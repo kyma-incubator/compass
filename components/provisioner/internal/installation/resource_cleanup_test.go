@@ -13,10 +13,12 @@ import (
 )
 
 const (
+	TestResourceSelector = "https://service-manager."
+
 	ClusterBrokerNameProvidingClusterServiceClasses    = "sm-working-broker"
 	ClusterBrokerNameNotProvidingClusterServiceClasses = "sm-fake-broker"
 
-	ClusterServiceClassExternalNameLabelFakeValue = "1736fed741bd9aa4996530b6b711b4f40800966fcb74974c77f0701f"
+	ClusterServiceClassFixedName = "some-serviceclass-name"
 )
 
 func TestNewServiceCatalogClient(t *testing.T) {
@@ -41,11 +43,30 @@ func TestServiceCatalogClient_PerformCleanup(t *testing.T) {
 
 	t.Run("should perform resource cleanup succesfully with happy path", func(t *testing.T) {
 		// when
-		err := cli.PerformCleanup("")
+		err := cli.PerformCleanup(TestResourceSelector)
 
 		// then
 		require.NoError(t, err)
+
+		// when
+		res, err := cli.listServiceInstance(metav1.ListOptions{})
+		require.NoError(t, err)
+		assert.Nil(t, res.Items)
 	})
+
+	t.Run("should fail cleanup when unable to list ClusterServiceBrokers", func(t *testing.T) {
+		// when
+		err := cli.PerformCleanup(TestResourceSelector)
+
+		// then
+		require.NoError(t, err)
+
+		// when
+		res, err := cli.listServiceInstance(metav1.ListOptions{})
+		require.NoError(t, err)
+		assert.Nil(t, res.Items)
+	})
+
 }
 
 func TestServiceCatalogClient_ListClusterServiceBroker(t *testing.T) {
@@ -194,6 +215,7 @@ func TestServiceCatalogClient_GetServiceInstancesForClusterServiceClasses(t *tes
 	cli := &serviceCatalogClient{client: fakeClient}
 
 	clusterServiceClassList := fixClusterServiceClassList().Items
+	expectedLabelValue := "0a3439490f8ad9b70c36c184b1110c044920a99f1b51ce9c3984ae7c"
 
 	t.Run("should list ServiceInstances for ClusterServiceClass", func(t *testing.T) {
 		// when
@@ -203,7 +225,7 @@ func TestServiceCatalogClient_GetServiceInstancesForClusterServiceClasses(t *tes
 		require.NoError(t, err)
 		assert.Len(t, resultList, 2)
 		for _, serviceInstance := range resultList {
-			assert.EqualValues(t, serviceInstance.Labels[ClusterServiceClassRefNameLabel], ClusterServiceClassExternalNameLabelFakeValue)
+			assert.EqualValues(t, serviceInstance.Labels[ClusterServiceClassRefNameLabel], expectedLabelValue)
 		}
 	})
 
@@ -277,10 +299,8 @@ func fixClusterServiceClassList() *v1beta1.ClusterServiceClassList {
 		Items: []v1beta1.ClusterServiceClass{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "saas-fake-service-class",
-					Labels: map[string]string{ClusterServiceBrokerNameLabel: fixGenerateSHA(ClusterBrokerNameProvidingClusterServiceClasses),
-						ClusterServiceClassExternalNameLabel: ClusterServiceClassExternalNameLabelFakeValue,
-					},
+					Name:   "saas-fake-service-class",
+					Labels: map[string]string{ClusterServiceBrokerNameLabel: fixGenerateSHA(ClusterBrokerNameProvidingClusterServiceClasses)},
 				},
 				Spec: v1beta1.ClusterServiceClassSpec{
 					ClusterServiceBrokerName: ClusterBrokerNameProvidingClusterServiceClasses,
@@ -288,7 +308,7 @@ func fixClusterServiceClassList() *v1beta1.ClusterServiceClassList {
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   "sm-fake-service-class",
+					Name:   ClusterServiceClassFixedName,
 					Labels: map[string]string{ClusterServiceBrokerNameLabel: fixGenerateSHA(ClusterBrokerNameNotProvidingClusterServiceClasses)},
 				},
 				Spec: v1beta1.ClusterServiceClassSpec{
@@ -308,8 +328,8 @@ func fixClusterServiceClassList() *v1beta1.ClusterServiceClassList {
 	}
 }
 
-func fixGenerateSHA(brokerName string) string {
-	return GenerateSHA(brokerName)
+func fixGenerateSHA(resourceName string) string {
+	return GenerateSHA(resourceName)
 }
 
 func newTestCR() []runtime.Object {
@@ -339,10 +359,8 @@ func newTestCR() []runtime.Object {
 		},
 		&v1beta1.ClusterServiceClass{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "saas-fake-service-class",
-				Labels: map[string]string{ClusterServiceBrokerNameLabel: fixGenerateSHA(ClusterBrokerNameProvidingClusterServiceClasses),
-					ClusterServiceClassExternalNameLabel: ClusterServiceClassExternalNameLabelFakeValue,
-				},
+				Name:   ClusterServiceClassFixedName,
+				Labels: map[string]string{ClusterServiceBrokerNameLabel: fixGenerateSHA(ClusterBrokerNameProvidingClusterServiceClasses)},
 			},
 			Spec: v1beta1.ClusterServiceClassSpec{
 				ClusterServiceBrokerName: ClusterBrokerNameProvidingClusterServiceClasses,
@@ -363,7 +381,7 @@ func newTestCR() []runtime.Object {
 				Name:      "fake-instance-one",
 				Namespace: "cstmr-ns",
 				Labels: map[string]string{
-					ClusterServiceClassRefNameLabel: ClusterServiceClassExternalNameLabelFakeValue,
+					ClusterServiceClassRefNameLabel: fixGenerateSHA(ClusterServiceClassFixedName),
 				},
 			},
 		},
@@ -372,7 +390,7 @@ func newTestCR() []runtime.Object {
 				Name:      "fake-instance-two",
 				Namespace: "cstmr-ns",
 				Labels: map[string]string{
-					ClusterServiceClassRefNameLabel: ClusterServiceClassExternalNameLabelFakeValue,
+					ClusterServiceClassRefNameLabel: fixGenerateSHA(ClusterServiceClassFixedName),
 				},
 			},
 		},

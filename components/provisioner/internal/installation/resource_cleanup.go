@@ -49,7 +49,9 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 		return errors.Wrapf(err, "while listing ClusterServiceBrokers")
 	}
 
+	logrus.Debugf("Filtering ClusterServiceBrokers with url prefix %s", resourceSelector)
 	brokersWithUrlPrefix := s.filterCsbWithUrlPrefix(clusterServiceBrokers, resourceSelector)
+	logrus.Debugf("Got %d ClusterServiceBrokers to process", len(brokersWithUrlPrefix))
 
 	cscWithMatchingLabel, err := s.getClusterServiceClassesForBrokers(brokersWithUrlPrefix)
 	if err != nil {
@@ -71,14 +73,14 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 
 func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptions) (*v1beta1.ClusterServiceBrokerList, error) {
 	result := &v1beta1.ClusterServiceBrokerList{}
-
+	logrus.Debugf("trying to list ClusterServiceBrokers...")
 	err := wait.Poll(10*time.Second, 2*time.Minute, func() (done bool, err error) {
 		csbList, err := s.client.ServicecatalogV1beta1().ClusterServiceBrokers().List(options)
 		if err != nil {
+			logrus.Errorf("while listing ClusterServiceBrokers: %s", err.Error())
 			if apiErrors.IsNotFound(err) {
 				return true, nil
 			}
-			logrus.Errorf("while listing ClusterServiceBrokers: %s", err.Error())
 			return false, nil
 		}
 		result = csbList
@@ -89,15 +91,15 @@ func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptio
 
 func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOptions) (*v1beta1.ClusterServiceClassList, error) {
 	result := &v1beta1.ClusterServiceClassList{}
-
+	logrus.Debugf("trying to list ClusterServiceClasses...")
 	err := wait.Poll(10*time.Second, 2*time.Minute, func() (done bool, err error) {
 		cscList, err := s.client.ServicecatalogV1beta1().ClusterServiceClasses().List(options)
 		if err != nil {
+			logrus.Errorf("while listing ClusterServiceClasses: %s", err.Error())
 			if apiErrors.IsNotFound(err) {
 				result = nil
 				return true, nil
 			}
-			logrus.Errorf("while listing ClusterServiceClasses: %s", err.Error())
 			return false, nil
 		}
 		result = cscList
@@ -108,15 +110,15 @@ func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOption
 
 func (s *serviceCatalogClient) listServiceInstance(options metav1.ListOptions) (*v1beta1.ServiceInstanceList, error) {
 	result := &v1beta1.ServiceInstanceList{}
-
+	logrus.Debugf("trying to list ServiceInstances...")
 	err := wait.Poll(10*time.Second, 2*time.Minute, func() (done bool, err error) {
 		siList, err := s.client.ServicecatalogV1beta1().ServiceInstances(metav1.NamespaceAll).List(options)
 		if err != nil {
+			logrus.Errorf("while listing ServiceInstances: %s", err.Error())
 			if apiErrors.IsNotFound(err) {
 				result = nil
 				return true, nil
 			}
-			logrus.Errorf("while listing ServiceInstances: %s", err.Error())
 			return false, nil
 		}
 		result = siList
@@ -161,7 +163,7 @@ func (s *serviceCatalogClient) getServiceInstancesForClusterServiceClasses(servi
 	var serviceInstances []v1beta1.ServiceInstance
 
 	for _, clusterServiceClass := range serviceClasses {
-		labelValue := clusterServiceClass.Labels[ClusterServiceClassExternalNameLabel]
+		labelValue := GenerateSHA(clusterServiceClass.Name)
 
 		options := fixListOptionsWithLabelSelector(ClusterServiceClassRefNameLabel, labelValue)
 
