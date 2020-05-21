@@ -48,7 +48,7 @@ type Config struct {
 	ConfigName         string        `default:"e2e-runtime-config"`
 	DeployNamespace    string        `default:"compass-system"`
 
-	UpgradeTest               bool `default:"false"`
+	UpgradeTest               bool `envconfig:"default=false"`
 	DummyTest                 bool `default:"false"`
 	CleanupPhase              bool `default:"false"`
 	TestAzureEventHubsEnabled bool `default:"true"`
@@ -94,9 +94,7 @@ const (
 	DefaultAzureEHRegion = "westeurope"
 )
 
-type options func(t *testing.T, config Config, suite *Suite)
-
-func newTestSuite(t *testing.T, options ...options) *Suite {
+func newTestSuite(t *testing.T) *Suite {
 	ctx := context.Background()
 	var azureClient *azure.Interface
 	cfg := &Config{}
@@ -182,8 +180,8 @@ func newTestSuite(t *testing.T, options ...options) *Suite {
 		IsTestAzureEventHubsEnabled: cfg.TestAzureEventHubsEnabled,
 	}
 
-	for _, opt := range options {
-		opt(t, *cfg, suite)
+	if suite.IsUpgradeTest {
+		suite.upgradeSuite = newUpgradeSuite(t, *cfg, suite)
 	}
 
 	return suite

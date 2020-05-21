@@ -72,7 +72,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	log = log.WithField("RuntimeId", runtimeId)
 
 	seed := getSeed(shoot)
-	if seed != "" {
+	if seed != "" && r.auditLogTenantConfigPath != "" {
 		err := r.enableAuditLogs(log, req.NamespacedName, &shoot, seed)
 		if err != nil {
 			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())

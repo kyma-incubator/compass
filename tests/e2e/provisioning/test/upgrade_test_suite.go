@@ -17,14 +17,6 @@ type UpgradeConfig struct {
 	UpgradeKymaVersion               string
 }
 
-func WithUpgrade() options {
-	return func(t *testing.T, config Config, suite *Suite) {
-		upgradeSuite := newUpgradeSuite(t, config, suite)
-
-		suite.upgradeSuite = upgradeSuite
-	}
-}
-
 type UpgradeSuite struct {
 	upgradeClient *provisioner.RuntimeUpgradeClient
 
