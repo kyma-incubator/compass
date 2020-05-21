@@ -17,6 +17,7 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -91,7 +92,9 @@ func TestManager_Execute(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.expectedDesc, strings.Trim(operation.Description, " "))
 			}
-			assert.Len(t, eventCollector.Events, tc.expectedNumberOfEvents, fmt.Sprintf("%d", len(eventCollector.Events)))
+			assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 2*time.Second, func() (bool, error) {
+				return len(eventCollector.Events) == tc.expectedNumberOfEvents, nil
+			}))
 		})
 	}
 }
