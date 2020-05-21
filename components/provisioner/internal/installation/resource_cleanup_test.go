@@ -55,7 +55,7 @@ func TestServiceCatalogClient_ListClusterServiceBroker(t *testing.T) {
 
 	t.Run("should list ClusterServiceBrokers successfully", func(t *testing.T) {
 		// when
-		list, err := cli.ListClusterServiceBroker(metav1.ListOptions{})
+		list, err := cli.listClusterServiceBroker(metav1.ListOptions{})
 
 		// then
 		require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestServiceCatalogClient_ListClusterServiceBroker(t *testing.T) {
 
 	t.Run("should return nil if no ClusterServiceBrokers found", func(t *testing.T) {
 		// when
-		list, _ := cli.ListClusterServiceBroker(metav1.ListOptions{})
+		list, _ := cli.listClusterServiceBroker(metav1.ListOptions{})
 		// then
 		require.Nil(t, list.Items)
 	})
@@ -82,7 +82,7 @@ func TestServiceCatalogClient_ListClusterServiceClass(t *testing.T) {
 
 	t.Run("should list cluster service classes successfully", func(t *testing.T) {
 		// when
-		list, err := cli.ListClusterServiceClass(metav1.ListOptions{})
+		list, err := cli.listClusterServiceClass(metav1.ListOptions{})
 
 		// then
 		require.NoError(t, err)
@@ -95,7 +95,7 @@ func TestServiceCatalogClient_ListClusterServiceClass(t *testing.T) {
 
 	t.Run("should return nil if no ClusterServiceClasses found", func(t *testing.T) {
 		// when
-		list, _ := cli.ListClusterServiceClass(metav1.ListOptions{})
+		list, _ := cli.listClusterServiceClass(metav1.ListOptions{})
 		// then
 		require.Nil(t, list.Items)
 	})
@@ -108,7 +108,7 @@ func TestServiceCatalogClient_ListServiceInstance(t *testing.T) {
 
 	t.Run("should list service instances successfully", func(t *testing.T) {
 		// when
-		list, err := cli.ListServiceInstance(metav1.ListOptions{})
+		list, err := cli.listServiceInstance(metav1.ListOptions{})
 
 		// then
 		require.NoError(t, err)
@@ -121,7 +121,7 @@ func TestServiceCatalogClient_ListServiceInstance(t *testing.T) {
 
 	t.Run("should return nil if no ServiceInstances found", func(t *testing.T) {
 		// when
-		list, _ := cli.ListServiceInstance(metav1.ListOptions{})
+		list, _ := cli.listServiceInstance(metav1.ListOptions{})
 		// then
 		require.Nil(t, list.Items)
 	})
@@ -138,7 +138,7 @@ func TestServiceCatalogClient_FilterCsbWithUrlPrefix(t *testing.T) {
 
 	t.Run("should return only ClusterServiceBrokers with matching url prefix", func(t *testing.T) {
 		// when
-		resultList := cli.FilterCsbWithUrlPrefix(brokerList, brokerUrlPrefix)
+		resultList := cli.filterCsbWithUrlPrefix(brokerList, brokerUrlPrefix)
 
 		// then
 		assert.Len(t, resultList, 2)
@@ -155,11 +155,11 @@ func TestServiceCatalogClient_GetClusterServiceClassesForBrokers(t *testing.T) {
 	cli := &serviceCatalogClient{client: fakeClient}
 	expectedBrokenNameSHA := "f17be81c5d87f618a16cfa4e7196494de37016490cd869d740181e2f"
 
-	filteredBrokers := cli.FilterCsbWithUrlPrefix(fixClusterServiceBrokerList(), "https://service-manager.")
+	filteredBrokers := cli.filterCsbWithUrlPrefix(fixClusterServiceBrokerList(), "https://service-manager.")
 
 	t.Run("should list ClusterServiceClasses for ClusterServiceBroker when provided", func(t *testing.T) {
 		// when
-		resultList, err := cli.GetClusterServiceClassesForBrokers(filteredBrokers)
+		resultList, err := cli.getClusterServiceClassesForBrokers(filteredBrokers)
 
 		// then
 		require.NoError(t, err)
@@ -173,7 +173,7 @@ func TestServiceCatalogClient_GetClusterServiceClassesForBrokers(t *testing.T) {
 
 	t.Run("should return nil if given ClusterServiceBroker do not provide ClusterServiceClass", func(t *testing.T) {
 		// when
-		resultList, _ := cli.GetClusterServiceClassesForBrokers([]v1beta1.ClusterServiceBroker{
+		resultList, _ := cli.getClusterServiceClassesForBrokers([]v1beta1.ClusterServiceBroker{
 			{
 				TypeMeta:   metav1.TypeMeta{},
 				ObjectMeta: metav1.ObjectMeta{},
@@ -197,7 +197,7 @@ func TestServiceCatalogClient_GetServiceInstancesForClusterServiceClasses(t *tes
 
 	t.Run("should list ServiceInstances for ClusterServiceClass", func(t *testing.T) {
 		// when
-		resultList, err := cli.GetServiceInstancesForClusterServiceClasses(clusterServiceClassList)
+		resultList, err := cli.getServiceInstancesForClusterServiceClasses(clusterServiceClassList)
 
 		// then
 		require.NoError(t, err)
@@ -213,7 +213,7 @@ func TestServiceCatalogClient_GetServiceInstancesForClusterServiceClasses(t *tes
 
 	t.Run("should return nil if no ServiceInstances found", func(t *testing.T) {
 		// when
-		resultList, _ := cli.GetServiceInstancesForClusterServiceClasses([]v1beta1.ClusterServiceClass{
+		resultList, _ := cli.getServiceInstancesForClusterServiceClasses([]v1beta1.ClusterServiceClass{
 			{
 				TypeMeta:   metav1.TypeMeta{},
 				ObjectMeta: metav1.ObjectMeta{},
