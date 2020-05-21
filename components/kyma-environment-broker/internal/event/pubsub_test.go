@@ -41,12 +41,31 @@ func TestPubSub(t *testing.T) {
 
 	// then
 	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 2*time.Second, func() (bool, error) {
-		return eventA{msg: "first event"} == gotEventAList1[0] &&
-			eventA{msg: "first event"} == gotEventAList2[0] &&
-			eventA{msg: "third event"} == gotEventAList1[1] &&
-			eventA{msg: "third event"} == gotEventAList2[1] &&
-			eventB{msg: "second event"} == gotEventBList[0], nil
+
+		return containsA(gotEventAList1, eventA{msg: "first event"}) &&
+			containsA(gotEventAList1, eventA{msg: "third event"}) &&
+			containsA(gotEventAList2, eventA{msg: "first event"}) &&
+			containsA(gotEventAList2, eventA{msg: "third event"}) &&
+			containsB(gotEventBList, eventB{msg: "second event"}), nil
 	}))
+}
+
+func containsA(slice []eventA, item eventA) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+func containsB(slice []eventB, item eventB) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
 
 type eventA struct {
