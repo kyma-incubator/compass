@@ -5,5 +5,5 @@ const (
 	DirectorSubsystem      = "director"
 	TenantFetcherSubsystem = "tenantfetcher"
 	TenantFetcherJobName   = TenantFetcherSubsystem
-	InstanceIDKeyName      = "instanceID"
+	InstanceIDKeyName      = "instance"
 )

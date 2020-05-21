@@ -40,7 +40,11 @@ func NewPusher(endpoint string) *Pusher {
 }
 
 func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc string) {
-	log.WithField(InstanceIDKeyName, p.instanceID).Infof("Recording request with status code '%d'...", statusCode)
+	log.WithFields(log.Fields{
+		InstanceIDKeyName: p.instanceID,
+		"statusCode":      statusCode,
+		"desc":            desc,
+	}).Infof("Recording eventing request...")
 	p.eventingRequestTotal.WithLabelValues(method, strconv.Itoa(statusCode), desc).Inc()
 }
 
