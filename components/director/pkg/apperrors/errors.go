@@ -304,7 +304,7 @@ func NewEmptyTenantError() *emptyTenantError {
 }
 
 func (e *emptyTenantError) Error() string {
-	return "tenant not found"
+	return "tenant is required"
 }
 
 func (emptyTenantError) EmptyTenant() {}
