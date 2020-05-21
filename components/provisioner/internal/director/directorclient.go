@@ -26,6 +26,7 @@ type DirectorClient interface {
 	DeleteRuntime(id, tenant string) error
 	SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error
 	GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, error)
+	RuntimeExists(gardenerClusterName, tenant string) (bool, error)
 }
 
 type directorClient struct {
@@ -160,6 +161,22 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) error {
 	log.Infof("Successfully unregistered Runtime %s in Director for tenant %s", id, tenant)
 
 	return nil
+}
+
+func (cc *directorClient) RuntimeExists(id, tenant string) (bool, error) {
+	runtimeQuery := cc.queryProvider.getRuntimeQuery(id)
+
+	var response GetRuntimeResponse
+	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
+	if err != nil {
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtime %s from Director", id))
+	}
+
+	if response.Result == nil {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error {

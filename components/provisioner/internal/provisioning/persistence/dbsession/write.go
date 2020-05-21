@@ -192,6 +192,26 @@ func (ws writeSession) TransitionOperation(operationID string, message string, s
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
 }
 
+// Clean up this code when not needed (https://github.com/kyma-incubator/compass/issues/1371)
+func (ws writeSession) FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error {
+	legacyStageCondition := dbr.Eq("stage", "ShootProvisioning")
+	provisioningOperation := dbr.Eq("type", model.Provision)
+	inProgressOperation := dbr.Eq("state", model.InProgress)
+
+	_, err := ws.update("operation").
+		Where(dbr.And(legacyStageCondition, provisioningOperation, inProgressOperation)).
+		Set("stage", newStage).
+		Set("message", message).
+		Set("last_transition", transitionTime).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to set stage: %v for operations", err)
+	}
+
+	return nil
+}
+
 func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).

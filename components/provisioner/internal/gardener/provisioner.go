@@ -62,7 +62,6 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	}
 
 	annotate(shootTemplate, operationIdAnnotation, operationId)
-	annotate(shootTemplate, provisioningAnnotation, Initial.String())
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
 
 	if g.policyConfigMapName != "" {
@@ -78,7 +77,6 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 }
 
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error) {
-	session := g.dbSessionFactory.NewWriteSession()
 
 	gardenerCfg, ok := cluster.GardenerConfig()
 	if !ok {
@@ -88,34 +86,43 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			message := fmt.Sprintf("Cluster %s does not exist. Nothing to deprovision.", cluster.ID)
+			message := fmt.Sprintf("Cluster %s already deleted. Proceeding to DeprovisionCluster stage.", cluster.ID)
 
-			dberr := session.MarkClusterAsDeleted(cluster.ID)
-			if dberr != nil {
-				return newDeprovisionOperation(operationId, cluster.ID, message, model.Failed, model.FinishedStage, time.Now()), dberr
-			}
-			return newDeprovisionOperation(operationId, cluster.ID, message, model.Succeeded, model.FinishedStage, time.Now()), nil
+			// Shoot was deleted. In order to make sure if all clean up actions were performed we need to proceed to WaitForClusterDeletion state
+			return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, time.Now()), nil
 		}
 	}
 
 	if shoot.DeletionTimestamp != nil {
+		annotate(shoot, operationIdAnnotation, operationId)
 		message := fmt.Sprintf("Cluster %s already %s scheduled for deletion.", gardenerCfg.Name, cluster.ID)
-		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisioningStage, shoot.DeletionTimestamp.Time), nil
+		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, shoot.DeletionTimestamp.Time), nil
 	}
 
 	deletionTime := time.Now()
 
-	// TODO: consider adding some annotation and uninstall before deleting shoot
-	annotate(shoot, provisioningAnnotation, Deprovisioning.String())
 	annotate(shoot, operationIdAnnotation, operationId)
-	AnnotateWithConfirmDeletion(shoot)
-	err = UpdateAndDeleteShoot(g.shootClient, shoot)
+
+	annotateWithConfirmDeletion(shoot)
 	if err != nil {
 		return model.Operation{}, fmt.Errorf("error scheduling shoot %s for deletion: %s", shoot.Name, err.Error())
 	}
 
+	_, err = g.shootClient.Update(shoot)
+	if err != nil {
+		return model.Operation{}, fmt.Errorf("error updating Shoot: %s", err.Error())
+	}
+
 	message := fmt.Sprintf("Deprovisioning started")
-	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeprovisioningStage, deletionTime), nil
+	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.TriggerKymaUninstall, deletionTime), nil
+}
+
+func annotateWithConfirmDeletion(shoot *gardener_types.Shoot) {
+	if shoot.Annotations == nil {
+		shoot.Annotations = map[string]string{}
+	}
+
+	shoot.Annotations["confirmation.garden.sapcloud.io/deletion"] = "true"
 }
 
 func (g *GardenerProvisioner) shouldSetMaintenanceWindow() bool {
@@ -190,20 +197,6 @@ type TimeWindow struct {
 
 func (tw TimeWindow) isEmpty() bool {
 	return tw.Begin == "" || tw.End == ""
-}
-
-func setAuditConfig(shoot *gardener_types.Shoot, policyConfigMapName, subAccountId string) {
-	if shoot.Spec.Kubernetes.KubeAPIServer == nil {
-		shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
-	}
-
-	shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_types.AuditConfig{
-		AuditPolicy: &gardener_types.AuditPolicy{
-			ConfigMapRef: &v12.ObjectReference{Name: policyConfigMapName},
-		},
-	}
-
-	annotate(shoot, auditLogsAnnotation, subAccountId)
 }
 
 func getDataFromFile(filepath, region string) (interface{}, error) {

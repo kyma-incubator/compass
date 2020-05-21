@@ -24,18 +24,21 @@ const (
 type OperationStage string
 
 const (
-	ShootProvisioning      OperationStage = "ShootProvisioning"
-	StartingInstallation   OperationStage = "StartingInstallation"
-	WaitingForInstallation OperationStage = "WaitingForInstallation"
-	ConnectRuntimeAgent    OperationStage = "ConnectRuntimeAgent"
-	WaitForAgentToConnect  OperationStage = "WaitForAgentToConnect"
+	WaitingForClusterDomain   OperationStage = "WaitingForClusterDomain"
+	WaitingForClusterCreation OperationStage = "WaitingForClusterCreation"
+	StartingInstallation      OperationStage = "StartingInstallation"
+	WaitingForInstallation    OperationStage = "WaitingForInstallation"
+	ConnectRuntimeAgent       OperationStage = "ConnectRuntimeAgent"
+	WaitForAgentToConnect     OperationStage = "WaitForAgentToConnect"
+
+	TriggerKymaUninstall   OperationStage = "TriggerKymaUninstall"
+	WaitForClusterDeletion OperationStage = "WaitForClusterDeletion"
+	DeleteCluster          OperationStage = "DeprovisionCluster"
 
 	StartingUpgrade      OperationStage = "StartingUpgrade"
 	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"
 
 	FinishedStage OperationStage = "Finished"
-
-	DeprovisioningStage OperationStage = "Deprovisioning"
 )
 
 type Cluster struct {

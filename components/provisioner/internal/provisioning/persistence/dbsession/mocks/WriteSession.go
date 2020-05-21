@@ -33,6 +33,22 @@ func (_m *WriteSession) DeleteCluster(runtimeID string) dberrors.Error {
 	return r0
 }
 
+// FixShootProvisioningStage provides a mock function with given fields: message, newStage, transitionTime
+func (_m *WriteSession) FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error {
+	ret := _m.Called(message, newStage, transitionTime)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(string, model.OperationStage, time.Time) dberrors.Error); ok {
+		r0 = rf(message, newStage, transitionTime)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
 // InsertCluster provides a mock function with given fields: cluster
 func (_m *WriteSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	ret := _m.Called(cluster)

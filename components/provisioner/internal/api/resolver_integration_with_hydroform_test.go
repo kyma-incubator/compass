@@ -249,6 +249,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 
 			mockK8sClientProvider := &mocks.K8sClientProvider{}
 			fakeK8sClient := fake.NewSimpleClientset()
+
 			mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
 			runtimeConfigurator := runtime.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
@@ -259,11 +260,14 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbSessionFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock)
-			installationQueue.Run(ctx.Done())
+			provisioningQueue := fixFakeQueue()
+			provisioningQueue.Run(ctx.Done())
+
+			deprovisioningQueue := fixFakeQueue()
+			deprovisioningQueue.Run(ctx.Done())
 
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, installationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, nil)
 			validator := NewValidator(dbSessionFactory.NewReadSession())
 			provisioner := NewResolver(provisioningService, validator)
 
@@ -488,4 +492,17 @@ func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
 		Value:  val,
 		Secret: secret,
 	}
+}
+
+func fixFakeQueue() queue.OperationQueue {
+	return fakeQueue{}
+}
+
+type fakeQueue struct {
+}
+
+func (f fakeQueue) Add(_ string) {
+}
+
+func (f fakeQueue) Run(_ <-chan struct{}) {
 }

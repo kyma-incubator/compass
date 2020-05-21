@@ -8,24 +8,11 @@ const (
 	auditLogsAnnotation = "custom.shoot.sapcloud.io/subaccountId"
 )
 
-const (
-	timeLayout = "2006-01-02T15:04:05.000Z"
-)
-
 type ProvisioningState string
 
 func (s ProvisioningState) String() string {
 	return string(s)
 }
-
-const (
-	UnknownProvisioningState ProvisioningState = ""
-	Provisioned              ProvisioningState = "provisioned"
-	Provisioning             ProvisioningState = "provisioning"
-	Initial                  ProvisioningState = "initial"
-	Deprovisioning           ProvisioningState = "deprovisioning"
-	ProvisioningFailed       ProvisioningState = "failed"
-)
 
 type KymaInstallationState string
 
@@ -34,10 +21,6 @@ func (s KymaInstallationState) String() string {
 }
 
 const (
-	provisioningAnnotation string = "compass.provisioner.kyma-project.io/provisioning"
-
-	uninstallingAnnotation string = "compass.provisioner.kyma-project.io/uninstalling"
-
 	operationIdAnnotation string = "compass.provisioner.kyma-project.io/operation-id"
 	runtimeIdAnnotation   string = "compass.provisioner.kyma-project.io/runtime-id"
 )
@@ -50,15 +33,6 @@ func annotate(shoot *gardener_types.Shoot, annotation, value string) {
 	shoot.Annotations[annotation] = value
 }
 
-func getOperationId(shoot gardener_types.Shoot) string {
-	operationId, found := shoot.Annotations[operationIdAnnotation]
-	if !found {
-		return ""
-	}
-
-	return operationId
-}
-
 func getRuntimeId(shoot gardener_types.Shoot) string {
 	runtimeId, found := shoot.Annotations[runtimeIdAnnotation]
 	if !found {
@@ -66,39 +40,4 @@ func getRuntimeId(shoot gardener_types.Shoot) string {
 	}
 
 	return runtimeId
-}
-
-func removeAnnotation(shoot *gardener_types.Shoot, annotation string) {
-	if shoot.Annotations == nil {
-		return
-	}
-
-	delete(shoot.Annotations, annotation)
-}
-
-func getProvisioningState(shoot gardener_types.Shoot) ProvisioningState {
-	provisioningState, found := shoot.Annotations[provisioningAnnotation]
-	if !found {
-		return UnknownProvisioningState
-	}
-
-	switch ProvisioningState(provisioningState) {
-	case Initial, Provisioning, Provisioned, Deprovisioning, ProvisioningFailed:
-		return ProvisioningState(provisioningState)
-	default:
-		return UnknownProvisioningState
-	}
-}
-
-func uninstallTriggered(shoot gardener_types.Shoot) bool {
-	uninstallState, found := shoot.Annotations[uninstallingAnnotation]
-	if !found {
-		return false
-	}
-
-	if uninstallState == "true" {
-		return true
-	}
-
-	return false
 }

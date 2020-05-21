@@ -10,7 +10,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages"
+	provisioningStages "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning"
 
 	retry "github.com/avast/retry-go"
 
@@ -46,6 +46,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
+	"k8s.io/client-go/kubernetes"
 )
 
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
@@ -68,7 +69,8 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable"`
 	}
 
-	ProvisioningTimeout queue.ProvisioningTimeouts
+	ProvisioningTimeout   queue.ProvisioningTimeouts
+	DeprovisioningTimeout queue.DeprovisioningTimeouts
 
 	Gardener struct {
 		Project                     string `envconfig:"default=gardenerProject"`
@@ -94,8 +96,10 @@ func (c *config) String() string {
 		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
+		"ProvisioningTimeoutClusterCreation: %s "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
+		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"Provisioner: %s, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
@@ -105,8 +109,10 @@ func (c *config) String() string {
 		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
+		c.ProvisioningTimeout.ClusterCreation.String(),
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
+		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.Provisioner,
 		c.LatestDownloadedReleases, c.DownloadPreReleases, c.SupportOnDemandReleases,
@@ -145,6 +151,11 @@ func main() {
 	gardenerClientSet, err := gardener.NewClient(gardenerClusterConfig)
 	exitOnError(err, "Failed to create Gardener cluster clientset")
 
+	k8sCoreClientSet, err := kubernetes.NewForConfig(gardenerClusterConfig)
+	exitOnError(err, "Failed to create Kubernetes ")
+
+	secretsInterface := k8sCoreClientSet.CoreV1().Secrets(gardenerNamespace)
+
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
@@ -164,8 +175,19 @@ func main() {
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
 
-	installationQueue := queue.CreateInstallationQueue(cfg.ProvisioningTimeout, dbsFactory, installationService, runtimeConfigurator, stages.NewCompassConnectionClient, directorClient)
+	provisioningQueue := queue.CreateProvisioningQueue(
+		cfg.ProvisioningTimeout,
+		dbsFactory,
+		installationService,
+		runtimeConfigurator,
+		provisioningStages.NewCompassConnectionClient,
+		directorClient,
+		shootClient,
+		secretsInterface)
+
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
+
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
 
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
@@ -174,7 +196,7 @@ func main() {
 		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
 	case "gardener":
 		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
-		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, gardenerClientSet, dbsFactory, directorClient, installationService, installationQueue, cfg.Gardener.AuditLogsTenantConfigPath)
+		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 		exitOnError(err, "Failed to create Shoot controller.")
 		go func() {
 			err := shootController.StartShootController()
@@ -191,7 +213,7 @@ func main() {
 		releaseProvider = release.NewOnDemandWrapper(httpClient, releaseRepository)
 	}
 
-	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient, upgradeQueue)
+	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient, provisioningQueue, deprovisioningQueue, upgradeQueue)
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 
 	resolver := api.NewResolver(provisioningSVC, validator)
@@ -205,7 +227,10 @@ func main() {
 	go downloader.FetchPeriodically(ctx, release.ShortInterval, release.LongInterval)
 
 	// Run installation queue
-	installationQueue.Run(ctx.Done())
+	provisioningQueue.Run(ctx.Done())
+
+	deprovisioningQueue.Run(ctx.Done())
+
 	// Run upgrade queue
 	upgradeQueue.Run(ctx.Done())
 
@@ -238,14 +263,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, installationQueue, upgradeQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue, upgradeQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -265,10 +290,20 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, installationQueue,
 		return fmt.Errorf("error enqueuing in progress operations: %s", err.Error())
 	}
 
+	err = migrateOperationsInShootProvisioningStage(dbFactory.NewWriteSession())
+	if err != nil {
+
+		return fmt.Errorf("error migrating operations in ShootProvisioning stage: %s", err.Error())
+	}
+
 	for _, op := range inProgressOps {
-		if op.Type == model.Provision && op.Stage != model.ShootProvisioning {
-			installationQueue.Add(op.ID)
+		if op.Type == model.Provision {
+			provisioningQueue.Add(op.ID)
 			continue
+		}
+
+		if op.Type == model.Deprovision {
+			deprovisioningQueue.Add(op.ID)
 		}
 
 		if op.Type == model.Upgrade {

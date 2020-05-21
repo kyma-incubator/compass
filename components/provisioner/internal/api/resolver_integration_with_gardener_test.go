@@ -63,7 +63,7 @@ var mgr ctrl.Manager
 const (
 	namespace  = "default"
 	syncPeriod = 5 * time.Second
-	waitPeriod = syncPeriod + 3*time.Second
+	waitPeriod = 10 * time.Second
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -183,12 +183,16 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	installationQueue := queue.CreateInstallationQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock)
-	installationQueue.Run(queueCtx.Done())
+	provisioningQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, shootInterface, secretsInterface)
+	provisioningQueue.Run(queueCtx.Done())
+
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
+	deprovisioningQueue.Run(queueCtx.Done())
+
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	controler, err := gardener.NewShootController(mgr, shootInterface, secretsInterface, dbsFactory, directorServiceMock, installationServiceMock, installationQueue, auditLogsConfigPath)
+	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
 	require.NoError(t, err)
 
 	go func() {
@@ -205,6 +209,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.ExpectedCalls = nil
 
 			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(config.runtimeID, nil)
+			directorServiceMock.On("RuntimeExists", mock.Anything, mock.Anything).Return(true, nil)
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
@@ -226,7 +231,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, upgradeQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue)
 
 			validator := NewValidator(dbsFactory.NewReadSession())
 
@@ -246,7 +251,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			//wait for Shoot to update
-			time.Sleep(waitPeriod)
+			time.Sleep(2 * syncPeriod)
 
 			list, err := shootInterface.List(metav1.ListOptions{})
 			require.NoError(t, err)
@@ -257,20 +262,18 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
-			assert.Equal(t, "initial", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
 			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 
 			simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
 			//when
 			//wait for Shoot to update
-			time.Sleep(waitPeriod)
+			time.Sleep(2 * waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then
 			require.NoError(t, err)
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, "provisioned", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
 
 			// when
 			upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, config.runtimeID, gqlschema.UpgradeRuntimeInput{KymaConfig: fixKymaGraphQLConfigInput()})
@@ -324,12 +327,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//then
 			require.NoError(t, err)
 			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, deprovisionRuntimeID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
-			assert.Equal(t, "deprovisioning", shoot.Annotations["compass.provisioner.kyma-project.io/provisioning"])
 
 			//when
 			shoot = removeFinalizers(t, shootInterface, shoot)
-			time.Sleep(waitPeriod)
+			time.Sleep(4 * waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			//then
@@ -388,10 +389,18 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 	return queue.ProvisioningTimeouts{
+		ClusterCreation:    5 * time.Minute,
 		Installation:       5 * time.Minute,
 		Upgrade:            5 * time.Minute,
 		AgentConfiguration: 5 * time.Minute,
 		AgentConnection:    5 * time.Minute,
+	}
+}
+
+func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
+	return queue.DeprovisioningTimeouts{
+		ClusterDeletion:           5 * time.Minute,
+		WaitingForClusterDeletion: 5 * time.Minute,
 	}
 }
 
