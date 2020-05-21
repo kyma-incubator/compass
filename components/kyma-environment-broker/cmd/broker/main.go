@@ -186,11 +186,10 @@ func main() {
 	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
-	// metrics collectors
-
 	// application event broker
 	eventBroker := event.NewPubSub()
 
+	// metrics collectors
 	metrics.RegisterAll(eventBroker, db.Operations(), db.Instances())
 
 	// setup operation managers
