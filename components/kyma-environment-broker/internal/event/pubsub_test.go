@@ -41,7 +41,7 @@ func TestPubSub(t *testing.T) {
 	time.Sleep(1 * time.Millisecond)
 
 	// then
-	require.NoError(t, wait.PollImmediate(5*time.Millisecond, time.Second, func() (bool, error) {
+	require.NoError(t, wait.PollImmediate(20 * time.Millisecond, 2*time.Second, func() (bool, error) {
 		return eventA{msg: "first event"} == gotEventAList1[0] &&
 			eventA{msg: "first event"} == gotEventAList2[0] &&
 			eventA{msg: "third event"} == gotEventAList1[1] &&
