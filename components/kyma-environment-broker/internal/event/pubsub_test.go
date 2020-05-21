@@ -41,7 +41,6 @@ func TestPubSub(t *testing.T) {
 
 	// then
 	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 2*time.Second, func() (bool, error) {
-
 		return containsA(gotEventAList1, eventA{msg: "first event"}) &&
 			containsA(gotEventAList1, eventA{msg: "third event"}) &&
 			containsA(gotEventAList2, eventA{msg: "first event"}) &&
