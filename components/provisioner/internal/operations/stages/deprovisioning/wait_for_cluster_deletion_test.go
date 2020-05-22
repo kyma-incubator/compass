@@ -84,10 +84,10 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient, dbSessionFactory, directorClient)
 
-			deprovisionClusterStep := NewWaitForClusterDeletionStep(gardenerClient, dbSessionFactory, directorClient, nextStageName, 10*time.Minute)
+			waitForClusterDeletionStep := NewWaitForClusterDeletionStep(gardenerClient, dbSessionFactory, directorClient, nextStageName, 10*time.Minute)
 
 			// when
-			result, err := deprovisionClusterStep.Run(cluster, model.Operation{}, logrus.New())
+			result, err := waitForClusterDeletionStep.Run(cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.NoError(t, err)
@@ -192,10 +192,10 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient, dbSessionFactory, directorClient)
 
-			deprovisionClusterStep := NewWaitForClusterDeletionStep(gardenerClient, dbSessionFactory, directorClient, nextStageName, 10*time.Minute)
+			waitForClusterDeletionStep := NewWaitForClusterDeletionStep(gardenerClient, dbSessionFactory, directorClient, nextStageName, 10*time.Minute)
 
 			// when
-			_, err := deprovisionClusterStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+			_, err := waitForClusterDeletionStep.Run(testCase.cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.Error(t, err)
