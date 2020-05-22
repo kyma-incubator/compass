@@ -145,7 +145,7 @@ func (c *Client) failedRequestDesc(err error) string {
 		return e.Err.Error()
 	}
 
-	if len(err.Error()) == maxErrMessageLength {
+	if len(err.Error()) > maxErrMessageLength {
 		// not all errors are actually wrapped, sometimes the error message is just concatenated with ":"
 		errParts := strings.Split(err.Error(), ":")
 		return errParts[len(errParts)-1]
