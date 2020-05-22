@@ -41,7 +41,8 @@ type Client struct {
 }
 
 const (
-	pageSize = 1000
+	pageSize            = 1000
+	maxErrMessageLength = 50
 )
 
 func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
@@ -144,7 +145,11 @@ func (c *Client) failedRequestDesc(err error) string {
 		return e.Err.Error()
 	}
 
-	// not all errors are actually wrapped, sometimes the error message is just concatenated with ":"
-	errParts := strings.Split(err.Error(), ":")
-	return errParts[len(errParts)-1]
+	if len(err.Error()) == maxErrMessageLength {
+		// not all errors are actually wrapped, sometimes the error message is just concatenated with ":"
+		errParts := strings.Split(err.Error(), ":")
+		return errParts[len(errParts)-1]
+	}
+
+	return err.Error()
 }
