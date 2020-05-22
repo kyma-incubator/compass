@@ -114,7 +114,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	}
 
 	message := fmt.Sprintf("Deprovisioning started")
-	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.TriggerKymaUninstall, deletionTime), nil
+	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.CleanupCluster, deletionTime), nil
 }
 
 func annotateWithConfirmDeletion(shoot *gardener_types.Shoot) {
