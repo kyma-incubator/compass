@@ -6,10 +6,12 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientgotesting "k8s.io/client-go/testing"
 )
 
 const (
@@ -55,18 +57,49 @@ func TestServiceCatalogClient_PerformCleanup(t *testing.T) {
 	})
 
 	t.Run("should fail cleanup when unable to list ClusterServiceBrokers", func(t *testing.T) {
+		// given
+		fakeClient := scfake.NewSimpleClientset(newTestCR()...)
+		cli := &serviceCatalogClient{client: fakeClient}
+		fakeClient.PrependReactor("list", "clusterservicebrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+			return true, nil, errors.New("error listing clusterservicebrokers")
+		})
+
 		// when
 		err := cli.PerformCleanup(TestResourceSelector)
 
 		// then
-		require.NoError(t, err)
-
-		// when
-		res, err := cli.listServiceInstance(metav1.ListOptions{})
-		require.NoError(t, err)
-		assert.Nil(t, res.Items)
+		require.Error(t, err)
 	})
 
+	t.Run("should fail cleanup when unable to list ClusterServiceClasses", func(t *testing.T) {
+		// given
+		fakeClient := scfake.NewSimpleClientset(newTestCR()...)
+		cli := &serviceCatalogClient{client: fakeClient}
+		fakeClient.PrependReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+			return true, nil, errors.New("error listing clusterserviceclasses")
+		})
+
+		// when
+		err := cli.PerformCleanup(TestResourceSelector)
+
+		// then
+		require.Error(t, err)
+	})
+
+	t.Run("should fail cleanup when unable to list ServiceInstances", func(t *testing.T) {
+		// given
+		fakeClient := scfake.NewSimpleClientset(newTestCR()...)
+		cli := &serviceCatalogClient{client: fakeClient}
+		fakeClient.PrependReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+			return true, nil, errors.New("error listing serviceinstances")
+		})
+
+		// when
+		err := cli.PerformCleanup(TestResourceSelector)
+
+		// then
+		require.Error(t, err)
+	})
 }
 
 func TestServiceCatalogClient_ListClusterServiceBroker(t *testing.T) {
