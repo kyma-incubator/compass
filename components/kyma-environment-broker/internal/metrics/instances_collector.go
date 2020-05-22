@@ -46,19 +46,9 @@ func (c *InstancesCollector) Collect(ch chan<- prometheus.Metric) {
 		logrus.Error(err)
 		return
 	}
+	collect(ch, c.instancesDesc, stats.TotalNumberOfInstances)
 
-	ch <- prometheus.MustNewConstMetric(
-		c.instancesDesc,
-		prometheus.GaugeValue,
-		float64(stats.TotalNumberOfInstances),
-	)
-
-	for gaid, num := range stats.PerGlobalAccountID {
-		ch <- prometheus.MustNewConstMetric(
-			c.instancesPerGAIDDesc,
-			prometheus.GaugeValue,
-			float64(num),
-			gaid,
-		)
+	for globalAccountID, num := range stats.PerGlobalAccountID {
+		collect(ch, c.instancesPerGAIDDesc, num, globalAccountID)
 	}
 }

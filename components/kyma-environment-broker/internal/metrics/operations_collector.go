@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -86,7 +87,8 @@ func fqName(operationType dbmodel.OperationType, state domain.LastOperationState
 	case domain.InProgress:
 		st = "in_progress"
 	}
-	return fmt.Sprintf("%s_%s_operations_%s_%s_total", prometheusNamespace, prometheusSubsystem, opType, st)
+	name := fmt.Sprintf("operations_%s_%s_total", opType, st)
+	return prometheus.BuildFQName(prometheusNamespace, prometheusSubsystem, name)
 }
 
 func (c *OperationsCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -105,35 +107,43 @@ func (c *OperationsCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	ch <- prometheus.MustNewConstMetric(
+	collect(ch,
 		c.provisioningInProgressDesc,
-		prometheus.GaugeValue,
-		float64(stats.Provisioning[domain.InProgress]),
+		stats.Provisioning[domain.InProgress],
 	)
-	ch <- prometheus.MustNewConstMetric(
+	collect(ch,
 		c.provisioningSucceededDesc,
-		prometheus.GaugeValue,
-		float64(stats.Provisioning[domain.Succeeded]),
+		stats.Provisioning[domain.Succeeded],
 	)
-	ch <- prometheus.MustNewConstMetric(
+	collect(ch,
 		c.provisioningFailedDesc,
-		prometheus.GaugeValue,
-		float64(stats.Provisioning[domain.Failed]),
+		stats.Provisioning[domain.Failed],
 	)
 
-	ch <- prometheus.MustNewConstMetric(
+	collect(ch,
 		c.deprovisioningInProgressDesc,
-		prometheus.GaugeValue,
-		float64(stats.Deprovisioning[domain.InProgress]),
+		stats.Deprovisioning[domain.InProgress],
 	)
-	ch <- prometheus.MustNewConstMetric(
+	collect(ch,
 		c.deprovisioningSucceededDesc,
-		prometheus.GaugeValue,
-		float64(stats.Deprovisioning[domain.Succeeded]),
+		stats.Deprovisioning[domain.Succeeded],
 	)
-	ch <- prometheus.MustNewConstMetric(
+	collect(ch,
 		c.deprovisioningFailedDesc,
-		prometheus.GaugeValue,
-		float64(stats.Deprovisioning[domain.Failed]),
+		stats.Deprovisioning[domain.Failed],
 	)
+}
+
+func collect(ch chan<- prometheus.Metric, desc *prometheus.Desc, value int, labelValues ...string) {
+	m, err := prometheus.NewConstMetric(
+		desc,
+		prometheus.GaugeValue,
+		float64(value),
+		labelValues...)
+
+	if err != nil {
+		logrus.Errorf("unable to register metric %s")
+		return
+	}
+	ch <- m
 }

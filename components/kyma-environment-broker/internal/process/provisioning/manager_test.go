@@ -1,19 +1,17 @@
 package provisioning
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-
-	"context"
-	"sync"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

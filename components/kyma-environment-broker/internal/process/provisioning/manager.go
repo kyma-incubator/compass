@@ -1,16 +1,14 @@
 package provisioning
 
 import (
+	"context"
 	"sort"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-
-	"context"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 )
