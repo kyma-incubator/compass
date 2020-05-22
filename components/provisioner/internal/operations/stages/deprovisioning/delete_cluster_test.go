@@ -64,10 +64,10 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient)
 
-			deprovisionClusterStep := NewDeleteClusterStep(gardenerClient, nextStageName, 10*time.Minute)
+			deleteClusterStep := NewDeleteClusterStep(gardenerClient, nextStageName, 10*time.Minute)
 
 			// when
-			result, err := deprovisionClusterStep.Run(cluster, model.Operation{}, logrus.New())
+			result, err := deleteClusterStep.Run(cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.NoError(t, err)
@@ -108,10 +108,10 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient)
 
-			deprovisionClusterStep := NewDeleteClusterStep(gardenerClient, nextStageName, 10*time.Minute)
+			deleteClusterStep := NewDeleteClusterStep(gardenerClient, nextStageName, 10*time.Minute)
 
 			// when
-			_, err := deprovisionClusterStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+			_, err := deleteClusterStep.Run(testCase.cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.Error(t, err)

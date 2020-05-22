@@ -79,9 +79,9 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient, dbSession, kubeconfigProvider)
 
-			waitForClusterInitializationStep := NewWaitForClusterCreationStep(gardenerClient, dbSession, kubeconfigProvider, nextStageName, 10*time.Minute)
+			waitForClusterCreationStep := NewWaitForClusterCreationStep(gardenerClient, dbSession, kubeconfigProvider, nextStageName, 10*time.Minute)
 			// when
-			result, err := waitForClusterInitializationStep.Run(cluster, model.Operation{}, logrus.New())
+			result, err := waitForClusterCreationStep.Run(cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.NoError(t, err)
@@ -149,10 +149,10 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient, dbSession, kubeconfigProvider)
 
-			waitForClusterInitializationStep := NewWaitForClusterCreationStep(gardenerClient, dbSession, kubeconfigProvider, nextStageName, 10*time.Minute)
+			waitForClusterCreationStep := NewWaitForClusterCreationStep(gardenerClient, dbSession, kubeconfigProvider, nextStageName, 10*time.Minute)
 
 			// when
-			_, err := waitForClusterInitializationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+			_, err := waitForClusterCreationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.Error(t, err)
