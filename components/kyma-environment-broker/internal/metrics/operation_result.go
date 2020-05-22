@@ -12,8 +12,20 @@ import (
 const (
 	prometheusNamespace = "compass"
 	prometheusSubsystem = "keb"
+
+	resultFailed     float64 = 0
+	resultSucceeded  float64 = 1
+	resultInProgress float64 = 2
 )
 
+// OperationResultCollector provides the following metrics:
+// - compass_keb_provisioning_result{"operation_id", "runtime_id", "instance_id"}
+// - compass_keb_deprovisioning_result{"operation_id", "runtime_id", "instance_id"}
+// These gauges show the status of the operation.
+// The value of the gauge could be:
+// 0 - Failed
+// 1 - Succeeded
+// 2 - In progress
 type OperationResultCollector struct {
 	provisioningResultGauge   *prometheus.GaugeVec
 	deprovisioningResultGauge *prometheus.GaugeVec
@@ -45,12 +57,6 @@ func (c *OperationResultCollector) Collect(ch chan<- prometheus.Metric) {
 	c.provisioningResultGauge.Collect(ch)
 	c.deprovisioningResultGauge.Collect(ch)
 }
-
-const (
-	resultFailed     float64 = 0
-	resultSucceeded  float64 = 1
-	resultInProgress float64 = 2
-)
 
 func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Context, ev interface{}) error {
 	stepProcessed, ok := ev.(process.ProvisioningStepProcessed)

@@ -11,6 +11,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// StepResultCollector provides the following metrics:
+// - compass_keb_provisioning_step_result{"operation_id", "runtime_id", "instance_id", "step_name"}
+// - compass_keb_deprovisioning_step_result{"operation_id", "runtime_id", "instance_id", "step_name"}
+// These gauges show the status of the operation step.
+// The value of the gauge could be:
+// 0 - Failed
+// 1 - Succeeded
+// 2 - In progress
 type StepResultCollector struct {
 	provisioningResultGauge   *prometheus.GaugeVec
 	deprovisioningResultGauge *prometheus.GaugeVec

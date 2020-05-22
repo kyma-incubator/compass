@@ -15,6 +15,13 @@ const (
 	subsystem = "operations"
 )
 
+// OperationsStatsGetter provides metrics, which shows how many operations were done:
+// - compass_keb_operations_provisioning_failed_total
+// - compass_keb_operations_provisioning_in_progress_total
+// - compass_keb_operations_provisioning_succeeded_total
+// - compass_keb_operations_deprovisioning_failed_total
+// - compass_keb_operations_deprovisioning_in_progress_total
+// - compass_keb_operations_deprovisioning_secceeded_total
 type OperationsStatsGetter interface {
 	GetOperationStats() (internal.OperationStats, error)
 }
@@ -142,7 +149,7 @@ func collect(ch chan<- prometheus.Metric, desc *prometheus.Desc, value int, labe
 		labelValues...)
 
 	if err != nil {
-		logrus.Errorf("unable to register metric %s")
+		logrus.Errorf("unable to register metric %s", err.Error())
 		return
 	}
 	ch <- m
