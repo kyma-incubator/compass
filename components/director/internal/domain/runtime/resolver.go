@@ -138,7 +138,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	runtime, err := r.svc.Get(ctx, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -338,9 +338,8 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 	itemMap, err := r.svc.ListLabels(ctx, obj.ID)
 	if err != nil {
 		if strings.Contains(err.Error(), "doesn't exist") { // TODO: Use custom error and check its type
-			return nil, nil
+			return nil, tx.Commit()
 		}
-
 		return nil, err
 	}
 

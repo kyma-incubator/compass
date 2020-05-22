@@ -75,7 +75,7 @@ func (r *Resolver) IntegrationSystem(ctx context.Context, id string) (*graphql.I
 	is, err := r.intSysSvc.Get(ctx, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}

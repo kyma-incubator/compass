@@ -130,7 +130,7 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, errors.Wrap(err, "while getting Label Definition")
 	}

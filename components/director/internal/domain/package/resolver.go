@@ -241,7 +241,7 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 	pkg, err := r.packageInstanceAuthSvc.GetForPackage(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id s
 	api, err := r.apiSvc.GetForPackage(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Package, id
 	eventAPI, err := r.eventSvc.GetForPackage(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -427,7 +427,7 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string
 	eventAPI, err := r.documentSvc.GetForPackage(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -440,7 +440,6 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string
 	return r.documentConverter.ToGraphQL(eventAPI), nil
 }
 
-// TODO: Proper error handling
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/require"
@@ -585,6 +587,34 @@ func TestResolver_Runtime(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
+			Name: "Success when runtime not found returns nil",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, apperrors.NewNotFoundError("foo")).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				return conv
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     nil,
+		},
+		{
 			Name: "Returns error when runtime retrieval failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
@@ -1076,6 +1106,28 @@ func TestResolver_Labels(t *testing.T) {
 			},
 			InputKey:       labelKey,
 			ExpectedResult: gqlLabels,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Success returns nil when labels not found",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("ListLabels", contextParam, id).Return(nil, errors.New("doesn't exist")).Once()
+				return svc
+			},
+			InputKey:       labelKey,
+			ExpectedResult: nil,
 			ExpectedErr:    nil,
 		},
 		{

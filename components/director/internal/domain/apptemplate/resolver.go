@@ -75,7 +75,7 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}

@@ -197,7 +197,7 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -466,7 +466,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 	itemMap, err := r.appSvc.ListLabels(ctx, obj.ID)
 	if err != nil {
 		if strings.Contains(err.Error(), "doesn't exist") {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 
 		return nil, err
@@ -617,7 +617,7 @@ func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id str
 	pkg, err := r.pkgSvc.GetForApplication(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}

@@ -54,7 +54,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 		},
 		{
 			Name: "Returns nil when application template not found",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError("")).Once()

@@ -416,6 +416,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
+				persistTx.On("Commit").Return(nil).Once()
 				transact.On("RollbackUnlessCommited", persistTx).Return().Once()
 				return transact
 			},

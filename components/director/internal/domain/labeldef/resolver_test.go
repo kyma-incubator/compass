@@ -405,6 +405,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockPersistanceCtx.On("Commit").Return(nil)
 		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 

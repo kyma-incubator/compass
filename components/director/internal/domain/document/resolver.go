@@ -150,7 +150,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*gr
 	}
 
 	if fr == nil {
-		return nil, nil
+		return nil, tx.Commit()
 	}
 
 	err = tx.Commit()

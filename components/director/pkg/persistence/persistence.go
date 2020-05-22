@@ -3,8 +3,9 @@ package persistence
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 
@@ -55,16 +56,46 @@ func (db *db) Stats() sql.DBStats {
 
 func (db *db) Begin() (PersistenceTx, error) {
 	tx, err := db.sqlDB.Beginx()
-	return PersistenceTx(tx), err
+	customTx := &stateAwareTransaction{
+		Tx:        tx,
+		committed: false,
+	}
+	return PersistenceTx(customTx), err
 }
 
 func (db *db) RollbackUnlessCommited(tx PersistenceTx) {
+	customTx, ok := tx.(*stateAwareTransaction)
+	if !ok {
+		db.logger.Warn("state aware transaction is not in use")
+		db.rollback(tx)
+	}
+	if customTx.committed {
+		return
+	}
+	db.rollback(customTx)
+}
+
+func (db *db) rollback(tx PersistenceTx) {
 	err := tx.Rollback()
 	if err == nil {
 		db.logger.Warn("transaction rolled back")
 	} else if err != sql.ErrTxDone {
 		db.logger.Warn(err)
 	}
+}
+
+type stateAwareTransaction struct {
+	*sqlx.Tx
+	committed bool
+}
+
+func (db *stateAwareTransaction) Commit() error {
+	err := db.Tx.Commit()
+	if err != nil {
+		return errors.Wrap(err, "while commiting transaction")
+	}
+	db.committed = true
+	return nil
 }
 
 //go:generate mockery -name=PersistenceTx -output=automock -outpkg=automock -case=underscore
