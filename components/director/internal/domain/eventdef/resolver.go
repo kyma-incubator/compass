@@ -71,7 +71,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -111,7 +111,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -142,7 +142,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -171,7 +171,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -199,7 +199,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

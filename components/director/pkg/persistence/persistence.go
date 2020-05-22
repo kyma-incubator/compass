@@ -36,7 +36,7 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 //go:generate mockery -name=Transactioner -output=automock -outpkg=automock -case=underscore
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
-	RollbackUnlessCommited(tx PersistenceTx)
+	RollbackUnlessCommitted(tx PersistenceTx)
 	PingContext(ctx context.Context) error
 	Stats() sql.DBStats
 }
@@ -56,15 +56,15 @@ func (db *db) Stats() sql.DBStats {
 
 func (db *db) Begin() (PersistenceTx, error) {
 	tx, err := db.sqlDB.Beginx()
-	customTx := &stateAwareTransaction{
+	customTx := &Transaction{
 		Tx:        tx,
 		committed: false,
 	}
 	return PersistenceTx(customTx), err
 }
 
-func (db *db) RollbackUnlessCommited(tx PersistenceTx) {
-	customTx, ok := tx.(*stateAwareTransaction)
+func (db *db) RollbackUnlessCommitted(tx PersistenceTx) {
+	customTx, ok := tx.(*Transaction)
 	if !ok {
 		db.logger.Warn("state aware transaction is not in use")
 		db.rollback(tx)
@@ -84,15 +84,18 @@ func (db *db) rollback(tx PersistenceTx) {
 	}
 }
 
-type stateAwareTransaction struct {
+type Transaction struct {
 	*sqlx.Tx
 	committed bool
 }
 
-func (db *stateAwareTransaction) Commit() error {
+func (db *Transaction) Commit() error {
+	if db.committed {
+		return errors.New("transaction already committed")
+	}
 	err := db.Tx.Commit()
 	if err != nil {
-		return errors.Wrap(err, "while commiting transaction")
+		return errors.Wrap(err, "while committing transaction")
 	}
 	db.committed = true
 	return nil

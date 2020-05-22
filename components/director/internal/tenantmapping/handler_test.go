@@ -327,7 +327,7 @@ func getTransactMock() *persistencemock.Transactioner {
 
 	transact := &persistencemock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+	transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
 
 	return transact
 }

@@ -55,7 +55,7 @@ func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string)
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	instanceAuth, err := r.svc.Get(ctx, authID)
@@ -82,7 +82,7 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn := r.conv.SetInputFromGraphQL(in)
@@ -110,7 +110,7 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	pkg, err := r.pkgSvc.Get(ctx, packageID)
@@ -144,7 +144,7 @@ func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authI
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	instanceAuth, err := r.svc.Get(ctx, authID)

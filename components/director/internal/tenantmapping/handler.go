@@ -85,7 +85,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		h.respond(writer, reqData.Body)
 		return
 	}
-	defer h.transact.RollbackUnlessCommited(tx)
+	defer h.transact.RollbackUnlessCommitted(tx)
 
 	ctx := persistence.SaveToContext(req.Context(), tx)
 
