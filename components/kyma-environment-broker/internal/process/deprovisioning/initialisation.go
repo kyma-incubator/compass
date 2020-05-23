@@ -4,16 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 )
 
@@ -75,6 +73,7 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 			return operation, 0, nil
 		}
 		log.Info("instance being removed, check operation status")
+		operation.RuntimeID = instance.RuntimeID
 		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")

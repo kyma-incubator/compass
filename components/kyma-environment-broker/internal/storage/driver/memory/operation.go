@@ -158,3 +158,21 @@ func (s *operations) GetOperationsInProgressByType(opType dbmodel.OperationType)
 
 	return ops, nil
 }
+
+func (s *operations) GetOperationStats() (internal.OperationStats, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result := internal.OperationStats{
+		Provisioning:   map[domain.LastOperationState]int{domain.InProgress: 0, domain.Succeeded: 0, domain.Failed: 0},
+		Deprovisioning: map[domain.LastOperationState]int{domain.InProgress: 0, domain.Succeeded: 0, domain.Failed: 0},
+	}
+
+	for _, op := range s.provisioningOperations {
+		result.Provisioning[op.State] = result.Provisioning[op.State] + 1
+	}
+	for _, op := range s.deprovisioningOperations {
+		result.Deprovisioning[op.State] = result.Deprovisioning[op.State] + 1
+	}
+	return result, nil
+}

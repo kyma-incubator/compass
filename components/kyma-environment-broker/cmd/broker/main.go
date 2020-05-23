@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/edp"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
@@ -21,6 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/deprovisioning"
@@ -184,9 +186,15 @@ func main() {
 	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
+	// application event broker
+	eventBroker := event.NewPubSub()
+
+	// metrics collectors
+	metrics.RegisterAll(eventBroker, db.Operations(), db.Instances())
+
 	// setup operation managers
-	provisionManager := provisioning.NewManager(db.Operations(), logs.WithField("provisioning", "manager"))
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), logs.WithField("deprovisioning", "manager"))
+	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
+	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 
 	// define steps
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),

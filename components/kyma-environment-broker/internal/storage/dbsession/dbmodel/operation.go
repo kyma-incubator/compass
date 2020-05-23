@@ -29,3 +29,14 @@ type OperationDTO struct {
 
 	Type OperationType
 }
+
+type OperationStatEntry struct {
+	Type  string
+	State string
+	Total int
+}
+
+type InstanceByGlobalAccountIDStatEntry struct {
+	GlobalAccountID string
+	Total           int
+}

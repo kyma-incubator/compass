@@ -142,3 +142,17 @@ func (r readSession) GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, db
 	}
 	return dto, nil
 }
+
+func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
+	var rows []dbmodel.OperationStatEntry
+	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, count(*) as total from %s group by type, state",
+		postsql.OperationTableName)).Load(&rows)
+	return rows, err
+}
+
+func (r readSession) GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error) {
+	var rows []dbmodel.InstanceByGlobalAccountIDStatEntry
+	_, err := r.session.SelectBySql(fmt.Sprintf("select global_account_id, count(*) as total from %s group by global_account_id",
+		postsql.InstancesTableName)).Load(&rows)
+	return rows, err
+}

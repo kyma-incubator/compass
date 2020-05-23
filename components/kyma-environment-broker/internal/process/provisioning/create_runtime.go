@@ -64,6 +64,9 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 			return operation, 5 * time.Second, nil
 		}
 		operation.ProvisionerOperationID = *provisionerResponse.ID
+		if provisionerResponse.RuntimeID != nil {
+			operation.RuntimeID = *provisionerResponse.RuntimeID
+		}
 		operation, repeat := s.operationManager.UpdateOperation(operation)
 		if repeat != 0 {
 			log.Errorf("cannot save operation ID from provisioner")

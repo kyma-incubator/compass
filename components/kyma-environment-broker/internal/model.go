@@ -109,6 +109,8 @@ type ProvisioningOperation struct {
 	InputCreator ProvisionInputCreator `json:"-"`
 
 	Avs AvsLifecycleData `json:"avs"`
+
+	RuntimeID string `json:"runtime_id"`
 }
 
 // DeprovisioningOperation holds all information about de-provisioning operation
@@ -119,6 +121,19 @@ type DeprovisioningOperation struct {
 	Avs                    AvsLifecycleData `json:"avs"`
 	EventHub               EventHub         `json:"eh"`
 	SubAccountID           string           `json:"-"`
+	RuntimeID              string           `json:"runtime_id"`
+}
+
+// OperationStats provide number of operations per type and state
+type OperationStats struct {
+	Provisioning   map[domain.LastOperationState]int
+	Deprovisioning map[domain.LastOperationState]int
+}
+
+// InstanceStats provide number of instances per Global Account ID
+type InstanceStats struct {
+	TotalNumberOfInstances int
+	PerGlobalAccountID     map[string]int
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation

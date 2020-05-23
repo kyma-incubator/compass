@@ -12,6 +12,7 @@ type Instances interface {
 	Insert(instance internal.Instance) error
 	Update(instance internal.Instance) error
 	Delete(instanceID string) error
+	GetInstanceStats() (internal.InstanceStats, error)
 }
 
 type Operations interface {
@@ -20,6 +21,7 @@ type Operations interface {
 
 	GetOperationByID(operationID string) (*internal.Operation, error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
+	GetOperationStats() (internal.OperationStats, error)
 }
 
 type Provisioning interface {

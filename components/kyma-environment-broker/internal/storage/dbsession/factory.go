@@ -23,6 +23,8 @@ type ReadSession interface {
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
 	GetOperationByTypeAndInstanceID(inID string, opType dbmodel.OperationType) (dbmodel.OperationDTO, dberr.Error)
 	GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error)
+	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
+	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 }
 
 //go:generate mockery -name=WriteSession
