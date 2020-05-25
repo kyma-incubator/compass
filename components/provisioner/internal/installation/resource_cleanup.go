@@ -23,9 +23,6 @@ const (
 
 type ServiceCatalogClient interface {
 	PerformCleanup(resourceSelector string) error
-	listClusterServiceBroker(metav1.ListOptions) (*v1beta1.ClusterServiceBrokerList, error)
-	listClusterServiceClass(metav1.ListOptions) (*v1beta1.ClusterServiceClassList, error)
-	listServiceInstance(metav1.ListOptions) (*v1beta1.ServiceInstanceList, error)
 }
 
 func NewServiceCatalogClient(kubeconfig *rest.Config) (ServiceCatalogClient, error) {
