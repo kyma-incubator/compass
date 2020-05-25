@@ -1,8 +1,6 @@
 package installation
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"strings"
 	"time"
 
@@ -51,7 +49,6 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 
 	logrus.Debugf("Filtering ClusterServiceBrokers with url prefix %s", resourceSelector)
 	brokersWithUrlPrefix := s.filterCsbWithUrlPrefix(clusterServiceBrokers, resourceSelector)
-	logrus.Debugf("Got %d ClusterServiceBrokers to process", len(brokersWithUrlPrefix))
 
 	cscWithMatchingLabel, err := s.getClusterServiceClassesForBrokers(brokersWithUrlPrefix)
 	if err != nil {
@@ -70,7 +67,6 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 
 func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptions) (*v1beta1.ClusterServiceBrokerList, error) {
 	result := &v1beta1.ClusterServiceBrokerList{}
-	logrus.Debugf("trying to list ClusterServiceBrokers...")
 	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
 		csbList, err := s.client.ServicecatalogV1beta1().ClusterServiceBrokers().List(options)
 		if err != nil {
@@ -85,7 +81,6 @@ func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptio
 
 func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOptions) (*v1beta1.ClusterServiceClassList, error) {
 	result := &v1beta1.ClusterServiceClassList{}
-	logrus.Debugf("trying to list ClusterServiceClasses...")
 	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
 		cscList, err := s.client.ServicecatalogV1beta1().ClusterServiceClasses().List(options)
 		if err != nil {
@@ -100,7 +95,6 @@ func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOption
 
 func (s *serviceCatalogClient) listServiceInstance(options metav1.ListOptions) (*v1beta1.ServiceInstanceList, error) {
 	result := &v1beta1.ServiceInstanceList{}
-	logrus.Debugf("trying to list ServiceInstances...")
 	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
 		siList, err := s.client.ServicecatalogV1beta1().ServiceInstances(metav1.NamespaceAll).List(options)
 		if err != nil {
@@ -191,19 +185,4 @@ func fixListOptionsWithLabelSelector(labelName, labelValue string) metav1.ListOp
 	return metav1.ListOptions{
 		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
 	}
-}
-
-// GenerateSHA generates the sha224 value from the given string
-// the function is used to provide a string length less than 63 characters, this string is used in label of resource
-// sha algorithm cannot be changed in the future because of backward compatibles
-func GenerateSHA(input string) string {
-	// TODO: remove this and import from "github.com/kubernetes-sigs/service-catalog/pkg/util" when service-catalog v0.3 is released
-	h := sha256.New224()
-	_, err := h.Write([]byte(input))
-	if err != nil {
-		logrus.Errorf("cannot generate SHA224 from string %q: %s", input, err)
-		return ""
-	}
-
-	return hex.EncodeToString(h.Sum(nil))
 }

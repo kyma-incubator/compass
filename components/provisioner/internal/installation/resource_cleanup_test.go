@@ -5,6 +5,7 @@ import (
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -362,7 +363,7 @@ func fixClusterServiceClassList() *v1beta1.ClusterServiceClassList {
 }
 
 func fixGenerateSHA(resourceName string) string {
-	return GenerateSHA(resourceName)
+	return util.GenerateSHA(resourceName)
 }
 
 func newTestCR() []runtime.Object {
