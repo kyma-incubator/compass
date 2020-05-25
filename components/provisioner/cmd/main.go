@@ -73,11 +73,12 @@ type config struct {
 	DeprovisioningTimeout queue.DeprovisioningTimeouts
 
 	Gardener struct {
-		Project                     string `envconfig:"default=gardenerProject"`
-		KubeconfigPath              string `envconfig:"default=./dev/kubeconfig.yaml"`
-		AuditLogsPolicyConfigMap    string `envconfig:"optional"`
-		AuditLogsTenantConfigPath   string `envconfig:"optional"`
-		MaintenanceWindowConfigPath string `envconfig:"optional"`
+		Project                        string `envconfig:"default=gardenerProject"`
+		KubeconfigPath                 string `envconfig:"default=./dev/kubeconfig.yaml"`
+		AuditLogsPolicyConfigMap       string `envconfig:"optional"`
+		AuditLogsTenantConfigPath      string `envconfig:"optional"`
+		MaintenanceWindowConfigPath    string `envconfig:"optional"`
+		ClusterCleanupResourceSelector string `envconfig:"default=https://service-manager."`
 	}
 
 	Provisioner string `envconfig:"default=gardener"`
@@ -166,7 +167,7 @@ func main() {
 	}
 
 	dbsFactory := dbsession.NewFactory(connection)
-	installationService := installation.NewInstallationService(cfg.ProvisioningTimeout.Installation, installationHandlerConstructor)
+	installationService := installation.NewInstallationService(cfg.ProvisioningTimeout.Installation, installationHandlerConstructor, cfg.Gardener.ClusterCleanupResourceSelector)
 
 	directorClient, err := newDirectorClient(cfg)
 	exitOnError(err, "Failed to initialize Director client")

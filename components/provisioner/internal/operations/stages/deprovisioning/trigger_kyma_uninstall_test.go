@@ -89,10 +89,10 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 
 			testCase.mockFunc(installationSvc)
 
-			waitForInstallationStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute, delay)
+			triggerKymaUninstallStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute, delay)
 
 			// when
-			result, err := waitForInstallationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+			result, err := triggerKymaUninstallStep.Run(testCase.cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.NoError(t, err)
@@ -132,10 +132,10 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 
 			testCase.mockFunc(installationSvc)
 
-			waitForInstallationStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute, delay)
+			triggerKymaUninstallStep := NewTriggerKymaUninstallStep(installationSvc, nextStageName, 10*time.Minute, delay)
 
 			// when
-			_, err := waitForInstallationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+			_, err := triggerKymaUninstallStep.Run(testCase.cluster, model.Operation{}, logrus.New())
 
 			// then
 			require.Error(t, err)

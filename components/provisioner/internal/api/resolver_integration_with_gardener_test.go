@@ -140,6 +140,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.AnythingOfType("model.Release"),
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
+	installationServiceMock.On("PerformCleanup", mock.Anything).Return(nil)
 	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
 
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
@@ -399,6 +400,7 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 
 func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 	return queue.DeprovisioningTimeouts{
+		ClusterCleanup:            5 * time.Minute,
 		ClusterDeletion:           5 * time.Minute,
 		WaitingForClusterDeletion: 5 * time.Minute,
 	}
