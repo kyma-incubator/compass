@@ -101,21 +101,6 @@ func TestServiceCatalogClient_PerformCleanup(t *testing.T) {
 		// then
 		require.Error(t, err)
 	})
-
-	t.Run("should fail cleanup when unable to delete ServiceInstances", func(t *testing.T) {
-		// given
-		fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-		cli := &serviceCatalogClient{client: fakeClient}
-		fakeClient.PrependReactor("delete", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-			return true, nil, errors.New("error deleting serviceinstances")
-		})
-
-		// when
-		err := cli.PerformCleanup(TestResourceSelector)
-
-		// then
-		require.Error(t, err)
-	})
 }
 
 func TestServiceCatalogClient_ListClusterServiceBroker(t *testing.T) {
