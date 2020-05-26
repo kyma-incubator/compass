@@ -1,6 +1,6 @@
 # Fetch Requests
 
-Packages API support providing documentation for API Definitions. You can provide the specification
+Packages API supports providing documentation for API Definitions. You can provide the specification
 during the call to the Director or use a Fetch Request. Fetch Request is a type in the Director API that contains all the information needed to 
 fetch specification from the given URL. It can be provided during the `addPackage`, `addAPIDefinitionToPackage` and `updateAPIDefinition` mutations.
 If a Fetch Request is specified, the Director makes a synchronous call to the specified URL and downloads the specification.
