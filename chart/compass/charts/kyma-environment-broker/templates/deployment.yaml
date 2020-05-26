@@ -10,6 +10,8 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
       labels:
@@ -225,7 +227,7 @@ spec:
 
         {{- if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.11
+          image: gcr.io/cloudsql-docker/gce-proxy:1.16
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
                     "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
