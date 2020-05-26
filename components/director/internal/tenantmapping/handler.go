@@ -96,6 +96,12 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if err := tx.Commit(); err != nil {
+		h.logError(err, "while committing transaction")
+		h.respond(writer, reqData.Body)
+		return
+	}
+
 	reqData.Body.Extra["tenant"] = objCtx.TenantID
 	reqData.Body.Extra["externalTenant"] = objCtx.ExternalTenantID
 	reqData.Body.Extra["scope"] = objCtx.Scopes
