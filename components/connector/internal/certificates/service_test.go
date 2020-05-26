@@ -130,7 +130,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 
 	t.Run("should create certificate with additional root certificate", func(t *testing.T) {
 		// given
-		certChain := append(append(clientCRTBytes, rootCACrtBytes...), caCRTBytes...)
+		certChain := append(append(clientCRTBytes, caCRTBytes...), rootCACrtBytes...)
 
 		secretsRepository := &secretsMock.Repository{}
 		secretsRepository.On("Get", authNamespacedName).Return(certsSecretData, nil).

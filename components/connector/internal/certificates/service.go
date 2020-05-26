@@ -92,7 +92,7 @@ func (svc *certificateService) encodeCertificates(rawCaCertificate, rawClientCer
 			return EncodedCertificateChain{}, err
 		}
 
-		caCrtBytes = svc.createCertChain(rootCABytes, caCrtBytes)
+		caCrtBytes = svc.createCertChain(caCrtBytes, rootCABytes)
 	}
 
 	certChain := svc.createCertChain(signedCrtBytes, caCrtBytes)
