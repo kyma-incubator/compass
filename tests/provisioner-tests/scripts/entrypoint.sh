@@ -9,7 +9,7 @@ if [ -z "$1" ]
 fi
 
 echo "Run Provisioner tests"
-./provisioner.test -test.v -test.timeout 2h -test.run ${TEST_CASES}
+./provisioner.test -test.v -test.timeout 4h -test.run ${TEST_CASES}
 res=$((res+$?))
 
 exit ${res}
