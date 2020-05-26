@@ -369,17 +369,6 @@ func getMapperForSystemAuthMock() *automock.ObjectContextForSystemAuthProvider {
 	return provider
 }
 
-//func getTransactMock() (*persistencemock.Transactioner, *persistencemock.PersistenceTx) {
-//	persistTx := &persistencemock.PersistenceTx{}
-//	persistTx.On("Commit").Return(nil).Once()
-//
-//	transact := &persistencemock.Transactioner{}
-//	transact.On("Begin").Return(persistTx, nil).Once()
-//	transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
-//
-//	return transact, persistTx
-//}
-
 func getLoggerMock(t *testing.T, expectedMessage string) *automock.Logger {
 	logger := &automock.Logger{}
 	logger.On("Error", mock.MatchedBy(func(err error) bool {
