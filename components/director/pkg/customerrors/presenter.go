@@ -26,22 +26,22 @@ func (p *presenter) ErrorPresenter(ctx context.Context, err error) *gqlerror.Err
 	if found := errors.As(err, &customErr); found {
 		if customErr.errorCode == InternalError {
 			errID := p.uuidService.Generate()
-			fmt.Printf("Internal Error, errorID:%s , %s\n", errID, err.Error())
+			fmt.Printf("Internal Error, errorID:%s, %s\n", errID, err.Error())
 			return NewInternalErrResponse(ctx, errID)
 		}
 
 		return &gqlerror.Error{
 			Message:    customErr.Error(),
 			Path:       graphql.GetResolverContext(ctx).Path(),
-			Extensions: map[string]interface{}{"error_code": customErr.errorCode},
+			Extensions: map[string]interface{}{"error_code": customErr.errorCode, "error": customErr.errorCode.String()},
 		}
 	}
 	errID := p.uuidService.Generate()
-	fmt.Printf("Not handled error yet, errorID %s: , %v\n", errID, err)
+	fmt.Printf("Not handled error yet, errorID:%s, %v\n", errID, err)
 	return &gqlerror.Error{
-		Message:    fmt.Sprintf("%s, errorID:%s", customErr.Error(), errID),
+		Message:    fmt.Sprintf("%s, errorID:%s", err.Error(), errID),
 		Path:       graphql.GetResolverContext(ctx).Path(),
-		Extensions: map[string]interface{}{"error_code": UnhandledError},
+		Extensions: map[string]interface{}{"error_code": UnhandledError, "error": UnhandledError.String()},
 	}
 }
 
@@ -49,6 +49,6 @@ func NewInternalErrResponse(ctx context.Context, uuid string) *gqlerror.Error {
 	return &gqlerror.Error{
 		Message:    fmt.Sprintf("Internal Error Server, errorID:%s", uuid),
 		Path:       graphql.GetResolverContext(ctx).Path(),
-		Extensions: map[string]interface{}{"error_code": InternalError},
+		Extensions: map[string]interface{}{"error_code": InternalError, "error": InternalError.String()},
 	}
 }

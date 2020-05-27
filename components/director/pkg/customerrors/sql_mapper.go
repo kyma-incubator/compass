@@ -17,14 +17,14 @@ func MapSQLError(err error) error {
 
 	pqerr, ok := err.(*pq.Error)
 	if !ok {
-		return NewBuilder().InternalError("").Wrap(err).Build()
+		return NewBuilder().WithStatusCode(InternalError).Wrap(err).Build()
 	}
 
 	switch pqerr.Code {
 	case persistence.UniqueViolation:
 		return NewBuilder().WithStatusCode(NotUnique).Wrap(err).Build()
 	case persistence.ForeignKeyViolation:
-		return NewBuilder().WithStatusCode(ConstraintVolation).WithMessage(pqerr.Detail).Wrap(err).Build()
+		return NewBuilder().WithStatusCode(ConstraintViolation).WithMessage(pqerr.Detail).Wrap(err).Build()
 	}
 
 	return NewBuilder().InternalError("").Wrap(err).Build()

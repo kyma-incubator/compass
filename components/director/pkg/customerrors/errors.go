@@ -15,15 +15,19 @@ type Error struct {
 func (err Error) Error() string {
 	builder := strings.Builder{}
 	builder.WriteString(err.Message)
-	builder.WriteString(" [")
-	for key, value := range err.arguments {
-		builder.WriteString(fmt.Sprintf("%s: %s; ", key, value))
+
+	if len(err.arguments) != 0 {
+		builder.WriteString(" [")
+		for key, value := range err.arguments {
+			builder.WriteString(fmt.Sprintf("%s: %s; ", key, value))
+		}
+		builder.WriteString("] ")
 	}
-	builder.WriteString("] ")
 	if err.errorCode == InternalError && err.parentErr != nil {
 		builder.WriteString(": ")
 		builder.WriteString(err.parentErr.Error())
 	}
+
 	return builder.String()
 }
 
