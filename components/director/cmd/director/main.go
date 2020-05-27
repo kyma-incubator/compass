@@ -32,10 +32,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
-	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
