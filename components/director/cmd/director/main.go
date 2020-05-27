@@ -35,8 +35,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
-	"github.com/kyma-project/kyma/components/console-backend-service/pkg/executor"
-	"github.com/kyma-project/kyma/components/console-backend-service/pkg/signal"
+	"github.com/kyma-incubator/compass/components/director/pkg/executor"
+	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/99designs/gqlgen/handler"
