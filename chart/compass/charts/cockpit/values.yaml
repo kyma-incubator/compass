@@ -1,3 +1,8 @@
+deployment:
+  image:
+    pullPolicy: IfNotPresent
+  resources: {}
+  strategy: {}
 images:
   containerRegistry:
     path: eu.gcr.io/kyma-project
@@ -17,8 +22,3 @@ service:
   internalPort: 81
   mfExternalPort: 8888
   mfInternalPort: 8888
-
-deployment:
-  image:
-    pullPolicy: IfNotPresent
-  resources: {}

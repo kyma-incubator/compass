@@ -7,10 +7,13 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 spec:
+  replicas: {{ .Values.deployment.replicaCount }}
   selector:
     matchLabels:
       app: {{ .Chart.Name }}
       release: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
       labels:
@@ -35,6 +38,8 @@ spec:
             - name: http
               containerPort: {{ .Values.global.provisioner.graphql.port }}
               protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.provisioner.graphql.port }}"
@@ -118,58 +123,71 @@ spec:
               value: "{{ .Values.logs.level }}"
             - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
               value: "true"
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-          {{if .Values.gardener.auditLogTenantConfigMapName }}
-          - mountPath: /gardener/tenant
-            name: gardener-audit-log-tenant-config
-            readOnly: true
-          {{- end }}
-          {{if .Values.gardener.maintenanceWindowConfigMapName }}
-          - mountPath: /gardener/maintenance
-            name: gardener-maintenance-config
-            readOnly: true
-          {{- end }}
-          - mountPath: /gardener/kubeconfig
-            name: gardener-kubeconfig
-            readOnly: true
+        {{if .Values.gardener.auditLogTenantConfigMapName }}
+            - mountPath: /gardener/tenant
+              name: gardener-audit-log-tenant-config
+              readOnly: true
+        {{- end }}
+        {{if .Values.gardener.maintenanceWindowConfigMapName }}
+            - mountPath: /gardener/maintenance
+              name: gardener-maintenance-config
+              readOnly: true
+        {{- end }}
+            - mountPath: /gardener/kubeconfig
+              name: gardener-kubeconfig
+              readOnly: true
         {{- with .Values.deployment.securityContext }}
-        securityContext:
-  {{ toYaml . | indent 12 }}
-  {{- end }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+        {{- end }}
+          livenessProbe:
+            httpGet:
+              port: {{ .Values.global.provisioner.graphql.port }}
+              path: "/healthz"
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              port: {{ .Values.global.provisioner.graphql.port }}
+              path: "/healthz"
+            initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
 
-  {{if eq .Values.global.database.embedded.enabled false}}
-- name: cloudsql-proxy
-  image: gcr.io/cloudsql-docker/gce-proxy:1.11
-  command: ["/cloud_sql_proxy",
-            "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
-            "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
-    {{- with .Values.deployment.securityContext }}
-  securityContext:
-  {{ toYaml . | indent 12 }}
-  {{- end }}
-volumeMounts:
-  - name: cloudsql-instance-credentials
-    mountPath: /secrets/cloudsql-instance-credentials
-    readOnly: true
-  {{end}}
-volumes:
-  {{if eq .Values.global.database.embedded.enabled false}}
-  - name: cloudsql-instance-credentials
-    secret:
-      secretName: cloudsql-instance-credentials
-  {{end}}
-  - name: gardener-kubeconfig
-    secret:
-      secretName: {{ .Values.gardener.secretName }}
-    {{if .Values.gardener.auditLogTenantConfigMapName }}
-  - name: gardener-audit-log-tenant-config
-    configMap:
-      name: {{ .Values.gardener.auditLogTenantConfigMapName }}
-    {{end}}
-    {{if .Values.gardener.maintenanceWindowConfigMapName }}
-  - name: gardener-maintenance-config
-    configMap:
-      name: {{ .Values.gardener.maintenanceWindowConfigMapName }}
-    {{end}}
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.16
+          command: ["/cloud_sql_proxy",
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                    "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
+                {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+                {{- end }}
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
+              readOnly: true
+        {{end}}
+      volumes:
+      {{if eq .Values.global.database.embedded.enabled false}}
+      - name: cloudsql-instance-credentials
+        secret:
+          secretName: cloudsql-instance-credentials
+      {{end}}
+      - name: gardener-kubeconfig
+        secret:
+          secretName: {{ .Values.gardener.secretName }}
+      {{if .Values.gardener.auditLogTenantConfigMapName }}
+      - name: gardener-audit-log-tenant-config
+        configMap:
+          name: {{ .Values.gardener.auditLogTenantConfigMapName }}
+      {{end}}
+      {{if .Values.gardener.maintenanceWindowConfigMapName }}
+      - name: gardener-maintenance-config
+        configMap:
+          name: {{ .Values.gardener.maintenanceWindowConfigMapName }}
+          optional: true
+      {{end}}
