@@ -124,11 +124,10 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting application templates to graphql")
 	}
-	totalCount := len(gqlAppTemplate)
 
 	return &graphql.ApplicationTemplatePage{
 		Data:       gqlAppTemplate,
-		TotalCount: totalCount,
+		TotalCount: appTemplatePage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(appTemplatePage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(appTemplatePage.PageInfo.EndCursor),
