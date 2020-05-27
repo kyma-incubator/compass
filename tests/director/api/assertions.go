@@ -384,3 +384,18 @@ func assertAutomaticScenarioAssignments(t *testing.T, expected []graphql.Automat
 		assert.True(t, found, "Assignment for scenario: '%s' not found", expectedAssignment.ScenarioName)
 	}
 }
+
+func assertIntegrationSystemNames(t *testing.T, expectedNames []string, actual graphql.IntegrationSystemPageExt) {
+	for _, intSysName := range expectedNames {
+		found := false
+		require.NotEmpty(t, actual.Data)
+		for _, intSys := range actual.Data {
+			require.NotNil(t, intSys)
+			if intSysName == intSys.Name {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "Assignment for scenario: '%s' not found", intSysName)
+	}
+}
