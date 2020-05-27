@@ -21,11 +21,14 @@ require (
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/crypto v0.0.0-20200210222208-86ce3cb69678 // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
-	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
 	gopkg.in/asaskevich/govalidator.v9 v9.0.0-20180315120708-ccb8e960c48f
 	k8s.io/api v0.17.2 // indirect
 	k8s.io/apimachinery v0.17.3 // indirect
 	k8s.io/client-go v11.0.0+incompatible // indirect
 )
 
-replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+replace (
+	github.com/kyma-incubator/compass/ v0.0.0-20200423121118-ddae913f3e98 => github.com/akucharska/compass/ v0.0.0-20200527082855-513bafa5fa80
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200423121118-ddae913f3e98 => github.com/akucharska/compass/components/director v0.0.0-20200527082855-513bafa5fa80
+	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+)
