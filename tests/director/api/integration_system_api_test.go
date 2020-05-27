@@ -145,6 +145,6 @@ func TestQueryIntegrationSystems(t *testing.T) {
 
 	//THEN
 	t.Log("Check if Integration Systems were received")
-	assert.Equal(t, 2, output.TotalCount)
+	assert.Equal(t, 3, output.TotalCount)
 	saveExample(t, getIntegrationSystemsRequest.Query(), "query integration systems")
 }
