@@ -13,7 +13,6 @@ rules:
   resources: ["secrets"]
   resourceNames: ["{{ .Values.global.connector.secrets.ca.name }}"]
   verbs: ["get"]
-
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -33,7 +32,6 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 {{ end }}
 
-
 {{ if .Values.global.connector.secrets.rootCA.name }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -50,7 +48,6 @@ rules:
   resources: ["secrets"]
   resourceNames: ["{{ .Values.global.connector.secrets.rootCA.name }}"]
   verbs: ["get"]
-
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -70,7 +67,6 @@ roleRef:
   name: {{ template "fullname" . }}-{{ .Values.global.connector.secrets.rootCA.name }}
   apiGroup: rbac.authorization.k8s.io
 {{ end }}
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -86,7 +82,6 @@ rules:
   resources: ["configmaps"]
   resourceNames: ["{{ .Values.global.connector.revocation.configmap.name }}"]
   verbs: ["get", "update"]
-
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -105,5 +100,4 @@ roleRef:
   kind: Role
   name: {{ template "fullname" . }}-{{ .Values.global.connector.revocation.configmap.name }}
   apiGroup: rbac.authorization.k8s.io
-
 ---
