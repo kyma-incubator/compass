@@ -98,6 +98,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 		// then
 		assertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certResult)
+		assertChainOrder(t, certResult)
 	})
 
 	t.Run("should return error when CSR subject is invalid", func(t *testing.T) {
@@ -293,6 +294,19 @@ func assertCertificate(t *testing.T, expectedSubject string, certificationResult
 	testkit.CheckIfSubjectEquals(t, expectedSubject, clientCert)
 	testkit.CheckIfChainContainsTwoCertificates(t, certChain)
 	testkit.CheckIfCertIsSigned(t, clientCert, caCert)
+}
+
+// Certificate chain starts from leaf certificate and ends with a root certificate.
+// The correct certificate chain holds the following property: ith certificate in the chain is issued by (i+1)th certificate
+func assertChainOrder(t *testing.T, certificationResult externalschema.CertificationResult) {
+	certChain := testkit.DecodeCertChain(t, certificationResult.CertificateChain)
+
+	for i := 0; i < len(certChain)-1; i++ {
+		issuer := certChain[i].Issuer
+		nextCertSubject := certChain[i+1].Subject
+
+		require.Equal(t, nextCertSubject, issuer)
+	}
 }
 
 func changeCommonName(subject, commonName string) string {
