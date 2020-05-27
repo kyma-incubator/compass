@@ -116,11 +116,10 @@ func (r *Resolver) IntegrationSystems(ctx context.Context, first *int, after *gr
 	}
 
 	gqlIntSys := r.intSysConverter.MultipleToGraphQL(intSysPage.Data)
-	totalCount := len(gqlIntSys)
 
 	return &graphql.IntegrationSystemPage{
 		Data:       gqlIntSys,
-		TotalCount: totalCount,
+		TotalCount: intSysPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(intSysPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(intSysPage.PageInfo.EndCursor),

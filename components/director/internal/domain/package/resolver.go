@@ -336,11 +336,10 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, gro
 	}
 
 	gqlApis := r.apiConverter.MultipleToGraphQL(apisPage.Data)
-	totalCount := len(gqlApis)
 
 	return &graphql.APIDefinitionPage{
 		Data:       gqlApis,
-		TotalCount: totalCount,
+		TotalCount: apisPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(apisPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(apisPage.PageInfo.EndCursor),
@@ -402,11 +401,10 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, g
 	}
 
 	gqlApis := r.eventConverter.MultipleToGraphQL(eventAPIPage.Data)
-	totalCount := len(gqlApis)
 
 	return &graphql.EventDefinitionPage{
 		Data:       gqlApis,
-		TotalCount: totalCount,
+		TotalCount: eventAPIPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(eventAPIPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(eventAPIPage.PageInfo.EndCursor),
@@ -469,11 +467,10 @@ func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *i
 	}
 
 	gqlDocuments := r.documentConverter.MultipleToGraphQL(documentsPage.Data)
-	totalCount := len(gqlDocuments)
 
 	return &graphql.DocumentPage{
 		Data:       gqlDocuments,
-		TotalCount: totalCount,
+		TotalCount: documentsPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(documentsPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(documentsPage.PageInfo.EndCursor),
