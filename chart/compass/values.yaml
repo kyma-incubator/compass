@@ -57,7 +57,7 @@ global:
         version: "PR-1318"
       connector:
         dir:
-        version: "PR-1270"
+        version: "PR-1394"
       provisioner:
         dir:
         version: "PR-1306"
