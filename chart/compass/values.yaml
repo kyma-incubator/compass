@@ -8,8 +8,6 @@ global:
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
 
-  enableCompassDefaultScenarioAssignment: true
-
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -24,7 +22,7 @@ global:
       version: "PR-1270"
     director:
       dir:
-      version: "PR-1380"
+      version: "PR-1378"
     gateway:
       dir:
       version: "PR-1330"
@@ -70,12 +68,28 @@ global:
   isLocalEnv: false
   oauth2:
     host: oauth2
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 1
+    periodSeconds: 10
+  readinessProbe:
+    initialDelaySeconds: 5
+    timeoutSeconds: 1
+    periodSeconds: 2
 
   director:
     port: 3000
 
     tests:
       scopes: "runtime:write application:write label_definition:write integration_system:write application:read runtime:read label_definition:read integration_system:read health_checks:read application_template:read application_template:write eventing:manage tenant:read automatic_scenario_assignment:read automatic_scenario_assignment:write"
+
+  auditlog:
+    configMapName: "compass-gateway-auditlog-config"
+    secretName: "compass-gateway-auditlog-secret"
+    script:
+      configMapName: "auditlog-script"
+
+  enableCompassDefaultScenarioAssignment: true
 
   tenantConfig:
     useDefaultTenants: true
@@ -165,6 +179,8 @@ global:
     gateway:
       name: compass-istio-gateway
       namespace: compass-system
+    proxy:
+      port: 15020
 
   database:
     manageSecrets: true
@@ -183,6 +199,8 @@ global:
       brokerDBName: "broker"
     # Values for GCP managed PostgreSQL database
     managedGCP:
+      serviceAccountKey: ""
+      instanceConnectionName: ""
       director:
         name: ""
         user: ""
@@ -195,8 +213,6 @@ global:
         name: ""
         user: ""
         password: ""
-      serviceAccountKey: ""
-      instanceConnectionName: ""
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
@@ -212,7 +228,7 @@ global:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
     port: 4455
     idTokenConfig:
-      claims: "{\"scopes\": \"{{ print .Extra.scope }}\", \"tenant\": \"{{ print .Extra.tenant }}\", \"externalTenant\": \"{{ print .Extra.externalTenant }}\", \"consumerID\": \"{{ print .Extra.consumerID}}\", \"consumerType\": \"{{ print .Extra.consumerType }}\"}"
+      claims: '{"scopes": "{{ print .Extra.scope }}", "tenant": "{{ print .Extra.tenant }}", "externalTenant": "{{ print .Extra.externalTenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}"}'
     mutators:
       runtimeMappingService:
         config:
@@ -265,11 +281,9 @@ global:
       maxOpenConnections: 1
       maxIdleConnections: 1
 
-  auditlog:
-    configMapName: "compass-gateway-auditlog-config"
-    secretName: "compass-gateway-auditlog-secret"
-    script:
-      configMapName: "auditlog-script"
+  metrics:
+    enabled: true
+    pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
 
   externalServicesMock:
     enabled: false

@@ -66,7 +66,7 @@ func (s Service) SyncTenants() error {
 	if err != nil {
 		return err
 	}
-	defer s.transact.RollbackUnlessCommited(tx)
+	defer s.transact.RollbackUnlessCommitted(tx)
 	ctx := context.Background()
 	ctx = persistence.SaveToContext(ctx, tx)
 

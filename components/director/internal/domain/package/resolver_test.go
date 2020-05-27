@@ -78,12 +78,11 @@ func TestResolver_API(t *testing.T) {
 				ExpectedErr: testErr,
 			},
 			{
-				Name:            "Returns null when application retrieval failed",
-				TransactionerFn: txGen.ThatDoesntExpectCommit,
+				Name:            "Returns null when api for package not found",
+				TransactionerFn: txGen.ThatSucceeds,
 				ServiceFn: func() *automock.APIService {
 					svc := &automock.APIService{}
 					svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
-
 					return svc
 				},
 				ConverterFn: func() *automock.APIConverter {
@@ -330,8 +329,8 @@ func TestResolver_EventAPI(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name:            "Returns null when application retrieval failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			Name:            "Returns null when event for package not found",
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
 				svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
@@ -558,8 +557,8 @@ func TestResolver_Document(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name:            "Returns null when application retrieval failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			Name:            "Returns null when document for package not found",
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
 				svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
@@ -1254,8 +1253,8 @@ func TestResolver_InstanceAuth(t *testing.T) {
 			ExpectedErr:                 testErr,
 		},
 		{
-			Name:            "Returns nil when Package retrieval failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			Name:            "Returns nil when package instance auth for package not found",
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.PackageInstanceAuthService {
 				svc := &automock.PackageInstanceAuthService{}
 				svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()

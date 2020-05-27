@@ -12,6 +12,8 @@ spec:
     matchLabels:
       app: {{ .Chart.Name }}
       release: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
       labels:
@@ -37,7 +39,7 @@ spec:
               value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.external.port }}"
             - name: APP_AUDITLOG_ENABLED
               value: "{{ .Values.gateway.auditlog.enabled }}"
-{{ if .Values.gateway.auditlog.enabled }}
+            {{ if .Values.gateway.auditlog.enabled }}
             {{ if eq .Values.gateway.auditlog.authMode "basic"}}
             - name: APP_AUDITLOG_AUTH_MODE
               value: "basic"
@@ -115,7 +117,21 @@ spec:
                   key: auditlog-channel-timeout
                   optional: true
 {{ end }}
-          {{- with .Values.deployment.securityContext }}
+{{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
-          {{- end }}
+{{- end }}
+          livenessProbe:
+            httpGet:
+              port: {{ .Values.global.gateway.port }}
+              path: "/healthz"
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              port: {{ .Values.global.gateway.port }}
+              path: "/healthz"
+            initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}

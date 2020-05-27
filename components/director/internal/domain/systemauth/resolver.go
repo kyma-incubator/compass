@@ -43,7 +43,7 @@ func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceO
 		if err != nil {
 			return nil, err
 		}
-		defer r.transact.RollbackUnlessCommited(tx)
+		defer r.transact.RollbackUnlessCommitted(tx)
 
 		ctx = persistence.SaveToContext(ctx, tx)
 

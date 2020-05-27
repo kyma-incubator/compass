@@ -12,6 +12,8 @@ spec:
         matchLabels:
             app: {{ .Chart.Name }}
             release: {{ .Release.Name }}
+    strategy:
+        {{- toYaml .Values.deployment.strategy | nindent 8 }}
     template:
         metadata:
             labels:
@@ -54,7 +56,21 @@ spec:
                 protocol: TCP
               resources:
                 {{- toYaml .Values.resources | nindent 16 }}
-            {{- with .Values.deployment.securityContext }}
+                    {{- with .Values.deployment.securityContext }}
               securityContext:
 {{ toYaml . | indent 16 }}
-            {{- end }}
+        {{- end }}
+              livenessProbe:
+                  httpGet:
+                      port: {{ .Values.deployment.port }}
+                      path: "/healthz"
+                  initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+                  timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+                  periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+              readinessProbe:
+                  httpGet:
+                      port: {{ .Values.deployment.port }}
+                      path: "/healthz"
+                  initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+                  timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
+                  periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}

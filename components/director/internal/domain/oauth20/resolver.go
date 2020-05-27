@@ -75,7 +75,7 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

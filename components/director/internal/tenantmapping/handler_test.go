@@ -9,13 +9,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
-	persistencemock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -27,6 +28,8 @@ func TestHandler(t *testing.T) {
 	tenantID := uuid.New()
 	systemAuthID := uuid.New()
 	objID := uuid.New()
+	testError := errors.New("some error")
+	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	t.Run("success for the request parsed as JWT flow", func(t *testing.T) {
 		username := "admin"
@@ -55,12 +58,12 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		transactMock := getTransactMock()
+		persist, transact := txGen.ThatSucceeds()
 
 		mapperForUserMock := getMapperForUserMock()
 		mapperForUserMock.On("GetObjectContext", mock.Anything, reqDataMock, username).Return(objCtxMock, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, mapperForUserMock, nil)
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, mapperForUserMock, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -70,7 +73,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, mapperForUserMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForUserMock)
 	})
 
 	t.Run("success for the request parsed as OAuth2 flow", func(t *testing.T) {
@@ -99,12 +102,12 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		transactMock := getTransactMock()
+		persist, transact := txGen.ThatSucceeds()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
 		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.OAuth2Flow).Return(objCtx, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -114,7 +117,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, mapperForSystemAuthMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForSystemAuthMock)
 	})
 
 	t.Run("success for the request parsed as Certificate flow", func(t *testing.T) {
@@ -144,12 +147,12 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		transactMock := getTransactMock()
+		persist, transact := txGen.ThatSucceeds()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
 		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.CertificateFlow).Return(objCtx, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -159,7 +162,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, mapperForSystemAuthMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForSystemAuthMock)
 	})
 
 	t.Run("success for the request parsed as OneTimeToken flow", func(t *testing.T) {
@@ -189,12 +192,12 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		transactMock := getTransactMock()
+		persist, transact := txGen.ThatSucceeds()
 
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
 		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.OneTimeTokenFlow).Return(objCtx, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, mapperForSystemAuthMock)
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -204,7 +207,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, mapperForSystemAuthMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForSystemAuthMock)
 	})
 
 	t.Run("error when sending different HTTP verb than POST", func(t *testing.T) {
@@ -247,6 +250,52 @@ func TestHandler(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, logger)
 	})
 
+	t.Run("error when transaction commit fails", func(t *testing.T) {
+		username := "admin"
+		scopes := "application:read"
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.UsernameKey: username,
+				},
+			},
+		}
+		objCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			Scopes:       scopes,
+			ConsumerID:   username,
+			ConsumerType: "Static User",
+		}
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqData, nil).Once()
+
+		persist, transact := txGen.ThatFailsOnCommit()
+
+		mapperForUserMock := getMapperForUserMock()
+		mapperForUserMock.On("GetObjectContext", mock.Anything, reqData, username).Return(objCtxMock, nil).Once()
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, mapperForUserMock, nil)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		out := oathkeeper.ReqBody{}
+		err := json.NewDecoder(resp.Body).Decode(&out)
+		require.NoError(t, err)
+
+		assert.Equal(t, reqData.Body, out)
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForUserMock)
+	})
+
 	t.Run("error when transaction begin fails", func(t *testing.T) {
 		reqData := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
@@ -262,12 +311,11 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqData, nil).Once()
 
-		transactMock := &persistencemock.Transactioner{}
-		transactMock.On("Begin").Return(nil, errors.New("some error")).Once()
+		persist, transact := txGen.ThatFailsOnBegin()
 
 		logger := getLoggerMock(t, "while opening the db transaction: some error")
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, nil)
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, nil)
 		handler.SetLogger(logger)
 		handler.ServeHTTP(w, req)
 
@@ -280,7 +328,7 @@ func TestHandler(t *testing.T) {
 
 		assert.Equal(t, reqData.Body, out)
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, logger)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, logger)
 	})
 
 	t.Run("error when GetAuthID returns error when looking for Auth ID", func(t *testing.T) {
@@ -290,11 +338,11 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, nil).Once()
 
-		transactMock := getTransactMock()
+		persist, transact := txGen.ThatDoesntExpectCommit()
 
 		logger := getLoggerMock(t, "while getting object context: while determining the auth ID from the request: unable to find valid auth ID")
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transactMock, nil, nil)
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, nil)
 		handler.SetLogger(logger)
 		handler.ServeHTTP(w, req)
 
@@ -307,7 +355,7 @@ func TestHandler(t *testing.T) {
 
 		assert.Equal(t, oathkeeper.ReqBody{}, out)
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, transactMock, logger)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, logger)
 	})
 }
 
@@ -319,17 +367,6 @@ func getMapperForUserMock() *automock.ObjectContextForUserProvider {
 func getMapperForSystemAuthMock() *automock.ObjectContextForSystemAuthProvider {
 	provider := &automock.ObjectContextForSystemAuthProvider{}
 	return provider
-}
-
-func getTransactMock() *persistencemock.Transactioner {
-	persistTx := &persistencemock.PersistenceTx{}
-	persistTx.On("Commit").Return(nil).Once()
-
-	transact := &persistencemock.Transactioner{}
-	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
-
-	return transact
 }
 
 func getLoggerMock(t *testing.T, expectedMessage string) *automock.Logger {

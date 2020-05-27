@@ -77,7 +77,7 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -117,7 +117,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -147,7 +147,7 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	api, err := r.svc.Get(ctx, id)
@@ -172,7 +172,7 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -199,7 +199,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

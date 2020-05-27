@@ -343,7 +343,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -405,7 +405,8 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockPersistanceCtx.On("Commit").Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -430,7 +431,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -475,7 +476,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -575,7 +576,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -609,7 +610,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -644,7 +645,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -700,7 +701,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
@@ -759,7 +760,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		mockConverter := &automock.ModelConverter{}
@@ -862,7 +863,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		mockConverter := &automock.ModelConverter{}
@@ -915,7 +916,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommited", mock.Anything).Return(nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything).Return(nil)
 		defer mockTransactioner.AssertExpectations(t)
 
 		mockService := &automock.Service{}
