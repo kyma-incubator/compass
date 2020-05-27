@@ -12,20 +12,20 @@ func MapSQLError(err error) error {
 		return nil
 	}
 	if err == sql.ErrNoRows {
-		return NewErrorBuilder(NotFound).Build()
+		return NewBuilder().WithStatusCode(NotFound).Build()
 	}
 
 	pqerr, ok := err.(*pq.Error)
 	if !ok {
-		return NewErrorBuilder(InternalError).Wrap(err).Build()
+		return NewBuilder().InternalError("").Wrap(err).Build()
 	}
 
 	switch pqerr.Code {
 	case persistence.UniqueViolation:
-		return NewErrorBuilder(NotUnique).Wrap(err).Build()
+		return NewBuilder().WithStatusCode(NotUnique).Wrap(err).Build()
 	case persistence.ForeignKeyViolation:
-		return NewErrorBuilder(ConstaintVolation).WithMessage(pqerr.Detail).Wrap(err).Build()
+		return NewBuilder().WithStatusCode(ConstraintVolation).WithMessage(pqerr.Detail).Wrap(err).Build()
 	}
 
-	return NewErrorBuilder(InternalError).Wrap(err).Build()
+	return NewBuilder().InternalError("").Wrap(err).Build()
 }

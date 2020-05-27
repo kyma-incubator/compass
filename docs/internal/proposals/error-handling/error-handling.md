@@ -24,10 +24,10 @@ To deal with the errors we introduced custom errors, which contains error codes.
 
 | Error type           | Error code  |                            Description                                                      |
 |----------------------|-------------|---------------------------------------------------------------------------------------------|
-| Internal Error       | 1           | Error which cannot be handler in director                                                   |
-| Not Found            | 2           | Error indicate that given resource cannot be found and further processing is impossible     |
-| Not Unique           | 3           | Error indicates that given resource is not unique                                           |
-| Tenant Not Found     | 4           | Internal Tenant not found in director                                                       |
+| InternalError       | 1           | Error which cannot be handled in director                                                   |
+| NotFound            | 2           | Error indicate that given resource cannot be found and further processing is impossible     |
+| NotUnique           | 3           | Error indicates that given resource is not unique                                           |
+| TenantNotFound     | 4           | Internal Tenant not found in director                                                       |
 | InvalidData          | 5           | The input data is invalid, error description should be delivered in error message           | 
 | ConstraintViolation  | 6           | Error which indicate that this operation can't happen because referenced resource not exist |
 | Insufficient Scopes  | 7           | Error which indicate insufficient scopes                                                    |

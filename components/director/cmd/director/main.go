@@ -139,10 +139,15 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
+	presenter := customerrors.NewPresenter(uid.NewService())
+
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema, handler.ResolverMiddleware(customerrors.HandlerErrors), handler.ErrorPresenter(customerrors.ErrorPresenter))))
+	gqlAPIRouter.HandleFunc("", handler.GraphQL(executableSchema,
+		handler.ErrorPresenter(presenter.ErrorPresenter),
+		handler.RecoverFunc(customerrors.RecoverFn)))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)

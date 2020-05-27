@@ -16,10 +16,7 @@ func (i ApplicationRegisterInput) Validate() error {
 		validation.Field(&i.Webhooks, validation.Each(validation.Required)),
 	)
 	if err != nil {
-		return customerrors.GraphqlError{
-			StatusCode: customerrors.InvalidData,
-			Message:    err.Error(),
-		}
+		return customerrors.NewInvalidDataError(err.Error())
 	}
 	return nil
 }

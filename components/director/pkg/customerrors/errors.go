@@ -6,22 +6,21 @@ import (
 )
 
 type Error struct {
-	errorCode ErrorCode
+	errorCode ErrorType
 	Message   string
 	arguments map[string]string
 	parentErr error
-	//isInterval bool
 }
 
 func (err Error) Error() string {
 	builder := strings.Builder{}
 	builder.WriteString(err.Message)
-	builder.WriteString("[")
+	builder.WriteString(" [")
 	for key, value := range err.arguments {
-		builder.WriteString(fmt.Sprintf("%s: %s;", key, value))
+		builder.WriteString(fmt.Sprintf("%s: %s; ", key, value))
 	}
-	builder.WriteString("]")
-	if err.errorCode == InternalError {
+	builder.WriteString("] ")
+	if err.errorCode == InternalError && err.parentErr != nil {
 		builder.WriteString(": ")
 		builder.WriteString(err.parentErr.Error())
 	}
@@ -36,20 +35,6 @@ func (e Error) Is(err error) bool {
 	}
 }
 
-//TODO: We can provide more constructors for different types and use format prepared messages in contructors.
-func NewNotUniqueErr() Error {
-	err := Error{errorCode: NotUnique}
-	return err
-}
-
-func GetErrorCode(err error) ErrorCode {
-	if customErr, ok := err.(Error); ok {
-		return customErr.errorCode
-	} else {
-		return UnhandledError
-	}
-}
-
 func IsNotFoundErr(err error) bool {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode == NotFound
@@ -58,11 +43,30 @@ func IsNotFoundErr(err error) bool {
 	}
 }
 
-type GraphqlError struct {
-	StatusCode ErrorCode `json:"status_code"`
-	Message    string    `json:"message"`
+func NewNotUniqueErr(reason string) error {
+	return NewBuilder().NotUnique(reason).Build()
 }
 
-func (g GraphqlError) Error() string {
-	return g.Message
+func NewNotFoundError(objectType ResourceType, objectID string) error {
+	return NewBuilder().NotFound(objectType, objectID).Build()
+}
+
+func NewInvalidDataError(msg string) error {
+	return NewBuilder().InvalidData(msg).Build()
+}
+
+func NewInternalError(msg string) error {
+	return NewBuilder().InternalError(msg).Build()
+}
+
+func NewTenantNotFound(tenantID string) error {
+	return NewBuilder().TenantNotFound(tenantID).Build()
+}
+
+func GetErrorCode(err error) ErrorType {
+	if customErr, ok := err.(Error); ok {
+		return customErr.errorCode
+	} else {
+		return UnhandledError
+	}
 }
