@@ -2,11 +2,12 @@ package metrics
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 //go:generate mockery -name=OperationsStatsGetter
