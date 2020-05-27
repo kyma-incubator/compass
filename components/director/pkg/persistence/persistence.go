@@ -3,8 +3,9 @@ package persistence
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 
@@ -35,7 +36,7 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 //go:generate mockery -name=Transactioner -output=automock -outpkg=automock -case=underscore
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
-	RollbackUnlessCommited(tx PersistenceTx)
+	RollbackUnlessCommitted(tx PersistenceTx)
 	PingContext(ctx context.Context) error
 	Stats() sql.DBStats
 }
@@ -55,16 +56,49 @@ func (db *db) Stats() sql.DBStats {
 
 func (db *db) Begin() (PersistenceTx, error) {
 	tx, err := db.sqlDB.Beginx()
-	return PersistenceTx(tx), err
+	customTx := &Transaction{
+		Tx:        tx,
+		committed: false,
+	}
+	return PersistenceTx(customTx), err
 }
 
-func (db *db) RollbackUnlessCommited(tx PersistenceTx) {
+func (db *db) RollbackUnlessCommitted(tx PersistenceTx) {
+	customTx, ok := tx.(*Transaction)
+	if !ok {
+		db.logger.Warn("state aware transaction is not in use")
+		db.rollback(tx)
+	}
+	if customTx.committed {
+		return
+	}
+	db.rollback(customTx)
+}
+
+func (db *db) rollback(tx PersistenceTx) {
 	err := tx.Rollback()
 	if err == nil {
 		db.logger.Warn("transaction rolled back")
 	} else if err != sql.ErrTxDone {
 		db.logger.Warn(err)
 	}
+}
+
+type Transaction struct {
+	*sqlx.Tx
+	committed bool
+}
+
+func (db *Transaction) Commit() error {
+	if db.committed {
+		return errors.New("transaction already committed")
+	}
+	err := db.Tx.Commit()
+	if err != nil {
+		return errors.Wrap(err, "while committing transaction")
+	}
+	db.committed = true
+	return nil
 }
 
 //go:generate mockery -name=PersistenceTx -output=automock -outpkg=automock -case=underscore

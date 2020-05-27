@@ -658,7 +658,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 		},
 		{
 			Name:            "Doesn't exist",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
 				svc.On("GetFetchRequest", contextParam, id).Return(nil, nil).Once()

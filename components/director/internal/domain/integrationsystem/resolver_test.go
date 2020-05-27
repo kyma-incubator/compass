@@ -53,7 +53,7 @@ func TestResolver_IntegrationSystem(t *testing.T) {
 		},
 		{
 			Name: "Returns nil when integration system not found",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			TxFn: txGen.ThatSucceeds,
 			IntSysSvcFn: func() *automock.IntegrationSystemService {
 				intSysSvc := &automock.IntegrationSystemService{}
 				intSysSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError("")).Once()

@@ -128,7 +128,7 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -161,7 +161,7 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -198,7 +198,7 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -234,14 +234,14 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	pkg, err := r.packageInstanceAuthSvc.GetForPackage(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -264,7 +264,7 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	pkgInstanceAuths, err := r.packageInstanceAuthSvc.List(ctx, obj.ID)
@@ -287,14 +287,14 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id s
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	api, err := r.apiSvc.GetForPackage(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -312,7 +312,7 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, gro
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -354,14 +354,14 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Package, id
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	eventAPI, err := r.eventSvc.GetForPackage(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -379,7 +379,7 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var cursor string
@@ -420,14 +420,14 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	eventAPI, err := r.documentSvc.GetForPackage(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -440,13 +440,12 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string
 	return r.documentConverter.ToGraphQL(eventAPI), nil
 }
 
-// TODO: Proper error handling
 func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

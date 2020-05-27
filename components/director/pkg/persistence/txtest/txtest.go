@@ -23,7 +23,7 @@ func PersistenceContextThatDoesntExpectCommit() *automock.PersistenceTx {
 func TransactionerThatSucceeds(persistTx *automock.PersistenceTx) *automock.Transactioner {
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+	transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
 	return transact
 }
 
@@ -48,7 +48,7 @@ func (g txCtxGenerator) ThatSucceeds() (*automock.PersistenceTx, *automock.Trans
 
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+	transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
 
 	return persistTx, transact
 }
@@ -58,7 +58,7 @@ func (g txCtxGenerator) ThatDoesntExpectCommit() (*automock.PersistenceTx, *auto
 
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+	transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
 
 	return persistTx, transact
 }
@@ -69,7 +69,7 @@ func (g txCtxGenerator) ThatFailsOnCommit() (*automock.PersistenceTx, *automock.
 
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommited", persistTx).Return().Once()
+	transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
 
 	return persistTx, transact
 }

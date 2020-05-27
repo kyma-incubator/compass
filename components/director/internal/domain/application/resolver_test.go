@@ -623,6 +623,24 @@ func TestResolver_Application(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
+			Name:            "Success returns nil when application not found",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Get", contextParam, "foo").Return(nil, apperrors.NewNotFoundError("foo")).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				return conv
+			},
+			InputID:             "foo",
+			ExpectedApplication: nil,
+			ExpectedErr:         nil,
+		},
+		{
 			Name:            "Returns error when application retrieval failed",
 			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txtest.TransactionerThatSucceeds,
@@ -1778,8 +1796,8 @@ func TestResolver_Package(t *testing.T) {
 			ExpectedErr:     testErr,
 		},
 		{
-			Name:            "Returns nil when application retrieval failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			Name:            "Returns nil when package for application not found",
+			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.PackageService {
 				svc := &automock.PackageService{}
 				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()

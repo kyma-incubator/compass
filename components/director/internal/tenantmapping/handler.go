@@ -85,13 +85,19 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		h.respond(writer, reqData.Body)
 		return
 	}
-	defer h.transact.RollbackUnlessCommited(tx)
+	defer h.transact.RollbackUnlessCommitted(tx)
 
 	ctx := persistence.SaveToContext(req.Context(), tx)
 
 	objCtx, err := h.getObjectContext(ctx, reqData)
 	if err != nil {
 		h.logError(err, "while getting object context")
+		h.respond(writer, reqData.Body)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		h.logError(err, "while committing transaction")
 		h.respond(writer, reqData.Body)
 		return
 	}
