@@ -396,6 +396,6 @@ func assertIntegrationSystemNames(t *testing.T, expectedNames []string, actual g
 				break
 			}
 		}
-		assert.True(t, found, "Assignment for scenario: '%s' not found", intSysName)
+		assert.True(t, found, "Integration system: '%s' not found", intSysName)
 	}
 }
