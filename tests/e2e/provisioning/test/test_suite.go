@@ -35,7 +35,6 @@ import (
 
 type Config struct {
 	Broker   broker.Config
-	Runtime  runtime.Config
 	Director director.Config
 	Gardener gardener.Config
 
@@ -146,7 +145,7 @@ func newTestSuite(t *testing.T) *Suite {
 
 	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, log.WithField("service", "director_client"))
 
-	runtimeClient := runtime.NewClient(cfg.Runtime, cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
+	runtimeClient := runtime.NewClient(cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
 
 	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
 
@@ -191,8 +190,6 @@ func newTestSuite(t *testing.T) *Suite {
 func (ts *Suite) Cleanup() {
 	ts.log.Info("Cleaning up...")
 	err := ts.cleanupResources()
-	assert.NoError(ts.t, err)
-	err = ts.runtimeClient.EnsureUAAInstanceRemoved()
 	assert.NoError(ts.t, err)
 	operationID, err := ts.brokerClient.DeprovisionRuntime()
 	require.NoError(ts.t, err)
