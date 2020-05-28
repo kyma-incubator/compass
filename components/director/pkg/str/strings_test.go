@@ -134,3 +134,14 @@ func TestCast(t *testing.T) {
 		require.Equal(t, "abc", s)
 	})
 }
+
+func TestPrefixStrings(t *testing.T) {
+	in := []string{"foo", "bar", "baz"}
+	prefix := "test."
+
+	expected := []string{"test.foo", "test.bar", "test.baz"}
+
+	result := str.PrefixStrings(in, prefix)
+
+	assert.Equal(t, expected, result)
+}

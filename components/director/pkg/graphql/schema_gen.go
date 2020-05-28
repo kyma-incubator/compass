@@ -430,6 +430,7 @@ type ComplexityRoot struct {
 
 	Tenant struct {
 		ID         func(childComplexity int) int
+		InUse      func(childComplexity int) int
 		InternalID func(childComplexity int) int
 		Name       func(childComplexity int) int
 	}
@@ -2655,6 +2656,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.ID(childComplexity), true
 
+	case "Tenant.inUse":
+		if e.complexity.Tenant.InUse == nil {
+			break
+		}
+
+		return e.complexity.Tenant.InUse(childComplexity), true
+
 	case "Tenant.internalID":
 		if e.complexity.Tenant.InternalID == nil {
 			break
@@ -3706,6 +3714,7 @@ type Tenant {
 	id: ID!
 	internalID: ID!
 	name: String
+	inUse: Boolean
 }
 
 type Version {
@@ -16523,6 +16532,40 @@ func (ec *executionContext) _Tenant_name(ctx context.Context, field graphql.Coll
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Tenant_inUse(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Tenant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InUse, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Version_value(ctx context.Context, field graphql.CollectedField, obj *Version) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -21591,6 +21634,8 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "name":
 			out.Values[i] = ec._Tenant_name(ctx, field, obj)
+		case "inUse":
+			out.Values[i] = ec._Tenant_inUse(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

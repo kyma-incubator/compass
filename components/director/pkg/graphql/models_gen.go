@@ -523,6 +523,7 @@ type Tenant struct {
 	ID         string  `json:"id"`
 	InternalID string  `json:"internalID"`
 	Name       *string `json:"name"`
+	InUse      *bool   `json:"inUse"`
 }
 
 type Version struct {

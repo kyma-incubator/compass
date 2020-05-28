@@ -4,6 +4,8 @@ import (
 	"database/sql/driver"
 	"errors"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -20,6 +22,7 @@ const (
 	testPageSize = 3
 	testCursor   = ""
 	testProvider = "Compass"
+	inUseColumn  = "in_use"
 )
 
 var (
@@ -37,6 +40,12 @@ func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping
 	}
 }
 
+func newModelBusinessTenantMappingWithComputedValues(id, name string, inUse *bool) *model.BusinessTenantMapping {
+	tenantModel := newModelBusinessTenantMapping(id, name)
+	tenantModel.InUse = inUse
+	return tenantModel
+}
+
 func newEntityBusinessTenantMapping(id, name string) *tenant.Entity {
 	return &tenant.Entity{
 		ID:             id,
@@ -47,12 +56,32 @@ func newEntityBusinessTenantMapping(id, name string) *tenant.Entity {
 	}
 }
 
+func newEntityBusinessTenantMappingWithComputedValues(id, name string, inUse *bool) *tenant.Entity {
+	tenantEntity := newEntityBusinessTenantMapping(id, name)
+	tenantEntity.InUse = inUse
+	return tenantEntity
+}
+
 type sqlRow struct {
 	id             string
 	name           string
 	externalTenant string
 	provider       string
 	status         tenant.TenantStatus
+}
+
+type sqlRowWithComputedValues struct {
+	sqlRow
+	inUse *bool
+}
+
+func fixSQLRowsWithComputedValues(rows []sqlRowWithComputedValues) *sqlmock.Rows {
+	columns := append(testTableColumns, inUseColumn)
+	out := sqlmock.NewRows(columns)
+	for _, row := range rows {
+		out.AddRow(row.id, row.name, row.externalTenant, row.provider, row.status, row.inUse)
+	}
+	return out
 }
 
 func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
@@ -80,5 +109,15 @@ func newGraphQLTenant(id, internalID, name string) *graphql.Tenant {
 		ID:         id,
 		InternalID: internalID,
 		Name:       str.Ptr(name),
+	}
+}
+
+func fixModelBusinessTenantMapping() model.BusinessTenantMapping {
+	return model.BusinessTenantMapping{
+		ID:             uuid.New().String(),
+		Name:           "tenant",
+		ExternalTenant: "external-tenant",
+		Provider:       "SAP",
+		Status:         model.Active,
 	}
 }
