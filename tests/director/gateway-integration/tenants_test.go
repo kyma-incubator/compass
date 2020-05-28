@@ -42,6 +42,7 @@ func TestTenantErrors(t *testing.T) {
 	require.Contains(t, err.Error(), noTenantMessage)
 
 	is := registerIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "test")
+	defer unregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, is.ID)
 
 	req := fixGenerateClientCredentialsForIntegrationSystem(is.ID)
 
