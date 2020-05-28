@@ -1,9 +1,9 @@
-# Error handling in Director graphql
+# Error handling in Director GraphQL
 
-In Compass Director, we have to filter errors which should be visible to user and add information which can be readable by machine.
+In the Director, we have to filter errors that are readable for both users and machines.
 
-## Error types
-Basic list of errors which should be displayed to the user:
+## Errors displayed to the user
+These are the basic errors that should be displayed to the user:
 * InternalError
 * NotFound
 * NotUnique
@@ -13,42 +13,37 @@ Basic list of errors which should be displayed to the user:
 * TenantIsRequired
 * TenantNotFound
 
-This list can be split into 2 groups due to different handling:
-* internal errors
-* the rest of errors, which will be presented to the user
+This list can be split into two separate groups due to different error handling:
+* Internal errors that originate from external libraries, panics, PostgreSQL (except such errors as `NotFound`, `NotUnique`). The only internal error visible to the user is `InternalError`.
+* The rest of errors that are mostly caused by the user. 
 
-In group of internal errors, are errors from:
-* external libraries
-* panics
-* postgreSQL, except errors like NotFound, NotUnique
 
-To deal with the errors we introduced custom errors, which contains error codes.
 
-## Custom errors and theirs error codes:
+## Custom errors and error codes
+
+To differentiate the errors, we introduced our own class of custom errors that include error codes. This is the list of custom errors that are displayed to the user:
 
 | Error type           | Error code  |                            Description                                                            |
 |----------------------|-------------|---------------------------------------------------------------------------------------------------|
-| InternalError        | 10          | Error which cannot be handled in director                                                         |
-| NotFound             | 20          | Error indicate that given resource cannot be found and further processing is impossible           |
-| NotUnique            | 21          | Error indicates that given resource is not unique                                                 |
-| InvalidData          | 22          | The input data is invalid, error description should be delivered in error message                 | 
-| InsufficientScopes   | 23          | Error which indicate that the client doesn't have sufficient permissions to execute the operation |
-| ConstraintViolation  | 24          | Error which indicate that this operation can't happen because referenced resource not exist       |
-| TenantIsRequired     | 25          | Tenant not found in request and is required to successful execute the request                     |
-| TenantNotFound       | 26          | Internal Tenant not found in director                                                             |
+| InternalError        | 10          | Specifies any error that cannot be handled in the Director.                                                        |
+| NotFound             | 20          | Indicates that a given resource cannot be found and further processing is impossible.           |
+| NotUnique            | 21          | Indicates that a given resource is not unique.                                                 |
+| InvalidData          | 22          | Indicates that the input data is invalid with the reason described in the error message.                 | 
+| InsufficientScopes   | 23          | Indicates that the client doesn't have permission to execute the operation. |
+| ConstraintViolation  | 24          | Indicates that this operation can't happen because the referenced resource does not exist.       |
+| TenantIsRequired     | 25          | Indicates that a tenant is not found in the request, which is required to successfully execute the request.                     |
+| TenantNotFound       | 26          | Indicates that the internal tenant is not found in the Director.                                                            |
 
-NotFoundError can be triggered in mutation like `addPackage` to not existing application.
 
-## Error processing flow:
+## Error processing flow
 
 ![](error-handling.svg)
 
-Description of following steps
 * PostgreSQL Error Mapper - this component map postgreSQL errors to custom errors
 * Error presenter - this component search for custom error in error stack. 
 If such error is found, the presenter add `error_code` and `error` metadata to the GraphQL error in section `extensions`
 In case of internal errors, the whole error is logged and `internal server error` is sent to client.
 In case of errors which are not handled by custom error library, the error is returned without error code and error message is logged.
 
-## Proof of concept
-[Here](https://github.com/kyma-incubator/compass/pull/1366) is implemented PoC.
+## PoC
+See the [implemented PoC](https://github.com/kyma-incubator/compass/pull/1366) for more details.
