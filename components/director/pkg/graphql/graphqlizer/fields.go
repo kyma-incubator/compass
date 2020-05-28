@@ -269,6 +269,7 @@ func (fp *GqlFieldsProvider) ForViewer() string {
 func (fp *GqlFieldsProvider) ForTenant() string {
 	return `
 		id
+        internalID
 		name
         inUse`
 }

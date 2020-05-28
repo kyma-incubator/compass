@@ -20,8 +20,9 @@ require (
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/crypto v0.0.0-20200210222208-86ce3cb69678 // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
-	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
 	k8s.io/apimachinery v0.17.3 // indirect
 )
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+
+replace github.com/kyma-incubator/compass/components/director => ../../components/director // TODO: Remove

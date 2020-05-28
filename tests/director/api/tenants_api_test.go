@@ -28,10 +28,23 @@ func TestQueryTenants(t *testing.T) {
 	//THEN
 	t.Log("Check if tenants were received")
 
-	for _, tenant := range defaultTenants {
-		assert.Contains(t, output, tenant)
-	}
+	assertTenants(t, defaultTenants, output)
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
+}
+
+func assertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant) {
+	for _, inTnt := range in {
+		found := false
+		for _, actTnt := range actual {
+			if inTnt.ID != actTnt.ID {
+				continue
+			}
+			found = true
+
+			assert.Equal(t, inTnt.Name, actTnt.Name)
+		}
+		assert.True(t, found)
+	}
 }
 
 func fixTenant(id, name string) *graphql.Tenant {
