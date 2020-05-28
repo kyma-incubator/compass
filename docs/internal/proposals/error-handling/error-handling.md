@@ -1,6 +1,8 @@
 # Error handling in Director graphql
 
-In compass director, we have to somehow filter errors which should be visible to user and add information which can be readable by machine.
+In Compass Director, we have to filter errors which should be visible to user and add information which can be readable by machine.
+
+## Error types
 Basic list of errors which should be displayed to the user:
 * InternalError
 * NotFound
@@ -22,7 +24,7 @@ In group of internal errors, are errors from:
 
 To deal with the errors we introduced custom errors, which contains error codes.
 
-## Proposed custom errors and theirs error codes:
+## Custom errors and theirs error codes:
 
 | Error type           | Error code  |                            Description                                                            |
 |----------------------|-------------|---------------------------------------------------------------------------------------------------|
@@ -37,15 +39,16 @@ To deal with the errors we introduced custom errors, which contains error codes.
 
 NotFoundError can be triggered in mutation like `addPackage` to not existing application.
 
-## Proposed processing flow:
+## Error processing flow:
 
 ![](error-handling.svg)
 
 Description of following steps
 * PostgreSQL Error Mapper - this component map postgreSQL errors to custom errors
 * Error presenter - this component search for custom error in error stack. 
-If such error is found, the presenter add `error_code` and `error` metadata to the graphql error in section `extensions`
+If such error is found, the presenter add `error_code` and `error` metadata to the GraphQL error in section `extensions`
 In case of internal errors, the whole error is logged and `internal server error` is sent to client.
 In case of errors which are not handled by custom error library, the error is returned without error code and error message is logged.
 
+## Proof of concept
 [Here](https://github.com/kyma-incubator/compass/pull/1366) is implemented PoC.
