@@ -8,8 +8,8 @@ Basic list of errors which should be displayed to the user:
 * InvalidData
 * InsufficientScopes
 * ConstraintViolation
+* TenantIsRequired
 * TenantNotFound
-* TenantNotExist
 
 This list can be split into 2 groups due to different handling:
 * internal errors
@@ -22,7 +22,7 @@ In group of internal errors, are errors from:
 
 To deal with the errors we introduced custom errors, which contains error codes.
 
-## Proposed custom errors and theirs error codes (the error codes can change):
+## Proposed custom errors and theirs error codes:
 
 | Error type           | Error code  |                            Description                                                            |
 |----------------------|-------------|---------------------------------------------------------------------------------------------------|
@@ -33,7 +33,7 @@ To deal with the errors we introduced custom errors, which contains error codes.
 | InsufficientScopes   | 23          | Error which indicate that the client doesn't have sufficient permissions to execute the operation |
 | ConstraintViolation  | 24          | Error which indicate that this operation can't happen because referenced resource not exist       |
 | TenantIsRequired     | 25          | Tenant not found in request and is required to successful execute the request                     |
-| TenantNotExist       | 26          | Internal Tenant not found in director                                                             |
+| TenantNotFound       | 26          | Internal Tenant not found in director                                                             |
 
 NotFoundError can be triggered in mutation like `addPackage` to not existing application.
 
