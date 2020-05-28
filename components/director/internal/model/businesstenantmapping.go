@@ -1,9 +1,5 @@
 package model
 
-import (
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-)
-
 type TenantStatus string
 
 const (
@@ -17,12 +13,6 @@ type BusinessTenantMapping struct {
 	ExternalTenant string
 	Provider       string
 	Status         TenantStatus
-}
-
-type BusinessTenantMappingPage struct {
-	Data       []*BusinessTenantMapping
-	PageInfo   *pagination.Page
-	TotalCount int
 }
 
 func (t BusinessTenantMapping) WithExternalTenant(externalTenant string) BusinessTenantMapping {

@@ -68,14 +68,14 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+			return nil, tx.Commit()
 		}
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -124,11 +124,10 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting application templates to graphql")
 	}
-	totalCount := len(gqlAppTemplate)
 
 	return &graphql.ApplicationTemplatePage{
 		Data:       gqlAppTemplate,
-		TotalCount: totalCount,
+		TotalCount: appTemplatePage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(appTemplatePage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(appTemplatePage.PageInfo.EndCursor),
@@ -142,7 +141,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -179,7 +178,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -230,7 +229,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -267,7 +266,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommited(tx)
+	defer r.transact.RollbackUnlessCommitted(tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

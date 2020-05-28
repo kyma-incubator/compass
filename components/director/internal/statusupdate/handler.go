@@ -67,7 +67,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			defer u.transact.RollbackUnlessCommited(tx)
+			defer u.transact.RollbackUnlessCommitted(tx)
 
 			ctxWithDB := persistence.SaveToContext(r.Context(), tx)
 
