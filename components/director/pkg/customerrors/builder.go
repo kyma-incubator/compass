@@ -2,99 +2,102 @@ package customerrors
 
 import "fmt"
 
-type ArgsStep interface {
-	With(key, value string) ArgsStep
-	Wrap(err error) BuildStep
-	Build() error
+type buildStep interface {
+	build() error
 }
 
-type MsgStep interface {
-	WithMessage(msg string) ArgsStep
-	Wrap(err error) BuildStep
-	Build() error
+type typeStep interface {
+	internalError(msg string) argsStep
+	notUnique(resourceType ResourceType) argsStep
+	notFound(resourceType ResourceType, resourceID string) argsStep
+	invalidData(msg string) argsStep
+	tenantNotFound(tenantID string) argsStep
+	withStatusCode(errType ErrorType) msgStep
+	buildStep
 }
 
-type TypeStep interface {
-	InternalError(msg string) ArgsStep
-	NotUnique(reason string) ArgsStep
-	NotFound(resourceType ResourceType, resourceID string) ArgsStep
-	InvalidData(msg string) ArgsStep
-	TenantNotFound(tenantID string) ArgsStep
-	WithStatusCode(errType ErrorType) MsgStep
-	Build() error
+type argsStep interface {
+	with(key, value string) argsStep
+	wrapStep
+	buildStep
 }
 
-type BuildStep interface {
-	Build() error
+type msgStep interface {
+	withMessage(msg string) argsStep
+	wrapStep
+	buildStep
+}
+type wrapStep interface {
+	wrap(err error) buildStep
 }
 
-type Builder struct {
+type builder struct {
 	args      map[string]string
 	errorType ErrorType
 	message   string
 	parentErr error
 }
 
-func NewBuilder() TypeStep {
-	return &Builder{args: make(map[string]string)}
+func newBuilder() typeStep {
+	return &builder{args: make(map[string]string)}
 }
 
-func (builder *Builder) InternalError(msg string) ArgsStep {
+func (builder *builder) internalError(msg string) argsStep {
 	builder.errorType = InternalError
 	builder.message = fmt.Sprintf("Internal Server Error; %s", msg)
 	return builder
 }
 
-func (builder *Builder) NotFound(objectType ResourceType, objectID string) ArgsStep {
-	builder.args["object"] = string(objectType)
+func (builder *builder) notFound(resourceType ResourceType, objectID string) argsStep {
+	builder.args["object"] = string(resourceType)
 	builder.args["ID"] = objectID
 	builder.message = "Object not found"
 	builder.errorType = NotFound
 	return builder
 }
 
-func (builder *Builder) InvalidData(msg string) ArgsStep {
+func (builder *builder) invalidData(msg string) argsStep {
 	builder.args["reason"] = msg
 	builder.message = "Invalid input"
 	builder.errorType = InvalidData
 	return builder
 }
 
-func (builder *Builder) NotUnique(msg string) ArgsStep {
-	builder.args["reason"] = msg
+func (builder *builder) notUnique(resourceType ResourceType) argsStep {
+	builder.args["object"] = string(resourceType)
 	builder.message = "Object is not unique"
 	builder.errorType = NotUnique
 	return builder
 }
 
-func (builder *Builder) TenantNotFound(tenantID string) ArgsStep {
+func (builder *builder) tenantNotFound(tenantID string) argsStep {
 	builder.message = "Tenant not found"
 	builder.args["tenantID"] = tenantID
-	builder.errorType = TenantNotFound
+	builder.errorType = TenantIsRequired
 	return builder
 }
 
-func (builder *Builder) WithStatusCode(errorType ErrorType) MsgStep {
+func (builder *builder) withStatusCode(errorType ErrorType) msgStep {
 	builder.errorType = errorType
 	return builder
 }
 
-func (builder *Builder) With(key, value string) ArgsStep {
+func (builder *builder) with(key, value string) argsStep {
 	builder.args[key] = value
 	return builder
 }
 
-func (builder *Builder) WithMessage(message string) ArgsStep {
+func (builder *builder) withMessage(message string) argsStep {
 	builder.message = message
 	return builder
 }
 
-func (builder *Builder) Wrap(err error) BuildStep {
+func (builder *builder) wrap(err error) buildStep {
 	builder.parentErr = err
 	return builder
 }
 
-func (builder *Builder) Build() error {
+func (builder *builder) build() error {
 	return Error{
 		errorCode: builder.errorType,
 		Message:   builder.message,

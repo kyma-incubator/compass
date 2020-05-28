@@ -47,30 +47,34 @@ func IsNotFoundErr(err error) bool {
 	}
 }
 
-func NewNotUniqueErr(reason string) error {
-	return NewBuilder().NotUnique(reason).Build()
+func NewNotUniqueErr(resourceType ResourceType) error {
+	return newBuilder().notUnique(resourceType).build()
 }
 
 func NewNotFoundError(objectType ResourceType, objectID string) error {
-	return NewBuilder().NotFound(objectType, objectID).Build()
+	return newBuilder().notFound(objectType, objectID).build()
 }
 
 func NewInvalidDataError(msg string) error {
-	return NewBuilder().InvalidData(msg).Build()
+	return newBuilder().invalidData(msg).build()
 }
 
 func NewInternalError(msg string) error {
-	return NewBuilder().InternalError(msg).Build()
+	return newBuilder().internalError(msg).build()
+}
+
+func InternalErrorFrom(msg string, err error) error {
+	return newBuilder().internalError(msg).wrap(err).build()
 }
 
 func NewTenantNotFound(tenantID string) error {
-	return NewBuilder().TenantNotFound(tenantID).Build()
+	return newBuilder().tenantNotFound(tenantID).build()
 }
 
 func GetErrorCode(err error) ErrorType {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode
 	} else {
-		return UnhandledError
+		return UnknownError
 	}
 }

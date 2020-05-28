@@ -67,8 +67,5 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 
 	err = persist.Get(dest, query, args...)
 
-	if err != nil {
-		return customerrors.MapSQLError(err)
-	}
-	return nil
+	return customerrors.MapSQLError(err, "while getting from table %s", g.tableName)
 }

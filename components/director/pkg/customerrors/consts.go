@@ -4,14 +4,14 @@ package customerrors
 type ErrorType int
 
 const (
-	UnhandledError      ErrorType = 10
-	InternalError       ErrorType = 11
+	UnknownError        ErrorType = 0
+	InternalError       ErrorType = 10
 	NotFound            ErrorType = 20
 	NotUnique           ErrorType = 21
 	InvalidData         ErrorType = 22
 	InsufficientScopes  ErrorType = 23
 	ConstraintViolation ErrorType = 24
-	TenantNotFound      ErrorType = 25
+	TenantIsRequired    ErrorType = 25
 	TenantNotExist      ErrorType = 26
 )
 

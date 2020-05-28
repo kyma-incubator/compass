@@ -31,16 +31,16 @@ func Resolve(ctx context.Context, errID int) (*graphql.Tenant, error) {
 		}
 	case customerrors.NotUnique:
 		{
-			err = customerrors.NewNotUniqueErr("given object is not unique")
+			err = customerrors.NewNotUniqueErr(customerrors.Package)
 			err = errors.Wrap(err, "while doing 1st not unique")
 			err = errors.Wrap(err, "while doing 2st not unique")
 		}
 	case customerrors.NotFound:
 		err = customerrors.NewNotFoundError(customerrors.Application, "uuuid")
-	case customerrors.UnhandledError:
-		err = errors.New("error which is not handled")
+	case customerrors.UnknownError:
+		err = errors.New("error which is not know to the library")
 		err = errors.Wrap(err, "while doing 1st thing")
-	case customerrors.TenantNotFound:
+	case customerrors.TenantIsRequired:
 		err = customerrors.NewTenantNotFound("tenant")
 		err = errors.Wrap(err, "while doing 1st not found")
 		err = errors.Wrap(err, "while doing 2st not found")

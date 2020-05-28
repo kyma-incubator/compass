@@ -45,9 +45,5 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
 	_, err = persist.NamedExec(stmt, dbEntity)
-	if err != nil {
-		return customerrors.MapSQLError(err)
-
-	}
-	return errors.Wrapf(err, "while inserting row to '%s' table", c.tableName)
+	return customerrors.MapSQLError(err, "while inserting row to '%s' table", c.tableName)
 }

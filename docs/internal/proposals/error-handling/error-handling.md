@@ -26,14 +26,13 @@ To deal with the errors we introduced custom errors, which contains error codes.
 
 | Error type           | Error code  |                            Description                                                            |
 |----------------------|-------------|---------------------------------------------------------------------------------------------------|
-| UnhandledError       | 10          | Error which cannot be handled in director and also is handled in old way                          |
-| InternalError        | 11          | Error which cannot be handled in director                                                         |
+| InternalError        | 10          | Error which cannot be handled in director                                                         |
 | NotFound             | 20          | Error indicate that given resource cannot be found and further processing is impossible           |
 | NotUnique            | 21          | Error indicates that given resource is not unique                                                 |
 | InvalidData          | 22          | The input data is invalid, error description should be delivered in error message                 | 
 | InsufficientScopes   | 23          | Error which indicate that the client doesn't have sufficient permissions to execute the operation |
 | ConstraintViolation  | 24          | Error which indicate that this operation can't happen because referenced resource not exist       |
-| TenantNotFound       | 25          | Tenant not found in request                                                                       |
+| TenantIsRequired     | 25          | Tenant not found in request and is required to successful execute the request                     |
 | TenantNotExist       | 26          | Internal Tenant not found in director                                                             |
 
 NotFoundError can be triggered in mutation like `addPackage` to not existing application.
@@ -47,3 +46,6 @@ Description of following steps
 * Error presenter - this component search for custom error in error stack. 
 If such error is found, the presenter add `error_code` and `error` metadata to the graphql error in section `extensions`
 In case of internal errors, the whole error is logged and `internal server error` is sent to client.
+In case of errors which are not handled by custom error library, the error is returned without error code and error message is logged.
+
+[Here](https://github.com/kyma-incubator/compass/pull/1366) is implemented PoC.
