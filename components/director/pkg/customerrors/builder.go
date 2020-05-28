@@ -45,7 +45,7 @@ func newBuilder() typeStep {
 
 func (builder *builder) internalError(msg string) argsStep {
 	builder.errorType = InternalError
-	builder.message = fmt.Sprintf("Internal Server Error; %s", msg)
+	builder.message = fmt.Sprintf("Internal Server Error: %s", msg)
 	return builder
 }
 
