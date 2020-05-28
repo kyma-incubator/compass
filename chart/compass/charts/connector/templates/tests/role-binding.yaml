@@ -6,8 +6,10 @@ metadata:
   namespace: {{ .Values.global.connector.revocation.configmap.namespace }}
   labels:
     app: {{ .Chart.Name }}-tests
-    release: {{ .Chart.Name }}
-    heritage: {{ .Release.Service }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version \| replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
 rules:
 - apiGroups: ["*"]
   resources: ["configmaps"]
@@ -21,8 +23,10 @@ metadata:
   namespace: {{ .Values.global.connector.revocation.configmap.namespace }}
   labels:
     app: {{ .Chart.Name }}-tests
-    release: {{ .Chart.Name }}
-    heritage: {{ .Release.Service }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version \| replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
 subjects:
 - kind: ServiceAccount
   name: {{ template "fullname" . }}-tests
