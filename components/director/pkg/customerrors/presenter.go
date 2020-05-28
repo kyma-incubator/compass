@@ -28,7 +28,7 @@ func (p *presenter) ErrorPresenter(ctx context.Context, err error) *gqlerror.Err
 	if found := errors.As(err, &customErr); found {
 		if customErr.errorCode == InternalError {
 			errID := p.uuidService.Generate()
-			log.Errorf("Internal Server Error, errorID:%s, %s\n", errID, err.Error())
+			log.WithField("errorID", errID).Infof("Internal Server Error: %s", err.Error())
 			return NewInternalErrResponse(ctx, errID)
 		}
 
@@ -47,7 +47,7 @@ func (p *presenter) ErrorPresenter(ctx context.Context, err error) *gqlerror.Err
 
 func NewInternalErrResponse(ctx context.Context, uuid string) *gqlerror.Error {
 	return &gqlerror.Error{
-		Message:    fmt.Sprintf("Internal Server Error, errorID:%s", uuid),
+		Message:    fmt.Sprintf("Internal Server Error [errorID=%s]", uuid),
 		Path:       graphql.GetResolverContext(ctx).Path(),
 		Extensions: map[string]interface{}{"error_code": InternalError, "error": InternalError.String()},
 	}

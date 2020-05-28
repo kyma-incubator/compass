@@ -19,7 +19,7 @@ func (err Error) Error() string {
 	if len(err.arguments) != 0 {
 		builder.WriteString(" [")
 		for key, value := range err.arguments {
-			builder.WriteString(fmt.Sprintf("%s: %s; ", key, value))
+			builder.WriteString(fmt.Sprintf("%s=%s; ", key, value))
 		}
 		builder.WriteString("] ")
 	}
