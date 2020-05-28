@@ -269,9 +269,9 @@ func (fp *GqlFieldsProvider) ForViewer() string {
 func (fp *GqlFieldsProvider) ForTenant() string {
 	return `
 		id
-        internalID
+		internalID
 		name
-        inUse`
+		inUse`
 }
 
 func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
