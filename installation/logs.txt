@@ -1,0 +1,896 @@
+The testing.sh script is deprecated and will be removed. Use Kyma CLI instead.
+----------------------------
+- Testing Kyma...
+----------------------------
+clustertestsuite.testing.kyma-project.io/testsuite-all-2020-06-01-16-02 created
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+ClusterTestSuite not finished. Waiting...
+Test suite 'testsuite-all-2020-06-01-16-02' failed.
+Test summary
+Test status: dex-connection - Succeeded
+Test status: api-gateway - Failed (Retried)
+Test status: compass-director-gateway-integration - Failed (Retried)
+Test status: connectivity-adapter - Succeeded
+Test status: compass-connector-tests - Succeeded
+Test status: compass-director-api - Succeeded
+Test status: dex-integration - Failed (Retried)
+All test pods should be terminated. Checking...
+OK
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-compass-connector-tests-0' from namespace 'compass-system'
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-compass-connector-tests-0'
+
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-api-0' from namespace 'compass-system'
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-api-0'
+
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-connectivity-adapter-0' from namespace 'compass-system'
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-connectivity-adapter-0'
+
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-0' from namespace 'kyma-system'
+'oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-0' has Failed status
+Fetching logs from 'oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-0' with options tailLimit=2000 and bytesLimit=500000
+2020/06/01 14:02:49 Using dedicated ingress client
+2020/06/01 14:02:49 Using namespace: api-gateway-test-ozrwle
+2020/06/01 14:02:49 Using OAuth2Client with name: api-gateway-tests-client-svpypm, secretName: api-gateway-tests-secret-svpypm
+2020/06/01 14:02:49 Delete test namespace, if exists: api-gateway-test-ozrwle
+2020/06/01 14:03:10 Creating common tests resources
+2020/06/01 14:03:10 Resource found: api-gateway-test-ozrwle
+2020/06/01 14:03:10 Resource found: api-gateway-tests-secret-svpypm
+2020/06/01 14:03:20 Creating hydra client resources
+2020/06/01 14:03:20 Resource found: api-gateway-tests-client-svpypm
+2020/06/01 14:03:30 Resource found: httpbin-erzmnmzp
+2020/06/01 14:03:30 Resource found: httpbin-xecuavgs
+2020/06/01 14:03:30 Resource found: httpbin-erzmnmzp
+2020/06/01 14:03:30 Resource found: httpbin-xecuavgs
+2020/06/01 14:03:30 Resource found: httpbin-sfdmbfmd
+2020/06/01 14:03:30 Resource found: httpbin-uxslnujp
+2020/06/01 14:03:31 Resource found: unsecured-erzmnmzp
+2020/06/01 14:03:31 Resource found: unsecured-xecuavgs
+2020/06/01 14:03:31 Resource found: httpbin-sfdmbfmd
+2020/06/01 14:03:32 Resource found: httpbin-uxslnujp
+2020/06/01 14:03:32 Resource found: unsecured-sfdmbfmd
+2020/06/01 14:03:32 Resource found: oauth2-uxslnujp
+2020/06/01 14:05:21 Resource found: httpbin-yrasttfp
+2020/06/01 14:05:21 Resource found: httpbin-yrasttfp
+2020/06/01 14:05:21 Resource found: jwt-oauth-one-path-yrasttfp
+2020/06/01 14:05:26 Retry: [0 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:30 Retry: [0 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:31 Retry: [1 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:35 Retry: [1 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:36 Retry: [2 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:40 Retry: [2 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:41 Retry: [3 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:45 Retry: [3 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:46 Retry: [4 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:46 Resource found: httpbin-rwayjntw
+2020/06/01 14:05:46 Resource found: httpbin-rwayjntw
+2020/06/01 14:05:46 Resource found: jwt-oauth-rwayjntw
+2020/06/01 14:05:48 Retry: [0 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:50 Retry: [4 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:50 Resource found: httpbin-heenfcwt
+2020/06/01 14:05:50 Resource found: httpbin-heenfcwt
+2020/06/01 14:05:50 Resource found: oauth2-heenfcwt
+2020/06/01 14:05:53 Retry: [1 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:05:58 Retry: [2 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:06:03 Retry: [3 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:06:08 Retry: [4 / 5], error: got unexpected response on authorize: 404 -
+--- FAIL: TestApiGatewayIntegration (295.65s)
+    main_test.go:209:
+                Error Trace:    main_test.go:209
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:487:
+                Error Trace:    main_test.go:487
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:433:
+                Error Trace:    main_test.go:433
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:380:
+                Error Trace:    main_test.go:380
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:397:
+                Error Trace:    main_test.go:397
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:454:
+                Error Trace:    main_test.go:454
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:246:
+                Error Trace:    main_test.go:246
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    --- FAIL: TestApiGatewayIntegration/API_Gateway_should (0.00s)
+        --- FAIL: TestApiGatewayIntegration/API_Gateway_should/Expose_service_with_OAUTH_and_JWT_on_the_same_path (25.10s)
+            main_test.go:336: failed to fetch and id_token. All attempts fail:
+                #1: got unexpected response on authorize: 404 -
+                #2: got unexpected response on authorize: 404 -
+                #3: got unexpected response on authorize: 404 -
+                #4: got unexpected response on authorize: 404 -
+                #5: got unexpected response on authorize: 404 -
+        --- FAIL: TestApiGatewayIntegration/API_Gateway_should/Expose_unsecured_API_next_secure_it_with_OAUTH2_and_JWT_strategy_on_paths (140.18s)
+            main_test.go:511: failed to fetch and id_token. All attempts fail:
+                #1: got unexpected response on authorize: 404 -
+                #2: got unexpected response on authorize: 404 -
+                #3: got unexpected response on authorize: 404 -
+                #4: got unexpected response on authorize: 404 -
+                #5: got unexpected response on authorize: 404 -
+        --- FAIL: TestApiGatewayIntegration/API_Gateway_should/Expose_service_with_OAUTH_and_JWT_on_speficic_paths (22.12s)
+            main_test.go:289: failed to fetch and id_token. All attempts fail:
+                #1: got unexpected response on authorize: 404 -
+                #2: got unexpected response on authorize: 404 -
+                #3: got unexpected response on authorize: 404 -
+                #4: got unexpected response on authorize: 404 -
+                #5: got unexpected response on authorize: 404 -
+FAIL
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     2  100     2    0     0    400      0 --:--:-- --:--:-- --:--:--   500
+OK
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-0'
+
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-1' from namespace 'kyma-system'
+'oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-1' has Failed status
+Fetching logs from 'oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-1' with options tailLimit=2000 and bytesLimit=500000
+2020/06/01 14:08:19 Using dedicated ingress client
+2020/06/01 14:08:19 Using namespace: api-gateway-test-lwlael
+2020/06/01 14:08:19 Using OAuth2Client with name: api-gateway-tests-client-hhqzpg, secretName: api-gateway-tests-secret-hhqzpg
+2020/06/01 14:08:19 Delete test namespace, if exists: api-gateway-test-lwlael
+2020/06/01 14:08:39 Creating common tests resources
+2020/06/01 14:08:39 Resource found: api-gateway-test-lwlael
+2020/06/01 14:08:39 Resource found: api-gateway-tests-secret-hhqzpg
+2020/06/01 14:08:49 Creating hydra client resources
+2020/06/01 14:08:49 Resource found: api-gateway-tests-client-hhqzpg
+2020/06/01 14:08:59 Resource found: httpbin-qfauauvo
+2020/06/01 14:08:59 Resource found: httpbin-qfauauvo
+2020/06/01 14:08:59 Resource found: httpbin-dxzujfla
+2020/06/01 14:08:59 Resource found: unsecured-qfauauvo
+2020/06/01 14:08:59 Resource found: httpbin-yjntlpaj
+2020/06/01 14:09:00 Resource found: httpbin-dxzujfla
+2020/06/01 14:09:00 Resource found: httpbin-mrdakleh
+2020/06/01 14:09:01 Resource found: httpbin-yjntlpaj
+2020/06/01 14:09:01 Resource found: unsecured-dxzujfla
+2020/06/01 14:09:01 Resource found: httpbin-mrdakleh
+2020/06/01 14:09:02 Resource found: jwt-oauth-yjntlpaj
+2020/06/01 14:09:02 Resource found: oauth2-mrdakleh
+2020/06/01 14:09:06 Retry: [0 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:09:11 Retry: [1 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:09:16 Retry: [2 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:09:21 Retry: [3 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:09:26 Retry: [4 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:09:26 Resource found: httpbin-lwpgjuui
+2020/06/01 14:09:26 Resource found: httpbin-lwpgjuui
+2020/06/01 14:09:26 Resource found: oauth2-lwpgjuui
+2020/06/01 14:10:50 Resource found: httpbin-fhlrhsar
+2020/06/01 14:10:50 Resource found: httpbin-fhlrhsar
+2020/06/01 14:10:50 Resource found: unsecured-fhlrhsar
+2020/06/01 14:10:58 Resource found: httpbin-uyoxlhjl
+2020/06/01 14:10:58 Resource found: httpbin-uyoxlhjl
+2020/06/01 14:10:58 Resource found: jwt-oauth-one-path-uyoxlhjl
+2020/06/01 14:11:00 Retry: [0 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:11:02 Retry: [0 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:11:05 Retry: [1 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:11:07 Retry: [1 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:11:10 Retry: [2 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:11:12 Retry: [2 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:11:15 Retry: [3 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:11:17 Retry: [3 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:11:20 Retry: [4 / 5], error: got unexpected response on authorize: 404 -
+2020/06/01 14:11:22 Retry: [4 / 5], error: got unexpected response on authorize: 404 -
+--- FAIL: TestApiGatewayIntegration (379.86s)
+    main_test.go:209:
+                Error Trace:    main_test.go:209
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:487:
+                Error Trace:    main_test.go:487
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:246:
+                Error Trace:    main_test.go:246
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:380:
+                Error Trace:    main_test.go:380
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:433:
+                Error Trace:    main_test.go:433
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:397:
+                Error Trace:    main_test.go:397
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    main_test.go:454:
+                Error Trace:    main_test.go:454
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: unexpected response 404 Not Found:
+                                #2: unexpected response 404 Not Found:
+                                #3: unexpected response 404 Not Found:
+                                #4: unexpected response 404 Not Found:
+                                #5: unexpected response 404 Not Found:
+                                #6: unexpected response 404 Not Found:
+                                #7: unexpected response 404 Not Found:
+                                #8: unexpected response 404 Not Found:
+                                #9: unexpected response 404 Not Found:
+                                #10: unexpected response 404 Not Found:
+                                #11: unexpected response 404 Not Found:
+                                #12: unexpected response 404 Not Found:
+                Test:           TestApiGatewayIntegration
+    --- FAIL: TestApiGatewayIntegration/API_Gateway_should (0.00s)
+        --- FAIL: TestApiGatewayIntegration/API_Gateway_should/Expose_service_with_OAUTH_and_JWT_on_speficic_paths (27.07s)
+            main_test.go:289: failed to fetch and id_token. All attempts fail:
+                #1: got unexpected response on authorize: 404 -
+                #2: got unexpected response on authorize: 404 -
+                #3: got unexpected response on authorize: 404 -
+                #4: got unexpected response on authorize: 404 -
+                #5: got unexpected response on authorize: 404 -
+        --- FAIL: TestApiGatewayIntegration/API_Gateway_should/Expose_unsecured_API_next_secure_it_with_OAUTH2_and_JWT_strategy_on_paths (141.22s)
+            main_test.go:511: failed to fetch and id_token. All attempts fail:
+                #1: got unexpected response on authorize: 404 -
+                #2: got unexpected response on authorize: 404 -
+                #3: got unexpected response on authorize: 404 -
+                #4: got unexpected response on authorize: 404 -
+                #5: got unexpected response on authorize: 404 -
+        --- FAIL: TestApiGatewayIntegration/API_Gateway_should/Expose_service_with_OAUTH_and_JWT_on_the_same_path (24.50s)
+            main_test.go:336: failed to fetch and id_token. All attempts fail:
+                #1: got unexpected response on authorize: 404 -
+                #2: got unexpected response on authorize: 404 -
+                #3: got unexpected response on authorize: 404 -
+                #4: got unexpected response on authorize: 404 -
+                #5: got unexpected response on authorize: 404 -
+FAIL
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     2  100     2    0     0   2000      0 --:--:-- --:--:-- --:--:--  2000
+OK
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-1'
+
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-0' from namespace 'kyma-system'
+'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-0' has Failed status
+Fetching logs from 'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-0' with options tailLimit=2000 and bytesLimit=500000
+Checking if Director is up...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     2  100     2    0     0    200      0 --:--:-- --:--:-- --:--:--   200
+ok=== RUN   TestAutomaticStatusUpdate
+    TestAutomaticStatusUpdate: automatic_status_update_test.go:22: Get Dex id_token
+2020/06/01 14:15:03 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:06 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:09 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:12 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+    TestAutomaticStatusUpdate: automatic_status_update_test.go:24:
+                Error Trace:    automatic_status_update_test.go:24
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestAutomaticStatusUpdate
+--- FAIL: TestAutomaticStatusUpdate (9.04s)
+=== RUN   TestCompassAuth
+    TestCompassAuth: compass_auth_test.go:24: Get Dex id_token
+2020/06/01 14:15:12 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:15 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:18 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+    TestCompassAuth: compass_auth_test.go:26:
+2020/06/01 14:15:21 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+                Error Trace:    compass_auth_test.go:26
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestCompassAuth
+--- FAIL: TestCompassAuth (9.04s)
+=== RUN   TestIntegrationSystemScenario
+    TestIntegrationSystemScenario: integration_system_scope_test.go:19: Get Dex id_token
+2020/06/01 14:15:21 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:24 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:27 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+    TestIntegrationSystemScenario: integration_system_scope_test.go:21:
+                Error Trace:    integration_system_scope_test.go:21
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestIntegrationSystemScenario
+--- FAIL: TestIntegrationSystemScenario (9.05s)
+=== RUN   TestDirectorPlaygroundAccess
+=== RUN   TestDirectorPlaygroundAccess/Access_playground_via_OAuth2_subdomain
+2020/06/01 14:15:30 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:30 Address https://compass-gateway-auth-oauth.kyma.local/director reached successfully
+2020/06/01 14:15:30 Address https://compass-gateway-auth-oauth.kyma.local/director/examples/register-application/register-application.graphql reached successfully
+=== RUN   TestDirectorPlaygroundAccess/Access_playground_via_JWT_subdomain
+2020/06/01 14:15:30 Address https://compass-gateway.kyma.local/director reached successfully
+2020/06/01 14:15:30 Address https://compass-gateway.kyma.local/director/examples/register-application/register-application.graphql reached successfully
+=== RUN   TestDirectorPlaygroundAccess/Access_playground_via_client_certificate_subdomain
+2020/06/01 14:15:30 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:33 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:36 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+    TestDirectorPlaygroundAccess/Access_playground_via_client_certificate_subdomain: playground_test.go:47:
+                Error Trace:    playground_test.go:47
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestDirectorPlaygroundAccess/Access_playground_via_client_certificate_subdomain
+--- FAIL: TestDirectorPlaygroundAccess (9.15s)
+    --- PASS: TestDirectorPlaygroundAccess/Access_playground_via_OAuth2_subdomain (0.07s)
+    --- PASS: TestDirectorPlaygroundAccess/Access_playground_via_JWT_subdomain (0.03s)
+    --- FAIL: TestDirectorPlaygroundAccess/Access_playground_via_client_certificate_subdomain (9.05s)
+=== RUN   TestTenantErrors
+    TestTenantErrors: tenants_test.go:25: Get Dex id_token
+2020/06/01 14:15:39 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:39 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:42 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:45 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+    TestTenantErrors: tenants_test.go:27:
+                Error Trace:    tenants_test.go:27
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestTenantErrors
+--- FAIL: TestTenantErrors (9.04s)
+=== RUN   TestViewerQuery
+    TestViewerQuery: viewer_test.go:19: Get Dex id_token
+2020/06/01 14:15:48 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:48 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:51 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:54 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:15:57 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+    TestViewerQuery: viewer_test.go:21:
+                Error Trace:    viewer_test.go:21
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestViewerQuery
+--- FAIL: TestViewerQuery (9.05s)
+FAIL
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     2  100     2    0     0   2000      0 --:--:-- --:--:-- --:--:--  2000
+OK
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-0'
+
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-1' from namespace 'kyma-system'
+'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-1' has Failed status
+Fetching logs from 'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-1' with options tailLimit=2000 and bytesLimit=500000
+Checking if Director is up...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to compass-director.compass-system.svc.cluster.local port 3000: Connection refused
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     2  100     2    0     0    200      0 --:--:-- --:--:-- --:--:--   200
+ok=== RUN   TestAutomaticStatusUpdate
+    TestAutomaticStatusUpdate: automatic_status_update_test.go:22: Get Dex id_token
+2020/06/01 14:16:13 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:16 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:19 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:22 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+    TestAutomaticStatusUpdate: automatic_status_update_test.go:24:
+                Error Trace:    automatic_status_update_test.go:24
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestAutomaticStatusUpdate
+--- FAIL: TestAutomaticStatusUpdate (9.05s)
+=== RUN   TestCompassAuth
+    TestCompassAuth: compass_auth_test.go:24: Get Dex id_token
+2020/06/01 14:16:22 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:25 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:28 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+    TestCompassAuth: compass_auth_test.go:26:
+                Error Trace:    compass_auth_test.go:26
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestCompassAuth
+--- FAIL: TestCompassAuth (9.05s)
+=== RUN   TestIntegrationSystemScenario
+    TestIntegrationSystemScenario: integration_system_scope_test.go:19: Get Dex id_token
+2020/06/01 14:16:31 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:31 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:34 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:37 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+    TestIntegrationSystemScenario: integration_system_scope_test.go:21:
+                Error Trace:    integration_system_scope_test.go:21
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestIntegrationSystemScenario
+--- FAIL: TestIntegrationSystemScenario (9.05s)
+=== RUN   TestDirectorPlaygroundAccess
+2020/06/01 14:16:40 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+=== RUN   TestDirectorPlaygroundAccess/Access_playground_via_OAuth2_subdomain
+2020/06/01 14:16:40 Address https://compass-gateway-auth-oauth.kyma.local/director reached successfully
+=== RUN   TestDirectorPlaygroundAccess/Access_playground_via_JWT_subdomain
+2020/06/01 14:16:40 Address https://compass-gateway-auth-oauth.kyma.local/director/examples/register-application/register-application.graphql reached successfully
+2020/06/01 14:16:40 Address https://compass-gateway.kyma.local/director reached successfully
+2020/06/01 14:16:40 Address https://compass-gateway.kyma.local/director/examples/register-application/register-application.graphql reached successfully
+=== RUN   TestDirectorPlaygroundAccess/Access_playground_via_client_certificate_subdomain
+2020/06/01 14:16:40 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:43 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:46 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+    TestDirectorPlaygroundAccess/Access_playground_via_client_certificate_subdomain: playground_test.go:47:
+                Error Trace:    playground_test.go:47
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestDirectorPlaygroundAccess/Access_playground_via_client_certificate_subdomain
+--- FAIL: TestDirectorPlaygroundAccess (9.12s)
+    --- PASS: TestDirectorPlaygroundAccess/Access_playground_via_OAuth2_subdomain (0.04s)
+    --- PASS: TestDirectorPlaygroundAccess/Access_playground_via_JWT_subdomain (0.03s)
+    --- FAIL: TestDirectorPlaygroundAccess/Access_playground_via_client_certificate_subdomain (9.05s)
+=== RUN   TestTenantErrors
+    TestTenantErrors: tenants_test.go:25: Get Dex id_token
+2020/06/01 14:16:49 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:49 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:52 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:55 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:16:58 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+    TestTenantErrors: tenants_test.go:27:
+                Error Trace:    tenants_test.go:27
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestTenantErrors
+--- FAIL: TestTenantErrors (9.05s)
+=== RUN   TestViewerQuery
+    TestViewerQuery: viewer_test.go:19: Get Dex id_token
+2020/06/01 14:16:58 Retry: [0 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:17:01 Retry: [1 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:17:04 Retry: [2 / 4], error: got unexpected response on authorize: 404 -
+2020/06/01 14:17:07 Retry: [3 / 4], error: got unexpected response on authorize: 404 -
+    TestViewerQuery: viewer_test.go:21:
+                Error Trace:    viewer_test.go:21
+                Error:          Received unexpected error:
+                                All attempts fail:
+                                #1: got unexpected response on authorize: 404 -
+                                #2: got unexpected response on authorize: 404 -
+                                #3: got unexpected response on authorize: 404 -
+                                #4: got unexpected response on authorize: 404 -
+                Test:           TestViewerQuery
+--- FAIL: TestViewerQuery (9.05s)
+FAIL
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     2  100     2    0     0   2000      0 --:--:-- --:--:-- --:--:--  2000
+OK
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-1'
+
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-dex-connection-0' from namespace 'kyma-system'
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-dex-connection-0'
+
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-0' from namespace 'kyma-system'
+'oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-0' has Failed status
+Fetching logs from 'oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-0' with options tailLimit=2000 and bytesLimit=500000
+TESTING start
+Run dex tests
+=== RUN   TestSpec
+x
+Failures:
+
+  * /workspace/go/src/github.com/kyma-project/kyma/tests/integration/dex/dex/dex_test.go
+  Line 76:
+  Expected: nil
+  Actual:   'got unexpected response on authorize: 404 - '
+
+
+1 total assertion
+
+--- FAIL: TestSpec (0.02s)
+FAIL
+exit_code is 1
+stopping pilot-agent...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     2  100     2    0     0   2000      0 --:--:-- --:--:-- --:--:--  2000
+OK
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-0'
+
+Testing 'oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-1' from namespace 'kyma-system'
+'oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-1' has Failed status
+Fetching logs from 'oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-1' with options tailLimit=2000 and bytesLimit=500000
+TESTING start
+Run dex tests
+=== RUN   TestSpec
+x
+Failures:
+
+  * /workspace/go/src/github.com/kyma-project/kyma/tests/integration/dex/dex/dex_test.go
+  Line 76:
+  Expected: nil
+  Actual:   'got unexpected response on authorize: 404 - '
+
+
+1 total assertion
+
+--- FAIL: TestSpec (0.01s)
+FAIL
+exit_code is 1
+stopping pilot-agent...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     2  100     2    0     0   2000      0 --:--:-- --:--:-- --:--:--  2000
+OK
+End of testing 'oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-1'
+
+ClusterTestSuite details:
+apiVersion: testing.kyma-project.io/v1alpha1
+kind: ClusterTestSuite
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"testing.kyma-project.io/v1alpha1","kind":"ClusterTestSuite","metadata":{"annotations":{},"labels":{"controller-tools.k8s.io":"1.0"},"name":"testsuite-all-2020-06-01-16-02"},"spec":{"concurrency":1,"maxRetries":1}}
+  creationTimestamp: "2020-06-01T14:02:25Z"
+  generation: 1
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: testsuite-all-2020-06-01-16-02
+  resourceVersion: "8409"
+  selfLink: /apis/testing.kyma-project.io/v1alpha1/clustertestsuites/testsuite-all-2020-06-01-16-02
+  uid: 9b11661a-9f7d-4d43-b91d-327ba409674f
+spec:
+  concurrency: 1
+  maxRetries: 1
+status:
+  completionTime: "2020-06-01T14:19:58Z"
+  conditions:
+  - status: "False"
+    type: Running
+  - status: "True"
+    type: Failed
+  results:
+  - executions:
+    - completionTime: "2020-06-01T14:02:31Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-dex-connection-0
+      podPhase: Succeeded
+      startTime: "2020-06-01T14:02:26Z"
+    name: dex-connection
+    namespace: kyma-system
+    status: Succeeded
+  - executions:
+    - completionTime: "2020-06-01T14:07:51Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-0
+      podPhase: Failed
+      startTime: "2020-06-01T14:02:31Z"
+    - completionTime: "2020-06-01T14:14:45Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-api-gateway-1
+      podPhase: Failed
+      startTime: "2020-06-01T14:07:52Z"
+    name: api-gateway
+    namespace: kyma-system
+    status: Failed
+  - executions:
+    - completionTime: "2020-06-01T14:16:03Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-0
+      podPhase: Failed
+      startTime: "2020-06-01T14:14:45Z"
+    - completionTime: "2020-06-01T14:17:13Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-compass-director-gateway-integration-1
+      podPhase: Failed
+      startTime: "2020-06-01T14:16:03Z"
+    name: compass-director-gateway-integration
+    namespace: kyma-system
+    status: Failed
+  - executions:
+    - completionTime: "2020-06-01T14:17:37Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-connectivity-adapter-0
+      podPhase: Succeeded
+      startTime: "2020-06-01T14:17:13Z"
+    name: connectivity-adapter
+    namespace: compass-system
+    status: Succeeded
+  - disabledConcurrency: true
+    executions:
+    - completionTime: "2020-06-01T14:19:58Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-compass-connector-tests-0
+      podPhase: Succeeded
+      startTime: "2020-06-01T14:19:33Z"
+    name: compass-connector-tests
+    namespace: compass-system
+    status: Succeeded
+  - executions:
+    - completionTime: "2020-06-01T14:18:35Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-compass-director-api-0
+      podPhase: Succeeded
+      startTime: "2020-06-01T14:17:37Z"
+    name: compass-director-api
+    namespace: compass-system
+    status: Succeeded
+  - executions:
+    - completionTime: "2020-06-01T14:19:05Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-0
+      podPhase: Failed
+      startTime: "2020-06-01T14:18:35Z"
+    - completionTime: "2020-06-01T14:19:33Z"
+      id: oct-tp-testsuite-all-2020-06-01-16-02-dex-integration-1
+      podPhase: Failed
+      startTime: "2020-06-01T14:19:05Z"
+    name: dex-integration
+    namespace: kyma-system
+    status: Failed
+  startTime: "2020-06-01T14:02:25Z"
+Deleting ClusterTestSuite testsuite-all-2020-06-01-16-02
+OK
+Images with tag latest are not allowed. Checking...
+OK

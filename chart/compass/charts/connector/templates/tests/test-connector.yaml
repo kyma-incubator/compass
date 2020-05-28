@@ -4,11 +4,10 @@ metadata:
   name: {{ template "fullname" . }}-tests
   labels:
     app: {{ .Chart.Name }}-tests
-    release: {{ .Release.Name }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}-tests
+    app.kubernetes.io/name: {{ .Chart.Name }}-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
 spec:
   disableConcurrency: true
   template:
@@ -30,9 +29,9 @@ spec:
         - name: APP_CERTIFICATE_DATA_HEADER
           value: {{ .Values.global.connector.certificateDataHeader }}
         - name: APP_REVOCATION_CONFIG_MAP_NAMESPACE
-          value: {{ tpl .Values.global.connector.revocation.configmap.namespace . }}
+          value: "{{ .Release.Namespace }}"
         - name: APP_REVOCATION_CONFIG_MAP_NAME
-          value: {{ .Values.global.connector.revocation.configmap.name | quote }}
+          value: "{{ .Values.global.connector.revocation.configmap.name }}"
         command:
         - "/bin/sh"
         args:

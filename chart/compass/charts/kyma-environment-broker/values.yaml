@@ -35,8 +35,8 @@ resources: {}
   #   memory: 128Mi
 
 provisioner:
-  URL: "http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"
   dumpRequests: "false"
+  URL: "http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"
 
   # Defines how long should the Kyma Environment Broker checks the status of the provisioning in the Provisioner.
   # The Provisioner timeout is defined in chart/compass/charts/provisioner/values.yaml
@@ -57,7 +57,7 @@ additionalRuntimeComponents: |-
   - name: "knative-eventing-kafka"
     namespace: "knative-eventing"
 
-kymaVersion: "1.11.0-rc2"
+kymaVersion: "9c738f01"
 kymaVersionOnDemand: "false"
 
 enablePlans: "azure,gcp"
@@ -76,6 +76,19 @@ serviceManager:
   url: "TBD"
   username: "TBD"
   password: "TBD"
+
+avs:
+  secretName: "avs-creds"
+  apiEndpoint: "TBD"
+  apiKey: "TBD"
+  clientId: "TBD"
+  oauthPassword: "TBD"
+  oauthTokenEndpoint: "TBD"
+  oauthUserName: "TBD"
+  internalTesterAccessId: "TBD"
+  externalTesterAccessId: "TBD"
+  groupId: "TBD"
+  parentId: "TBD"
 
 lms:
   secretName: "lms-creds"

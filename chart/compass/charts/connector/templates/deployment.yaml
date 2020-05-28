@@ -6,10 +6,6 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   selector:
     matchLabels:
@@ -22,10 +18,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
-        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-        app.kubernetes.io/name: {{ template "name" . }}
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ template "fullname" . }}
       containers:
@@ -43,7 +35,7 @@ spec:
               containerPort: {{ .Values.global.connector.validator.port }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.deployment.resources | nindent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
           env:
             - name: APP_EXTERNAL_ADDRESS
               value: "0.0.0.0:{{ .Values.global.connector.graphql.external.port }}"
@@ -54,39 +46,39 @@ spec:
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "/connector/graphql"
             - name: APP_TOKEN_LENGTH
-              value: {{ .Values.deployment.args.token.length | quote }}
+              value: "{{ .Values.deployment.args.token.length }}"
             - name: APP_TOKEN_RUNTIME_EXPIRATION
-              value: {{ .Values.deployment.args.token.runtimeExpiration | quote }}
+              value: "{{ .Values.deployment.args.token.runtimeExpiration }}"
             - name: APP_TOKEN_APPLICATION_EXPIRATION
-              value: {{ .Values.deployment.args.token.applicationExpiration | quote }}
+              value: "{{ .Values.deployment.args.token.applicationExpiration }}"
             - name: APP_CERTIFICATE_VALIDITY_TIME
-              value: {{ .Values.deployment.args.certificateValidityTime | quote }}
+              value: "{{ .Values.deployment.args.certificateValidityTime }}"
             - name: APP_CA_SECRET_NAME
               value: "{{ .Values.global.connector.secrets.ca.namespace }}/{{ .Values.global.connector.secrets.ca.name }}"
             - name: APP_CA_SECRET_CERTIFICATE_KEY
-              value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
+              value: "{{ .Values.global.connector.secrets.ca.certificateKey }}"
             - name: APP_CA_SECRET_KEY_KEY
-              value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
+              value: "{{ .Values.global.connector.secrets.ca.keyKey }}"
             {{ if .Values.deployment.args.attachRootCAToChain }}
             - name: APP_ROOT_CA_SECRET_NAME
               value: "{{ .Values.global.connector.secrets.rootCA.namespace }}/{{ .Values.global.connector.secrets.rootCA.cacert }}"
             - name: APP_ROOT_CA_SECRET_CERTIFICATE_KEY
-              value: {{ .Values.global.connector.secrets.rootCA.certificateKey | quote }}
+              value: "{{ .Values.global.connector.secrets.rootCA.certificateKey }}"
             {{ end }}
             - name: APP_CERTIFICATE_DATA_HEADER
-              value: {{ .Values.global.connector.certificateDataHeader | quote }}
+              value: "{{ .Values.global.connector.certificateDataHeader }}"
             - name: APP_REVOCATION_CONFIG_MAP_NAME
-              value: "{{ tpl .Values.global.connector.revocation.configmap.namespace . }}/{{ .Values.global.connector.revocation.configmap.name }}"
+              value: "{{ .Release.Namespace }}/{{ .Values.global.connector.revocation.configmap.name }}"
             - name: APP_CSR_SUBJECT_COUNTRY
-              value: {{ .Values.deployment.args.csrSubject.country | quote }}
+              value: "{{ .Values.deployment.args.csrSubject.country }}"
             - name: APP_CSR_SUBJECT_ORGANIZATION
-              value: {{ .Values.deployment.args.csrSubject.organization | quote }}
+              value: "{{ .Values.deployment.args.csrSubject.organization }}"
             - name: APP_CSR_SUBJECT_ORGANIZATIONAL_UNIT
-              value: {{ .Values.deployment.args.csrSubject.organizationalUnit | quote }}
+              value: "{{ .Values.deployment.args.csrSubject.organizationalUnit }}"
             - name: APP_CSR_SUBJECT_LOCALITY
-              value: {{ .Values.deployment.args.csrSubject.locality | quote }}
+              value: "{{ .Values.deployment.args.csrSubject.locality }}"
             - name: APP_CSR_SUBJECT_PROVINCE
-              value: {{ .Values.deployment.args.csrSubject.province | quote }}
+              value: "{{ .Values.deployment.args.csrSubject.province }}"
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_CERTIFICATE_SECURED_CONNECTOR_URL

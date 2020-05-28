@@ -2194,4 +2194,4 @@ data:
       },
       "version": 1
     }
-{{- end }}
+  {{- end }}

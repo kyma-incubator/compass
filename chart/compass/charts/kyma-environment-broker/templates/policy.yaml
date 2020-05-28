@@ -6,7 +6,7 @@ metadata:
   namespace: compass-system
 spec:
   peers:
-  - mtls:
-      mode: PERMISSIVE
+    - mtls:
+        mode: PERMISSIVE
   targets:
-  - name: {{ include "kyma-env-broker.fullname" . }}
+    - name: {{ include "kyma-env-broker.fullname" . }}
