@@ -12,7 +12,7 @@ const (
 	InsufficientScopes  ErrorType = 23
 	ConstraintViolation ErrorType = 24
 	TenantIsRequired    ErrorType = 25
-	TenantNotExist      ErrorType = 26
+	TenantNotFound      ErrorType = 26
 )
 
 type ResourceType string

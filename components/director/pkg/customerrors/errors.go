@@ -71,6 +71,10 @@ func NewTenantNotFound(tenantID string) error {
 	return newBuilder().tenantNotFound(tenantID).build()
 }
 
+func NewTenantIsRequired() error {
+	return newBuilder().tenantIsRequired().build()
+}
+
 func GetErrorCode(err error) ErrorType {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode

@@ -12,6 +12,7 @@ type typeStep interface {
 	notFound(resourceType ResourceType, resourceID string) argsStep
 	invalidData(msg string) argsStep
 	tenantNotFound(tenantID string) argsStep
+	tenantIsRequired() argsStep
 	withStatusCode(errType ErrorType) msgStep
 	buildStep
 }
@@ -70,10 +71,16 @@ func (builder *builder) notUnique(resourceType ResourceType) argsStep {
 	return builder
 }
 
+func (builder *builder) tenantIsRequired() argsStep {
+	builder.message = "Tenant is required"
+	builder.errorType = TenantIsRequired
+	return builder
+}
+
 func (builder *builder) tenantNotFound(tenantID string) argsStep {
 	builder.message = "Tenant not found"
 	builder.args["tenantID"] = tenantID
-	builder.errorType = TenantIsRequired
+	builder.errorType = TenantNotFound
 	return builder
 }
 

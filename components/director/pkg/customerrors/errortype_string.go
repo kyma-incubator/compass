@@ -16,13 +16,13 @@ func _() {
 	_ = x[InsufficientScopes-23]
 	_ = x[ConstraintViolation-24]
 	_ = x[TenantIsRequired-25]
-	_ = x[TenantNotExist-26]
+	_ = x[TenantNotFound-26]
 }
 
 const (
 	_ErrorType_name_0 = "UnknownError"
 	_ErrorType_name_1 = "InternalError"
-	_ErrorType_name_2 = "NotFoundNotUniqueInvalidDataInsufficientScopesConstraintViolationTenantIsRequiredTenantNotExist"
+	_ErrorType_name_2 = "NotFoundNotUniqueInvalidDataInsufficientScopesConstraintViolationTenantIsRequiredTenantNotFound"
 )
 
 var (
