@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -38,10 +40,10 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:    repo.NewExistQuerier(applicationTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(applicationTable, tenantColumn, applicationColumns),
+		singleGetter:    repo.NewSingleGetter(applicationTable, customerrors.Application, tenantColumn, applicationColumns),
 		deleter:         repo.NewDeleter(applicationTable, tenantColumn),
 		pageableQuerier: repo.NewPageableQuerier(applicationTable, tenantColumn, applicationColumns),
-		creator:         repo.NewCreator(applicationTable, applicationColumns),
+		creator:         repo.NewCreator(applicationTable, customerrors.Application, applicationColumns),
 		updater:         repo.NewUpdater(applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name"}, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}

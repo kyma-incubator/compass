@@ -3,6 +3,8 @@ package integrationsystem
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
@@ -30,9 +32,9 @@ type pgRepository struct {
 
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		creator:               repo.NewCreator(tableName, tableColumns),
+		creator:               repo.NewCreator(tableName, customerrors.IntegrationSystem, tableColumns),
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(tableName),
-		singleGetterGlobal:    repo.NewSingleGetterGlobal(tableName, tableColumns),
+		singleGetterGlobal:    repo.NewSingleGetterGlobal(tableName, customerrors.IntegrationSystem, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(tableName, tableColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(tableName, []string{"name", "description"}, []string{"id"}),
 		deleterGlobal:         repo.NewDeleterGlobal(tableName),

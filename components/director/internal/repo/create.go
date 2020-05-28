@@ -16,14 +16,16 @@ type Creator interface {
 }
 
 type universalCreator struct {
-	tableName string
-	columns   []string
+	tableName    string
+	resourceType customerrors.ResourceType
+	columns      []string
 }
 
-func NewCreator(tableName string, columns []string) Creator {
+func NewCreator(tableName string, resourceType customerrors.ResourceType, columns []string) Creator {
 	return &universalCreator{
-		tableName: tableName,
-		columns:   columns,
+		tableName:    tableName,
+		resourceType: resourceType,
+		columns:      columns,
 	}
 }
 
@@ -45,5 +47,5 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
 	_, err = persist.NamedExec(stmt, dbEntity)
-	return customerrors.MapSQLError(err, "while inserting row to '%s' table", c.tableName)
+	return customerrors.MapSQLError(err, c.resourceType, "while inserting row to '%s' table", c.tableName)
 }

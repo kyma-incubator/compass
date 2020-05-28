@@ -75,6 +75,10 @@ func NewTenantIsRequired() error {
 	return newBuilder().tenantIsRequired().build()
 }
 
+func NewConstrainViolation(resourceType ResourceType) error {
+	return newBuilder().constraintViolation(resourceType).build()
+}
+
 func GetErrorCode(err error) ErrorType {
 	if customErr, ok := err.(Error); ok {
 		return customErr.errorCode

@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -36,8 +38,8 @@ type repository struct {
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, webhookColumns),
-		creator:      repo.NewCreator(tableName, webhookColumns),
+		singleGetter: repo.NewSingleGetter(tableName, customerrors.Webhook, tenantColumn, webhookColumns),
+		creator:      repo.NewCreator(tableName, customerrors.Webhook, webhookColumns),
 		updater:      repo.NewUpdater(tableName, []string{"type", "url", "auth"}, tenantColumn, []string{"id", "app_id"}),
 		deleter:      repo.NewDeleter(tableName, tenantColumn),
 		lister:       repo.NewLister(tableName, tenantColumn, webhookColumns),

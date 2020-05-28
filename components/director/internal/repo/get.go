@@ -20,21 +20,24 @@ type SingleGetterGlobal interface {
 
 type universalSingleGetter struct {
 	tableName       string
+	resourceType    customerrors.ResourceType
 	tenantColumn    *string
 	selectedColumns string
 }
 
-func NewSingleGetter(tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
+func NewSingleGetter(tableName string, resourceType customerrors.ResourceType, tenantColumn string, selectedColumns []string) SingleGetter {
 	return &universalSingleGetter{
 		tableName:       tableName,
 		tenantColumn:    &tenantColumn,
+		resourceType:    resourceType,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
 }
 
-func NewSingleGetterGlobal(tableName string, selectedColumns []string) SingleGetterGlobal {
+func NewSingleGetterGlobal(tableName string, resourceType customerrors.ResourceType, selectedColumns []string) SingleGetterGlobal {
 	return &universalSingleGetter{
 		tableName:       tableName,
+		resourceType:    resourceType,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
 }
@@ -67,5 +70,5 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 
 	err = persist.Get(dest, query, args...)
 
-	return customerrors.MapSQLError(err, "while getting from table %s", g.tableName)
+	return customerrors.MapSQLError(err, g.resourceType, "while getting from table %s", g.tableName)
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -40,10 +42,10 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:    repo.NewExistQuerier(packageTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(packageTable, tenantColumn, packageColumns),
+		singleGetter:    repo.NewSingleGetter(packageTable, customerrors.Package, tenantColumn, packageColumns),
 		deleter:         repo.NewDeleter(packageTable, tenantColumn),
 		pageableQuerier: repo.NewPageableQuerier(packageTable, tenantColumn, packageColumns),
-		creator:         repo.NewCreator(packageTable, packageColumns),
+		creator:         repo.NewCreator(packageTable, customerrors.Package, packageColumns),
 		updater:         repo.NewUpdater(packageTable, []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth"}, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}

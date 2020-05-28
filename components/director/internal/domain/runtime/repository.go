@@ -3,6 +3,8 @@ package runtime
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -32,11 +34,11 @@ type pgRepository struct {
 func NewRepository() *pgRepository {
 	return &pgRepository{
 		existQuerier:       repo.NewExistQuerier(runtimeTable, tenantColumn),
-		singleGetter:       repo.NewSingleGetter(runtimeTable, tenantColumn, runtimeColumns),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(runtimeTable, runtimeColumns),
+		singleGetter:       repo.NewSingleGetter(runtimeTable, customerrors.Runtime, tenantColumn, runtimeColumns),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(runtimeTable, customerrors.Runtime, runtimeColumns),
 		deleter:            repo.NewDeleter(runtimeTable, tenantColumn),
 		pageableQuerier:    repo.NewPageableQuerier(runtimeTable, tenantColumn, runtimeColumns),
-		creator:            repo.NewCreator(runtimeTable, runtimeColumns),
+		creator:            repo.NewCreator(runtimeTable, customerrors.Runtime, runtimeColumns),
 		updater:            repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
 	}
 }

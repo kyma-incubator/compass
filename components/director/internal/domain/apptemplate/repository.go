@@ -3,6 +3,8 @@ package apptemplate
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
@@ -34,9 +36,9 @@ type repository struct {
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:               repo.NewCreator(tableName, tableColumns),
+		creator:               repo.NewCreator(tableName, customerrors.ApplicationTemplate, tableColumns),
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(tableName),
-		singleGetterGlobal:    repo.NewSingleGetterGlobal(tableName, tableColumns),
+		singleGetterGlobal:    repo.NewSingleGetterGlobal(tableName, customerrors.ApplicationTemplate, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(tableName, tableColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(tableName, updatableTableColumns, idTableColumns),
 		deleterGlobal:         repo.NewDeleterGlobal(tableName),

@@ -18,10 +18,19 @@ const (
 type ResourceType string
 
 const (
-	Application         ResourceType = "Application"
-	ApplicationTemplate ResourceType = "ApplicationTemplate"
-	Runtime             ResourceType = "Runtime"
-	LabelDefinition     ResourceType = "LabelDefinition"
-	Package             ResourceType = "Package"
-	IntegrationSystem   ResourceType = "IntegrationSystem"
+	Application                ResourceType = "Application"
+	ApplicationTemplate        ResourceType = "ApplicationTemplate"
+	Runtime                    ResourceType = "Runtime"
+	LabelDefinition            ResourceType = "LabelDefinition"
+	Package                    ResourceType = "Package"
+	IntegrationSystem          ResourceType = "IntegrationSystem"
+	Tenant                     ResourceType = "Tenant"
+	SystemAuth                 ResourceType = "SystemAuth"
+	FetchRequest               ResourceType = "FetchRequest"
+	Document                   ResourceType = "Document"
+	PackageInstanceAuth        ResourceType = "PackageInstanceAuth"
+	API                        ResourceType = "Api"
+	EventDefinition            ResourceType = "EventDefinition"
+	AutomaticScenarioAssigment ResourceType = "AutomaticScenarioAssigment"
+	Webhook                    ResourceType = "Webhook"
 )

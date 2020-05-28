@@ -3,6 +3,8 @@ package document
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/pkg/errors"
@@ -36,10 +38,10 @@ type repository struct {
 func NewRepository(conv Converter) *repository {
 	return &repository{
 		existQuerier:    repo.NewExistQuerier(documentTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(documentTable, tenantColumn, documentColumns),
+		singleGetter:    repo.NewSingleGetter(documentTable, customerrors.Document, tenantColumn, documentColumns),
 		deleter:         repo.NewDeleter(documentTable, tenantColumn),
 		pageableQuerier: repo.NewPageableQuerier(documentTable, tenantColumn, documentColumns),
-		creator:         repo.NewCreator(documentTable, documentColumns),
+		creator:         repo.NewCreator(documentTable, customerrors.Document, documentColumns),
 
 		conv: conv,
 	}

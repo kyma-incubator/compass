@@ -8,14 +8,14 @@ import (
 	"github.com/lib/pq"
 )
 
-func MapSQLError(err error, format string, args ...interface{}) error {
+func MapSQLError(err error, resourceType ResourceType, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
 	}
 
 	errMsg := fmt.Sprintf(format, args...)
 	if err == sql.ErrNoRows {
-		return newBuilder().withStatusCode(NotFound).withMessage(errMsg).build()
+		return newBuilder().withStatusCode(NotFound).withMessage("Object not found").with("object", string(resourceType)).build()
 	}
 
 	pgErr, ok := err.(*pq.Error)
@@ -25,9 +25,9 @@ func MapSQLError(err error, format string, args ...interface{}) error {
 
 	switch pgErr.Code {
 	case persistence.UniqueViolation:
-		return newBuilder().withStatusCode(NotUnique).withMessage(errMsg).wrap(err).build()
+		return NewNotUniqueErr(resourceType)
 	case persistence.ForeignKeyViolation:
-		return newBuilder().withStatusCode(ConstraintViolation).withMessage(pgErr.Detail).wrap(err).build()
+		return NewConstrainViolation(resourceType)
 	}
 
 	return newBuilder().internalError(fmt.Sprintf("SQL Error: %s", errMsg)).wrap(err).build()

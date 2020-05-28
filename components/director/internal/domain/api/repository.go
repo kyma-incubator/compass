@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
@@ -37,9 +39,9 @@ type pgRepository struct {
 
 func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:    repo.NewSingleGetter(apiDefTable, tenantColumn, apiDefColumns),
+		singleGetter:    repo.NewSingleGetter(apiDefTable, customerrors.API, tenantColumn, apiDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(apiDefTable, tenantColumn, apiDefColumns),
-		creator:         repo.NewCreator(apiDefTable, apiDefColumns),
+		creator:         repo.NewCreator(apiDefTable, customerrors.API, apiDefColumns),
 		updater:         repo.NewUpdater(apiDefTable, updatableColumns, tenantColumn, idColumns),
 		deleter:         repo.NewDeleter(apiDefTable, tenantColumn),
 		existQuerier:    repo.NewExistQuerier(apiDefTable, tenantColumn),

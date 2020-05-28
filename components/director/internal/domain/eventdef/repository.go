@@ -3,6 +3,8 @@ package eventdef
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
@@ -40,9 +42,9 @@ type pgRepository struct {
 
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:    repo.NewSingleGetter(eventAPIDefTable, tenantColumn, apiDefColumns),
+		singleGetter:    repo.NewSingleGetter(eventAPIDefTable, customerrors.EventDefinition, tenantColumn, apiDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(eventAPIDefTable, tenantColumn, apiDefColumns),
-		creator:         repo.NewCreator(eventAPIDefTable, apiDefColumns),
+		creator:         repo.NewCreator(eventAPIDefTable, customerrors.EventDefinition, apiDefColumns),
 		updater:         repo.NewUpdater(eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
 		deleter:         repo.NewDeleter(eventAPIDefTable, tenantColumn),
 		existQuerier:    repo.NewExistQuerier(eventAPIDefTable, tenantColumn),

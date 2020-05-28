@@ -13,6 +13,7 @@ type typeStep interface {
 	invalidData(msg string) argsStep
 	tenantNotFound(tenantID string) argsStep
 	tenantIsRequired() argsStep
+	constraintViolation(resourceType ResourceType) argsStep
 	withStatusCode(errType ErrorType) msgStep
 	buildStep
 }
@@ -82,6 +83,13 @@ func (builder *builder) tenantNotFound(tenantID string) argsStep {
 	builder.args["tenantID"] = tenantID
 	builder.errorType = TenantNotFound
 	return builder
+}
+
+func (builder *builder) constraintViolation(resourceType ResourceType) argsStep {
+	builder.message = "Object already exist"
+	builder.args["object"] = string(resourceType)
+	return builder
+
 }
 
 func (builder *builder) withStatusCode(errorType ErrorType) msgStep {

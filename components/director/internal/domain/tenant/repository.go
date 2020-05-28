@@ -3,6 +3,8 @@ package tenant
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -39,9 +41,9 @@ type pgRepository struct {
 
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		creator:            repo.NewCreator(tableName, tableColumns),
+		creator:            repo.NewCreator(tableName, customerrors.Tenant, tableColumns),
 		existQuerierGlobal: repo.NewExistQuerierGlobal(tableName),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(tableName, tableColumns),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(tableName, customerrors.Tenant, tableColumns),
 		listerGlobal:       repo.NewListerGlobal(tableName, tableColumns),
 		updaterGlobal:      repo.NewUpdaterGlobal(tableName, []string{externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}, []string{idColumn}),
 		deleterGlobal:      repo.NewDeleterGlobal(tableName),

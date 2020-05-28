@@ -3,6 +3,8 @@ package packageinstanceauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/customerrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -35,8 +37,8 @@ type repository struct {
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(tableName, tableColumns),
-		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
+		creator:      repo.NewCreator(tableName, customerrors.PackageInstanceAuth, tableColumns),
+		singleGetter: repo.NewSingleGetter(tableName, customerrors.PackageInstanceAuth, tenantColumn, tableColumns),
 		lister:       repo.NewLister(tableName, tenantColumn, tableColumns),
 		deleter:      repo.NewDeleter(tableName, tenantColumn),
 		updater:      repo.NewUpdater(tableName, updatableColumns, tenantColumn, idColumns),
