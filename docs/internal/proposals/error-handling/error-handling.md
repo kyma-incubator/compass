@@ -40,7 +40,7 @@ This is the list of custom errors that are displayed to the user:
 ![](error-handling.svg)
 * Internal errors, External lib errors, PostgreSQL error, directives are sources of errors in the Director.
 * PostgreSQL Error Mapper - this component map PostgreSQL errors to custom errors
-* Panic Handler - this component recovers all panics and transform them as errors
+* Panic Handler - this component recovers all panics and transform them as custom errors
 * Error presenter - this component search for custom error in error stack. 
 If such error is found, the presenter add `error_code` and `error` metadata to the GraphQL error in section `extensions`
 In case of internal errors, the whole error is logged and `internal server error` is sent to client.
