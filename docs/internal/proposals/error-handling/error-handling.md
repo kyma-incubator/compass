@@ -1,23 +1,9 @@
 # Error handling in Director GraphQL
 
-The errors can come from external libraries, triggered by the Director due to user wrong actions.
-We have to filter errors that are readable for both users and machines.
+Errors can originate from different sources. This document describes our approach of handling them internally and presenting them in the readable form for the users.
 
 ## Errors displayed to the user
-These are the basic errors that should be displayed to the user:
-* InternalError
-* NotFound
-* NotUnique
-* InvalidData
-* InsufficientScopes
-* ConstraintViolation
-* TenantIsRequired
-* TenantNotFound
-
-This list can be split into two separate groups due to different error handling:
-* Internal errors that originate from external libraries, panics, PostgreSQL (except such errors as `NotFound`, `NotUnique`). 
-  The error is visible to the user as `InternalError`.
-* The rest of errors that are mostly caused by the user.
+Errors that are returned to the user can be split into two groups, based on the error handling approach. Errors that originate from external systems, libraries, panics, and directly not depend on the user input are handled as the internal one. Such errors are returned to the user as the `InternalError` type. Errors that directly depend on the user input are classified as separate types which in detail describes the nature of a problem.
 
 ## Custom errors and error codes
 
