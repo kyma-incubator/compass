@@ -44,43 +44,84 @@ func TestOnDemand_GetReleaseByVersion(t *testing.T) {
 	})
 
 	t.Run("should download and save on demand release", func(t *testing.T) {
-		// given
-		httpClient := newTestClient(func(req *http.Request) *http.Response {
-			if strings.HasSuffix(req.URL.String(), "kyma-installer-cluster.yaml") {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString("installer")),
-				}
-			}
-			if strings.HasSuffix(req.URL.String(), "tiller.yaml") {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString("tiller")),
-				}
-			}
-			return &http.Response{
-				StatusCode: http.StatusBadRequest,
-			}
-		})
+		for _, testCase := range []struct {
+			description string
+			httpClient  *http.Client
+			release     model.Release
+		}{
+			{
+				description: "with Tiller",
+				httpClient: newTestClient(func(req *http.Request) *http.Response {
+					if strings.HasSuffix(req.URL.String(), "kyma-installer-cluster.yaml") {
+						return &http.Response{
+							StatusCode: http.StatusOK,
+							Body:       ioutil.NopCloser(bytes.NewBufferString("installer")),
+						}
+					}
+					if strings.HasSuffix(req.URL.String(), "tiller.yaml") {
+						return &http.Response{
+							StatusCode: http.StatusOK,
+							Body:       ioutil.NopCloser(bytes.NewBufferString("tiller")),
+						}
+					}
+					return &http.Response{
+						StatusCode: http.StatusBadRequest,
+					}
+				}),
+				release: model.Release{
+					Version:       onDemandVersion,
+					TillerYAML:    "tiller",
+					InstallerYAML: "installer",
+				},
+			},
+			{
+				description: "without Tiller",
+				httpClient: newTestClient(func(req *http.Request) *http.Response {
+					if strings.HasSuffix(req.URL.String(), "kyma-installer-cluster.yaml") {
+						return &http.Response{
+							StatusCode: http.StatusOK,
+							Body:       ioutil.NopCloser(bytes.NewBufferString("installer")),
+						}
+					}
+					if strings.HasSuffix(req.URL.String(), "tiller.yaml") {
+						return &http.Response{
+							StatusCode: http.StatusNotFound,
+							Body:       ioutil.NopCloser(bytes.NewBufferString("404 not found")),
+						}
+					}
+					return &http.Response{
+						StatusCode: http.StatusBadRequest,
+					}
+				}),
+				release: model.Release{
+					Version:       onDemandVersion,
+					InstallerYAML: "installer",
+				},
+			},
+		} {
+			t.Run(testCase.description, func(t *testing.T) {
+				// given
+				fileDownloader := NewFileDownloader(testCase.httpClient)
 
-		repo := &mocks.Repository{}
-		repo.On("GetReleaseByVersion", onDemandVersion).Return(model.Release{}, dberrors.NotFound("error"))
-		repo.On("SaveRelease", mock.AnythingOfType("model.Release")).Run(func(args mock.Arguments) {
-			rel, ok := args.Get(0).(model.Release)
-			require.True(t, ok)
-			(&rel).Id = "abcd-efgh"
-		}).Return(release, nil)
+				repo := &mocks.Repository{}
+				repo.On("GetReleaseByVersion", onDemandVersion).Return(model.Release{}, dberrors.NotFound("error"))
+				repo.On("SaveRelease", testCase.release).Run(func(args mock.Arguments) {
+					rel, ok := args.Get(0).(model.Release)
+					require.True(t, ok)
+					(&rel).Id = "abcd-efgh"
+				}).Return(release, nil)
 
-		onDemand := NewOnDemandWrapper(httpClient, repo)
+				onDemand := NewOnDemandWrapper(fileDownloader, repo)
 
-		// when
-		onDemandRelease, err := onDemand.GetReleaseByVersion(onDemandVersion)
-		require.NoError(t, err)
+				// when
+				onDemandRelease, err := onDemand.GetReleaseByVersion(onDemandVersion)
+				require.NoError(t, err)
 
-		// then
-		assert.Equal(t, release, onDemandRelease)
+				// then
+				assert.Equal(t, release, onDemandRelease)
+			})
+		}
 	})
-
 }
 
 func TestOnDemand_GetReleaseByVersion_Error(t *testing.T) {
@@ -132,12 +173,13 @@ func TestOnDemand_GetReleaseByVersion_Error(t *testing.T) {
 				StatusCode: http.StatusBadRequest,
 			}
 		})
+		fileDownloader := NewFileDownloader(httpClient)
 
 		repo := &mocks.Repository{}
 		repo.On("GetReleaseByVersion", onDemandVersion).Return(model.Release{}, dberrors.NotFound("error"))
 		repo.On("SaveRelease", mock.AnythingOfType("model.Release")).Return(model.Release{}, dberrors.Internal("error"))
 
-		onDemand := NewOnDemandWrapper(httpClient, repo)
+		onDemand := NewOnDemandWrapper(fileDownloader, repo)
 
 		// when
 		_, err := onDemand.GetReleaseByVersion(onDemandVersion)
@@ -183,8 +225,9 @@ func TestOnDemand_GetReleaseByVersion_Error(t *testing.T) {
 		t.Run(testCase.description, func(t *testing.T) {
 			repo := &mocks.Repository{}
 			repo.On("GetReleaseByVersion", onDemandVersion).Return(model.Release{}, dberrors.NotFound("error"))
+			fileDownloader := NewFileDownloader(testCase.httpClient)
 
-			onDemand := NewOnDemandWrapper(testCase.httpClient, repo)
+			onDemand := NewOnDemandWrapper(fileDownloader, repo)
 
 			// when
 			_, err := onDemand.GetReleaseByVersion(onDemandVersion)

@@ -20,19 +20,24 @@ const (
 	LongInterval  = 1 * time.Hour
 	ShortInterval = 1 * time.Minute
 
-	Timeout = 5 * time.Second
-
 	releaseFetchURL   = "https://api.github.com/repos/kyma-project/kyma/releases"
 	installerYAMLName = "kyma-installer-cluster.yaml"
 	tillerFormat      = "https://raw.githubusercontent.com/kyma-project/kyma/%s/installation/resources/tiller.yaml"
 )
 
-func NewArtifactsDownloader(repository Repository, latestReleases int, includePreReleases bool, client *http.Client, log *logrus.Entry) *artifactsDownloader {
+func NewArtifactsDownloader(
+	repository Repository,
+	latestReleases int,
+	includePreReleases bool,
+	client *http.Client,
+	downloader TextFileDownloader,
+	log *logrus.Entry) *artifactsDownloader {
 	return &artifactsDownloader{
 		repository:         repository,
 		latestReleases:     latestReleases,
 		includePreReleases: includePreReleases,
 		httpClient:         client,
+		downloader:         downloader,
 		log:                log,
 	}
 }
@@ -42,6 +47,7 @@ type artifactsDownloader struct {
 	latestReleases     int
 	includePreReleases bool
 	httpClient         *http.Client
+	downloader         TextFileDownloader
 	log                *logrus.Entry
 }
 
@@ -130,12 +136,12 @@ func (ad artifactsDownloader) buildRelease(release model.GithubRelease) (model.R
 
 	tillerURL := buildTillerURL(release.Name)
 
-	installerYAML, err := ad.downloadYAML(installerURL)
+	installerYAML, err := ad.downloader.Download(installerURL)
 	if err != nil {
 		return model.Release{}, err
 	}
 
-	tillerYAML, err := ad.downloadYAML(tillerURL)
+	tillerYAML, err := ad.downloader.DownloadOrEmpty(tillerURL)
 	if err != nil {
 		return model.Release{}, err
 	}
@@ -145,15 +151,6 @@ func (ad artifactsDownloader) buildRelease(release model.GithubRelease) (model.R
 		TillerYAML:    tillerYAML,
 		InstallerYAML: installerYAML,
 	}, nil
-}
-
-func (ad artifactsDownloader) downloadYAML(url string) (string, error) {
-	responseBody, err := ad.sendRequest(url)
-	if err != nil {
-		return "", err
-	}
-
-	return string(responseBody), nil
 }
 
 func (ad artifactsDownloader) sendRequest(url string) ([]byte, error) {

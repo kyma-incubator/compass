@@ -207,11 +207,12 @@ func main() {
 		log.Fatalf("Error: invalid provisioner provided: %s", cfg.Provisioner)
 	}
 	httpClient := newHTTPClient(false)
+	fileDownloader := release.NewFileDownloader(httpClient)
 
 	releaseRepository := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
 	var releaseProvider release.Provider = releaseRepository
 	if cfg.SupportOnDemandReleases {
-		releaseProvider = release.NewOnDemandWrapper(httpClient, releaseRepository)
+		releaseProvider = release.NewOnDemandWrapper(fileDownloader, releaseRepository)
 	}
 
 	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient, provisioningQueue, deprovisioningQueue, upgradeQueue)
@@ -220,7 +221,7 @@ func main() {
 	resolver := api.NewResolver(provisioningSVC, validator)
 
 	logger := log.WithField("Component", "Artifact Downloader")
-	downloader := release.NewArtifactsDownloader(releaseRepository, cfg.LatestDownloadedReleases, cfg.DownloadPreReleases, httpClient, logger)
+	downloader := release.NewArtifactsDownloader(releaseRepository, cfg.LatestDownloadedReleases, cfg.DownloadPreReleases, httpClient, fileDownloader, logger)
 
 	// Run release downloader
 	ctx, cancel := context.WithCancel(context.Background())
