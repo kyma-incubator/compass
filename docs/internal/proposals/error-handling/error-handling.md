@@ -1,9 +1,10 @@
 # Error handling in Director GraphQL
 
-Errors can originate from different sources. This document describes our approach of handling them internally and presenting them in the readable form for the users.
+Errors can originate from different sources. This document describes our approach to handling them internally and presenting them in a readable form to the users.
 
 ## Errors displayed to the user
-Errors that are returned to the user can be split into two groups, based on the error handling approach. Errors that originate from external systems, libraries, panics, and directly not depend on the user input are handled as the internal one. Such errors are returned to the user as the `InternalError` type. Errors that directly depend on the user input are classified as separate types which in detail describes the nature of a problem.
+
+Errors that are returned to the user can be split into two groups, based on the error handling approach. Errors that originate from external systems, libraries, panics, and directly not dependent on the user input are handled as the internal one. Such errors are returned to the user as the `InternalError` type. Errors that directly depend on the user input are classified as separate types.
 
 ## Custom errors and error codes
 
@@ -17,20 +18,21 @@ This is the list of custom errors that are displayed to the user:
 | `NotUnique`            | `21`          | Indicates that a given resource is not unique.                                                              |
 | `InvalidData`          | `22`          | Indicates that the input data is invalid with the reason described in the error message.                    | 
 | `InsufficientScopes`   | `23`          | Indicates that the client doesn't have permission to execute the operation.                                 |
-| `ConstraintViolation`  | `24`          | Indicates that this operation can't happen because the referenced resource does not exist.                  |
-| `TenantIsRequired`     | `25`          | Indicates that a tenant is not found in the request, which is required to successfully execute the request. |
+| `ConstraintViolation`  | `24`          | Indicates that the operation cannot be executed because the referenced resource does not exist.                  |
+| `TenantIsRequired`     | `25`          | Indicates that a tenant is not found in the request, which is required to successfully handle the request. |
 | `TenantNotFound`       | `26`          | Indicates that the internal tenant is not found in the Director.                                            |
 
 ## Error processing flow
 
 ![](error-handling.svg)
-* Internal errors, External lib errors, PostgreSQL error, directives are sources of errors in the Director.
-* PostgreSQL Error Mapper - this component map PostgreSQL errors to custom errors
-* Panic Handler - this component recovers all panics and transform them as custom errors
-* Error presenter - this component search for custom error in error stack. 
-If such error is found, the presenter add `error_code` and `error` metadata to the GraphQL error in section `extensions`
-In case of internal errors, the whole error is logged and `internal server error` is sent to client.
-In case of errors which are not handled by custom error library, the error is returned without error code and error message is logged.
+1. Internal errors, external lib errors, PostgreSQL errors, and directives are sources of errors in the Director.
+2. PostgreSQL Error Mapper maps PostgreSQL errors to custom errors.
+3. Panic Handler recovers all panics and transforms them into custom errors.
+3. Error Presenter searches for custom errors in the error stack. 
+If such an error is found, the Error Presenter adds `error_code` and `error` metadata to the GraphQL error in the **extensions** section.
+In case of internal errors, the error is logged and the `internal server error` message is sent to the client.
+In case of errors that are not handled by custom error library, the error is returned without any error code and an error message is logged.
 
 ## PoC
+
 See the [implemented PoC](https://github.com/kyma-incubator/compass/pull/1366) for more details.
