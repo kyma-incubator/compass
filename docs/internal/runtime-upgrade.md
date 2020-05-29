@@ -129,7 +129,7 @@ mutation {
 }
 ```
 
-The Kyma configuration passed to the upgrade mutation overrides the previous configuration. The components and parts of the configuration not specified in the new version are removed.
+The Kyma configuration passed to the upgrade mutation overrides the previous configuration preserving the values that did not change.
 
 > **CAUTION:** Before upgrading your Kyma deployment, you must perform the migration steps described in the Migration Guide matching the release you're upgrading to, if provided. If you upgrade to the new release without performing these steps, you can compromise the functionality of your cluster or make it unusable. To find the Migration Guide, go to `https://github.com/kyma-project/kyma/tree/release-{RELEASE_TAG_TO_UPGRADE_TO}/docs` and check if it contains the `migration-guides` directory. If it does, find the Migration Guide inside. If it doesn't, no steps need to be performed. Alternatively, find the link to the Migration Guide, if provided, in appropriate Release Notes on the [Kyma blog](https://kyma-project.io/blog/).
 
