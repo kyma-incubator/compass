@@ -1,5 +1,7 @@
 package repo_test
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 // User is a exemplary type to test generic Repositories
 type User struct {
 	ID        string `db:"id_col"`
@@ -8,6 +10,8 @@ type User struct {
 	LastName  string `db:"last_name"`
 	Age       int
 }
+
+const UserType = resource.Type("UserType")
 
 type UserCollection []User
 

@@ -23,7 +23,7 @@ func TestList(t *testing.T) {
 	homer := User{FirstName: "Homer", LastName: "Simpson", Age: 55, Tenant: givenTenant, ID: homerID}
 	homerRow := []driver.Value{homerID, givenTenant, "Homer", "Simpson", 55}
 
-	sut := repo.NewLister("users", "tenant_id",
+	sut := repo.NewLister("UserType", "users", "tenant_id",
 		[]string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 
 	t.Run("lists all items successfully", func(t *testing.T) {
@@ -81,7 +81,7 @@ func TestList(t *testing.T) {
 		var dest UserCollection
 
 		err := sut.List(ctx, givenTenant, &dest)
-		require.EqualError(t, err, "while fetching list of objects from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from DB: some error")
 	})
 }
 
@@ -93,8 +93,7 @@ func TestListGlobal(t *testing.T) {
 	homer := User{FirstName: "Homer", LastName: "Simpson", Age: 55, ID: homerID}
 	homerRow := []driver.Value{homerID, "Homer", "Simpson", 55}
 
-	sut := repo.NewListerGlobal("users",
-		[]string{"id_col", "first_name", "last_name", "age"})
+	sut := repo.NewListerGlobal(UserType, "users", []string{"id_col", "first_name", "last_name", "age"})
 
 	t.Run("lists all items successfully", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
@@ -151,6 +150,6 @@ func TestListGlobal(t *testing.T) {
 		var dest UserCollection
 
 		err := sut.ListGlobal(ctx, &dest)
-		require.EqualError(t, err, "while fetching list of objects from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from DB: some error")
 	})
 }

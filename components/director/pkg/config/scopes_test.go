@@ -3,7 +3,6 @@ package config_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 
 	"github.com/stretchr/testify/assert"
@@ -41,7 +40,8 @@ func TestProvider_GetRequiredScopes(t *testing.T) {
 		// WHEN
 		_, err := sut.GetRequiredScopes("graphql.mutation.empty")
 		// THEN
-		require.True(t, apperrors.IsRequiredScopesNotDefined(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "required scopes are not defined")
 	})
 
 	t.Run("returns error if path not found", func(t *testing.T) {

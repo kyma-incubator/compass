@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/lib/pq"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -26,15 +26,16 @@ type DeleterGlobal interface {
 
 type universalDeleter struct {
 	tableName    string
+	resourceType resource.Type
 	tenantColumn *string
 }
 
-func NewDeleter(tableName string, tenantColumn string) Deleter {
-	return &universalDeleter{tableName: tableName, tenantColumn: &tenantColumn}
+func NewDeleter(resourceType resource.Type, tableName string, tenantColumn string) Deleter {
+	return &universalDeleter{resourceType: resourceType, tableName: tableName, tenantColumn: &tenantColumn}
 }
 
-func NewDeleterGlobal(tableName string) DeleterGlobal {
-	return &universalDeleter{tableName: tableName}
+func NewDeleterGlobal(resourceType resource.Type, tableName string) DeleterGlobal {
+	return &universalDeleter{tableName: tableName, resourceType: resourceType}
 }
 
 func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditions Conditions) error {
@@ -83,12 +84,8 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, conditions Conditio
 
 	query := getQueryFromBuilder(stmtBuilder)
 	res, err := persist.Exec(query, allArgs...)
-	if persistence.IsConstraintViolation(err) {
-		return apperrors.NewConstraintViolationError(err.(*pq.Error).Table)
-	}
-
-	if err != nil {
-		return errors.Wrap(err, "while deleting from database")
+	if err = persistence.MapSQLError(err, g.resourceType, "while deleting object from database"); err != nil {
+		return err
 	}
 
 	if requireSingleRemoval {
@@ -97,7 +94,7 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, conditions Conditio
 			return errors.Wrap(err, "while checking affected rows")
 		}
 		if affected != 1 {
-			return fmt.Errorf("delete should remove single row, but removed %d rows", affected)
+			return apperrors.NewInternalError("delete should remove single row, but removed %d rows", affected)
 		}
 	}
 

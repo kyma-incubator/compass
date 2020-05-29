@@ -60,8 +60,8 @@ func (s *service) Create(ctx context.Context, in model.AutomaticScenarioAssignme
 	}
 	err = s.repo.Create(ctx, in)
 	if err != nil {
-		if apperrors.IsNotUnique(err) {
-			return model.AutomaticScenarioAssignment{}, errors.New("a given scenario already has an assignment")
+		if apperrors.IsNotUniqueError(err) {
+			return model.AutomaticScenarioAssignment{}, apperrors.NewInvalidOperationError("a given scenario already has an assignment")
 		}
 
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")

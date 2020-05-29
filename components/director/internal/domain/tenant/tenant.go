@@ -25,7 +25,7 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	}
 
 	if tenant.InternalID == "" {
-		return "", apperrors.NewEmptyTenantError()
+		return "", apperrors.NewTenantRequiredError()
 	}
 
 	return tenant.InternalID, nil

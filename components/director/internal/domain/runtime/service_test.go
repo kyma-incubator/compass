@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -273,7 +271,8 @@ func TestService_Create(t *testing.T) {
 		// when
 		_, err := svc.Create(context.TODO(), model.RuntimeInput{})
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
@@ -555,7 +554,8 @@ func TestService_Update(t *testing.T) {
 		// when
 		err := svc.Update(context.TODO(), "id", model.RuntimeInput{})
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
@@ -632,7 +632,8 @@ func TestService_Delete(t *testing.T) {
 		// when
 		err := svc.Delete(context.TODO(), "id")
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
@@ -713,7 +714,8 @@ func TestService_Get(t *testing.T) {
 		// when
 		_, err := svc.Get(context.TODO(), "id")
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
@@ -866,7 +868,8 @@ func TestService_Exist(t *testing.T) {
 		// when
 		_, err := svc.Exist(context.TODO(), "id")
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
@@ -986,7 +989,8 @@ func TestService_List(t *testing.T) {
 		// when
 		_, err := svc.List(context.TODO(), nil, 1, "")
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
@@ -1126,7 +1130,8 @@ func TestService_GetLabel(t *testing.T) {
 		// when
 		_, err := svc.GetLabel(context.TODO(), "id", "key")
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
@@ -1267,7 +1272,8 @@ func TestService_ListLabel(t *testing.T) {
 		// when
 		_, err := svc.ListLabels(context.TODO(), "id")
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
@@ -1695,7 +1701,8 @@ func TestService_SetLabel(t *testing.T) {
 		// when
 		err := svc.SetLabel(context.TODO(), &model.LabelInput{})
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 
@@ -2195,7 +2202,8 @@ func TestService_DeleteLabel(t *testing.T) {
 		// when
 		err := svc.DeleteLabel(context.TODO(), "id", "key")
 		// then
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
 }
 

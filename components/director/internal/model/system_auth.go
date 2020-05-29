@@ -55,5 +55,5 @@ const (
 )
 
 func IsIntegrationSystemNoTenantFlow(err error, objectType SystemAuthReferenceObjectType) bool {
-	return apperrors.IsEmptyTenant(err) && objectType == IntegrationSystemReference
+	return apperrors.IsTenantRequired(err) && objectType == IntegrationSystemReference
 }

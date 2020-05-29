@@ -166,7 +166,7 @@ func TestRepository_Upsert(t *testing.T) {
 		err := labelRepo.Upsert(ctx, &labelModel)
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		assert.EqualError(t, err, "Internal Server Error: while upserting row to 'public.labels' table: Test error")
 	})
 }
 
@@ -1082,7 +1082,7 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Cannot execute query without runtimesIDs")
+		assert.EqualError(t, err, "Invalid data [reason=cannot execute query without runtimeIDs]")
 		dbMock.AssertExpectations(t)
 	})
 }

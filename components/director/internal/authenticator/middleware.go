@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/pkg/errors"
@@ -65,7 +67,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			}
 
 			if claims.Tenant == "" && claims.ExternalTenant != "" {
-				msg := fmt.Sprintf("Tenant not found: %s", claims.ExternalTenant)
+				msg := apperrors.NewTenantNotFoundError(claims.ExternalTenant).Error()
 				log.Error(msg)
 				a.writeError(w, msg, http.StatusBadRequest)
 				return
@@ -118,7 +120,7 @@ func (a *Authenticator) parseClaims(bearerToken string) (Claims, error) {
 func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 	reqToken := r.Header.Get(AuthorizationHeaderKey)
 	if reqToken == "" {
-		return "", errors.New("invalid bearer token")
+		return "", apperrors.NewUnauthorizedError("invalid bearer token")
 	}
 
 	reqToken = strings.TrimPrefix(reqToken, "Bearer ")

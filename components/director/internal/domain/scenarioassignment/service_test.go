@@ -83,7 +83,8 @@ func TestService_Create(t *testing.T) {
 		// WHEN
 		_, err := sut.Create(fixCtxWithTenant(), fixModel())
 		// THEN
-		require.EqualError(t, err, "a given scenario already has an assignment")
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "a given scenario already has an assignment")
 	})
 
 	t.Run("returns error when given scenario does not exist", func(t *testing.T) {

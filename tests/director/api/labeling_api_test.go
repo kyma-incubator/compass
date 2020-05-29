@@ -104,7 +104,7 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		errMsg := fmt.Sprintf("graphql: while creating label for Application: while validating Label value for '%s': while validating value %d against JSON Schema", labelKey, invalidLabelValue)
+		errMsg := fmt.Sprintf("reason=input value=%d, key=%s, is not valid against JSON Schema", invalidLabelValue, labelKey)
 		assert.Contains(t, err.Error(), errMsg)
 		saveExample(t, createLabelDefinitionRequest.Query(), "create label definition")
 
@@ -250,8 +250,8 @@ func TestEditLabelDefinition(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		errString := fmt.Sprintf("graphql: while updating label definition: label with key \"%s\" is not valid against new schema for Application with ID \"%s\": %s: Invalid type. Expected: integer, given: string", labelKey, app.ID, labelKey)
-		assert.EqualError(t, err, errString)
+		errString := fmt.Sprintf(`reason=label with key="%s" is not valid against new schema for Application with ID="%s": %s: Invalid type. Expected: integer, given: string`, labelKey, app.ID, labelKey)
+		assert.Contains(t, err.Error(), errString)
 	})
 
 	t.Run("Edit LabelDefinition with compatible data", func(t *testing.T) {
@@ -461,7 +461,7 @@ func TestDeleteLabelDefinition(t *testing.T) {
 		deleteLabelDefinitionRequest := fixDeleteLabelDefinitionRequest(labelKey, false)
 		err = tc.RunOperation(context.Background(), deleteLabelDefinitionRequest, nil)
 		require.Error(t, err)
-		assert.EqualError(t, err, "graphql: could not delete label definition, it is already used by at least one label")
+		assert.Contains(t, err.Error(), "reason=could not delete label definition, it is already used by at least one label")
 		saveExample(t, deleteLabelDefinitionRequest.Query(), "delete label definition")
 	})
 
@@ -577,11 +577,11 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 
 	// WHEN
 	err = tc.RunOperation(ctx, updateLabelDefinitionRequest, &labelDefinition)
-	errMsg := fmt.Sprintf(`graphql: validation error for type LabelDefinitionInput: Rule.ValidSchema: while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s".`, labelKey, defaultValue)
+	errMsg := fmt.Sprintf(`rule.validSchema=while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s"`, labelKey, defaultValue)
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, errMsg)
+	assert.Contains(t, err.Error(), errMsg)
 }
 
 func TestSearchApplicationsByLabels(t *testing.T) {

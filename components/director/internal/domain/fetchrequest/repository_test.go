@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest/automock"
@@ -64,7 +66,7 @@ func TestRepository_Create(t *testing.T) {
 		// WHEN
 		err := repo.Create(ctx, &frModel)
 		// THEN
-		require.EqualError(t, err, "while inserting row to 'public.fetch_requests' table: some error")
+		require.EqualError(t, err, apperrors.NewInternalError("while inserting row to 'public.fetch_requests' table: some error").Error())
 	})
 
 	t.Run("Error - Converter", func(t *testing.T) {
@@ -170,7 +172,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), model.DocumentFetchRequestReference, givenID())
 		// THEN
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.fetch_requests: some error")
 	})
 
 	t.Run("Error - Invalid Object Reference Type", func(t *testing.T) {
@@ -218,7 +220,7 @@ func TestRepository_Delete(t *testing.T) {
 		// WHEN
 		err := repo.Delete(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "while deleting from database: some error")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
 	})
 }
 
@@ -281,7 +283,7 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 		// WHEN
 		err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), model.APIFetchRequestReference, givenID())
 		// THEN
-		require.EqualError(t, err, "while deleting from database: some error")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
 	})
 }
 

@@ -3,6 +3,8 @@ package scenarioassignment
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -22,11 +24,11 @@ var (
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:         repo.NewCreator(tableName, columns),
-		lister:          repo.NewLister(tableName, tenantColumn, columns),
-		singleGetter:    repo.NewSingleGetter(tableName, tenantColumn, columns),
-		pageableQuerier: repo.NewPageableQuerier(tableName, tenantColumn, columns),
-		deleter:         repo.NewDeleter(tableName, tenantColumn),
+		creator:         repo.NewCreator(resource.AutomaticScenarioAssigment, tableName, columns),
+		lister:          repo.NewLister(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
+		singleGetter:    repo.NewSingleGetter(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
+		pageableQuerier: repo.NewPageableQuerier(resource.AutomaticScenarioAssigment, tableName, tenantColumn, columns),
+		deleter:         repo.NewDeleter(resource.AutomaticScenarioAssigment, tableName, tenantColumn),
 		conv:            conv,
 	}
 }

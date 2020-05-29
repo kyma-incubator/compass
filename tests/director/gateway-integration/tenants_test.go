@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	wrongTenant        = "b1e46bd5-18ba-4a02-b96d-631a9e803504"
-	emptyTenant        = ""
-	noTenantMessage    = "tenant is required"
-	wrongTenantMessage = "Tenant not found:"
+	notExistingTenant     = "b1e46bd5-18ba-4a02-b96d-631a9e803504"
+	emptyTenant           = ""
+	tenantRequiredMessage = "Tenant is required"
+	tenantNotFoundMessage = "Tenant not found"
 )
 
 func TestTenantErrors(t *testing.T) {
@@ -33,13 +33,13 @@ func TestTenantErrors(t *testing.T) {
 		Name:         "app-static-user",
 		ProviderName: ptr.String("compass"),
 	}
-	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, wrongTenant, appInput)
+	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), wrongTenantMessage)
+	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
 	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, emptyTenant, appInput)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), noTenantMessage)
+	require.Contains(t, err.Error(), tenantRequiredMessage)
 
 	is := registerIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "test")
 	defer unregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, is.ID)
@@ -47,9 +47,9 @@ func TestTenantErrors(t *testing.T) {
 	req := fixGenerateClientCredentialsForIntegrationSystem(is.ID)
 
 	var credentials graphql.SystemAuth
-	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, wrongTenant, req, &credentials)
+	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, notExistingTenant, req, &credentials)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), wrongTenantMessage)
+	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
 	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, emptyTenant, req, &credentials)
 	require.NoError(t, err)

@@ -62,6 +62,6 @@ func TestResolver_Viewer(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "while getting viewer from context: cannot read consumer from context")
+		assert.EqualError(t, err, "while getting viewer from context: Internal Server Error: cannot read consumer from context")
 	})
 }

@@ -410,7 +410,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
-		require.EqualError(t, err, "while fetching external tenant: while parsing the value for tenant: unable to cast the value to a string type")
+		require.EqualError(t, err, "while fetching external tenant: while parsing the value for tenant: Internal Server Error: unable to cast the value to a string type")
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})
@@ -435,7 +435,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
-		require.EqualError(t, err, "while getting user data: while fetching scopes: while parsing the value for scope: unable to cast the value to a string type")
+		require.EqualError(t, err, "while getting user data: while fetching scopes: while parsing the value for scope: Internal Server Error: unable to cast the value to a string type")
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock)
 	})

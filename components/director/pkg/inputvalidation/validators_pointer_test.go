@@ -15,7 +15,6 @@ import (
 func TestValidateExactlyOneNotNil(t *testing.T) {
 	// GIVEN
 	testErrorMessage := "test error message"
-	testError := errors.New(testErrorMessage)
 
 	testCases := []struct {
 		Name          string
@@ -46,21 +45,21 @@ func TestValidateExactlyOneNotNil(t *testing.T) {
 			Pointers: []interface{}{
 				nil, nil, (*string)(nil),
 			},
-			ExpectedError: testError,
+			ExpectedError: errors.New(testErrorMessage),
 		},
 		{
 			Name: "Error when more than one not nil",
 			Pointers: []interface{}{
 				str.Ptr("ok"), nil, str.Ptr("notok"),
 			},
-			ExpectedError: testError,
+			ExpectedError: errors.New(testErrorMessage),
 		},
 		{
 			Name: "Error when invalid use",
 			Pointers: []interface{}{
 				5, str.Ptr("notok"), str.Ptr("notok"),
 			},
-			ExpectedError: errors.New("internal server error: field is not a pointer"),
+			ExpectedError: errors.New("Internal Server Error: field is not a pointer"),
 		},
 	}
 

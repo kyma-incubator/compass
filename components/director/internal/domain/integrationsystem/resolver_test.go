@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -56,7 +58,7 @@ func TestResolver_IntegrationSystem(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			IntSysSvcFn: func() *automock.IntegrationSystemService {
 				intSysSvc := &automock.IntegrationSystemService{}
-				intSysSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError("")).Once()
+				intSysSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError(resource.IntegrationSystem, "")).Once()
 				return intSysSvc
 			},
 			IntSysConvFn: func() *automock.IntegrationSystemConverter {

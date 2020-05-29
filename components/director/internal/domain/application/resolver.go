@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -151,7 +153,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 		cursor = string(*after)
 	}
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	tx, err := r.transact.Begin()
@@ -225,7 +227,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	runtimeUUID, err := uuid.Parse(runtimeID)
@@ -363,7 +365,7 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
 	// TODO: Use @validation directive on input type instead, after resolving https://github.com/kyma-incubator/compass/issues/515
 	gqlLabel := graphql.LabelInput{Key: key, Value: value}
-	if err := gqlLabel.Validate(); err != nil {
+	if err := inputvalidation.Validate(&gqlLabel); err != nil {
 		return nil, errors.Wrap(err, "validation error for type LabelInput")
 	}
 
@@ -451,7 +453,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (*graphql.Labels, error) {
 	if obj == nil {
-		return nil, errors.New("Application cannot be empty")
+		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -489,7 +491,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 
 func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*graphql.SystemAuth, error) {
 	if obj == nil {
-		return nil, errors.New("Application cannot be empty")
+		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -520,16 +522,16 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 
 func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
 	if obj == nil {
-		return nil, errors.New("Application cannot be empty")
+		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return nil, errors.New("error while loading tenant from context")
+		return nil, apperrors.NewCannotReadTenantError()
 	}
 
 	app := r.appConverter.GraphQLToModel(obj, tenantID)
 	if app == nil {
-		return nil, errors.New("application cannot be empty")
+		return nil, apperrors.NewInternalError("application cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -571,7 +573,7 @@ func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first
 	}
 
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	pkgsPage, err := r.pkgSvc.ListByApplicationID(ctx, obj.ID, *first, cursor)

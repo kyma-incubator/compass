@@ -19,7 +19,7 @@ type methodToTestWithoutTenant = func(ctx context.Context, conditions repo.Condi
 func TestDelete(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewDeleter("users", "tenant_id")
+	sut := repo.NewDeleter(UserType, "users", "tenant_id")
 
 	tc := map[string]methodToTest{
 		"DeleteMany": sut.DeleteMany,
@@ -73,7 +73,7 @@ func TestDelete(t *testing.T) {
 			// WHEN
 			err := testedMethod(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
-			require.EqualError(t, err, "while deleting from database: some error")
+			require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
 		})
 
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestDelete(t *testing.T) {
 
 func TestDeleteGlobal(t *testing.T) {
 	givenID := uuidA()
-	sut := repo.NewDeleterGlobal("users")
+	sut := repo.NewDeleterGlobal(UserType, "users")
 
 	tc := map[string]methodToTestWithoutTenant{
 		"DeleteMany": sut.DeleteManyGlobal,
@@ -142,7 +142,7 @@ func TestDeleteGlobal(t *testing.T) {
 			// WHEN
 			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
-			require.EqualError(t, err, "while deleting from database: some error")
+			require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
 		})
 
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
@@ -156,7 +156,7 @@ func TestDeleteGlobal(t *testing.T) {
 func TestDeleteReactsOnNumberOfRemovedObjects(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewDeleter("users", "tenant_id")
+	sut := repo.NewDeleter(UserType, "users", "tenant_id")
 
 	cases := map[string]struct {
 		methodToTest      methodToTest
@@ -166,12 +166,12 @@ func TestDeleteReactsOnNumberOfRemovedObjects(t *testing.T) {
 		"[DeleteOne] returns error when removed more than one object": {
 			methodToTest:      sut.DeleteOne,
 			givenRowsAffected: 154,
-			expectedErrString: "delete should remove single row, but removed 154 rows",
+			expectedErrString: "Internal Server Error: delete should remove single row, but removed 154 rows",
 		},
 		"[DeleteOne] returns error when object not found": {
 			methodToTest:      sut.DeleteOne,
 			givenRowsAffected: 0,
-			expectedErrString: "delete should remove single row, but removed 0 rows",
+			expectedErrString: "Internal Server Error: delete should remove single row, but removed 0 rows",
 		},
 		"[Delete Many] success when removed more than one object": {
 			methodToTest:      sut.DeleteMany,
@@ -204,7 +204,7 @@ func TestDeleteReactsOnNumberOfRemovedObjects(t *testing.T) {
 
 func TestDeleteGlobalReactsOnNumberOfRemovedObjects(t *testing.T) {
 	givenID := uuidA()
-	sut := repo.NewDeleterGlobal("users")
+	sut := repo.NewDeleterGlobal(UserType, "users")
 
 	cases := map[string]struct {
 		methodToTest      methodToTestWithoutTenant
@@ -214,12 +214,12 @@ func TestDeleteGlobalReactsOnNumberOfRemovedObjects(t *testing.T) {
 		"[DeleteOne] returns error when removed more than one object": {
 			methodToTest:      sut.DeleteOneGlobal,
 			givenRowsAffected: 154,
-			expectedErrString: "delete should remove single row, but removed 154 rows",
+			expectedErrString: "Internal Server Error: delete should remove single row, but removed 154 rows",
 		},
 		"[DeleteOne] returns error when object not found": {
 			methodToTest:      sut.DeleteOneGlobal,
 			givenRowsAffected: 0,
-			expectedErrString: "delete should remove single row, but removed 0 rows",
+			expectedErrString: "Internal Server Error: delete should remove single row, but removed 0 rows",
 		},
 		"[Delete Many] success when removed more than one object": {
 			methodToTest:      sut.DeleteManyGlobal,

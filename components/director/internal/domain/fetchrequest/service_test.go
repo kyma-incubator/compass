@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest/automock"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 
@@ -77,7 +77,7 @@ func TestService_HandleAPISpec(t *testing.T) {
 		Mode: model.FetchModePackage,
 		Status: &model.FetchRequestStatus{
 			Timestamp: timestamp,
-			Message:   str.Ptr("Unsupported fetch mode: PACKAGE"),
+			Message:   str.Ptr("Invalid data [reason=Unsupported fetch mode: PACKAGE]"),
 			Condition: model.FetchRequestStatusConditionInitial},
 	}
 
@@ -106,7 +106,6 @@ func TestService_HandleAPISpec(t *testing.T) {
 				return repo
 			},
 			InputFr:        modelInput,
-			ExpectedLog:    nil,
 			ExpectedOutput: &mockSpec,
 		},
 		{
@@ -122,7 +121,6 @@ func TestService_HandleAPISpec(t *testing.T) {
 				return repo
 			},
 			InputFr:        modelInputPackage,
-			ExpectedLog:    str.Ptr("Unsupported fetch mode: PACKAGE"),
 			ExpectedOutput: nil,
 		},
 		{
@@ -142,8 +140,7 @@ func TestService_HandleAPISpec(t *testing.T) {
 			InputFr:        modelInput,
 			ExpectedLog:    str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", http.StatusInternalServerError)),
 			ExpectedOutput: nil,
-		},
-		{
+		}, {
 			Name: "Nil when failed to update status",
 			RoundTripFn: func() RoundTripFunc {
 				return func(req *http.Request) *http.Response {
@@ -185,7 +182,7 @@ func TestService_HandleAPISpec(t *testing.T) {
 				expectedLog := fmt.Sprintf("level=error msg=\"%s\"\n", *testCase.ExpectedLog)
 				assert.Equal(t, expectedLog, actualLog.String())
 			}
-			if testCase.ExpectedLog != nil {
+			if testCase.ExpectedOutput != nil {
 				assert.Equal(t, testCase.ExpectedOutput, output)
 			}
 

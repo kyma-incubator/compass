@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -602,7 +604,7 @@ func TestResolver_Runtime(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, apperrors.NewNotFoundError("foo")).Once()
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, apperrors.NewNotFoundError(resource.Runtime, "foo")).Once()
 
 				return svc
 			},
@@ -904,7 +906,8 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 		// then
 		require.Nil(t, result)
 		require.Error(t, err)
-		assert.EqualError(t, err, "validation error for type LabelInput: key: cannot be blank; value: cannot be blank.")
+		assert.Contains(t, err.Error(), "value=cannot be blank")
+		assert.Contains(t, err.Error(), "key=cannot be blank")
 	})
 }
 

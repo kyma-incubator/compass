@@ -313,7 +313,7 @@ func TestPgRepository_List(t *testing.T) {
 		_, err := pgRepository.List(ctx, tenantID, nil, 2, convertIntToBase64String(-3))
 
 		//THEN
-		require.EqualError(t, err, "while decoding page cursor: cursor is not correct")
+		require.EqualError(t, err, "while decoding page cursor: Invalid data [reason=cursor is not correct]")
 	})
 }
 
