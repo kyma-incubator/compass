@@ -4,7 +4,7 @@ Errors can originate from different sources. This document describes our approac
 
 ## Errors displayed to the user
 
-Errors that are returned to the user can be split into two groups, based on the error handling approach. Errors that originate from external systems, libraries, panics, and directly not dependent on the user input are handled as the internal one. Such errors are returned to the user as the `InternalError` type. Errors that directly depend on the user input are classified as separate types.
+Errors that are returned to the user can be split into two groups, based on the error handling approach. Errors that originate from external systems, libraries, panics, and directly not dependent on the user input are handled as the internal ones. Such errors are returned to the user as the `InternalError` type. Errors that directly depend on the user input are classified as separate types.
 
 ## Custom errors and error codes
 
