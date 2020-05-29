@@ -30,7 +30,7 @@ This is the list of custom errors that are displayed to the user:
 3. Panic Handler recovers all panics and transforms them into custom errors.
 3. Error Presenter searches for custom errors in the error stack. 
 If such an error is found, the Error Presenter adds `error_code` and `error` metadata to the GraphQL error in the **extensions** section.
-In case of internal errors, the error is logged and the `internal server error` message is sent to the client.
+In case of internal errors, the error is logged and the `internal server error` is sent to the client.
 In case of errors that are not handled by custom error library, the error is returned without any error code and an error message is logged.
 
 ## PoC
