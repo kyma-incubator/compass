@@ -379,3 +379,32 @@ func (r readSession) GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade
 
 	return runtimeUpgrade, nil
 }
+
+func (r readSession) InProgressOperationsCount() (model.OperationsCount, dberrors.Error) {
+	var opsCount []struct {
+		Type  model.OperationType
+		Count int
+	}
+
+	_, err := r.session.Select("type", "count(*)").
+		From("operation").
+		Where(dbr.Eq("state", model.InProgress)).
+		GroupBy("type").
+		Load(&opsCount)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return model.OperationsCount{}, dberrors.NotFound("Operations not found: %s", err.Error())
+		}
+		return model.OperationsCount{}, dberrors.Internal("Failed to count operations in progress: %s", err.Error())
+	}
+
+	operationsCount := model.OperationsCount{
+		Count: make(map[model.OperationType]int, len(opsCount)),
+	}
+	for _, op := range opsCount {
+		operationsCount.Count[op.Type] = op.Count
+	}
+
+	return operationsCount, nil
+}
