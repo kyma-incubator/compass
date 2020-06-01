@@ -1,10 +1,11 @@
 package release
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/pkg/errors"
 )
 
 type httpGetter interface {
