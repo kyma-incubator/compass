@@ -58,7 +58,8 @@ func (c *InProgressOperationsCollector) Describe(ch chan<- *prometheus.Desc) {
 func (c *InProgressOperationsCollector) Collect(ch chan<- prometheus.Metric) {
 	inProgressOpsCounts, err := c.statsGetter.InProgressOperationsCount()
 	if err != nil {
-		c.log.Errorf("failed to get in progress operation while collecting metrics: %s", err.Error())
+		c.log.Errorf("failed to get count of operations in progress while collecting metrics: %s", err.Error())
+
 		return
 	}
 

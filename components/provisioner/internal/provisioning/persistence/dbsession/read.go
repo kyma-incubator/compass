@@ -396,7 +396,7 @@ func (r readSession) InProgressOperationsCount() (model.OperationsCount, dberror
 		if err == dbr.ErrNotFound {
 			return model.OperationsCount{}, dberrors.NotFound("Operations not found: %s", err.Error())
 		}
-		return model.OperationsCount{}, dberrors.Internal("Failed to count in progress operations: %s", err.Error())
+		return model.OperationsCount{}, dberrors.Internal("Failed to count operations in progress: %s", err.Error())
 	}
 
 	operationsCount := model.OperationsCount{
