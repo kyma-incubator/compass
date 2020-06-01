@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/require"
@@ -24,6 +22,11 @@ func TestQueryTenants(t *testing.T) {
 	var output []*graphql.Tenant
 	expectedTenants := expectedTenants()
 
+	t.Log("Initializing one of the tenants")
+	initializedTenantID := testTenants.GetIDByName(t, tenantsQueryInitializedTenantName)
+	unregisterApp := registerSimpleApp(t, initializedTenantID)
+	defer unregisterApp()
+
 	// WHEN
 	t.Log("List tenant")
 	err := tc.RunOperationWithoutTenant(ctx, getTenantsRequest, &output)
@@ -36,37 +39,38 @@ func TestQueryTenants(t *testing.T) {
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 
-func fixTenant(id, name string) *graphql.Tenant {
-	return &graphql.Tenant{
-		ID:   id,
-		Name: str.Ptr(name),
-	}
+func registerSimpleApp(t *testing.T, tenantID string) func() {
+	ctx := context.Background()
+
+	in := fixSampleApplicationRegisterInput("foo")
+	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	var res graphql.Application
+	req := fixRegisterApplicationRequest(appInputGQL)
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &res)
+	require.NoError(t, err)
+
+	return func() { unregisterApplicationInTenant(t, res.ID, tenantID) }
 }
 
 func expectedTenants() []*graphql.Tenant {
-	return append([]*graphql.Tenant{
-		fixTenant("3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", "default"),
-		fixTenant("1eba80dd-8ff6-54ee-be4d-77944d17b10b", "foo"),
-		fixTenant("af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e", "bar"),
-	}, expectedFromTestTenants(testTenants.GetAll())...)
-}
+	testTnts := testTenants.List()
+	var expectedTenants []*graphql.Tenant
 
-func expectedFromTestTenants(tenants []Tenant) []*graphql.Tenant {
-	var toReturn []*graphql.Tenant
-
-	for _, tnt := range tenants {
+	for _, tnt := range testTnts {
 		name := tnt.Name
-		toReturn = append(toReturn, &graphql.Tenant{
+		expectedTenants = append(expectedTenants, &graphql.Tenant{
 			ID:    tnt.ID,
 			Name:  &name,
-			InUse: expectedInUseForTenant(name),
+			InUse: expectedInitializedFieldForTenant(name),
 		})
 	}
 
-	return toReturn
+	return expectedTenants
 }
 
-func expectedInUseForTenant(name string) *bool {
+func expectedInitializedFieldForTenant(name string) *bool {
 	switch name {
 	case tenantsQueryInitializedTenantName:
 		return &trueVal
