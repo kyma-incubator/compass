@@ -20,12 +20,12 @@ const labelDefinitionsTenantIDColumn string = `tenant_id`
 
 var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}
 var (
-	idColumn             = "id"
-	externalNameColumn   = "external_name"
-	externalTenantColumn = "external_tenant"
-	providerNameColumn   = "provider_name"
-	statusColumn         = "status"
-	inUseComputedColumn  = "in_use"
+	idColumn                  = "id"
+	externalNameColumn        = "external_name"
+	externalTenantColumn      = "external_tenant"
+	providerNameColumn        = "provider_name"
+	statusColumn              = "status"
+	initializedComputedColumn = "initialized"
 )
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -104,7 +104,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	query := fmt.Sprintf(`SELECT DISTINCT %s, ld.%s IS NOT NULL AS %s
 			FROM %s t LEFT JOIN %s ld ON t.%s=ld.%s
 			WHERE t.%s = $1
-			ORDER BY %s DESC, t.%s ASC`, prefixedFields, labelDefinitionsTenantIDColumn, inUseComputedColumn, tableName, labelDefinitionsTableName, idColumn, labelDefinitionsTenantIDColumn, statusColumn, inUseComputedColumn, externalNameColumn)
+			ORDER BY %s DESC, t.%s ASC`, prefixedFields, labelDefinitionsTenantIDColumn, initializedComputedColumn, tableName, labelDefinitionsTableName, idColumn, labelDefinitionsTenantIDColumn, statusColumn, initializedComputedColumn, externalNameColumn)
 
 	err = persist.Select(&entityCollection, query, Active)
 	if err != nil {

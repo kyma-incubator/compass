@@ -268,19 +268,19 @@ func TestPgRepository_List(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 
-		inUseVal := true
-		notInUseVal := false
+		initializedVal := true
+		notInitializedVal := false
 
 		tenantModels := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &inUseVal),
-			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInUseVal),
-			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInUseVal),
+			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal),
+			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal),
+			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal),
 		}
 
 		tenantEntities := []*tenant.Entity{
-			newEntityBusinessTenantMappingWithComputedValues("id1", "name1", &inUseVal),
-			newEntityBusinessTenantMappingWithComputedValues("id2", "name2", &notInUseVal),
-			newEntityBusinessTenantMappingWithComputedValues("id3", "name3", &notInUseVal),
+			newEntityBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal),
+			newEntityBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal),
+			newEntityBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal),
 		}
 
 		mockConverter := &automock.Converter{}
@@ -292,11 +292,11 @@ func TestPgRepository_List(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
-			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, provider: "Compass", status: tenant.Active}, inUse: &inUseVal},
-			{sqlRow: sqlRow{id: "id2", name: "name2", externalTenant: testExternal, provider: "Compass", status: tenant.Active}, inUse: &notInUseVal},
-			{sqlRow: sqlRow{id: "id3", name: "name3", externalTenant: testExternal, provider: "Compass", status: tenant.Active}, inUse: &notInUseVal},
+			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, provider: "Compass", status: tenant.Active}, initialized: &initializedVal},
+			{sqlRow: sqlRow{id: "id2", name: "name2", externalTenant: testExternal, provider: "Compass", status: tenant.Active}, initialized: &notInitializedVal},
+			{sqlRow: sqlRow{id: "id3", name: "name3", externalTenant: testExternal, provider: "Compass", status: tenant.Active}, initialized: &notInitializedVal},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS in_use FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY in_use DESC, t.external_name ASC`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS initialized FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY initialized DESC, t.external_name ASC`)).
 			WithArgs(tenant.Active).
 			WillReturnRows(rowsToReturn)
 
@@ -318,7 +318,7 @@ func TestPgRepository_List(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS in_use FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY in_use DESC, t.external_name ASC`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS initialized FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY initialized DESC, t.external_name ASC`)).
 			WithArgs(tenant.Active).
 			WillReturnError(testError)
 

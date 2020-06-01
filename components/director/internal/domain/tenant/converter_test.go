@@ -25,17 +25,17 @@ func TestConverter(t *testing.T) {
 		assert.Equal(t, input, outputModel)
 	})
 
-	t.Run("inUse from entity", func(t *testing.T) {
+	t.Run("initialized from entity", func(t *testing.T) {
 		c := tenant.NewConverter()
-		inUse := true
+		initialized := true
 		input := newEntityBusinessTenantMapping(id, name)
-		input.InUse = &inUse
+		input.Initialized = &initialized
 
 		// When
 		outputModel := c.FromEntity(input)
 
 		// Then
-		assert.Equal(t, input.InUse, outputModel.InUse)
+		assert.Equal(t, input.Initialized, outputModel.Initialized)
 	})
 
 	t.Run("nil model", func(t *testing.T) {

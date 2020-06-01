@@ -13,7 +13,7 @@ type BusinessTenantMapping struct {
 	ExternalTenant string
 	Provider       string
 	Status         TenantStatus
-	InUse          *bool // computed value
+	Initialized    *bool // computed value
 }
 
 func (t BusinessTenantMapping) WithExternalTenant(externalTenant string) BusinessTenantMapping {

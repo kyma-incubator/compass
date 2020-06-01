@@ -271,7 +271,7 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 		id
 		internalID
 		name
-		inUse`
+		initialized`
 }
 
 func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {

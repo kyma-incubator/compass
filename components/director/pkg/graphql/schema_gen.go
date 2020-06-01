@@ -429,10 +429,10 @@ type ComplexityRoot struct {
 	}
 
 	Tenant struct {
-		ID         func(childComplexity int) int
-		InUse      func(childComplexity int) int
-		InternalID func(childComplexity int) int
-		Name       func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Initialized func(childComplexity int) int
+		InternalID  func(childComplexity int) int
+		Name        func(childComplexity int) int
 	}
 
 	Version struct {
@@ -2656,12 +2656,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.ID(childComplexity), true
 
-	case "Tenant.inUse":
-		if e.complexity.Tenant.InUse == nil {
+	case "Tenant.initialized":
+		if e.complexity.Tenant.Initialized == nil {
 			break
 		}
 
-		return e.complexity.Tenant.InUse(childComplexity), true
+		return e.complexity.Tenant.Initialized(childComplexity), true
 
 	case "Tenant.internalID":
 		if e.complexity.Tenant.InternalID == nil {
@@ -3714,7 +3714,7 @@ type Tenant {
 	id: ID!
 	internalID: ID!
 	name: String
-	inUse: Boolean
+	initialized: Boolean
 }
 
 type Version {
@@ -3973,10 +3973,6 @@ type Mutation {
 	- [delete document](examples/delete-document/delete-document.graphql)
 	"""
 	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
-	"""
-	**Examples**
-	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
-	"""
 	createLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
 	"""
 	**Examples**
@@ -16532,7 +16528,7 @@ func (ec *executionContext) _Tenant_name(ctx context.Context, field graphql.Coll
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Tenant_inUse(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Tenant_initialized(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -16551,7 +16547,7 @@ func (ec *executionContext) _Tenant_inUse(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.InUse, nil
+		return obj.Initialized, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21634,8 +21630,8 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "name":
 			out.Values[i] = ec._Tenant_name(ctx, field, obj)
-		case "inUse":
-			out.Values[i] = ec._Tenant_inUse(ctx, field, obj)
+		case "initialized":
+			out.Values[i] = ec._Tenant_initialized(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

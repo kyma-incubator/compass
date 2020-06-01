@@ -35,7 +35,7 @@ func (c *converter) FromEntity(in *Entity) *model.BusinessTenantMapping {
 		ExternalTenant: in.ExternalTenant,
 		Provider:       in.ProviderName,
 		Status:         model.TenantStatus(in.Status),
-		InUse:          in.InUse,
+		Initialized:    in.Initialized,
 	}
 }
 
@@ -45,10 +45,10 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 	}
 
 	return &graphql.Tenant{
-		ID:         in.ExternalTenant,
-		InternalID: in.ID,
-		Name:       str.Ptr(in.Name),
-		InUse:      in.InUse,
+		ID:          in.ExternalTenant,
+		InternalID:  in.ID,
+		Name:        str.Ptr(in.Name),
+		Initialized: in.Initialized,
 	}
 
 }

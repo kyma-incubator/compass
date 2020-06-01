@@ -896,7 +896,7 @@ type Tenant {
 	id: ID!
 	internalID: ID!
 	name: String
-	inUse: Boolean
+	initialized: Boolean
 }
 
 type Version {
@@ -1155,10 +1155,6 @@ type Mutation {
 	- [delete document](examples/delete-document/delete-document.graphql)
 	"""
 	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
-	"""
-	**Examples**
-	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
-	"""
 	createLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
 	"""
 	**Examples**
