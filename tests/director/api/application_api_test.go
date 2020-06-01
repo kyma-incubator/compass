@@ -478,7 +478,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 func TestTenantSeparation(t *testing.T) {
 	// GIVEN
-	appIn := fixSampleApplicationRegisterInput("adidas")
+	appIn := fixSampleApplicationRegisterInput("tenantseparation")
 	inStr, err := tc.graphqlizer.ApplicationRegisterInputToGQL(appIn)
 	require.NoError(t, err)
 	createReq := fixRegisterApplicationRequest(inStr)
@@ -507,7 +507,6 @@ func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRe
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 			URL:  webhookURL},
 		},
-		Labels: &graphql.Labels{placeholder: []interface{}{placeholder}},
 	}
 }
 

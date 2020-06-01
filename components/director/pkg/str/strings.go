@@ -1,6 +1,8 @@
 package str
 
 import (
+	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
@@ -37,4 +39,13 @@ func Cast(i interface{}) (string, error) {
 	}
 
 	return "", apperrors.NewInvalidStringCastError()
+}
+
+func PrefixStrings(in []string, prefix string) []string {
+	var prefixedFieldNames []string
+	for _, column := range in {
+		prefixedFieldNames = append(prefixedFieldNames, fmt.Sprintf("%s%s", prefix, column))
+	}
+
+	return prefixedFieldNames
 }

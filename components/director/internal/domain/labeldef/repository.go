@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -44,21 +46,13 @@ func (r *repo) Create(ctx context.Context, def model.LabelDefinition) error {
 		return errors.Wrap(err, "while converting Label Definition to insert")
 	}
 
-	values := r.prefixEveryWithColon(labeldefColumns)
+	values := str.PrefixStrings(labeldefColumns, ":")
 
 	_, err = db.NamedExec(fmt.Sprintf("insert into %s (%s) values(%s)", tableName, strings.Join(labeldefColumns, ","), strings.Join(values, ",")), entity)
 	if err != nil {
 		return errors.Wrap(err, "while inserting Label Definition")
 	}
 	return nil
-}
-
-func (r *repo) prefixEveryWithColon(in []string) []string {
-	out := make([]string, 0)
-	for _, elem := range in {
-		out = append(out, ":"+elem)
-	}
-	return out
 }
 
 func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {

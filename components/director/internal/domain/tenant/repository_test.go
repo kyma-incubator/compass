@@ -43,23 +43,23 @@ func TestPgRepository_Create(t *testing.T) {
 
 	t.Run("Error when creating", func(t *testing.T) {
 		// GIVEN
-		intSysModel := newModelBusinessTenantMapping(testID, testName)
-		intSysEntity := newEntityBusinessTenantMapping(testID, testName)
+		tenantModel := newModelBusinessTenantMapping(testID, testName)
+		tenantEntity := newEntityBusinessTenantMapping(testID, testName)
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", intSysModel).Return(intSysEntity).Once()
+		mockConverter.On("ToEntity", tenantModel).Return(tenantEntity).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, provider_name, status ) VALUES ( ?, ?, ?, ?, ? )`)).
-			WithArgs(fixTenantMappingCreateArgs(*intSysEntity)...).
+			WithArgs(fixTenantMappingCreateArgs(*tenantEntity)...).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		err := tenantMappingRepo.Create(ctx, *intSysModel)
+		err := tenantMappingRepo.Create(ctx, *tenantModel)
 
 		// THEN
 		require.Error(t, err)
@@ -267,31 +267,36 @@ func TestPgRepository_ExistsByExternalTenant(t *testing.T) {
 func TestPgRepository_List(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		intSysModels := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMapping("id1", "name1"),
-			newModelBusinessTenantMapping("id2", "name2"),
-			newModelBusinessTenantMapping("id3", "name3"),
+
+		initializedVal := true
+		notInitializedVal := false
+
+		tenantModels := []*model.BusinessTenantMapping{
+			newModelBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal),
+			newModelBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal),
+			newModelBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal),
 		}
 
-		intSysEntities := []*tenant.Entity{
-			newEntityBusinessTenantMapping("id1", "name1"),
-			newEntityBusinessTenantMapping("id2", "name2"),
-			newEntityBusinessTenantMapping("id3", "name3"),
+		tenantEntities := []*tenant.Entity{
+			newEntityBusinessTenantMappingWithComputedValues("id1", "name1", &initializedVal),
+			newEntityBusinessTenantMappingWithComputedValues("id2", "name2", &notInitializedVal),
+			newEntityBusinessTenantMappingWithComputedValues("id3", "name3", &notInitializedVal),
 		}
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromEntity", intSysEntities[0]).Return(intSysModels[0]).Once()
-		mockConverter.On("FromEntity", intSysEntities[1]).Return(intSysModels[1]).Once()
-		mockConverter.On("FromEntity", intSysEntities[2]).Return(intSysModels[2]).Once()
+		mockConverter.On("FromEntity", tenantEntities[0]).Return(tenantModels[0]).Once()
+		mockConverter.On("FromEntity", tenantEntities[1]).Return(tenantModels[1]).Once()
+		mockConverter.On("FromEntity", tenantEntities[2]).Return(tenantModels[2]).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		rowsToReturn := fixSQLRows([]sqlRow{
-			{id: "id1", name: "name1", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
-			{id: "id2", name: "name2", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
-			{id: "id3", name: "name3", externalTenant: testExternal, provider: "Compass", status: tenant.Active},
+
+		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
+			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, provider: "Compass", status: tenant.Active}, initialized: &initializedVal},
+			{sqlRow: sqlRow{id: "id2", name: "name2", externalTenant: testExternal, provider: "Compass", status: tenant.Active}, initialized: &notInitializedVal},
+			{sqlRow: sqlRow{id: "id3", name: "name3", externalTenant: testExternal, provider: "Compass", status: tenant.Active}, initialized: &notInitializedVal},
 		})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS initialized FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY initialized DESC, t.external_name ASC`)).
 			WithArgs(tenant.Active).
 			WillReturnRows(rowsToReturn)
 
@@ -304,7 +309,7 @@ func TestPgRepository_List(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, intSysModels, result)
+		assert.Equal(t, tenantModels, result)
 	})
 
 	t.Run("Error when listing", func(t *testing.T) {
@@ -313,7 +318,7 @@ func TestPgRepository_List(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, provider_name, status FROM public.business_tenant_mappings WHERE status = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT DISTINCT t.id, t.external_name, t.external_tenant, t.provider_name, t.status, ld.tenant_id IS NOT NULL AS initialized FROM public.business_tenant_mappings t LEFT JOIN public.label_definitions ld ON t.id=ld.tenant_id WHERE t.status = $1 ORDER BY initialized DESC, t.external_name ASC`)).
 			WithArgs(tenant.Active).
 			WillReturnError(testError)
 
@@ -327,6 +332,18 @@ func TestPgRepository_List(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testError.Error())
 		require.Nil(t, result)
+	})
+
+	t.Run("Error when missing persistence context", func(t *testing.T) {
+		// GIVEN
+		repo := tenant.NewRepository(nil)
+		ctx := context.TODO()
+
+		// WHEN
+		_, err := repo.List(ctx)
+
+		// THEN
+		require.EqualError(t, err, "while fetching persistence from context: unable to fetch database from context")
 	})
 }
 

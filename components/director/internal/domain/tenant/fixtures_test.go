@@ -14,12 +14,13 @@ import (
 )
 
 const (
-	testExternal = "external"
-	testID       = "foo"
-	testName     = "bar"
-	testPageSize = 3
-	testCursor   = ""
-	testProvider = "Compass"
+	testExternal      = "external"
+	testID            = "foo"
+	testName          = "bar"
+	testPageSize      = 3
+	testCursor        = ""
+	testProvider      = "Compass"
+	initializedColumn = "initialized"
 )
 
 var (
@@ -37,6 +38,12 @@ func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping
 	}
 }
 
+func newModelBusinessTenantMappingWithComputedValues(id, name string, initialized *bool) *model.BusinessTenantMapping {
+	tenantModel := newModelBusinessTenantMapping(id, name)
+	tenantModel.Initialized = initialized
+	return tenantModel
+}
+
 func newEntityBusinessTenantMapping(id, name string) *tenant.Entity {
 	return &tenant.Entity{
 		ID:             id,
@@ -47,12 +54,32 @@ func newEntityBusinessTenantMapping(id, name string) *tenant.Entity {
 	}
 }
 
+func newEntityBusinessTenantMappingWithComputedValues(id, name string, initialized *bool) *tenant.Entity {
+	tenantEntity := newEntityBusinessTenantMapping(id, name)
+	tenantEntity.Initialized = initialized
+	return tenantEntity
+}
+
 type sqlRow struct {
 	id             string
 	name           string
 	externalTenant string
 	provider       string
 	status         tenant.TenantStatus
+}
+
+type sqlRowWithComputedValues struct {
+	sqlRow
+	initialized *bool
+}
+
+func fixSQLRowsWithComputedValues(rows []sqlRowWithComputedValues) *sqlmock.Rows {
+	columns := append(testTableColumns, initializedColumn)
+	out := sqlmock.NewRows(columns)
+	for _, row := range rows {
+		out.AddRow(row.id, row.name, row.externalTenant, row.provider, row.status, row.initialized)
+	}
+	return out
 }
 
 func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
