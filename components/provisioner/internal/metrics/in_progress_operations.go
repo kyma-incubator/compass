@@ -62,13 +62,6 @@ func (c *InProgressOperationsCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	fmt.Println("COUNT: ", inProgressOpsCounts)
-
-	for a, b := range inProgressOpsCounts.Count {
-		fmt.Println(a, "  ", b)
-
-	}
-
 	c.newMeasure(ch,
 		c.provisioningDesc,
 		inProgressOpsCounts.Count[model.Provision],
