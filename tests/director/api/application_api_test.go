@@ -507,7 +507,6 @@ func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRe
 			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
 			URL:  webhookURL},
 		},
-		Labels: &graphql.Labels{placeholder: []interface{}{placeholder}},
 	}
 }
 

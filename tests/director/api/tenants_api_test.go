@@ -54,7 +54,6 @@ func registerSimpleApp(t *testing.T, tenantID string) func() {
 
 	return func() {
 		unregisterApplicationInTenant(t, res.ID, tenantID)
-		deleteLabelDefinitionWithinTenant(t, ctx, placeholder, false, tenantID)
 	}
 }
 
