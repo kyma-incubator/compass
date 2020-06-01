@@ -22,7 +22,7 @@ global:
       version: "PR-1270"
     director:
       dir:
-      version: "PR-1400"
+      version: "PR-1404"
     gateway:
       dir:
       version: "PR-1330"
@@ -52,7 +52,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1401"
+        version: "PR-1404"
       connector:
         dir:
         version: "PR-1270"
