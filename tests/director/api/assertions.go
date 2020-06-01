@@ -411,8 +411,8 @@ func assertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant)
 
 			assert.Equal(t, inTnt.Name, actTnt.Name)
 
-			if inTnt.InUse != nil {
-				assert.Equal(t, inTnt.InUse, actTnt.InUse)
+			if inTnt.Initialized != nil {
+				assert.Equal(t, inTnt.Initialized, actTnt.Initialized)
 			}
 		}
 		assert.True(t, found)

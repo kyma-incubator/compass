@@ -61,9 +61,9 @@ func expectedTenants() []*graphql.Tenant {
 	for _, tnt := range testTnts {
 		name := tnt.Name
 		expectedTenants = append(expectedTenants, &graphql.Tenant{
-			ID:    tnt.ID,
-			Name:  &name,
-			InUse: expectedInitializedFieldForTenant(name),
+			ID:          tnt.ID,
+			Name:        &name,
+			Initialized: expectedInitializedFieldForTenant(name),
 		})
 	}
 
