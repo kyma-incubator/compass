@@ -42,7 +42,8 @@ func TestQueryTenants(t *testing.T) {
 func registerSimpleApp(t *testing.T, tenantID string) func() {
 	ctx := context.Background()
 
-	in := fixSampleApplicationRegisterInput("foo")
+	placeholder := "foo"
+	in := fixSampleApplicationRegisterInput(placeholder)
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
@@ -51,7 +52,10 @@ func registerSimpleApp(t *testing.T, tenantID string) func() {
 	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &res)
 	require.NoError(t, err)
 
-	return func() { unregisterApplicationInTenant(t, res.ID, tenantID) }
+	return func() {
+		unregisterApplicationInTenant(t, res.ID, tenantID)
+		deleteLabelDefinitionWithinTenant(t, ctx, placeholder, false, tenantID)
+	}
 }
 
 func expectedTenants() []*graphql.Tenant {

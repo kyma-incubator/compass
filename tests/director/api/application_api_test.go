@@ -478,7 +478,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 func TestTenantSeparation(t *testing.T) {
 	// GIVEN
-	appIn := fixSampleApplicationRegisterInput("foo")
+	appIn := fixSampleApplicationRegisterInput("tenantseparation")
 	inStr, err := tc.graphqlizer.ApplicationRegisterInputToGQL(appIn)
 	require.NoError(t, err)
 	createReq := fixRegisterApplicationRequest(inStr)
