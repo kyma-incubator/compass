@@ -399,3 +399,18 @@ func assertIntegrationSystemNames(t *testing.T, expectedNames []string, actual g
 		assert.True(t, found, "Integration system: '%s' not found", intSysName)
 	}
 }
+
+func assertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant) {
+	for _, inTnt := range in {
+		found := false
+		for _, actTnt := range actual {
+			if inTnt.ID != actTnt.ID {
+				continue
+			}
+			found = true
+
+			assert.Equal(t, inTnt.Name, actTnt.Name)
+		}
+		assert.True(t, found)
+	}
+}

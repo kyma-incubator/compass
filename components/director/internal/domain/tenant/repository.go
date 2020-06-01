@@ -101,10 +101,10 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	}
 
 	prefixedFields := strings.Join(str.PrefixStrings(tableColumns, "t."), ", ")
-	query := fmt.Sprintf(`SELECT DISTINCT %s, ld.tenant_id IS NOT NULL AS %s
+	query := fmt.Sprintf(`SELECT DISTINCT %s, ld.%s IS NOT NULL AS %s
 			FROM %s t LEFT JOIN %s ld ON t.%s=ld.%s
 			WHERE t.%s = $1
-			ORDER BY %s DESC, t.%s ASC`, prefixedFields, inUseComputedColumn, tableName, labelDefinitionsTableName, idColumn, labelDefinitionsTenantIDColumn, statusColumn, inUseComputedColumn, externalNameColumn)
+			ORDER BY %s DESC, t.%s ASC`, prefixedFields, labelDefinitionsTenantIDColumn, inUseComputedColumn, tableName, labelDefinitionsTableName, idColumn, labelDefinitionsTenantIDColumn, statusColumn, inUseComputedColumn, externalNameColumn)
 
 	err = persist.Select(&entityCollection, query, Active)
 	if err != nil {

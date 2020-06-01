@@ -4,8 +4,6 @@ import (
 	"database/sql/driver"
 	"errors"
 
-	"github.com/google/uuid"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -109,15 +107,5 @@ func newGraphQLTenant(id, internalID, name string) *graphql.Tenant {
 		ID:         id,
 		InternalID: internalID,
 		Name:       str.Ptr(name),
-	}
-}
-
-func fixModelBusinessTenantMapping() model.BusinessTenantMapping {
-	return model.BusinessTenantMapping{
-		ID:             uuid.New().String(),
-		Name:           "tenant",
-		ExternalTenant: "external-tenant",
-		Provider:       "SAP",
-		Status:         model.Active,
 	}
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,21 +29,6 @@ func TestQueryTenants(t *testing.T) {
 
 	assertTenants(t, defaultTenants, output)
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
-}
-
-func assertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant) {
-	for _, inTnt := range in {
-		found := false
-		for _, actTnt := range actual {
-			if inTnt.ID != actTnt.ID {
-				continue
-			}
-			found = true
-
-			assert.Equal(t, inTnt.Name, actTnt.Name)
-		}
-		assert.True(t, found)
-	}
 }
 
 func fixTenant(id, name string) *graphql.Tenant {
