@@ -29,6 +29,9 @@ type TenantStatus string
 const (
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
+
+	tenantsQueryNotInitializedTenantName = "TestTenantsQueryTenantNotInitialized"
+	tenantsQueryInitializedTenantName    = "TestTenantsQueryTenantInitialized"
 )
 
 var testTenants TestTenantsManager
@@ -120,6 +123,20 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ID:             "7e1f2df8-36dc-4e40-8be3-d1555d50c91c",
 			Name:           "TestApplicationsForRuntimeWithHiddenApps",
 			ExternalTenant: "7e1f2df8-36dc-4e40-8be3-d1555d50c91c",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
+		"TestTenantsQueryNotInitializedTenant": {
+			ID:             "72329135-27fd-4284-9bcb-37ea8d6307d0",
+			Name:           tenantsQueryNotInitializedTenantName,
+			ExternalTenant: "72329135-27fd-4284-9bcb-37ea8d6307d0",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
+		"TestTenantsQueryInitializedTenant": {
+			ID:             "8cf0c909-f816-4fe3-a507-a7917ccd8380",
+			Name:           tenantsQueryInitializedTenantName,
+			ExternalTenant: "8cf0c909-f816-4fe3-a507-a7917ccd8380",
 			ProviderName:   testProvider,
 			Status:         Active,
 		},

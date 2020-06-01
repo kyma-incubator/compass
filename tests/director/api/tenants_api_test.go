@@ -11,13 +11,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	trueVal  = true
+	falseVal = false
+)
+
 func TestQueryTenants(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
 	getTenantsRequest := fixTenantsRequest()
 	var output []*graphql.Tenant
-	defaultTenants := fixDefaultTenants()
+	expectedTenants := expectedTenants()
 
 	// WHEN
 	t.Log("List tenant")
@@ -27,7 +32,7 @@ func TestQueryTenants(t *testing.T) {
 	//THEN
 	t.Log("Check if tenants were received")
 
-	assertTenants(t, defaultTenants, output)
+	assertTenants(t, expectedTenants, output)
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 
@@ -38,20 +43,36 @@ func fixTenant(id, name string) *graphql.Tenant {
 	}
 }
 
-func fixDefaultTenants() []*graphql.Tenant {
+func expectedTenants() []*graphql.Tenant {
 	return append([]*graphql.Tenant{
 		fixTenant("3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", "default"),
 		fixTenant("1eba80dd-8ff6-54ee-be4d-77944d17b10b", "foo"),
 		fixTenant("af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e", "bar"),
-	}, tenantsToGraphql(testTenants.GetAll())...)
+	}, expectedFromTestTenants(testTenants.GetAll())...)
 }
 
-func tenantsToGraphql(tenants []Tenant) []*graphql.Tenant {
+func expectedFromTestTenants(tenants []Tenant) []*graphql.Tenant {
 	var toReturn []*graphql.Tenant
 
-	for k, _ := range tenants {
-		toReturn = append(toReturn, &graphql.Tenant{ID: tenants[k].ID, Name: &tenants[k].Name})
+	for _, tnt := range tenants {
+		name := tnt.Name
+		toReturn = append(toReturn, &graphql.Tenant{
+			ID:    tnt.ID,
+			Name:  &name,
+			InUse: expectedInUseForTenant(name),
+		})
 	}
 
 	return toReturn
+}
+
+func expectedInUseForTenant(name string) *bool {
+	switch name {
+	case tenantsQueryInitializedTenantName:
+		return &trueVal
+	case tenantsQueryNotInitializedTenantName:
+		return &falseVal
+	}
+
+	return nil
 }
