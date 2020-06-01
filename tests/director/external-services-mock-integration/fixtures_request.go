@@ -1,12 +1,18 @@
 package external_services_mock_integration
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/pkg/retrier"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
@@ -52,14 +58,20 @@ func getAuditlogMockToken(t *testing.T, client *http.Client, baseURL string) tok
 	require.NoError(t, err)
 
 	req.Header.Add("Authorization", base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", "client_id", "client_secret"))))
-	resp, err := client.Do(req)
+
+	var resp *http.Response
+	err = retrier.DoOnTemporaryConnectionProblems("GetAuditLogMockTokenIntegrationTest", func() error {
+		var err error
+		resp, err = client.Do(req)
+		return err
+	})
 	require.NoError(t, err)
+	defer closeBody(resp.Body)
 
 	var auditlogToken token
-	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	err = json.Unmarshal(body, &auditlogToken)
+	err = json.NewDecoder(resp.Body).Decode(&auditlogToken)
 	require.NoError(t, err)
 
 	return auditlogToken
@@ -71,14 +83,29 @@ func searchForAuditlogByString(t *testing.T, client *http.Client, baseURL string
 
 	req.URL.RawQuery = fmt.Sprintf("query=%s", search)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken.AccessToken))
-	resp, err := client.Do(req)
+
+	var resp *http.Response
+	err = retrier.DoOnTemporaryConnectionProblems("SearchForAuditLogIntegrationTest", func() error {
+		var err error
+		resp, err = client.Do(req)
+		return err
+	})
 	require.NoError(t, err)
+	defer closeBody(resp.Body)
 
 	var auditlogs []model.ConfigurationChange
-	body, err := ioutil.ReadAll(resp.Body)
+
+	// TEMP - START
+	data, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
-	err = json.Unmarshal(body, &auditlogs)
+	log.Printf("statuscode: %d, data:\n%s\n---", resp.StatusCode, string(data))
+	bodyReader := ioutil.NopCloser(bytes.NewReader(data))
+	defer closeBody(bodyReader)
+	// TEMP - STOP
+
+	err = json.NewDecoder(bodyReader).Decode(&auditlogs)
 	require.NoError(t, err)
+
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	return auditlogs
@@ -121,4 +148,19 @@ func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
 			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
 		})))
+}
+
+func closeBody(body io.ReadCloser) {
+	if body == nil {
+		return
+	}
+	_, err := io.Copy(ioutil.Discard, body)
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = body.Close()
+	if err != nil {
+		log.Error(err)
+	}
 }

@@ -3,14 +3,9 @@ package external_services_mock_integration
 import (
 	"context"
 	"reflect"
-	"strings"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/avast/retry-go"
+	"github.com/kyma-incubator/compass/tests/director/pkg/retrier"
 
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -39,22 +34,11 @@ func NewTestContext() (*TestContext, error) {
 	}, nil
 }
 
-func (tc *TestContext) withRetryOnTemporaryConnectionProblems(risky func() error) error {
-	return retry.Do(risky, retry.Attempts(7), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
-		logrus.WithField("component", "TestContext").Warnf("OnRetry: attempts: %d, error: %v", n, err)
-
-	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
-		return strings.Contains(err.Error(), "connection refused") ||
-			strings.Contains(err.Error(), "connection reset by peer")
-	}))
-}
-
 func (tc *TestContext) RunOperationWithCustomTenant(ctx context.Context, cli *gcli.Client, tenant string, req *gcli.Request, resp interface{}) error {
 	m := resultMapperFor(&resp)
-
 	req.Header.Set("Tenant", tenant)
 
-	return tc.withRetryOnTemporaryConnectionProblems(func() error { return cli.Run(ctx, req, &m) })
+	return retrier.DoOnTemporaryConnectionProblems("AuditLogIntegrationTestContext", func() error { return cli.Run(ctx, req, &m) })
 }
 
 // resultMapperFor returns generic object that can be passed to Run method for storing response.

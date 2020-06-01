@@ -5,15 +5,11 @@ import (
 	"os"
 	"reflect"
 	"strings"
-	"time"
 
 	gqlizer "github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-	"github.com/sirupsen/logrus"
-
-	"github.com/avast/retry-go"
-
 	"github.com/kyma-incubator/compass/tests/director/pkg/jwtbuilder"
+	"github.com/kyma-incubator/compass/tests/director/pkg/retrier"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -55,19 +51,7 @@ func newTestContext() (*testContext, error) {
 func (tc *testContext) RunOperation(ctx context.Context, req *gcli.Request, resp interface{}) error {
 	m := resultMapperFor(&resp)
 
-	return tc.withRetryOnTemporaryConnectionProblems(func() error {
-		return tc.cli.Run(ctx, req, &m)
-	})
-}
-
-func (tc *testContext) withRetryOnTemporaryConnectionProblems(risky func() error) error {
-	return retry.Do(risky, retry.Attempts(7), retry.Delay(time.Second), retry.OnRetry(func(n uint, err error) {
-		logrus.WithField("component", "testContext").Warnf("OnRetry: attempts: %d, error: %v", n, err)
-
-	}), retry.LastErrorOnly(true), retry.RetryIf(func(err error) bool {
-		return strings.Contains(err.Error(), "connection refused") ||
-			strings.Contains(err.Error(), "connection reset by peer")
-	}))
+	return retrier.DoOnTemporaryConnectionProblems("DirectorAPITestContext", func() error { return tc.cli.Run(ctx, req, &m) })
 }
 
 func (tc *testContext) RunOperationWithCustomTenant(ctx context.Context, tenant string, req *gcli.Request, resp interface{}) error {
@@ -91,7 +75,7 @@ func (tc *testContext) runCustomOperation(ctx context.Context, tenant string, sc
 	}
 
 	cli := gql.NewAuthorizedGraphQLClient(token)
-	return tc.withRetryOnTemporaryConnectionProblems(func() error { return cli.Run(ctx, req, &m) })
+	return retrier.DoOnTemporaryConnectionProblems("DirectorAPITestContext", func() error { return cli.Run(ctx, req, &m) })
 }
 
 // resultMapperFor returns generic object that can be passed to Run method for storing response.
