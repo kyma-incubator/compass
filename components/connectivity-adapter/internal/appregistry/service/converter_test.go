@@ -189,10 +189,10 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 						"q1": {"a", "b"},
 						"q2": {"c", "d"},
 					},
-					AdditionalHeaders: &graphql.HttpHeaders{
-						"h1": {"e", "f"},
-						"h2": {"g", "h"},
-					},
+					AdditionalHeaders: httpHeadersFromMap(t, map[string][]string{
+						"h1": []string{"e", "f"},
+						"h2": []string{"g", "h"},
+					}),
 				},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{Name: "foo"},
@@ -220,10 +220,10 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 						"q1": {"a", "b"},
 						"q2": {"c", "d"},
 					},
-					AdditionalHeaders: &graphql.HttpHeaders{
-						"h1": {"e", "f"},
-						"h2": {"g", "h"},
-					},
+					AdditionalHeaders: httpHeadersFromMap(t, map[string][]string{
+						"h1": []string{"e", "f"},
+						"h2": []string{"g", "h"},
+					}),
 				},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{},
@@ -253,9 +253,9 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					AdditionalQueryParams: &graphql.QueryParams{
 						"new": {"new"},
 					},
-					AdditionalHeaders: &graphql.HttpHeaders{
-						"new": {"new"},
-					},
+					AdditionalHeaders: httpHeadersFromMap(t, map[string][]string{
+						"new": []string{"new"},
+					}),
 				},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{},
@@ -458,10 +458,10 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 										"q1": {"a", "b"},
 										"q2": {"c", "d"},
 									},
-									AdditionalHeaders: &graphql.HttpHeaders{
-										"h1": {"e", "f"},
-										"h2": {"g", "h"},
-									},
+									AdditionalHeaders: httpHeadersFromMap(t, map[string][]string{
+										"h1": []string{"e", "f"},
+										"h2": []string{"g", "h"},
+									}),
 								},
 							},
 							Format: graphql.SpecFormatJSON,
@@ -563,10 +563,10 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 							"q1": []string{"a", "b"},
 							"q2": []string{"c", "d"},
 						},
-						AdditionalHeaders: &graphql.HttpHeaders{
+						AdditionalHeaders: httpHeadersFromMap(t, map[string][]string{
 							"h1": []string{"e", "f"},
 							"h2": []string{"g", "h"},
-						},
+						}),
 					},
 				},
 				APIDefinitions: graphql.APIDefinitionPageExt{
@@ -687,10 +687,10 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 											"q1": {"a", "b"},
 											"q2": {"c", "d"},
 										},
-										AdditionalHeaders: &graphql.HttpHeaders{
-											"h1": {"e", "f"},
-											"h2": {"g", "h"},
-										},
+										AdditionalHeaders: httpHeadersFromMap(t, map[string][]string{
+											"h1": []string{"e", "f"},
+											"h2": []string{"g", "h"},
+										}),
 									},
 								}}},
 					},
@@ -980,4 +980,11 @@ func ptrString(in string) *string {
 
 func ptrClob(in graphql.CLOB) *graphql.CLOB {
 	return &in
+}
+
+func httpHeadersFromMap(t *testing.T, in map[string][]string) *graphql.HttpHeaders {
+	headers, err := graphql.NewHttpHeaders(in)
+	require.NoError(t, err)
+
+	return &headers
 }

@@ -36,7 +36,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			},
 		},
 	})
-	gqlSystemAuth := fixGQLSystemAuth(id, fixGQLAuth())
+	gqlSystemAuth := fixGQLSystemAuth(id, fixGQLAuth(t))
 
 	testCases := []struct {
 		Name               string

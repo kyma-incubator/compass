@@ -18,14 +18,14 @@ func TestUnmarshalBasicAuth(t *testing.T) {
 			"username": "aaa",
 			"password": "bbb"
 		},
-		"additionalHeaders": {
-			"scopes": ["read", "write"]
-		}
+		"additionalHeaders": "{\"scopes\": [\"read\", \"write\"]}"
 	}`))
 	// THEN
 	require.NoError(t, err)
 	require.NotNil(t, a.AdditionalHeaders)
-	scopes := (*a.AdditionalHeaders)["scopes"]
+	additionalHeaders, err := a.AdditionalHeaders.Unmarshal()
+	require.NoError(t, err)
+	scopes := additionalHeaders["scopes"]
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
@@ -45,14 +45,14 @@ func TestUnmarshalOAuth(t *testing.T) {
 			"clientId": "client-id",
 			"clientSecret":"client-secret"
 		},
-		"additionalHeaders": {
-			"scopes": ["read", "write"]
-		}
+		"additionalHeaders": "{\"scopes\": [\"read\", \"write\"]}"
 	}`))
 	// THEN
 	require.NoError(t, err)
 	require.NotNil(t, a.AdditionalHeaders)
-	scopes := (*a.AdditionalHeaders)["scopes"]
+	additionalHeaders, err := a.AdditionalHeaders.Unmarshal()
+	require.NoError(t, err)
+	scopes := additionalHeaders["scopes"]
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
@@ -72,14 +72,13 @@ func TestUnmarshalCSRFBasicAuth(t *testing.T) {
 			"username": "aaa",
 			"password": "bbb"
 		},
-		"additionalHeaders": {
-			"scopes": ["read", "write"]
-		}
+		"additionalHeaders": "{\"scopes\": [\"read\", \"write\"]}"
 	}`))
 	// THEN
 	require.NoError(t, err)
 	require.NotNil(t, a.AdditionalHeaders)
-	scopes := (*a.AdditionalHeaders)["scopes"]
+	additionalHeaders, err := a.AdditionalHeaders.Unmarshal()
+	scopes := additionalHeaders["scopes"]
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")
@@ -99,14 +98,13 @@ func TestUnmarshalCSRFOAuth(t *testing.T) {
 			"clientId": "client-id",
 			"clientSecret":"client-secret"
 		},
-		"additionalHeaders": {
-			"scopes": ["read", "write"]
-		}
+		"additionalHeaders": "{\"scopes\": [\"read\", \"write\"]}"
 	}`))
 	// THEN
 	require.NoError(t, err)
 	require.NotNil(t, a.AdditionalHeaders)
-	scopes := (*a.AdditionalHeaders)["scopes"]
+	additionalHeaders, err := a.AdditionalHeaders.Unmarshal()
+	scopes := additionalHeaders["scopes"]
 	assert.Len(t, scopes, 2)
 	assert.Contains(t, scopes, "read")
 	assert.Contains(t, scopes, "write")

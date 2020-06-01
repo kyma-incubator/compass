@@ -19,7 +19,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		{
 			Name:     "All properties given",
 			Input:    fixDetailedAuth(),
-			Expected: fixDetailedGQLAuth(),
+			Expected: fixDetailedGQLAuth(t),
 		},
 		{
 			Name:     "Empty",
@@ -54,7 +54,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixDetailedGQLAuthInput(),
+			Input:    fixDetailedGQLAuthInput(t),
 			Expected: fixDetailedAuthInput(),
 		},
 		{

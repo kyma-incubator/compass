@@ -19,7 +19,10 @@ func (c *converter) ToGraphQL(in *model.Auth) *graphql.Auth {
 
 	var headers *graphql.HttpHeaders
 	if len(in.AdditionalHeaders) != 0 {
-		var value graphql.HttpHeaders = in.AdditionalHeaders
+		value, err := graphql.NewHttpHeaders(in.AdditionalHeaders)
+		if err != nil {
+			// TODO handle err
+		}
 		headers = &value
 	}
 
@@ -43,9 +46,13 @@ func (c *converter) InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput {
 	}
 
 	credential := c.credentialInputFromGraphQL(in.Credential)
+	additionalHeaders, err := in.AdditionalHeaders.Unmarshal()
+	if err != nil {
+		//TODO handler error
+	}
 	return &model.AuthInput{
 		Credential:            credential,
-		AdditionalHeaders:     c.headersFromGraphQL(in.AdditionalHeaders),
+		AdditionalHeaders:     additionalHeaders, //c.headers2FromGraphQL(in.AdditionalHeaders),
 		AdditionalQueryParams: c.queryParamsFromGraphQL(in.AdditionalQueryParams),
 		RequestAuth:           c.requestAuthInputFromGraphQL(in.RequestAuth),
 	}
@@ -60,7 +67,10 @@ func (c *converter) requestAuthToGraphQL(in *model.CredentialRequestAuth) *graph
 	if in.Csrf != nil {
 		var headers *graphql.HttpHeaders
 		if len(in.Csrf.AdditionalHeaders) != 0 {
-			var value graphql.HttpHeaders = in.Csrf.AdditionalHeaders
+			value, err := graphql.NewHttpHeaders(in.Csrf.AdditionalHeaders)
+			if err != nil {
+				// TODO handle err
+			}
 			headers = &value
 		}
 
@@ -90,10 +100,14 @@ func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAut
 
 	var csrf *model.CSRFTokenCredentialRequestAuthInput
 	if in.Csrf != nil {
+		headers, err := in.Csrf.AdditionalHeaders.Unmarshal()
+		if err != nil {
+			//TODO handler error
+		}
 		csrf = &model.CSRFTokenCredentialRequestAuthInput{
 			TokenEndpointURL:      in.Csrf.TokenEndpointURL,
 			AdditionalQueryParams: c.queryParamsFromGraphQL(in.Csrf.AdditionalQueryParams),
-			AdditionalHeaders:     c.headersFromGraphQL(in.Csrf.AdditionalHeaders),
+			AdditionalHeaders:     headers,
 			Credential:            c.credentialInputFromGraphQL(in.Csrf.Credential),
 		}
 	}
@@ -101,15 +115,6 @@ func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAut
 	return &model.CredentialRequestAuthInput{
 		Csrf: csrf,
 	}
-}
-
-func (c *converter) headersFromGraphQL(headers *graphql.HttpHeaders) map[string][]string {
-	var h map[string][]string
-	if headers != nil {
-		h = *headers
-	}
-
-	return h
 }
 
 func (c *converter) queryParamsFromGraphQL(params *graphql.QueryParams) map[string][]string {

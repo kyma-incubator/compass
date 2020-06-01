@@ -154,7 +154,7 @@ func (g *Graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFT
 			credential: {{ CredentialDataInputToGQL .Credential }},
 			{{- end }}
 			{{- if .AdditionalHeaders }}
-			additionalHeaders : {{ HTTPHeadersToGQL .AdditionalHeaders }},
+			additionalHeaders: {{ HTTPHeadersToGQL .AdditionalHeaders }},
 			{{- end }}
 			{{- if .AdditionalQueryParams }}
 			additionalQueryParams : {{ QueryParamsToGQL .AdditionalQueryParams }},
@@ -163,12 +163,13 @@ func (g *Graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFT
 }
 
 func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
+	in.AdditionalHeaders = quoteHttpHeaders(in.AdditionalHeaders)
 	return g.genericToGQL(in, `{
 		{{- if .Credential }}
 		credential: {{ CredentialDataInputToGQL .Credential }},
 		{{- end }}
 		{{- if .AdditionalHeaders }}
-		additionalHeaders: {{ HTTPHeadersToGQL .AdditionalHeaders }},
+		additionalHeaders: {{ .AdditionalHeaders }},
 		{{- end }}
 		{{- if .AdditionalQueryParams }}
 		additionalQueryParams: {{ QueryParamsToGQL .AdditionalQueryParams}},
@@ -254,7 +255,7 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 }
 
 func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string, error) {
-	in.Data = quoteString(in.Data)
+	in.Data = quoteCLOB(in.Data)
 	return g.genericToGQL(in, `{
 		{{- if .Data }}
 		data: {{.Data}},
@@ -268,7 +269,7 @@ func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string,
 }
 
 func (g *Graphqlizer) ApiSpecInputToGQL(in graphql.APISpecInput) (string, error) {
-	in.Data = quoteString(in.Data)
+	in.Data = quoteCLOB(in.Data)
 	return g.genericToGQL(in, `{
 		{{- if .Data}}
 		data: {{.Data}},
@@ -529,10 +530,19 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	return b.String(), nil
 }
 
-func quoteString(in *graphql.CLOB) *graphql.CLOB {
+func quoteCLOB(in *graphql.CLOB) *graphql.CLOB {
 	if in != nil {
 		quotedData := strconv.Quote(string(*in))
 		return (*graphql.CLOB)(&quotedData)
 	}
 	return nil
+}
+
+func quoteHttpHeaders(in *graphql.HttpHeaders) *graphql.HttpHeaders {
+	if in == nil {
+		return nil
+	}
+
+	quoted := strconv.Quote(string(*in))
+	return (*graphql.HttpHeaders)(&quoted)
 }

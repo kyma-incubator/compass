@@ -101,7 +101,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 		Webhooks: []*graphql.WebhookInput{
 			{
 				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-				Auth: fixBasicAuth(),
+				Auth: fixBasicAuth(t),
 				URL:  "http://mywordpress.com/webhooks1",
 			},
 		},
@@ -129,7 +129,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 func TestRegisterApplicationWithPackages(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := fixApplicationRegisterInputWithPackages()
+	in := fixApplicationRegisterInputWithPackages(t)
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}

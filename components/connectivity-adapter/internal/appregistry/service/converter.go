@@ -90,11 +90,14 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 		// old way of providing request headers
 		if deprecated.Api.Headers != nil {
-			h := (graphql.HttpHeaders)(*deprecated.Api.Headers)
+			h, err := graphql.NewHttpHeaders(*deprecated.Api.Headers)
+			if err != nil {
+				// TODO handle err
+			}
 			defaultInstanceAuth.AdditionalHeaders = &h
 		}
 
-		// old way of providing request headers
+		// old way of providing query parameters
 		if deprecated.Api.QueryParameters != nil {
 			q := (graphql.QueryParams)(*deprecated.Api.QueryParameters)
 			defaultInstanceAuth.AdditionalQueryParams = &q
@@ -103,7 +106,10 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 		// new way
 		if deprecated.Api.RequestParameters != nil {
 			if deprecated.Api.RequestParameters.Headers != nil {
-				h := (graphql.HttpHeaders)(*deprecated.Api.RequestParameters.Headers)
+				h, err := graphql.NewHttpHeaders(*deprecated.Api.RequestParameters.Headers)
+				if err != nil {
+					// TODO handle err
+				}
 				defaultInstanceAuth.AdditionalHeaders = &h
 			}
 			if deprecated.Api.RequestParameters.QueryParameters != nil {
@@ -148,8 +154,8 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 				url := deprecated.Api.SpecificationUrl
 				if lowercaseDeprecatedAPIType == oDataSpecType && url == "" {
-					targetUrl := strings.TrimSuffix(apiDef.TargetURL, "/")
-					url = fmt.Sprintf(oDataSpecFormat, targetUrl)
+					targetURL := strings.TrimSuffix(apiDef.TargetURL, "/")
+					url = fmt.Sprintf(oDataSpecFormat, targetURL)
 				}
 
 				apiDef.Spec.FetchRequest = &graphql.FetchRequestInput{
@@ -185,7 +191,10 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 			if deprecated.Api.SpecificationRequestParameters != nil && apiDef.Spec.FetchRequest != nil {
 				if deprecated.Api.SpecificationRequestParameters.Headers != nil {
-					h := (graphql.HttpHeaders)(*deprecated.Api.SpecificationRequestParameters.Headers)
+					h, err := graphql.NewHttpHeaders(*deprecated.Api.SpecificationRequestParameters.Headers)
+					if err != nil {
+						// TODO handle err
+					}
 					apiDef.Spec.FetchRequest.Auth.AdditionalHeaders = &h
 				}
 				if deprecated.Api.SpecificationRequestParameters.QueryParameters != nil {
@@ -370,19 +379,16 @@ func (c *converter) GraphQLToServiceDetails(in graphql.PackageExt, legacyService
 		}
 
 		if in.DefaultInstanceAuth != nil && in.DefaultInstanceAuth.AdditionalHeaders != nil {
-			inHeaders := *in.DefaultInstanceAuth.AdditionalHeaders
-			outDeprecated.Api.Headers = &map[string][]string{}
+			inHeaders, err := in.DefaultInstanceAuth.AdditionalHeaders.Unmarshal()
+			if err != nil {
+				// TODO handle err
+			}
+			outDeprecated.Api.Headers = &inHeaders
+
 			if outDeprecated.Api.RequestParameters == nil {
 				outDeprecated.Api.RequestParameters = &model.RequestParameters{}
 			}
-			if outDeprecated.Api.RequestParameters.Headers == nil {
-				outDeprecated.Api.RequestParameters.Headers = &map[string][]string{}
-			}
-
-			for k, v := range inHeaders {
-				(*outDeprecated.Api.Headers)[k] = v
-				(*outDeprecated.Api.RequestParameters.Headers)[k] = v
-			}
+			outDeprecated.Api.RequestParameters.Headers = &inHeaders
 		}
 
 		if in.DefaultInstanceAuth != nil && in.DefaultInstanceAuth.AdditionalQueryParams != nil {
@@ -412,7 +418,10 @@ func (c *converter) GraphQLToServiceDetails(in graphql.PackageExt, legacyService
 				}
 
 				if apiDef.Spec.FetchRequest.Auth.AdditionalHeaders != nil {
-					asMap := (map[string][]string)(*apiDef.Spec.FetchRequest.Auth.AdditionalHeaders)
+					asMap, err := apiDef.Spec.FetchRequest.Auth.AdditionalHeaders.Unmarshal()
+					if err != nil {
+						// TODO handle err
+					}
 					outDeprecated.Api.SpecificationRequestParameters.Headers = &asMap
 				}
 

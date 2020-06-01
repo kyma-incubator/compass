@@ -1,30 +1,27 @@
 package graphql
 
 import (
-	"io"
-
-	log "github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
+	"encoding/json"
 )
 
-type HttpHeaders map[string][]string
+type HttpHeaders string
 
-func (y *HttpHeaders) UnmarshalGQL(v interface{}) error {
-	headers, err := scalar.ConvertToMapStringStringArray(v)
-	if err != nil {
-		return err
+func (y *HttpHeaders) Unmarshal() (map[string][]string, error) {
+	var data map[string][]string
+	if y == nil {
+		return data, nil
 	}
 
-	*y = headers
+	err := json.Unmarshal([]byte(*y), &data)
 
-	return nil
+	return data, err
 }
 
-func (y HttpHeaders) MarshalGQL(w io.Writer) {
-	err := scalar.WriteMarshalled(y, w)
+func NewHttpHeaders(h map[string][]string) (HttpHeaders, error) {
+	data, err := json.Marshal(h)
 	if err != nil {
-		log.Printf("while writing %T: %s", y, err)
-		return
+		return "", err
 	}
+
+	return HttpHeaders(data), nil
 }

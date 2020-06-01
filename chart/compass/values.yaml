@@ -17,13 +17,13 @@ global:
       version: "PR-1441"
     connectivity_adapter:
       dir:
-      version: "PR-1460"
+      version: "PR-1409"
     pairing_adapter:
       dir:
       version: "PR-1460"
     director:
       dir:
-      version: "PR-1442"
+      version: "PR-1409"
     gateway:
       dir:
       version: "PR-1460"
@@ -53,7 +53,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1442"
+        version: "PR-1409"
       connector:
         dir:
         version: "PR-1453"

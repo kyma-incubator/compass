@@ -50,64 +50,64 @@ func TestAuthInput_Validate_Credential(t *testing.T) {
 	}
 }
 
-func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
-	testCases := []struct {
-		Name          string
-		Value         *graphql.HttpHeaders
-		ExpectedValid bool
-	}{
-		{
-			Name: "ExpectedValid",
-			Value: &graphql.HttpHeaders{
-				"Authorization": {"test", "asdf"},
-				"Test":          {"test", "asdf"},
-			},
-			ExpectedValid: true,
-		},
-		{
-			Name:          "ExpectedValid - nil",
-			Value:         nil,
-			ExpectedValid: true,
-		},
-		{
-			Name: "Invalid - empty key",
-			Value: &graphql.HttpHeaders{
-				inputvalidationtest.EmptyString: {"test"},
-			},
-			ExpectedValid: false,
-		},
-		{
-			Name: "Invalid - nil value",
-			Value: &graphql.HttpHeaders{
-				"test": nil,
-			},
-			ExpectedValid: false,
-		},
-		{
-			Name: "Invalid - empty slice element",
-			Value: &graphql.HttpHeaders{
-				"test": {inputvalidationtest.EmptyString},
-			},
-			ExpectedValid: false,
-		},
-	}
+// func TestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
+// 	testCases := []struct {
+// 		Name          string
+// 		Value         *graphql.HttpHeaders
+// 		ExpectedValid bool
+// 	}{
+// 		{
+// 			Name: "ExpectedValid",
+// 			Value: &graphql.HttpHeaders{
+// 				"Authorization": {"test", "asdf"},
+// 				"Test":          {"test", "asdf"},
+// 			},
+// 			ExpectedValid: true,
+// 		},
+// 		{
+// 			Name:          "ExpectedValid - nil",
+// 			Value:         nil,
+// 			ExpectedValid: true,
+// 		},
+// 		{
+// 			Name: "Invalid - empty key",
+// 			Value: &graphql.HttpHeaders{
+// 				inputvalidationtest.EmptyString: {"test"},
+// 			},
+// 			ExpectedValid: false,
+// 		},
+// 		{
+// 			Name: "Invalid - nil value",
+// 			Value: &graphql.HttpHeaders{
+// 				"test": nil,
+// 			},
+// 			ExpectedValid: false,
+// 		},
+// 		{
+// 			Name: "Invalid - empty slice element",
+// 			Value: &graphql.HttpHeaders{
+// 				"test": {inputvalidationtest.EmptyString},
+// 			},
+// 			ExpectedValid: false,
+// 		},
+// 	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			sut := fixValidAuthInput()
-			sut.AdditionalHeaders = testCase.Value
-			//WHEN
-			err := sut.Validate()
-			//THEN
-			if testCase.ExpectedValid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
-	}
-}
+// 	for _, testCase := range testCases {
+// 		t.Run(testCase.Name, func(t *testing.T) {
+// 			//GIVEN
+// 			sut := fixValidAuthInput()
+// 			sut.AdditionalHeaders = testCase.Value
+// 			//WHEN
+// 			err := sut.Validate()
+// 			//THEN
+// 			if testCase.ExpectedValid {
+// 				require.NoError(t, err)
+// 			} else {
+// 				require.Error(t, err)
+// 			}
+// 		})
+// 	}
+// }
 
 func TestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 	testCases := []struct {
@@ -553,64 +553,64 @@ func TestCSRFTokenCredentialRequestAuthInput_Validate_Credential(t *testing.T) {
 	}
 }
 
-func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
-	testCases := []struct {
-		Name          string
-		Value         *graphql.HttpHeaders
-		ExpectedValid bool
-	}{
-		{
-			Name: "ExpectedValid",
-			Value: &graphql.HttpHeaders{
-				"Authorization": {"test", "asdf"},
-				"Test":          {"test", "asdf"},
-			},
-			ExpectedValid: true,
-		},
-		{
-			Name:          "ExpectedValid - nil",
-			Value:         nil,
-			ExpectedValid: true,
-		},
-		{
-			Name: "Invalid - empty key",
-			Value: &graphql.HttpHeaders{
-				inputvalidationtest.EmptyString: {"test"},
-			},
-			ExpectedValid: false,
-		},
-		{
-			Name: "Invalid - nil value",
-			Value: &graphql.HttpHeaders{
-				"test": nil,
-			},
-			ExpectedValid: false,
-		},
-		{
-			Name: "Invalid - empty slice element",
-			Value: &graphql.HttpHeaders{
-				"test": {inputvalidationtest.EmptyString},
-			},
-			ExpectedValid: false,
-		},
-	}
+// func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalHeaders(t *testing.T) {
+// 	testCases := []struct {
+// 		Name          string
+// 		Value         *graphql.HttpHeaders
+// 		ExpectedValid bool
+// 	}{
+// 		{
+// 			Name: "ExpectedValid",
+// 			Value: &graphql.HttpHeaders{
+// 				"Authorization": {"test", "asdf"},
+// 				"Test":          {"test", "asdf"},
+// 			},
+// 			ExpectedValid: true,
+// 		},
+// 		{
+// 			Name:          "ExpectedValid - nil",
+// 			Value:         nil,
+// 			ExpectedValid: true,
+// 		},
+// 		{
+// 			Name: "Invalid - empty key",
+// 			Value: &graphql.HttpHeaders{
+// 				inputvalidationtest.EmptyString: {"test"},
+// 			},
+// 			ExpectedValid: false,
+// 		},
+// 		{
+// 			Name: "Invalid - nil value",
+// 			Value: &graphql.HttpHeaders{
+// 				"test": nil,
+// 			},
+// 			ExpectedValid: false,
+// 		},
+// 		{
+// 			Name: "Invalid - empty slice element",
+// 			Value: &graphql.HttpHeaders{
+// 				"test": {inputvalidationtest.EmptyString},
+// 			},
+// 			ExpectedValid: false,
+// 		},
+// 	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			sut := fixValidCSRFTokenCredentialRequestAuthInput()
-			sut.AdditionalHeaders = testCase.Value
-			//WHEN
-			err := sut.Validate()
-			//THEN
-			if testCase.ExpectedValid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
-	}
-}
+// 	for _, testCase := range testCases {
+// 		t.Run(testCase.Name, func(t *testing.T) {
+// 			//GIVEN
+// 			sut := fixValidCSRFTokenCredentialRequestAuthInput()
+// 			sut.AdditionalHeaders = testCase.Value
+// 			//WHEN
+// 			err := sut.Validate()
+// 			//THEN
+// 			if testCase.ExpectedValid {
+// 				require.NoError(t, err)
+// 			} else {
+// 				require.Error(t, err)
+// 			}
+// 		})
+// 	}
+// }
 
 func TestCSRFTokenCredentialRequestAuthInput_Validate_AdditionalQueryParams(t *testing.T) {
 	testCases := []struct {

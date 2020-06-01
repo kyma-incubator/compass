@@ -7,6 +7,7 @@ import (
 	"time"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -176,14 +177,14 @@ func fixPackageModel(t *testing.T, name, desc string) *model.Package {
 	}
 }
 
-func fixGQLPackage(id, name, desc string) *graphql.Package {
+func fixGQLPackage(t *testing.T, id, name, desc string) *graphql.Package {
 	schema := graphql.JSONSchema(`{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`)
 	return &graphql.Package{
 		ID:                             id,
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: &schema,
-		DefaultInstanceAuth:            fixGQLAuth(),
+		DefaultInstanceAuth:            fixGQLAuth(t),
 	}
 }
 
@@ -315,13 +316,16 @@ func fixModelAuth() *model.Auth {
 	}
 }
 
-func fixGQLAuth() *graphql.Auth {
+func fixGQLAuth(t *testing.T) *graphql.Auth {
+	additionalHeaders, err := graphql.NewHttpHeaders(map[string][]string{"test": []string{"foo", "bar"}})
+	require.NoError(t, err)
+
 	return &graphql.Auth{
 		Credential: &graphql.BasicCredentialData{
 			Username: "foo",
 			Password: "bar",
 		},
-		AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
+		AdditionalHeaders:     &additionalHeaders,
 		AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
@@ -330,7 +334,7 @@ func fixGQLAuth() *graphql.Auth {
 					Username: "boo",
 					Password: "far",
 				},
-				AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
+				AdditionalHeaders:     &additionalHeaders,
 				AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
 			},
 		},
@@ -415,7 +419,7 @@ func fixModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
 	}
 }
 
-func fixGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
+func fixGQLPackageInstanceAuth(t *testing.T, id string) *graphql.PackageInstanceAuth {
 	msg := "test-message"
 	reason := "test-reason"
 	status := graphql.PackageInstanceAuthStatus{
@@ -431,7 +435,7 @@ func fixGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
 		ID:          id,
 		Context:     &ctx,
 		InputParams: &params,
-		Auth:        fixGQLAuth(),
+		Auth:        fixGQLAuth(t),
 		Status:      &status,
 	}
 }

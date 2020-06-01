@@ -2,8 +2,10 @@ package systemauth_test
 
 import (
 	"database/sql/driver"
+	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -76,13 +78,16 @@ func fixModelAuthInput() model.AuthInput {
 	}
 }
 
-func fixGQLAuth() *graphql.Auth {
+func fixGQLAuth(t *testing.T) *graphql.Auth {
+	additionalHeaders, err := graphql.NewHttpHeaders(map[string][]string{"test": []string{"foo", "bar"}})
+	require.NoError(t, err)
+
 	return &graphql.Auth{
 		Credential: &graphql.BasicCredentialData{
 			Username: "foo",
 			Password: "bar",
 		},
-		AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
+		AdditionalHeaders:     &additionalHeaders,
 		AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
@@ -91,7 +96,7 @@ func fixGQLAuth() *graphql.Auth {
 					Username: "boo",
 					Password: "far",
 				},
-				AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
+				AdditionalHeaders:     &additionalHeaders,
 				AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
 			},
 		},

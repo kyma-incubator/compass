@@ -172,62 +172,6 @@ func fixModelAuthInput(headers map[string][]string) *model.AuthInput {
 	}
 }
 
-func fixGQLAuthInput(headers map[string][]string) *graphql.AuthInput {
-	httpHeaders := graphql.HttpHeaders(headers)
-
-	return &graphql.AuthInput{
-		AdditionalHeaders: &httpHeaders,
-	}
-}
-
-func fixModelAuth() *model.Auth {
-	return &model.Auth{
-		Credential: model.CredentialData{
-			Basic: &model.BasicCredentialData{
-				Username: "foo",
-				Password: "bar",
-			},
-		},
-		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
-		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-		RequestAuth: &model.CredentialRequestAuth{
-			Csrf: &model.CSRFTokenCredentialRequestAuth{
-				TokenEndpointURL: "foo.url",
-				Credential: model.CredentialData{
-					Basic: &model.BasicCredentialData{
-						Username: "boo",
-						Password: "far",
-					},
-				},
-				AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
-				AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-			},
-		},
-	}
-}
-
-func fixGQLAuth() *graphql.Auth {
-	return &graphql.Auth{
-		Credential: &graphql.BasicCredentialData{
-			Username: "foo",
-			Password: "bar",
-		},
-		AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-		AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
-		RequestAuth: &graphql.CredentialRequestAuth{
-			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
-				TokenEndpointURL: "foo.url",
-				Credential: &graphql.BasicCredentialData{
-					Username: "boo",
-					Password: "far",
-				},
-				AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-				AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
-			},
-		},
-	}
-}
-
 func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 	return &model.APIRuntimeAuth{
 		ID:        str.Ptr("foo"),

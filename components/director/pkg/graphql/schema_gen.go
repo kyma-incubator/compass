@@ -24116,12 +24116,12 @@ func (ec *executionContext) marshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑinc
 }
 
 func (ec *executionContext) unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx context.Context, v interface{}) (HttpHeaders, error) {
-	var res HttpHeaders
-	return res, res.UnmarshalGQL(v)
+	tmp, err := graphql.UnmarshalString(v)
+	return HttpHeaders(tmp), err
 }
 
 func (ec *executionContext) marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx context.Context, sel ast.SelectionSet, v HttpHeaders) graphql.Marshaler {
-	return v
+	return graphql.MarshalString(string(v))
 }
 
 func (ec *executionContext) unmarshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx context.Context, v interface{}) (*HttpHeaders, error) {
@@ -24136,7 +24136,7 @@ func (ec *executionContext) marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubat
 	if v == nil {
 		return graphql.Null
 	}
-	return v
+	return ec.marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {

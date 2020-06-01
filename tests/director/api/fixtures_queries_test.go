@@ -385,7 +385,7 @@ func addDocumentToPackageWithInput(t *testing.T, ctx context.Context, pkgID stri
 }
 
 func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.DocumentExt {
-	return addDocumentToPackageWithInput(t, ctx, pkgID, fixDocumentInput())
+	return addDocumentToPackageWithInput(t, ctx, pkgID, fixDocumentInput(t))
 }
 
 func createPackageInstanceAuth(t *testing.T, ctx context.Context, pkgID string) graphql.PackageInstanceAuth {

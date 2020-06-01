@@ -1,8 +1,11 @@
 package auth_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -13,8 +16,7 @@ var (
 		"foo": {"bar", "baz"},
 		"too": {"tar", "taz"},
 	}
-	authHeaders = graphql.HttpHeaders(authMap)
-	authParams  = graphql.QueryParams(authMap)
+	authParams = graphql.QueryParams(authMap)
 )
 
 func fixDetailedAuth() *model.Auth {
@@ -45,7 +47,10 @@ func fixDetailedAuth() *model.Auth {
 	}
 }
 
-func fixDetailedGQLAuth() *graphql.Auth {
+func fixDetailedGQLAuth(t *testing.T) *graphql.Auth {
+	authHeaders, err := graphql.NewHttpHeaders(authMap)
+	require.NoError(t, err)
+
 	return &graphql.Auth{
 		Credential: graphql.BasicCredentialData{
 			Username: authUsername,
@@ -95,7 +100,10 @@ func fixDetailedAuthInput() *model.AuthInput {
 	}
 }
 
-func fixDetailedGQLAuthInput() *graphql.AuthInput {
+func fixDetailedGQLAuthInput(t *testing.T) *graphql.AuthInput {
+	authHeaders, err := graphql.NewHttpHeaders(authMap)
+	require.NoError(t, err)
+
 	return &graphql.AuthInput{
 		Credential: &graphql.CredentialDataInput{
 			Basic: &graphql.BasicCredentialDataInput{

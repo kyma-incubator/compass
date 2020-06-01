@@ -197,13 +197,16 @@ func fixModelAuth() *model.Auth {
 	}
 }
 
-func fixGQLAuth() *graphql.Auth {
+func fixGQLAuth(t *testing.T) *graphql.Auth {
+	additionalHeaders, err := graphql.NewHttpHeaders(map[string][]string{"test": []string{"foo", "bar"}})
+	require.NoError(t, err)
+
 	return &graphql.Auth{
 		Credential: &graphql.BasicCredentialData{
 			Username: "foo",
 			Password: "bar",
 		},
-		AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
+		AdditionalHeaders:     &additionalHeaders,
 		AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
@@ -212,7 +215,7 @@ func fixGQLAuth() *graphql.Auth {
 					Username: "boo",
 					Password: "far",
 				},
-				AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
+				AdditionalHeaders:     &additionalHeaders,
 				AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
 			},
 		},

@@ -28,7 +28,7 @@ func TestResolver_API(t *testing.T) {
 		pkgID := "1"
 		modelAPI := fixModelAPIDefinition(id, pkgID, "name", "bar", "test")
 		gqlAPI := fixGQLAPIDefinition(id, pkgID, "name", "bar", "test")
-		app := fixGQLPackage("foo", "foo", "foo")
+		app := fixGQLPackage(t, "foo", "foo", "foo")
 		testErr := errors.New("Test error")
 		txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -162,7 +162,7 @@ func TestResolver_Apis(t *testing.T) {
 
 	packageID := "1"
 	group := "group"
-	app := fixGQLPackage(packageID, "foo", "foo")
+	app := fixGQLPackage(t, packageID, "foo", "foo")
 	modelAPIDefinitions := []*model.APIDefinition{
 
 		fixModelAPIDefinition("foo", packageID, "Foo", "Lorem Ipsum", group),
@@ -279,7 +279,7 @@ func TestResolver_EventAPI(t *testing.T) {
 
 	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
 	gqlAPI := fixGQLEventDefinition(id, "placeholder", "placeholder", "placeholder", "placeholder")
-	pkg := fixGQLPackage("foo", "foo", "foo")
+	pkg := fixGQLPackage(t, "foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -413,7 +413,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 
 	packageID := "1"
 	group := "group"
-	pkg := fixGQLPackage(packageID, "foo", "foo")
+	pkg := fixGQLPackage(t, packageID, "foo", "foo")
 	modelEventAPIDefinitions := []*model.EventDefinition{
 
 		fixModelEventAPIDefinition("foo", packageID, "Foo", "Lorem Ipsum", group),
@@ -507,7 +507,7 @@ func TestResolver_Document(t *testing.T) {
 
 	modelDoc := fixModelDocument("foo", id)
 	gqlDoc := fixGQLDocument(id)
-	pkg := fixGQLPackage("foo", "foo", "foo")
+	pkg := fixGQLPackage(t, "foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -648,7 +648,7 @@ func TestResolver_Documents(t *testing.T) {
 		fixGQLDocument("foo"),
 		fixGQLDocument("bar"),
 	}
-	pkg := fixGQLPackage(pkgID, "foo", "foo")
+	pkg := fixGQLPackage(t, pkgID, "foo", "foo")
 
 	first := 2
 	gqlAfter := graphql.PageCursor("test")
@@ -733,7 +733,7 @@ func TestResolver_AddPackage(t *testing.T) {
 	name := "baz"
 
 	modelPackage := fixPackageModel(t, name, desc)
-	gqlPackage := fixGQLPackage(id, name, desc)
+	gqlPackage := fixGQLPackage(t, id, name, desc)
 	gqlPackageInput := fixGQLPackageCreateInput(name, desc)
 	modelPackageInput := fixModelPackageCreateInput(name, desc)
 
@@ -887,7 +887,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 	desc := "bar"
 	gqlPackageUpdateInput := fixGQLPackageUpdateInput(name, desc)
 	modelPackageUpdateInput := fixModelPackageUpdateInput(t, name, desc)
-	gqlPackage := fixGQLPackage(id, name, desc)
+	gqlPackage := fixGQLPackage(t, id, name, desc)
 	modelPackage := fixPackageModel(t, name, desc)
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -1060,7 +1060,7 @@ func TestResolver_DeletePackage(t *testing.T) {
 	name := "foo"
 	desc := "desc"
 	modelPackage := fixPackageModel(t, name, desc)
-	gqlPackage := fixGQLPackage(id, name, desc)
+	gqlPackage := fixGQLPackage(t, id, name, desc)
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -1202,8 +1202,8 @@ func TestResolver_InstanceAuth(t *testing.T) {
 	// given
 	id := "foo"
 	modelPackageInstanceAuth := fixModelPackageInstanceAuth(id)
-	gqlPackageInstanceAuth := fixGQLPackageInstanceAuth(id)
-	pkg := fixGQLPackage("foo", "foo", "foo")
+	gqlPackageInstanceAuth := fixGQLPackageInstanceAuth(t, id)
+	pkg := fixGQLPackage(t, "foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -1344,15 +1344,15 @@ func TestResolver_InstanceAuths(t *testing.T) {
 	// given
 	testErr := errors.New("test error")
 
-	pkg := fixGQLPackage(packageID, "foo", "bar")
+	pkg := fixGQLPackage(t, packageID, "foo", "bar")
 	modelPackageInstanceAuths := []*model.PackageInstanceAuth{
 		fixModelPackageInstanceAuth("foo"),
 		fixModelPackageInstanceAuth("bar"),
 	}
 
 	gqlPackageInstanceAuths := []*graphql.PackageInstanceAuth{
-		fixGQLPackageInstanceAuth("foo"),
-		fixGQLPackageInstanceAuth("bar"),
+		fixGQLPackageInstanceAuth(t, "foo"),
+		fixGQLPackageInstanceAuth(t, "bar"),
 	}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)

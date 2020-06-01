@@ -8,10 +8,10 @@ import (
 
 func (i AuthInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.AdditionalHeaders,
-			inputvalidation.EachKey(validation.Required),                                         // key
-			inputvalidation.Each(validation.Required, inputvalidation.Each(validation.Required)), // value
-		),
+		// validation.Field(&i.AdditionalHeaders,
+		// 	inputvalidation.EachKey(validation.Required),                                         // key
+		// 	inputvalidation.Each(validation.Required, inputvalidation.Each(validation.Required)), // value
+		// ),
 		validation.Field(&i.AdditionalQueryParams,
 			inputvalidation.EachKey(validation.Required),                                         // key
 			inputvalidation.Each(validation.Required, inputvalidation.Each(validation.Required)), // value

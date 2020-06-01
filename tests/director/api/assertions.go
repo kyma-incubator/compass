@@ -62,8 +62,11 @@ func assertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 		return
 	}
 	require.NotNil(t, actual)
-	assert.Equal(t, in.AdditionalHeaders, actual.AdditionalHeaders)
+
+	//assert.Equal(t, in.AdditionalHeaders, actual.AdditionalHeaders)
+	assertHttpHeaders(t, in.AdditionalHeaders, actual.AdditionalHeaders)
 	assert.Equal(t, in.AdditionalQueryParams, actual.AdditionalQueryParams)
+
 	if in.Credential != nil {
 		if in.Credential.Basic != nil {
 			basic, ok := actual.Credential.(*graphql.BasicCredentialData)
@@ -359,6 +362,21 @@ func unmarshalJSONSchema(t *testing.T, schema *graphql.JSONSchema) interface{} {
 	require.NoError(t, err)
 
 	return output
+}
+
+func assertHttpHeaders(t *testing.T, in *graphql.HttpHeaders, actual *graphql.HttpHeaders) {
+	if in == nil && actual == nil {
+		return
+	}
+
+	require.NotNil(t, in)
+	require.NotNil(t, actual)
+
+	unquoted, err := strconv.Unquote(string(*in))
+	require.NoError(t, err)
+
+	unquotedIn := (*graphql.HttpHeaders)(&unquoted)
+	require.Equal(t, unquotedIn, actual)
 }
 
 func assertAutomaticScenarioAssignment(t *testing.T, expected graphql.AutomaticScenarioAssignmentSetInput, actual graphql.AutomaticScenarioAssignment) {

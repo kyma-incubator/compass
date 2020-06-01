@@ -1192,9 +1192,9 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	gqlSysAuths := []*graphql.SystemAuth{
-		fixGQLSystemAuth("bar", fixGQLAuth()),
-		fixGQLSystemAuth("baz", fixGQLAuth()),
-		fixGQLSystemAuth("faz", fixGQLAuth()),
+		fixGQLSystemAuth("bar", fixGQLAuth(t)),
+		fixGQLSystemAuth("baz", fixGQLAuth(t)),
+		fixGQLSystemAuth("faz", fixGQLAuth(t)),
 	}
 
 	testErr := errors.New("this is a test error")

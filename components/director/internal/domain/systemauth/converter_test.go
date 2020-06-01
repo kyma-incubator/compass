@@ -19,7 +19,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	objectID := "bar"
 
 	modelAuth := fixModelAuth()
-	gqlAuth := fixGQLAuth()
+	gqlAuth := fixGQLAuth(t)
 	modelRtmSysAuth := fixModelSystemAuth(sysAuthID, model.RuntimeReference, objectID, modelAuth)
 	modelAppSysAuth := fixModelSystemAuth(sysAuthID, model.ApplicationReference, objectID, modelAuth)
 	modelIntSysAuth := fixModelSystemAuth(sysAuthID, model.IntegrationSystemReference, objectID, modelAuth)

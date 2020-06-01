@@ -123,7 +123,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 	modelPackage := fixPackageModel(t, name, desc)
-	gqlPackage := fixGQLPackage(id, name, desc)
+	gqlPackage := fixGQLPackage(t, id, name, desc)
 	emptyModelPackage := &model.Package{}
 	emptyGraphQLPackage := &graphql.Package{}
 
@@ -201,8 +201,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	expected := []*graphql.Package{
-		fixGQLPackage(packageID, name1, desc),
-		fixGQLPackage(packageID, name2, desc),
+		fixGQLPackage(t, packageID, name1, desc),
+		fixGQLPackage(t, packageID, name2, desc),
 		{},
 	}
 
