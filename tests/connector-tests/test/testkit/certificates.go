@@ -94,6 +94,19 @@ func CheckIfCertIsSigned(t *testing.T, clientCertStr, caCertStr string) {
 	require.NoError(t, err)
 }
 
+// Certificate chain starts from leaf certificate and ends with a root certificate (https://tools.ietf.org/html/rfc5246#section-7.4.2).
+// The correct certificate chain holds the following property: ith certificate in the chain is issued by (i+1)th certificate
+func CheckCertificateChainOrder(t *testing.T, chain string) {
+	certChain := DecodeCertChain(t, chain)
+
+	for i := 0; i < len(certChain)-1; i++ {
+		issuer := certChain[i].Issuer
+		nextCertSubject := certChain[i+1].Subject
+
+		require.Equal(t, nextCertSubject, issuer)
+	}
+}
+
 func GetCertificateHash(t *testing.T, certificateStr string) string {
 	cert := decodeCert(t, certificateStr)
 	sha := sha256.Sum256(cert.Raw)

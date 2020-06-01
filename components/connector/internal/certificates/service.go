@@ -92,10 +92,10 @@ func (svc *certificateService) encodeCertificates(rawCaCertificate, rawClientCer
 			return EncodedCertificateChain{}, err
 		}
 
-		caCrtBytes = svc.createCertChain(rootCABytes, caCrtBytes)
+		caCrtBytes = append(caCrtBytes, rootCABytes...)
 	}
 
-	certChain := svc.createCertChain(signedCrtBytes, caCrtBytes)
+	certChain := append(signedCrtBytes, caCrtBytes...)
 
 	return encodeCertificateBase64(certChain, signedCrtBytes, caCrtBytes), nil
 }
@@ -116,10 +116,6 @@ func (svc *certificateService) loadRootCACert() ([]byte, apperrors.AppError) {
 
 func (svc *certificateService) checkCSR(csr *x509.CertificateRequest, expectedSubject CSRSubject) apperrors.AppError {
 	return svc.certUtil.CheckCSRValues(csr, expectedSubject)
-}
-
-func (svc *certificateService) createCertChain(clientCrt, caCrt []byte) []byte {
-	return append(clientCrt, caCrt...)
 }
 
 func encodeCertificateBase64(certChain, clientCRT, caCRT []byte) EncodedCertificateChain {
