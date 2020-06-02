@@ -25,7 +25,6 @@ require (
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979
 	github.com/lestrrat-go/jwx v0.9.0
 	github.com/lib/pq v1.2.0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225

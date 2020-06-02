@@ -210,6 +210,29 @@ func (_m *ReadWriteSession) GetTenantForOperation(operationID string) (string, d
 	return r0, r1
 }
 
+// InProgressOperationsCount provides a mock function with given fields:
+func (_m *ReadWriteSession) InProgressOperationsCount() (model.OperationsCount, dberrors.Error) {
+	ret := _m.Called()
+
+	var r0 model.OperationsCount
+	if rf, ok := ret.Get(0).(func() model.OperationsCount); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(model.OperationsCount)
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func() dberrors.Error); ok {
+		r1 = rf()
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // InsertCluster provides a mock function with given fields: cluster
 func (_m *ReadWriteSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	ret := _m.Called(cluster)

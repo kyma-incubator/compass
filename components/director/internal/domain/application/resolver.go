@@ -244,11 +244,10 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	}
 
 	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
-	totalCount := len(gqlApps)
 
 	return &graphql.ApplicationPage{
 		Data:       gqlApps,
-		TotalCount: totalCount,
+		TotalCount: appPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),

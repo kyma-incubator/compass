@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -131,7 +133,7 @@ func (r *pgRepository) GetByInstanceAuthID(ctx context.Context, tenant string, i
 		return nil, err
 	}
 
-	prefixedFieldNames := r.prefixStrings(packageColumns, "p.")
+	prefixedFieldNames := str.PrefixStrings(packageColumns, "p.")
 	stmt := fmt.Sprintf(`SELECT %s FROM %s AS p JOIN %s AS a on a.%s=p.id where a.tenant_id=$1 AND a.id=$2`,
 		strings.Join(prefixedFieldNames, ", "),
 		packageTable,
@@ -178,13 +180,4 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
-}
-
-func (r *pgRepository) prefixStrings(in []string, prefix string) []string {
-	var prefixedFieldNames []string
-	for _, column := range in {
-		prefixedFieldNames = append(prefixedFieldNames, fmt.Sprintf("%s%s", prefix, column))
-	}
-
-	return prefixedFieldNames
 }

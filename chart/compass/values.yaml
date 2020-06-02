@@ -13,16 +13,16 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1270"
+      version: "PR-1394"
     connectivity_adapter:
       dir:
-      version: "PR-1344"
+      version: "PR-1403"
     pairing_adapter:
       dir:
       version: "PR-1270"
     director:
       dir:
-      version: "PR-1378"
+      version: "PR-1404"
     gateway:
       dir:
       version: "PR-1330"
@@ -42,7 +42,7 @@ global:
       version: "PR-5318"
     kyma_environment_broker:
       dir:
-      version: "PR-1332"
+      version: "e095a49b"
     external_services_mock:
       dir:
       version: "PR-1315"
@@ -52,10 +52,10 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1318"
+        version: "PR-1411"
       connector:
         dir:
-        version: "PR-1270"
+        version: "PR-1394"
       provisioner:
         dir:
         version: "PR-1306"
@@ -130,6 +130,7 @@ global:
     enabled: false
 
   kyma_environment_broker:
+    enabled: false
     secrets:
       integrationSystemCredentials:
         name: compass-kyma-environment-broker-credentials

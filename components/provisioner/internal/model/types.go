@@ -95,3 +95,7 @@ type RuntimeStatus struct {
 	RuntimeConnectionStatus RuntimeAgentConnectionStatus
 	RuntimeConfiguration    Cluster
 }
+
+type OperationsCount struct {
+	Count map[OperationType]int
+}

@@ -5,6 +5,7 @@ type Entity struct {
 	Name           string       `db:"external_name"`
 	ExternalTenant string       `db:"external_tenant"`
 	ProviderName   string       `db:"provider_name"`
+	Initialized    *bool        `db:"initialized"` // computed value
 	Status         TenantStatus `db:"status"`
 }
 

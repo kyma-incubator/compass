@@ -29,6 +29,9 @@ type TenantStatus string
 const (
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
+
+	tenantsQueryNotInitializedTenantName = "TestTenantsQueryTenantNotInitialized"
+	tenantsQueryInitializedTenantName    = "TestTenantsQueryTenantInitialized"
 )
 
 var testTenants TestTenantsManager
@@ -123,6 +126,20 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
+		tenantsQueryNotInitializedTenantName: {
+			ID:             "72329135-27fd-4284-9bcb-37ea8d6307d0",
+			Name:           tenantsQueryNotInitializedTenantName,
+			ExternalTenant: "72329135-27fd-4284-9bcb-37ea8d6307d0",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
+		tenantsQueryInitializedTenantName: {
+			ID:             "8cf0c909-f816-4fe3-a507-a7917ccd8380",
+			Name:           tenantsQueryInitializedTenantName,
+			ExternalTenant: "8cf0c909-f816-4fe3-a507-a7917ccd8380",
+			ProviderName:   testProvider,
+			Status:         Active,
+		},
 	}
 
 	tx, err := transact.Begin()
@@ -176,7 +193,7 @@ func (mgr TestTenantsManager) emptyTenant() string {
 	return ""
 }
 
-func (mgr TestTenantsManager) GetAll() []Tenant {
+func (mgr TestTenantsManager) List() []Tenant {
 	var toReturn []Tenant
 
 	for _, v := range mgr.tenantsByName {

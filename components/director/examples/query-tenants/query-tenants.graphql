@@ -2,6 +2,8 @@
 query {
   result: tenants {
     id
+    internalID
     name
+    initialized
   }
 }

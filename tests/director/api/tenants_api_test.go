@@ -4,12 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	trueVal  = true
+	falseVal = false
 )
 
 func TestQueryTenants(t *testing.T) {
@@ -18,7 +20,12 @@ func TestQueryTenants(t *testing.T) {
 
 	getTenantsRequest := fixTenantsRequest()
 	var output []*graphql.Tenant
-	defaultTenants := fixDefaultTenants()
+	expectedTenants := expectedTenants()
+
+	t.Log("Initializing one of the tenants")
+	initializedTenantID := testTenants.GetIDByName(t, tenantsQueryInitializedTenantName)
+	unregisterApp := registerSimpleApp(t, initializedTenantID)
+	defer unregisterApp()
 
 	// WHEN
 	t.Log("List tenant")
@@ -28,33 +35,51 @@ func TestQueryTenants(t *testing.T) {
 	//THEN
 	t.Log("Check if tenants were received")
 
-	for _, tenant := range defaultTenants {
-		assert.Contains(t, output, tenant)
-	}
+	assertTenants(t, expectedTenants, output)
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 
-func fixTenant(id, name string) *graphql.Tenant {
-	return &graphql.Tenant{
-		ID:   id,
-		Name: str.Ptr(name),
+func registerSimpleApp(t *testing.T, tenantID string) func() {
+	ctx := context.Background()
+
+	placeholder := "foo"
+	in := fixSampleApplicationRegisterInput(placeholder)
+	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	var res graphql.Application
+	req := fixRegisterApplicationRequest(appInputGQL)
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &res)
+	require.NoError(t, err)
+
+	return func() {
+		unregisterApplicationInTenant(t, res.ID, tenantID)
 	}
 }
 
-func fixDefaultTenants() []*graphql.Tenant {
-	return append([]*graphql.Tenant{
-		fixTenant("3e64ebae-38b5-46a0-b1ed-9ccee153a0ae", "default"),
-		fixTenant("1eba80dd-8ff6-54ee-be4d-77944d17b10b", "foo"),
-		fixTenant("af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e", "bar"),
-	}, tenantsToGraphql(testTenants.GetAll())...)
-}
+func expectedTenants() []*graphql.Tenant {
+	testTnts := testTenants.List()
+	var expectedTenants []*graphql.Tenant
 
-func tenantsToGraphql(tenants []Tenant) []*graphql.Tenant {
-	var toReturn []*graphql.Tenant
-
-	for k, _ := range tenants {
-		toReturn = append(toReturn, &graphql.Tenant{ID: tenants[k].ID, Name: &tenants[k].Name})
+	for _, tnt := range testTnts {
+		name := tnt.Name
+		expectedTenants = append(expectedTenants, &graphql.Tenant{
+			ID:          tnt.ID,
+			Name:        &name,
+			Initialized: expectedInitializedFieldForTenant(name),
+		})
 	}
 
-	return toReturn
+	return expectedTenants
+}
+
+func expectedInitializedFieldForTenant(name string) *bool {
+	switch name {
+	case tenantsQueryInitializedTenantName:
+		return &trueVal
+	case tenantsQueryNotInitializedTenantName:
+		return &falseVal
+	}
+
+	return nil
 }

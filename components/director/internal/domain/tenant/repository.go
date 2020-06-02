@@ -2,6 +2,11 @@ package tenant
 
 import (
 	"context"
+	"fmt"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/pkg/errors"
 
@@ -10,14 +15,17 @@ import (
 )
 
 const tableName string = `public.business_tenant_mappings`
+const labelDefinitionsTableName string = `public.label_definitions`
+const labelDefinitionsTenantIDColumn string = `tenant_id`
 
 var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}
 var (
-	idColumn             = "id"
-	externalNameColumn   = "external_name"
-	externalTenantColumn = "external_tenant"
-	providerNameColumn   = "provider_name"
-	statusColumn         = "status"
+	idColumn                  = "id"
+	externalNameColumn        = "external_name"
+	externalTenantColumn      = "external_tenant"
+	providerNameColumn        = "provider_name"
+	statusColumn              = "status"
+	initializedComputedColumn = "initialized"
 )
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -87,13 +95,20 @@ func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenan
 func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection EntityCollection
 
-	conditions := repo.Conditions{
-		repo.NewEqualCondition(statusColumn, Active),
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...)
+	prefixedFields := strings.Join(str.PrefixStrings(tableColumns, "t."), ", ")
+	query := fmt.Sprintf(`SELECT DISTINCT %s, ld.%s IS NOT NULL AS %s
+			FROM %s t LEFT JOIN %s ld ON t.%s=ld.%s
+			WHERE t.%s = $1
+			ORDER BY %s DESC, t.%s ASC`, prefixedFields, labelDefinitionsTenantIDColumn, initializedComputedColumn, tableName, labelDefinitionsTableName, idColumn, labelDefinitionsTenantIDColumn, statusColumn, initializedComputedColumn, externalNameColumn)
+
+	err = persist.Select(&entityCollection, query, Active)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
 
 	var items []*model.BusinessTenantMapping

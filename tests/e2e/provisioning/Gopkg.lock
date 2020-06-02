@@ -234,25 +234,6 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:62ea1253e90e8cd2b229ad9614e134d025a1728dc7ada9536e76f28b66251206"
-  name = "github.com/kubernetes-incubator/service-catalog"
-  packages = ["pkg/apis/servicecatalog/v1beta1"]
-  pruneopts = "UT"
-  revision = "33d0c09773b4a57b652b4e08b68921f402065f1d"
-  version = "v0.2.2"
-
-[[projects]]
-  digest = "1:9b345d38b9569ac0a189f68fde5b3d7b752bbb6e58aee62d20d90f5e476fb128"
-  name = "github.com/kubernetes-sigs/service-catalog"
-  packages = [
-    "pkg/apis/servicecatalog",
-    "pkg/filter",
-  ]
-  pruneopts = "UT"
-  revision = "33d0c09773b4a57b652b4e08b68921f402065f1d"
-  version = "v0.2.2"
-
-[[projects]]
   branch = "master"
   digest = "1:0ec3e5ffef4f79e483e2d272aa81af32412c3de9f1889b8dd660bfb4a4a27fa7"
   name = "github.com/kyma-incubator/compass"
@@ -436,11 +417,9 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:eb908895ef7c0947ac2ea0f0622e2cb41606496f94701e045546da51a89d08d7"
+  digest = "1:06ea4b9041b945d21befb747ce386482e7686e88ae901110fad90328c3d2ceaf"
   name = "golang.org/x/crypto"
   packages = [
-    "bcrypt",
-    "blowfish",
     "pbkdf2",
     "scrypt",
     "ssh/terminal",
@@ -792,7 +771,6 @@
     "github.com/Masterminds/sprig",
     "github.com/avast/retry-go",
     "github.com/google/uuid",
-    "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",

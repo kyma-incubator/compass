@@ -292,6 +292,7 @@ func assertCertificate(t *testing.T, expectedSubject string, certificationResult
 
 	testkit.CheckIfSubjectEquals(t, expectedSubject, clientCert)
 	testkit.CheckIfChainContainsTwoCertificates(t, certChain)
+	testkit.CheckCertificateChainOrder(t, certChain)
 	testkit.CheckIfCertIsSigned(t, clientCert, caCert)
 }
 

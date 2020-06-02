@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/provisioner/internal/metrics"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 
 	provisioningStages "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning"
@@ -39,6 +41,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/99designs/gqlgen/handler"
@@ -88,6 +91,8 @@ type config struct {
 	SupportOnDemandReleases  bool `envconfig:"default=false"`
 
 	EnqueueInProgressOperations bool `envconfig:"default=true"`
+
+	MetricsAddress string `envconfig:"default=127.0.0.1:9000"`
 
 	LogLevel string `envconfig:"default=info"`
 }
@@ -248,9 +253,21 @@ func main() {
 	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
 	router.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
-	http.Handle("/", router)
+	// Metrics
+	err = metrics.Register(dbsFactory.NewReadSession())
+	exitOnError(err, "Failed to register metrics collectors")
+
+	// Expose metrics on different port as it cannot be secured with mTLS
+	metricsRouter := mux.NewRouter()
+	metricsRouter.Handle("/metrics", promhttp.Handler())
+
+	metricsServer := &http.Server{
+		Handler: metricsRouter,
+		Addr:    cfg.MetricsAddress,
+	}
 
 	log.Infof("API listening on %s...", cfg.Address)
+	log.Infof("Metrics API listening on %s...", cfg.MetricsAddress)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -260,6 +277,12 @@ func main() {
 
 		if err := http.ListenAndServe(cfg.Address, router); err != nil {
 			log.Errorf("Error starting server: %s", err.Error())
+		}
+	}()
+
+	go func() {
+		if err := metricsServer.ListenAndServe(); err != nil {
+			log.Errorf("Error starting metrics server: %s", err.Error())
 		}
 	}()
 

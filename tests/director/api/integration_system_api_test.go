@@ -132,7 +132,7 @@ func TestQueryIntegrationSystems(t *testing.T) {
 	intSys2 := registerIntegrationSystem(t, ctx, name2)
 	defer unregisterIntegrationSystem(t, ctx, intSys2.ID)
 
-	first := 2
+	first := 100
 	after := ""
 
 	getIntegrationSystemsRequest := fixIntegrationSystemsRequest(first, after)
@@ -145,6 +145,6 @@ func TestQueryIntegrationSystems(t *testing.T) {
 
 	//THEN
 	t.Log("Check if Integration Systems were received")
-	assert.Equal(t, 2, output.TotalCount)
+	assertIntegrationSystemNames(t, []string{name1, name2}, output)
 	saveExample(t, getIntegrationSystemsRequest.Query(), "query integration systems")
 }

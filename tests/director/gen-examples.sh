@@ -22,7 +22,7 @@ export APP_DB_NAME="compass"
 export APP_DB_PORT="5432"
 export APP_DB_SSL_PARAM="disable"
 export APP_DB_HOST=${POSTGRES_CONTAINER}
-APP_PORT="3001"
+APP_PORT="3002"
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIRECTOR_URL="compass-dev-director"
