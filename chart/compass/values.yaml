@@ -113,8 +113,8 @@ global:
         certificateKey: ca.crt
         keyKey: ca.key
       rootCA:
-        name: compass-connector-root-ca
-        cacert: {{ .Values.global.connector.secrets.rootCA.name }}
+        name: &rootCAName compass-connector-root-ca
+        cacert: *rootCAName
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
         certificateKey: cacert
     certificateDataHeader: "Certificate-Data"
