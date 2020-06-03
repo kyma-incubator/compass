@@ -1,4 +1,4 @@
-{{ if (tpl .Values.global.connector.revocation.configmap.shouldCreate .) }}
+{{ if (tpl .Values.global.connector.revocation.configmap.shouldCreate . | quote) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
