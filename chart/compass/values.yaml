@@ -97,6 +97,7 @@ global:
       maxOpenConnections: 1
       maxIdleConnections: 1
 
+  disableLegacyConnectivity: true
   connector:
     graphql:
       external:
@@ -113,13 +114,13 @@ global:
         certificateKey: ca.crt
         keyKey: ca.key
       rootCA:
-        name: compass-connector-root-ca
+        name: &connectorSecretsRootCAName compass-connector-root-ca
+        cacert: *connectorSecretsRootCAName
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
         certificateKey: cacert
     certificateDataHeader: "Certificate-Data"
     revocation:
       configmap:
-        shouldCreate: true
         namespace: compass-system
         name: revocations-config
     # If key and certificate are not provided they will be generated
