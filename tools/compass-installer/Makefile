@@ -8,8 +8,7 @@ build-image:
 	cd ./../../; \
 	docker build -t $(IMG):$(TAG) \
 		-f ./tools/compass-installer/compass.Dockerfile  \
-		--build-arg INSTALLER_DIR=$(DOCKER_PATH) \
-		--build-arg INSTALLER_VERSION=$(TAG) .
+		--build-arg INSTALLER_DIR=$(DOCKER_PATH) .
 
 .PHONY: push-image
 push-image:
