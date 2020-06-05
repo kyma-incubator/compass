@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
+
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -23,7 +24,6 @@ type Client interface {
 	ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)
 	DeprovisionRuntime(accountID, runtimeID string) (string, error)
 	ReconnectRuntimeAgent(accountID, runtimeID string) (string, error)
-	GCPRuntimeStatus(accountID, runtimeID string) (GCPRuntimeStatus, error)
 	RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error)
 }
 
@@ -92,30 +92,6 @@ func (c *client) ReconnectRuntimeAgent(accountID, runtimeID string) (string, err
 		return "", errors.Wrap(err, "Failed to reconnect Runtime agent")
 	}
 	return operationId, nil
-}
-
-type GCPRuntimeStatus struct {
-	LastOperationStatus     *schema.OperationStatus         `json:"lastOperationStatus"`
-	RuntimeConnectionStatus *schema.RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
-	RuntimeConfiguration    struct {
-		ClusterConfig         *schema.GCPConfig  `json:"clusterConfig"`
-		KymaConfig            *schema.KymaConfig `json:"kymaConfig"`
-		Kubeconfig            *string            `json:"kubeconfig"`
-		CredentialsSecretName *string            `json:"credentialsSecretName"`
-	} `json:"runtimeConfiguration"`
-}
-
-func (c *client) GCPRuntimeStatus(accountID, runtimeID string) (GCPRuntimeStatus, error) {
-	query := c.queryProvider.runtimeStatus(runtimeID)
-	req := gcli.NewRequest(query)
-	req.Header.Add(accountIDKey, accountID)
-
-	var response GCPRuntimeStatus
-	err := c.executeRequest(req, &response)
-	if err != nil {
-		return GCPRuntimeStatus{}, errors.Wrap(err, "Failed to get Runtime status")
-	}
-	return response, nil
 }
 
 func (c *client) RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error) {
