@@ -59,7 +59,7 @@ The following section lists all steps needed to implement the Compass separation
 
 - Modify the `run.sh` development script in the Compass repository:
 
-  - Install Kyma with CLI from the fixed Kyma version using overrides from the Compass repository.
+  - Install the lite version of Kyma with CLI from the fixed Kyma version using overrides from the Compass repository.
   - Install Compass with Compass Operator (using the new `run.sh` script).
 
 - Modify the Kyma Compass Integration pipeline in the Compass repository:
