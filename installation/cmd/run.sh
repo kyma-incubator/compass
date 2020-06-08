@@ -3,7 +3,7 @@
 set -o errexit
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
-defaultRelease=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION.txt)
+defaultRelease=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
 KYMA_RELEASE=${1:-$defaultRelease}
 COMPASS_HELM_RELEASE_NAME="compass"
 COMPASS_HELM_RELEASE_NAMESPACE="compass-system"
