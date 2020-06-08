@@ -99,6 +99,8 @@ github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdko
 github.com/QcloudApi/qcloud_sign_golang v0.0.0-20141224014652-e4130a326409/go.mod h1:1pk82RBxDY/JZnPQrtqHlUFfCctgdorsd9M06fMynOM=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
+github.com/Szymongib/hydroform/install v0.0.0-20200529124552-33395ccd54e1 h1:DNUUmBu63eS9G/MGzQTRQuHW6vVVXBW67UZ+kiiFRtA=
+github.com/Szymongib/hydroform/install v0.0.0-20200529124552-33395ccd54e1/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292 h1:tuQ7w+my8a8mkwN7x2TSd7OzTjkZ7rAeSyH4xncuAMI=
 github.com/Unknwon/com v0.0.0-20151008135407-28b053d5a292/go.mod h1:KYCjqMOeHpNuTOiFQU6WEcTG7poCJrUs0YgyHNtn1no=
 github.com/abdullin/seq v0.0.0-20160510034733-d5467c17e7af h1:DBNMBMuMiWYu0b+8KMJuWmfCkcxl09JwdlqwDZZ6U14=
@@ -719,6 +721,8 @@ github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9 h1:YERsmP
 github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9/go.mod h1:AxIzJWwHlpqqSdLjwV+bMBK2dpTaQaVpFRprmum1BB8=
 github.com/kyma-incubator/hydroform/install v0.0.0-20200514103120-0b6d49693c4d h1:WW9GT7TOx+hKlCeqOWsdMlYAg8XVJHA1jQwhj5734Dw=
 github.com/kyma-incubator/hydroform/install v0.0.0-20200514103120-0b6d49693c4d/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
+github.com/kyma-incubator/hydroform/install v0.0.0-20200608065102-102f8232317b h1:jpwEOxIcaLRpX4n4Y8XO2MhT3qyNQaSIw1dRF6PSqzI=
+github.com/kyma-incubator/hydroform/install v0.0.0-20200608065102-102f8232317b/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20200317154738-0bb20217c2cb/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=

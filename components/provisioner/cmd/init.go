@@ -111,10 +111,10 @@ func newGardenerClusterConfig(cfg config) (*restclient.Config, error) {
 	return gardenerClusterConfig, nil
 }
 
-func newHTTPClient(skipCertVeryfication bool) *http.Client {
+func newHTTPClient(skipCertVerification bool) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipCertVeryfication},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipCertVerification},
 		},
 		Timeout: 30 * time.Second,
 	}

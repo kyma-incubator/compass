@@ -2,14 +2,10 @@ package release
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -17,20 +13,21 @@ const (
 	onDemandInstallerFileFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-installer-cluster.yaml"
 )
 
-type httpGetter interface {
-	Get(url string) (resp *http.Response, err error)
+type TextFileDownloader interface {
+	Download(url string) (string, error)
+	DownloadOrEmpty(url string) (string, error)
 }
 
 // OnDemandWrapper wraps release.Repository with minimal functionality necessary for downloading the Kyma release from on-demand versions
 type OnDemandWrapper struct {
-	httpGetter httpGetter
+	downloader TextFileDownloader
 	repository Repository
 }
 
 // NewOnDemandWrapper returns new instance of OnDemandWrapper
-func NewOnDemandWrapper(httpGetter httpGetter, releaseRepo Repository) *OnDemandWrapper {
+func NewOnDemandWrapper(downloader TextFileDownloader, releaseRepo Repository) *OnDemandWrapper {
 	return &OnDemandWrapper{
-		httpGetter: httpGetter,
+		downloader: downloader,
 		repository: releaseRepo,
 	}
 }
@@ -78,32 +75,13 @@ func (o *OnDemandWrapper) isOnDemandVersion(version string) bool {
 	return isOnDemandVersion
 }
 
-func (o *OnDemandWrapper) get(url string) (string, error) {
-	resp, err := o.httpGetter.Get(url)
-	if err != nil {
-		return "", errors.Wrapf(err, "while executing get request on url: %q", url)
-	}
-	defer util.Close(resp.Body)
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("received unexpected http status %d", resp.StatusCode)
-	}
-
-	reqBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Wrap(err, "while reading body")
-	}
-
-	return string(reqBody), nil
-}
-
 func (o *OnDemandWrapper) downloadRelease(version string) (model.Release, dberrors.Error) {
-	tillerYAML, err := o.get(fmt.Sprintf(onDemandTillerFileFormat, version))
+	tillerYAML, err := o.downloader.DownloadOrEmpty(fmt.Sprintf(onDemandTillerFileFormat, version))
 	if err != nil {
 		return model.Release{}, dberrors.Internal("Failed to download tiller YAML release for version %s: %s", version, err)
 	}
 
-	installerYAML, err := o.get(fmt.Sprintf(onDemandInstallerFileFormat, version))
+	installerYAML, err := o.downloader.Download(fmt.Sprintf(onDemandInstallerFileFormat, version))
 	if err != nil {
 		return model.Release{}, dberrors.Internal("Failed to download installer YAML release for version %s: %s", version, err)
 	}
