@@ -24,16 +24,6 @@ echo -e "Secrets with Tiller tls client certificates have been created \n"
 
 bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
-#MINIKUBE_IP=$(eval minikube ip)
-#helm install \
-#-f=${MINIKUBE_HELM_VALUES} \
-#--set=global.minikubeIP=${MINIKUBE_IP} \
-#--name "${COMPASS_HELM_RELEASE_NAME}" \
-#--namespace "${COMPASS_HELM_RELEASE_NAMESPACE}" \
-#"${ROOT_PATH}"/chart/compass \
-#--tls --wait
-
-
 
 # TODO: Remove it after next CLI release
 echo "Adding Compass entries to /etc/hosts..."
