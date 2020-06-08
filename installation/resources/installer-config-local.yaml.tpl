@@ -31,6 +31,7 @@ metadata:
   name: compass-installation-config-overrides
   namespace: compass-installer
   labels:
+    component: compass
     installer: overrides
     kyma-project.io/installation: ""
 data:
@@ -39,12 +40,9 @@ data:
   global.adminPassword: ""
   global.minikubeIP: ""
   global.ingress.domainName: "kyma.local"
-  gateway.gateway.enabled: true
   global.istio.gateway.name: "compass-istio-gateway"
   global.istio.gateway.namespace: "compass-system"
-  global.externalServicesMock.enabled: true
-
-  gateway.gateway.auditlog.enabled: true
+  global.externalServicesMock.enabled: "true"
+  gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
-
-  director.deployment.allowJWTSigningNone: true
+  director.deployment.allowJWTSigningNone: "true"
