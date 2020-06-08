@@ -16,7 +16,7 @@ require (
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
-	github.com/kyma-incubator/hydroform/install v0.0.0-20200514103120-0b6d49693c4d
+	github.com/kyma-incubator/hydroform/install v0.0.0-20200608065102-102f8232317b
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6
 	github.com/lib/pq v1.2.0
@@ -59,5 +59,3 @@ replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66
 replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-
-replace github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20200529124552-33395ccd54e1
