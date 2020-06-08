@@ -19,7 +19,7 @@ spec:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 ---
-{{- if eq .Values.global.metrics.enabled true -}}
+{{- if and .Values.global.metrics.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:

@@ -81,7 +81,7 @@ spec:
             - name: APP_LMS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: "{{ .Values.lms.secretName }}"
+                  name: "{{ .Values.lms.secretName}}"
                   key: token
             - name: APP_IAS_URL
               value: "{{ .Values.ias.url }}"
@@ -225,8 +225,6 @@ spec:
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_PROVISIONING_KUBERNETES_VERSION
               value: {{ .Values.gardener.kubernetesVersion }}
-            - name: APP_DUMP_PROVISIONER_REQUESTS
-              value: "{{ .Values.provisioner.dumpRequests }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_AUDITLOG_URL

@@ -56,10 +56,6 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-#if [[ ! ${SKIP_MINIKUBE_START} ]]; then
-#    bash ${SCRIPTS_DIR}/minikube.sh --domain "${DOMAIN}" --vm-driver "${VM_DRIVER}"
-#fi
-
 bash ${SCRIPTS_DIR}/build-kyma-installer.sh --vm-driver "${VM_DRIVER}"
 
 if [ -z "$CR_PATH" ]; then

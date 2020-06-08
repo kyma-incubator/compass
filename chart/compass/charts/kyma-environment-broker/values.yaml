@@ -35,7 +35,6 @@ resources: {}
   #   memory: 128Mi
 
 provisioner:
-  dumpRequests: "false"
   URL: "http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"
 
   # Defines how long should the Kyma Environment Broker checks the status of the provisioning in the Provisioner.

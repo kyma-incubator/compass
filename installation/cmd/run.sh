@@ -3,19 +3,18 @@
 set -o errexit
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
-
-defaultRelease="latest-published"
+defaultRelease=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION.txt)
 KYMA_RELEASE=${1:-$defaultRelease}
 COMPASS_HELM_RELEASE_NAME="compass"
 COMPASS_HELM_RELEASE_NAMESPACE="compass-system"
-
 INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/installer-cr-kyma-diet.yaml
 OVERRIDES_COMPASS_GATEWAY="${ROOT_PATH}"/installation/resources/installer-overrides-compass-gateway.yaml
 ISTIO_OVERRIDES="${ROOT_PATH}"/installation/resources/installer-overrides-istio.yaml
+API_GATEWAY_OVERRIDES="${ROOT_PATH}"/installation/resources/installer-overrides-api-gateway.yaml
 MINIKUBE_HELM_VALUES="${ROOT_PATH}"/installation/resources/minikube-values.yaml
 
 kyma provision minikube
-kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o $ISTIO_OVERRIDES --source "${KYMA_RELEASE}"
+kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o $ISTIO_OVERRIDES -o $API_GATEWAY_OVERRIDES --source "${KYMA_RELEASE}"
 
 #Get Tiller tls client certificates
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.ca\.crt']}" | base64 --decode > "$(helm home)/ca.pem"
@@ -23,14 +22,18 @@ kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.he
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.tls\.key']}" | base64 --decode > "$(helm home)/key.pem"
 echo -e "Secrets with Tiller tls client certificates have been created \n"
 
-MINIKUBE_IP=$(eval minikube ip)
-helm install \
--f=${MINIKUBE_HELM_VALUES} \
---set=global.minikubeIP=${MINIKUBE_IP} \
---name "${COMPASS_HELM_RELEASE_NAME}" \
---namespace "${COMPASS_HELM_RELEASE_NAMESPACE}" \
-"${ROOT_PATH}"/chart/compass \
---tls --wait
+bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh
+bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
+#MINIKUBE_IP=$(eval minikube ip)
+#helm install \
+#-f=${MINIKUBE_HELM_VALUES} \
+#--set=global.minikubeIP=${MINIKUBE_IP} \
+#--name "${COMPASS_HELM_RELEASE_NAME}" \
+#--namespace "${COMPASS_HELM_RELEASE_NAMESPACE}" \
+#"${ROOT_PATH}"/chart/compass \
+#--tls --wait
+
+
 
 # TODO: Remove it after next CLI release
 echo "Adding Compass entries to /etc/hosts..."
