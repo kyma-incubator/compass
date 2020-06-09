@@ -22,7 +22,7 @@ then
    exit 1
 fi
 
-matchTests="" # match all tests
+# match all tests
 
 cat <<EOF | ${kc} apply -f -
 apiVersion: testing.kyma-project.io/v1alpha1
@@ -34,8 +34,6 @@ metadata:
 spec:
   maxRetries: 1
   concurrency: 1
-  selectors:
-${matchTests}
 EOF
 
 startTime=$(date +%s)
