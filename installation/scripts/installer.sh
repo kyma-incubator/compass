@@ -44,7 +44,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 echo "
 ################################################################################
-# Kyma Installer setup
+# Compass Installer setup
 ################################################################################
 "
 
