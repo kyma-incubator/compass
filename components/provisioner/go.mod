@@ -41,22 +41,18 @@ require (
 	sigs.k8s.io/controller-runtime v0.5.0
 )
 
-replace github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
+replace (
+	github.com/Azure/go-autorest v11.5.0+incompatible => github.com/Azure/go-autorest v13.3.2+incompatible
+	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
+	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 
-replace k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.15.8-beta.1
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
 
-replace k8s.io/apimachinery v0.17.2 => k8s.io/apimachinery v0.15.8-beta.1
+	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
 
-replace k8s.io/apiextensions-apiserver v0.17.2 => k8s.io/apiextensions-apiserver v0.15.8-beta.1
-
-replace k8s.io/api v0.17.2 => k8s.io/api v0.15.8-beta.1
-
-replace sigs.k8s.io/controller-runtime v0.5.0 => sigs.k8s.io/controller-runtime v0.3.0
-
-replace github.com/Azure/go-autorest v11.5.0+incompatible => github.com/Azure/go-autorest v13.3.2+incompatible
-
-replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
-replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
-
-replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+	k8s.io/api v0.17.2 => k8s.io/api v0.15.8-beta.1
+	k8s.io/apiextensions-apiserver v0.17.2 => k8s.io/apiextensions-apiserver v0.15.8-beta.1
+	k8s.io/apimachinery v0.17.2 => k8s.io/apimachinery v0.15.8-beta.1
+	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.15.8-beta.1
+	sigs.k8s.io/controller-runtime v0.5.0 => sigs.k8s.io/controller-runtime v0.3.0
+)
