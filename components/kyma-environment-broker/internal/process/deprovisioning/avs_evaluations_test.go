@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -73,6 +74,31 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	assert.Equal(t, externalEvalId, inDB.Avs.AVSEvaluationExternalId)
 }
 
+func TestAvsEvaluationConfigs(t *testing.T) {
+	// given
+	assert := assert.New(t)
+
+	mockOauthServer := newMockAvsOauthServer()
+	defer mockOauthServer.Close()
+	mockAvsServer := newMockAvsServer(t)
+	defer mockAvsServer.Close()
+	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
+	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
+
+	// verify assistant configs
+	assert.Equal("dummy", internalEvalAssistant.ProvideNewOrDefaultServiceName("dummy"))
+	assert.Equal("external-dummy", externalEvalAssistant.ProvideNewOrDefaultServiceName("dummy"))
+
+	assert.Equal(0, len(internalEvalAssistant.ProvideTags()))
+	assert.Equal(1, len(externalEvalAssistant.ProvideTags()))
+
+	// verify marshalling configs
+	tags, testTag := externalEvalAssistant.ProvideTags(), avs.Tag{}
+	json.Unmarshal([]byte(`{"content":"dummy","tag_class_id":123,"tag_class_name":"location-dummy"}`), &testTag)
+	assert.Equal(testTag, *tags[0])
+}
+
 func newMockAvsOauthServer() *httptest.Server {
 	return httptest.NewServer(
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -117,8 +143,18 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 		ApiEndpoint:            mockAvsServer.URL,
 		DefinitionType:         avs.DefinitionType,
 		InternalTesterAccessId: 1234,
+		InternalTesterService:  "",
+		InternalTesterTags:     []*avs.Tag{},
 		ExternalTesterAccessId: 5678,
-		GroupId:                5555,
-		ParentId:               parentEvalId,
+		ExternalTesterService:  "external-dummy",
+		ExternalTesterTags: []*avs.Tag{
+			&avs.Tag{
+				Content:      "dummy",
+				TagClassId:   123,
+				TagClassName: "location-dummy",
+			},
+		},
+		GroupId:  5555,
+		ParentId: parentEvalId,
 	}
 }

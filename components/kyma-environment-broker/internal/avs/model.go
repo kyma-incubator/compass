@@ -33,6 +33,7 @@ type BasicEvaluationCreateRequest struct {
 	GroupId          int64  `json:"group_id"`
 	Visibility       string `json:"visibility"`
 	ParentId         int64  `json:"parent_id"`
+	Tags             []*Tag `json:"tags"`
 }
 
 type BasicEvaluationCreateResponse struct {
@@ -52,18 +53,18 @@ type BasicEvaluationCreateResponse struct {
 	GroupId          int64  `json:"group_id"`
 	Visibility       string `json:"visibility"`
 
-	DateCreated                int64    `json:"dateCreated"`
-	DateChanged                int64    `json:"dateChanged"`
-	Owner                      string   `json:"owner"`
-	Status                     string   `json:"status"`
-	Alerts                     []int    `json:"alerts"`
-	Tags                       []string `json:"tags"`
-	Id                         int64    `json:"id"`
-	LegacyCheckId              int64    `json:"legacy_check_id"`
-	InternalInterval           int64    `json:"internal_interval"`
-	AuthType                   string   `json:"auth_type"`
-	IndividualOutageEventsOnly bool     `json:"individual_outage_events_only"`
-	IdOnTester                 string   `json:"id_on_tester"`
+	DateCreated                int64  `json:"dateCreated"`
+	DateChanged                int64  `json:"dateChanged"`
+	Owner                      string `json:"owner"`
+	Status                     string `json:"status"`
+	Alerts                     []int  `json:"alerts"`
+	Tags                       []*Tag `json:"tags"`
+	Id                         int64  `json:"id"`
+	LegacyCheckId              int64  `json:"legacy_check_id"`
+	InternalInterval           int64  `json:"internal_interval"`
+	AuthType                   string `json:"auth_type"`
+	IndividualOutageEventsOnly bool   `json:"individual_outage_events_only"`
+	IdOnTester                 string `json:"id_on_tester"`
 }
 
 func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, evalTypeSpecificConfig ModelConfigurator,
@@ -80,11 +81,12 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, e
 		DefinitionType:   DefinitionType,
 		Name:             beName,
 		Description:      beDescription,
-		Service:          beName,
+		Service:          evalTypeSpecificConfig.ProvideNewOrDefaultServiceName(beName),
 		URL:              url,
 		CheckType:        evalTypeSpecificConfig.ProvideCheckType(),
 		Interval:         interval,
 		TesterAccessId:   evalTypeSpecificConfig.ProvideTesterAccessId(),
+		Tags:             evalTypeSpecificConfig.ProvideTags(),
 		Timeout:          timeout,
 		ReadOnly:         false,
 		ContentCheck:     contentCheck,
