@@ -2,8 +2,6 @@
 
 set -o errexit
 
-echo "The run.sh script is deprecated and will be removed. Use Kyma CLI instead."
-
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 DOMAIN="kyma.local"
@@ -56,7 +54,7 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-bash ${SCRIPTS_DIR}/build-kyma-installer.sh --vm-driver "${VM_DRIVER}"
+bash ${SCRIPTS_DIR}/build-compass-installer.sh --vm-driver "${VM_DRIVER}"
 
 if [ -z "$CR_PATH" ]; then
 
