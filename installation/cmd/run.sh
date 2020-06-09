@@ -22,6 +22,5 @@ echo -e "Secrets with Tiller tls client certificates have been created \n"
 bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
 
-# TODO: Remove it after next CLI release
 echo "Adding Compass entries to /etc/hosts..."
 sudo sh -c 'echo "\n$(minikube ip) adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local" >> /etc/hosts'
