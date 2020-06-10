@@ -42,7 +42,7 @@ func main() {
 
 	router := mux.NewRouter()
 
-	router.Methods("GET").Path("/kubeconfig").HandlerFunc(endpoints.GetKubeConfig)
+	router.Methods("GET").Path("/kubeconfig/{tenantID}/{runtimeID}").HandlerFunc(endpoints.GetKubeConfig)
 	router.Methods("GET").Path("/health/ready").HandlerFunc(endpoints.GetHealthStatus)
 
 	term := make(chan os.Signal)
