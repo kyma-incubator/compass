@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: compass-connector-app-ca
-  namespace: compass-system
+  name: application-connector-certificate-overrides
+  namespace: compass-installer
   labels:
     installer: overrides
     kyma-project.io/installation: ""
