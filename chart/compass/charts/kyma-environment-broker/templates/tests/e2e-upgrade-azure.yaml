@@ -30,9 +30,9 @@ spec:
                 name: {{ include "kyma-env-broker.fullname" . }}
           env:
             - name: APP_PROVISION_TIMEOUT
-              value: "105m"
+              value: "{{ .Values.e2e.provisioning.timeout }}"
             - name: APP_DEPROVISION_TIMEOUT
-              value: "45m"
+              value: "{{ .Values.e2e.deprovisioning.timeout }}"
             - name: APP_SKIP_CERT_VERIFICATION
               value: "true"
             - name: APP_TENANT_ID
@@ -76,7 +76,7 @@ spec:
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_PATH
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_UPGRADE_TIMEOUT
-              value: "100m"
+              value: {{ .Values.e2e.upgrade.timeout }}
             - name: APP_PRE_UPGRADE_KYMA_VERSION
               value: {{ .Values.e2e.upgrade.preUpgradeVersion }}
             - name: APP_UPGRADE_KYMA_VERSION
@@ -117,9 +117,9 @@ spec:
               readOnly: true
           env:
             - name: APP_PROVISION_TIMEOUT
-              value: "105m"
+              value: "{{ .Values.e2e.provisioning.timeout }}"
             - name: APP_DEPROVISION_TIMEOUT
-              value: "45m"
+              value: "{{ .Values.e2e.deprovisioning.timeout }}"
             - name: APP_SKIP_CERT_VERIFICATION
               value: "true"
             - name: APP_TENANT_ID
@@ -159,7 +159,7 @@ spec:
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_PATH
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_UPGRADE_TIMEOUT
-              value: "{{ .Values.e2e.upgrade.timeout }}"
+              value: {{ .Values.e2e.upgrade.timeout }}
             - name: APP_PRE_UPGRADE_KYMA_VERSION
               value: {{ .Values.e2e.upgrade.preUpgradeVersion }}
             - name: APP_UPGRADE_KYMA_VERSION
