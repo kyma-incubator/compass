@@ -38,12 +38,12 @@ provider:
 
 edp:
   datastream:
-    name: "consumption-metrics"
-    namespace: "kyma-dev"
+    name: "TBD"
+    namespace: "TBD"
     version: 1
-    env: "dev"
-  token: ""
-  url: "https://input.yevents.io"
+    env: "TBD"
+  token: "TBD"
+  url: "TBD"
   workers: 5
 
 metrics:
