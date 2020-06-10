@@ -2,28 +2,32 @@ package main
 
 import (
 	"flag"
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/endpoints"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
+
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/endpoints"
+	log "github.com/sirupsen/logrus"
 )
 
 type config struct {
-	port int
-	address string
+	port           int
+	address        string
+	provisionerURL string
 }
 
 func main() {
 	port := flag.Int("port", 8000, "Application port")
 	address := flag.String("address", "", "Kubeconfig address")
+	provisionerURL := flag.String("provisioner-url", "", "URL to the Provisioner service")
 
-	cfg := config {
-		port: *port,
-		address: *address,
+	cfg := config{
+		port:           *port,
+		address:        *address,
+		provisionerURL: *provisionerURL,
 	}
 
 	log.Info("Starting kubeconfig-service sever")
@@ -45,7 +49,7 @@ func main() {
 	log.Infof("Kubeconfig service started on port: %d...", cfg.port)
 
 	select {
-		case <-term:
-			log.Info("Received SIGTERM, exiting gracefully...")
+	case <-term:
+		log.Info("Received SIGTERM, exiting gracefully...")
 	}
 }
