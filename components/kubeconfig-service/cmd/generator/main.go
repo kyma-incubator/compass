@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 
 	"github.com/gorilla/mux"
@@ -43,12 +43,12 @@ func main() {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		err := http.ListenAndServe(":"+strconv.Itoa(cfg.port), router)
+		err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.port), router)
 		log.Errorf("Error serving HTTP: %v", err)
 		term <- os.Interrupt
 	}()
 
-	log.Infof("Kubeconfig service started on port: %d...", cfg.port)
+	log.Infof("Kubeconfig service started on port: %d", cfg.port)
 	log.Infof("Using GraphQL Service: %s", cfg.graphqlURL)
 	select {
 	case <-term:
