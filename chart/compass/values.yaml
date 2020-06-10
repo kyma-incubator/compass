@@ -111,8 +111,8 @@ global:
     # If secrets do not exist they will be created
     secrets:
       ca:
-        name: application-connector-certificate-overrides
-        namespace: compass-installer
+        name: compass-connector-app-ca
+        namespace: compass-system
         certificateKey: ca.crt
         keyKey: ca.key
       rootCA:
