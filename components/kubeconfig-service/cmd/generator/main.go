@@ -14,20 +14,22 @@ import (
 )
 
 type config struct {
-	port           int
-	address        string
-	provisionerURL string
+	port       int
+	address    string
+	graphqlURL string
 }
 
 func main() {
 	port := flag.Int("port", 8000, "Application port")
 	address := flag.String("address", "", "Kubeconfig address")
-	provisionerURL := flag.String("provisioner-url", "", "URL to the Provisioner service")
+	graphqlURL := flag.String("graphql-url", "", "URL to the GraphQL service")
+
+	flag.Parse()
 
 	cfg := config{
-		port:           *port,
-		address:        *address,
-		provisionerURL: *provisionerURL,
+		port:       *port,
+		address:    *address,
+		graphqlURL: *graphqlURL,
 	}
 
 	log.Info("Starting kubeconfig-service sever")
@@ -47,7 +49,7 @@ func main() {
 	}()
 
 	log.Infof("Kubeconfig service started on port: %d...", cfg.port)
-
+	log.Infof("Using GraphQL Service: %s", cfg.graphqlURL)
 	select {
 	case <-term:
 		log.Info("Received SIGTERM, exiting gracefully...")
