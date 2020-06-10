@@ -14,22 +14,28 @@ import (
 )
 
 type config struct {
-	port       int
-	address    string
-	graphqlURL string
+	port             int
+	oidcIssuerUrl    string
+	oidcClientId     string
+	oidcClientSecret string
+	graphqlURL       string
 }
 
 func main() {
 	port := flag.Int("port", 8000, "Application port")
-	address := flag.String("address", "", "Kubeconfig address")
+	oidcIssuerUrl := flag.String("oidc-issuer-url", "", "URL of the OIDC provider")
+	oidcClientId := flag.String("oidc-client-id", "", "A client id that token is issued for")
+	oidcClientSecret := flag.String("oidc-client-secret", "", "A client's secret")
 	graphqlURL := flag.String("graphql-url", "", "URL to the GraphQL service")
 
 	flag.Parse()
 
 	cfg := config{
-		port:       *port,
-		address:    *address,
-		graphqlURL: *graphqlURL,
+		port:             *port,
+		oidcIssuerUrl:    *oidcIssuerUrl,
+		oidcClientId:     *oidcClientId,
+		oidcClientSecret: *oidcClientSecret,
+		graphqlURL:       *graphqlURL,
 	}
 
 	log.Info("Starting kubeconfig-service sever")
