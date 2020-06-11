@@ -9,11 +9,11 @@ import (
 const externalEvalCheckType = "HTTPSGET"
 
 type ExternalEvalAssistant struct {
-	avsConfig   Config
+	avsConfig   *Config
 	retryConfig *RetryConfig
 }
 
-func NewExternalEvalAssistant(avsConfig Config) *ExternalEvalAssistant {
+func NewExternalEvalAssistant(avsConfig *Config) *ExternalEvalAssistant {
 	return &ExternalEvalAssistant{
 		avsConfig:   avsConfig,
 		retryConfig: &RetryConfig{maxTime: 90 * time.Minute, retryInterval: 1 * time.Minute},

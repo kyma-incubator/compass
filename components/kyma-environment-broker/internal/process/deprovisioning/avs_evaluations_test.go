@@ -42,9 +42,9 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	mockAvsServer := newMockAvsServer(t)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
-	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
-	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
+	avsDel := avs.NewDelegator(&avsConfig, memoryStorage.Operations())
+	internalEvalAssistant := avs.NewInternalEvalAssistant(&avsConfig)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(&avsConfig)
 	step := NewAvsEvaluationsRemovalStep(avsDel, memoryStorage.Operations(), externalEvalAssistant, internalEvalAssistant)
 
 	assert.Equal(t, 0, len(evalIdsHolder))
@@ -83,8 +83,8 @@ func TestAvsEvaluationConfigs(t *testing.T) {
 	mockAvsServer := newMockAvsServer(t)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
-	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
+	internalEvalAssistant := avs.NewInternalEvalAssistant(&avsConfig)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(&avsConfig)
 
 	// verify assistant configs
 	assert.Equal("dummy", internalEvalAssistant.ProvideNewOrDefaultServiceName("dummy"))

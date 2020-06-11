@@ -59,8 +59,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 	mockAvsServer := newMockAvsServer(t, idh, false)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
-	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
+	avsDel := avs.NewDelegator(&avsConfig, memoryStorage.Operations())
+	externalEvalAssistant := avs.NewExternalEvalAssistant(&avsConfig)
 	externalEvalCreator := NewExternalEvalCreator(avsDel, false, externalEvalAssistant)
 	iasType := NewIASType(nil, true)
 

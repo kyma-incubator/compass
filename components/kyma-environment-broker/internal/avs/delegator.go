@@ -20,7 +20,7 @@ import (
 
 type Delegator struct {
 	operationManager  *process.ProvisionOperationManager
-	avsConfig         Config
+	avsConfig         *Config
 	clientHolder      *clientHolder
 	operationsStorage storage.Operations
 	configForModel    *configForModel
@@ -36,7 +36,7 @@ type avsNonSuccessResp struct {
 	Message string `json:"message"`
 }
 
-func NewDelegator(avsConfig Config, operationsStorage storage.Operations) *Delegator {
+func NewDelegator(avsConfig *Config, operationsStorage storage.Operations) *Delegator {
 	return &Delegator{
 		operationManager:  process.NewProvisionOperationManager(operationsStorage),
 		avsConfig:         avsConfig,
