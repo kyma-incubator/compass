@@ -40,7 +40,8 @@ func (c Caller) newRequest(query string) *graphql.Request {
 	return req
 }
 
-func (c Caller) runtimeStatus(runtimeID string) (schema.RuntimeStatus, error) {
+//RuntimeStatus return schema.RuntimeStatus
+func (c Caller) RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error) {
 	query := c.queryProvider.runtimeStatus(runtimeID)
 	req := c.newRequest(query)
 

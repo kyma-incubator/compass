@@ -15,16 +15,16 @@ import (
 
 type config struct {
 	port             int
-	oidcIssuerUrl    string
-	oidcClientId     string
+	oidcIssuerURL    string
+	oidcClientID     string
 	oidcClientSecret string
 	graphqlURL       string
 }
 
 func main() {
 	port := flag.Int("port", 8000, "Application port")
-	oidcIssuerUrl := flag.String("oidc-issuer-url", "", "URL of the OIDC provider")
-	oidcClientId := flag.String("oidc-client-id", "", "A client id that token is issued for")
+	oidcIssuerURL := flag.String("oidc-issuer-url", "", "URL of the OIDC provider")
+	oidcClientID := flag.String("oidc-client-id", "", "A client id that token is issued for")
 	oidcClientSecret := flag.String("oidc-client-secret", "", "A client's secret")
 	graphqlURL := flag.String("graphql-url", "", "URL to the GraphQL service")
 
@@ -32,18 +32,19 @@ func main() {
 
 	cfg := config{
 		port:             *port,
-		oidcIssuerUrl:    *oidcIssuerUrl,
-		oidcClientId:     *oidcClientId,
+		oidcIssuerURL:    *oidcIssuerURL,
+		oidcClientID:     *oidcClientID,
 		oidcClientSecret: *oidcClientSecret,
 		graphqlURL:       *graphqlURL,
 	}
 
 	log.Info("Starting kubeconfig-service sever")
 
+	ec := endpoints.NewEndpointClient(*graphqlURL)
 	router := mux.NewRouter()
 
-	router.Methods("GET").Path("/kubeconfig/{tenantID}/{runtimeID}").HandlerFunc(endpoints.GetKubeConfig)
-	router.Methods("GET").Path("/health/ready").HandlerFunc(endpoints.GetHealthStatus)
+	router.Methods("GET").Path("/kubeconfig/{tenantID}/{runtimeID}").HandlerFunc(ec.GetKubeConfig)
+	router.Methods("GET").Path("/health/ready").HandlerFunc(ec.GetHealthStatus)
 
 	term := make(chan os.Signal)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
