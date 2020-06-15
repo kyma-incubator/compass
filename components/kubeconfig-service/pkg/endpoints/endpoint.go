@@ -21,12 +21,9 @@ type EndpointClient struct {
 }
 
 //NewEndpointClient return new instance of EndpointClient
-func NewEndpointClient(gqlURL string, oidcIssuerURL string, oidcClientID string, oidcClientSecret string) *EndpointClient {
+func NewEndpointClient(gqlURL string) *EndpointClient {
 	return &EndpointClient{
 		gqlURL:           gqlURL,
-		oidcClientID:     oidcClientID,
-		oidcClientSecret: oidcClientSecret,
-		oidcIssuerURL:    oidcIssuerURL,
 	}
 }
 
@@ -45,9 +42,13 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 		log.Errorf("Error ocurred while processing client data: %s", err)
 	}
 
-	tc := transformer.NewTransformerClient(ec.oidcIssuerURL, ec.oidcClientID, ec.oidcClientSecret)
+	tc, err := transformer.NewTransformerClient(rawConfig)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Errorf("Error while processing the kubeconfig: %s", err)
+	}
 
-	kubeConfig, err := tc.TransformKubeconfig(rawConfig)
+	kubeConfig, err := tc.TransformKubeconfig()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Errorf("Error while processing the kubeconfig: %s", err)
