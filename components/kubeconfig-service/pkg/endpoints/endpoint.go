@@ -9,6 +9,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const MimeTypeYaml = "application/x-yaml"
+
 //EndpointClient Wrpper for Endpoints
 type EndpointClient struct {
 	gqlURL string
@@ -33,18 +35,26 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 	tenant := vars["tenantID"]
 	runtime := vars["runtimeID"]
 
+	w.Header().Add("Content-Type", MimeTypeYaml)
+
 	log.Infof("Fetching kubeconfig for %s/%s", tenant, runtime)
 	rawConfig, err := ec.callGQL(tenant, runtime)
 	if err != nil || rawConfig == "" {
+		w.WriteHeader(http.StatusInternalServerError)
 		log.Errorf("Error ocurred while processing client data: %s", err)
 	}
 	log.Infof("%s", rawConfig)
 
-	kubeConfig, err := transformer.TransformKubeconfig(rawConfig)
+	tc := transformer.NewTransformerClient(ec.oidcIssuerURL, ec.oidcClientID, ec.oidcClientSecret)
+
+	kubeConfig, err := tc.TransformKubeconfig(rawConfig)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		log.Errorf("Error while processing the kubeconfig: %s", err)
 	}
 	log.Infof("%s", kubeConfig)
+
+	w.Write(kubeConfig)
 }
 
 //GetHealthStatus REST Path for health checks
