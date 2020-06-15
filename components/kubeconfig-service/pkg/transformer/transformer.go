@@ -2,8 +2,9 @@ package transformer
 
 import (
 	"bytes"
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/env"
 	"html/template"
+
+	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/env"
 
 	"gopkg.in/yaml.v2"
 )
@@ -26,9 +27,9 @@ func NewTransformerClient(rawKubeCfg string) (*TransformerClient, error) {
 		return nil, err
 	}
 	return &TransformerClient{
-		ContextName:	  kubeCfg.CurrentContext,
-		CAData:			  kubeCfg.Clusters[0].Cluster.CertificateAuthorityData,
-		ServerURL: 		  kubeCfg.Clusters[0].Cluster.Server,
+		ContextName:      kubeCfg.CurrentContext,
+		CAData:           kubeCfg.Clusters[0].Cluster.CertificateAuthorityData,
+		ServerURL:        kubeCfg.Clusters[0].Cluster.Server,
 		OIDCClientID:     env.Config.OIDC.ClientID,
 		OIDCClientSecret: env.Config.OIDC.ClientSecret,
 		OIDCIssuerURL:    env.Config.OIDC.IssuerURL,

@@ -23,7 +23,7 @@ type EndpointClient struct {
 //NewEndpointClient return new instance of EndpointClient
 func NewEndpointClient(gqlURL string) *EndpointClient {
 	return &EndpointClient{
-		gqlURL:           gqlURL,
+		gqlURL: gqlURL,
 	}
 }
 
