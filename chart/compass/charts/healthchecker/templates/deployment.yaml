@@ -19,7 +19,7 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
-      nodeSelector: 
+      nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}

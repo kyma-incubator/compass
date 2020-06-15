@@ -38,7 +38,7 @@ spec:
             - "{{ .Values.global.oauth2.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ template "fullname" . }}
-      nodeSelector: 
+      nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}

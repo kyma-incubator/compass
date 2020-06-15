@@ -39,7 +39,7 @@ spec:
             mountPath: /var/public/config
           - name: config
             mountPath: /var/public-luigi/config
-      nodeSelector: 
+      nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}  
       volumes:
         - name: config

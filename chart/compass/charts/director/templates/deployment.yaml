@@ -21,7 +21,7 @@ spec:
         release: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ template "fullname" . }}
-      nodeSelector: 
+      nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}

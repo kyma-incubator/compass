@@ -24,7 +24,7 @@ spec:
     spec:
 {{- include "metris.imagePullSecrets" . | indent 6 }}
       serviceAccountName: {{ template "metris.fullname" . }}
-      nodeSelector: 
+      nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
