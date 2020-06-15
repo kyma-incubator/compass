@@ -9,8 +9,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//TransformerClient Wrapper for transformer operations
-type TransformerClient struct {
+//Client Wrapper for transformer operations
+type Client struct {
 	ContextName      string
 	CAData           string
 	ServerURL        string
@@ -19,14 +19,14 @@ type TransformerClient struct {
 	OIDCClientSecret string
 }
 
-//NewTransformerClient Create new instance of TransformerClient
-func NewTransformerClient(rawKubeCfg string) (*TransformerClient, error) {
-	var kubeCfg Kubeconfig
+//NewClient Create new instance of TransformerClient
+func NewClient(rawKubeCfg string) (*Client, error) {
+	var kubeCfg kubeconfig
 	err := yaml.Unmarshal([]byte(rawKubeCfg), &kubeCfg)
 	if err != nil {
 		return nil, err
 	}
-	return &TransformerClient{
+	return &Client{
 		ContextName:      kubeCfg.CurrentContext,
 		CAData:           kubeCfg.Clusters[0].Cluster.CertificateAuthorityData,
 		ServerURL:        kubeCfg.Clusters[0].Cluster.Server,
@@ -37,25 +37,24 @@ func NewTransformerClient(rawKubeCfg string) (*TransformerClient, error) {
 }
 
 //TransformKubeconfig injects OIDC data into raw kubeconfig structure
-func (tc *TransformerClient) TransformKubeconfig() ([]byte, error) {
-
-	testYaml, err := tc.parseTemplate()
+func (c *Client) TransformKubeconfig() ([]byte, error) {
+	out, err := c.parseTemplate()
 	if err != nil {
 		return nil, err
 	}
 
-	return []byte(testYaml), nil
+	return []byte(out), nil
 }
 
-func (tc *TransformerClient) parseTemplate() (string, error) {
+func (c *Client) parseTemplate() (string, error) {
 	var result bytes.Buffer
 	t := template.New("kubeconfigParser")
-	t, err := t.Parse(KubeconfigTemplate)
+	t, err := t.Parse(kubeconfigTemplate)
 	if err != nil {
 		return "", err
 	}
 
-	err = t.Execute(&result, tc)
+	err = t.Execute(&result, c)
 	if err != nil {
 		return "", err
 	}

@@ -1,6 +1,6 @@
 package transformer
 
-type Kubeconfig struct {
+type kubeconfig struct {
 	APIVersion     string `yaml:"apiVersion"`
 	Kind           string `yaml:"kind"`
 	CurrentContext string `yaml:"current-context"`
@@ -24,7 +24,8 @@ type Kubeconfig struct {
 	} `yaml:"users"`
 }
 
-const KubeconfigTemplate = `---
+const kubeconfigTemplate = `
+---
 apiVersion: v1
 kind: Config
 current-context: {{ .ContextName }}
@@ -49,4 +50,5 @@ users:
       - "--oidc-issuer-url={{ .OIDCIssuerURL }}"
       - "--oidc-client-id={{ .OIDCClientID }}"
       - "--oidc-client-secret={{ .OIDCClientSecret }}"
-      command: kubectl`
+      command: kubectl
+`

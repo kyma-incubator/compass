@@ -42,16 +42,16 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 		log.Errorf("Error ocurred while processing client data: %s", err)
 	}
 
-	tc, err := transformer.NewTransformerClient(rawConfig)
+	tc, err := transformer.NewClient(rawConfig)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Errorf("Error while processing the kubeconfig: %s", err)
+		log.Errorf("Error while decoding kubeconfig from server: %s", err)
 	}
 
 	kubeConfig, err := tc.TransformKubeconfig()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Errorf("Error while processing the kubeconfig: %s", err)
+		log.Errorf("Error while processing the kubeconfig file: %s", err)
 	}
 	log.Infof("Generated new Kubeconfig for %s/%s", tenant, runtime)
 
