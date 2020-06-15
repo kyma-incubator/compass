@@ -54,7 +54,10 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 	}
 	log.Infof("Generated new Kubeconfig for %s/%s", tenant, runtime)
 
-	w.Write(kubeConfig)
+	_, err = w.Write(kubeConfig)
+	if err != nil {
+		log.Errorf("Error while sending response: %s", err)
+	}
 }
 
 //GetHealthStatus REST Path for health checks
