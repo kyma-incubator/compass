@@ -30,8 +30,8 @@ func TestAvsEvaluationConfigs(t *testing.T) {
 	mockAvsServer := newMockAvsServer(t)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	internalEvalAssistant := NewInternalEvalAssistant(&avsConfig)
-	externalEvalAssistant := NewExternalEvalAssistant(&avsConfig)
+	internalEvalAssistant := NewInternalEvalAssistant(avsConfig)
+	externalEvalAssistant := NewExternalEvalAssistant(avsConfig)
 
 	// verify assistant configs
 	assert.Equal(internalEvalId, internalEvalAssistant.ProvideTesterAccessId())
@@ -48,19 +48,6 @@ func TestAvsEvaluationConfigs(t *testing.T) {
 
 	assert.Equal(0, len(internalEvalAssistant.ProvideTags()))
 	assert.Equal(1, len(externalEvalAssistant.ProvideTags()))
-
-	// verify avsConfig dynamic changes
-	avsConfig.InternalTesterService = "non-dummy"
-	avsConfig.ExternalTesterService = ""
-	assert.Equal("non-dummy", internalEvalAssistant.ProvideNewOrDefaultServiceName("dummy"))
-	assert.Equal("dummy", externalEvalAssistant.ProvideNewOrDefaultServiceName("dummy"))
-
-	// This might occur e.g. if searching for available ID from Avs
-	// or autoassigned ID
-	avsConfig.InternalTesterAccessId = internalEvalUpdatedId
-	avsConfig.ExternalTesterAccessId = externalEvalUpdatedId
-	assert.Equal(internalEvalUpdatedId, internalEvalAssistant.ProvideTesterAccessId())
-	assert.Equal(externalEvalUpdatedId, externalEvalAssistant.ProvideTesterAccessId())
 
 	// verify confg as json
 	tags, testTag := externalEvalAssistant.ProvideTags(), Tag{}

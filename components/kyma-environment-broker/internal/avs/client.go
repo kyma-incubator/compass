@@ -12,12 +12,12 @@ import (
 
 type clientHolder struct {
 	httpClient        *http.Client
-	avsConfig         *Config
+	avsConfig         Config
 	clientInitialized uint32
 	mu                sync.Mutex
 }
 
-func newClientHolder(avsConfig *Config) *clientHolder {
+func newClientHolder(avsConfig Config) *clientHolder {
 	return &clientHolder{
 		avsConfig: avsConfig,
 	}

@@ -15,11 +15,11 @@ const (
 )
 
 type InternalEvalAssistant struct {
-	avsConfig   *Config
+	avsConfig   Config
 	retryConfig *RetryConfig
 }
 
-func NewInternalEvalAssistant(avsConfig *Config) *InternalEvalAssistant {
+func NewInternalEvalAssistant(avsConfig Config) *InternalEvalAssistant {
 	return &InternalEvalAssistant{
 		avsConfig:   avsConfig,
 		retryConfig: &RetryConfig{maxTime: 10 * time.Minute, retryInterval: 1 * time.Minute},
