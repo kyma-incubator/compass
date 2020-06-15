@@ -6,16 +6,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const oidcConfiguration = `
-apiVersion: client.authentication.k8s.io/v1beta1
+const oidcConfiguration = `apiVersion: client.authentication.k8s.io/v1beta1
 args:
 - oidc-login
 - get-token
 - "--oidc-issuer-url=%s"
 - "--oidc-client-id=%s"
 - "--oidc-client-secret=%s"
-command: kubectl
-`
+command: kubectl`
 
 //TransformKubeconfig Inject OIDC data into raw kubeconfig structure
 func TransformKubeconfig(rawKubeCfg string) ([]byte, error) {

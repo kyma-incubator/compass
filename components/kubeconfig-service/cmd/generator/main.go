@@ -21,7 +21,7 @@ type config struct {
 	graphqlURL       string
 }
 
-func main() {
+func getConfig() *config {
 	port := flag.Int("port", 8000, "Application port")
 	oidcIssuerURL := flag.String("oidc-issuer-url", "", "URL of the OIDC provider")
 	oidcClientID := flag.String("oidc-client-id", "", "A client id that token is issued for")
@@ -30,17 +30,21 @@ func main() {
 
 	flag.Parse()
 
-	cfg := config{
+	return &config{
 		port:             *port,
 		oidcIssuerURL:    *oidcIssuerURL,
 		oidcClientID:     *oidcClientID,
 		oidcClientSecret: *oidcClientSecret,
 		graphqlURL:       *graphqlURL,
 	}
+}
+
+func main() {
+	cfg := getConfig()
 
 	log.Info("Starting kubeconfig-service sever")
 
-	ec := endpoints.NewEndpointClient(*graphqlURL, cfg.oidcIssuerURL, cfg.oidcClientID, cfg.oidcClientSecret)
+	ec := endpoints.NewEndpointClient(cfg.graphqlURL, cfg.oidcIssuerURL, cfg.oidcClientID, cfg.oidcClientSecret)
 	router := mux.NewRouter()
 
 	router.Methods("GET").Path("/kubeconfig/{tenantID}/{runtimeID}").HandlerFunc(ec.GetKubeConfig)
