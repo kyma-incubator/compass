@@ -208,10 +208,11 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:a265bd6d3c99c99ce337019e56245e1152f368bf2893cf1ba67945a52f2ba701"
+  digest = "1:bfa965009e096bf20a3ebf3170b2d4c94bc1eeb98ffd40999b01f5a049aa61d7"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
+    "components/director/pkg/apperrors",
     "components/director/pkg/graphql",
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
@@ -220,7 +221,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "dad304da01da10bad9a123fd8852bf696607d4c1"
+  revision = "64f737ad7e1db26e2c3e9b71335bd67e69199092"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
@@ -557,7 +558,7 @@
   version = "kubernetes-1.15.2"
 
 [[projects]]
-  digest = "1:df8b3b712dc49ec8cd3293a1b0badaf17eadb974a0492688922bf3cef1deb284"
+  digest = "1:b7a3813f503c2f9b565eb4f4c88ca06531c71b5ce79d557ebc5a68edadbcb72d"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -602,11 +603,11 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
-  revision = "1799e75a07195de9460b8ef7300883499f12127b"
-  version = "kubernetes-1.15.2"
+  revision = "6e7c4b1e1854abaeb159e69f0ce3f0a931cb6d31"
+  version = "kubernetes-1.15.12"
 
 [[projects]]
-  digest = "1:213119926b1bbb469000f766e0afe80d25ec23f501cf936d769c0e4970ebb1b1"
+  digest = "1:f0104078dc0b8cfdd1822798671eabe7130f79f4a86e66ca87f107257a8446a5"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -712,8 +713,8 @@
     "util/keyutil",
   ]
   pruneopts = "UT"
-  revision = "2fe0317bcee0e1ff48861f77cc1e2791cceba458"
-  version = "kubernetes-1.15.2"
+  revision = "28e1f35180cc417e1776a10a3174a89e36b8adf6"
+  version = "kubernetes-1.15.12"
 
 [[projects]]
   digest = "1:93e82f25d75aba18436ad1ac042cb49493f096011f2541075721ed6f9e05c044"
