@@ -40,7 +40,7 @@ func main() {
 
 	log.Info("Starting kubeconfig-service sever")
 
-	ec := endpoints.NewEndpointClient(*graphqlURL)
+	ec := endpoints.NewEndpointClient(*graphqlURL, cfg.oidcIssuerURL, cfg.oidcClientID, cfg.oidcClientSecret)
 	router := mux.NewRouter()
 
 	router.Methods("GET").Path("/kubeconfig/{tenantID}/{runtimeID}").HandlerFunc(ec.GetKubeConfig)

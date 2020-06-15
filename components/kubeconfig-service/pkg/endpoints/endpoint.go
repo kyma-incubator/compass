@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/transformer"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -11,12 +12,18 @@ import (
 //EndpointClient Wrpper for Endpoints
 type EndpointClient struct {
 	gqlURL string
+	oidcIssuerURL string
+	oidcClientID string
+	oidcClientSecret string
 }
 
 //NewEndpointClient return new instance of EndpointClient
-func NewEndpointClient(gqlURL string) *EndpointClient {
+func NewEndpointClient(gqlURL string, oidcIssuerURL string, oidcClientID string, oidcClientSecret string) *EndpointClient {
 	return &EndpointClient{
 		gqlURL: gqlURL,
+		oidcClientID: oidcClientID,
+		oidcClientSecret: oidcClientSecret,
+		oidcIssuerURL: oidcIssuerURL,
 	}
 }
 
@@ -32,6 +39,12 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 		log.Errorf("Error ocurred while processing client data: %s", err)
 	}
 	log.Infof("%s", rawConfig)
+
+	kubeConfig, err := transformer.TransformKubeconfig(rawConfig)
+	if err != nil {
+		log.Errorf("Error while processing the kubeconfig: %s", err)
+	}
+	log.Infof("%s", kubeConfig)
 }
 
 //GetHealthStatus REST Path for health checks
