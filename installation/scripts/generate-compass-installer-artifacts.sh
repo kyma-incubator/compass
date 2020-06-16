@@ -39,7 +39,7 @@ function copyKymaInstaller() {
 
     sed -i 's/action: install/action: /' kyma-installer.yaml
 
-    cat ${RESOURCES_DIR}/installer-cr-kyma-diet.yaml >> kyma-installer.yaml
+    cat ${RESOURCES_DIR}/installer-cr-kyma-dependencies.yaml >> kyma-installer.yaml
 
     mv kyma-installer.yaml ${ARTIFACTS_DIR}/kyma-installer.yaml
 }
