@@ -41,7 +41,7 @@ function copyKymaInstaller() {
 
     cat ${RESOURCES_DIR}/installer-cr-kyma-dependencies.yaml >> kyma-installer.yaml
 
-    mv kyma-installer.yaml ${RESOURCES_DIR}/kyma-installer.yaml
+    mv kyma-installer.yaml ${ARTIFACTS_DIR}/kyma-installer.yaml
 }
 
 generateArtifact
