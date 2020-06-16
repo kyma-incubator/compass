@@ -33,8 +33,6 @@ function generateArtifact() {
 }
 
 function copyKymaInstaller() {
-
-
     release=$(<"${RESOURCES_DIR}"/KYMA_VERSION)
 
     curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
@@ -44,8 +42,6 @@ function copyKymaInstaller() {
     cat ${RESOURCES_DIR}/installer-cr-kyma-diet.yaml >> kyma-installer.yaml
 
     mv kyma-installer.yaml ${ARTIFACTS_DIR}/kyma-installer.yaml
-
-
 }
 
 generateArtifact
