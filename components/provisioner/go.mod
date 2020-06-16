@@ -33,7 +33,7 @@ require (
 	github.com/vrischmann/envconfig v1.2.0
 	k8s.io/api v0.17.6
 	k8s.io/apimachinery v0.17.6
-	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible // tag kubernetes-1.15.6
+	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	sigs.k8s.io/controller-runtime v0.5.4
 )
 
@@ -43,9 +43,5 @@ replace (
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-	k8s.io/api v0.17.2 => k8s.io/api v0.15.8-beta.1
-	k8s.io/apiextensions-apiserver v0.17.2 => k8s.io/apiextensions-apiserver v0.15.8-beta.1
-	k8s.io/apimachinery v0.17.2 => k8s.io/apimachinery v0.15.8-beta.1
-	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.15.8-beta.1
-	sigs.k8s.io/controller-runtime v0.5.0 => sigs.k8s.io/controller-runtime v0.3.0
+	k8s.io/client-go => k8s.io/client-go v0.17.6
 )
