@@ -110,6 +110,6 @@ func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfig
 		return nil
 	}
 	// TODO: Check if Purpose can be casted as Gardener Shoot Purpose
-	// lusterConfig.GardenerConfig.Purpose
+	// clusterConfig.GardenerConfig.Purpose
 	return nil
 }

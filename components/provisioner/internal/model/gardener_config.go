@@ -50,6 +50,11 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	if c.Seed != "" {
 		seed = util.StringPtr(c.Seed)
 	}
+	var purpose *gardener_types.ShootPurpose = nil
+	if c.Purpose != "" {
+		p := gardener_types.ShootPurpose(c.Purpose)
+		purpose = &p
+	}
 
 	shoot := &gardener_types.Shoot{
 		ObjectMeta: v1.ObjectMeta{
@@ -72,9 +77,10 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				},
 			},
 			Networking: gardener_types.Networking{
-				Type:  "calico",        // Default value - we may consider adding it to API (if Hydroform will support it)
-				Nodes: "10.250.0.0/19", // TODO: it is required - provide configuration in API (when Hydroform will support it)
+				Type:  "calico",                        // Default value - we may consider adding it to API (if Hydroform will support it)
+				Nodes: util.StringPtr("10.250.0.0/19"), // TODO: it is required - provide configuration in API (when Hydroform will support it)
 			},
+			Purpose:     purpose,
 			Maintenance: &gardener_types.Maintenance{},
 		},
 	}
@@ -210,8 +216,8 @@ func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 
 	shoot.Spec.Provider = gardener_types.Provider{
 		Type:                 "gcp",
-		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
-		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
+		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
+		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
 	}
 
@@ -281,8 +287,8 @@ func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, sh
 
 	shoot.Spec.Provider = gardener_types.Provider{
 		Type:                 "azure",
-		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
-		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
+		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
+		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
 	}
 
@@ -345,8 +351,8 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 
 	shoot.Spec.Provider = gardener_types.Provider{
 		Type:                 "aws",
-		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
-		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
+		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
+		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
 	}
 
@@ -362,8 +368,8 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 			Type: gardenerConfig.MachineType,
 		},
 		Volume: &gardener_types.Volume{
-			Type: &gardenerConfig.DiskType,
-			Size: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
+			Type:       &gardenerConfig.DiskType,
+			VolumeSize: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
 		},
 		Maximum: int32(gardenerConfig.AutoScalerMax),
 		Minimum: int32(gardenerConfig.AutoScalerMin),
