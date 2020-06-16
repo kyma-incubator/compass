@@ -135,6 +135,12 @@ edp:
   secret: "TBD"
   secretName: "edp-creds"
 
+environmentsCleanup:
+  schedule: "0 0 * * *"
+  maxAge: "24h"
+  secretName: "TBD"
+  scope: "TBD"
+
 e2e:
   provisioning:
     timeout: "105m"

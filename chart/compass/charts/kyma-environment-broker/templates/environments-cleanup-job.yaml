@@ -1,0 +1,72 @@
+{{if eq .Values.global.kyma_environment_broker.environmentsCleanup.enabled true}}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: "compass-kyma-environments-cleanup"
+  namespace: compass-system
+spec:
+  schedule: {{.Values.global.kyma_environment_broker.environmentsCleanup.schedule}}
+  failedJobsHistoryLimit: 5
+  successfulJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          name: kyma-environments-cleanup
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccountName: compass-kyma-environment-broker
+          restartPolicy: Never
+          containers:
+          - name: environments-cleanup
+            image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
+            imagePullPolicy: IfNotPresent
+            env:
+              - name: APP_MAX_AGE_HOURS
+                value: "{{.Values.environmentsCleanup.maxAge}}"
+              - name: APP_GARDENER_PROJECT
+                value: "{{ .Values.gardener.project }}"
+              - name: APP_GARDENER_KUBECONFIG_PATH
+                value: "{{.Values.gardener.kubeconfigPath}}"
+              - name: APP_DIRECTOR_NAMESPACE
+                value: "{{ .Release.Namespace }}"
+              - name: APP_DIRECTOR_URL
+                value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+              - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
+                value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
+              - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
+                value: "{{ .Values.global.isLocalEnv }}"
+              - name: APP_BROKER_URL
+                value: "https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}"
+              - name: APP_BROKER_TOKEN_URL
+                value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
+              - name: APP_BROKER_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    key: client_id
+                    name: {{.Values.environmentsCleanup.secretName}}
+              - name: APP_BROKER_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    key: client_secret
+                    name: {{.Values.environmentsCleanup.secretName}}
+              - name: APP_BROKER_SCOPE
+                value: {{.Values.environmentsCleanup.scope}}
+            volumeMounts:
+              - mountPath: /gardener/kubeconfig
+                name: gardener-kubeconfig
+                readOnly: true
+            command:
+              - "/bin/sh"
+            args:
+              - "-c"
+              - "./bin/environments-cleanup; exit_code=$?;"
+          volumes:
+            - name: gardener-kubeconfig
+              secret:
+                optional: true
+                defaultMode: 420
+                secretName: gardener-credentials
+  {{end}}

@@ -137,6 +137,8 @@ global:
     secrets:
       integrationSystemCredentials:
         name: compass-kyma-environment-broker-credentials
+    environmentsCleanup:
+      enabled: false
 
   provisioner:
     graphql:

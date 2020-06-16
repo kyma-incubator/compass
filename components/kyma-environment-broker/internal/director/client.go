@@ -50,6 +50,10 @@ type (
 	runtimeLabelResponse struct {
 		Result *graphql.Label `json:"result"`
 	}
+
+	getLabelsResponse struct {
+		Result graphql.RuntimeExt `json:"result"`
+	}
 )
 
 var lock sync.Mutex
@@ -97,6 +101,21 @@ func (dc *Client) SetLabel(accountID, runtimeID, key, value string) error {
 
 	log.Infof("DirectorClient: Label %s:%s set correctly", response.Result.Key, response.Result.Value)
 	return nil
+}
+
+func (dc *Client) GetInstanceId(accountID, runtimeID string) (string, error) {
+	query := dc.queryProvider.RuntimeLabels(runtimeID)
+	req := machineGraph.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
+
+	log.Info("DirectorClient: Send request to director")
+	response, err := dc.getRuntimeLabelsFromDirector(req)
+	if err != nil {
+		return "", errors.Wrap(err, "while making call to director")
+	}
+
+	log.Info("DirectorClient: Extract Runtime labels from the response")
+	return dc.getInstanceIdFromLabels(&response.Result)
 }
 
 func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLResponse, error) {
@@ -163,6 +182,38 @@ func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelR
 	return &response, nil
 }
 
+func (dc *Client) getRuntimeLabelsFromDirector(req *machineGraph.Request) (*getLabelsResponse, error) {
+	var response getLabelsResponse
+	var lastError error
+	var success bool
+
+	for i := 0; i < reqAttempt; i++ {
+		err := dc.setToken()
+		if err != nil {
+			lastError = err
+			log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
+			continue
+		}
+		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
+		err = dc.graphQLClient.Run(context.Background(), req, &response)
+		if err != nil {
+			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
+			dc.token.AccessToken = ""
+			req.Header.Del(authorizationKey)
+			log.Errorf("call to director failed (attempt %d): %s", i, err)
+			continue
+		}
+		success = true
+		break
+	}
+
+	if !success {
+		return &getLabelsResponse{}, lastError
+	}
+
+	return &response, nil
+}
+
 func (dc *Client) setToken() error {
 	lock.Lock()
 	defer lock.Unlock()
@@ -206,4 +257,21 @@ func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error
 	}
 
 	return URL, nil
+}
+
+func (dc *Client) getInstanceIdFromLabels(response *graphql.RuntimeExt) (string, error) {
+	value, ok := response.Labels[instanceIDLabelKey]
+	if !ok {
+		return "", kebError.NewTemporaryError("response label key is not equal to %q", instanceIDLabelKey)
+	}
+
+	var instanceID string
+	switch value.(type) {
+	case string:
+		instanceID = value.(string)
+	default:
+		return "", errors.New("response label value is not string")
+	}
+
+	return instanceID, nil
 }
