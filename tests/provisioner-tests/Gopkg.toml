@@ -5,7 +5,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  revision = "dad304da01da10bad9a123fd8852bf696607d4c1"
+  revision = "64f737ad7e1db26e2c3e9b71335bd67e69199092"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
@@ -25,15 +25,15 @@ required = [
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.15.2"
+  version = "kubernetes-1.15.12"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  version = "kubernetes-1.15.2"
+  version = "kubernetes-1.15.12"
 
 [[override]]
   name = "k8s.io/kubernetes"
-  version = "kubernetes-1.15.2"
+  version = "kubernetes-1.15.12"
 
 [prune]
   go-tests = true

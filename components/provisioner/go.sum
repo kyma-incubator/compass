@@ -711,8 +711,6 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/kyma-incubator/compass v0.0.0-20200421071627-8604d53a20a2 h1:/rk3EVS3Jls62msFfnM/vLZ6y53QdZWXK/q0M7ow73g=
 github.com/kyma-incubator/compass v0.0.0-20200421071627-8604d53a20a2/go.mod h1:QzxfnmINIGUzElyHs9KhdeMDsYRJTS8TxYtqMZo0YHc=
-github.com/kyma-incubator/compass v0.0.0-20200512131122-359ba4a8ee6b h1:3ZDo6ipQPju4+2/tdzsABxDVC/1KOpqtgsaMfbSTZEg=
-github.com/kyma-incubator/compass v0.0.0-20200515111806-86dec1ced9da h1:M+XgfoREqIi/5zZS/s5FhtnfHhlHSlfU7hLlPWtho80=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200421071627-8604d53a20a2 h1:97Kefi+Dxsy10b4OgmRnMEqRyUmwgEXJikAyVz5cWaE=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200421071627-8604d53a20a2/go.mod h1:C41YpM1c0uzB8mzfFifxmsljBvhhycUxHg/kkUospDo=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283 h1:yQNZGjjcqS9557xdwpfPj6H1LiG+Wq6LgCpVsu4wWLI=

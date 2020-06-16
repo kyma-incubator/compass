@@ -21,3 +21,5 @@ spec:
       namespace: "kyma-system"
     - name: "ory"
       namespace: "kyma-system"
+    - name: "api-gateway"
+      namespace: "kyma-system"

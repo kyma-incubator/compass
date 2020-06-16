@@ -22,20 +22,7 @@ then
    exit 1
 fi
 
-matchNames=$(cat <<-END
-    matchNames:
-      - name: compass-director-api
-        namespace: compass-system
-      - name: compass-director-gateway-integration
-        namespace: kyma-system
-      - name: compass-gateway-external-services-integration
-        namespace: kyma-system
-      - name: compass-connector-tests
-        namespace: compass-system
-      - name: connectivity-adapter
-        namespace: compass-system
-END
-)
+# match all tests
 
 cat <<EOF | ${kc} apply -f -
 apiVersion: testing.kyma-project.io/v1alpha1
@@ -47,8 +34,6 @@ metadata:
 spec:
   maxRetries: 1
   concurrency: 1
-  selectors:
-${matchNames}
 EOF
 
 startTime=$(date +%s)

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-api-gateway-tests
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: api-gateway
+    kyma-project.io/installation: ""
+data:
+  tests.env.gatewayName: "compass-istio-gateway"
+  tests.env.gatewayNamespace: "compass-system"

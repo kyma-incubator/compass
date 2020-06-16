@@ -418,9 +418,10 @@
   version = "v2.2.8"
 
 [[projects]]
-  digest = "1:b2e959d92a38ffc25142da8e8bf4fefe0e5e687ecb871fabaac58db0497304df"
+  digest = "1:274e6b4fd11a6a01212ee6af5ba488c7623f5eaa7339d3bb5642220d96ee8744"
   name = "k8s.io/api"
   packages = [
+    "admissionregistration/v1",
     "admissionregistration/v1beta1",
     "apps/v1",
     "apps/v1beta1",
@@ -440,6 +441,7 @@
     "coordination/v1",
     "coordination/v1beta1",
     "core/v1",
+    "discovery/v1alpha1",
     "events/v1beta1",
     "extensions/v1beta1",
     "networking/v1",
@@ -459,11 +461,11 @@
     "storage/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "fdd30b57c827abbc506646ecfd579f6ccb3b80ab"
-  version = "kubernetes-1.15.2"
+  revision = "6287e2b171401931686bb9a4d1c769343f712343"
+  version = "kubernetes-1.16.10"
 
 [[projects]]
-  digest = "1:d5e54dd0a35390b815ae107be9f6f8bac51df38c29375275322a1f5ebabc5290"
+  digest = "1:052684b6891f38539aec4fe733597bf002c761ba4d7c9c8b664cd154d5a4920e"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/errors",
@@ -506,11 +508,11 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
-  revision = "1799e75a07195de9460b8ef7300883499f12127b"
-  version = "kubernetes-1.15.2"
+  revision = "9402b4926e83cddfcac78460d5dca7ae87c1dc49"
+  version = "kubernetes-1.16.10"
 
 [[projects]]
-  digest = "1:f753f5e9339c68ba8e59c7ef8d3f853c64fc45798e0f12d41a11c50d96138ace"
+  digest = "1:d8af6f0511917cfe256aba1d33b5ad33477712121450e79982325ed8dd9bbdd3"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -518,6 +520,8 @@
     "kubernetes",
     "kubernetes/fake",
     "kubernetes/scheme",
+    "kubernetes/typed/admissionregistration/v1",
+    "kubernetes/typed/admissionregistration/v1/fake",
     "kubernetes/typed/admissionregistration/v1beta1",
     "kubernetes/typed/admissionregistration/v1beta1/fake",
     "kubernetes/typed/apps/v1",
@@ -556,6 +560,8 @@
     "kubernetes/typed/coordination/v1beta1/fake",
     "kubernetes/typed/core/v1",
     "kubernetes/typed/core/v1/fake",
+    "kubernetes/typed/discovery/v1alpha1",
+    "kubernetes/typed/discovery/v1alpha1/fake",
     "kubernetes/typed/events/v1beta1",
     "kubernetes/typed/events/v1beta1/fake",
     "kubernetes/typed/extensions/v1beta1",
@@ -617,8 +623,8 @@
     "util/retry",
   ]
   pruneopts = "UT"
-  revision = "2fe0317bcee0e1ff48861f77cc1e2791cceba458"
-  version = "kubernetes-1.15.2"
+  revision = "0f69009510c3f4630de40c7b7f9034f2a2728023"
+  version = "kubernetes-1.16.10"
 
 [[projects]]
   digest = "1:ccb9be4c583b6ec848eb98aa395a4e8c8f8ad9ebb823642c0dd1c1c45939a5bb"

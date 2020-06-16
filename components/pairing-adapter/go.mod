@@ -11,4 +11,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )
 
-replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+replace (
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
+	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+)

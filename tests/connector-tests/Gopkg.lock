@@ -98,7 +98,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:de5b5122bf0826ff9aec376ccdb277a363c68c13718aee708717ca2a80ffce56"
+  digest = "1:4d2596e9fe17f202a68c448353454cb52fde77b3330ed0d47e7b49bdffa6d559"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/connector/internal/apperrors",
@@ -111,7 +111,7 @@
     "components/connector/pkg/oathkeeper",
   ]
   pruneopts = "UT"
-  revision = "ed26afa1728808f0d9d5b7cf37bf02b3e48b4cd8"
+  revision = "64f737ad7e1db26e2c3e9b71335bd67e69199092"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
