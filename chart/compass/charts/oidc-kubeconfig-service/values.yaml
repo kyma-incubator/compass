@@ -10,7 +10,7 @@ image:
   pullPolicy: IfNotPresent
 
 config:
-  servicePort: 80
+  servicePort: 9090
   graphqlURL: http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql
   oidc:
     issuer: https://kymatest.accounts400.ondemand.com
