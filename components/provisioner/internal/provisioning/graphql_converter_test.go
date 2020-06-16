@@ -145,6 +145,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		kubeversion := "kubeversion"
 		kubeconfig := "kubeconfig"
 		provider := "GCP"
+		purpose := "testing"
 		seed := "gcp-eu1"
 		secret := "secret"
 		cidr := "cidr"
@@ -176,6 +177,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					VolumeSizeGB:           volume,
 					KubernetesVersion:      kubeversion,
 					Provider:               provider,
+					Purpose:                purpose,
 					Seed:                   seed,
 					TargetSecret:           secret,
 					WorkerCidr:             cidr,
@@ -215,6 +217,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					VolumeSizeGb:      &volume,
 					KubernetesVersion: &kubeversion,
 					Provider:          &provider,
+					Purpose:           &purpose,
 					Seed:              &seed,
 					TargetSecret:      &secret,
 					WorkerCidr:        &cidr,
@@ -249,6 +252,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		kubeversion := "kubeversion"
 		kubeconfig := "kubeconfig"
 		provider := "Azure"
+		purpose := "testing"
 		seed := "az-eu1"
 		secret := "secret"
 		cidr := "cidr"
@@ -279,6 +283,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					DiskType:               disk,
 					MachineType:            machine,
 					Provider:               provider,
+					Purpose:                purpose,
 					Seed:                   seed,
 					TargetSecret:           secret,
 					Region:                 region,
@@ -319,6 +324,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					VolumeSizeGb:      &volume,
 					KubernetesVersion: &kubeversion,
 					Provider:          &provider,
+					Purpose:           &purpose,
 					Seed:              &seed,
 					TargetSecret:      &secret,
 					WorkerCidr:        &cidr,

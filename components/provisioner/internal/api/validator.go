@@ -29,8 +29,11 @@ func NewValidator(readSession dbsession.ReadSession) Validator {
 }
 
 func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) error {
-	err := v.validateKymaConfig(input.KymaConfig)
-	if err != nil {
+	if err := v.validateKymaConfig(input.KymaConfig); err != nil {
+		return fmt.Errorf("validation error while starting Runtime provisioning: %s", err.Error())
+	}
+
+	if err := v.validateClusterConfig(input.ClusterConfig); err != nil {
 		return fmt.Errorf("validation error while starting Runtime provisioning: %s", err.Error())
 	}
 
@@ -45,22 +48,6 @@ func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) er
 	err := v.validateKymaConfig(input.KymaConfig)
 	if err != nil {
 		return fmt.Errorf("validation error while starting Runtime upgrade: %s", err.Error())
-	}
-
-	return nil
-}
-
-func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) error {
-	if kymaConfig == nil {
-		return errors.New("error: Kyma config not provided")
-	}
-
-	if len(kymaConfig.Components) == 0 {
-		return errors.New("error: Kyma components list is empty")
-	}
-
-	if !configContainsRuntimeAgentComponent(kymaConfig.Components) {
-		return errors.New("error: Kyma components list does not contain Compass Runtime Agent")
 	}
 
 	return nil
@@ -90,6 +77,22 @@ func (v *validator) ValidateTenantForOperation(operationID, tenant string) error
 	return nil
 }
 
+func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) error {
+	if kymaConfig == nil {
+		return errors.New("error: Kyma config not provided")
+	}
+
+	if len(kymaConfig.Components) == 0 {
+		return errors.New("error: Kyma components list is empty")
+	}
+
+	if !configContainsRuntimeAgentComponent(kymaConfig.Components) {
+		return errors.New("error: Kyma components list does not contain Compass Runtime Agent")
+	}
+
+	return nil
+}
+
 func configContainsRuntimeAgentComponent(components []*gqlschema.ComponentConfigurationInput) bool {
 	for _, component := range components {
 		if component.Component == RuntimeAgent {
@@ -97,4 +100,16 @@ func configContainsRuntimeAgentComponent(components []*gqlschema.ComponentConfig
 		}
 	}
 	return false
+}
+
+func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfigInput) error {
+	if clusterConfig == nil {
+		return fmt.Errorf("cluster config is not provided")
+	}
+	if clusterConfig.GardenerConfig == nil {
+		return nil
+	}
+	// TODO: Check if Purpose can be casted as Gardener Shoot Purpose
+	// lusterConfig.GardenerConfig.Purpose
+	return nil
 }
