@@ -1,6 +1,7 @@
 FROM eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200117-d3885041 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/kubeconfig-service
+ENV CGO_ENABLED 0
 WORKDIR ${BASE_APP_DIR}
 
 #
