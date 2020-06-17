@@ -10,10 +10,6 @@ import (
 
 func TestSpec(t *testing.T) {
 
-	const testClientID = "testClientId"
-	const testClientSecret = "testClientSecret"
-	const testIssuerURL = "testIssuerURL"
-
 	env.Config.OIDC.ClientID = testClientID
 	env.Config.OIDC.ClientSecret = testClientSecret
 	env.Config.OIDC.IssuerURL = testIssuerURL
@@ -50,7 +46,12 @@ func TestSpec(t *testing.T) {
 	})
 }
 
-var testInputRawKubeconfig = `
+const (
+	testClientID     = "testClientId"
+	testClientSecret = "testClientSecret"
+	testIssuerURL    = "testIssuerURL"
+
+	testInputRawKubeconfig = `
 apiVersion: v1
 kind: Config
 clusters:
@@ -70,7 +71,7 @@ users:
       token: 7WFakeFakeK
 `
 
-var expectedTransformedKubeconfig = `
+	expectedTransformedKubeconfig = `
 ---
 apiVersion: v1
 kind: Config
@@ -98,3 +99,4 @@ users:
       - "--oidc-client-secret=testClientSecret"
       command: kubectl
 `
+)

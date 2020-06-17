@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	tenantHeader = "Tenant"
+	TenantHeader = "Tenant"
 )
 
 //Caller wrapper structure for the graphQL Client
@@ -35,7 +35,7 @@ func NewCaller(endpoint, tenant string) *Caller {
 
 func (c Caller) newRequest(query string) *graphql.Request {
 	req := graphql.NewRequest(query)
-	req.Header.Add(tenantHeader, c.tenant)
+	req.Header.Add(TenantHeader, c.tenant)
 
 	return req
 }
