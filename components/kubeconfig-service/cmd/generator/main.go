@@ -4,18 +4,20 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/authn"
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/reload"
-	"k8s.io/apiserver/pkg/authentication/authenticator"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
 
+	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/authn"
+	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/reload"
+	"k8s.io/apiserver/pkg/authentication/authenticator"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/endpoints"
 	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/env"
+
 	//"github.com/kyma-project/kyma/components/iam-kubeconfig-service/cmd/generator/reload"
 	log "github.com/sirupsen/logrus"
 )
@@ -75,7 +77,6 @@ func main() {
 	}
 }
 
-
 func readAuthnConfig() *authn.OIDCConfig {
 	oidcIssuerURLArg := flag.String(oidcIssuerURLFlag, "", "OIDC: The URL of the OpenID issuer. Used to verify the OIDC JSON Web Token (JWT)")
 	oidcClientIDArg := flag.String(oidcClientIDFlag, "", "OIDC: The client ID for the OpenID Connect client")
@@ -111,18 +112,17 @@ func readAuthnConfig() *authn.OIDCConfig {
 		oidcSupportedSigningAlgsArg = []string{"RS256"}
 	}
 
-	return &authn.OIDCConfig {
-			IssuerURL:            *oidcIssuerURLArg,
-			ClientID:             *oidcClientIDArg,
-			CAFilePath:           *oidcCAFileArg,
-			UsernameClaim:        *oidcUsernameClaimArg,
-			UsernamePrefix:       *oidcUsernamePrefixArg,
-			GroupsClaim:          *oidcGroupsClaimArg,
-			GroupsPrefix:         *oidcGroupsPrefixArg,
-			SupportedSigningAlgs: oidcSupportedSigningAlgsArg,
+	return &authn.OIDCConfig{
+		IssuerURL:            *oidcIssuerURLArg,
+		ClientID:             *oidcClientIDArg,
+		CAFilePath:           *oidcCAFileArg,
+		UsernameClaim:        *oidcUsernameClaimArg,
+		UsernamePrefix:       *oidcUsernamePrefixArg,
+		GroupsClaim:          *oidcGroupsClaimArg,
+		GroupsPrefix:         *oidcGroupsPrefixArg,
+		SupportedSigningAlgs: oidcSupportedSigningAlgsArg,
 	}
 }
-
 
 //Support for multi-valued flag: -flagName=val1 -flagName=val2 etc.
 type multiValFlag []string
