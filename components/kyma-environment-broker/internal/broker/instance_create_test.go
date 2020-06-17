@@ -33,6 +33,10 @@ const (
 	clusterName      = "cluster-testing"
 )
 
+var (
+	shootPurpose = "development"
+)
+
 func TestProvision_Provision(t *testing.T) {
 	t.Run("new operation will be created", func(t *testing.T) {
 		// given
@@ -100,7 +104,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure"}, DefaultGardenerShootPurpose: shootPurpose},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -374,8 +378,8 @@ func fixExistOperation() internal.ProvisioningOperation {
 			InstanceID: instanceID,
 		},
 		ProvisioningParameters: fmt.Sprintf(
-			`{"plan_id":"%s", "service_id": "%s", "ers_context":{"globalaccount_id": "%s", "subaccount_id": "%s"}, "parameters":{"name": "%s"}}`,
-			planID, serviceID, globalAccountID, subAccountID, clusterName),
+			`{"plan_id":"%s", "service_id": "%s", "ers_context":{"globalaccount_id": "%s", "subaccount_id": "%s"}, "parameters":{"name": "%s", "purpose": "%s"}}`,
+			planID, serviceID, globalAccountID, subAccountID, clusterName, shootPurpose),
 	}
 }
 

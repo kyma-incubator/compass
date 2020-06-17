@@ -408,10 +408,12 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:7104890b67c4b703b6c80f612886bedf6bc182be563da09a3173df4b871e8142"
+  branch = "385-add-purpose-to-provisioners-api"
+  digest = "1:c0f23dae66dd7498e70ddcf090bddd463c4fb6c8b25445f0a7c0a0498403d0f4"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
+    "components/director/pkg/apperrors",
     "components/director/pkg/graphql",
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
@@ -420,7 +422,8 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "3f19fcd363a5a9fd5d3c99dcd9b855718f820efb"
+  revision = "6ea51a1fb23350c814ced538ba702785522d09bb"
+  source = "https://github.com/franpog859/compass"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"

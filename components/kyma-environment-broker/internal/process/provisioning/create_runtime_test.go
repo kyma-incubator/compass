@@ -34,6 +34,10 @@ const (
 	serviceManagerPassword = "admin123"
 )
 
+var (
+	shootPurpose = "development"
+)
+
 func TestCreateRuntimeStep_Run(t *testing.T) {
 	// given
 	log := logrus.New()
@@ -64,6 +68,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				MachineType:       "n1-standard-4",
 				Region:            "europe-west4-a",
 				Provider:          "gcp",
+				Purpose:           &shootPurpose,
 				WorkerCidr:        "10.250.0.0/19",
 				AutoScalerMin:     3,
 				AutoScalerMax:     4,

@@ -115,6 +115,7 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	updateString(&r.input.ClusterConfig.GardenerConfig.Region, r.provisioningParameters.Region)
 	updateString(&r.input.ClusterConfig.GardenerConfig.MachineType, r.provisioningParameters.MachineType)
 	updateString(&r.input.ClusterConfig.GardenerConfig.TargetSecret, r.provisioningParameters.TargetSecret)
+	updateString(r.input.ClusterConfig.GardenerConfig.Purpose, r.provisioningParameters.Purpose)
 
 	r.hyperscalerInputProvider.ApplyParameters(r.input.ClusterConfig, r.provisioningParameters)
 

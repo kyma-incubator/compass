@@ -9,6 +9,10 @@ const (
 	DefaultAzureRegion = "westeurope"
 )
 
+var (
+	DefaultAzurePurpose = "development"
+)
+
 type AzureInput struct{}
 
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -19,6 +23,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "Standard_D8_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
+			Purpose:        &DefaultAzurePurpose,
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  3,
 			AutoScalerMax:  10,
