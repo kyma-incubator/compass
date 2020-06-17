@@ -1187,6 +1187,7 @@
     "github.com/Azure/go-autorest/autorest/azure",
     "github.com/Masterminds/sprig",
     "github.com/dlmiddlecote/sqlstats",
+    "github.com/gardener/gardener/pkg/apis/core/v1beta1",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gocraft/dbr",
     "github.com/google/uuid",

@@ -355,10 +355,10 @@ func TestClient_SetLabel(t *testing.T) {
 
 func TestClient_GetInstanceId(t *testing.T) {
 	var (
-		accountID  = "ad568853-ecf3-433a-8638-e53aa6bead5d"
-		runtimeID  = "775dc85e-825b-4ddf-abf6-da0dd002b66e"
+		accountID          = "ad568853-ecf3-433a-8638-e53aa6bead5d"
+		runtimeID          = "775dc85e-825b-4ddf-abf6-da0dd002b66e"
 		expectedInstanceID = "a5fb2c81-91f6-a440-415e-6f625609aeb3"
-		token       = oauth.Token{
+		token              = oauth.Token{
 			AccessToken: "1234xyza",
 			Expiration:  time.Now().Unix() + 999,
 		}
@@ -459,7 +459,6 @@ func TestClient_GetInstanceId(t *testing.T) {
 		assert.False(t, kebError.IsTemporaryError(err))
 		assert.Equal(t, "", instanceID)
 	})
-
 
 }
 
