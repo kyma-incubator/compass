@@ -10,7 +10,7 @@ export BROKER_URL={KYMA_ENVIRONMENT_BROKER_URL}
 export INSTANCE_ID={INSTANCE_ID_FROM_PROVISIONING_CALL}
 ```
 
-2. Get [Access Token](./03-05-authorization.md). Export this variable based on token you got from OAuth client:
+2. Get the [access token](./03-05-authorization.md). Export this variable based on the token you got from the OAuth client:
 
 ```bash
 export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
