@@ -7,11 +7,11 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/howeyc/fsnotify v0.9.0
 	github.com/kyma-incubator/compass/components/provisioner v0.0.0-20200610112737-6086a0421bda
-	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/smartystreets/goconvey v1.6.4
+	github.com/stretchr/testify v1.5.1
 	github.com/vrischmann/envconfig v1.2.0
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/apiserver v0.17.2
