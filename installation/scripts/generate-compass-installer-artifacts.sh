@@ -36,16 +36,11 @@ function copyKymaInstaller() {
     release=$(<"${RESOURCES_DIR}"/KYMA_VERSION)
 
     curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
-
     sed -i '/action: install/d' kyma-installer.yaml
-
     cat ${RESOURCES_DIR}/installer-cr-kyma-dependencies.yaml >> kyma-installer.yaml
-
     mv kyma-installer.yaml ${ARTIFACTS_DIR}/kyma-installer.yaml
 
-    curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/is-installed.sh -o kyma-is-installed.sh
-
-    mv kyma-is-installed.sh ${ARTIFACTS_DIR}/kyma-is-installed.sh
+    curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/is-installed.sh -o ${ARTIFACTS_DIR}/kyma-is-installed.sh
 }
 
 generateArtifact
