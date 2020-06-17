@@ -42,8 +42,11 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 	if err != nil {
 		w.Header().Add("Content-Type", mimeTypeText)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, err2 := w.Write([]byte(err.Error()))
 		log.Errorf("Error while processing the kubeconfig file: %s", err)
+		if err2 != nil {
+			log.Errorf("Error while sending response: %s", err2)
+		}
 	}
 	w.Header().Add("Content-Type", mimeTypeYaml)
 	_, err = w.Write(kubeConfig)
