@@ -11,7 +11,7 @@ ISTIO_OVERRIDES="${ROOT_PATH}"/installation/resources/installer-overrides-istio.
 API_GATEWAY_OVERRIDES="${ROOT_PATH}"/installation/resources/installer-overrides-api-gateway.yaml
 
 kyma provision minikube
-kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o $ISTIO_OVERRIDES -o $API_GATEWAY_OVERRIDES "${KYMA_RELEASE}"
+kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o $ISTIO_OVERRIDES -o $API_GATEWAY_OVERRIDES --source "eu.gcr.io/kyma-project/kyma-installer:${KYMA_RELEASE}"
 
 #Get Tiller tls client certificates
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.ca\.crt']}" | base64 --decode > "$(helm home)/ca.pem"
