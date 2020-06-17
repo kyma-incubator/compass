@@ -30,9 +30,9 @@ func NewClient(rawKubeCfg string) (*Client, error) {
 		ContextName:      kubeCfg.CurrentContext,
 		CAData:           kubeCfg.Clusters[0].Cluster.CertificateAuthorityData,
 		ServerURL:        kubeCfg.Clusters[0].Cluster.Server,
-		OIDCClientID:     env.Config.OIDC.ClientID,
-		OIDCClientSecret: env.Config.OIDC.ClientSecret,
-		OIDCIssuerURL:    env.Config.OIDC.IssuerURL,
+		OIDCClientID:     env.Config.OIDC.Kubeconfig.ClientID,
+		OIDCClientSecret: env.Config.OIDC.Kubeconfig.ClientSecret,
+		OIDCIssuerURL:    env.Config.OIDC.Kubeconfig.IssuerURL,
 	}, nil
 }
 

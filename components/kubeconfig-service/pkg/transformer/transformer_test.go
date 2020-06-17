@@ -10,9 +10,9 @@ import (
 
 func TestSpec(t *testing.T) {
 
-	env.Config.OIDC.ClientID = testClientID
-	env.Config.OIDC.ClientSecret = testClientSecret
-	env.Config.OIDC.IssuerURL = testIssuerURL
+	env.Config.OIDC.Kubeconfig.ClientID = testClientID
+	env.Config.OIDC.Kubeconfig.ClientSecret = testClientSecret
+	env.Config.OIDC.Kubeconfig.IssuerURL = testIssuerURL
 
 	// Only pass t into top-level Convey calls
 	Convey("NewClient()", t, func() {

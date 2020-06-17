@@ -1,6 +1,8 @@
 package env
 
-import "github.com/vrischmann/envconfig"
+import (
+	"github.com/vrischmann/envconfig"
+)
 
 var (
 	Config EnvConfig
@@ -10,9 +12,11 @@ type EnvConfig struct {
 	ServicePort int    `envconfig:"default=8000"`
 	GraphqlURL  string `envconfig:"default=http://127.0.0.1:3000/graphql"`
 	OIDC        struct {
-		IssuerURL    string
-		ClientID     string
-		ClientSecret string
+		Kubeconfig  struct {
+			IssuerURL    string
+			ClientID     string
+			ClientSecret string
+	}
 	}
 }
 

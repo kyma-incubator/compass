@@ -16,6 +16,12 @@ spec:
         app.kubernetes.io/name: {{ include "oidc-kubeconfig-service.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "dex.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -33,27 +39,44 @@ spec:
               value: {{ .Values.config.servicePort | quote }}
             - name: GRAPHQL_URL
               value: {{ .Values.config.graphqlURL | quote }}
-            - name: OIDC_ISSUER_URL
+            - name: OIDC_KUBECONFIG_ISSUER_URL
               value: {{ .Values.config.oidc.issuer | quote }}
-            - name: OIDC_CLIENT_ID
+            - name: OIDC_KUBECONFIG_CLIENT_ID
               value: {{ .Values.config.oidc.client | quote }}
-            - name: OIDC_CLIENT_SECRET
+            - name: OIDC_KUBECONFIG_CLIENT_SECRET
               value: {{ .Values.config.oidc.secret | quote }}
+          command:
+            - sh
+            - -c
+            {{ if .Values.global.environment.gardener }}
+            - /app/main -oidc-issuer-url=https://dex.{{ .Values.global.ingress.domainName }} -oidc-client-id=compass-ui
+            {{ else }}
+            - /app/main -oidc-issuer-url=https://dex.{{ .Values.global.ingress.domainName }} -oidc-client-id=compass-ui -oidc-ca-file=/etc/dex-tls-cert/tls.crt
+          {{ end  }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
               containerPort: {{ .Values.config.servicePort }}
-              protocol: TCP 
+              protocol: TCP
           livenessProbe:
             httpGet:
               path: /health/ready
-              port: http
+              port: 9000
           readinessProbe:
             httpGet:
               path: /health/ready
-              port: http
+              port: 9000
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if not .Values.global.environment.gardener }}
+          volumeMounts:
+            - name: dex-tls-cert
+              mountPath: /etc/dex-tls-cert/
+      volumes:
+        - name: dex-tls-cert
+          secret:
+            secretName: ingress-tls-cert
+      {{ end -}}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
