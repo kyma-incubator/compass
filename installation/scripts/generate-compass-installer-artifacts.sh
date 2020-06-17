@@ -48,5 +48,5 @@ fi
     mv kyma-installer.yaml ${ARTIFACTS_DIR}/kyma-installer.yaml
 }
 
-#generateArtifact
+generateArtifact
 copyKymaInstaller
