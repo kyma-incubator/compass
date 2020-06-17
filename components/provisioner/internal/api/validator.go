@@ -33,10 +33,6 @@ func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeIn
 		return fmt.Errorf("validation error while starting Runtime provisioning: %s", err.Error())
 	}
 
-	if err := v.validateClusterConfig(input.ClusterConfig); err != nil {
-		return fmt.Errorf("validation error while starting Runtime provisioning: %s", err.Error())
-	}
-
 	if input.RuntimeInput == nil {
 		return fmt.Errorf("validation error while starting Runtime provisioning: runtime input is missing")
 	}
@@ -100,16 +96,4 @@ func configContainsRuntimeAgentComponent(components []*gqlschema.ComponentConfig
 		}
 	}
 	return false
-}
-
-func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfigInput) error {
-	if clusterConfig == nil {
-		return fmt.Errorf("cluster config is not provided")
-	}
-	if clusterConfig.GardenerConfig == nil {
-		return nil
-	}
-	// TODO: Check if Purpose can be casted as Gardener Shoot Purpose
-	// clusterConfig.GardenerConfig.Purpose
-	return nil
 }
