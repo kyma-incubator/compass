@@ -10,16 +10,16 @@ export BROKER_URL={KYMA_ENVIRONMENT_BROKER_URL}
 export INSTANCE_ID={INSTANCE_ID_FROM_PROVISIONING_CALL}
 ```
 
-2. Get [authorization credentials](./03-05-authorization.md). Export this variable based on the chosen authorization method:
+2. Get [Access Token](./03-05-authorization.md). Export this variable based on token you got from OAuth client:
 
 ```bash
-export AUTHORIZATION_HEADER="Authorization: {Basic OR Bearer} $ENCODED_CREDENTIALS"
+export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 3. Make a call to the Kyma Environment Broker to delete a Runtime on Azure.
 
 ```bash
-curl  --request DELETE "https://$BROKER_URL/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281&plan_id=4deee563-e5ec-4731-b9b1-53b42d855f0c" \
+curl  --request DELETE "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281&plan_id=4deee563-e5ec-4731-b9b1-53b42d855f0c" \
 --header 'X-Broker-API-Version: 2.13' \
 --header "$AUTHORIZATION_HEADER"
 ```
