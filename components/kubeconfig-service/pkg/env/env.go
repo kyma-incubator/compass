@@ -12,11 +12,11 @@ type EnvConfig struct {
 	ServicePort int    `envconfig:"default=8000"`
 	GraphqlURL  string `envconfig:"default=http://127.0.0.1:3000/graphql"`
 	OIDC        struct {
-		Kubeconfig  struct {
+		Kubeconfig struct {
 			IssuerURL    string
 			ClientID     string
 			ClientSecret string
-	}
+		}
 	}
 }
 
