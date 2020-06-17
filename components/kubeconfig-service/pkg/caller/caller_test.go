@@ -47,8 +47,9 @@ func TestSpec(t *testing.T) {
 					//Assertion on runtimeStatus parameter (embedded in the query)
 					c.So(string(b), ShouldContainSubstring, fmt.Sprintf(`result: runtimeStatus(id: \"%s\")`, testRuntimeID))
 
-					//Mock response, our contract on what the endpoint shall return.
-					io.WriteString(w, fmt.Sprintf(mockGQLResponse, testKubeconfig))
+					//Mock response, our contract on what the endpoint shall return
+					_, err = io.WriteString(w, fmt.Sprintf(mockGQLResponse, testKubeconfig))
+					c.So(err, ShouldBeNil)
 				}))
 				defer srv.Close()
 
