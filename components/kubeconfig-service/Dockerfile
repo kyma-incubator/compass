@@ -18,7 +18,7 @@ RUN go build -v -o main ./cmd/generator/main.go
 RUN mkdir /app && mv ./main /app/main
 #&& mv ./licenses /app/licenses
 
-FROM alpine:3.11.3
+FROM alpine:3.11.6
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
