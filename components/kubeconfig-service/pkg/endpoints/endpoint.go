@@ -10,7 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const mimeTypeYaml = "application/x-yaml"
+const (
+	mimeTypeYaml = "application/x-yaml"
+	mimeTypeText = "text/plain"
+)
 
 //EndpointClient Wrpper for Endpoints
 type EndpointClient struct {
@@ -33,32 +36,16 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 	tenant := vars["tenantID"]
 	runtime := vars["runtimeID"]
 
-	w.Header().Add("Content-Type", mimeTypeYaml)
+	log.Infof("Generating kubeconfig for %s/%s", tenant, runtime)
 
-	//TODO: Business logic is mixed with low-level HTTP things. This makes testing/maintenance harder and can be easily fixed.
-	log.Infof("Fetching kubeconfig for %s/%s", tenant, runtime)
-	//TODO: What if tenant/runtime is invalid or not-found? Perhaps a 400/404 error should be returned?
-	rawConfig, err := ec.callGQL(tenant, runtime)
-	if err != nil || rawConfig == "" {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Errorf("Error ocurred while processing client data: %s", err)
-	}
-
-	tc, err := transformer.NewClient(rawConfig)
+	kubeConfig, err := ec.generateKubeConfig(tenant, runtime)
 	if err != nil {
+		w.Header().Add("Content-Type", mimeTypeText)
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Errorf("Error while decoding kubeconfig from server: %s", err)
-	}
-
-	kubeConfig, err := tc.TransformKubeconfig()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		log.Errorf("Error while processing the kubeconfig file: %s", err)
 	}
-	//BUG: This is executed even if an error occurred
-	log.Infof("Generated new Kubeconfig for %s/%s", tenant, runtime)
-
-	//TODO: In case of an error, we could serialize it's description to YAML/JSON and send that instead.
+	w.Header().Add("Content-Type", mimeTypeYaml)
 	_, err = w.Write(kubeConfig)
 	if err != nil {
 		log.Errorf("Error while sending response: %s", err)
@@ -77,4 +64,20 @@ func (ec EndpointClient) callGQL(tenantID, runtimeID string) (string, error) {
 		return "", err
 	}
 	return *status.RuntimeConfiguration.Kubeconfig, nil
+}
+
+func (ec EndpointClient) generateKubeConfig(tenant, runtime string) ([]byte, error) {
+	rawConfig, err := ec.callGQL(tenant, runtime)
+	if err != nil || rawConfig == "" {
+		return nil, err
+	}
+	tc, err := transformer.NewClient(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+	kubeConfig, err := tc.TransformKubeconfig()
+	if err != nil {
+		return nil, err
+	}
+	return kubeConfig, nil
 }
