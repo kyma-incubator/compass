@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
 
@@ -58,7 +60,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		// WHEN
 		res, err := client.FetchTenantEventsPage(-1, 1)
 		// THEN
-		require.EqualError(t, err, "unknown events type")
+		require.EqualError(t, err, apperrors.NewInternalError("unknown events type").Error())
 		assert.Empty(t, res)
 	})
 

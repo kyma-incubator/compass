@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 
@@ -263,7 +265,7 @@ func TestConverter_EventToTenant(t *testing.T) {
 		out, err := conv.EventToTenant(eventsType, in)
 
 		// THEN
-		require.EqualError(t, err, "invalid event data format")
+		require.EqualError(t, err, apperrors.NewInvalidDataError("invalid event data format").Error())
 		require.Empty(t, out)
 	})
 

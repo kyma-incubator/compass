@@ -135,7 +135,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	}
 
 	if pageSize < 1 || pageSize > 100 {
-		return nil, errors.New("page size must be between 1 and 100")
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
 	return s.repo.List(ctx, tnt, pageSize, cursor)
@@ -187,14 +187,14 @@ func (s *service) Delete(ctx context.Context, in model.AutomaticScenarioAssignme
 
 func (s *service) ensureSameSelector(in []*model.AutomaticScenarioAssignment) (model.LabelSelector, error) {
 	if in == nil || len(in) == 0 || in[0] == nil {
-		return model.LabelSelector{}, errors.New("expected at least one item in Assignments slice")
+		return model.LabelSelector{}, apperrors.NewInternalError("expected at least one item in Assignments slice")
 	}
 
 	selector := in[0].Selector
 
 	for _, item := range in {
 		if item != nil && item.Selector != selector {
-			return model.LabelSelector{}, errors.New("all input items have to have the same selector")
+			return model.LabelSelector{}, apperrors.NewInternalError("all input items have to have the same selector")
 		}
 	}
 

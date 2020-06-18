@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,7 +23,7 @@ func (p *reqDataParser) Parse(req *http.Request) (ReqData, error) {
 	err := json.NewDecoder(req.Body).Decode(&reqBody)
 	if err != nil {
 		if err == io.EOF {
-			return ReqData{}, errors.New("request body is empty")
+			return ReqData{}, apperrors.NewInternalError("request body is empty")
 		}
 
 		return ReqData{}, errors.Wrap(err, "while decoding request body")

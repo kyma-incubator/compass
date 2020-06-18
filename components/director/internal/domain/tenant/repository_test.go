@@ -343,7 +343,7 @@ func TestPgRepository_List(t *testing.T) {
 		_, err := repo.List(ctx)
 
 		// THEN
-		require.EqualError(t, err, "while fetching persistence from context: unable to fetch database from context")
+		require.EqualError(t, err, "while fetching persistence from context: Internal Server Error: unable to fetch database from context")
 	})
 }
 

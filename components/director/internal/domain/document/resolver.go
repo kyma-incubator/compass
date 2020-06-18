@@ -81,7 +81,7 @@ func (r *Resolver) AddDocumentToPackage(ctx context.Context, packageID string, i
 	}
 
 	if !found {
-		return nil, errors.New("Cannot add Document to not existing Package")
+		return nil, apperrors.NewInvalidDataError("cannot add Document to not existing Package")
 	}
 
 	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)

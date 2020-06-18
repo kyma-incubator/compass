@@ -3,6 +3,8 @@ package graphql
 import (
 	"io"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
@@ -14,7 +16,7 @@ type Labels map[string]interface{}
 
 func (y *Labels) UnmarshalGQL(v interface{}) error {
 	if v == nil {
-		return errors.New("input should not be nil")
+		return apperrors.NewInternalError("input should not be nil")
 	}
 
 	value, ok := v.(map[string]interface{})

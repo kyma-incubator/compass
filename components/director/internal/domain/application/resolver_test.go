@@ -1737,7 +1737,7 @@ func TestResolver_Packages(t *testing.T) {
 		_, err := resolver.Packages(context.TODO(), nil, nil, nil)
 		//then
 		require.Error(t, err)
-		assert.EqualError(t, err, "Application cannot be empty")
+		assert.EqualError(t, err, apperrors.NewInternalError("Application cannot be empty").Error())
 	})
 }
 
@@ -1881,7 +1881,7 @@ func TestResolver_Package(t *testing.T) {
 		_, err := resolver.Package(context.TODO(), nil, "")
 		//then
 		require.Error(t, err)
-		assert.EqualError(t, err, "Application cannot be empty")
+		assert.EqualError(t, err, apperrors.NewInternalError("Application cannot be empty").Error())
 	})
 
 }

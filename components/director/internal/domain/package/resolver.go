@@ -227,7 +227,7 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 
 func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
 	if obj == nil {
-		return nil, errors.New("Package cannot be empty")
+		return nil, apperrors.NewInternalError("Package cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -257,7 +257,7 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 
 func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
 	if obj == nil {
-		return nil, errors.New("Package cannot be empty")
+		return nil, apperrors.NewInternalError("Package cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -322,7 +322,7 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, gro
 	}
 
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	apisPage, err := r.apiSvc.ListForPackage(ctx, obj.ID, *first, cursor)
@@ -387,7 +387,7 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, g
 	}
 
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	eventAPIPage, err := r.eventSvc.ListForPackage(ctx, obj.ID, *first, cursor)
@@ -453,7 +453,7 @@ func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *i
 	}
 
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	documentsPage, err := r.documentSvc.ListForPackage(ctx, obj.ID, *first, cursor)

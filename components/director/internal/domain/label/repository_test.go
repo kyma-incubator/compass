@@ -944,7 +944,7 @@ func TestRepository_GetRuntimeScenariosWhereRuntimesLabelsMatchSelector(t *testi
 
 		//THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "while fetching persistence from context: unable to fetch database from context")
+		assert.EqualError(t, err, "while fetching persistence from context: Internal Server Error: unable to fetch database from context")
 	})
 }
 

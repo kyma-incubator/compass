@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -59,7 +61,7 @@ func (c *converter) ToEntity(in *model.Package) (*Entity, error) {
 
 func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 	if entity == nil {
-		return nil, errors.New("the Package entity is nil")
+		return nil, apperrors.NewInternalError("the Package entity is nil")
 	}
 
 	defaultInstanceAuth, err := c.unmarshalDefaultInstanceAuth(entity.DefaultInstanceAuth)
@@ -82,7 +84,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 
 func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
 	if in == nil {
-		return nil, errors.New("the model Package is nil")
+		return nil, apperrors.NewInternalError("the model Package is nil")
 	}
 
 	return &graphql.Package{

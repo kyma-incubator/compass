@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/dgrijalva/jwt-go"
@@ -48,7 +50,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		_, err := jwksFetch.GetKey(nil)
 
 		// THEN
-		require.EqualError(t, err, "token cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("token cannot be nil").Error())
 	})
 
 	t.Run("should return error when unable to cast claims to MapClaims", func(t *testing.T) {
@@ -60,7 +62,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		_, err := jwksFetch.GetKey(token)
 
 		// THEN
-		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: unable to cast claims to the MapClaims")
+		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: Internal Server Error: unable to cast claims to the MapClaims")
 	})
 
 	t.Run("should return error when claims have no issuer claim", func(t *testing.T) {
@@ -72,7 +74,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		_, err := jwksFetch.GetKey(token)
 
 		// THEN
-		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while getting the issuer from claims: no issuer claim found")
+		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while getting the issuer from claims: Internal Server Error: no issuer claim found")
 	})
 
 	t.Run("should return error when claims have non-string issuer claim", func(t *testing.T) {
@@ -84,7 +86,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		_, err := jwksFetch.GetKey(token)
 
 		// THEN
-		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while getting the issuer from claims: unable to cast the issuer to a string")
+		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while getting the issuer from claims: Internal Server Error: unable to cast the issuer to a string")
 	})
 
 	t.Run("should return error when claims have issuer claim in non-URL format", func(t *testing.T) {
@@ -160,7 +162,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		_, err := jwksFetch.GetKey(token)
 
 		// THEN
-		require.EqualError(t, err, "while getting the JWKs URI: unable to cast the JWKs URI to a string")
+		require.EqualError(t, err, "while getting the JWKs URI: Internal Server Error: unable to cast the JWKs URI to a string")
 	})
 
 	t.Run("should return error when unable to fetch the JWKs", func(t *testing.T) {
@@ -215,7 +217,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		_, err := jwksFetch.GetKey(token)
 
 		// THEN
-		require.EqualError(t, err, "while getting the key ID: unable to find the key ID in the token")
+		require.EqualError(t, err, "while getting the key ID: Internal Server Error: unable to find the key ID in the token")
 	})
 
 	t.Run("should return error when unable to fetch the JWKs", func(t *testing.T) {
@@ -240,7 +242,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		_, err := jwksFetch.GetKey(token)
 
 		// THEN
-		require.EqualError(t, err, "while getting the key ID: unable to cast the key ID to a string")
+		require.EqualError(t, err, "while getting the key ID: Internal Server Error: unable to cast the key ID to a string")
 	})
 
 	t.Run("should return error when unable to finad a proper key", func(t *testing.T) {
@@ -265,7 +267,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		_, err := jwksFetch.GetKey(token)
 
 		// THEN
-		require.EqualError(t, err, "unable to find a proper key")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to find a proper key").Error())
 	})
 }
 
@@ -332,7 +334,7 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		_, err := tokenVerifier.Verify(token)
 
 		// THEN
-		require.EqualError(t, err, "token cannot be empty")
+		require.EqualError(t, err, apperrors.NewUnauthorizedError("token cannot be empty").Error())
 	})
 
 	t.Run("should return error when token is invalid", func(t *testing.T) {

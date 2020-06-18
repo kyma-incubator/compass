@@ -116,7 +116,7 @@ func (r *repository) ListByPackageID(ctx context.Context, tenantID string, packa
 
 func (r *repository) Update(ctx context.Context, item *model.PackageInstanceAuth) error {
 	if item == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity, err := r.conv.ToEntity(*item)

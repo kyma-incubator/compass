@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
@@ -44,7 +45,7 @@ func NewListerGlobal(resourceType resource.Type, tableName string, selectedColum
 
 func (l *universalLister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error {
 	if tenant == "" {
-		return errors.New("tenant cannot be empty")
+		return apperrors.NewTenantRequiredError()
 	}
 	additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
 	return l.unsafeList(ctx, dest, additionalConditions...)

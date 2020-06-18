@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/dgrijalva/jwt-go"
 	logrustest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
@@ -102,7 +104,7 @@ func TestJWKsCache_GetKey(t *testing.T) {
 		_, err := jwksCache.GetKey(nil)
 
 		// THEN
-		require.EqualError(t, err, "token cannot be nil")
+		require.EqualError(t, err, apperrors.NewUnauthorizedError("token cannot be nil").Error())
 	})
 
 	t.Run("should return error when unable to get token key ID", func(t *testing.T) {
@@ -115,7 +117,7 @@ func TestJWKsCache_GetKey(t *testing.T) {
 		_, err := jwksCache.GetKey(token)
 
 		// THEN
-		require.EqualError(t, err, "while getting the key ID: unable to find the key ID in the token")
+		require.EqualError(t, err, "while getting the key ID: Internal Server Error: unable to find the key ID in the token")
 	})
 
 	t.Run("should return error when unable to get key from remote server", func(t *testing.T) {

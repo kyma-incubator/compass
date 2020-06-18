@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/assert"
@@ -35,7 +37,7 @@ func TestLabels_UnmarshalGQL(t *testing.T) {
 		"error: input is nil": {
 			input:  nil,
 			err:    true,
-			errMsg: "input should not be nil"},
+			errMsg: apperrors.NewInternalError("input should not be nil").Error()},
 		"error: invalid input type": {
 			input:  map[int]interface{}{123: "invalid map"},
 			err:    true,

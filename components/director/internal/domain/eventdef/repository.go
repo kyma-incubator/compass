@@ -3,6 +3,8 @@ package eventdef
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -126,7 +128,7 @@ func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cu
 
 func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) error {
 	if item == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity, err := r.conv.ToEntity(*item)
@@ -159,7 +161,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, items []*model.EventDefin
 
 func (r *pgRepository) Update(ctx context.Context, item *model.EventDefinition) error {
 	if item == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity, err := r.conv.ToEntity(*item)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -144,10 +146,10 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 			return nil, errors.Wrap(err, "while fetching tenant events page")
 		}
 		if res == nil {
-			return nil, errors.New("next page was expected but response was empty")
+			return nil, apperrors.NewInternalError("next page was expected but response was empty")
 		}
 		if initialCount != res.TotalResults {
-			return nil, errors.New("total results number changed during fetching consecutive events pages")
+			return nil, apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
 		}
 		events = append(events, res.Events...)
 	}

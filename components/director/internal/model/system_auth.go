@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/pkg/errors"
 )
 
 type SystemAuth struct {
@@ -27,7 +26,7 @@ func (sa SystemAuth) GetReferenceObjectType() (SystemAuthReferenceObjectType, er
 		return IntegrationSystemReference, nil
 	}
 
-	return "", errors.New("unknown reference object type")
+	return "", apperrors.NewInternalError("unknown reference object type")
 }
 
 func (sa SystemAuth) GetReferenceObjectID() (string, error) {
@@ -43,7 +42,7 @@ func (sa SystemAuth) GetReferenceObjectID() (string, error) {
 		return *sa.IntegrationSystemID, nil
 	}
 
-	return "", errors.New("unknown reference object ID")
+	return "", apperrors.NewInternalError("unknown reference object ID")
 }
 
 type SystemAuthReferenceObjectType string

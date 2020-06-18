@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -124,7 +126,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 
 func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMapping) error {
 	if model == nil {
-		return errors.New("model can not be empty")
+		return apperrors.NewInternalError("model can not be empty")
 	}
 
 	entity := r.conv.ToEntity(model)

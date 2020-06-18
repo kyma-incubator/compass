@@ -3,6 +3,8 @@ package fetchrequest
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -47,7 +49,7 @@ func NewRepository(conv Converter) *repository {
 
 func (r *repository) Create(ctx context.Context, item *model.FetchRequest) error {
 	if item == nil {
-		return errors.New("item can not be empty")
+		return apperrors.NewInternalError("item can not be empty")
 	}
 
 	entity, err := r.conv.ToEntity(*item)
@@ -109,5 +111,5 @@ func (r *repository) referenceObjectFieldName(objectType model.FetchRequestRefer
 		return eventAPIDefIDColumn, nil
 	}
 
-	return "", errors.New("Invalid type of the Fetch Request reference object")
+	return "", apperrors.NewInternalError("Invalid type of the Fetch Request reference object")
 }

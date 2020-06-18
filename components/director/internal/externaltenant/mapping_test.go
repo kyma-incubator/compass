@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
@@ -68,7 +70,7 @@ func TestMapTenants(t *testing.T) {
 
 		//then
 		require.Error(t, err)
-		assert.Equal(t, err.Error(), "unsupported file format [.txt]")
+		assert.Equal(t, err.Error(), apperrors.NewInternalError("unsupported file format [.txt]").Error())
 	})
 
 	t.Run("should fail while unmarshalling tenants", func(t *testing.T) {

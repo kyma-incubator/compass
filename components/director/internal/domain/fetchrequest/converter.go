@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -60,7 +62,7 @@ func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) *model.Fetch
 
 func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 	if in.Status == nil {
-		return Entity{}, errors.New("Invalid input model")
+		return Entity{}, apperrors.NewInvalidDataError("Invalid input model")
 	}
 
 	auth, err := c.authToEntity(in.Auth)

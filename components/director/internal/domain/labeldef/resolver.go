@@ -205,7 +205,7 @@ func (r *Resolver) DeleteLabelDefinition(ctx context.Context, key string, delete
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if deleteRelatedLabels == nil {
-		return nil, errors.New("deleteRelatedLabels can not be nil, internal server error")
+		return nil, apperrors.NewInternalError("deleteRelatedLabels can not be nil")
 	}
 
 	ld, err := r.srv.Get(ctx, tnt, key)

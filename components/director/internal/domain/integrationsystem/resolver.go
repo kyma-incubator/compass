@@ -8,8 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=IntegrationSystemService -output=automock -outpkg=automock -case=underscore
@@ -230,7 +228,7 @@ func (r *Resolver) UnregisterIntegrationSystem(ctx context.Context, id string) (
 
 func (r *Resolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([]*graphql.SystemAuth, error) {
 	if obj == nil {
-		return nil, errors.New("Integration System cannot be empty")
+		return nil, apperrors.NewInternalError("Integration System cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()

@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/pkg/errors"
@@ -17,7 +19,7 @@ const (
 
 var (
 	webhookColumns         = []string{"id", "tenant_id", "app_id", "type", "url", "auth"}
-	missingInputModelError = errors.New("model has to be provided")
+	missingInputModelError = apperrors.NewInternalError("model has to be provided")
 	tenantColumn           = "tenant_id"
 )
 

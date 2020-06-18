@@ -2,6 +2,7 @@ package webhook_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -309,11 +310,10 @@ func TestService_Update(t *testing.T) {
 	}
 
 	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		t.SkipNow()
 		svc := webhook.NewService(nil, nil)
 		// when
 		err := svc.Update(context.TODO(), givenApplicationID(), *modelInput)
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		assert.EqualError(t, err, fmt.Sprintf("while getting Webhook: %s", apperrors.NewCannotReadTenantError().Error()))
 	})
 }
 
@@ -385,10 +385,9 @@ func TestService_Delete(t *testing.T) {
 	}
 
 	t.Run(testCaseErrorOnLoadingTenant, func(t *testing.T) {
-		t.SkipNow()
 		svc := webhook.NewService(nil, nil)
 		// when
 		err := svc.Delete(context.TODO(), id)
-		assert.True(t, apperrors.IsCannotReadTenant(err))
+		assert.EqualError(t, err, fmt.Sprintf("while getting Webhook: %s", apperrors.NewCannotReadTenantError()))
 	})
 }

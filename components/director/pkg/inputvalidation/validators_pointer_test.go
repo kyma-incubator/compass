@@ -59,7 +59,7 @@ func TestValidateExactlyOneNotNil(t *testing.T) {
 			Pointers: []interface{}{
 				5, str.Ptr("notok"), str.Ptr("notok"),
 			},
-			ExpectedError: errors.New("Internal Server Error: field is not a pointer"),
+			ExpectedError: errors.New("field is not a pointer"),
 		},
 	}
 

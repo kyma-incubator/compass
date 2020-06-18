@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -79,7 +81,7 @@ func TestDelete(t *testing.T) {
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
 			ctx := context.TODO()
 			err := testedMethod(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
-			require.EqualError(t, err, "unable to fetch database from context")
+			require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 		})
 	}
 }
@@ -148,7 +150,7 @@ func TestDeleteGlobal(t *testing.T) {
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
 			ctx := context.TODO()
 			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
-			require.EqualError(t, err, "unable to fetch database from context")
+			require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 		})
 	}
 }

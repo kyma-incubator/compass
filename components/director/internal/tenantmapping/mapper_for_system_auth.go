@@ -104,7 +104,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 	var err error
 
 	if sysAuth.TenantID == nil {
-		return TenantContext{}, scopes, errors.New("system auth tenant id cannot be nil")
+		return TenantContext{}, scopes, apperrors.NewInternalError("system auth tenant id cannot be nil")
 	}
 
 	if authFlow.IsOAuth2Flow() {

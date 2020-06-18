@@ -17,7 +17,6 @@ type testStruct struct {
 
 func (ts testStruct) Validate() error {
 	if ts.returnErr != nil {
-
 		return validation.Errors{"field": ts.returnErr}
 	}
 	return nil
