@@ -2,7 +2,6 @@ package apperrors_test
 
 import (
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -41,9 +40,9 @@ func TestErrorMessage(t *testing.T) {
 	t.Run("Multiple fields", func(t *testing.T) {
 		//GIVEN
 		validationErrors := map[string]error{
-			"field1": errors.New("field1 is invalid"),
 			"field2": errors.New("field2 is invalid"),
 			"field3": errors.New("field3 is invalid"),
+			"field1": errors.New("field1 is invalid"),
 		}
 
 		//WHEN
@@ -51,16 +50,7 @@ func TestErrorMessage(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		errMsg := err.Error()
-		assert.Equal(t, 2, strings.Count(err.Error(), ";"))
-		assert.Contains(t, errMsg, "field1=field1 is invalid")
-		assert.Contains(t, errMsg, "field2=field2 is invalid")
-		assert.Contains(t, errMsg, "field3=field3 is invalid")
-		assert.Contains(t, errMsg, "Invalid data testObject")
-		endIdx := strings.IndexRune(errMsg, ']')
-		runeMsg := []rune(errMsg)
-		assert.NotEqual(t, runeMsg[endIdx-1], ';')
-		assert.NotEqual(t, runeMsg[endIdx-1], ' ')
+		assert.EqualError(t, err, "Invalid data testObject [field1=field1 is invalid; field2=field2 is invalid; field3=field3 is invalid]")
 	})
 }
 

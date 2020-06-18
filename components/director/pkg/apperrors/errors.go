@@ -3,6 +3,7 @@ package apperrors
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -22,8 +23,9 @@ func (err Error) Error() string {
 	var i = 0
 	if len(err.arguments) != 0 {
 		builder.WriteString(" [")
-		for key, value := range err.arguments {
-			builder.WriteString(fmt.Sprintf("%s=%s", key, value))
+		keys := sortMapKey(err.arguments)
+		for _, key := range keys {
+			builder.WriteString(fmt.Sprintf("%s=%s", key, err.arguments[key]))
 			i++
 			if len(err.arguments) != i {
 				builder.WriteString("; ")
@@ -253,4 +255,14 @@ func IsTenantNotFoundError(err error) bool {
 
 func IsNotUniqueError(err error) bool {
 	return ErrorCode(err) == NotUnique
+}
+
+func sortMapKey(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k, _ := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+	return keys
 }
