@@ -86,7 +86,8 @@ func TestSpec(t *testing.T) {
 
 					if calls == 0 {
 						w.WriteHeader(http.StatusInternalServerError)
-						io.WriteString(w, `Internal Server Error`)
+						_, err = io.WriteString(w, `Internal Server Error`)
+						c.So(err, ShouldBeNil)
 					} else {
 						//Mock response, our contract on what the endpoint shall return
 						_, err = io.WriteString(w, fmt.Sprintf(mockGQLResponse, testKubeconfig))
