@@ -51,9 +51,9 @@ spec:
               value: "https://dex.{{ .Values.global.ingress.domainName }}"
             - name: OIDC_CLIENT_ID
               value: {{ .Values.config.oidc.client }}
-            {{- with .Values.config.oidc.caFile}}
+            {{- with .Values.config.oidc.caFile }}
             - name: OIDC_CA
-              value: {{ .Values.config.oidc.caFile }}
+              value: {{ . }}
             {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:

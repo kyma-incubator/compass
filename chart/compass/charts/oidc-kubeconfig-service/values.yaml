@@ -4,11 +4,9 @@
 
 global: 
   ingress:  
-    domainName: kyma.local  
-  environment:  
-    gardener: false 
+    domainName: kyma.local
   isLocalEnv: true  
-  minikubeIP: 192.168.64.2
+  minikubeIP: 192.168.64.203
 
 replicaCount: 1
 
@@ -27,7 +25,7 @@ config:
       client: 1234-5678-qwer
       secret: foobar
     client: compass-ui
-    caFile: ""  # Use /etc/dex-tls-cert/tls.crt
+    caFile: /etc/dex-tls-cert/tls.crt
 
 
 imagePullSecrets: []
