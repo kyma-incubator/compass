@@ -22,9 +22,13 @@ config:
   healthPort: 9000
   graphqlURL: http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql
   oidc:
-    issuer: https://kymatest.accounts400.ondemand.com
-    client: 1234-5678-qwer
-    secret: foobar
+    kubeconfig:
+      issuer: https://kymatest.accounts400.ondemand.com
+      client: 1234-5678-qwer
+      secret: foobar
+    client: compass-ui
+    caFile: ""  # Use /etc/dex-tls-cert/tls.crt
+
 
 imagePullSecrets: []
 nameOverride: ""
