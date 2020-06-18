@@ -10,8 +10,8 @@ OVERRIDES_COMPASS_GATEWAY="${ROOT_PATH}"/installation/resources/installer-overri
 ISTIO_OVERRIDES="${ROOT_PATH}"/installation/resources/installer-overrides-istio.yaml
 API_GATEWAY_OVERRIDES="${ROOT_PATH}"/installation/resources/installer-overrides-api-gateway.yaml
 
-if [[ KYMA_RELEASE == *PR-* ]] || [ KYMA_RELEASE == master ]; then
-  KYMA_TAG=$(curl -L https://storage.googleapis.com/kyma-development-artifacts/${KYMA_TAG}/kyma-installer-cluster.yaml | grep 'image: eu.gcr.io/kyma-project/kyma-installer:'| sed 's+image: eu.gcr.io/kyma-project/kyma-installer:++g' | tr -d '[:space:]')
+if [[ $KYMA_RELEASE == *PR-* ]] || [ $KYMA_RELEASE == master ]; then
+  KYMA_TAG=$(curl -L https://storage.googleapis.com/kyma-development-artifacts/${KYMA_RELEASE}/kyma-installer-cluster.yaml | grep 'image: eu.gcr.io/kyma-project/kyma-installer:'| sed 's+image: eu.gcr.io/kyma-project/kyma-installer:++g' | tr -d '[:space:]')
 else
   KYMA_TAG=${KYMA_RELEASE}
 fi
