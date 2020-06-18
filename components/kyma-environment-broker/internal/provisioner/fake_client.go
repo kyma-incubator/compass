@@ -82,10 +82,6 @@ func (c *fakeClient) ReconnectRuntimeAgent(accountID, runtimeID string) (string,
 	return "", fmt.Errorf("not implemented")
 }
 
-func (c *fakeClient) GCPRuntimeStatus(accountID, runtimeID string) (GCPRuntimeStatus, error) {
-	return GCPRuntimeStatus{}, fmt.Errorf("not implemented")
-}
-
 func (c *fakeClient) RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
