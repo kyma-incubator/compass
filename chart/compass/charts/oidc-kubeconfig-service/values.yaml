@@ -6,7 +6,7 @@ global:
   ingress:  
     domainName: kyma.local
   isLocalEnv: true  
-  minikubeIP: 192.168.64.203
+  minikubeIP: ""
 
 replicaCount: 1
 
