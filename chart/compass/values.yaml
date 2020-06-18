@@ -291,7 +291,7 @@ global:
     enabled: false
 
   oidcKubeconfigService:
-    enabled: true
+    enabled: false
 
 pairing-adapter:
   enabled: false
