@@ -1,14 +1,14 @@
-#Compass Resources
+# Compass Resources
 
-##Installation CRs
+## Installation CRs
 
-###[Kyma Dependencies](installer-cr-kyma-dependencies.yaml)
+### [Kyma Dependencies](installer-cr-kyma-dependencies.yaml)
 Kyma components that are required for Compass Installation
 
-###[Compass installation](.installer-cr-yaml.tpl)
+### [Compass installation](.installer-cr-yaml.tpl)
 Compass Component
 
-##KYMA_VERSION file
+## KYMA_VERSION file
 
 KYMA_VERSION is a file used to configure the version of Kyma used during the Compass installation.
 
