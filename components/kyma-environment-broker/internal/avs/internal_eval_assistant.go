@@ -59,6 +59,17 @@ func (iec *InternalEvalAssistant) ProvideCheckType() string {
 	return ""
 }
 
+func (iec *InternalEvalAssistant) ProvideTags() []*Tag {
+	return iec.avsConfig.InternalTesterTags
+}
+
+func (iec *InternalEvalAssistant) ProvideNewOrDefaultServiceName(defaultServiceName string) string {
+	if iec.avsConfig.InternalTesterService == "" {
+		return defaultServiceName
+	}
+	return iec.avsConfig.InternalTesterService
+}
+
 func (iec *InternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64) {
 	lifecycleData.AvsEvaluationInternalId = evalId
 }

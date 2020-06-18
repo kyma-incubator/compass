@@ -20,16 +20,16 @@ export NAME={RUNTIME_NAME}
 
 > **NOTE:** INSTANCE_ID and NAME must be unique. It is recommended to use UUID as an INSTANCE_ID.
 
-2. Get [authorization credentials](./03-05-authorization.md). Export this variable based on the chosen authorization method:
+2. Get the [access token](./03-05-authorization.md). Export this variable based on the token you got from the OAuth client:
 
 ```bash
-export AUTHORIZATION_HEADER="Authorization: {Basic OR Bearer} $ENCODED_CREDENTIALS"
+export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 3. Make a call to the Kyma Environment Broker to create a Runtime on Azure. Find the list of possible request parameters [here](./03-01-service-description.md).
 
 ```bash
-curl --request PUT "https://$BROKER_URL/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true" \
+curl --request PUT "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true" \
 --header 'X-Broker-API-Version: 2.14' \
 --header 'Content-Type: application/json' \
 --header "$AUTHORIZATION_HEADER" \

@@ -15,7 +15,7 @@ export OPERATION_ID={OBTAINED_OPERATION_ID}
 2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](./03-05-authorization.md) to verify that provisioning/deprovisioning succeeded.
 
 ```bash
-curl --request GET "https://$BROKER_URL/v2/service_instances/$INSTANCE_ID/last_operation?operation=$OPERATION_ID&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281&plan_id=4deee563-e5ec-4731-b9b1-53b42d855f0c" \
+curl --request GET "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID/last_operation?operation=$OPERATION_ID&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281&plan_id=4deee563-e5ec-4731-b9b1-53b42d855f0c" \
 --header 'X-Broker-API-Version: 2.13' \
 --header "$AUTHORIZATION_HEADER"
 ```
