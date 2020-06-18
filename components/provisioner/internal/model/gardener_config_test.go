@@ -334,7 +334,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							EnableBasicAuthentication: util.BoolPtr(false),
 						},
 					},
-					Maintenance: &gardener_types.Maintenance{},
+					Maintenance: &gardener_types.Maintenance{
+						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
+							KubernetesVersion:   false,
+							MachineImageVersion: false,
+						},
+					},
 				},
 			},
 		},
@@ -382,7 +387,11 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							EnableBasicAuthentication: util.BoolPtr(false),
 						},
 					},
-					Maintenance: &gardener_types.Maintenance{},
+					Maintenance: &gardener_types.Maintenance{AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
+						KubernetesVersion:   false,
+						MachineImageVersion: false,
+					},
+					},
 				},
 			},
 		},
@@ -430,7 +439,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							EnableBasicAuthentication: util.BoolPtr(false),
 						},
 					},
-					Maintenance: &gardener_types.Maintenance{},
+					Maintenance: &gardener_types.Maintenance{
+						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
+							KubernetesVersion:   false,
+							MachineImageVersion: false,
+						},
+					},
 				},
 			},
 		},
@@ -478,7 +492,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							EnableBasicAuthentication: util.BoolPtr(false),
 						},
 					},
-					Maintenance: &gardener_types.Maintenance{},
+					Maintenance: &gardener_types.Maintenance{
+						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
+							KubernetesVersion:   false,
+							MachineImageVersion: false,
+						},
+					},
 				},
 			},
 		},
