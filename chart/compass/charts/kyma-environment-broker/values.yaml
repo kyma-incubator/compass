@@ -89,6 +89,19 @@ avs:
   externalTesterAccessId: "TBD"
   groupId: "TBD"
   parentId: "TBD"
+  # if set - overrides default tester service name
+  internalTesterService: ""
+  externalTesterService: ""
+  # List of tags to bind to testers.
+  # Example: 
+  #  - content: tag-A
+  #    tag_id: 1
+  #    tag_name: value-A
+  #  - content: tag-B
+  #    tag_id: 2
+  #    tag_name: value-B
+  internalTesterTags: []
+  externalTesterTags: []
 
 lms:
   secretName: "lms-creds"
