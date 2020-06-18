@@ -28,6 +28,14 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 		return false
 	}
 	if !reflect.DeepEqual(p.Parameters, input.Parameters) {
+		// TODO: If there are already not resolved operations in the db
+		//       KEB will raise an error "provisioning operation already
+		//       exist" after updating the image on the environments.
+		//       Delete this check after some time, when every operation
+		//       has at least the default Gardener Shoot Purpose.
+		if p.Parameters.Purpose != input.Parameters.Purpose {
+			return true
+		}
 		return false
 	}
 

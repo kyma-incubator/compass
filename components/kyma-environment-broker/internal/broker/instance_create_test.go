@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	shootPurpose = "development"
+	defaultShootPurpose = "development"
 )
 
 func TestProvision_Provision(t *testing.T) {
@@ -51,7 +51,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure"}, DefaultGardenerShootPurpose: defaultShootPurpose},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -84,6 +84,8 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, globalAccountID, instanceParameters.ErsContext.GlobalAccountID)
 		assert.Equal(t, clusterName, instanceParameters.Parameters.Name)
 		assert.Equal(t, "req-region", instanceParameters.PlatformRegion)
+		require.NotNil(t, instanceParameters.Parameters.Purpose)
+		assert.Equal(t, defaultShootPurpose, *instanceParameters.Parameters.Purpose)
 
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)
@@ -104,7 +106,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}, DefaultGardenerShootPurpose: shootPurpose},
+			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -378,8 +380,8 @@ func fixExistOperation() internal.ProvisioningOperation {
 			InstanceID: instanceID,
 		},
 		ProvisioningParameters: fmt.Sprintf(
-			`{"plan_id":"%s", "service_id": "%s", "ers_context":{"globalaccount_id": "%s", "subaccount_id": "%s"}, "parameters":{"name": "%s", "purpose": "%s"}}`,
-			planID, serviceID, globalAccountID, subAccountID, clusterName, shootPurpose),
+			`{"plan_id":"%s", "service_id": "%s", "ers_context":{"globalaccount_id": "%s", "subaccount_id": "%s"}, "parameters":{"name": "%s"}}`,
+			planID, serviceID, globalAccountID, subAccountID, clusterName),
 	}
 }
 
