@@ -58,14 +58,23 @@ spec:
             - name: http
               containerPort: {{ .Values.config.servicePort }}
               protocol: TCP
+            - name: health
+              containerPort: {{ .Values.config.healthPort }}
+              protocol: TCP
           livenessProbe:
             httpGet:
               path: /health/ready
-              port: 9000
+              port: health
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health/ready
-              port: 9000
+              port: health
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- if not .Values.global.environment.gardener }}
