@@ -2,19 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-global: 
-  ingress:  
-    domainName: kyma.local
-  isLocalEnv: true  
-  minikubeIP: ""
-  livenessProbe:
-    initialDelaySeconds: 30
-    timeoutSeconds: 1
-    periodSeconds: 10
-  readinessProbe:
-    initialDelaySeconds: 5
-    timeoutSeconds: 1
-    periodSeconds: 2
 replicaCount: 1
 
 image:

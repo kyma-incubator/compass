@@ -290,8 +290,5 @@ global:
   metris:
     enabled: false
 
-  oidcKubeconfigService:
-    enabled: false
-
 pairing-adapter:
   enabled: false

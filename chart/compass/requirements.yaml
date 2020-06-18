@@ -13,5 +13,3 @@ dependencies:
   condition: global.metris.enabled
 - name: prometheus-postgres-exporter
   condition: global.metrics.enabled
-- name: oidc-kubeconfig-service
-  condition: global.oidcKubeconfigService.enabled
