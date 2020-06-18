@@ -14,6 +14,7 @@ set -o errexit
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 RESOURCES_DIR="${CURRENT_DIR}/../resources"
+SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 INSTALLER_YAML_PATH="${RESOURCES_DIR}/installer.yaml"
 INSTALLER_LOCAL_CONFIG_PATH="${RESOURCES_DIR}/installer-config-local.yaml.tpl"
 INSTALLER_CR_PATH="${RESOURCES_DIR}/installer-cr.yaml.tpl"
@@ -32,4 +33,20 @@ function generateArtifact() {
     rm -rf ${TMP_CR}
 }
 
+function copyKymaInstaller() {
+    release=$(<"${RESOURCES_DIR}"/KYMA_VERSION)
+if [[ $release == *PR-* ]] || [[ $release == *master* ]]; then
+    curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
+    curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/is-installed.sh -o ${ARTIFACTS_DIR}/is-kyma-installed.sh
+else
+    curl -L https://github.com/kyma-project/kyma/releases/download/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
+    cp ${SCRIPTS_DIR}/is-kyma-installed.sh ${ARTIFACTS_DIR}/is-kyma-installed.sh
+fi
+
+    sed -i '/action: install/d' kyma-installer.yaml
+    cat ${RESOURCES_DIR}/installer-cr-kyma-dependencies.yaml >> kyma-installer.yaml
+    mv kyma-installer.yaml ${ARTIFACTS_DIR}/kyma-installer.yaml
+}
+
 generateArtifact
+copyKymaInstaller
