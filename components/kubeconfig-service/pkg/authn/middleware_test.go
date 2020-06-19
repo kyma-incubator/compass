@@ -26,7 +26,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 		t.Run("Then authorizer is called with token", func(t *testing.T) {
 			assert.True(t, reject.Called)
-			assert.Equal(t, "Bearer token", reject.LastReq.Header.Get("authorization"))
+			assert.Equal(t, "Bearer token", reject.LastReq.Header.Get("Authorization"))
 		})
 		t.Run("Then next handler is not called", func(t *testing.T) {
 			assert.False(t, next.Called)
@@ -45,7 +45,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 		t.Run("Then authorizer is called with token", func(t *testing.T) {
 			assert.True(t, erroneous.Called)
-			assert.Equal(t, "Bearer token", erroneous.LastReq.Header.Get("authorization"))
+			assert.Equal(t, "Bearer token", erroneous.LastReq.Header.Get("Authorization"))
 		})
 		t.Run("Then next handler is not called", func(t *testing.T) {
 			assert.False(t, next.Called)
@@ -65,7 +65,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 		t.Run("Then authorizer is called with token", func(t *testing.T) {
 			assert.True(t, authenticated.Called)
-			assert.Equal(t, "Bearer token", authenticated.LastReq.Header.Get("authorization"))
+			assert.Equal(t, "Bearer token", authenticated.AuthHeader)
 		})
 		t.Run("Then next handler is called", func(t *testing.T) {
 			assert.True(t, next.Called)
@@ -73,15 +73,13 @@ func TestAuthMiddleware(t *testing.T) {
 		t.Run("Then status code is not set", func(t *testing.T) {
 			assert.Equal(t, 0, response.Code)
 		})
-		t.Run("Then authorization header is present in the request", func(t *testing.T) {
-			assert.Equal(t, "Bearer token", next.r.Header.Get("Authorization"))
-		})
 	})
 }
 
 type mockAuthenticator struct {
 	UserInfo   user.Info
 	Authorised bool
+	AuthHeader string
 	Err        error
 	LastReq    *http.Request
 	Called     bool
@@ -91,8 +89,9 @@ func (a *mockAuthenticator) AuthenticateRequest(req *http.Request) (*authenticat
 	a.Called = true
 	a.LastReq = req
 
-	//Mimic behaviour of k8s.io/apiserver/pkg/authentication/request/bearertoken.Authenticator.AuthenticateRequest
 	if a.Authorised {
+		a.AuthHeader = req.Header.Get("Authorization")
+		//Mimic behaviour of k8s.io/apiserver/pkg/authentication/request/bearertoken.Authenticator.AuthenticateRequest
 		req.Header.Del("Authorization")
 	}
 
@@ -113,6 +112,6 @@ func (h *mockHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func newHttpRequest() *http.Request {
 	req := httptest.NewRequest("POST", "/kube-config", strings.NewReader(""))
-	req.Header.Set("authorization", "Bearer token")
+	req.Header.Set("Authorization", "Bearer token")
 	return req
 }
