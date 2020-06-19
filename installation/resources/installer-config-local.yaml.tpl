@@ -59,3 +59,4 @@ data:
   global.domainName: "kyma.local"
   global.minikubeIP: ""
   global.ingress.domainName: "kyma.local"
+  config.oidc.caFile: "/etc/dex-tls-cert/tls.crt"

@@ -19,7 +19,7 @@ config:
       client: 1234-5678-qwer
       secret: foobar
     client: compass-ui
-    caFile: /etc/dex-tls-cert/tls.crt
+    # caFile: /etc/dex-tls-cert/tls.crt
 
 
 imagePullSecrets: []
