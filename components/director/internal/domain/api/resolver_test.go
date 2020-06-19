@@ -101,7 +101,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 				return conv
 			},
 			ExpectedAPI: nil,
-			ExpectedErr: errors.New("Cannot add API to not existing package"),
+			ExpectedErr: errors.New("cannot add API to not existing package"),
 		},
 		{
 			Name:            "Returns error when application existence check failed",

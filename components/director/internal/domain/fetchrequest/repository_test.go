@@ -185,7 +185,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), "test", givenID())
 		// THEN
-		require.EqualError(t, err, "Invalid type of the Fetch Request reference object")
+		require.EqualError(t, err, apperrors.NewInternalError("Invalid type of the Fetch Request reference object").Error())
 	})
 
 }
@@ -267,7 +267,7 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 		// WHEN
 		err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), "test", givenID())
 		// THEN
-		require.EqualError(t, err, "Invalid type of the Fetch Request reference object")
+		require.EqualError(t, err, apperrors.NewInternalError("Invalid type of the Fetch Request reference object").Error())
 	})
 
 	t.Run("Error - DB", func(t *testing.T) {

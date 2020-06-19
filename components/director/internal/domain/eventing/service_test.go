@@ -228,7 +228,7 @@ func Test_SetForApplication(t *testing.T) {
 
 	t.Run("Error when there are no scenarios assigned to application", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while getting the runtime: application does not belong to scenarios`)
+		expectedError := fmt.Sprintf(`while getting the runtime: Internal Server Error: application does not belong to scenarios`)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
@@ -798,7 +798,7 @@ func Test_GetForApplication(t *testing.T) {
 
 	t.Run("Error when ensuring the scenarios, there are no scenarios assigned to application", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while ensuring the scenarios assigned to the runtime and application: while verifing whether runtime [ID=%s] belongs to the application scenarios: application does not belong to scenarios`, runtimeID)
+		expectedError := fmt.Sprintf(`while ensuring the scenarios assigned to the runtime and application: while verifing whether runtime [ID=%s] belongs to the application scenarios: Internal Server Error: application does not belong to scenarios`, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),

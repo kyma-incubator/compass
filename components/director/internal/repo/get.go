@@ -58,7 +58,7 @@ func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Condit
 
 func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if dest == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {

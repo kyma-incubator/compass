@@ -190,12 +190,12 @@ func TestGetSingle(t *testing.T) {
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &User{})
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
 		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, nil)
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 }
 
@@ -337,12 +337,12 @@ func TestGetSingleGlobal(t *testing.T) {
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &User{})
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
 		err := sut.GetGlobal(context.TODO(), repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, nil)
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 }
 

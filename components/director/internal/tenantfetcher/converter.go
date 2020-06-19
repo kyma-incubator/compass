@@ -3,6 +3,8 @@ package tenantfetcher
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/pkg/errors"
@@ -51,7 +53,7 @@ func (c converter) EventToTenant(eventType EventsType, event Event) (*model.Busi
 
 	eventDataJSON, ok := event["eventData"].(string)
 	if !ok {
-		return nil, errors.New("invalid event data format")
+		return nil, apperrors.NewInvalidDataError("invalid event data format")
 	}
 
 	var eventData map[string]interface{}

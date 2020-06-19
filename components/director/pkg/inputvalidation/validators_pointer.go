@@ -3,7 +3,6 @@ package inputvalidation
 import (
 	"reflect"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
 
@@ -30,7 +29,7 @@ func exactlyOneNotNil(ptrs []interface{}) (bool, error) {
 			continue
 		}
 		if reflect.ValueOf(v).Kind() != reflect.Ptr {
-			return false, apperrors.NewInternalError("field is not a pointer")
+			return false, errors.New("field is not a pointer")
 		}
 		if !reflect.ValueOf(v).IsNil() {
 			notNilFound++

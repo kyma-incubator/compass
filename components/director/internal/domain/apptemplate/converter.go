@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -32,7 +34,7 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 	}
 
 	if in.ApplicationInputJSON == "" {
-		return nil, errors.New("application input is empty")
+		return nil, apperrors.NewInternalError("application input is empty")
 	}
 
 	gqlAppInput, err := c.graphqliseApplicationCreateInput(in.ApplicationInputJSON)

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
@@ -136,7 +138,7 @@ func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
 
 	b, ok := val.(string)
 	if !ok {
-		return nil, errors.New("Auth should be slice of bytes")
+		return nil, apperrors.NewInternalError("Auth should be slice of bytes")
 	}
 	if err := json.Unmarshal([]byte(b), auth); err != nil {
 		return nil, errors.Wrap(err, "while unmarshaling Auth")

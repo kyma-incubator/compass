@@ -3,6 +3,8 @@ package eventdef
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
@@ -83,7 +85,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 	}
 
 	if !found {
-		return nil, errors.New("Cannot add Event Definition to not existing Package")
+		return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Package")
 	}
 
 	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
@@ -192,7 +194,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
-		return nil, errors.New("Event Spec cannot be empty")
+		return nil, apperrors.NewInternalError("Event Spec cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -204,7 +206,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if obj.DefinitionID == "" {
-		return nil, errors.New("Internal Server Error: Cannot fetch FetchRequest. EventDefinition ID is empty")
+		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition ID is empty")
 	}
 
 	fr, err := r.svc.GetFetchRequest(ctx, obj.DefinitionID)

@@ -101,7 +101,7 @@ func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
 		return username, JWTAuthFlow, nil
 	}
 
-	return "", "", errors.New("unable to find valid auth ID")
+	return "", "", apperrors.NewInternalError("unable to find valid auth ID")
 }
 
 // GetExternalTenantID returns external tenant ID from the parsed request input if it is defined

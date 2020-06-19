@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/stretchr/testify/assert"
@@ -74,7 +76,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		sut := labeldef.NewRepository(nil)
 		ctx := context.TODO()
 		err := sut.Create(ctx, model.LabelDefinition{})
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if insert fails", func(t *testing.T) {
@@ -159,7 +161,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		sut := labeldef.NewRepository(nil)
 		ctx := context.TODO()
 		err := sut.Update(ctx, model.LabelDefinition{})
-		require.EqualError(t, err, "while fetching persistence from context: unable to fetch database from context")
+		require.EqualError(t, err, "while fetching persistence from context: Internal Server Error: unable to fetch database from context")
 	})
 
 	t.Run("returns error if update fails", func(t *testing.T) {
@@ -308,7 +310,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 		// WHEN
 		_, err := sut.GetByKey(context.TODO(), "tenant", "key")
 		// THEN
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 	t.Run("returns error if select fails", func(t *testing.T) {
 		// GIVEN
@@ -431,7 +433,7 @@ func TestRepositoryList(t *testing.T) {
 		// WHEN
 		_, err := sut.List(context.TODO(), "tenant")
 		// THEN
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 	t.Run("returns error if if select fails", func(t *testing.T) {
 		// GIVEN
@@ -496,7 +498,7 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		// WHEN
 		_, err := sut.Exists(context.TODO(), "tenant", "key")
 		// THEN
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 	t.Run("returns error if select fails", func(t *testing.T) {
 		// GIVEN

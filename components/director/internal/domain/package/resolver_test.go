@@ -1336,7 +1336,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 		_, err := resolver.InstanceAuth(context.TODO(), nil, "")
 		//then
 		require.Error(t, err)
-		assert.EqualError(t, err, "Package cannot be empty")
+		assert.EqualError(t, err, apperrors.NewInternalError("Package cannot be empty").Error())
 	})
 }
 
@@ -1455,6 +1455,6 @@ func TestResolver_InstanceAuths(t *testing.T) {
 		_, err := resolver.InstanceAuths(context.TODO(), nil)
 		//then
 		require.Error(t, err)
-		assert.EqualError(t, err, "Package cannot be empty")
+		assert.EqualError(t, err, apperrors.NewInternalError("Package cannot be empty").Error())
 	})
 }

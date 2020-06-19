@@ -3,6 +3,8 @@ package systemauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -187,5 +189,5 @@ func referenceObjectField(objectType model.SystemAuthReferenceObjectType) (strin
 		return "integration_system_id", nil
 	}
 
-	return "", errors.New("unsupported reference object type")
+	return "", apperrors.NewInternalError("unsupported reference object type")
 }

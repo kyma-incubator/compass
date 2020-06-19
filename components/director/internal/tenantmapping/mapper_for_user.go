@@ -55,7 +55,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 	}
 
 	if staticUser != nil && !hasValidTenant(staticUser.Tenants, tenantMapping.ExternalTenant) {
-		return ObjectContext{}, errors.New("tenant mismatch")
+		return ObjectContext{}, apperrors.NewInternalError("tenant mismatch")
 	}
 
 	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, username, consumer.User), nil

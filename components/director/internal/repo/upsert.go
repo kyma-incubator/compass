@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"github.com/pkg/errors"
 )
 
 type Upserter interface {
@@ -34,7 +34,7 @@ func NewUpserter(resourceType resource.Type, tableName string, insertColumns []s
 
 func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) error {
 	if dbEntity == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	persist, err := persistence.FromCtx(ctx)

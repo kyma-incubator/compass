@@ -5,6 +5,8 @@ import (
 	"net/textproto"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -91,7 +93,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 
 		_, _, err := reqData.GetAuthID()
 
-		require.EqualError(t, err, "unable to find valid auth ID")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to find valid auth ID").Error())
 	})
 
 	t.Run("returns error when client_id is specified in Extra map in a non-string format", func(t *testing.T) {

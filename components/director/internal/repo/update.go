@@ -57,7 +57,7 @@ func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity inte
 
 func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity interface{}, isGlobal bool) error {
 	if dbEntity == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	persist, err := persistence.FromCtx(ctx)

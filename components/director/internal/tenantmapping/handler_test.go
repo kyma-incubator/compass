@@ -340,7 +340,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatDoesntExpectCommit()
 
-		logger := getLoggerMock(t, "while getting object context: while determining the auth ID from the request: unable to find valid auth ID")
+		logger := getLoggerMock(t, "while getting object context: while determining the auth ID from the request: Internal Server Error: unable to find valid auth ID")
 
 		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, nil)
 		handler.SetLogger(logger)

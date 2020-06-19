@@ -101,7 +101,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 		cursor = string(*after)
 	}
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	tx, err := r.transact.Begin()

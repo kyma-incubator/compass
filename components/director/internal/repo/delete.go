@@ -40,7 +40,7 @@ func NewDeleterGlobal(resourceType resource.Type, tableName string) DeleterGloba
 
 func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditions Conditions) error {
 	if tenant == "" {
-		return errors.New("tenant cannot be empty")
+		return apperrors.NewTenantRequiredError()
 	}
 	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeDelete(ctx, conditions, true)
@@ -48,7 +48,7 @@ func (g *universalDeleter) DeleteOne(ctx context.Context, tenant string, conditi
 
 func (g *universalDeleter) DeleteMany(ctx context.Context, tenant string, conditions Conditions) error {
 	if tenant == "" {
-		return errors.New("tenant cannot be empty")
+		return apperrors.NewTenantRequiredError()
 	}
 	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeDelete(ctx, conditions, false)
