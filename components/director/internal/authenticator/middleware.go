@@ -9,6 +9,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/vektah/gqlparser/gqlerror"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -55,21 +58,21 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
 				log.Error(errors.Wrap(err, "while getting token from header"))
-				a.writeError(w, err.Error(), http.StatusBadRequest)
+				a.writeAppError(w, err, http.StatusBadRequest)
 				return
 			}
 
 			claims, err := a.parseClaimsWithRetry(bearerToken)
 			if err != nil {
 				log.Error(err)
-				a.writeError(w, err.Error(), http.StatusUnauthorized)
+				a.writeAppError(w, err, http.StatusUnauthorized)
 				return
 			}
 
 			if claims.Tenant == "" && claims.ExternalTenant != "" {
-				msg := apperrors.NewTenantNotFoundError(claims.ExternalTenant).Error()
-				log.Error(msg)
-				a.writeError(w, msg, http.StatusBadRequest)
+				err := apperrors.NewTenantNotFoundError(claims.ExternalTenant)
+				log.Error(err)
+				a.writeAppError(w, err, http.StatusBadRequest)
 				return
 			}
 
@@ -88,17 +91,17 @@ func (a *Authenticator) parseClaimsWithRetry(bearerToken string) (Claims, error)
 	if err != nil {
 		validationErr, ok := err.(*jwt.ValidationError)
 		if !ok || validationErr.Inner != rsa.ErrVerification {
-			return Claims{}, errors.Wrap(err, "while parsing token")
+			return Claims{}, apperrors.NewUnauthorizedError(err.Error())
 		}
 
 		err := a.SynchronizeJWKS()
 		if err != nil {
-			return Claims{}, errors.Wrap(err, "while synchronizing JWKs during parsing token")
+			return Claims{}, apperrors.InternalErrorFrom(err, "while synchronizing JWKs during parsing token")
 		}
 
 		claims, err = a.parseClaims(bearerToken)
 		if err != nil {
-			return Claims{}, errors.Wrap(err, "while parsing token")
+			return Claims{}, apperrors.NewUnauthorizedError(err.Error())
 		}
 
 		return claims, err
@@ -163,19 +166,18 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 	}
 }
 
-type errorResponse struct {
-	Errors []gqlError `json:"errors"`
-}
+func (a *Authenticator) writeAppError(w http.ResponseWriter, appErr error, statusCode int) {
+	errCode := apperrors.ErrorCode(appErr)
+	if errCode == apperrors.UnknownError || errCode == apperrors.InternalError {
+		log.Error(appErr.Error())
+		errCode = apperrors.InternalError
+	}
 
-type gqlError struct {
-	Message string `json:"message"`
-}
-
-func (a *Authenticator) writeError(w http.ResponseWriter, message string, statusCode int) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
-
-	resp := errorResponse{Errors: []gqlError{{Message: message}}}
+	resp := graphql.Response{Errors: []*gqlerror.Error{{
+		Message:    appErr.Error(),
+		Extensions: map[string]interface{}{"error_code": errCode, "error": errCode.String()}}}}
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		log.Error(err, "while encoding data")
