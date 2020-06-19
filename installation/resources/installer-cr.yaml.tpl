@@ -12,7 +12,7 @@ spec:
   version: "__VERSION__"
   url: "__URL__"
   components:
-    - name: "oidc-kubeconfig-service"
-      namespace: "kyma-system"
     - name: "compass"
       namespace: "compass-system"
+    - name: "oidc-kubeconfig-service"
+      namespace: "kyma-system"
