@@ -16,7 +16,7 @@ else
   KYMA_TAG=${KYMA_RELEASE}
 fi
 kyma provision minikube
-kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o $ISTIO_OVERRIDES -o $API_GATEWAY_OVERRIDES --source "eu.gcr.io/kyma-project/kyma-installer:${KYMA_TAG}"
+kyma install -c $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o $ISTIO_OVERRIDES -o $API_GATEWAY_OVERRIDES --source "eu.gcr.io/kyma-project/kyma-installer:${KYMA_TAG}"
 
 
 #Get Tiller tls client certificates
