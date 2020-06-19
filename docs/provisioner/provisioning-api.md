@@ -87,6 +87,45 @@ The mutation returns OperationID allowing to retrieve the operation status.
 
 The mutation returns OperationID allowing to retrieve the operation status.
 
+### Upgrade Shoot mutation
+
+***upgradeShoot*** mutation upgrades Gardener Shoot cluster configuration, triggering shoot reconcile.
+
+List of possible configurable `GardenerConfig` values:
+
+| Field                    |                                       Configurable                                       | Note         |
+| ------------------------ | :--------------------------------------------------------------------------------------: | ------------ |
+| `name`                   |                                 :heavy_multiplication_x:                                 |              |
+| `kubernetesVersion`      |                                    :heavy_check_mark:                                    | upgrade only |
+| `provider`               |                                 :heavy_multiplication_x:                                 |              |
+| `targetSecret`           |                                            ?                                             |              |
+| `machineType`            |                                    :heavy_check_mark:                                    |              |
+| `volumeSizeGB`           |                                    :heavy_check_mark:                                    |              |
+| `diskType`               |                                    :heavy_check_mark:                                    |              |
+| `region`                 |                                 :heavy_multiplication_x:                                 |              |
+| `seed`                   |                                 :heavy_multiplication_x:                                 |              |
+| `workerCidr`             |                                    :heavy_check_mark:                                    |              |
+| `autoScalerMin`          |                                    :heavy_check_mark:                                    | min. 1       |
+| `autoScalerMax`          |                                    :heavy_check_mark:                                    |              |
+| `maxSurge`               |                                    :heavy_check_mark:                                    |              |
+| `maxUnavailable`         |                                    :heavy_check_mark:                                    |              |
+| `providerSpecificConfig` | Azure :heavy_check_mark: <br/> AWS :heavy_multiplication_x: <br/> GCP :heavy_check_mark: |              |
+
+> **Dev notes** (to remove before merge)
+>
+> - `kubernetesVersion` - some strange stuff happened with `nodes readiness` during upgrade - may require investigation
+> - `workedCidr` - is updatable but update results in reconcile error message:
+>
+>   ```log
+>   Message="Subnet shoot--frog-dev--f5cb9a4-nodes is in use and cannot be updated.
+>   ```
+>
+> What does Kyma addon on Gardener do?
+>
+> Didn't test Kyma after each reconcile but it was present on shoot.
+
+The mutation returns OperationID allowing to retrieve the operation status.
+
 ### Deprovision Runtime mutation
 
 ***deprovisionRuntime*** mutation deprovisions Runtimes. Pass the RuntimeID as argument. 
