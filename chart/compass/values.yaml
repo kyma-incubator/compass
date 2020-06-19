@@ -23,7 +23,7 @@ global:
       version: "d068b250"
     director:
       dir:
-      version: "PR-1416"
+      version: "PR-1415"
     gateway:
       dir:
       version: "53b12181"

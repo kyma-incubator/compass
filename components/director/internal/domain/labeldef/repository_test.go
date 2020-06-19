@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/stretchr/testify/assert"
@@ -44,7 +42,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
-		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key,schema) values(?,?,?,?)")
+		escapedQuery := regexp.QuoteMeta("INSERT INTO public.label_definitions ( id, tenant_id, key, schema ) VALUES ( ?, ?, ?, ? )")
 		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key", "any").WillReturnResult(sqlmock.NewResult(1, 1))
 
 		defer dbMock.AssertExpectations(t)
@@ -62,7 +60,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID}, nil)
-		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key,schema) values(?,?,?,?)")
+		escapedQuery := regexp.QuoteMeta("INSERT INTO public.label_definitions ( id, tenant_id, key, schema ) VALUES ( ?, ?, ?, ? )")
 		dbMock.ExpectExec(escapedQuery).WithArgs(labelDefID, tenantID, "some-key", nil).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 		sut := labeldef.NewRepository(mockConverter)
@@ -70,13 +68,6 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		err := sut.Create(ctx, in)
 		// THEN
 		require.NoError(t, err)
-	})
-
-	t.Run("returns error if missing persistence context", func(t *testing.T) {
-		sut := labeldef.NewRepository(nil)
-		ctx := context.TODO()
-		err := sut.Create(ctx, model.LabelDefinition{})
-		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if insert fails", func(t *testing.T) {
@@ -88,13 +79,13 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
-		escapedQuery := regexp.QuoteMeta("insert into public.label_definitions (id,tenant_id,key,schema) values(?,?,?,?)")
+		escapedQuery := regexp.QuoteMeta("INSERT INTO public.label_definitions ( id, tenant_id, key, schema ) VALUES ( ?, ?, ?, ? )")
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
 		defer dbMock.AssertExpectations(t)
 		// WHEN
 		err := sut.Create(ctx, in)
 		// THEN
-		require.EqualError(t, err, "while inserting Label Definition: some error")
+		require.EqualError(t, err, "while inserting Label Definition: Internal Server Error: while inserting row to 'public.label_definitions' table: some error")
 	})
 }
 
@@ -123,8 +114,8 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
-		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
-		dbMock.ExpectExec(escapedQuery).WithArgs("any", labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ? WHERE tenant_id = ? AND id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
@@ -145,8 +136,8 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID}, nil)
 
-		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
-		dbMock.ExpectExec(escapedQuery).WithArgs(nil, labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ? WHERE tenant_id = ? AND id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs(nil, tenantID, labelDefID).WillReturnResult(sqlmock.NewResult(1, 1))
 		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
@@ -157,11 +148,25 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("returns error if missing persistence context", func(t *testing.T) {
-		sut := labeldef.NewRepository(nil)
+	t.Run("returns error if update fails", func(t *testing.T) {
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
+
+		sut := labeldef.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+
 		ctx := context.TODO()
-		err := sut.Update(ctx, model.LabelDefinition{})
-		require.EqualError(t, err, "while fetching persistence from context: Internal Server Error: unable to fetch database from context")
+		ctx = persistence.SaveToContext(ctx, db)
+
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ? WHERE tenant_id = ? AND id = ?`)
+		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
+		defer dbMock.AssertExpectations(t)
+
+		// WHEN
+		err := sut.Update(ctx, in)
+		// THEN
+		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
 	})
 
 	t.Run("returns error if update fails", func(t *testing.T) {
@@ -175,35 +180,14 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
-		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ? WHERE tenant_id = ? AND id = ?`)
 		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
 		defer dbMock.AssertExpectations(t)
 
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
-		require.EqualError(t, err, "while updating Label Definition: some error")
-	})
-
-	t.Run("returns error if update fails", func(t *testing.T) {
-		mockConverter := &automock.EntityConverter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
-
-		sut := labeldef.NewRepository(mockConverter)
-		db, dbMock := testdb.MockDatabase(t)
-
-		ctx := context.TODO()
-		ctx = persistence.SaveToContext(ctx, db)
-
-		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
-		dbMock.ExpectExec(escapedQuery).WillReturnError(errors.New("some error"))
-		defer dbMock.AssertExpectations(t)
-
-		// WHEN
-		err := sut.Update(ctx, in)
-		// THEN
-		require.EqualError(t, err, "while updating Label Definition: some error")
+		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
 	})
 
 	t.Run("returns error if no row was affected by query", func(t *testing.T) {
@@ -216,8 +200,8 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", in).Return(labeldef.Entity{ID: labelDefID, Key: "some-key", TenantID: tenantID, SchemaJSON: sql.NullString{String: "any", Valid: true}}, nil)
 
-		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET "schema" = ? WHERE "id" = ?`)
-		dbMock.ExpectExec(escapedQuery).WithArgs("any", labelDefID).WillReturnResult(sqlmock.NewResult(1, 0))
+		escapedQuery := regexp.QuoteMeta(`UPDATE public.label_definitions SET schema = ? WHERE tenant_id = ? AND id = ?`)
+		dbMock.ExpectExec(escapedQuery).WithArgs("any", tenantID, labelDefID).WillReturnResult(sqlmock.NewResult(1, 0))
 		defer dbMock.AssertExpectations(t)
 
 		sut := labeldef.NewRepository(mockConverter)
@@ -225,7 +209,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: no row was affected by query")
+		require.EqualError(t, err, "Internal Server Error: should update single row, but updated 0 rows")
 	})
 }
 
@@ -249,9 +233,9 @@ func TestRepositoryGetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1 and key=$2")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).AddRow("id", "tenant", "key", `{"title":"title"}`)
-		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1 AND key = \$2$`).
+			WithArgs("tenant", "key").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -269,8 +253,8 @@ func TestRepositoryGetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1 and key=$2")
-		dbMock.ExpectQuery(escapedQuery).WithArgs("anything", "anything").WillReturnRows(sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}))
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1 AND key = \$2$`).
+			WithArgs("anything", "anything").WillReturnRows(sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}))
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 
@@ -293,9 +277,9 @@ func TestRepositoryGetByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1 and key=$2")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).AddRow("id", "tenant", "key", `{"title":"title"}`)
-		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1 AND key = \$2$`).
+			WithArgs("tenant", "key").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -304,29 +288,21 @@ func TestRepositoryGetByKey(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while converting Label Definition: conversion error")
 	})
-	t.Run("returns error if missing persistence context", func(t *testing.T) {
-		// GIVEN
-		sut := labeldef.NewRepository(nil)
-		// WHEN
-		_, err := sut.GetByKey(context.TODO(), "tenant", "key")
-		// THEN
-		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
-	})
 	t.Run("returns error if select fails", func(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewRepository(nil)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1 and key=$2")
-		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnError(errors.New("persistence error"))
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1 AND key = \$2$`).
+			WithArgs("tenant", "key").WillReturnError(errors.New("persistence error"))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		// WHEN
 		_, err := sut.GetByKey(ctx, "tenant", "key")
 		// THEN
-		require.EqualError(t, err, "while querying Label Definition: persistence error")
+		require.EqualError(t, err, "while getting Label Definition by key=key: Internal Server Error: while getting object from table public.label_definitions: persistence error")
 	})
 }
 
@@ -357,12 +333,11 @@ func TestRepositoryList(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).
 			AddRow("id1", "tenant", "key1", nil).
 			AddRow("id2", "tenant", "key2", `{"title":"title"}`)
 
-		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant").WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1$`).WithArgs("tenant").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -383,10 +358,9 @@ func TestRepositoryList(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"})
 
-		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant").WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1$`).WithArgs("tenant").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -412,12 +386,11 @@ func TestRepositoryList(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
 		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "schema"}).
 			AddRow("id1", "tenant", "key1", nil).
 			AddRow("id2", "tenant", "key2", `{"title":"title"}`)
 
-		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant").WillReturnRows(mockedRows)
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1$`).WithArgs("tenant").WillReturnRows(mockedRows)
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -427,14 +400,6 @@ func TestRepositoryList(t *testing.T) {
 		require.EqualError(t, err, "while converting Label Definition [key=key1]: conversion error")
 
 	})
-	t.Run("returns error if missing persistence context", func(t *testing.T) {
-		// GIVEN
-		sut := labeldef.NewRepository(nil)
-		// WHEN
-		_, err := sut.List(context.TODO(), "tenant")
-		// THEN
-		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
-	})
 	t.Run("returns error if if select fails", func(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewRepository(nil)
@@ -442,16 +407,15 @@ func TestRepositoryList(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select * from public.label_definitions where tenant_id=$1")
-
-		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant").WillReturnError(errors.New("db error"))
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.label_definitions WHERE tenant_id = \$1$`).
+			WithArgs("tenant").WillReturnError(errors.New("db error"))
 
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
 		// WHEN
 		_, err := sut.List(ctx, "tenant")
 		// THEN
-		require.EqualError(t, err, "while listing Label Definitions: db error")
+		require.EqualError(t, err, "while listing Label Definitions: Internal Server Error: while fetching list of objects from DB: db error")
 	})
 }
 
@@ -462,7 +426,7 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select 1 as exists from public.label_definitions where tenant_id=$1 and key=$2")
+		escapedQuery := regexp.QuoteMeta("SELECT 1 FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow("1"))
 
 		ctx := context.TODO()
@@ -479,7 +443,7 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select 1 as exists from public.label_definitions where tenant_id=$1 and key=$2")
+		escapedQuery := regexp.QuoteMeta("SELECT 1 FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("anything", "anything").WillReturnRows(sqlmock.NewRows([]string{"exists"}))
 		ctx := context.TODO()
 		ctx = persistence.SaveToContext(ctx, db)
@@ -492,21 +456,13 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		assert.False(t, actual)
 
 	})
-	t.Run("returns error if missing persistence context", func(t *testing.T) {
-		// GIVEN
-		sut := labeldef.NewRepository(nil)
-		// WHEN
-		_, err := sut.Exists(context.TODO(), "tenant", "key")
-		// THEN
-		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
-	})
 	t.Run("returns error if select fails", func(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewRepository(nil)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta("select 1 as exists from public.label_definitions where tenant_id=$1 and key=$2")
+		escapedQuery := regexp.QuoteMeta("SELECT 1 FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectQuery(escapedQuery).WithArgs("tenant", "key").WillReturnError(errors.New("persistence error"))
 
 		ctx := context.TODO()
@@ -514,7 +470,7 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		// WHEN
 		_, err := sut.Exists(ctx, "tenant", "key")
 		// THEN
-		require.EqualError(t, err, "while querying Label Definition: persistence error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from DB: persistence error")
 	})
 }
 
@@ -532,7 +488,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.label_definitions WHERE tenant_id=$1 AND key=$2`)
+		escapedQuery := regexp.QuoteMeta("DELETE FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnResult(sqlmock.NewResult(1, 1))
 
 		ctx := context.TODO()
@@ -557,7 +513,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.label_definitions WHERE tenant_id=$1 AND key=$2`)
+		escapedQuery := regexp.QuoteMeta("DELETE FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnError(testErr)
 
 		ctx := context.TODO()
@@ -567,20 +523,6 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-	})
-
-	t.Run("Error - Missing persistence", func(t *testing.T) {
-		// GIVEN
-		repo := labeldef.NewRepository(nil)
-		key := "key"
-		tnt := "tenant"
-		ctx := context.TODO()
-
-		// WHEN
-		err := repo.DeleteByKey(ctx, tnt, key)
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unable to fetch database from context")
 	})
 
 	t.Run("Error - No rows affected", func(t *testing.T) {
@@ -596,7 +538,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		escapedQuery := regexp.QuoteMeta(`DELETE FROM public.label_definitions WHERE tenant_id=$1 AND key=$2`)
+		escapedQuery := regexp.QuoteMeta("DELETE FROM public.label_definitions WHERE tenant_id = $1 AND key = $2")
 		dbMock.ExpectExec(escapedQuery).WithArgs(tnt, key).WillReturnResult(sqlmock.NewResult(1, 0))
 
 		ctx := context.TODO()
@@ -604,6 +546,6 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		// WHEN
 		err := repo.DeleteByKey(ctx, tnt, key)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: no rows were affected by query")
+		require.EqualError(t, err, "Internal Server Error: delete should remove single row, but removed 0 rows")
 	})
 }
