@@ -19,4 +19,4 @@ KYMA_VERSION is a file used to configure the version of Kyma used during the Com
 | `master`                	| Latest master version   	|
 | `master-${commit hash}` 	| Specific master version 	|
 | `PR-${PR number}`       	| Specific PR version     	|
-| `${Release number`    	| Release version         	|
+| `${Release number}`    	| Release version         	|
