@@ -16,8 +16,9 @@ else
   KYMA_TAG=${KYMA_RELEASE}
 fi
 kyma provision minikube
-kyma install -o $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o $ISTIO_OVERRIDES -o $API_GATEWAY_OVERRIDES --source "eu.gcr.io/kyma-project/kyma-installer:${KYMA_TAG}"
+kyma install -c $INSTALLER_CR_PATH  -o $OVERRIDES_COMPASS_GATEWAY -o $ISTIO_OVERRIDES -o $API_GATEWAY_OVERRIDES --source "eu.gcr.io/kyma-project/kyma-installer:${KYMA_TAG}"
 
+mkdir -p "$(helm home)"
 
 #Get Tiller tls client certificates
 kubectl get -n kyma-installer secret helm-secret -o jsonpath="{.data['global\.helm\.ca\.crt']}" | base64 --decode > "$(helm home)/ca.pem"
