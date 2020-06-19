@@ -48,7 +48,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: compass-installation-config-overrides
+  name: compass-installation-oidc-kubeconfig-service-overrides
   namespace: compass-installer
   labels:
     component: oidc-kubeconfig-service
@@ -59,3 +59,4 @@ data:
   global.domainName: "kyma.local"
   global.minikubeIP: ""
   global.ingress.domainName: "kyma.local"
+  config.oidc.caFile: "/etc/dex-tls-cert/tls.crt"
