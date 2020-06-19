@@ -3,6 +3,8 @@ package model
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/require"
@@ -50,7 +52,7 @@ func TestSystemAuthGetReferenceObjectType(t *testing.T) {
 
 		_, err := sysAuth.GetReferenceObjectType()
 
-		require.EqualError(t, err, "unknown reference object type")
+		require.EqualError(t, err, apperrors.NewInternalError("unknown reference object type").Error())
 	})
 }
 
@@ -96,6 +98,6 @@ func TestSystemAuthGetReferenceObjectID(t *testing.T) {
 
 		_, err := sysAuth.GetReferenceObjectID()
 
-		require.EqualError(t, err, "unknown reference object ID")
+		require.EqualError(t, err, apperrors.NewInternalError("unknown reference object ID").Error())
 	})
 }

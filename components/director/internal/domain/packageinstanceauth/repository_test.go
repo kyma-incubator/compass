@@ -390,7 +390,7 @@ func TestRepository_Update(t *testing.T) {
 		err := repo.Update(context.Background(), nil)
 
 		// then
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 
 	t.Run("DB Error", func(t *testing.T) {

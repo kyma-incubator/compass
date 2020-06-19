@@ -3,6 +3,8 @@ package runtime
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/google/uuid"
@@ -164,7 +166,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 
 func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
 	if item == nil {
-		return errors.New("item can not be empty")
+		return apperrors.NewInternalError("item can not be empty")
 	}
 
 	runtimeEnt, err := EntityFromRuntimeModel(item)

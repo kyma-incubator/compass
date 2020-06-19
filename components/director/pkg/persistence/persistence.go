@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
@@ -30,7 +32,7 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 		return db, nil
 	}
 
-	return nil, errors.New("unable to fetch database from context")
+	return nil, apperrors.NewInternalError("unable to fetch database from context")
 }
 
 //go:generate mockery -name=Transactioner -output=automock -outpkg=automock -case=underscore
@@ -91,7 +93,7 @@ type Transaction struct {
 
 func (db *Transaction) Commit() error {
 	if db.committed {
-		return errors.New("transaction already committed")
+		return apperrors.NewInternalError("transaction already committed")
 	}
 	err := db.Tx.Commit()
 	if err != nil {

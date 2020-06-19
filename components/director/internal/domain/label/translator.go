@@ -3,7 +3,7 @@ package label
 import (
 	"regexp"
 
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 // ExtractValueFromJSONPath returns the value that is placed in the SQL/JSON path query
@@ -14,7 +14,7 @@ func ExtractValueFromJSONPath(jpq string) ([]interface{}, error) {
 	re := regexp.MustCompile(`^\$\[\*\]\s*\?\s*\(\s*@\s*==\s*"(?P<value>[a-zA-Z0-9\-\_\s]+)"\s*|\|\|\s*@\s*==\s*"(?P<value>[a-zA-Z0-9\-\_\s]+)"`)
 	res := re.FindAllStringSubmatch(jpq, -1)
 	if res == nil {
-		return nil, errors.New("value not found in the query parameter")
+		return nil, apperrors.NewInternalError("value not found in the query parameter")
 	}
 
 	extractedValues := make([]interface{}, len(res))

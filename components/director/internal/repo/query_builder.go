@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/jmoiron/sqlx"
 
 	"github.com/pkg/errors"
@@ -22,7 +24,7 @@ func getAllArgs(conditions Conditions) []interface{} {
 
 func writeEnumeratedConditions(builder *strings.Builder, conditions Conditions) error {
 	if builder == nil {
-		return errors.New("builder cannot be nil")
+		return apperrors.NewInternalError("builder cannot be nil")
 	}
 
 	var conditionsToJoin []string
@@ -92,7 +94,7 @@ func getQueryFromBuilder(builder strings.Builder) string {
 
 func writeOrderByPart(builder *strings.Builder, orderByParams OrderByParams) error {
 	if builder == nil {
-		return errors.New("builder cannot be nil")
+		return apperrors.NewInternalError("builder cannot be nil")
 	}
 
 	if orderByParams == nil || len(orderByParams) == 0 {

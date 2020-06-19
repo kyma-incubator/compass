@@ -74,7 +74,7 @@ func TestCreate(t *testing.T) {
 		// WHEN
 		err := sut.Create(context.TODO(), User{})
 		// THEN
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {

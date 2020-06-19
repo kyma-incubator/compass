@@ -556,7 +556,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 
 func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackagePage, error) {
 	if obj == nil {
-		return nil, errors.New("Application cannot be empty")
+		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -604,7 +604,7 @@ func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first
 
 func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.Package, error) {
 	if obj == nil {
-		return nil, errors.New("Application cannot be empty")
+		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()

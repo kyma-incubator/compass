@@ -101,7 +101,7 @@ func (r *repository) Create(ctx context.Context, item *model.Document) error {
 func (r *repository) CreateMany(ctx context.Context, items []*model.Document) error {
 	for _, item := range items {
 		if item == nil {
-			return errors.New("Document cannot be empty")
+			return apperrors.NewInternalError("Document cannot be empty")
 		}
 		err := r.Create(ctx, item)
 		if err != nil {

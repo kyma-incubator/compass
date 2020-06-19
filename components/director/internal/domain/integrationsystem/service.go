@@ -3,6 +3,8 @@ package integrationsystem
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -68,7 +70,7 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.IntegrationSystemPage, error) {
 	if pageSize < 1 || pageSize > 100 {
-		return model.IntegrationSystemPage{}, errors.New("page size must be between 1 and 100")
+		return model.IntegrationSystemPage{}, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
 	return s.intSysRepo.List(ctx, pageSize, cursor)

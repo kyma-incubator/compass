@@ -116,14 +116,14 @@ func TestUpdateSingle(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingle(context.TODO(), User{})
 		// THEN
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if entity is nil", func(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingle(context.TODO(), nil)
 		// THEN
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 }
 
@@ -225,13 +225,13 @@ func TestUpdateSingleGlobal(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingleGlobal(context.TODO(), User{})
 		// THEN
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if entity is nil", func(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingleGlobal(context.TODO(), nil)
 		// THEN
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 }

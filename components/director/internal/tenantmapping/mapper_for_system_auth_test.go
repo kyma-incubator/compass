@@ -160,7 +160,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while getting reference object type: unknown reference object type")
+		require.EqualError(t, err, "while getting reference object type: Internal Server Error: unknown reference object type")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -280,7 +280,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: system auth tenant id cannot be nil")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: Internal Server Error: system auth tenant id cannot be nil")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})

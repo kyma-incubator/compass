@@ -142,7 +142,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinit
 
 func (r *pgRepository) Update(ctx context.Context, item *model.APIDefinition) error {
 	if item == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity := r.conv.ToEntity(*item)

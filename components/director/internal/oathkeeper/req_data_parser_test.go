@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +49,7 @@ func TestParse(t *testing.T) {
 
 		_, err := parser.Parse(req)
 
-		require.EqualError(t, err, "request body is empty")
+		require.EqualError(t, err, apperrors.NewInternalError("request body is empty").Error())
 	})
 
 	t.Run("returns error when request body is empty", func(t *testing.T) {

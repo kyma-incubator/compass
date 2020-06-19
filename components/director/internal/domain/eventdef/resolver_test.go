@@ -104,7 +104,7 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				return conv
 			},
 			ExpectedEventDef: nil,
-			ExpectedErr:      errors.New("Cannot add Event Definition to not existing Package"),
+			ExpectedErr:      errors.New("cannot add Event Definition to not existing Package"),
 		},
 		{
 			Name:            "Returns error when application existence check failed",

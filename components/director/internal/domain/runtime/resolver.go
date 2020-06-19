@@ -326,7 +326,7 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string) (*graphql.Labels, error) {
 	if obj == nil {
-		return nil, errors.New("Runtime cannot be empty")
+		return nil, apperrors.NewInternalError("Runtime cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -362,7 +362,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 
 func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.SystemAuth, error) {
 	if obj == nil {
-		return nil, errors.New("Runtime cannot be empty")
+		return nil, apperrors.NewInternalError("Runtime cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -394,7 +394,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.
 
 func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runtime) (*graphql.RuntimeEventingConfiguration, error) {
 	if obj == nil {
-		return nil, errors.New("Runtime cannot be empty")
+		return nil, apperrors.NewInternalError("Runtime cannot be empty")
 	}
 
 	runtimeID, err := uuid.Parse(obj.ID)

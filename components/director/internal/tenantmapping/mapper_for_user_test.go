@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/textproto"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"strings"
 	"testing"
 
@@ -385,7 +387,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, tenantRepoMock)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
 
-		require.EqualError(t, err, "tenant mismatch")
+		require.EqualError(t, err, apperrors.NewInternalError("tenant mismatch").Error())
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock, tenantRepoMock)
 	})

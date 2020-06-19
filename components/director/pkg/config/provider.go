@@ -39,7 +39,7 @@ func (p *Provider) Load() error {
 
 func (p *Provider) getValueForJSONPath(path string) (interface{}, error) {
 	if p.cachedConfig == nil {
-		return nil, errors.New("required configuration not loaded")
+		return nil, apperrors.NewInternalError("required configuration not loaded")
 	}
 	jPath := fmt.Sprintf("$.%s", path)
 	res, err := jsonpath.JsonPathLookup(p.cachedConfig, jPath)

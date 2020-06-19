@@ -1,6 +1,7 @@
 package inputvalidation
 
 import (
+	"errors"
 	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -8,7 +9,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/pkg/errors"
 )
 
 type urlValidator struct{}

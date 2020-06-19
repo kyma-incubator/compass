@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
@@ -65,7 +67,7 @@ func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID stri
 	}
 
 	if !found {
-		return nil, errors.New("Cannot add Webhook to not existing Application")
+		return nil, apperrors.NewInvalidDataError("cannot add Webhook to not existing Application")
 	}
 
 	id, err := r.webhookSvc.Create(ctx, applicationID, *convertedIn)

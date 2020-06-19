@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -79,7 +81,7 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 
 func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
 	if obj == nil {
-		return nil, errors.New("Token was nil")
+		return nil, apperrors.NewInternalError("Token was nil")
 	}
 
 	rawJSON, err := json.Marshal(obj)
@@ -94,7 +96,7 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*
 
 func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string, error) {
 	if obj == nil {
-		return nil, errors.New("Token was nil")
+		return nil, apperrors.NewInternalError("Token was nil")
 	}
 
 	rawJSON, err := json.Marshal(obj)

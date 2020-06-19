@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -39,7 +41,7 @@ func NewJWKsCache(logger *logrus.Logger, fetch KeyGetter, expPeriod time.Duratio
 
 func (c *jwksCache) GetKey(token *jwt.Token) (interface{}, error) {
 	if token == nil {
-		return nil, errors.New("token cannot be nil")
+		return nil, apperrors.NewUnauthorizedError("token cannot be nil")
 	}
 
 	keyID, err := getKeyID(*token)
