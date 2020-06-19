@@ -3,9 +3,10 @@ package systemauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-
 	"github.com/pkg/errors"
 )
 
@@ -36,13 +37,13 @@ type repository struct {
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		creator:            repo.NewCreator(tableName, tableColumns),
-		singleGetter:       repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(tableName, tableColumns),
-		lister:             repo.NewLister(tableName, tenantColumn, tableColumns),
-		listerGlobal:       repo.NewListerGlobal(tableName, tableColumns),
-		deleter:            repo.NewDeleter(tableName, tenantColumn),
-		deleterGlobal:      repo.NewDeleterGlobal(tableName),
+		creator:            repo.NewCreator(resource.SystemAuth, tableName, tableColumns),
+		singleGetter:       repo.NewSingleGetter(resource.SystemAuth, tableName, tenantColumn, tableColumns),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.SystemAuth, tableName, tableColumns),
+		lister:             repo.NewLister(resource.SystemAuth, tableName, tenantColumn, tableColumns),
+		listerGlobal:       repo.NewListerGlobal(resource.SystemAuth, tableName, tableColumns),
+		deleter:            repo.NewDeleter(resource.SystemAuth, tableName, tenantColumn),
+		deleterGlobal:      repo.NewDeleterGlobal(resource.SystemAuth, tableName),
 		conv:               conv,
 	}
 }

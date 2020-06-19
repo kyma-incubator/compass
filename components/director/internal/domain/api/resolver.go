@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -192,7 +194,7 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
-		return nil, errors.New("API Spec cannot be empty")
+		return nil, apperrors.NewInternalError("API Spec cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()

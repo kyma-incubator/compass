@@ -63,7 +63,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.EqualError(t, err, "Internal Server Error: while inserting row to 'public.integration_systems' table: test error")
 	})
 }
 
@@ -115,7 +115,7 @@ func TestPgRepository_Get(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.EqualError(t, err, "Internal Server Error: while getting object from table public.integration_systems: test error")
 		require.Nil(t, result)
 	})
 }
@@ -275,7 +275,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.EqualError(t, err, "Internal Server Error: while updating single entity: test error")
 	})
 }
 
@@ -314,6 +314,6 @@ func TestPgRepository_Delete(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.EqualError(t, err, "Internal Server Error: while deleting object from database: test error")
 	})
 }

@@ -2,12 +2,13 @@ package consumer
 
 import (
 	"context"
-	"errors"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 const consumerKey = "consumer"
 
-var NoConsumerError = errors.New("cannot read consumer from context")
+var NoConsumerError = apperrors.NewInternalError("cannot read consumer from context")
 
 func LoadFromContext(ctx context.Context) (Consumer, error) {
 	value := ctx.Value(consumerKey)

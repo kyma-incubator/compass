@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope/automock"
 
@@ -41,7 +40,9 @@ func TestHasScope(t *testing.T) {
 		// WHEN
 		_, err := sut.VerifyScopes(ctx, nil, nil, fixScopesDefinition())
 		// THEN
-		assert.EqualError(t, err, "insufficient scopes provided, required: [read write], actual: [delete]")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "required=read;write")
+		assert.Contains(t, err.Error(), "actual=delete")
 	})
 
 	t.Run("returns error on getting scopes from context", func(t *testing.T) {
@@ -50,7 +51,7 @@ func TestHasScope(t *testing.T) {
 		// WHEN
 		_, err := sut.VerifyScopes(context.TODO(), nil, nil, fixScopesDefinition())
 		// THEN
-		assert.True(t, apperrors.IsNoScopesInContext(err))
+		assert.EqualError(t, err, "cannot read scopes from context")
 
 	})
 

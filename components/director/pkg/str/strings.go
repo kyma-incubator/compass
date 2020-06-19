@@ -38,7 +38,7 @@ func Cast(i interface{}) (string, error) {
 		return s, nil
 	}
 
-	return "", apperrors.NewInvalidStringCastError()
+	return "", apperrors.NewInternalError("unable to cast the value to a string type")
 }
 
 func PrefixStrings(in []string, prefix string) []string {

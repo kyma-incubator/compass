@@ -15,10 +15,10 @@ import (
 func (i ApplicationTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.ValidPlaceholders": i.validPlaceholders(),
-		"Name":                   validation.Validate(i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
-		"Description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
-		"Placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
-		"AccessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
+		"name":                   validation.Validate(i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
+		"description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
+		"placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
+		"accessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
 	}.Filter()
 }
 
@@ -78,8 +78,8 @@ func (i PlaceholderDefinitionInput) Validate() error {
 func (i ApplicationFromTemplateInput) Validate() error {
 	return validation.Errors{
 		"Rule.UniquePlaceholders": i.ensureUniquePlaceholders(),
-		"TemplateName":            validation.Validate(i.TemplateName, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
-		"Values":                  validation.Validate(i.Values, validation.Each(validation.Required)),
+		"templateName":            validation.Validate(i.TemplateName, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
+		"values":                  validation.Validate(i.Values, validation.Each(validation.Required)),
 	}.Filter()
 }
 

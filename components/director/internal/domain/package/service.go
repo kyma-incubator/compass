@@ -3,6 +3,8 @@ package mp_package
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
@@ -215,7 +217,7 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	}
 
 	if pageSize < 1 || pageSize > 100 {
-		return nil, errors.New("page size must be between 1 and 100")
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
 	return s.pkgRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)

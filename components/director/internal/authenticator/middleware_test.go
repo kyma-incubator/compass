@@ -276,7 +276,7 @@ func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Han
 func testHandler(t *testing.T, expectedTenant string, scopes string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantFromContext, err := tenant.LoadFromContext(r.Context())
-		if !apperrors.IsEmptyTenant(err) {
+		if !apperrors.IsTenantRequired(err) {
 			require.NoError(t, err)
 		}
 		scopesFromContext, err := scope.LoadFromContext(r.Context())

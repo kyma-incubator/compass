@@ -124,7 +124,7 @@ func TestCast(t *testing.T) {
 	t.Run("errors when casting non-string data", func(t *testing.T) {
 		_, err := str.Cast([]byte{1, 2})
 
-		require.EqualError(t, err, "unable to cast the value to a string type")
+		require.EqualError(t, err, "Internal Server Error: unable to cast the value to a string type")
 	})
 
 	t.Run("returns valid string", func(t *testing.T) {

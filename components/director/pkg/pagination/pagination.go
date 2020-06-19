@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 )
 
@@ -35,7 +37,7 @@ func DecodeOffsetCursor(cursor string) (int, error) {
 	}
 
 	if offset < 0 {
-		return 0, errors.New("cursor is not correct")
+		return 0, apperrors.NewInvalidDataError("cursor is not correct")
 	}
 
 	return offset, nil
@@ -51,15 +53,15 @@ func EncodeNextOffsetCursor(offset, pageSize int) string {
 
 func ConvertOffsetLimitAndOrderedColumnToSQL(pageSize, offset int, orderedColumn string) (string, error) {
 	if orderedColumn == "" {
-		return "", errors.New("to use pagination you must provide column to order by")
+		return "", apperrors.NewInvalidDataError("to use pagination you must provide column to order by")
 	}
 
 	if pageSize < 1 {
-		return "", errors.New("page size cannot be smaller than 1")
+		return "", apperrors.NewInvalidDataError("page size cannot be smaller than 1")
 	}
 
 	if offset < 0 {
-		return "", errors.New("offset cannot be smaller than 0")
+		return "", apperrors.NewInvalidDataError("offset cannot be smaller than 0")
 	}
 
 	return fmt.Sprintf(`ORDER BY %s LIMIT %d OFFSET %d`, orderedColumn, pageSize, offset), nil

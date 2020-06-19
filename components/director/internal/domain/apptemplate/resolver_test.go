@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -57,7 +59,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError("")).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError(resource.ApplicationTemplate, "")).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -616,7 +618,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				return appConv
 			},
 			ExpectedOutput: nil,
-			ExpectedError:  errors.New("while validating application input from application template [name=bar]: name: cannot be blank."),
+			ExpectedError:  errors.New("name=cannot be blank"),
 		},
 		{
 			Name: "Returns error when creating Application fails",

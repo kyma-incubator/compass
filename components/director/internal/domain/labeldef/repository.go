@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -67,7 +69,7 @@ func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.
 	err = db.Get(&dest, q, tenant, key)
 	switch {
 	case err == sql.ErrNoRows:
-		return nil, apperrors.NewNotFoundError(key)
+		return nil, apperrors.NewNotFoundError(resource.LabelDefinition, key)
 	case err != nil:
 		return nil, errors.Wrap(err, "while querying Label Definition")
 	}
@@ -145,7 +147,7 @@ func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("no row was affected by query")
+		return apperrors.NewInternalError("no row was affected by query")
 	}
 
 	return nil
@@ -168,7 +170,7 @@ func (r *repo) DeleteByKey(ctx context.Context, tenant, key string) error {
 		return errors.Wrapf(err, "while receiving affected rows in db")
 	}
 	if rowsAffected < 1 {
-		return errors.New("no rows were affected by query")
+		return apperrors.NewInternalError("no rows were affected by query")
 	}
 
 	return nil

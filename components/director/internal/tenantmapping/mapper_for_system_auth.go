@@ -65,7 +65,7 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 
 	consumerType, err := consumer.MapSystemAuthToConsumerType(refObjType)
 	if err != nil {
-		return ObjectContext{}, errors.New("while mapping reference type to consumer type")
+		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
 	return NewObjectContext(tenantCtx, scopes, refObjID, consumerType), nil

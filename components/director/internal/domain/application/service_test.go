@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/sirupsen/logrus"
 
@@ -424,7 +426,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInput,
-			ExpectedErr: errors.New("does not exist"),
+			ExpectedErr: errors.New("Object not found"),
 		},
 		{
 			Name: "Returns error when checking for integration system fails",
@@ -673,7 +675,7 @@ func TestService_Update(t *testing.T) {
 			},
 			InputID:            "foo",
 			Input:              updateInput,
-			ExpectedErrMessage: errors.New("does not exist").Error(),
+			ExpectedErrMessage: errors.New("Object not found").Error(),
 		},
 		{
 			Name: "Returns error ensuring Integration System existance failed",
@@ -737,7 +739,7 @@ func TestService_Update(t *testing.T) {
 			},
 			InputID:            "foo",
 			Input:              updateInput,
-			ExpectedErrMessage: "doesn't exist",
+			ExpectedErrMessage: "Object not found",
 		},
 		{
 			Name: "Returns error when ensuring app existence fails",
@@ -1118,7 +1120,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				labelRepository := &automock.LabelRepository{}
 				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(nil, apperrors.NewNotFoundError("")).Once()
+					Return(nil, apperrors.NewNotFoundError(resource.Application, "")).Once()
 				return labelRepository
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {

@@ -3,6 +3,8 @@ package inputvalidation
 import (
 	"regexp"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/asaskevich/govalidator"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
@@ -15,7 +17,7 @@ var IsURL = &urlValidator{}
 
 const protocolRegex = govalidator.URLSchema
 
-const errMsg = "is not valid URL"
+const errMsg = "must be a valid URL"
 
 func (v *urlValidator) Validate(value interface{}) error {
 	s, isNil, err := ensureIsString(value)
@@ -28,7 +30,7 @@ func (v *urlValidator) Validate(value interface{}) error {
 
 	matched, err := regexp.Match(protocolRegex, []byte(s))
 	if err != nil {
-		return errors.Wrapf(err, "error during checking URL: %s", value)
+		return apperrors.InternalErrorFrom(err, "error during checking URL: %s", value)
 	}
 
 	if !matched {
