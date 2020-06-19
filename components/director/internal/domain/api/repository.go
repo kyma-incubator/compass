@@ -3,8 +3,11 @@ package api
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
 
@@ -37,12 +40,12 @@ type pgRepository struct {
 
 func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:    repo.NewSingleGetter(apiDefTable, tenantColumn, apiDefColumns),
-		pageableQuerier: repo.NewPageableQuerier(apiDefTable, tenantColumn, apiDefColumns),
-		creator:         repo.NewCreator(apiDefTable, apiDefColumns),
-		updater:         repo.NewUpdater(apiDefTable, updatableColumns, tenantColumn, idColumns),
-		deleter:         repo.NewDeleter(apiDefTable, tenantColumn),
-		existQuerier:    repo.NewExistQuerier(apiDefTable, tenantColumn),
+		singleGetter:    repo.NewSingleGetter(resource.API, apiDefTable, tenantColumn, apiDefColumns),
+		pageableQuerier: repo.NewPageableQuerier(resource.API, apiDefTable, tenantColumn, apiDefColumns),
+		creator:         repo.NewCreator(resource.API, apiDefTable, apiDefColumns),
+		updater:         repo.NewUpdater(resource.API, apiDefTable, updatableColumns, tenantColumn, idColumns),
+		deleter:         repo.NewDeleter(resource.API, apiDefTable, tenantColumn),
+		existQuerier:    repo.NewExistQuerier(resource.API, apiDefTable, tenantColumn),
 		conv:            conv,
 	}
 }
@@ -112,7 +115,7 @@ func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id stri
 
 func (r *pgRepository) Create(ctx context.Context, item *model.APIDefinition) error {
 	if item == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity := r.conv.ToEntity(*item)
@@ -139,7 +142,7 @@ func (r *pgRepository) CreateMany(ctx context.Context, items []*model.APIDefinit
 
 func (r *pgRepository) Update(ctx context.Context, item *model.APIDefinition) error {
 	if item == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity := r.conv.ToEntity(*item)

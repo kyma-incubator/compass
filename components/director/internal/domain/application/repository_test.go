@@ -73,13 +73,13 @@ func TestRepository_Delete(t *testing.T) {
 			givenTenant(), givenID()).WillReturnError(givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := application.NewRepository(nil)
+		repository := application.NewRepository(nil)
 
 		// when
-		err := repo.Delete(ctx, givenTenant(), givenID())
+		err := repository.Delete(ctx, givenTenant(), givenID())
 
 		// then
-		require.EqualError(t, err, "while deleting from database: some error")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
 	})
 }
 
@@ -125,13 +125,13 @@ func TestRepository_Create(t *testing.T) {
 		dbMock.ExpectExec("INSERT INTO .*").WillReturnError(givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := application.NewRepository(mockConverter)
+		repository := application.NewRepository(mockConverter)
 
 		// when
-		err := repo.Create(ctx, appModel)
+		err := repository.Create(ctx, appModel)
 
 		// then
-		require.EqualError(t, err, "while inserting row to 'public.applications' table: some error")
+		require.EqualError(t, err, "Internal Server Error: while inserting row to 'public.applications' table: some error")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -196,13 +196,13 @@ func TestRepository_Update(t *testing.T) {
 			WillReturnError(givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
-		repo := application.NewRepository(mockConverter)
+		repository := application.NewRepository(mockConverter)
 
 		// when
-		err := repo.Update(ctx, appModel)
+		err := repository.Update(ctx, appModel)
 
 		// then
-		require.EqualError(t, err, "while updating single entity: some error")
+		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -256,7 +256,7 @@ func TestRepository_GetByID(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		repo := application.NewRepository(nil)
+		repository := application.NewRepository(nil)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
@@ -266,10 +266,10 @@ func TestRepository_GetByID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		// when
-		_, err := repo.GetByID(ctx, givenTenant(), givenID())
+		_, err := repository.GetByID(ctx, givenTenant(), givenID())
 
 		// then
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.applications: some error")
 	})
 }
 

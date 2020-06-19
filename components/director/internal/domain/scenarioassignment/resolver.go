@@ -3,6 +3,8 @@ package scenarioassignment
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -122,7 +124,7 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 		cursor = string(*after)
 	}
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	tx, err := r.transact.Begin()

@@ -323,7 +323,7 @@ func TestServiceUpdate(t *testing.T) {
 		err := sut.Update(ctx, in)
 		// THEN
 		require.Error(t, err)
-		require.EqualError(t, err, `label with key "oldProperty" is not valid against new schema for Runtime with ID "foo": (root): nonExistingProp is required`)
+		require.EqualError(t, err, `Invalid data [reason=label with key="oldProperty" is not valid against new schema for Runtime with ID="foo": (root): nonExistingProp is required]`)
 	})
 
 	t.Run("returns error when error occurred during receiving Label Definition", func(t *testing.T) {

@@ -65,7 +65,7 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 
 	consumerType, err := consumer.MapSystemAuthToConsumerType(refObjType)
 	if err != nil {
-		return ObjectContext{}, errors.New("while mapping reference type to consumer type")
+		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
 	return NewObjectContext(tenantCtx, scopes, refObjID, consumerType), nil
@@ -104,7 +104,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 	var err error
 
 	if sysAuth.TenantID == nil {
-		return TenantContext{}, scopes, errors.New("system auth tenant id cannot be nil")
+		return TenantContext{}, scopes, apperrors.NewInternalError("system auth tenant id cannot be nil")
 	}
 
 	if authFlow.IsOAuth2Flow() {

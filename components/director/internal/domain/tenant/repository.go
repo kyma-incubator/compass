@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -47,12 +51,12 @@ type pgRepository struct {
 
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		creator:            repo.NewCreator(tableName, tableColumns),
-		existQuerierGlobal: repo.NewExistQuerierGlobal(tableName),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(tableName, tableColumns),
-		listerGlobal:       repo.NewListerGlobal(tableName, tableColumns),
-		updaterGlobal:      repo.NewUpdaterGlobal(tableName, []string{externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}, []string{idColumn}),
-		deleterGlobal:      repo.NewDeleterGlobal(tableName),
+		creator:            repo.NewCreator(resource.Tenant, tableName, tableColumns),
+		existQuerierGlobal: repo.NewExistQuerierGlobal(resource.Tenant, tableName),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Tenant, tableName, tableColumns),
+		listerGlobal:       repo.NewListerGlobal(resource.Tenant, tableName, tableColumns),
+		updaterGlobal:      repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}, []string{idColumn}),
+		deleterGlobal:      repo.NewDeleterGlobal(resource.Tenant, tableName),
 		conv:               conv,
 	}
 }
@@ -122,7 +126,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 
 func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMapping) error {
 	if model == nil {
-		return errors.New("model can not be empty")
+		return apperrors.NewInternalError("model can not be empty")
 	}
 
 	entity := r.conv.ToEntity(model)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/pkg/errors"
@@ -126,7 +128,7 @@ func (e engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context,
 	if isScenarioLabelInInput {
 		scenariosFromInputInterfaceSlice, ok := scenariosFromInput.([]interface{})
 		if !ok {
-			return nil, errors.New("while converting scenarios label to an interface slice")
+			return nil, apperrors.NewInternalError("while converting scenarios label to an interface slice")
 		}
 
 		for _, scenario := range scenariosFromInputInterfaceSlice {
@@ -236,7 +238,7 @@ func (e *engine) convertInterfaceArrayToStringArray(scenarios []interface{}) ([]
 	for _, scenario := range scenarios {
 		item, ok := scenario.(string)
 		if !ok {
-			return nil, errors.New("scenario value is not a string")
+			return nil, apperrors.NewInternalError("scenario value is not a string")
 		}
 		scenariosString = append(scenariosString, item)
 	}

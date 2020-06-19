@@ -3,10 +3,13 @@ package packageinstanceauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 const tableName string = `public.package_instance_auths`
@@ -35,18 +38,18 @@ type repository struct {
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(tableName, tableColumns),
-		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, tableColumns),
-		lister:       repo.NewLister(tableName, tenantColumn, tableColumns),
-		deleter:      repo.NewDeleter(tableName, tenantColumn),
-		updater:      repo.NewUpdater(tableName, updatableColumns, tenantColumn, idColumns),
+		creator:      repo.NewCreator(resource.PackageInstanceAuth, tableName, tableColumns),
+		singleGetter: repo.NewSingleGetter(resource.PackageInstanceAuth, tableName, tenantColumn, tableColumns),
+		lister:       repo.NewLister(resource.PackageInstanceAuth, tableName, tenantColumn, tableColumns),
+		deleter:      repo.NewDeleter(resource.PackageInstanceAuth, tableName, tenantColumn),
+		updater:      repo.NewUpdater(resource.PackageInstanceAuth, tableName, updatableColumns, tenantColumn, idColumns),
 		conv:         conv,
 	}
 }
 
 func (r *repository) Create(ctx context.Context, item *model.PackageInstanceAuth) error {
 	if item == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity, err := r.conv.ToEntity(*item)
@@ -113,7 +116,7 @@ func (r *repository) ListByPackageID(ctx context.Context, tenantID string, packa
 
 func (r *repository) Update(ctx context.Context, item *model.PackageInstanceAuth) error {
 	if item == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	entity, err := r.conv.ToEntity(*item)

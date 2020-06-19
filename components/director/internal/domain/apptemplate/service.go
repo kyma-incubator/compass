@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -80,7 +82,7 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
 	if pageSize < 1 || pageSize > 100 {
-		return model.ApplicationTemplatePage{}, errors.New("page size must be between 1 and 100")
+		return model.ApplicationTemplatePage{}, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
 	return s.appTemplateRepo.List(ctx, pageSize, cursor)

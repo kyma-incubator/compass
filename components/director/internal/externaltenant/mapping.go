@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/pkg/errors"
@@ -21,7 +23,7 @@ func MapTenants(tenantsDirectoryPath string) ([]model.BusinessTenantMappingInput
 	var outputTenants []model.BusinessTenantMappingInput
 	for _, f := range files {
 		if filepath.Ext(f.Name()) != ".json" {
-			return nil, errors.New(fmt.Sprintf("unsupported file format [%s]", filepath.Ext(f.Name())))
+			return nil, apperrors.NewInternalError(fmt.Sprintf("unsupported file format [%s]", filepath.Ext(f.Name())))
 		}
 
 		bytes, err := ioutil.ReadFile(tenantsDirectoryPath + f.Name())

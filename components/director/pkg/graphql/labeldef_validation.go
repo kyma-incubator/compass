@@ -3,15 +3,16 @@ package graphql
 import (
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 	"github.com/pkg/errors"
 )
 
 func (i LabelDefinitionInput) Validate() error {
 	return validation.Errors{
-		"Rule.ValidSchema": i.validateSchema(),
-		"Key":              validation.Validate(i.Key, validation.Required, validation.RuneLength(0, longStringLengthLimit), validation.Match(alphanumericUnderscoreRegexp)),
-		"Schema":           validation.Validate(i.Schema),
+		"rule.validSchema": i.validateSchema(),
+		"key":              validation.Validate(i.Key, validation.Required, validation.RuneLength(0, longStringLengthLimit), validation.Match(alphanumericUnderscoreRegexp)),
+		"schema":           validation.Validate(i.Schema),
 	}.Filter()
 }
 
@@ -31,7 +32,7 @@ func (i LabelDefinitionInput) validateSchema() error {
 
 func (i LabelDefinitionInput) validateScenariosSchema() error {
 	if i.Schema == nil {
-		return errors.New("schema can not be nil")
+		return apperrors.NewInternalError("schema can not be nil")
 	}
 
 	validator, err := jsonschema.NewValidatorFromRawSchema(model.SchemaForScenariosSchema)

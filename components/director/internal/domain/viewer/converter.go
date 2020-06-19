@@ -2,8 +2,8 @@ package viewer
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/pkg/errors"
 )
 
 func ToViewer(cons consumer.Consumer) (*graphql.Viewer, error) {
@@ -18,6 +18,6 @@ func ToViewer(cons consumer.Consumer) (*graphql.Viewer, error) {
 		return &graphql.Viewer{ID: cons.ConsumerID, Type: graphql.ViewerTypeUser}, nil
 	}
 
-	return nil, errors.New("viewer does not exist")
+	return nil, apperrors.NewInternalError("viewer does not exist")
 
 }

@@ -6,11 +6,8 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/lib/pq"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 type Upserter interface {
@@ -19,13 +16,15 @@ type Upserter interface {
 
 type universalUpserter struct {
 	tableName          string
+	resourceType       resource.Type
 	insertColumns      []string
 	conflictingColumns []string
 	updateColumns      []string
 }
 
-func NewUpserter(tableName string, insertColumns []string, conflictingColumns []string, updateColumns []string) Upserter {
+func NewUpserter(resourceType resource.Type, tableName string, insertColumns []string, conflictingColumns []string, updateColumns []string) Upserter {
 	return &universalUpserter{
+		resourceType:       resourceType,
 		tableName:          tableName,
 		insertColumns:      insertColumns,
 		conflictingColumns: conflictingColumns,
@@ -35,7 +34,7 @@ func NewUpserter(tableName string, insertColumns []string, conflictingColumns []
 
 func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) error {
 	if dbEntity == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	persist, err := persistence.FromCtx(ctx)
@@ -57,11 +56,5 @@ func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) er
 	stmtWithUpsert := fmt.Sprintf("%s ON CONFLICT ( %s ) DO UPDATE SET %s", stmtWithoutUpsert, strings.Join(u.conflictingColumns, ", "), strings.Join(update, ", "))
 
 	_, err = persist.NamedExec(stmtWithUpsert, dbEntity)
-	if pqerr, ok := err.(*pq.Error); ok {
-		if pqerr.Code == persistence.UniqueViolation {
-			return apperrors.NewNotUniqueError("")
-		}
-	}
-
-	return errors.Wrapf(err, "while upserting row to '%s' table", u.tableName)
+	return persistence.MapSQLError(err, u.resourceType, "while upserting row to '%s' table", u.tableName)
 }

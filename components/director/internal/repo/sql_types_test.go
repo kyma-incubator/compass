@@ -28,7 +28,7 @@ func TestNewNullableBool(t *testing.T) {
 func TestNewNullableString(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		//GIVEN
-		text := "lorem impsun"
+		text := "lorem ipsum"
 		//WHEN
 		result := NewNullableString(&text)
 		//THEN

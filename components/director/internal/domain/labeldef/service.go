@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -151,7 +153,7 @@ func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedL
 		return errors.Wrap(err, "while listing labels by key")
 	}
 	if len(existingLabels) > 0 {
-		return errors.New("could not delete label definition, it is already used by at least one label")
+		return apperrors.NewInvalidOperationError("could not delete label definition, it is already used by at least one label")
 	}
 
 	return s.repo.DeleteByKey(ctx, tenant, ld.Key)
@@ -175,7 +177,7 @@ func (s *service) validateExistingLabelsAgainstSchema(ctx context.Context, schem
 		}
 
 		if !result.Valid {
-			return errors.Wrapf(result.Error, `label with key "%s" is not valid against new schema for %s with ID "%s"`, label.Key, label.ObjectType, label.ObjectID)
+			return apperrors.NewInvalidDataError(fmt.Sprintf(`label with key="%s" is not valid against new schema for %s with ID="%s": %s`, label.Key, label.ObjectType, label.ObjectID, result.Error))
 		}
 	}
 	return nil

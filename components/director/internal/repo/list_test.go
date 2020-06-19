@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -23,7 +25,7 @@ func TestList(t *testing.T) {
 	homer := User{FirstName: "Homer", LastName: "Simpson", Age: 55, Tenant: givenTenant, ID: homerID}
 	homerRow := []driver.Value{homerID, givenTenant, "Homer", "Simpson", 55}
 
-	sut := repo.NewLister("users", "tenant_id",
+	sut := repo.NewLister("UserType", "users", "tenant_id",
 		[]string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 
 	t.Run("lists all items successfully", func(t *testing.T) {
@@ -69,7 +71,7 @@ func TestList(t *testing.T) {
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		err := sut.List(ctx, givenTenant, nil)
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error on db operation", func(t *testing.T) {
@@ -81,7 +83,7 @@ func TestList(t *testing.T) {
 		var dest UserCollection
 
 		err := sut.List(ctx, givenTenant, &dest)
-		require.EqualError(t, err, "while fetching list of objects from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from DB: some error")
 	})
 }
 
@@ -93,8 +95,7 @@ func TestListGlobal(t *testing.T) {
 	homer := User{FirstName: "Homer", LastName: "Simpson", Age: 55, ID: homerID}
 	homerRow := []driver.Value{homerID, "Homer", "Simpson", 55}
 
-	sut := repo.NewListerGlobal("users",
-		[]string{"id_col", "first_name", "last_name", "age"})
+	sut := repo.NewListerGlobal(UserType, "users", []string{"id_col", "first_name", "last_name", "age"})
 
 	t.Run("lists all items successfully", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
@@ -139,7 +140,7 @@ func TestListGlobal(t *testing.T) {
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		err := sut.ListGlobal(ctx, nil)
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error on db operation", func(t *testing.T) {
@@ -151,6 +152,6 @@ func TestListGlobal(t *testing.T) {
 		var dest UserCollection
 
 		err := sut.ListGlobal(ctx, &dest)
-		require.EqualError(t, err, "while fetching list of objects from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from DB: some error")
 	})
 }

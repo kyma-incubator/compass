@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 )
 
@@ -22,7 +24,7 @@ func WriteMarshalled(in interface{}, w io.Writer) error {
 
 func ConvertToString(in interface{}) (string, error) {
 	if in == nil {
-		return "", errors.New("input should not be nil")
+		return "", apperrors.NewInvalidDataError("input should not be nil")
 	}
 
 	value, ok := in.(string)
@@ -35,7 +37,7 @@ func ConvertToString(in interface{}) (string, error) {
 
 func ConvertToMapStringStringArray(in interface{}) (map[string][]string, error) {
 	if in == nil {
-		return nil, errors.New("input should not be nil")
+		return nil, apperrors.NewInvalidDataError("input should not be nil")
 	}
 
 	result := make(map[string][]string)

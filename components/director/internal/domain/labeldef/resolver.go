@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -138,7 +140,7 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 	if def == nil {
-		return nil, apperrors.NewNotFoundError(key)
+		return nil, apperrors.NewNotFoundError(resource.LabelDefinition, key)
 	}
 	c, err := r.conv.ToGraphQL(*def)
 	if err != nil {
@@ -203,7 +205,7 @@ func (r *Resolver) DeleteLabelDefinition(ctx context.Context, key string, delete
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if deleteRelatedLabels == nil {
-		return nil, errors.New("deleteRelatedLabels can not be nil, internal server error")
+		return nil, apperrors.NewInternalError("deleteRelatedLabels can not be nil")
 	}
 
 	ld, err := r.srv.Get(ctx, tnt, key)

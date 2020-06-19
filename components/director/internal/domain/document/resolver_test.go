@@ -107,7 +107,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 
 			ExpectedDocument: nil,
-			ExpectedErr:      errors.New("Cannot add Document to not existing Package"),
+			ExpectedErr:      errors.New("cannot add Document to not existing Package"),
 		},
 		{
 			Name: "Returns error when application existence check failed",

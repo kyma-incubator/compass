@@ -65,7 +65,7 @@ func TestRepository_Create(t *testing.T) {
 		// WHEN
 		err := repo.Create(ctx, docModel)
 		// THEN
-		require.EqualError(t, err, "while inserting row to 'public.documents' table: some error")
+		require.EqualError(t, err, "Internal Server Error: while inserting row to 'public.documents' table: some error")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -149,7 +149,7 @@ func TestRepository_CreateMany(t *testing.T) {
 		// WHEN
 		err := repo.CreateMany(ctx, given)
 		// THEN
-		require.EqualError(t, err, "while creating Document with ID 2: while inserting row to 'public.documents' table: some error")
+		require.EqualError(t, err, "while creating Document with ID 2: Internal Server Error: while inserting row to 'public.documents' table: some error")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -379,7 +379,7 @@ func TestRepository_GetByID(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByID(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.documents: some error")
 	})
 }
 
@@ -454,7 +454,7 @@ func TestRepository_GetForPackage(t *testing.T) {
 		// WHEN
 		_, err := repo.GetForPackage(ctx, givenTenant(), givenID(), pkgID())
 		// THEN
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.documents: some error")
 	})
 }
 
@@ -488,7 +488,7 @@ func TestRepository_Delete(t *testing.T) {
 		// WHEN
 		err := repo.Delete(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "while deleting from database: some error")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
 	})
 }
 

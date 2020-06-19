@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -628,7 +630,7 @@ func TestResolver_Application(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(nil, apperrors.NewNotFoundError("foo")).Once()
+				svc.On("Get", contextParam, "foo").Return(nil, apperrors.NewNotFoundError(resource.Application, "foo")).Once()
 
 				return svc
 			},
@@ -1016,7 +1018,9 @@ func TestResolver_SetApplicationLabel(t *testing.T) {
 		// then
 		require.Nil(t, result)
 		require.Error(t, err)
-		assert.EqualError(t, err, "validation error for type LabelInput: key: cannot be blank; value: cannot be blank.")
+		assert.Contains(t, err.Error(), "key=cannot be blank")
+		assert.Contains(t, err.Error(), "value=cannot be blank")
+		assert.Contains(t, err.Error(), "validation error for type LabelInput:")
 	})
 }
 
@@ -1462,7 +1466,7 @@ func TestResolver_Auths(t *testing.T) {
 		_, err := resolver.Auths(context.TODO(), nil)
 		//THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Application cannot be empty")
+		assert.EqualError(t, err, "Internal Server Error: Application cannot be empty")
 	})
 }
 
@@ -1578,7 +1582,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "while loading tenant from context")
+		assert.EqualError(t, err, "cannot read tenant from context")
 	})
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
@@ -1733,7 +1737,7 @@ func TestResolver_Packages(t *testing.T) {
 		_, err := resolver.Packages(context.TODO(), nil, nil, nil)
 		//then
 		require.Error(t, err)
-		assert.EqualError(t, err, "Application cannot be empty")
+		assert.EqualError(t, err, apperrors.NewInternalError("Application cannot be empty").Error())
 	})
 }
 
@@ -1800,7 +1804,7 @@ func TestResolver_Package(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.PackageService {
 				svc := &automock.PackageService{}
-				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+				svc.On("GetForApplication", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError(resource.Application, "")).Once()
 
 				return svc
 			},
@@ -1877,7 +1881,7 @@ func TestResolver_Package(t *testing.T) {
 		_, err := resolver.Package(context.TODO(), nil, "")
 		//then
 		require.Error(t, err)
-		assert.EqualError(t, err, "Application cannot be empty")
+		assert.EqualError(t, err, apperrors.NewInternalError("Application cannot be empty").Error())
 	})
 
 }

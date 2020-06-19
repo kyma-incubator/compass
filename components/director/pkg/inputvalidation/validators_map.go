@@ -24,10 +24,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 package inputvalidation
 
 import (
+	"errors"
 	"reflect"
 
 	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/pkg/errors"
 )
 
 type eachKeyRule []validation.Rule

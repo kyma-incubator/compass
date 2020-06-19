@@ -160,7 +160,7 @@ func unregisterIntegrationSystemWithErr(t *testing.T, ctx context.Context, gqlCl
 	req := fixUnregisterIntegrationSystem(id)
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "referenced by it")
+	require.Contains(t, err.Error(), "Object already exist")
 }
 
 func getSystemAuthsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) []*graphql.SystemAuth {

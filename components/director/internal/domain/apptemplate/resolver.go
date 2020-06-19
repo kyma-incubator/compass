@@ -3,6 +3,8 @@ package apptemplate
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -99,7 +101,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 		cursor = string(*after)
 	}
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	tx, err := r.transact.Begin()
@@ -199,7 +201,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 		return nil, err
 	}
 
-	if err := appCreateInputGQL.Validate(); err != nil {
+	if err := inputvalidation.Validate(appCreateInputGQL); err != nil {
 		return nil, errors.Wrapf(err, "while validating application input from application template [name=%s]", convertedIn.TemplateName)
 	}
 

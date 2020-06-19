@@ -7,6 +7,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
+
+	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
@@ -137,10 +141,14 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
+	presenter := error_presenter.NewPresenter(log.StandardLogger(), uid.NewService())
+
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema)))
+	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema,
+		handler.ErrorPresenter(presenter.Do),
+		handler.RecoverFunc(panic_handler.RecoverFn))))
 
 	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)

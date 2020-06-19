@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
@@ -22,13 +22,15 @@ type UpdaterGlobal interface {
 
 type universalUpdater struct {
 	tableName        string
+	resourceType     resource.Type
 	updatableColumns []string
 	tenantColumn     *string
 	idColumns        []string
 }
 
-func NewUpdater(tableName string, updatableColumns []string, tenantColumn string, idColumns []string) Updater {
+func NewUpdater(resourceType resource.Type, tableName string, updatableColumns []string, tenantColumn string, idColumns []string) Updater {
 	return &universalUpdater{
+		resourceType:     resourceType,
 		tableName:        tableName,
 		updatableColumns: updatableColumns,
 		tenantColumn:     &tenantColumn,
@@ -36,8 +38,9 @@ func NewUpdater(tableName string, updatableColumns []string, tenantColumn string
 	}
 }
 
-func NewUpdaterGlobal(tableName string, updatableColumns []string, idColumns []string) UpdaterGlobal {
+func NewUpdaterGlobal(resourceType resource.Type, tableName string, updatableColumns []string, idColumns []string) UpdaterGlobal {
 	return &universalUpdater{
+		resourceType:     resourceType,
 		tableName:        tableName,
 		updatableColumns: updatableColumns,
 		idColumns:        idColumns,
@@ -54,7 +57,7 @@ func (u *universalUpdater) UpdateSingleGlobal(ctx context.Context, dbEntity inte
 
 func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity interface{}, isGlobal bool) error {
 	if dbEntity == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 
 	persist, err := persistence.FromCtx(ctx)
@@ -88,13 +91,8 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 	}
 
 	res, err := persist.NamedExec(stmtBuilder.String(), dbEntity)
-	if pqerr, ok := err.(*pq.Error); ok {
-		if pqerr.Code == persistence.UniqueViolation {
-			return apperrors.NewNotUniqueError("")
-		}
-	}
-	if err != nil {
-		return errors.Wrap(err, "while updating single entity")
+	if err = persistence.MapSQLError(err, u.resourceType, "while updating single entity"); err != nil {
+		return err
 	}
 
 	affected, err := res.RowsAffected()
@@ -102,7 +100,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		return errors.Wrap(err, "while checking affected rows")
 	}
 	if affected != 1 {
-		return fmt.Errorf("should update single row, but updated %d rows", affected)
+		return apperrors.NewInternalError("should update single row, but updated %d rows", affected)
 	}
 
 	return nil

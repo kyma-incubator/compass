@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/stretchr/testify/require"
@@ -210,7 +212,7 @@ func TestConverter_ToEntity(t *testing.T) {
 				ID:       "2",
 				TenantID: "tenant",
 			},
-			ExpectedErrMessage: "Invalid input model",
+			ExpectedErrMessage: apperrors.NewInvalidDataError("Invalid input model").Error(),
 		},
 	}
 

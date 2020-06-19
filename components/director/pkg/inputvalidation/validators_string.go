@@ -3,6 +3,8 @@ package inputvalidation
 import (
 	"reflect"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	k8svalidation "k8s.io/apimachinery/pkg/api/validation"
 
 	"github.com/pkg/errors"
@@ -27,7 +29,7 @@ func (v *dnsNameRule) Validate(value interface{}) error {
 		return errors.New("must be no more than 36 characters")
 	}
 	if s[0] >= '0' && s[0] <= '9' {
-		return errors.New("cannot start with digit")
+		return apperrors.NewInvalidDataError("cannot start with digit")
 	}
 	if errorMsg := k8svalidation.NameIsDNSSubdomain(s, false); errorMsg != nil {
 		return errors.Errorf("%v", errorMsg)

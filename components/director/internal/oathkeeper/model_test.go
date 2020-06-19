@@ -93,7 +93,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 
 		_, _, err := reqData.GetAuthID()
 
-		require.EqualError(t, err, "unable to find valid auth ID")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to find valid auth ID").Error())
 	})
 
 	t.Run("returns error when client_id is specified in Extra map in a non-string format", func(t *testing.T) {
@@ -107,7 +107,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 
 		_, _, err := reqData.GetAuthID()
 
-		require.EqualError(t, err, "while parsing the value for client_id: unable to cast the value to a string type")
+		require.EqualError(t, err, "while parsing the value for client_id: Internal Server Error: unable to cast the value to a string type")
 	})
 
 	t.Run("returns error when a name is specified in Extra map in a non-string format", func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 
 		_, _, err := reqData.GetAuthID()
 
-		require.EqualError(t, err, "while parsing the value for name: unable to cast the value to a string type")
+		require.EqualError(t, err, "while parsing the value for name: Internal Server Error: unable to cast the value to a string type")
 	})
 }
 
@@ -183,7 +183,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 
 		_, err := reqData.GetExternalTenantID()
 
-		require.EqualError(t, err, "while parsing the value for tenant: unable to cast the value to a string type")
+		require.EqualError(t, err, "while parsing the value for tenant: Internal Server Error: unable to cast the value to a string type")
 	})
 
 	t.Run("returns error when tenant ID is not specified", func(t *testing.T) {
@@ -192,8 +192,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 		_, err := reqData.GetExternalTenantID()
 
 		require.Error(t, err)
-		require.Implements(t, (*apperrors.KeyDoesNotExist)(nil), err)
-		require.EqualError(t, err, "the key (tenant) does not exist in source object")
+		require.EqualError(t, err, "the key does not exist in the source object [key=tenant]")
 	})
 }
 
@@ -225,7 +224,7 @@ func TestReqData_GetScopes(t *testing.T) {
 
 		_, err := reqData.GetScopes()
 
-		require.EqualError(t, err, "while parsing the value for scope: unable to cast the value to a string type")
+		require.EqualError(t, err, "while parsing the value for scope: Internal Server Error: unable to cast the value to a string type")
 	})
 
 	t.Run("returns error when scopes value is not specified", func(t *testing.T) {
@@ -234,8 +233,7 @@ func TestReqData_GetScopes(t *testing.T) {
 		_, err := reqData.GetScopes()
 
 		require.Error(t, err)
-		require.Implements(t, (*apperrors.KeyDoesNotExist)(nil), err)
-		require.EqualError(t, err, "the key (scope) does not exist in source object")
+		require.EqualError(t, err, "the key does not exist in the source object [key=scope]")
 	})
 }
 

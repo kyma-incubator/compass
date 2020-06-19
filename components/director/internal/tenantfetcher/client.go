@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	pkgErrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
@@ -115,7 +117,7 @@ func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error)
 	case UpdatedEventsType:
 		return c.apiConfig.EndpointTenantUpdated, nil
 	default:
-		return "", errors.New("unknown events type")
+		return "", apperrors.NewInternalError("unknown events type")
 	}
 }
 
