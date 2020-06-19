@@ -1,10 +1,11 @@
 package certificates
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
-	"time"
 )
 
 const interval = 1 * time.Minute
