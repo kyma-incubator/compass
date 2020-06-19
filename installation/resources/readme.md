@@ -2,11 +2,10 @@
 
 ## Installation CRs
 
-- [Kyma Dependencies](installer-cr-kyma-dependencies.yaml)
-Kyma components that are required for Compass Installation
-
-- [Compass installation](.installer-cr-yaml.tpl)
-Components installed by the Compas Installer
+| File                                	| Description                                                	|
+|-------------------------------------	|------------------------------------------------------------	|
+| installer-cr-kyma-dependencies.yaml 	| Kyma components that are required for Compass Installation 	|
+| installer-cr.yaml.tpl               	| Components installed by the Compas Installer               	|
 
 ## KYMA_VERSION file
 
