@@ -1,13 +1,18 @@
 # Default values for oidc-kubeconfig-service.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+global:
+  isLocalEnv: false
+  minikubeIP: "0.0.0.0"
+  ingress:
+    domainName: "override.me.io"
 
 replicaCount: 1
 
 image:
   repository: eu.gcr.io/kyma-project/incubator/kubeconfig-service
   tag: PR-1420
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 config:
   servicePort: 9090
