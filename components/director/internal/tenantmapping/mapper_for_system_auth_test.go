@@ -182,7 +182,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Integration System: while fetching scopes: the key (scope) does not exist in source object")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Integration System: while fetching scopes: the key does not exist in the source object [key=scope]")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -212,7 +212,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching tenant: while parsing the value for tenant: unable to cast the value to a string type")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching tenant: while parsing the value for tenant: Internal Server Error: unable to cast the value to a string type")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -303,7 +303,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching scopes: the key (scope) does not exist in source object")
+		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching scopes: the key does not exist in the source object [key=scope]")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})

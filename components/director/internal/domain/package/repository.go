@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -41,12 +43,12 @@ type pgRepository struct {
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(packageTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(packageTable, tenantColumn, packageColumns),
-		deleter:         repo.NewDeleter(packageTable, tenantColumn),
-		pageableQuerier: repo.NewPageableQuerier(packageTable, tenantColumn, packageColumns),
-		creator:         repo.NewCreator(packageTable, packageColumns),
-		updater:         repo.NewUpdater(packageTable, []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth"}, tenantColumn, []string{"id"}),
+		existQuerier:    repo.NewExistQuerier(resource.Package, packageTable, tenantColumn),
+		singleGetter:    repo.NewSingleGetter(resource.Package, packageTable, tenantColumn, packageColumns),
+		deleter:         repo.NewDeleter(resource.Package, packageTable, tenantColumn),
+		pageableQuerier: repo.NewPageableQuerier(resource.Package, packageTable, tenantColumn, packageColumns),
+		creator:         repo.NewCreator(resource.Package, packageTable, packageColumns),
+		updater:         repo.NewUpdater(resource.Package, packageTable, []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth"}, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}
 }

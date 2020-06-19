@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -32,7 +31,7 @@ func TestCreateRuntime_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type RuntimeInput")
+	assert.Contains(t, err.Error(), "name=cannot start with digit")
 }
 
 func TestUpdateRuntime_Validation(t *testing.T) {
@@ -54,7 +53,7 @@ func TestUpdateRuntime_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type RuntimeInput")
+	assert.Contains(t, err.Error(), "name=cannot start with digit")
 }
 
 // Label Definition Validation
@@ -75,7 +74,7 @@ func TestCreateLabelDefinition_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type LabelDefinitionInput")
+	assert.Contains(t, err.Error(), "key=cannot be blank")
 }
 
 func TestUpdateLabelDefinition_Validation(t *testing.T) {
@@ -97,7 +96,7 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type LabelDefinitionInput")
+	assert.Contains(t, err.Error(), "key=cannot be blank")
 }
 
 // Label Validation
@@ -116,7 +115,7 @@ func TestSetApplicationLabel_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type LabelInput")
+	assert.Contains(t, err.Error(), "key=the length must be no more than 256")
 }
 
 func TestSetRuntimeLabel_Validation(t *testing.T) {
@@ -133,12 +132,12 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type LabelInput")
+	assert.Contains(t, err.Error(), "key=the length must be no more than 256")
 }
 
 // Application Validation
 
-const longDescErrorMsg = "graphql: validation error for type %s: description: the length must be no more than 2000."
+const longDescErrMsg = "description=the length must be no more than 2000"
 
 func TestCreateApplication_Validation(t *testing.T) {
 	//GIVEN
@@ -156,7 +155,7 @@ func TestCreateApplication_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "ApplicationRegisterInput"))
+	assert.Contains(t, err.Error(), longDescErrMsg)
 }
 
 func TestUpdateApplication_Validation(t *testing.T) {
@@ -176,7 +175,7 @@ func TestUpdateApplication_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "ApplicationUpdateInput"))
+	assert.Contains(t, err.Error(), longDescErrMsg)
 }
 
 func TestAddDocument_Validation(t *testing.T) {
@@ -198,7 +197,7 @@ func TestAddDocument_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: validation error for type DocumentInput: displayName: the length must be between 1 and 128.")
+	assert.Contains(t, err.Error(), "displayName=the length must be between 1 and 128")
 }
 
 func TestCreateIntegrationSystem_Validation(t *testing.T) {
@@ -217,7 +216,7 @@ func TestCreateIntegrationSystem_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "IntegrationSystemInput"))
+	assert.Contains(t, err.Error(), longDescErrMsg)
 }
 
 func TestUpdateIntegrationSystem_Validation(t *testing.T) {
@@ -236,7 +235,7 @@ func TestUpdateIntegrationSystem_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "IntegrationSystemInput"))
+	assert.Contains(t, err.Error(), longDescErrMsg)
 }
 
 func TestAddAPI_Validation(t *testing.T) {
@@ -257,7 +256,7 @@ func TestAddAPI_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	require.EqualError(t, err, "graphql: validation error for type APIDefinitionInput: targetURL: must be a valid URL.")
+	require.Contains(t, err.Error(), "targetURL=must be a valid URL")
 }
 
 func TestUpdateAPI_Validation(t *testing.T) {
@@ -281,7 +280,7 @@ func TestUpdateAPI_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	require.EqualError(t, err, "graphql: validation error for type APIDefinitionInput: targetURL: is not valid URL.")
+	require.Contains(t, err.Error(), "targetURL=must be a valid URL")
 }
 
 func TestAddEventAPI_Validation(t *testing.T) {
@@ -304,7 +303,7 @@ func TestAddEventAPI_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventDefinitionInput"))
+	require.Contains(t, err.Error(), longDescErrMsg)
 }
 
 func TestUpdateEventAPI_Validation(t *testing.T) {
@@ -328,7 +327,7 @@ func TestUpdateEventAPI_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	require.EqualError(t, err, fmt.Sprintf(longDescErrorMsg, "EventDefinitionInput"))
+	require.Contains(t, err.Error(), longDescErrMsg)
 }
 
 func fixEventAPIDefinitionInput() graphql.EventDefinitionInput {
@@ -379,7 +378,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type ApplicationTemplateInput")
+	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
 func TestUpdateApplicationTemplate_Validation(t *testing.T) {
@@ -405,7 +404,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type ApplicationTemplateInput")
+	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
 func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
@@ -423,7 +422,7 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "TemplateName: cannot be blank.")
+	assert.Contains(t, err.Error(), "templateName=cannot be blank")
 }
 
 func fixDocumentInput() graphql.DocumentInput {
@@ -457,7 +456,7 @@ func TestAddPackage_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type PackageCreateInput")
+	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
 func TestUpdatePackage_Validation(t *testing.T) {
@@ -474,7 +473,7 @@ func TestUpdatePackage_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type PackageUpdateInput")
+	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
 func TestSetPackageInstanceAuth_Validation(t *testing.T) {
@@ -491,7 +490,7 @@ func TestSetPackageInstanceAuth_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type PackageInstanceAuthSetInput")
+	assert.Contains(t, err.Error(), "reason=at least one field (Auth or Status) has to be provided")
 }
 
 func TestAddAPIDefinitionToPackage_Validation(t *testing.T) {
@@ -508,7 +507,7 @@ func TestAddAPIDefinitionToPackage_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type APIDefinitionInput")
+	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
 func TestAddEventDefinitionToPackage_Validation(t *testing.T) {
@@ -525,7 +524,7 @@ func TestAddEventDefinitionToPackage_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type EventDefinitionInput")
+	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
 func TestAddDocumentToPackage_Validation(t *testing.T) {
@@ -544,5 +543,5 @@ func TestAddDocumentToPackage_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error for type DocumentInput")
+	assert.Contains(t, err.Error(), "description=cannot be blank")
 }

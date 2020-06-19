@@ -3,7 +3,10 @@ package document
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/pkg/errors"
 
@@ -35,11 +38,11 @@ type repository struct {
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		existQuerier:    repo.NewExistQuerier(documentTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(documentTable, tenantColumn, documentColumns),
-		deleter:         repo.NewDeleter(documentTable, tenantColumn),
-		pageableQuerier: repo.NewPageableQuerier(documentTable, tenantColumn, documentColumns),
-		creator:         repo.NewCreator(documentTable, documentColumns),
+		existQuerier:    repo.NewExistQuerier(resource.Document, documentTable, tenantColumn),
+		singleGetter:    repo.NewSingleGetter(resource.Document, documentTable, tenantColumn, documentColumns),
+		deleter:         repo.NewDeleter(resource.Document, documentTable, tenantColumn),
+		pageableQuerier: repo.NewPageableQuerier(resource.Document, documentTable, tenantColumn, documentColumns),
+		creator:         repo.NewCreator(resource.Document, documentTable, documentColumns),
 
 		conv: conv,
 	}
@@ -84,7 +87,7 @@ func (r *repository) GetForPackage(ctx context.Context, tenant string, id string
 
 func (r *repository) Create(ctx context.Context, item *model.Document) error {
 	if item == nil {
-		return errors.New("Document cannot be empty")
+		return apperrors.NewInternalError("Document cannot be empty")
 	}
 
 	entity, err := r.conv.ToEntity(*item)

@@ -23,7 +23,7 @@ func TestCLOB_UnmarshalGQL(t *testing.T) {
 		"error: input is nil": {
 			input:  nil,
 			err:    true,
-			errmsg: "input should not be nil",
+			errmsg: "Invalid data [reason=input should not be nil]",
 		},
 		"error: invalid input": {
 			input:  123,

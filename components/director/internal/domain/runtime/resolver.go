@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -100,7 +102,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if first == nil {
-		return nil, errors.New("missing required parameter 'first'")
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	runtimesPage, err := r.svc.List(ctx, labelFilter, *first, cursor)
@@ -254,7 +256,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Label, error) {
 	// TODO: Use @validation directive on input type instead, after resolving https://github.com/kyma-incubator/compass/issues/515
 	gqlLabel := graphql.LabelInput{Key: key, Value: value}
-	if err := gqlLabel.Validate(); err != nil {
+	if err := inputvalidation.Validate(&gqlLabel); err != nil {
 		return nil, errors.Wrap(err, "validation error for type LabelInput")
 	}
 

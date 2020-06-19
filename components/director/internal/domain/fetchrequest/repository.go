@@ -3,6 +3,8 @@ package fetchrequest
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
@@ -35,10 +37,10 @@ type repository struct {
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		creator:      repo.NewCreator(fetchRequestTable, fetchRequestColumns),
-		singleGetter: repo.NewSingleGetter(fetchRequestTable, tenantColumn, fetchRequestColumns),
-		deleter:      repo.NewDeleter(fetchRequestTable, tenantColumn),
-		updater:      repo.NewUpdater(fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, tenantColumn, []string{"id"}),
+		creator:      repo.NewCreator(resource.FetchRequest, fetchRequestTable, fetchRequestColumns),
+		singleGetter: repo.NewSingleGetter(resource.FetchRequest, fetchRequestTable, tenantColumn, fetchRequestColumns),
+		deleter:      repo.NewDeleter(resource.FetchRequest, fetchRequestTable, tenantColumn),
+		updater:      repo.NewUpdater(resource.FetchRequest, fetchRequestTable, []string{"status_condition", "status_message", "status_timestamp"}, tenantColumn, []string{"id"}),
 		conv:         conv,
 	}
 }

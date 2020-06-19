@@ -2,7 +2,7 @@ package consumer
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 type ConsumerType string
@@ -28,5 +28,5 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 	case model.IntegrationSystemReference:
 		return IntegrationSystem, nil
 	}
-	return "", errors.New("unknown reference object type")
+	return "", apperrors.NewInternalError("unknown reference object type")
 }

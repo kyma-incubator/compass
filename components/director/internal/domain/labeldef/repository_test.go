@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 
 	"github.com/stretchr/testify/assert"
@@ -225,7 +223,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
-		require.EqualError(t, err, "no row was affected by query")
+		require.EqualError(t, err, "Internal Server Error: no row was affected by query")
 	})
 }
 
@@ -278,7 +276,8 @@ func TestRepositoryGetByKey(t *testing.T) {
 		// WHEN
 		actual, err := sut.GetByKey(ctx, "anything", "anything")
 		// THEN
-		assert.EqualError(t, err, apperrors.NewNotFoundError("anything").Error())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Object not found")
 		assert.Nil(t, actual)
 
 	})
@@ -603,6 +602,6 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		// WHEN
 		err := repo.DeleteByKey(ctx, tnt, key)
 		// THEN
-		require.EqualError(t, err, "no rows were affected by query")
+		require.EqualError(t, err, "Internal Server Error: no rows were affected by query")
 	})
 }

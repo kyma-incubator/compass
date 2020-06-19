@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
@@ -22,20 +24,23 @@ type universalPageableQuerier struct {
 	tableName       string
 	selectedColumns string
 	tenantColumn    *string
+	resourceType    resource.Type
 }
 
-func NewPageableQuerier(tableName string, tenantColumn string, selectedColumns []string) PageableQuerier {
+func NewPageableQuerier(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) PageableQuerier {
 	return &universalPageableQuerier{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
+		resourceType:    resourceType,
 	}
 }
 
-func NewPageableQuerierGlobal(tableName string, selectedColumns []string) PageableQuerierGlobal {
+func NewPageableQuerierGlobal(resourceType resource.Type, tableName string, selectedColumns []string) PageableQuerierGlobal {
 	return &universalPageableQuerier{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
+		resourceType:    resourceType,
 	}
 }
 

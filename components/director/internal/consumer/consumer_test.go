@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -52,7 +54,7 @@ func TestMapSystemAuthToConsumerType(t *testing.T) {
 				assert.Equal(t, consumerType, testCase.expected)
 			} else {
 				require.Error(t, testCase.expectedErr)
-				assert.EqualError(t, testCase.expectedErr, err.Error())
+				assert.EqualError(t, err, apperrors.NewInternalError("unknown reference object type").Error())
 			}
 		})
 	}

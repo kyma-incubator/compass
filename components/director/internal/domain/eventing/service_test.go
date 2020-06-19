@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -233,7 +235,7 @@ func Test_SetForApplication(t *testing.T) {
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
-			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(""))
+			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
@@ -256,7 +258,7 @@ func Test_SetForApplication(t *testing.T) {
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
-			fixLabelFilterForRuntimeScenarios()).Return(nil, apperrors.NewNotFoundError(""))
+			fixLabelFilterForRuntimeScenarios()).Return(nil, apperrors.NewNotFoundError(resource.Runtime, ""))
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
@@ -563,7 +565,7 @@ func Test_GetForApplication(t *testing.T) {
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		runtimeRepo.On("GetOldestForFilters", ctx, tenantID.String(), fixLabelFilterForRuntimeScenarios()).
-			Return(nil, apperrors.NewNotFoundError(""))
+			Return(nil, apperrors.NewNotFoundError(resource.Runtime, ""))
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
@@ -588,7 +590,7 @@ func Test_GetForApplication(t *testing.T) {
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
-			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(""))
+			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
 		svc := NewService(runtimeRepo, labelRepo)
 
 		// WHEN
@@ -608,9 +610,9 @@ func Test_GetForApplication(t *testing.T) {
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
-			fixLabelFilterForRuntimeScenarios()).Return(nil, apperrors.NewNotFoundError(""))
+			fixLabelFilterForRuntimeScenarios()).Return(nil, apperrors.NewNotFoundError(resource.Runtime, ""))
 		runtimeRepo.On("GetOldestForFilters", ctx, tenantID.String(), fixLabelFilterForRuntimeScenarios()).
-			Return(nil, apperrors.NewNotFoundError(""))
+			Return(nil, apperrors.NewNotFoundError(resource.Runtime, ""))
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
@@ -692,7 +694,7 @@ func Test_GetForApplication(t *testing.T) {
 
 	t.Run("Error when getting the oldest runtime for application eventing returns error on converting scenarios label to slice of strings", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while getting the oldest runtime for scenarios: while getting application scenarios: while converting label [key=%s] value to a slice of strings: cannot convert label value to slice of strings`, model.ScenariosKey)
+		expectedError := fmt.Sprintf(`while getting the oldest runtime for scenarios: while getting application scenarios: while converting label [key=%s] value to a slice of strings: Internal Server Error: cannot convert label value to slice of strings`, model.ScenariosKey)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
@@ -803,7 +805,7 @@ func Test_GetForApplication(t *testing.T) {
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
-			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(""))
+			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
 
 		svc := NewService(runtimeRepo, labelRepo)
 
@@ -848,7 +850,7 @@ func Test_GetForApplication(t *testing.T) {
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
-			fixLabelFilterForRuntimeScenarios()).Return(nil, apperrors.NewNotFoundError(""))
+			fixLabelFilterForRuntimeScenarios()).Return(nil, apperrors.NewNotFoundError(resource.Runtime, ""))
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
@@ -899,7 +901,7 @@ func Test_GetForRuntime(t *testing.T) {
 		ctx := fixCtxWithTenant()
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(), RuntimeEventingURLLabel).
-			Return(nil, apperrors.NewNotFoundError(""))
+			Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
 		expectedEventingCfg := fixRuntimeEventngCfgWithEmptyURL(t)
 		eventingSvc := NewService(nil, labelRepo)
 

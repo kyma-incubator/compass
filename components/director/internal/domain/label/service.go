@@ -2,6 +2,8 @@ package label
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -102,12 +104,17 @@ func (s *labelUpsertService) validateLabelInputValue(ctx context.Context, tenant
 		return errors.Wrapf(err, "while creating JSON Schema validator for schema %+v", *labelDef.Schema)
 	}
 
+	jsonSchema, err := json.Marshal(*labelDef.Schema)
+	if err != nil {
+		return apperrors.InternalErrorFrom(err, "while marshalling json schema")
+	}
+
 	result, err := validator.ValidateRaw(labelInput.Value)
 	if err != nil {
-		return errors.Wrapf(err, "while validating value %+v against JSON Schema: %+v", labelInput.Value, *labelDef.Schema)
+		return apperrors.InternalErrorFrom(err, "while validating value=%+v against JSON Schema=%s", labelInput.Value, string(jsonSchema))
 	}
 	if !result.Valid {
-		return errors.Wrapf(result.Error, "while validating value %+v against JSON Schema: %+v", labelInput.Value, *labelDef.Schema)
+		return apperrors.NewInvalidDataError(fmt.Sprintf("input value=%+v, key=%s, is not valid against JSON Schema=%s,result=%s", labelInput.Value, labelInput.Key, jsonSchema, result.Error.Error()))
 	}
 
 	return nil

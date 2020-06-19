@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -117,7 +119,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	}
 
 	if pageSize < 1 || pageSize > 100 {
-		return nil, errors.New("page size must be between 1 and 100")
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
@@ -132,7 +134,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 
 	tenantUUID, err := uuid.Parse(tenantID)
 	if err != nil {
-		return nil, errors.New("tenantID is not UUID")
+		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
 	}
 
 	exist, err := s.runtimeRepo.Exists(ctx, tenantID, runtimeID.String())
@@ -141,7 +143,7 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 	}
 
 	if !exist {
-		return nil, errors.New("runtime does not exist")
+		return nil, apperrors.NewInvalidDataError("runtime does not exist")
 	}
 
 	scenariosLabel, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
@@ -220,7 +222,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	}
 
 	if !exists {
-		return "", errors.New(fmt.Sprintf("while ensuring integration system exists: Integration System with ID: %s does not exist", *in.IntegrationSystemID))
+		return "", apperrors.NewNotFoundError(resource.IntegrationSystem, *in.IntegrationSystemID)
 	}
 
 	id := s.uidService.Generate()
@@ -273,7 +275,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	}
 
 	if !exists {
-		return errors.New(fmt.Sprintf("integration System with ID: %s does not exist", *in.IntegrationSystemID))
+		return apperrors.NewNotFoundError(resource.IntegrationSystem, *in.IntegrationSystemID)
 	}
 
 	app, err := s.Get(ctx, id)
@@ -330,7 +332,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return fmt.Errorf("application with ID %s doesn't exist", labelInput.ObjectID)
+		return apperrors.NewNotFoundError(resource.Application, labelInput.ObjectID)
 	}
 
 	err = s.labelUpsertService.UpsertLabel(ctx, appTenant, labelInput)

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
@@ -82,7 +84,7 @@ func TestResolver_API(t *testing.T) {
 				TransactionerFn: txGen.ThatSucceeds,
 				ServiceFn: func() *automock.APIService {
 					svc := &automock.APIService{}
-					svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+					svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError(resource.Package, "")).Once()
 					return svc
 				},
 				ConverterFn: func() *automock.APIConverter {
@@ -333,7 +335,7 @@ func TestResolver_EventAPI(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+				svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError(resource.Package, "")).Once()
 
 				return svc
 			},
@@ -561,7 +563,7 @@ func TestResolver_Document(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+				svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError(resource.Package, "")).Once()
 
 				return svc
 			},
@@ -1257,7 +1259,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.PackageInstanceAuthService {
 				svc := &automock.PackageInstanceAuthService{}
-				svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError("")).Once()
+				svc.On("GetForPackage", txtest.CtxWithDBMatcher(), "foo", "foo").Return(nil, apperrors.NewNotFoundError(resource.Package, "")).Once()
 
 				return svc
 			},

@@ -3,6 +3,8 @@ package document
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
@@ -133,7 +135,7 @@ func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Docu
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*graphql.FetchRequest, error) {
 	if obj == nil {
-		return nil, errors.New("Document cannot be empty")
+		return nil, apperrors.NewInternalError("Document cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()

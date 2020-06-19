@@ -63,7 +63,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.EqualError(t, err, "Internal Server Error: while inserting row to 'public.business_tenant_mappings' table: test error")
 	})
 }
 
@@ -175,7 +175,7 @@ func TestPgRepository_GetByExternalTenant(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.EqualError(t, err, "Internal Server Error: while getting object from table public.business_tenant_mappings: test error")
 		require.Nil(t, result)
 	})
 }
@@ -394,7 +394,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.EqualError(t, err, "Internal Server Error: while updating single entity: test error")
 	})
 }
 
@@ -436,6 +436,6 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.EqualError(t, err, "Internal Server Error: while deleting object from database: test error")
 	})
 }

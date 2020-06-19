@@ -137,7 +137,7 @@ func TestRepository_Create(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		assert.EqualError(t, err, "Internal Server Error: while inserting row to 'public.system_auths' table: test error")
 
 		dbMock.AssertExpectations(t)
 		convMock.AssertExpectations(t)
@@ -216,7 +216,7 @@ func TestRepository_GetByID(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByID(ctx, testTenant, saID)
 		// THEN
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.system_auths: some error")
 	})
 }
 
@@ -292,7 +292,7 @@ func TestRepository_GetByIDGlobal(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByIDGlobal(ctx, saID)
 		// THEN
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.system_auths: some error")
 	})
 }
 
@@ -595,7 +595,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		err := repo.DeleteAllForObject(ctx, testTenant, model.RuntimeReference, sysAuthID)
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		assert.EqualError(t, err, "Internal Server Error: while deleting object from database: test error")
 	})
 
 	t.Run("Error listing auths for unsupported reference object type", func(t *testing.T) {
@@ -677,7 +677,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.ApplicationReference)
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		assert.EqualError(t, err, "Internal Server Error: while deleting object from database: test error")
 	})
 }
 

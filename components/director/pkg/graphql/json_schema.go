@@ -5,7 +5,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 	log "github.com/sirupsen/logrus"
@@ -21,7 +21,7 @@ func (j *JSONSchema) UnmarshalGQL(v interface{}) error {
 
 	err = json.Unmarshal([]byte(val), new(interface{}))
 	if err != nil {
-		return errors.New("JSONSchema input is not a valid JSON")
+		return apperrors.NewInvalidDataError("JSONSchema input is not a valid JSON")
 	}
 
 	*j = JSONSchema(val)

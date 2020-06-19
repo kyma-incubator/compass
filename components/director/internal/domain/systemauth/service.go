@@ -3,6 +3,8 @@ package systemauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
 
@@ -69,7 +71,7 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 		systemAuth.IntegrationSystemID = &objectID
 		systemAuth.TenantID = nil
 	default:
-		return "", errors.New("unknown reference object type")
+		return "", apperrors.NewInternalError("unknown reference object type")
 	}
 
 	err = s.repo.Create(ctx, systemAuth)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -415,7 +417,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
-			tnt, "key").Return(nil, apperrors.NewNotFoundError(""))
+			tnt, "key").Return(nil, apperrors.NewNotFoundError(resource.LabelDefinition, ""))
 
 		sut := labeldef.NewResolver(mockTransactioner, mockService, nil)
 		// WHEN
