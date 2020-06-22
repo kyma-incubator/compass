@@ -1,8 +1,8 @@
-# (OIDC) Kubeconfig Service
+# OIDC Kubeconfig Service
 
 ## Overview
 
-The Kubeconfig Service is a single purpose [REST](https://en.wikipedia.org/wiki/Representational_state_transfer)-based API. It is designed to retrieve a `kubeconfig` file from an SKR cluster and change the default authentication mechanism (token) to [kubelogin](https://github.com/int128/kubelogin).
+The OIDC Kubeconfig Service is a single purpose [REST](https://en.wikipedia.org/wiki/Representational_state_transfer)-based API. It is designed to retrieve a `kubeconfig` file from an SKR cluster and change the default authentication mechanism (token) to [kubelogin](https://github.com/int128/kubelogin).
 
 ## Configuration
 
@@ -25,24 +25,35 @@ The application uses the following environment variables for configuration:
 | **OIDC_GROUPS_PREFIX** | No | If provided, all groups are prefixed with this value to prevent conflicts with other authentication strategies. | None |
 | **OIDC_SUPPORTED_SIGNING_ALGS** | No | List of supported signing algorithms. | `RS256` |
 
+## Prerequisites
+
+To run locally, the OIDC Kubeconfig Service requires the following tools: 
+
+- [Go](https://golang.org/dl/) (version specified in the [`go.mod`](go.mod) file)
+- [Make](https://www.gnu.org/software/make/)
+- [Docker](https://www.docker.com/)
+
 ## Usage
 
-### Build a local image
+You can run the OIDC Kubeconfig Service locally using either a Docker image or the binary.
 
-To build a local image, use the provided makefile: 
+### Run locally using a Docker image
+
+Use the provided makefile to build a local image: 
 
 ```bash
 make build-image
 ```
-
-### Run locally
-
-Set the required parameters and run the binary, or use a Docker image:
+Set the required parameters and run the Docker image:
 
 ```bash
-#Go run
-OIDC_KUBECONFIG_ISSUER_URL=https://foo OIDC_KUBECONFIG_CLIENT_ID=foobar OIDC_KUBECONFIG_CLIENT_SECRET=1234 OIDC_ISSUER_URL=https://dex.kyma.local OIDC_CLIENT_ID=compass-ui OIDC_CA=~/.minikube/ca.crt go run cmd/generator/main.go
-
-#Docker run
 docker run --rm -e OIDC_KUBECONFIG_ISSUER_URL=https://foo -e OIDC_KUBECONFIG_CLIENT_ID=foobar -e OIDC_KUBECONFIG_CLIENT_SECRET=1234 -e OIDC_ISSUER_URL=https://dex.kyma.local -e OIDC_CLIENT_ID=compass-ui -e OIDC_CA=~/.minikube/ca.crt kubeconfig-service
+```
+
+### Run locally using the binary
+
+Set the required parameters and run the binary:
+
+```bash
+OIDC_KUBECONFIG_ISSUER_URL=https://foo OIDC_KUBECONFIG_CLIENT_ID=foobar OIDC_KUBECONFIG_CLIENT_SECRET=1234 OIDC_ISSUER_URL=https://dex.kyma.local OIDC_CLIENT_ID=compass-ui OIDC_CA=~/.minikube/ca.crt go run cmd/generator/main.go
 ```
