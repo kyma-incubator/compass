@@ -60,6 +60,6 @@ build-image:
 # overide push-image to push two separate images - broker and cleanup job
 push-image:
 	@docker tag $(IMG_NAME) $(IMG_NAME):$(TAG)
-    @docker push $(IMG_NAME):$(TAG)
+	@docker push $(IMG_NAME):$(TAG)
 	@docker tag $(CLEANUP_IMG_NAME) $(CLEANUP_IMG_NAME):$(TAG)
 	@docker push $(CLEANUP_IMG_NAME):$(TAG)
