@@ -68,6 +68,7 @@ func (s *Service) PerformCleanup() error {
 			CloudProfileName: shoot.Spec.CloudProfileName,
 		})
 	}
+	log.Infof("Instances Details to process: %v", instancesDetails)
 
 	instancesToDelete, err := s.getInstanceIds(instancesDetails)
 	if err != nil {
@@ -133,11 +134,13 @@ func (s *Service) getInstanceIds(instancesToDelete []instanceDetailsDTO) ([]inst
 	for _, instanceDetails := range instancesToDelete {
 		runtimeIdList = append(runtimeIdList, instanceDetails.RuntimeID)
 	}
+	log.Infof("RuntimeID list to process: '%+q'", runtimeIdList)
 
 	instances, err := s.instanceStorage.FindAllInstancesForRuntimes(runtimeIdList)
 	if err != nil {
 		return []instanceDetailsDTO{}, err
 	}
+	log.Infof("Instances to process: %v", instances)
 
 	for _, instance := range instances {
 		for _, instanceToDeleteDetails := range instancesToDelete {
@@ -146,6 +149,7 @@ func (s *Service) getInstanceIds(instancesToDelete []instanceDetailsDTO) ([]inst
 			}
 		}
 	}
+	log.Infof("Instances to delete: %v", instancesToDelete)
 
 	return instancesToDelete, nil
 }
@@ -155,6 +159,7 @@ func (s *Service) triggerEnvironmentDeprovisioning(instanceDetails instanceDetai
 		InstanceID:       instanceDetails.InstanceID,
 		CloudProfileName: instanceDetails.CloudProfileName,
 	}
+	log.Infof("Deprovision call payload: %v", payload)
 	opID, err := s.brokerService.Deprovision(payload)
 	if err != nil {
 		return err
