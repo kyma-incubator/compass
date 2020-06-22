@@ -75,8 +75,8 @@ func TestService_PerformCleanup(t *testing.T) {
 
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{
-			InstanceID: fixInstanceID,
-			RuntimeID:  fixRuntimeID,
+			InstanceID: "some-instance-id",
+			RuntimeID:  "not-matching-id",
 		})
 
 		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), maxShootAge, shootLabelSelector)

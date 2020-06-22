@@ -1,6 +1,7 @@
 package environmentscleanup
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -46,18 +47,40 @@ func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, instan
 }
 
 func (s *Service) PerformCleanup() error {
+	var result *multierror.Error
 	shootsToDelete, err := s.getShootsToDelete(s.LabelSelector)
 	if err != nil {
-		return errors.Wrap(err, "while getting shoots to delete")
+		log.Error(errors.Wrap(err, "while getting shoots to delete"))
+		result = multierror.Append(result, err)
 	}
 
-	var result *multierror.Error
+	var instancesDetails []instanceDetailsDTO
 	for _, shoot := range shootsToDelete {
-		log.Infof("Triggering environment deprovisioning for shoot %q, runtimeID: %q", shoot.Name, shoot.Annotations[shootAnnotationRuntimeId])
-		currentErr := s.triggerEnvironmentDeprovisioning(shoot)
+		runtimeId, ok := shoot.Annotations[shootAnnotationRuntimeId]
+		if !ok {
+			err = errors.New(fmt.Sprintf("shoot %q has no runtime-id annotation", shoot.Name))
+			log.Error(err)
+			result = multierror.Append(result, err)
+			continue
+		}
+		instancesDetails = append(instancesDetails, instanceDetailsDTO{
+			RuntimeID:        runtimeId,
+			CloudProfileName: shoot.Spec.CloudProfileName,
+		})
+	}
+
+	instancesToDelete, err := s.getInstanceIds(instancesDetails)
+	if err != nil {
+		log.Error(errors.Wrap(err, "while getting instance IDs for runtimes"))
+		result = multierror.Append(result, err)
+	}
+
+	for _, payload := range instancesToDelete {
+		log.Infof("Triggering environment deprovisioning for instance ID %q", payload.InstanceID)
+		currentErr := s.triggerEnvironmentDeprovisioning(payload)
 		if currentErr != nil {
+			log.Error(errors.Wrapf(currentErr, "while triggering deprovisioning for instance ID %q", payload.InstanceID))
 			result = multierror.Append(result, currentErr)
-			log.Error(errors.Wrapf(currentErr, "while triggering deprovisioning for shoot %q", shoot.Name))
 		}
 	}
 	if result != nil {
@@ -81,7 +104,7 @@ func (s *Service) getShootsToDelete(labelSelector string) ([]v1beta1.Shoot, erro
 		return []v1beta1.Shoot{}, errors.Wrap(err, "while listing Gardener shoots")
 	}
 
-	var result []v1beta1.Shoot
+	var shoots []v1beta1.Shoot
 	for _, shoot := range shootList.Items {
 		log.Infof("Processing shoot %q created on %q", shoot.GetName(), shoot.GetCreationTimestamp())
 
@@ -91,31 +114,56 @@ func (s *Service) getShootsToDelete(labelSelector string) ([]v1beta1.Shoot, erro
 
 		if shootAge.Hours() >= s.MaxShootAge.Hours() {
 			log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.Name, s.MaxShootAge.Hours(), shootAge.Hours())
-			result = append(result, shoot)
+			shoots = append(shoots, shoot)
 		}
 	}
 
-	return result, nil
+	return shoots, nil
 }
 
-func (s *Service) triggerEnvironmentDeprovisioning(shoot v1beta1.Shoot) error {
-	instanceID, err := s.getInstanceId(shoot)
-	if err != nil {
-		return err
+type instanceDetailsDTO struct {
+	InstanceID string
+	RuntimeID string
+	CloudProfileName string
+}
+
+func (s *Service) getInstanceIds(instancesToDelete []instanceDetailsDTO) ([]instanceDetailsDTO, error) {
+	var runtimeIdList []string
+
+	for _, instanceDetails := range instancesToDelete {
+		runtimeIdList = append(runtimeIdList, instanceDetails.RuntimeID)
 	}
 
-	payload := broker.DeprovisionDetails{InstanceID: instanceID, CloudProfileName: shoot.Spec.CloudProfileName}
+	instances, err := s.instanceStorage.FindAllInstancesForRuntimes(runtimeIdList)
+	if err != nil {
+		return []instanceDetailsDTO{}, err
+	}
 
+	for _, instance := range instances {
+		for _, instanceToDeleteDetails := range instancesToDelete {
+			if instance.RuntimeID == instanceToDeleteDetails.RuntimeID {
+				instanceToDeleteDetails.InstanceID = instance.InstanceID
+			}
+		}
+	}
+
+	return instancesToDelete, nil
+}
+
+func (s *Service) triggerEnvironmentDeprovisioning(instanceDetails instanceDetailsDTO) error {
+	payload := broker.DeprovisionDetails{
+		InstanceID:      instanceDetails.InstanceID,
+		CloudProfileName: instanceDetails.CloudProfileName,
+	}
 	opID, err := s.brokerService.Deprovision(payload)
 	if err != nil {
 		return err
 	}
-
 	log.Infof("Successfully send deprovision request, got operation ID %q", opID)
 	return nil
 }
 
-func (s *Service) getInstanceId(shoot v1beta1.Shoot) (string, error) {
+func (s *Service) getInstanceIDForShoots(shoot v1beta1.Shoot) (string, error) {
 	runtimeId, ok := shoot.Annotations[shootAnnotationRuntimeId]
 	if !ok {
 		return "", errors.New("shoot's runtimeID should not be nil")

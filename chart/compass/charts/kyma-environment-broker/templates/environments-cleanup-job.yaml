@@ -26,8 +26,6 @@ spec:
             image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
             imagePullPolicy: IfNotPresent
             env:
-              - name: APP_DB_IN_MEMORY
-                value: "{{ .Values.global.database.embedded.enabled }}"
               - name: APP_MAX_AGE_HOURS
                 value: "{{ .Values.environmentsCleanup.maxAge }}"
               - name: APP_LABEL_SELECTOR
@@ -86,17 +84,10 @@ spec:
               - mountPath: /gardener/kubeconfig
                 name: gardener-kubeconfig
                 readOnly: true
-              {{if eq .Values.global.database.embedded.enabled false}}
+          {{if eq .Values.global.database.embedded.enabled false}}
               - name: cloudsql-instance-credentials
                 mountPath: /secrets/cloudsql-instance-credentials
                 readOnly: true
-              {{end}}
-            command:
-              - "/bin/sh"
-            args:
-              - "-c"
-              - "./bin/environments-cleanup; exit_code=$?;"
-          {{- if eq .Values.global.database.embedded.enabled false}}
           - name: cloudsql-proxy
             image: gcr.io/cloudsql-docker/gce-proxy:1.14
             command:

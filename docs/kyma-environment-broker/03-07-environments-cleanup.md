@@ -17,7 +17,6 @@ The Environments Cleanup binary allows you to override some configuration parame
 
 | Environment variable                       | Description                                                                                                                        | Default value                                                            |
 |--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
-| APP_DB_IN_MEMORY                          | Defines if KEB is using embedded database. | `false`                                                                    |
 | APP_MAX_AGE_HOURS                          | Defines the maximum time a Shoot can live without deletion in case the label is not specified. The Shoot age is provided in hours. | `24h`                                                                    |
 | APP_LABEL_SELECTOR                          | Defines the label selector to filter out Shoots for deletion. | `owner.do-not-delete!=true`                                                                    |
 | APP_GARDENER_PROJECT                       | Specifies Gardener project name.                                                                                                   | `kyma-dev`                                                               |

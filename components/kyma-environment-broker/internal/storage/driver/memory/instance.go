@@ -65,6 +65,24 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 	return instances, nil
 }
 
+func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, error) {
+	var instances []internal.Instance
+
+	for _, runtimeID := range runtimeIdList {
+		for _, inst := range s.instances {
+			if inst.RuntimeID == runtimeID {
+				instances = append(instances, inst)
+			}
+		}
+	}
+
+	if len(instances) == 0 {
+		return nil, dberr.NotFound("instances with runtime id from list %+q not exist", runtimeIdList)
+	}
+
+	return instances, nil
+}
+
 func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	inst, ok := s.instances[instanceID]
 	if !ok {

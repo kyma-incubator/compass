@@ -17,7 +17,6 @@ import (
 )
 
 type config struct {
-	DbInMemory    bool          `envconfig:"default=false"`
 	MaxAgeHours   time.Duration `envconfig:"default=24h"`
 	LabelSelector string        `envconfig:"default=owner.do-not-delete!=true"`
 	Gardener      gardener.Config
@@ -41,16 +40,11 @@ func main() {
 	brokerClient := broker.NewClient(ctx, cfg.Broker)
 
 	// create storage
-	var db storage.BrokerStorage
-	if cfg.DbInMemory {
-		db = storage.NewMemoryStorage()
-	} else {
-		storage, conn, err := storage.NewFromConfig(cfg.Database, log.WithField("service", "storage"))
-		fatalOnError(err)
-		db = storage
-		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
-		prometheus.MustRegister(dbStatsCollector)
-	}
+
+	db, conn, err := storage.NewFromConfig(cfg.Database, log.WithField("service", "storage"))
+	fatalOnError(err)
+	dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
+	prometheus.MustRegister(dbStatsCollector)
 
 	svc := environmentscleanup.NewService(shootClient, brokerClient, db.Instances(), cfg.MaxAgeHours, cfg.LabelSelector)
 	err = svc.PerformCleanup()
