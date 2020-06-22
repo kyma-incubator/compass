@@ -144,7 +144,7 @@ input ClusterConfigInput {
     gcpConfig: GCPConfigInput               # GCP-specific configuration for the cluster to be provisioned
 }
 
-input GardenerConfigInput {                   # Gardener project in which the cluster is created
+input GardenerConfigInput {
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
@@ -217,8 +217,46 @@ input UpgradeRuntimeInput {
     kymaConfig: KymaConfigInput! # Kyma config to upgrade to
 }
 
+# Shoot Upgrade Input
+
+input GardenerUpgradeInput {
+    kubernetesVersion: String                              # Kubernetes version to be installed on the cluster
+    machineType: String                                    # Type of node machines, varies depending on the target provider
+    diskType: String                                       # Disk type, varies depending on the target provider
+    volumeSizeGB: Int                                      # Size of the available disk, provided in GB
+    region: String!                                        # Region in which the cluster is created
+    workerCidr: String                                     # Classless Inter-Domain Routing range for the nodes
+    autoScalerMin: Int                                     # Minimum number of VMs to create
+    autoScalerMax: Int                                     # Maximum number of VMs to create
+    maxSurge: Int                                          # Maximum number of VMs created during an update
+    maxUnavailable: Int                                    # Maximum number of VMs that can be unavailable during an update
+    providerSpecificConfig: ProviderSpecificUpgradeInput   # Additional parameters, vary depending on the target provider
+}
+
+input ProviderSpecificUpgradeInput {
+    gcpConfig: GCPProviderConfigInput        # GCP-specific configuration for the cluster to be provisioned
+    azureConfig: AzureProviderConfigInput    # Azure-specific configuration for the cluster to be provisioned
+    awsConfig: AWSProviderConfigInput        # AWS-specific configuration for the cluster to be provisioned
+}
+
+input GCPProviderUpgradeInput {
+    zones: [String!]      # Zones in which to create the cluster
+}
+
+input AzureProviderUpgradeInput {
+    vnetCidr: String      # Classless Inter-Domain Routing for the Azure Virtual Network
+    zones: [String!]      # Zones in which to create the cluster
+}
+
+input AWSProviderUpgradeInput {
+    zone: String           # Zone in which to create the cluster
+    vpcCidr: String        # Classless Inter-Domain Routing for the virtual public cloud
+    publicCidr: String     # Classless Inter-Domain Routing for the public subnet
+    internalCidr: String   # Classless Inter-Domain Routing for the private subnet
+}
+
 input UpgradeShootInput {
-    gardenerConfig: GardenerConfigInput! # Gardener-specific configuration for the cluster to be upgraded
+    gardenerConfig: GardenerUpgradeInput! # Gardener-specific configuration for the cluster to be upgraded
 }
 
 type Mutation {
