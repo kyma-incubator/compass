@@ -122,8 +122,8 @@ func (s *Service) getShootsToDelete(labelSelector string) ([]v1beta1.Shoot, erro
 }
 
 type instanceDetailsDTO struct {
-	InstanceID string
-	RuntimeID string
+	InstanceID       string
+	RuntimeID        string
 	CloudProfileName string
 }
 
@@ -152,7 +152,7 @@ func (s *Service) getInstanceIds(instancesToDelete []instanceDetailsDTO) ([]inst
 
 func (s *Service) triggerEnvironmentDeprovisioning(instanceDetails instanceDetailsDTO) error {
 	payload := broker.DeprovisionDetails{
-		InstanceID:      instanceDetails.InstanceID,
+		InstanceID:       instanceDetails.InstanceID,
 		CloudProfileName: instanceDetails.CloudProfileName,
 	}
 	opID, err := s.brokerService.Deprovision(payload)
