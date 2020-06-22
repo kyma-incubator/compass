@@ -98,7 +98,7 @@ List of possible configurable `GardenerConfig` values:
 | `name`                   |                                 :heavy_multiplication_x:                                 |              |
 | `kubernetesVersion`      |                                    :heavy_check_mark:                                    | upgrade only |
 | `provider`               |                                 :heavy_multiplication_x:                                 |              |
-| `targetSecret`           |                                            ?                                             |              |
+| `targetSecret`           |                                 :heavy_multiplication_x:                                 | HAP          |
 | `machineType`            |                                    :heavy_check_mark:                                    |              |
 | `volumeSizeGB`           |                                    :heavy_check_mark:                                    |              |
 | `diskType`               |                                    :heavy_check_mark:                                    |              |
