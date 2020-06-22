@@ -146,12 +146,12 @@ input ClusterConfigInput {
 
 input GardenerConfigInput {                   # Gardener project in which the cluster is created
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
-    volumeSizeGB: Int!                              # Size of the available disk, provided in GB
-    machineType: String!                            # Type of node machines, varies depending on the target provider
-    region: String!                                 # Region in which the cluster is created
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
+    machineType: String!                            # Type of node machines, varies depending on the target provider
     diskType: String!                               # Disk type, varies depending on the target provider
+    volumeSizeGB: Int!                              # Size of the available disk, provided in GB
+    region: String!                                 # Region in which the cluster is created
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
     autoScalerMin: Int!                             # Minimum number of VMs to create
     autoScalerMax: Int!                             # Maximum number of VMs to create
@@ -217,7 +217,14 @@ input UpgradeRuntimeInput {
     kymaConfig: KymaConfigInput! # Kyma config to upgrade to
 }
 
+input UpgradeShootInput {
+    gardenerConfig: GardenerConfigInput! # Gardener-specific configuration for the cluster to be upgraded
+}
+
 type Mutation {
+    # upgradeShoot upgrades Gardener cluster configuration
+    upgradeShoot(id: String!, config: UpgradeShootInput!): OperationStatus
+
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): OperationStatus

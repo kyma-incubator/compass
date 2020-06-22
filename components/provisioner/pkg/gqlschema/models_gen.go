@@ -139,12 +139,12 @@ func (GardenerConfig) IsClusterConfig() {}
 
 type GardenerConfigInput struct {
 	KubernetesVersion      string                 `json:"kubernetesVersion"`
-	VolumeSizeGb           int                    `json:"volumeSizeGB"`
-	MachineType            string                 `json:"machineType"`
-	Region                 string                 `json:"region"`
 	Provider               string                 `json:"provider"`
 	TargetSecret           string                 `json:"targetSecret"`
+	MachineType            string                 `json:"machineType"`
 	DiskType               string                 `json:"diskType"`
+	VolumeSizeGb           int                    `json:"volumeSizeGB"`
+	Region                 string                 `json:"region"`
 	WorkerCidr             string                 `json:"workerCidr"`
 	AutoScalerMin          int                    `json:"autoScalerMin"`
 	AutoScalerMax          int                    `json:"autoScalerMax"`
@@ -212,6 +212,10 @@ type RuntimeStatus struct {
 
 type UpgradeRuntimeInput struct {
 	KymaConfig *KymaConfigInput `json:"kymaConfig"`
+}
+
+type UpgradeShootInput struct {
+	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
 }
 
 type OperationState string
