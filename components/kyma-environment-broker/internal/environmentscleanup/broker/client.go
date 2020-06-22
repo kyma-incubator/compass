@@ -20,7 +20,8 @@ const (
 	gcpPlanID   = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
 	azurePlanID = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 
-	instancesURL = "/oauth/v2/service_instances"
+	instancesURL    = "/oauth/v2/service_instances"
+	deprovisionTmpl = "%s%s/%s?service_id=%s&plan_id=%s"
 )
 
 type Config struct {
@@ -33,7 +34,7 @@ type Config struct {
 
 type Client struct {
 	brokerConfig Config
-	client       *http.Client
+	httpClient   *http.Client
 }
 
 func NewClient(ctx context.Context, config Config) *Client {
@@ -48,7 +49,7 @@ func NewClient(ctx context.Context, config Config) *Client {
 
 	return &Client{
 		brokerConfig: config,
-		client:       httpClientOAuth,
+		httpClient:   httpClientOAuth,
 	}
 }
 
@@ -66,7 +67,7 @@ func (c *Client) Deprovision(details DeprovisionDetails) (string, error) {
 	deprovisionURL := c.formatDeprovisionUrl(details)
 
 	response := deprovisionResponse{}
-	log.Infof("Deprovisioning runtime id: %q", details.InstanceID)
+	log.Infof("Requesting deprovisioning of the environment with instance id: %q", details.InstanceID)
 	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequest(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
 		if err != nil {
@@ -82,13 +83,11 @@ func (c *Client) Deprovision(details DeprovisionDetails) (string, error) {
 }
 
 func (c *Client) formatDeprovisionUrl(details DeprovisionDetails) string {
-	format := "%s%s/%s?service_id=%s&plan_id=%s"
-
 	switch details.CloudProfileName {
 	case "az":
-		return fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, details.InstanceID, kymaClassID, azurePlanID)
+		return fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, details.InstanceID, kymaClassID, azurePlanID)
 	case "gcp":
-		return fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, details.InstanceID, kymaClassID, gcpPlanID)
+		return fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, details.InstanceID, kymaClassID, gcpPlanID)
 	default:
 		return ""
 	}
@@ -101,7 +100,7 @@ func (c *Client) executeRequest(method, url string, expectedStatus int, body io.
 	}
 	request.Header.Set("X-Broker-API-Version", "2.14")
 
-	resp, err := c.client.Do(request)
+	resp, err := c.httpClient.Do(request)
 	if err != nil {
 		return errors.Wrapf(err, "while executing request URL: %s", url)
 	}
@@ -122,4 +121,9 @@ func (c *Client) warnOnError(do func() error) {
 	if err := do(); err != nil {
 		log.Warn(err.Error())
 	}
+}
+
+// setHttpClient auxiliary method of testing to get rid of oAuth client wrapper
+func (c *Client) setHttpClient(httpClient *http.Client) {
+	c.httpClient = httpClient
 }

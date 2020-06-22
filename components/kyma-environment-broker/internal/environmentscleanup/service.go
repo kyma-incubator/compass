@@ -1,64 +1,75 @@
 package environmentscleanup
 
 import (
+	"strings"
 	"time"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/environmentscleanup/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	labelSelector             = "owner.do-not-delete!=true"
-	shootAnnotationRuntimeId  = "compass.provisioner.kyma-project.io/runtime-id"
-	shootLabelGlobalAccountId = "account"
+	shootAnnotationRuntimeId = "compass.provisioner.kyma-project.io/runtime-id"
 )
 
+//go:generate mockery -name=GardenerClient -output=automock
 type GardenerClient interface {
 	List(opts v1.ListOptions) (*v1beta1.ShootList, error)
 }
 
-type DirectorClient interface {
-	GetInstanceId(accountID, runtimeID string) (string, error)
-}
-
+//go:generate mockery -name=BrokerClient -output=automock
 type BrokerClient interface {
 	Deprovision(details broker.DeprovisionDetails) (string, error)
 }
 
 type Service struct {
 	gardenerService GardenerClient
-	directorService DirectorClient
 	brokerService   BrokerClient
-
-	MaxShootAge time.Duration
+	instanceStorage storage.Instances
+	MaxShootAge     time.Duration
+	LabelSelector   string
 }
 
-func NewService(gardenerClient GardenerClient, directorClient DirectorClient, brokerClient BrokerClient, maxShootAge time.Duration) *Service {
+func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, instanceStorage storage.Instances, maxShootAge time.Duration, labelSelector string) *Service {
 	return &Service{
 		gardenerService: gardenerClient,
-		directorService: directorClient,
 		brokerService:   brokerClient,
+		instanceStorage: instanceStorage,
 		MaxShootAge:     maxShootAge,
+		LabelSelector:   labelSelector,
 	}
 }
 
-func (s *Service) PerformCleanup() {
-	shootsToDelete, err := s.getShootsToDelete(labelSelector)
+func (s *Service) PerformCleanup() error {
+	shootsToDelete, err := s.getShootsToDelete(s.LabelSelector)
 	if err != nil {
-		log.Error(errors.Wrap(err, "while getting shoots to delete"))
+		return errors.Wrap(err, "while getting shoots to delete")
 	}
 
+	var result *multierror.Error
 	for _, shoot := range shootsToDelete {
 		log.Infof("Triggering environment deprovisioning for shoot %q, runtimeID: %q", shoot.Name, shoot.Annotations[shootAnnotationRuntimeId])
-		err = s.triggerEnvironmentDeprovisioning(shoot)
-		if err != nil {
-			log.Error(errors.Wrapf(err, "while triggering deprovisioning for shoot %q", shoot.Name))
+		currentErr := s.triggerEnvironmentDeprovisioning(shoot)
+		if currentErr != nil {
+			result = multierror.Append(result, currentErr)
+			log.Error(errors.Wrapf(currentErr, "while triggering deprovisioning for shoot %q", shoot.Name))
 		}
 	}
-	log.Info("Kyma Environments cleanup performed successfully")
+	if result != nil {
+		result.ErrorFormat = func(i []error) string {
+			var s []string
+			for _, v := range i {
+				s = append(s, v.Error())
+			}
+			return strings.Join(s, ", ")
+		}
+	}
+	return result.ErrorOrNil()
 }
 
 func (s *Service) getShootsToDelete(labelSelector string) ([]v1beta1.Shoot, error) {
@@ -105,19 +116,14 @@ func (s *Service) triggerEnvironmentDeprovisioning(shoot v1beta1.Shoot) error {
 }
 
 func (s *Service) getInstanceId(shoot v1beta1.Shoot) (string, error) {
-	globalAccountId, ok := shoot.Labels[shootLabelGlobalAccountId]
-	if !ok {
-		return "", errors.New("shoot's globalAccountID should not be nil")
-	}
 	runtimeId, ok := shoot.Annotations[shootAnnotationRuntimeId]
 	if !ok {
 		return "", errors.New("shoot's runtimeID should not be nil")
 	}
-
-	result, err := s.directorService.GetInstanceId(globalAccountId, runtimeId)
+	instance, err := s.instanceStorage.GetByRuntimeID(runtimeId)
 	if err != nil {
-		return "", errors.Wrapf(err, "while getting Instance ID from director for shoot %q", shoot.Name)
+		return "", err
 	}
 
-	return result, nil
+	return instance.InstanceID, nil
 }

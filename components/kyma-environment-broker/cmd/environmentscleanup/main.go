@@ -5,26 +5,24 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
+	"github.com/dlmiddlecote/sqlstats"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/environmentscleanup"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/environmentscleanup/broker"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/gardener"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
-	gcli "github.com/machinebox/graphql"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
-	"github.com/vrischmann/envconfig"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	k8sClientCfg "sigs.k8s.io/controller-runtime/pkg/client/config"
-
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
+	"github.com/vrischmann/envconfig"
 )
 
 type config struct {
-	MaxAgeHours time.Duration `envconfig:"APP_MAX_AGE_HOURS"`
-	Gardener    gardener.Config
-	Director    director.Config
-	Broker      broker.Config
+	DbInMemory    bool          `envconfig:"default=false"`
+	MaxAgeHours   time.Duration `envconfig:"default=24h"`
+	LabelSelector string        `envconfig:"default=owner.do-not-delete!=true"`
+	Gardener      gardener.Config
+	Database      storage.Config
+	Broker        broker.Config
 }
 
 func main() {
@@ -39,23 +37,27 @@ func main() {
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	shootClient := cli.Shoots(gardenerNamespace)
 
-	k8sCfg, err := k8sClientCfg.GetConfig()
-	fatalOnError(err)
-	k8sCli, err := client.New(k8sCfg, client.Options{})
-	fatalOnError(err)
-
-	httpClient := httputil.NewClient(30, cfg.Director.SkipCertVerification)
-	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
-	oauthClient := oauth.NewOauthClient(httpClient, k8sCli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
-	err = oauthClient.WaitForCredentials()
-	fatalOnError(err)
-	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
-
 	ctx := context.Background()
 	brokerClient := broker.NewClient(ctx, cfg.Broker)
 
-	svc := environmentscleanup.NewService(shootClient, directorClient, brokerClient, cfg.MaxAgeHours)
-	svc.PerformCleanup()
+	// create storage
+	var db storage.BrokerStorage
+	if cfg.DbInMemory {
+		db = storage.NewMemoryStorage()
+	} else {
+		storage, conn, err := storage.NewFromConfig(cfg.Database, log.WithField("service", "storage"))
+		fatalOnError(err)
+		db = storage
+		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
+		prometheus.MustRegister(dbStatsCollector)
+	}
+
+	svc := environmentscleanup.NewService(shootClient, brokerClient, db.Instances(), cfg.MaxAgeHours, cfg.LabelSelector)
+	err = svc.PerformCleanup()
+	if err != nil {
+		fatalOnError(err)
+	}
+	log.Info("Kyma Environments cleanup performed successfully")
 }
 
 func fatalOnError(err error) {

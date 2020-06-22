@@ -138,6 +138,7 @@ edp:
 environmentsCleanup:
   schedule: "0 0 * * *"
   maxAge: "24h"
+  labelSelector: "owner.do-not-delete!=true"
   secretName: "TBD"
   scope: "TBD"
 
