@@ -4,6 +4,14 @@
 
 The OIDC Kubeconfig Service is a single purpose [REST](https://en.wikipedia.org/wiki/Representational_state_transfer)-based API. It is designed to retrieve a `kubeconfig` file from an SKR cluster and change the default authentication mechanism (token) to [kubelogin](https://github.com/int128/kubelogin).
 
+## Prerequisites
+
+To run locally, the OIDC Kubeconfig Service requires the following tools: 
+
+- [Go](https://golang.org/dl/) (version specified in the [`go.mod`](go.mod) file)
+- [Make](https://www.gnu.org/software/make/)
+- [Docker](https://www.docker.com/)
+
 ## Configuration
 
 The application uses the following environment variables for configuration:
@@ -24,14 +32,6 @@ The application uses the following environment variables for configuration:
 | **OIDC_USERNAME_PREFIX** | No | If provided, all users are prefixed with this value to prevent conflicts with other authentication strategies. | None |
 | **OIDC_GROUPS_PREFIX** | No | If provided, all groups are prefixed with this value to prevent conflicts with other authentication strategies. | None |
 | **OIDC_SUPPORTED_SIGNING_ALGS** | No | List of supported signing algorithms. | `RS256` |
-
-## Prerequisites
-
-To run locally, the OIDC Kubeconfig Service requires the following tools: 
-
-- [Go](https://golang.org/dl/) (version specified in the [`go.mod`](go.mod) file)
-- [Make](https://www.gnu.org/software/make/)
-- [Docker](https://www.docker.com/)
 
 ## Usage
 
