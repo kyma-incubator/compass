@@ -25,7 +25,7 @@ KEB binary allows you to override some configuration parameters. You can specify
 | Name | Description | Default value |
 |-----|---------|:--------:|
 | **APP_PORT** | Specifies the port on which the HTTP server listens. | `8080` |
-| **APP_BROKER_DEFAULT_GARDENER_SHOOT_PURPOSE** | Specifies the purpose of the created cluster. The possible values are: `development`, `evaluation`, `production`, `testing`. | `development` |
+| **APP_PROVISIONING_DEFAULT_GARDENER_SHOOT_PURPOSE** | Specifies the purpose of the created cluster. The possible values are: `development`, `evaluation`, `production`, `testing`. | `development` |
 | **APP_PROVISIONING_URL** | Specifies a URL to the Provisioner's API. | None |
 | **APP_PROVISIONING_SECRET_NAME** | Specifies the name of the Secret which holds credentials to the Provisioner's API. | None |
 | **APP_PROVISIONING_GARDENER_PROJECT_NAME** | Defines the Gardener project name. | `true` |
