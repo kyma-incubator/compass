@@ -30,6 +30,11 @@ gardener:
   clusterCleanupResourceSelector: "https://service-manager."
 
 provisioner: "gardener"
+  graphql:
+    port: 3000
+  secrets:
+    integrationSystemCredentials:
+      name: compass-provisioner-credentials
 
 kymaRelease:
   preReleases:

@@ -150,3 +150,53 @@ e2e:
     timeout: "100m"
     preUpgradeVersion: ""
     targetVersion: "master-156dc1a5"
+
+global:
+  kyma_environment_broker:
+    secrets:
+      integrationSystemCredentials:
+        name: compass-kyma-environment-broker-credentials
+  istio:
+    gateway:
+      name: "compass-istio-gateway"
+      namespace: "compass-system"
+    proxy:
+      port: 15020
+
+  isLocalEnv: false
+
+  gateway:
+    tls:
+      host: compass-gateway
+      secure:
+        oauth:
+          host: compass-gateway-auth-oauth
+  oauth2:
+    host: oauth2
+
+  images:
+    containerRegistry:
+      path: eu.gcr.io/kyma-project/incubator
+    kyma_environment_broker:
+      dir:
+      version: "PR-1434"
+  tests:
+    e2e_provisioning:
+      dir:
+      version: "9103d980"
+
+  defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+
+  auditlog:
+    configMapName: "compass-gateway-auditlog-config"
+    secretName: "compass-gateway-auditlog-secret"
+    script:
+      configMapName: "auditlog-script"
+
+  database:
+    embedded:
+      enabled: true
+      #TODO remove below after migration to separate user will be done
+    # Values for GCP managed PostgreSQL database
+    managedGCP:
+      instanceConnectionName: ""
