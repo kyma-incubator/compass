@@ -17,7 +17,7 @@ To run locally, the OIDC Kubeconfig Service requires the following tools:
 The application uses the following environment variables for configuration:
 
 | Parameter | Required | Description | Default value |
-| :---: | :--- | :--- | :---: | 
+| :--- | :--- | :--- | :---: | 
 | **PORT_SERVICE** | No | Port used by the application. | `8000` |
 | **PORT_HEALTH** | No | Port used by the application for health check. | `9000` |
 | **GRAPHQL_URL** | Yes | Full URL of the chosen [GraphQL](https://graphql.org/learn/) service. | `http://127.0.0.1:3000/graphql` |
