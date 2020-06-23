@@ -14,5 +14,9 @@ spec:
   components:
     - name: "compass"
       namespace: "compass-system"
+    - name: "istio-gateway"
+      namespace: "istio-system"
+    - name: "kyma-environment-broker"
+      namespace: "kcp-system"
     - name: "oidc-kubeconfig-service"
       namespace: "kyma-system"

@@ -60,3 +60,47 @@ data:
   global.minikubeIP: ""
   global.ingress.domainName: "kyma.local"
   config.oidc.caFile: "/etc/dex-tls-cert/tls.crt"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-installation-config-overrides
+  namespace: compass-installer
+  labels:
+    component: kyma-environment-broker
+    installer: overrides
+    kyma-project.io/installation: ""
+data:
+  global.isLocalEnv: "true"
+  global.domainName: "kyma.local"
+  global.adminPassword: ""
+  global.minikubeIP: ""
+  global.ingress.domainName: "kyma.local"
+  global.istio.gateway.name: "compass-istio-gateway"
+  global.istio.gateway.namespace: "compass-system"
+  global.externalServicesMock.enabled: "true"
+  gateway.gateway.auditlog.enabled: "true"
+  gateway.gateway.auditlog.authMode: "oauth"
+  director.deployment.allowJWTSigningNone: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-installation-config-overrides
+  namespace: compass-installer
+  labels:
+    component: provisioner
+    installer: overrides
+    kyma-project.io/installation: ""
+data:
+  global.isLocalEnv: "true"
+  global.domainName: "kyma.local"
+  global.adminPassword: ""
+  global.minikubeIP: ""
+  global.ingress.domainName: "kyma.local"
+  global.istio.gateway.name: "compass-istio-gateway"
+  global.istio.gateway.namespace: "compass-system"
+  global.externalServicesMock.enabled: "true"
+  gateway.gateway.auditlog.enabled: "true"
+  gateway.gateway.auditlog.authMode: "oauth"
+  director.deployment.allowJWTSigningNone: "true"
