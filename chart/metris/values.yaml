@@ -1,6 +1,15 @@
 nameOverride: ""
 fullnameOverride: ""
 
+global:
+  images:
+    containerRegistry:
+      path: eu.gcr.io/kyma-project/incubator
+    metris:
+      dir:
+      version: "PR-1434"
+
+
 image:
   # these override the values from global chart
   repository: ""
@@ -74,3 +83,4 @@ extraEnv: []
 
 # Define custom arguments to pass to metris container
 extraArgs: []
+

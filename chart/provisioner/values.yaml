@@ -67,3 +67,56 @@ tests:
   kyma:
     version: "1.12.0"
   queryLogging: false
+
+global:
+
+  images:
+    containerRegistry:
+      path: eu.gcr.io/kyma-project/incubator
+    provisioner:
+      dir:
+      version: "PR-1425"
+    tests:
+      provisioner:
+        dir:
+        version: "8fb2e53b"
+
+  isLocalEnv: false
+
+  gateway:
+    tls:
+      host: compass-gateway
+      secure:
+        oauth:
+          host: compass-gateway-auth-oauth
+    mtls:
+      host: compass-gateway-mtls
+
+  oauth2:
+    host: oauth2
+
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 1
+    periodSeconds: 10
+  readinessProbe:
+    initialDelaySeconds: 5
+    timeoutSeconds: 1
+    periodSeconds: 2
+
+  database:
+    embedded:
+      enabled: true
+      #TODO remove below after migration to separate user will be done
+    # Values for GCP managed PostgreSQL database
+    managedGCP:
+      instanceConnectionName: ""
+
+  istio:
+    gateway:
+      name: "compass-istio-gateway"
+      namespace: "compass-system"
+    proxy:
+      port: 15020
+
+  defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
