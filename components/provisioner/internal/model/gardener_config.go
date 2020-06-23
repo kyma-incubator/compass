@@ -30,6 +30,7 @@ type GardenerConfig struct {
 	DiskType               string
 	MachineType            string
 	Provider               string
+	Purpose                string
 	Seed                   string
 	TargetSecret           string
 	Region                 string
@@ -48,6 +49,11 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	var seed *string = nil
 	if c.Seed != "" {
 		seed = util.StringPtr(c.Seed)
+	}
+	var purpose *gardener_types.ShootPurpose = nil
+	if c.Purpose != "" {
+		p := gardener_types.ShootPurpose(c.Purpose)
+		purpose = &p
 	}
 
 	shoot := &gardener_types.Shoot{
@@ -71,9 +77,10 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				},
 			},
 			Networking: gardener_types.Networking{
-				Type:  "calico",        // Default value - we may consider adding it to API (if Hydroform will support it)
-				Nodes: "10.250.0.0/19", // TODO: it is required - provide configuration in API (when Hydroform will support it)
+				Type:  "calico",                        // Default value - we may consider adding it to API (if Hydroform will support it)
+				Nodes: util.StringPtr("10.250.0.0/19"), // TODO: it is required - provide configuration in API (when Hydroform will support it)
 			},
+			Purpose: purpose,
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 					KubernetesVersion:   false,

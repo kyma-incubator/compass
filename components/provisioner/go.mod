@@ -6,7 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.9.3
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/avast/retry-go v2.6.0+incompatible
-	github.com/gardener/gardener v0.33.7
+	github.com/gardener/gardener v0.35.0
 	github.com/gocraft/dbr/v2 v2.6.3
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3
@@ -42,20 +42,17 @@ require (
 )
 
 replace (
-	github.com/Azure/go-autorest v11.5.0+incompatible => github.com/Azure/go-autorest v13.3.2+incompatible
+	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
-
-	github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20200623094931-c83b89ae6798
-
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-
 	k8s.io/api v0.17.2 => k8s.io/api v0.15.8-beta.1
 	k8s.io/apiextensions-apiserver v0.17.2 => k8s.io/apiextensions-apiserver v0.15.8-beta.1
 	k8s.io/apimachinery v0.17.2 => k8s.io/apimachinery v0.15.8-beta.1
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.15.8-beta.1
 	sigs.k8s.io/controller-runtime v0.5.0 => sigs.k8s.io/controller-runtime v0.3.0
+
+	github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20200623094931-c83b89ae6798
 
 )

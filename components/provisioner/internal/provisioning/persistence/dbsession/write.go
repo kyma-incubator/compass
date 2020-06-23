@@ -45,6 +45,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("machine_type", config.MachineType).
 		Pair("region", config.Region).
 		Pair("provider", config.Provider).
+		Pair("purpose", config.Purpose).
 		Pair("seed", config.Seed).
 		Pair("target_secret", config.TargetSecret).
 		Pair("disk_type", config.DiskType).

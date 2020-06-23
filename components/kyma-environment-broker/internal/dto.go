@@ -40,6 +40,7 @@ type ProvisioningParametersDTO struct {
 	VolumeSizeGb                *int     `json:"volumeSizeGb"`
 	MachineType                 *string  `json:"machineType"`
 	Region                      *string  `json:"region"`
+	Purpose                     *string  `json:"purpose"`
 	Zones                       []string `json:"zones"`
 	AutoScalerMin               *int     `json:"autoScalerMin"`
 	AutoScalerMax               *int     `json:"autoScalerMax"`

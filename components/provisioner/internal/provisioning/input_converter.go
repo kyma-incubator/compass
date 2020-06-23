@@ -75,30 +75,22 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 }
 
 func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
-	id := c.uuidGenerator.New()
-	name := c.createGardenerClusterName(input.Provider)
-
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
-
 	if err != nil {
 		return model.GardenerConfig{}, err
 	}
 
-	var seed string
-	if input.Seed != nil {
-		seed = *input.Seed
-	}
-
 	return model.GardenerConfig{
-		ID:                     id,
-		Name:                   name,
+		ID:                     c.uuidGenerator.New(),
+		Name:                   c.createGardenerClusterName(),
 		ProjectName:            c.gardenerProject,
 		KubernetesVersion:      input.KubernetesVersion,
 		VolumeSizeGB:           input.VolumeSizeGb,
 		DiskType:               input.DiskType,
 		MachineType:            input.MachineType,
 		Provider:               input.Provider,
-		Seed:                   seed,
+		Purpose:                util.UnwrapStr(input.Purpose),
+		Seed:                   util.UnwrapStr(input.Seed),
 		TargetSecret:           input.TargetSecret,
 		WorkerCidr:             input.WorkerCidr,
 		Region:                 input.Region,
@@ -111,7 +103,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 	}, nil
 }
 
-func (c converter) createGardenerClusterName(provider string) string {
+func (c converter) createGardenerClusterName() string {
 	id := c.uuidGenerator.New()
 
 	name := strings.ReplaceAll(id, "-", "")
