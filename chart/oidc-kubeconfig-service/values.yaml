@@ -6,12 +6,16 @@ global:
   minikubeIP: "0.0.0.0"
   ingress:
     domainName: "override.me.io"
+  istio:
+    gateway:
+      name: "compass-istio-gateway"
+      namespace: "compass-system"
 
 replicaCount: 1
 
 image:
   repository: eu.gcr.io/kyma-project/incubator/kubeconfig-service
-  tag: PR-1420
+  tag: a80f4373
   pullPolicy: Always
 
 config:
@@ -51,6 +55,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
+  hostname: kubeconfig-service
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
