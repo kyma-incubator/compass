@@ -3,7 +3,7 @@ kind: ServiceMonitor
 metadata:
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
-  name: {{ include "kyma-env-broker.fullname" . }}
+  name: {{ include "fullname" . }}
   namespace: compass-system
 spec:
   endpoints:

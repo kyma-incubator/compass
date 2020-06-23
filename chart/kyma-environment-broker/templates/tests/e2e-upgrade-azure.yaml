@@ -16,7 +16,7 @@ spec:
             secretName: {{ .Values.gardener.secretName }}
         - name: config-volume
           configMap:
-            name: {{ include "kyma-env-broker.fullname" . }}
+            name: {{ include "fullname" . }}
       containers:
         - name: tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
@@ -27,7 +27,7 @@ spec:
               readOnly: true
             - name: config-volume
               configMap:
-                name: {{ include "kyma-env-broker.fullname" . }}
+                name: {{ include "fullname" . }}
           env:
             - name: APP_PROVISION_TIMEOUT
               value: "{{ .Values.e2e.provisioning.timeout }}"
@@ -50,7 +50,7 @@ spec:
             - name: APP_BROKER_PROVISION_GCP
               value: "false"
             - name: APP_BROKER_CLIENT_NAME
-              value: {{ include "kyma-env-broker.fullname" . | quote }}
+              value: {{ include "fullname" . | quote }}
             - name: APP_BROKER_TOKEN_URL
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
             - name: APP_PROVISIONER_URL
@@ -103,7 +103,7 @@ spec:
             secretName: {{ .Values.gardener.secretName }}
         - name: config-volume
           configMap:
-            name: {{ include "kyma-env-broker.fullname" . }}
+            name: {{ include "fullname" . }}
       containers:
         - name: tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.e2e_provisioning.dir }}e2e-provisioning-test:{{ .Values.global.images.tests.e2e_provisioning.version }}
@@ -133,7 +133,7 @@ spec:
             - name: APP_BROKER_PROVISION_GCP
               value: "false"
             - name: APP_BROKER_CLIENT_NAME
-              value: {{ include "kyma-env-broker.fullname" . | quote }}
+              value: {{ include "fullname" . | quote }}
             - name: APP_BROKER_TOKEN_URL
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
             - name: APP_PROVISIONER_URL

@@ -1,11 +1,11 @@
 apiVersion: gateway.kyma-project.io/v1alpha1
 kind: APIRule
 metadata:
-  name: {{ include "kyma-env-broker.fullname" . }}
+  name: {{ include "fullname" . }}
 spec:
   gateway: {{ .Values.global.istio.gateway.name }}.{{ .Values.global.istio.gateway.namespace }}.svc.cluster.local
   service:
-    name: {{ include "kyma-env-broker.fullname" . }}
+    name: {{ include "fullname" . }}
     port: {{ .Values.service.port }}
     host: {{ .Values.host }}.{{ .Values.global.ingress.domainName }}
   rules:

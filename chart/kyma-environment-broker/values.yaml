@@ -180,10 +180,10 @@ global:
     kyma_environment_broker:
       dir:
       version: "PR-1434"
-  tests:
-    e2e_provisioning:
-      dir:
-      version: "9103d980"
+    tests:
+      e2e_provisioning:
+        dir:
+        version: "9103d980"
 
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
 

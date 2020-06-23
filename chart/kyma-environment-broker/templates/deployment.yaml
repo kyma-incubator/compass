@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kyma-env-broker.fullname" . }}
+  name: {{ include "fullname" . }}
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -28,7 +28,7 @@ spec:
             # Used for calls for oauth token
             - "{{ .Values.global.oauth2.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
-      serviceAccountName: {{ include "kyma-env-broker.fullname" . }}
+      serviceAccountName: {{ include "fullname" . }}
     {{- with .Values.deployment.securityContext }}
       securityContext:
         {{ toYaml . | indent 8 }}
@@ -317,7 +317,7 @@ spec:
       volumes:
       - name: config-volume
         configMap:
-          name: {{ include "kyma-env-broker.fullname" . }}
+          name: {{ include "fullname" . }}
       {{- if eq .Values.global.database.embedded.enabled false}}
       - name: cloudsql-instance-credentials
         secret:
