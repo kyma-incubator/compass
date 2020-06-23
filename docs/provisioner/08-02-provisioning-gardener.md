@@ -105,7 +105,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 machineType: "n1-standard-4"
                 region: "europe-west4"
                 provider: "gcp"
-                purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "development"
+                purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
                 targetSecret: "{GARDENER_GCP_SECRET_NAME}"
                 workerCidr: "10.250.0.0/19"
                 autoScalerMin: 2
@@ -196,7 +196,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 machineType: "Standard_D2_v3"
                 region: "westeurope"
                 provider: "azure"
-                purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "development"
+                purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
                 targetSecret: "{GARDENER_AZURE_SECRET_NAME}"
                 workerCidr: "10.250.0.0/19"
                 autoScalerMin: 2
@@ -287,7 +287,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 machineType: "m4.2xlarge"
                 region: "eu-west-1"
                 provider: "aws"
-                purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "development"
+                purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
                 targetSecret: "{GARDENER_AWS_SECRET_NAME}"
                 workerCidr: "10.250.0.0/19"
                 autoScalerMin: 2
