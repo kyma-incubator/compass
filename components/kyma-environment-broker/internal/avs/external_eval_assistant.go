@@ -40,6 +40,17 @@ func (eea *ExternalEvalAssistant) ProvideTesterAccessId() int64 {
 	return eea.avsConfig.ExternalTesterAccessId
 }
 
+func (eea *ExternalEvalAssistant) ProvideTags() []*Tag {
+	return eea.avsConfig.ExternalTesterTags
+}
+
+func (eea *ExternalEvalAssistant) ProvideNewOrDefaultServiceName(defaultServiceName string) string {
+	if eea.avsConfig.ExternalTesterService == "" {
+		return defaultServiceName
+	}
+	return eea.avsConfig.ExternalTesterService
+}
+
 func (eea *ExternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64) {
 	lifecycleData.AVSEvaluationExternalId = evalId
 }

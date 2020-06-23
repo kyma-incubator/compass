@@ -3,6 +3,10 @@ package runtime
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -31,13 +35,13 @@ type pgRepository struct {
 
 func NewRepository() *pgRepository {
 	return &pgRepository{
-		existQuerier:       repo.NewExistQuerier(runtimeTable, tenantColumn),
-		singleGetter:       repo.NewSingleGetter(runtimeTable, tenantColumn, runtimeColumns),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(runtimeTable, runtimeColumns),
-		deleter:            repo.NewDeleter(runtimeTable, tenantColumn),
-		pageableQuerier:    repo.NewPageableQuerier(runtimeTable, tenantColumn, runtimeColumns),
-		creator:            repo.NewCreator(runtimeTable, runtimeColumns),
-		updater:            repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
+		existQuerier:       repo.NewExistQuerier(resource.Runtime, runtimeTable, tenantColumn),
+		singleGetter:       repo.NewSingleGetter(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
+		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Runtime, runtimeTable, runtimeColumns),
+		deleter:            repo.NewDeleter(resource.Runtime, runtimeTable, tenantColumn),
+		pageableQuerier:    repo.NewPageableQuerier(resource.Runtime, runtimeTable, tenantColumn, runtimeColumns),
+		creator:            repo.NewCreator(resource.Runtime, runtimeTable, runtimeColumns),
+		updater:            repo.NewUpdater(resource.Runtime, runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, tenantColumn, []string{"id"}),
 	}
 }
 
@@ -162,7 +166,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 
 func (r *pgRepository) Create(ctx context.Context, item *model.Runtime) error {
 	if item == nil {
-		return errors.New("item can not be empty")
+		return apperrors.NewInternalError("item can not be empty")
 	}
 
 	runtimeEnt, err := EntityFromRuntimeModel(item)

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -36,15 +38,15 @@ type repository struct {
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		upserter: repo.NewUpserter(tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
-		lister:   repo.NewLister(tableName, tenantColumn, tableColumns),
+		upserter: repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		lister:   repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
 		conv:     conv,
 	}
 }
 
 func (r *repository) Upsert(ctx context.Context, label *model.Label) error {
 	if label == nil {
-		return errors.New("item can not be empty")
+		return apperrors.NewInternalError("item can not be empty")
 	}
 
 	labelEntity, err := r.conv.ToEntity(*label)
@@ -68,7 +70,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 	err = persist.Get(&entity, stmt, key, objectID, tenant)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, apperrors.NewNotFoundError(key)
+			return nil, apperrors.NewNotFoundError(resource.Label, key)
 		}
 		return nil, errors.Wrap(err, "while getting Entity from DB")
 	}
@@ -195,7 +197,7 @@ func (r *repository) GetRuntimesIDsByStringLabel(ctx context.Context, tenantID, 
 
 func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error) {
 	if len(runtimesIDs) == 0 {
-		return nil, errors.New("Cannot execute query without runtimesIDs")
+		return nil, apperrors.NewInvalidDataError("cannot execute query without runtimeIDs")
 	}
 
 	conditions := repo.Conditions{

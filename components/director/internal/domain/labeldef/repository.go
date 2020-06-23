@@ -2,21 +2,17 @@ package labeldef
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
-	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
 )
 
 const (
-	tableName = "public.label_definitions"
+	tableName    = "public.label_definitions"
+	tenantColumn = "tenant_id"
 )
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
@@ -25,92 +21,74 @@ type EntityConverter interface {
 	FromEntity(in Entity) (model.LabelDefinition, error)
 }
 
-var labeldefColumns = []string{"id", "tenant_id", "key", "schema"}
+var (
+	idColumns        = []string{"id"}
+	labeldefColumns  = []string{"id", tenantColumn, "key", "schema"}
+	updatableColumns = []string{"schema"}
+)
 
-type repo struct {
-	conv EntityConverter
+type repository struct {
+	conv         EntityConverter
+	creator      repo.Creator
+	getter       repo.SingleGetter
+	lister       repo.Lister
+	existQuerier repo.ExistQuerier
+	deleter      repo.Deleter
+	updater      repo.Updater
 }
 
-func NewRepository(conv EntityConverter) *repo {
-	return &repo{conv: conv}
+func NewRepository(conv EntityConverter) *repository {
+
+	return &repository{conv: conv,
+		creator:      repo.NewCreator(resource.LabelDefinition, tableName, labeldefColumns),
+		getter:       repo.NewSingleGetter(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
+		existQuerier: repo.NewExistQuerier(resource.LabelDefinition, tableName, tenantColumn),
+		lister:       repo.NewLister(resource.LabelDefinition, tableName, tenantColumn, labeldefColumns),
+		deleter:      repo.NewDeleter(resource.LabelDefinition, tableName, tenantColumn),
+		updater:      repo.NewUpdater(resource.LabelDefinition, tableName, updatableColumns, tenantColumn, idColumns)}
 }
 
-func (r *repo) Create(ctx context.Context, def model.LabelDefinition) error {
-	db, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return err
-	}
-
+func (r *repository) Create(ctx context.Context, def model.LabelDefinition) error {
 	entity, err := r.conv.ToEntity(def)
 	if err != nil {
 		return errors.Wrap(err, "while converting Label Definition to insert")
 	}
 
-	values := str.PrefixStrings(labeldefColumns, ":")
-
-	_, err = db.NamedExec(fmt.Sprintf("insert into %s (%s) values(%s)", tableName, strings.Join(labeldefColumns, ","), strings.Join(values, ",")), entity)
+	err = r.creator.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while inserting Label Definition")
 	}
 	return nil
 }
 
-func (r *repo) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
-	db, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (r *repository) GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
+	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
 	dest := Entity{}
 
-	q := fmt.Sprintf("select * from %s where tenant_id=$1 and key=$2 ", tableName)
-
-	err = db.Get(&dest, q, tenant, key)
-	switch {
-	case err == sql.ErrNoRows:
-		return nil, apperrors.NewNotFoundError(key)
-	case err != nil:
-		return nil, errors.Wrap(err, "while querying Label Definition")
+	err := r.getter.Get(ctx, tenant, conds, repo.NoOrderBy, &dest)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Label Definition by key=%s", key)
 	}
 
-	ld, err := r.conv.FromEntity(dest)
+	out, err := r.conv.FromEntity(dest)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Label Definition")
 	}
-	return &ld, nil
+	return &out, nil
 }
 
-func (r *repo) Exists(ctx context.Context, tenant string, key string) (bool, error) {
-	db, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	q := fmt.Sprintf("select 1 as exists from %s where tenant_id=$1 and key=$2 ", tableName)
-
-	var count int
-	err = db.Get(&count, q, tenant, key)
-	switch {
-	case err == sql.ErrNoRows:
-		return false, nil
-	case err != nil:
-		return false, errors.Wrap(err, "while querying Label Definition")
-	}
-	return true, nil
+func (r *repository) Exists(ctx context.Context, tenant string, key string) (bool, error) {
+	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
+	return r.existQuerier.Exists(ctx, tenant, conds)
 }
 
-func (r *repo) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
-	db, err := persistence.FromCtx(ctx)
+func (r *repository) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
+	var dest EntityCollection
+
+	err := r.lister.List(ctx, tenant, &dest)
 	if err != nil {
-		return nil, err
-	}
-	var dest []Entity
-
-	q := fmt.Sprintf("select * from %s where tenant_id=$1", tableName)
-
-	if err = db.Select(&dest, q, tenant); err != nil {
 		return nil, errors.Wrap(err, "while listing Label Definitions")
 	}
-
 	var out []model.LabelDefinition
 	for _, entity := range dest {
 		ld, err := r.conv.FromEntity(entity)
@@ -122,54 +100,15 @@ func (r *repo) List(ctx context.Context, tenant string) ([]model.LabelDefinition
 	return out, nil
 }
 
-func (r *repo) Update(ctx context.Context, def model.LabelDefinition) error {
-	db, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return errors.Wrap(err, "while fetching persistence from context")
-	}
-
+func (r *repository) Update(ctx context.Context, def model.LabelDefinition) error {
 	entity, err := r.conv.ToEntity(def)
 	if err != nil {
 		return errors.Wrap(err, "while creating Label Definition entity from model")
 	}
-
-	stmt := fmt.Sprintf(`UPDATE %s SET "schema" = :schema WHERE "id" = :id`, tableName)
-	result, err := db.NamedExec(stmt, entity)
-	if err != nil {
-		return errors.Wrap(err, "while updating Label Definition")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return errors.Wrapf(err, "while receiving affected rows in db")
-	}
-
-	if rowsAffected == 0 {
-		return errors.New("no row was affected by query")
-	}
-
-	return nil
+	return r.updater.UpdateSingle(ctx, entity)
 }
 
-func (r *repo) DeleteByKey(ctx context.Context, tenant, key string) error {
-	db, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return err
-	}
-
-	stmt := fmt.Sprintf(`DELETE FROM %s WHERE tenant_id=$1 AND key=$2`, tableName)
-	result, err := db.Exec(stmt, tenant, key)
-	if err != nil {
-		return errors.Wrap(err, "while deleting the Label Definition entity from database")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return errors.Wrapf(err, "while receiving affected rows in db")
-	}
-	if rowsAffected < 1 {
-		return errors.New("no rows were affected by query")
-	}
-
-	return nil
+func (r *repository) DeleteByKey(ctx context.Context, tenant, key string) error {
+	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
+	return r.deleter.DeleteOne(ctx, tenant, conds)
 }

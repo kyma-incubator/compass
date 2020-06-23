@@ -3,6 +3,10 @@ package webhook
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -15,7 +19,7 @@ const (
 
 var (
 	webhookColumns         = []string{"id", "tenant_id", "app_id", "type", "url", "auth"}
-	missingInputModelError = errors.New("model has to be provided")
+	missingInputModelError = apperrors.NewInternalError("model has to be provided")
 	tenantColumn           = "tenant_id"
 )
 
@@ -36,11 +40,11 @@ type repository struct {
 
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		singleGetter: repo.NewSingleGetter(tableName, tenantColumn, webhookColumns),
-		creator:      repo.NewCreator(tableName, webhookColumns),
-		updater:      repo.NewUpdater(tableName, []string{"type", "url", "auth"}, tenantColumn, []string{"id", "app_id"}),
-		deleter:      repo.NewDeleter(tableName, tenantColumn),
-		lister:       repo.NewLister(tableName, tenantColumn, webhookColumns),
+		singleGetter: repo.NewSingleGetter(resource.Webhook, tableName, tenantColumn, webhookColumns),
+		creator:      repo.NewCreator(resource.Webhook, tableName, webhookColumns),
+		updater:      repo.NewUpdater(resource.Webhook, tableName, []string{"type", "url", "auth"}, tenantColumn, []string{"id", "app_id"}),
+		deleter:      repo.NewDeleter(resource.Webhook, tableName, tenantColumn),
+		lister:       repo.NewLister(resource.Webhook, tableName, tenantColumn, webhookColumns),
 		conv:         conv,
 	}
 }

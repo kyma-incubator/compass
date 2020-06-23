@@ -3,6 +3,8 @@ package packageinstanceauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
@@ -123,7 +125,7 @@ func (s *service) SetAuth(ctx context.Context, id string, in model.PackageInstan
 	}
 
 	if instanceAuth.Status == nil || instanceAuth.Status.Condition != model.PackageInstanceAuthStatusConditionPending {
-		return errors.New("auth can be set only on Package Instance Auths in PENDING state")
+		return apperrors.NewInvalidOperationError("auth can be set only on Package Instance Auths in PENDING state")
 	}
 
 	err = s.setUpdateAuthAndStatus(instanceAuth, in)
@@ -140,7 +142,7 @@ func (s *service) SetAuth(ctx context.Context, id string, in model.PackageInstan
 
 func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.PackageInstanceAuth, defaultPackageInstanceAuth *model.Auth) (bool, error) {
 	if instanceAuth == nil {
-		return false, errors.New("instance auth is required to request its deletion")
+		return false, apperrors.NewInternalError("instance auth is required to request its deletion")
 	}
 
 	if defaultPackageInstanceAuth == nil {
@@ -217,7 +219,7 @@ func (s *service) validateInputParamsAgainstSchema(inputParams *string, schema *
 		return nil
 	}
 	if inputParams == nil {
-		return errors.New("json schema for input parameters was defined for the package but no input parameters were provided")
+		return apperrors.NewInvalidDataError("json schema for input parameters was defined for the package but no input parameters were provided")
 	}
 
 	validator, err := jsonschema.NewValidatorFromStringSchema(*schema)

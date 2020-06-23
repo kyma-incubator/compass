@@ -22,7 +22,7 @@ import (
 func TestUpsert(t *testing.T) {
 	expectedQuery := regexp.QuoteMeta(`INSERT INTO users ( id_col, tenant_id, first_name, last_name, age ) 
 		VALUES ( ?, ?, ?, ?, ? ) ON CONFLICT ( tenant_id, first_name, last_name ) DO UPDATE SET age=EXCLUDED.age`)
-	sut := repo.NewUpserter("users", []string{"id_col", "tenant_id", "first_name", "last_name", "age"}, []string{"tenant_id", "first_name", "last_name"}, []string{"age"})
+	sut := repo.NewUpserter(UserType, "users", []string{"id_col", "tenant_id", "first_name", "last_name", "age"}, []string{"tenant_id", "first_name", "last_name"}, []string{"age"})
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
@@ -56,7 +56,7 @@ func TestUpsert(t *testing.T) {
 		// WHEN
 		err := sut.Upsert(ctx, givenUser)
 		// THEN
-		require.EqualError(t, err, "while upserting row to 'users' table: some error")
+		require.EqualError(t, err, "Internal Server Error: while upserting row to 'users' table: some error")
 	})
 
 	t.Run("returns non unique error", func(t *testing.T) {
@@ -71,26 +71,26 @@ func TestUpsert(t *testing.T) {
 		// WHEN
 		err := sut.Upsert(ctx, givenUser)
 		// THEN
-		require.True(t, apperrors.IsNotUnique(err))
+		require.True(t, apperrors.IsNotUniqueError(err))
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		// WHEN
 		err := sut.Upsert(context.TODO(), User{})
 		// THEN
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
 		// WHEN
 		err := sut.Upsert(context.TODO(), nil)
 		// THEN
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 }
 
 func TestUpsertWhenWrongConfiguration(t *testing.T) {
-	sut := repo.NewUpserter("users", []string{"id_col", "tenant_id", "column_does_not_exist"}, []string{"id_col", "tenant_id"}, []string{"column_does_not_exist"})
+	sut := repo.NewUpserter("users", "UserType", []string{"id_col", "tenant_id", "column_does_not_exist"}, []string{"id_col", "tenant_id"}, []string{"column_does_not_exist"})
 	// GIVEN
 	db, mock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), db)

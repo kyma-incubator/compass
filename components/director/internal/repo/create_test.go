@@ -18,7 +18,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	sut := repo.NewCreator("users", []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
+	sut := repo.NewCreator(UserType, "users", []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
@@ -52,7 +52,7 @@ func TestCreate(t *testing.T) {
 		// WHEN
 		err := sut.Create(ctx, givenUser)
 		// THEN
-		require.EqualError(t, err, "while inserting row to 'users' table: some error")
+		require.EqualError(t, err, "Internal Server Error: while inserting row to 'users' table: some error")
 	})
 
 	t.Run("returns non unique error", func(t *testing.T) {
@@ -67,26 +67,26 @@ func TestCreate(t *testing.T) {
 		// WHEN
 		err := sut.Create(ctx, givenUser)
 		// THEN
-		require.True(t, apperrors.IsNotUnique(err))
+		require.True(t, apperrors.IsNotUniqueError(err))
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		// WHEN
 		err := sut.Create(context.TODO(), User{})
 		// THEN
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
 		// WHEN
 		err := sut.Create(context.TODO(), nil)
 		// THEN
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, "Internal Server Error: item cannot be nil")
 	})
 }
 
 func TestCreateWhenWrongConfiguration(t *testing.T) {
-	sut := repo.NewCreator("users", []string{"id_col", "tenant_id", "column_does_not_exist"})
+	sut := repo.NewCreator(UserType, "users", []string{"id_col", "tenant_id", "column_does_not_exist"})
 	// GIVEN
 	db, mock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), db)

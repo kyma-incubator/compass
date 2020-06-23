@@ -29,7 +29,7 @@ func exactlyOneNotNil(ptrs []interface{}) (bool, error) {
 			continue
 		}
 		if reflect.ValueOf(v).Kind() != reflect.Ptr {
-			return false, errors.Errorf("internal server error: field is not a pointer")
+			return false, errors.New("field is not a pointer")
 		}
 		if !reflect.ValueOf(v).IsNil() {
 			notNilFound++

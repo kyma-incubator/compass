@@ -8,3 +8,9 @@ type Entity struct {
 	Key        string         `db:"key"`
 	SchemaJSON sql.NullString `db:"schema"`
 }
+
+type EntityCollection []Entity
+
+func (a EntityCollection) Len() int {
+	return len(a)
+}

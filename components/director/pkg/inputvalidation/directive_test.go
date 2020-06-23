@@ -5,6 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,7 +16,10 @@ type testStruct struct {
 }
 
 func (ts testStruct) Validate() error {
-	return ts.returnErr
+	if ts.returnErr != nil {
+		return validation.Errors{"field": ts.returnErr}
+	}
+	return nil
 }
 
 func TestDirective_Validate(t *testing.T) {
@@ -37,7 +43,8 @@ func TestDirective_Validate(t *testing.T) {
 		result, err := validatorDirective.Validate(ctx, ts, next(ts, nil))
 		//THEN
 		require.Error(t, err)
-		require.EqualError(t, err, "validation error for type testStruct: testError")
+		assert.Contains(t, err.Error(), "field=testError")
+		assert.Contains(t, err.Error(), "Invalid data testStruct")
 		require.Equal(t, ts, result)
 	})
 
@@ -45,6 +52,7 @@ func TestDirective_Validate(t *testing.T) {
 		_, err := validatorDirective.Validate(ctx, nil, next("test", nil))
 		//THEN
 		require.Error(t, err)
+		assert.Contains(t, err.Error(), "object is not validatable")
 	})
 
 	t.Run("next resolver return err", func(t *testing.T) {

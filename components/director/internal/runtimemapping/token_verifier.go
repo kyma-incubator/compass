@@ -7,6 +7,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
@@ -44,7 +46,7 @@ func NewTokenVerifier(logger *logrus.Logger, keys KeyGetter) *tokenVerifier {
 
 func (tv *tokenVerifier) Verify(token string) (*jwt.MapClaims, error) {
 	if token == "" {
-		return nil, errors.New("token cannot be empty")
+		return nil, apperrors.NewUnauthorizedError("token cannot be empty")
 	}
 
 	claims, err := tv.verifyToken(token)
@@ -79,7 +81,7 @@ func NewJWKsFetch(logger *logrus.Logger) *jwksFetch {
 
 func (f *jwksFetch) GetKey(token *jwt.Token) (interface{}, error) {
 	if token == nil {
-		return nil, errors.New("token cannot be nil")
+		return nil, apperrors.NewInternalError("token cannot be nil")
 	}
 
 	jwksURI, err := f.getJWKsURI(*token)
@@ -104,7 +106,7 @@ func (f *jwksFetch) GetKey(token *jwt.Token) (interface{}, error) {
 		}
 	}
 
-	return nil, errors.New("unable to find a proper key")
+	return nil, apperrors.NewInternalError("unable to find a proper key")
 }
 
 func (f *jwksFetch) getJWKsURI(token jwt.Token) (string, error) {
@@ -130,7 +132,7 @@ func (f *jwksFetch) getJWKsURI(token jwt.Token) (string, error) {
 
 	jwksURI, ok := config[jwksURIKey].(string)
 	if !ok {
-		return "", errors.New("unable to cast the JWKs URI to a string")
+		return "", apperrors.NewInternalError("unable to cast the JWKs URI to a string")
 	}
 
 	return jwksURI, nil
@@ -139,7 +141,7 @@ func (f *jwksFetch) getJWKsURI(token jwt.Token) (string, error) {
 func (f *jwksFetch) getDiscoveryURL(token jwt.Token) (string, error) {
 	claims, ok := token.Claims.(*jwt.MapClaims)
 	if !ok {
-		return "", errors.New("unable to cast claims to the MapClaims")
+		return "", apperrors.NewInternalError("unable to cast claims to the MapClaims")
 	}
 
 	issuer, err := getTokenIssuer(*claims)
@@ -160,12 +162,12 @@ func (f *jwksFetch) getDiscoveryURL(token jwt.Token) (string, error) {
 func getKeyID(token jwt.Token) (string, error) {
 	keyID, ok := token.Header[jwksKeyIDKey]
 	if !ok {
-		return "", errors.New("unable to find the key ID in the token")
+		return "", apperrors.NewInternalError("unable to find the key ID in the token")
 	}
 
 	keyIDStr, ok := keyID.(string)
 	if !ok {
-		return "", errors.New("unable to cast the key ID to a string")
+		return "", apperrors.NewInternalError("unable to cast the key ID to a string")
 	}
 
 	return keyIDStr, nil
@@ -174,12 +176,12 @@ func getKeyID(token jwt.Token) (string, error) {
 func getTokenIssuer(claims jwt.MapClaims) (string, error) {
 	issuer, ok := claims[claimsIssuerKey]
 	if !ok {
-		return "", errors.New("no issuer claim found")
+		return "", apperrors.NewInternalError("no issuer claim found")
 	}
 
 	issuerStr, ok := issuer.(string)
 	if !ok {
-		return "", errors.New("unable to cast the issuer to a string")
+		return "", apperrors.NewInternalError("unable to cast the issuer to a string")
 	}
 
 	return issuerStr, nil

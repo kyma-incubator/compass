@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -52,7 +54,7 @@ func TestRepository_Create(t *testing.T) {
 		err := repo.Create(context.Background(), nil)
 
 		// then
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 
 	t.Run("DB Error", func(t *testing.T) {
@@ -76,7 +78,7 @@ func TestRepository_Create(t *testing.T) {
 		err := repo.Create(ctx, piaModel)
 
 		// then
-		require.EqualError(t, err, "while saving entity to db: while inserting row to 'public.package_instance_auths' table: test")
+		require.EqualError(t, err, "while saving entity to db: Internal Server Error: while inserting row to 'public.package_instance_auths' table: test")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -171,7 +173,7 @@ func TestRepository_GetByID(t *testing.T) {
 		_, err := repo.GetByID(ctx, testTenant, testID)
 
 		// then
-		require.EqualError(t, err, "while getting object from DB: test")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.package_instance_auths: test")
 	})
 }
 
@@ -222,7 +224,7 @@ func TestRepository_GetForPackage(t *testing.T) {
 		_, err := repo.GetForPackage(ctx, testTenant, testID, testPackageID)
 
 		// then
-		require.EqualError(t, err, "while getting object from DB: test")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.package_instance_auths: test")
 	})
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {
@@ -344,7 +346,7 @@ func TestRepository_ListByPackageID(t *testing.T) {
 		result, err := pgRepository.ListByPackageID(ctx, testTenant, testPackageID)
 
 		//THEN
-		require.EqualError(t, err, "while fetching list of objects from DB: test")
+		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from DB: test")
 		require.Nil(t, result)
 		dbMock.AssertExpectations(t)
 	})
@@ -388,7 +390,7 @@ func TestRepository_Update(t *testing.T) {
 		err := repo.Update(context.Background(), nil)
 
 		// then
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 
 	t.Run("DB Error", func(t *testing.T) {
@@ -413,7 +415,7 @@ func TestRepository_Update(t *testing.T) {
 		err := repo.Update(ctx, piaModel)
 
 		// then
-		require.EqualError(t, err, "while updating single entity: test")
+		require.EqualError(t, err, "Internal Server Error: while updating single entity: test")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -467,6 +469,6 @@ func TestRepository_Delete(t *testing.T) {
 		err := repo.Delete(ctx, testTenant, testID)
 
 		// then
-		require.EqualError(t, err, "while deleting from database: test")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from database: test")
 	})
 }

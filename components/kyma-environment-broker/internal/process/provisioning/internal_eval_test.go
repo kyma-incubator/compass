@@ -148,10 +148,20 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 		ApiEndpoint:            mockAvsServer.URL,
 		DefinitionType:         avs.DefinitionType,
 		InternalTesterAccessId: 1234,
+		InternalTesterService:  "",
+		InternalTesterTags:     []*avs.Tag{},
 		ExternalTesterAccessId: 5678,
-		GroupId:                5555,
-		ParentId:               9101112,
-		ApiKey:                 dummyStrAvsTest,
+		ExternalTesterService:  dummyStrAvsTest,
+		ExternalTesterTags: []*avs.Tag{
+			&avs.Tag{
+				Content:      dummyStrAvsTest,
+				TagClassId:   123,
+				TagClassName: dummyStrAvsTest,
+			},
+		},
+		GroupId:  5555,
+		ParentId: 9101112,
+		ApiKey:   dummyStrAvsTest,
 	}
 }
 
@@ -182,7 +192,7 @@ func createResponseObj(err error, requestObj avs.BasicEvaluationCreateRequest, t
 		Owner:                      "abc@xyz.corp",
 		Status:                     "ACTIVE",
 		Alerts:                     nil,
-		Tags:                       nil,
+		Tags:                       requestObj.Tags,
 		Id:                         id,
 		LegacyCheckId:              id,
 		InternalInterval:           60,

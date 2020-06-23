@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/viewer"
@@ -49,7 +51,7 @@ func TestResolver_Viewer(t *testing.T) {
 		_, err := resolver.Viewer(ctx)
 		//THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "viewer does not exist")
+		assert.EqualError(t, err, apperrors.NewInternalError("viewer does not exist").Error())
 	})
 
 	t.Run("No consumer in ctx", func(t *testing.T) {
@@ -62,6 +64,6 @@ func TestResolver_Viewer(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "while getting viewer from context: cannot read consumer from context")
+		assert.EqualError(t, err, "while getting viewer from context: Internal Server Error: cannot read consumer from context")
 	})
 }

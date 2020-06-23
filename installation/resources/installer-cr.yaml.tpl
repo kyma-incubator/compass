@@ -14,3 +14,5 @@ spec:
   components:
     - name: "compass"
       namespace: "compass-system"
+    - name: "oidc-kubeconfig-service"
+      namespace: "kyma-system"

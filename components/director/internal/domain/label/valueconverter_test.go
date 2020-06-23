@@ -3,6 +3,8 @@ package label
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
@@ -25,11 +27,11 @@ func Test_ValueToStringsSlice(t *testing.T) {
 		}, {
 			Name:  "Error when unable to convert to slice of interfaces",
 			Input: "some text",
-			Error: errors.New("cannot convert label value to slice of strings"),
+			Error: errors.New("Internal Server Error: cannot convert label value to slice of strings"),
 		}, {
 			Name:  "Error when unable to convert element to string",
 			Input: []interface{}{byte(1)},
-			Error: errors.New("cannot cast label value as a string"),
+			Error: errors.New("Internal Server Error: cannot cast label value as a string"),
 		},
 	}
 
@@ -41,7 +43,7 @@ func Test_ValueToStringsSlice(t *testing.T) {
 				require.NotNil(t, sliceOfStrings)
 				require.Equal(t, testCase.Expected, sliceOfStrings)
 			} else {
-				require.EqualError(t, testCase.Error, err.Error())
+				assert.EqualError(t, err, testCase.Error.Error())
 			}
 		})
 	}

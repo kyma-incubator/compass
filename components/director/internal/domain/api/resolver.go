@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -89,7 +91,7 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 	}
 
 	if !found {
-		return nil, errors.New("Cannot add API to not existing package")
+		return nil, apperrors.NewInvalidDataError("cannot add API to not existing package")
 	}
 
 	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
@@ -192,7 +194,7 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
-		return nil, errors.New("API Spec cannot be empty")
+		return nil, apperrors.NewInternalError("API Spec cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -204,7 +206,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if obj.DefinitionID == "" {
-		return nil, errors.New("Internal Server Error: Cannot fetch FetchRequest. APIDefinition ID is empty")
+		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition ID is empty")
 	}
 
 	fr, err := r.svc.GetFetchRequest(ctx, obj.DefinitionID)

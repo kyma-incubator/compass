@@ -1,11 +1,15 @@
 package authenticator_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/vektah/gqlparser/gqlerror"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -173,7 +177,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 		middleware(handler).ServeHTTP(rr, req)
 
 		//then
-		assert.Equal(t, "{\"errors\":[{\"message\":\"while synchronizing JWKs during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme \"}]}\n", rr.Body.String())
+		var response graphql.Response
+		err = json.Unmarshal(rr.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		expected := fixGraphqlResponse("Internal Server Error: while synchronizing JWKs during parsing token: while fetching JWKS from endpoint invalid.url.scheme: invalid url scheme ", apperrors.InternalError)
+		assertGraphqlResponse(t, expected, response)
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	})
 
@@ -190,10 +199,16 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		//when
 		middleware(handler).ServeHTTP(rr, req)
+
 		//then
-		assert.Equal(t, "{\"errors\":[{\"message\":\"while parsing token: unexpected signing method: none\"}]}\n", rr.Body.String())
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 
+		var response graphql.Response
+		err = json.Unmarshal(rr.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		expected := fixGraphqlResponse("Unauthorized [reason=unexpected signing method: none]", apperrors.Unauthorized)
+		assertGraphqlResponse(t, expected, response)
 	})
 
 	t.Run("Error - can't parse token", func(t *testing.T) {
@@ -209,8 +224,14 @@ func TestAuthenticator_Handler(t *testing.T) {
 		middleware(handler).ServeHTTP(rr, req)
 
 		//then
-		assert.Equal(t, "{\"errors\":[{\"message\":\"while parsing token: token contains an invalid number of segments\"}]}\n", rr.Body.String())
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+
+		var response graphql.Response
+		err = json.Unmarshal(rr.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		expected := fixGraphqlResponse("Unauthorized [reason=token contains an invalid number of segments]", apperrors.Unauthorized)
+		assertGraphqlResponse(t, expected, response)
 	})
 
 	t.Run("Error - Token signed with different key", func(t *testing.T) {
@@ -232,7 +253,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 		//then
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
-		assert.Equal(t, "{\"errors\":[{\"message\":\"while parsing token: crypto/rsa: verification error\"}]}\n", rr.Body.String())
+		var response graphql.Response
+		err = json.Unmarshal(rr.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		expected := fixGraphqlResponse("Unauthorized [reason=crypto/rsa: verification error]", apperrors.Unauthorized)
+		assertGraphqlResponse(t, expected, response)
 	})
 }
 
@@ -276,7 +302,7 @@ func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Han
 func testHandler(t *testing.T, expectedTenant string, scopes string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantFromContext, err := tenant.LoadFromContext(r.Context())
-		if !apperrors.IsEmptyTenant(err) {
+		if !apperrors.IsTenantRequired(err) {
 			require.NoError(t, err)
 		}
 		scopesFromContext, err := scope.LoadFromContext(r.Context())
@@ -296,4 +322,28 @@ func fixEmptyRequest(t *testing.T) *http.Request {
 	require.NoError(t, err)
 
 	return req
+}
+
+func fixGraphqlResponse(msg string, errorType apperrors.ErrorType) graphql.Response {
+	return graphql.Response{
+		Data: []byte("null"),
+		Errors: []*gqlerror.Error{{
+			Message:    msg,
+			Extensions: map[string]interface{}{"error_code": errorType, "error": errorType.String()}}}}
+}
+
+func assertGraphqlResponse(t *testing.T, expected, actual graphql.Response) {
+	require.Len(t, expected.Errors, 1)
+	require.Len(t, actual.Errors, 1)
+	assert.Equal(t, expected.Errors[0].Extensions["error"], actual.Errors[0].Extensions["error"])
+
+	errType, ok := expected.Errors[0].Extensions["error_code"].(apperrors.ErrorType)
+	require.True(t, ok)
+	actualErrCode := int(errType)
+
+	errCode, ok := actual.Errors[0].Extensions["error_code"].(float64)
+	require.True(t, ok)
+	expectedErrCode := int(errCode)
+	assert.Equal(t, expectedErrCode, actualErrCode)
+	assert.Equal(t, expected.Errors[0].Message, actual.Errors[0].Message)
 }

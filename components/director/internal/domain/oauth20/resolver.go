@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -92,7 +94,7 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 		return nil, err
 	}
 	if clientCreds == nil {
-		return nil, errors.New("client credentials cannot be empty")
+		return nil, apperrors.NewInvalidDataError("client credentials cannot be empty")
 	}
 	cleanupOnError := func(originalErr error) error {
 		cleanupErr := r.svc.DeleteClientCredentials(ctx, clientCreds.ClientID)

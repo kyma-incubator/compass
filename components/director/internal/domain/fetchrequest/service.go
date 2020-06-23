@@ -2,10 +2,11 @@ package fetchrequest
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -54,6 +55,7 @@ func (s *service) fetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchReq
 
 	err := s.validateFetchRequest(fr)
 	if err != nil {
+		s.logger.Error(err)
 		return nil, s.fixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()))
 	}
 
@@ -89,21 +91,15 @@ func (s *service) fetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchReq
 
 func (s *service) validateFetchRequest(fr *model.FetchRequest) error {
 	if fr.Mode != model.FetchModeSingle {
-		err := errors.New(fmt.Sprintf("Unsupported fetch mode: %s", fr.Mode))
-		s.logger.Error(err)
-		return err
+		return apperrors.NewInvalidDataError("Unsupported fetch mode: %s", fr.Mode)
 	}
 
 	if fr.Auth != nil {
-		err := errors.New("Auth for Fetch Request was provided, currently it's unsupported")
-		s.logger.Error(err)
-		return err
+		return apperrors.NewInvalidDataError("Auth for Fetch Request was provided, currently it's unsupported")
 	}
 
 	if fr.Filter != nil {
-		err := errors.New("Filter for Fetch Request was provided, currently it's unsupported")
-		s.logger.Error(err)
-		return err
+		return apperrors.NewInvalidDataError("Filter for Fetch Request was provided, currently it's unsupported")
 	}
 	return nil
 }

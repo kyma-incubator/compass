@@ -132,7 +132,7 @@ func TestUpdate_Handler(t *testing.T) {
 			},
 			Request:         &http.Request{},
 			ExpectedStatus:  http.StatusOK,
-			ExpectedLog:     *bytes.NewBufferString("while fetching consumer info from from context: cannot read consumer from context"),
+			ExpectedLog:     *bytes.NewBufferString("while fetching consumer info from from context: Internal Server Error: cannot read consumer from context"),
 			MockNextHandler: fixNextHandler(t, testID, consumer.IntegrationSystem),
 		},
 		{

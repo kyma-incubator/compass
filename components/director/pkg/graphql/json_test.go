@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +36,7 @@ func TestJSON_UnmarshalGQL(t *testing.T) {
 		"error: input is nil": {
 			input:         nil,
 			expected:      "",
-			expectedError: errors.New("input should not be nil"),
+			expectedError: apperrors.NewInvalidDataError("input should not be nil"),
 		},
 		"error: invalid input": {
 			input:         123,

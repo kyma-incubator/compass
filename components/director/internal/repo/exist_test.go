@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -14,7 +16,7 @@ import (
 func TestExist(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewExistQuerier("users", "tenant_id")
+	sut := repo.NewExistQuerier(UserType, "users", "tenant_id")
 
 	t.Run("success when exist", func(t *testing.T) {
 		// GIVEN
@@ -78,20 +80,20 @@ func TestExist(t *testing.T) {
 		// WHEN
 		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from DB: some error")
 
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 }
 
 func TestExistGlobal(t *testing.T) {
 	givenID := uuidA()
-	sut := repo.NewExistQuerierGlobal("users")
+	sut := repo.NewExistQuerierGlobal(UserType, "users")
 
 	t.Run("success when exist", func(t *testing.T) {
 		// GIVEN
@@ -158,14 +160,14 @@ func TestExistGlobal(t *testing.T) {
 		// WHEN
 		_, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from DB: some error")
 
 	})
 
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		_, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 }
 

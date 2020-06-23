@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -754,7 +756,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("GetByReferenceObjectID", ctx, tenantID, model.EventAPIFetchRequestReference, refID).Return(nil, apperrors.NewNotFoundError("")).Once()
+				repo.On("GetByReferenceObjectID", ctx, tenantID, model.EventAPIFetchRequestReference, refID).Return(nil, apperrors.NewNotFoundError(resource.EventDefinition, "")).Once()
 				return repo
 			},
 			ExpectedFetchRequest: nil,

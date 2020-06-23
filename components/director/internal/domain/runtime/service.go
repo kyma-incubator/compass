@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -88,7 +90,7 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	}
 
 	if pageSize < 1 || pageSize > 100 {
-		return nil, errors.New("page size must be between 1 and 100")
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
 	return s.repo.List(ctx, rtmTenant, filter, pageSize, cursor)
@@ -452,7 +454,7 @@ func getScenariosLabel(currentRuntimeLabels map[string]interface{}) ([]interface
 	if ok {
 		oldScenariosLabelInterfaceSlice, ok = oldScenariosLabel.([]interface{})
 		if !ok {
-			return nil, errors.New("value for scenarios label must be []interface{}")
+			return nil, apperrors.NewInternalError("value for scenarios label must be []interface{}")
 		}
 	}
 	return oldScenariosLabelInterfaceSlice, nil

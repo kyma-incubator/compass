@@ -1,319 +1,268 @@
 package apperrors
 
 import (
+	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
-type NotFound interface {
-	IsNotFound() bool
+type Error struct {
+	errorCode ErrorType
+	Message   string
+	arguments map[string]string
+	parentErr error
 }
 
-type notFoundError struct {
-	identifier string
+func (err Error) Error() string {
+	builder := strings.Builder{}
+	builder.WriteString(err.Message)
+
+	var i = 0
+	if len(err.arguments) != 0 {
+		builder.WriteString(" [")
+		keys := sortMapKey(err.arguments)
+		for _, key := range keys {
+			builder.WriteString(fmt.Sprintf("%s=%s", key, err.arguments[key]))
+			i++
+			if len(err.arguments) != i {
+				builder.WriteString("; ")
+			}
+		}
+		builder.WriteString("]")
+	}
+	if err.errorCode == InternalError && err.parentErr != nil {
+		builder.WriteString(": ")
+		builder.WriteString(err.parentErr.Error())
+	}
+
+	return builder.String()
 }
 
-func NewNotFoundError(identifier string) *notFoundError {
-	return &notFoundError{
-		identifier: identifier,
+func (e Error) Is(err error) bool {
+	if customErr, ok := err.(Error); ok {
+		return e.errorCode == customErr.errorCode
+	} else {
+		return false
 	}
 }
 
-func (e *notFoundError) Error() string {
-	if e.identifier == "" {
-		return "Object was not found"
+func ErrorCode(err error) ErrorType {
+	var customErr Error
+	found := errors.As(err, &customErr)
+	if found {
+		return customErr.errorCode
 	}
-	return fmt.Sprintf("Object %s not found", e.identifier)
+	return UnknownError
+
 }
 
-func (e *notFoundError) IsNotFound() bool {
-	return true
+func NewNotUniqueError(resourceType resource.Type) error {
+	return Error{
+		errorCode: NotUnique,
+		Message:   notUniqueMsg,
+		arguments: map[string]string{"object": string(resourceType)},
+	}
+}
+
+func NewNotFoundError(resourceType resource.Type, objectID string) error {
+	return Error{
+		errorCode: NotFound,
+		Message:   notFoundMsg,
+		arguments: map[string]string{"object": string(resourceType), "ID": objectID},
+		parentErr: nil,
+	}
+}
+
+func NewNotFoundErrorWithType(resourceType resource.Type) error {
+	return Error{
+		errorCode: NotFound,
+		Message:   notFoundMsg,
+		arguments: map[string]string{"object": string(resourceType)},
+		parentErr: nil,
+	}
+}
+
+func NewInvalidDataError(msg string, args ...interface{}) error {
+	return Error{
+		errorCode: InvalidData,
+		Message:   invalidDataMsg,
+		arguments: map[string]string{"reason": fmt.Sprintf(msg, args...)},
+	}
+}
+
+func NewInvalidDataErrorWithFields(fields map[string]error, objType string) error {
+	if len(fields) == 0 {
+		return nil
+	}
+
+	err := Error{
+		errorCode: InvalidData,
+		Message:   fmt.Sprintf("%s %s", invalidDataMsg, objType),
+		arguments: map[string]string{},
+	}
+
+	for k, v := range fields {
+		err.arguments[k] = v.Error()
+	}
+	return err
+}
+
+func NewInternalError(msg string, args ...interface{}) error {
+	errMsg := fmt.Sprintf(msg, args...)
+	return Error{
+		errorCode: InternalError,
+		Message:   fmt.Sprintf(internalServerErrMsgF, errMsg),
+		arguments: map[string]string{},
+	}
+}
+
+func InternalErrorFrom(err error, msg string, args ...interface{}) error {
+	errMsg := fmt.Sprintf(msg, args...)
+	return Error{
+		errorCode: InternalError,
+		Message:   fmt.Sprintf(internalServerErrMsgF, errMsg),
+		arguments: map[string]string{},
+		parentErr: err,
+	}
+}
+
+func NewTenantNotFoundError(externalTenant string) error {
+	return Error{
+		errorCode: TenantNotFound,
+		Message:   tenantNotFoundMsg,
+		arguments: map[string]string{"externalTenant": externalTenant},
+	}
+}
+
+func NewTenantRequiredError() error {
+	return Error{
+		errorCode: TenantRequired,
+		Message:   tenantRequiredMsg,
+		arguments: map[string]string{},
+	}
+}
+
+func NewInvalidOperationError(reason string) error {
+	return Error{
+		errorCode: InvalidOperation,
+		Message:   invalidOperationMsg,
+		arguments: map[string]string{"reason": reason},
+	}
+}
+
+const valueNotFoundInConfigMsg = "value under specified path not found in configuration"
+
+func NewValueNotFoundInConfigurationError() error {
+	return Error{
+		errorCode: NotFound,
+		Message:   valueNotFoundInConfigMsg,
+		arguments: map[string]string{},
+	}
+}
+
+func NewNoScopesInContextError() error {
+	return Error{
+		errorCode: NotFound,
+		Message:   noScopesInContextMsg,
+		arguments: map[string]string{},
+	}
+}
+
+func NewRequiredScopesNotDefinedError() error {
+	return Error{
+		errorCode: InsufficientScopes,
+		Message:   noRequiredScopesInContextMsg,
+		arguments: map[string]string{},
+	}
+}
+
+func NewKeyDoesNotExistError(key string) error {
+	return Error{
+		errorCode: NotFound,
+		Message:   keyDoesNotExistMsg,
+		arguments: map[string]string{"key": key},
+	}
+}
+
+func NewInsufficientScopesError(requiredScopes, actualScopes []string) error {
+	return Error{
+		errorCode: InsufficientScopes,
+		Message:   insufficientScopesMsg,
+		arguments: map[string]string{"required": strings.Join(requiredScopes, ";"),
+			"actual": strings.Join(actualScopes, ";")},
+		parentErr: nil,
+	}
+}
+
+func NewCannotReadTenantError() error {
+	return Error{
+		errorCode: InternalError,
+		Message:   cannotReadTenantMsg,
+		arguments: map[string]string{},
+	}
+}
+
+func NewUnauthorizedError(msg string) error {
+	return Error{
+		errorCode: Unauthorized,
+		Message:   unauthorizedMsg,
+		arguments: map[string]string{"reason": msg},
+	}
+}
+
+func IsValueNotFoundInConfiguration(err error) bool {
+	if customErr, ok := err.(Error); ok {
+		return customErr.errorCode == NotFound && customErr.Message == valueNotFoundInConfigMsg
+	} else {
+		return false
+	}
+}
+
+func IsKeyDoesNotExist(err error) bool {
+	if customErr, ok := err.(Error); ok {
+		return customErr.errorCode == NotFound && customErr.Message == keyDoesNotExistMsg
+	} else {
+		return false
+	}
+}
+
+func IsCannotReadTenant(err error) bool {
+	if customErr, ok := err.(Error); ok {
+		return customErr.errorCode == InternalError && customErr.Message == cannotReadTenantMsg
+	} else {
+		return false
+	}
+}
+
+func IsNewInvalidDataError(err error) bool {
+	return ErrorCode(err) == InvalidData
 }
 
 func IsNotFoundError(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-	_, ok := err.(NotFound)
-	return ok
+	return ErrorCode(err) == NotFound
 }
 
-type NotUnique interface {
-	IsNotUnique()
+func IsTenantRequired(err error) bool {
+	return ErrorCode(err) == TenantRequired
 }
 
-type notUniqueError struct {
-	identifier string
+func IsTenantNotFoundError(err error) bool {
+	return ErrorCode(err) == TenantNotFound
 }
 
-func NewNotUniqueError(identifier string) *notUniqueError {
-	return &notUniqueError{
-		identifier: identifier,
-	}
+func IsNotUniqueError(err error) bool {
+	return ErrorCode(err) == NotUnique
 }
 
-func (e *notUniqueError) Error() string {
-	if e.identifier == "" {
-		return "Object is not unique"
-	}
-	return fmt.Sprintf("Object %s is not unique", e.identifier)
-}
-
-func (notUniqueError) IsNotUnique() {}
-
-func IsNotUnique(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-	_, ok := err.(NotUnique)
-	return ok
-}
-
-type ConstraintViolation interface {
-	ConstraintViolation()
-}
-
-type constraintViolationError struct {
-	table string
-}
-
-func NewConstraintViolationError(table string) *constraintViolationError {
-	return &constraintViolationError{
-		table: table,
-	}
-}
-
-func (e *constraintViolationError) Error() string {
-	return fmt.Sprintf("this object still has %s referenced by it", e.table)
-}
-
-func (constraintViolationError) ConstraintViolation() {}
-
-func IsConstraintViolation(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-	_, ok := err.(ConstraintViolation)
-	return ok
-}
-
-type InvalidCast interface {
-	InvalidCast()
-}
-
-type invalidStringCastError struct{}
-
-func NewInvalidStringCastError() *invalidStringCastError {
-	return &invalidStringCastError{}
-}
-
-func (e *invalidStringCastError) Error() string {
-	return "unable to cast the value to a string type"
-}
-
-func (invalidStringCastError) InvalidCast() {}
-
-func IsInvalidCast(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
+func sortMapKey(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k, _ := range m {
+		keys = append(keys, k)
 	}
 
-	_, ok := err.(InvalidCast)
-	return ok
-}
-
-type KeyDoesNotExist interface {
-	KeyDoesNotExist()
-}
-
-type keyDoesNotExistError struct {
-	key string
-}
-
-func NewKeyDoesNotExistError(key string) *keyDoesNotExistError {
-	return &keyDoesNotExistError{
-		key: key,
-	}
-}
-
-func (e *keyDoesNotExistError) Error() string {
-	return fmt.Sprintf("the key (%s) does not exist in source object", e.key)
-}
-
-func (keyDoesNotExistError) KeyDoesNotExist() {}
-
-func IsKeyDoesNotExist(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-
-	_, ok := err.(KeyDoesNotExist)
-	return ok
-}
-
-// ValueNotFoundInConfiguration
-
-type ValueNotFoundInConfiguration interface {
-	ValueNotFoundInConfiguration()
-}
-
-type valueNotFoundInConfigurationError struct{}
-
-func NewValueNotFoundInConfigurationError() *valueNotFoundInConfigurationError {
-	return &valueNotFoundInConfigurationError{}
-}
-
-func (e *valueNotFoundInConfigurationError) Error() string {
-	return "value under specified path not found in configuration"
-}
-
-func (valueNotFoundInConfigurationError) ValueNotFoundInConfiguration() {}
-
-func IsValueNotFoundInConfiguration(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-
-	_, ok := err.(ValueNotFoundInConfiguration)
-	return ok
-}
-
-// NoScopesInContextError
-
-type NoScopesInContext interface {
-	NoScopesInContext()
-}
-
-type noScopesInContextError struct{}
-
-func NewNoScopesInContextError() *noScopesInContextError {
-	return &noScopesInContextError{}
-}
-
-func (e *noScopesInContextError) Error() string {
-	return "cannot read scopes from context"
-}
-
-func (noScopesInContextError) NoScopesInContext() {}
-
-func IsNoScopesInContext(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-
-	_, ok := err.(NoScopesInContext)
-	return ok
-}
-
-// RequiredScopesNotDefinedError
-
-type RequiredScopesNotDefined interface {
-	RequiredScopesNotDefined()
-}
-
-type requiredScopesNotDefinedError struct{}
-
-func NewRequiredScopesNotDefinedError() *requiredScopesNotDefinedError {
-	return &requiredScopesNotDefinedError{}
-}
-
-func (e *requiredScopesNotDefinedError) Error() string {
-	return "required scopes are not defined"
-}
-
-func (requiredScopesNotDefinedError) RequiredScopesNotDefined() {}
-
-func IsRequiredScopesNotDefined(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-
-	_, ok := err.(RequiredScopesNotDefined)
-	return ok
-}
-
-// InsufficientScopesError
-
-type InsufficientScopes interface {
-	InsufficientScopes()
-}
-
-type insufficientScopesError struct {
-	required []string
-	actual   []string
-}
-
-func NewInsufficientScopesError(requiredScopes, actualScopes []string) *insufficientScopesError {
-	return &insufficientScopesError{
-		required: requiredScopes,
-		actual:   actualScopes,
-	}
-}
-
-func (e *insufficientScopesError) Error() string {
-	return fmt.Sprintf("insufficient scopes provided, required: %v, actual: %v", e.required, e.actual)
-}
-
-func (insufficientScopesError) InsufficientScopes() {}
-
-func IsInsufficientScopes(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-
-	_, ok := err.(InsufficientScopes)
-	return ok
-}
-
-type CannotReadTenant interface {
-	CannotReadTenant()
-}
-
-type cannotReadTenantError struct {
-}
-
-func NewCannotReadTenantError() *cannotReadTenantError {
-	return &cannotReadTenantError{}
-}
-
-func (e *cannotReadTenantError) Error() string {
-	return "cannot read tenant from context"
-}
-
-func (cannotReadTenantError) CannotReadTenant() {}
-
-func IsCannotReadTenant(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-
-	_, ok := err.(CannotReadTenant)
-	return ok
-}
-
-type EmptyTenant interface {
-	EmptyTenant()
-}
-
-type emptyTenantError struct {
-}
-
-func NewEmptyTenantError() *emptyTenantError {
-	return &emptyTenantError{}
-}
-
-func (e *emptyTenantError) Error() string {
-	return "tenant is required"
-}
-
-func (emptyTenantError) EmptyTenant() {}
-
-func IsEmptyTenant(err error) bool {
-	if cause := errors.Cause(err); cause != nil {
-		err = cause
-	}
-
-	_, ok := err.(EmptyTenant)
-	return ok
+	sort.Strings(keys)
+	return keys
 }

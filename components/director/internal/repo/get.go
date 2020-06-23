@@ -2,8 +2,9 @@ package repo
 
 import (
 	"context"
-	"database/sql"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -21,20 +22,23 @@ type SingleGetterGlobal interface {
 
 type universalSingleGetter struct {
 	tableName       string
+	resourceType    resource.Type
 	tenantColumn    *string
 	selectedColumns string
 }
 
-func NewSingleGetter(tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
+func NewSingleGetter(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
 	return &universalSingleGetter{
+		resourceType:    resourceType,
 		tableName:       tableName,
 		tenantColumn:    &tenantColumn,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
 }
 
-func NewSingleGetterGlobal(tableName string, selectedColumns []string) SingleGetterGlobal {
+func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selectedColumns []string) SingleGetterGlobal {
 	return &universalSingleGetter{
+		resourceType:    resourceType,
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
@@ -42,7 +46,7 @@ func NewSingleGetterGlobal(tableName string, selectedColumns []string) SingleGet
 
 func (g *universalSingleGetter) Get(ctx context.Context, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if tenant == "" {
-		return errors.New("tenant cannot be empty")
+		return apperrors.NewTenantRequiredError()
 	}
 	conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
 	return g.unsafeGet(ctx, conditions, orderByParams, dest)
@@ -54,7 +58,7 @@ func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Condit
 
 func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	if dest == nil {
-		return errors.New("item cannot be nil")
+		return apperrors.NewInternalError("item cannot be nil")
 	}
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -67,11 +71,6 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 	}
 
 	err = persist.Get(dest, query, args...)
-	switch {
-	case err == sql.ErrNoRows:
-		return apperrors.NewNotFoundError("")
-	case err != nil:
-		return errors.Wrap(err, "while getting object from DB")
-	}
-	return nil
+
+	return persistence.MapSQLError(err, g.resourceType, "while getting object from table %s", g.tableName)
 }

@@ -3,10 +3,11 @@ package graphql
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
-	"github.com/pkg/errors"
 )
 
 func (i PackageCreateInput) Validate() error {
@@ -40,7 +41,7 @@ func (i PackageInstanceAuthRequestInput) Validate() error {
 
 func (i PackageInstanceAuthSetInput) Validate() error {
 	if i.Auth == nil && i.Status == nil {
-		return errors.New("at least one field (Auth or Status) has to be provided")
+		return apperrors.NewInvalidDataError("at least one field (Auth or Status) has to be provided")
 	}
 
 	if i.Status != nil {

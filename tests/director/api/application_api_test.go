@@ -162,7 +162,7 @@ func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	require.NotNil(t, err.Error())
-	require.Contains(t, err.Error(), "does not exist")
+	require.Contains(t, err.Error(), "Object not found")
 }
 
 func TestUpdateApplication(t *testing.T) {
@@ -223,7 +223,7 @@ func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	require.NotNil(t, err.Error())
-	require.Contains(t, err.Error(), "does not exist")
+	require.Contains(t, err.Error(), "Object not found")
 }
 
 func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {

@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/pkg/errors"
 )
 
@@ -37,12 +40,12 @@ type pgRepository struct {
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(applicationTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(applicationTable, tenantColumn, applicationColumns),
-		deleter:         repo.NewDeleter(applicationTable, tenantColumn),
-		pageableQuerier: repo.NewPageableQuerier(applicationTable, tenantColumn, applicationColumns),
-		creator:         repo.NewCreator(applicationTable, applicationColumns),
-		updater:         repo.NewUpdater(applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name"}, tenantColumn, []string{"id"}),
+		existQuerier:    repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
+		singleGetter:    repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		deleter:         repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
+		pageableQuerier: repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		creator:         repo.NewCreator(resource.Application, applicationTable, applicationColumns),
+		updater:         repo.NewUpdater(resource.Application, applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name"}, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}
 }
@@ -157,7 +160,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 
 func (r *pgRepository) Create(ctx context.Context, model *model.Application) error {
 	if model == nil {
-		return errors.New("model can not be empty")
+		return apperrors.NewInternalError("model can not be empty")
 	}
 
 	appEnt, err := r.conv.ToEntity(model)
@@ -170,7 +173,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 
 func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
 	if model == nil {
-		return errors.New("model can not be empty")
+		return apperrors.NewInternalError("model can not be empty")
 	}
 
 	appEnt, err := r.conv.ToEntity(model)

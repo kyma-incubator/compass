@@ -6,7 +6,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 type Lister interface {
@@ -21,18 +23,21 @@ type universalLister struct {
 	tableName       string
 	selectedColumns string
 	tenantColumn    *string
+	resourceType    resource.Type
 }
 
-func NewLister(tableName string, tenantColumn string, selectedColumns []string) Lister {
+func NewLister(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) Lister {
 	return &universalLister{
+		resourceType:    resourceType,
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
 	}
 }
 
-func NewListerGlobal(tableName string, selectedColumns []string) ListerGlobal {
+func NewListerGlobal(resourceType resource.Type, tableName string, selectedColumns []string) ListerGlobal {
 	return &universalLister{
+		resourceType:    resourceType,
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
@@ -40,7 +45,7 @@ func NewListerGlobal(tableName string, selectedColumns []string) ListerGlobal {
 
 func (l *universalLister) List(ctx context.Context, tenant string, dest Collection, additionalConditions ...Condition) error {
 	if tenant == "" {
-		return errors.New("tenant cannot be empty")
+		return apperrors.NewTenantRequiredError()
 	}
 	additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
 	return l.unsafeList(ctx, dest, additionalConditions...)
@@ -62,9 +67,5 @@ func (l *universalLister) unsafeList(ctx context.Context, dest Collection, condi
 	}
 
 	err = persist.Select(dest, query, args...)
-	if err != nil {
-		return errors.Wrap(err, "while fetching list of objects from DB")
-	}
-
-	return nil
+	return persistence.MapSQLError(err, l.resourceType, "while fetching list of objects from DB")
 }

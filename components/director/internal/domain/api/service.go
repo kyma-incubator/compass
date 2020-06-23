@@ -65,7 +65,7 @@ func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize
 	}
 
 	if pageSize < 1 || pageSize > 100 {
-		return nil, errors.New("page size must be between 1 and 100")
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
 	return s.repo.ListForPackage(ctx, tnt, packageID, pageSize, cursor)

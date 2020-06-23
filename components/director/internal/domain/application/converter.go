@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -26,7 +28,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	}
 
 	if in.Status == nil {
-		return nil, errors.New("invalid input model")
+		return nil, apperrors.NewInternalError("invalid input model")
 	}
 
 	return &Entity{

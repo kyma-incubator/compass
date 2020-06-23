@@ -81,7 +81,12 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				Nodes: util.StringPtr("10.250.0.0/19"), // TODO: it is required - provide configuration in API (when Hydroform will support it)
 			},
 			Purpose:     purpose,
-			Maintenance: &gardener_types.Maintenance{},
+			Maintenance: &gardener_types.Maintenance{
+				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
+					KubernetesVersion:   false,
+					MachineImageVersion: false,
+				},
+			},
 		},
 	}
 

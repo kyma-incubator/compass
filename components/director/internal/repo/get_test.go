@@ -18,7 +18,7 @@ import (
 func TestGetSingle(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
+	sut := repo.NewSingleGetter(UserType, "users", "tenant_id", []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
@@ -62,8 +62,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when more conditions", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3")
-		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -79,8 +78,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when IN condition", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name IN (SELECT name from names WHERE description = $2 AND id = $3)")
-		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name IN (SELECT name from names WHERE description = $2 AND id = $3)")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -96,8 +94,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success when IN condition for values", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name IN ($2, $3)")
-		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name IN ($2, $3)")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -113,8 +110,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success with order by params", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 ORDER BY first_name ASC")
-		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY first_name ASC")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -130,8 +126,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success with multiple order by params", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 ORDER BY first_name ASC, last_name DESC")
-		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 ORDER BY first_name ASC, last_name DESC")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -147,8 +142,7 @@ func TestGetSingle(t *testing.T) {
 	t.Run("success with conditions and order by params", func(t *testing.T) {
 		// GIVEN
 		givenTenant := uuidB()
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3 ORDER BY first_name ASC")
-		sut := repo.NewSingleGetter("users", "tenant_id", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3 ORDER BY first_name ASC")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -175,7 +169,7 @@ func TestGetSingle(t *testing.T) {
 		// WHEN
 		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table users: some error")
 	})
 
 	t.Run("returns ErrorNotFound if object not found", func(t *testing.T) {
@@ -196,22 +190,22 @@ func TestGetSingle(t *testing.T) {
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &User{})
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
 		err := sut.Get(context.TODO(), givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, nil)
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 }
 
 func TestGetSingleGlobal(t *testing.T) {
 	givenID := uuidA()
-	sut := repo.NewSingleGetterGlobal("users", []string{"id_col", "first_name", "last_name", "age"})
+	sut := repo.NewSingleGetterGlobal(UserType, "users", []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, first_name, last_name, age FROM users WHERE id_col = $1")
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE id_col = $1")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -230,7 +224,7 @@ func TestGetSingleGlobal(t *testing.T) {
 
 	t.Run("success when no conditions", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, first_name, last_name, age FROM users")
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -249,8 +243,7 @@ func TestGetSingleGlobal(t *testing.T) {
 
 	t.Run("success when more conditions", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE first_name = $1 AND last_name = $2")
-		sut := repo.NewSingleGetterGlobal("users", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE first_name = $1 AND last_name = $2")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -265,8 +258,7 @@ func TestGetSingleGlobal(t *testing.T) {
 
 	t.Run("success with order by params", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users ORDER BY first_name ASC")
-		sut := repo.NewSingleGetterGlobal("users", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users ORDER BY first_name ASC")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -281,8 +273,7 @@ func TestGetSingleGlobal(t *testing.T) {
 
 	t.Run("success with multiple order by params", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users ORDER BY first_name ASC, last_name DESC")
-		sut := repo.NewSingleGetterGlobal("users", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users ORDER BY first_name ASC, last_name DESC")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -297,8 +288,7 @@ func TestGetSingleGlobal(t *testing.T) {
 
 	t.Run("success with conditions and order by params", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col FROM users WHERE first_name = $1 AND last_name = $2 ORDER BY first_name ASC")
-		sut := repo.NewSingleGetterGlobal("users", []string{"id_col"})
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE first_name = $1 AND last_name = $2 ORDER BY first_name ASC")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -316,7 +306,7 @@ func TestGetSingleGlobal(t *testing.T) {
 
 	t.Run("returns error when operation on db failed", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, first_name, last_name, age FROM users WHERE id_col = $1")
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE id_col = $1")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -325,12 +315,12 @@ func TestGetSingleGlobal(t *testing.T) {
 		// WHEN
 		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
-		require.EqualError(t, err, "while getting object from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table users: some error")
 	})
 
 	t.Run("returns ErrorNotFound if object not found", func(t *testing.T) {
 		// GIVEN
-		expectedQuery := regexp.QuoteMeta("SELECT id_col, first_name, last_name, age FROM users WHERE id_col = $1")
+		expectedQuery := regexp.QuoteMeta("SELECT id_col, tenant_id, first_name, last_name, age FROM users WHERE id_col = $1")
 		db, mock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		defer mock.AssertExpectations(t)
@@ -347,12 +337,12 @@ func TestGetSingleGlobal(t *testing.T) {
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &User{})
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if destination is nil", func(t *testing.T) {
 		err := sut.GetGlobal(context.TODO(), repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, nil)
-		require.EqualError(t, err, "item cannot be nil")
+		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
 	})
 }
 

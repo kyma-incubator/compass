@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -25,7 +27,7 @@ func TestListPageable(t *testing.T) {
 	homer := User{FirstName: "Homer", LastName: "Simpson", Age: 55, Tenant: givenTenant, ID: homerID}
 	homerRow := []driver.Value{homerID, givenTenant, "Homer", "Simpson", 55}
 
-	sut := repo.NewPageableQuerier("users", "tenant_id",
+	sut := repo.NewPageableQuerier("UserType", "users", "tenant_id",
 		[]string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 
 	t.Run("returns first page and there are no more pages", func(t *testing.T) {
@@ -170,7 +172,7 @@ func TestListPageable(t *testing.T) {
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		_, _, err := sut.List(ctx, givenTenant, 2, "", "id_col", nil)
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if wrong cursor", func(t *testing.T) {
@@ -182,7 +184,7 @@ func TestListPageable(t *testing.T) {
 	t.Run("returns error if wrong pagination attributes", func(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), &sqlx.Tx{})
 		_, _, err := sut.List(ctx, givenTenant, -3, "", "id_col", nil)
-		require.EqualError(t, err, "while converting offset and limit to cursor: page size cannot be smaller than 1")
+		require.EqualError(t, err, "while converting offset and limit to cursor: Invalid data [reason=page size cannot be smaller than 1]")
 	})
 
 	t.Run("returns error on db operation", func(t *testing.T) {
@@ -220,7 +222,7 @@ func TestListPageableGlobal(t *testing.T) {
 	homer := User{FirstName: "Homer", LastName: "Simpson", Age: 55, ID: homerID}
 	homerRow := []driver.Value{homerID, "Homer", "Simpson", 55}
 
-	sut := repo.NewPageableQuerierGlobal("users",
+	sut := repo.NewPageableQuerierGlobal("UserType", "users",
 		[]string{"id_col", "first_name", "last_name", "age"})
 
 	t.Run("returns first page and there are no more pages", func(t *testing.T) {
@@ -365,7 +367,7 @@ func TestListPageableGlobal(t *testing.T) {
 	t.Run("returns error if missing persistence context", func(t *testing.T) {
 		ctx := context.TODO()
 		_, _, err := sut.ListGlobal(ctx, 2, "", "id_col", nil)
-		require.EqualError(t, err, "unable to fetch database from context")
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
 	t.Run("returns error if wrong cursor", func(t *testing.T) {
@@ -377,7 +379,7 @@ func TestListPageableGlobal(t *testing.T) {
 	t.Run("returns error if wrong pagination attributes", func(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), &sqlx.Tx{})
 		_, _, err := sut.ListGlobal(ctx, -3, "", "id_col", nil)
-		require.EqualError(t, err, "while converting offset and limit to cursor: page size cannot be smaller than 1")
+		require.EqualError(t, err, "while converting offset and limit to cursor: Invalid data [reason=page size cannot be smaller than 1]")
 	})
 
 	t.Run("returns error on db operation", func(t *testing.T) {

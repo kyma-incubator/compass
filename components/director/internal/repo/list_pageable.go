@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
@@ -22,20 +26,23 @@ type universalPageableQuerier struct {
 	tableName       string
 	selectedColumns string
 	tenantColumn    *string
+	resourceType    resource.Type
 }
 
-func NewPageableQuerier(tableName string, tenantColumn string, selectedColumns []string) PageableQuerier {
+func NewPageableQuerier(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) PageableQuerier {
 	return &universalPageableQuerier{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
+		resourceType:    resourceType,
 	}
 }
 
-func NewPageableQuerierGlobal(tableName string, selectedColumns []string) PageableQuerierGlobal {
+func NewPageableQuerierGlobal(resourceType resource.Type, tableName string, selectedColumns []string) PageableQuerierGlobal {
 	return &universalPageableQuerier{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
+		resourceType:    resourceType,
 	}
 }
 
@@ -46,7 +53,7 @@ type Collection interface {
 // List returns Page, TotalCount or error
 func (g *universalPageableQuerier) List(ctx context.Context, tenant string, pageSize int, cursor string, orderByColumn string, dest Collection, additionalConditions ...Condition) (*pagination.Page, int, error) {
 	if tenant == "" {
-		return nil, -1, errors.New("tenant cannot be empty")
+		return nil, -1, apperrors.NewTenantRequiredError()
 	}
 
 	additionalConditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, additionalConditions...)
