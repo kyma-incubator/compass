@@ -126,6 +126,7 @@ func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaV
 	}
 
 	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
+	provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
 
 	return provisionInput, nil
 }

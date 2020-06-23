@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var purpose = gardener_types.ShootPurposeTesting
+
 func TestGardenerConfig_ToHydroformConfiguration(t *testing.T) {
 
 	credentialsFile := "credentials"
@@ -307,7 +309,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					CloudProfileName: "gcp",
 					Networking: gardener_types.Networking{
 						Type:  "calico",
-						Nodes: "10.250.0.0/19",
+						Nodes: util.StringPtr("10.250.0.0/19"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
@@ -316,7 +318,8 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "gcp",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zone":"fix-zone-1"}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zone":"fix-zone-1"}`),
+							},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
@@ -327,6 +330,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
 						},
 					},
+					Purpose: &purpose,
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
@@ -360,7 +364,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					CloudProfileName: "az",
 					Networking: gardener_types.Networking{
 						Type:  "calico",
-						Nodes: "10.250.0.0/19",
+						Nodes: util.StringPtr("10.250.0.0/19"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
@@ -369,7 +373,8 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "azure",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`),
+							},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
@@ -380,6 +385,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
 						},
 					},
+					Purpose: &purpose,
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
@@ -412,7 +418,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					CloudProfileName: "az",
 					Networking: gardener_types.Networking{
 						Type:  "calico",
-						Nodes: "10.250.0.0/19",
+						Nodes: util.StringPtr("10.250.0.0/19"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
@@ -421,7 +427,8 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "azure",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`),
+							},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
@@ -432,6 +439,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							fixWorker(nil),
 						},
 					},
+					Purpose: &purpose,
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
@@ -465,7 +473,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					CloudProfileName: "aws",
 					Networking: gardener_types.Networking{
 						Type:  "calico",
-						Nodes: "10.250.0.0/19",
+						Nodes: util.StringPtr("10.250.0.0/19"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
@@ -474,7 +482,8 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Type: "aws",
 						ControlPlaneConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1"}`)},
+								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1"}`),
+							},
 						},
 						InfrastructureConfig: &gardener_types.ProviderConfig{
 							RawExtension: apimachineryRuntime.RawExtension{
@@ -485,6 +494,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							fixWorker([]string{"zone"}),
 						},
 					},
+					Purpose: &purpose,
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(true),
 						Version:                   "1.15",
@@ -528,6 +538,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		DiskType:               "SSD",
 		MachineType:            "machine",
 		Provider:               provider,
+		Purpose:                "testing",
 		Seed:                   "eu",
 		TargetSecret:           "gardener-secret",
 		Region:                 "eu",
