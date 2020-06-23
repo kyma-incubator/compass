@@ -27,15 +27,7 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 	if !reflect.DeepEqual(p.ErsContext, input.ErsContext) {
 		return false
 	}
-
-	// TODO: If there are already not resolved operations in the db
-	//       KEB will raise an error "provisioning operation already
-	//       exist" after updating the image on the environments.
-	//       Revert this check after some time, when every operation
-	//       has at least the default Gardener Shoot Purpose to:
-	//       if !reflect.DeepEqual(p.Parameters, input.Parameters) {
-	//          ...
-	if !temporaryDeepEqualWithoutPurpose(p.Parameters, input.Parameters) {
+	if !reflect.DeepEqual(p.Parameters, input.Parameters) {
 		return false
 	}
 
@@ -77,41 +69,4 @@ type ServiceManagerCredentials struct {
 type ServiceManagerBasicAuth struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-}
-
-func temporaryDeepEqualWithoutPurpose(a0, a1 ProvisioningParametersDTO) bool {
-	return a0.Name == a1.Name &&
-		a0.KymaVersion == a1.KymaVersion &&
-		areStrPtrEqual(a0.TargetSecret, a1.TargetSecret) &&
-		areIntPtrEqual(a0.VolumeSizeGb, a1.VolumeSizeGb) &&
-		areStrPtrEqual(a0.MachineType, a1.MachineType) &&
-		areStrPtrEqual(a0.Region, a1.Region) &&
-		areStrArrEqual(a0.Zones, a1.Zones) &&
-		areIntPtrEqual(a0.AutoScalerMin, a1.AutoScalerMin) &&
-		areIntPtrEqual(a0.AutoScalerMax, a1.AutoScalerMax) &&
-		areIntPtrEqual(a0.MaxSurge, a1.MaxSurge) &&
-		areIntPtrEqual(a0.MaxUnavailable, a1.MaxUnavailable) &&
-		areStrArrEqual(a0.OptionalComponentsToInstall, a1.OptionalComponentsToInstall)
-}
-
-func areStrPtrEqual(a0, a1 *string) bool {
-	if (a0 == nil && a1 != nil) || (a0 != nil && a1 == nil) {
-		return false
-	}
-	if a0 != nil && a1 != nil && *a0 != *a1 {
-		return false
-	}
-	return true
-}
-func areIntPtrEqual(a0, a1 *int) bool {
-	if (a0 == nil && a1 != nil) || (a0 != nil && a1 == nil) {
-		return false
-	}
-	if a0 != nil && a1 != nil && *a0 != *a1 {
-		return false
-	}
-	return true
-}
-func areStrArrEqual(a0, a1 []string) bool {
-	return reflect.DeepEqual(a0, a1)
 }

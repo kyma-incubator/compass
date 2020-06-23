@@ -32,14 +32,13 @@ type (
 )
 
 type ProvisionEndpoint struct {
-	operationsStorage           storage.Provisioning
-	instanceStorage             storage.Instances
-	queue                       Queue
-	builderFactory              PlanValidator
-	enabledPlanIDs              map[string]struct{}
-	plansSchemaValidator        PlansSchemaValidator
-	kymaVerOnDemand             bool
-	defaultGardenerShootPurpose string
+	operationsStorage    storage.Provisioning
+	instanceStorage      storage.Instances
+	queue                Queue
+	builderFactory       PlanValidator
+	enabledPlanIDs       map[string]struct{}
+	plansSchemaValidator PlansSchemaValidator
+	kymaVerOnDemand      bool
 
 	log logrus.FieldLogger
 }
@@ -52,15 +51,14 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, instanceStor
 	}
 
 	return &ProvisionEndpoint{
-		plansSchemaValidator:        validator,
-		operationsStorage:           operationsStorage,
-		instanceStorage:             instanceStorage,
-		queue:                       q,
-		builderFactory:              builderFactory,
-		log:                         log.WithField("service", "ProvisionEndpoint"),
-		enabledPlanIDs:              enabledPlanIDs,
-		kymaVerOnDemand:             kvod,
-		defaultGardenerShootPurpose: cfg.DefaultGardenerShootPurpose,
+		plansSchemaValidator: validator,
+		operationsStorage:    operationsStorage,
+		instanceStorage:      instanceStorage,
+		queue:                q,
+		builderFactory:       builderFactory,
+		log:                  log.WithField("service", "ProvisionEndpoint"),
+		enabledPlanIDs:       enabledPlanIDs,
+		kymaVerOnDemand:      kvod,
 	}
 }
 
@@ -173,11 +171,6 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	if !b.kymaVerOnDemand && parameters.KymaVersion != "" {
 		logger.Infof("Kyma on demand functionality is disabled. Default Kyma version will be used instead %s", parameters.KymaVersion)
 		parameters.KymaVersion = ""
-	}
-
-	if parameters.Purpose == nil {
-		logger.Infof("No shoot purpose provided. %s purpose will be used", b.defaultGardenerShootPurpose)
-		parameters.Purpose = &b.defaultGardenerShootPurpose
 	}
 
 	found := b.builderFactory.IsPlanSupport(details.PlanID)

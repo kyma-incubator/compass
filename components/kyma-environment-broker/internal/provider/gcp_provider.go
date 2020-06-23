@@ -11,10 +11,6 @@ const (
 	DefaultGCPRegion = "europe-west4"
 )
 
-var (
-	DefaultGCPPurpose = "development"
-)
-
 type GcpInput struct{}
 
 func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -25,7 +21,6 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "n1-standard-4",
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
-			Purpose:        &DefaultGCPPurpose,
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  3,
 			AutoScalerMax:  4,

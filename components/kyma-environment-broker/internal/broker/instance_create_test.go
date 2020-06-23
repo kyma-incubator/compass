@@ -33,10 +33,6 @@ const (
 	clusterName      = "cluster-testing"
 )
 
-var (
-	defaultShootPurpose = "development"
-)
-
 func TestProvision_Provision(t *testing.T) {
 	t.Run("new operation will be created", func(t *testing.T) {
 		// given
@@ -51,7 +47,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}, DefaultGardenerShootPurpose: defaultShootPurpose},
+			broker.Config{EnablePlans: []string{"gcp", "azure"}},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -84,8 +80,6 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, globalAccountID, instanceParameters.ErsContext.GlobalAccountID)
 		assert.Equal(t, clusterName, instanceParameters.Parameters.Name)
 		assert.Equal(t, "req-region", instanceParameters.PlatformRegion)
-		require.NotNil(t, instanceParameters.Parameters.Purpose)
-		assert.Equal(t, defaultShootPurpose, *instanceParameters.Parameters.Purpose)
 
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)

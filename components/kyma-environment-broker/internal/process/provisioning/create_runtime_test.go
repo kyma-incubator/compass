@@ -218,7 +218,8 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{
-		KubernetesVersion: k8sVersion,
+		KubernetesVersion:           k8sVersion,
+		DefaultGardenerShootPurpose: shootPurpose,
 	}, kymaVersion)
 	assert.NoError(t, err)
 

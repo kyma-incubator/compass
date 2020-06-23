@@ -31,8 +31,7 @@ type KymaEnvironmentBroker struct {
 
 // Config represents configuration for broker
 type Config struct {
-	EnablePlans                 EnablePlans `envconfig:"default=azure"`
-	DefaultGardenerShootPurpose string      `envconfig:"default=development"`
+	EnablePlans EnablePlans `envconfig:"default=azure"`
 }
 
 // EnablePlans defines the plans that should be available for provisioning
