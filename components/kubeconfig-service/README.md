@@ -57,3 +57,19 @@ Set the required parameters and run the binary:
 ```bash
 OIDC_KUBECONFIG_ISSUER_URL=https://foo OIDC_KUBECONFIG_CLIENT_ID=foobar OIDC_KUBECONFIG_CLIENT_SECRET=1234 OIDC_ISSUER_URL=https://dex.kyma.local OIDC_CLIENT_ID=compass-ui OIDC_CA=~/.minikube/ca.crt go run cmd/generator/main.go
 ```
+
+### Call the API
+
+```bash
+# Get a valid Token from your issuer
+export TOKEN="Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+# Get valid IDs from Provisioner
+export TENANT="3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
+export RUNTIME="ec8b348f-d8c8-49cd-956d-a0c783bfe329"
+
+# Call the service
+curl -H "Authorization: ${TOKEN}" "http://127.0.0.1:8000/kubeconfig/${TENANT}/${RUNTIME}" > kubeconfig.yaml
+
+# Use the new config file
+KUBECONFIG=kubeconfig.yaml kubectl cluster-inf
+```
