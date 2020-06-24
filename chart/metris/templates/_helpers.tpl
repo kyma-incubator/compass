@@ -55,24 +55,13 @@ imagePullSecrets:
 
 
 {{- define "metris.image" -}}
-{{- $repository := "" -}}
-{{- $tag := "" -}}
 {{- if .Values.global -}}
   {{- if .Values.global.images -}}
     {{- if .Values.global.images.containerRegistry -}}
-      {{- $repository = printf "%s/%smetris" .Values.global.images.containerRegistry.path (default "" .Values.global.images.metris.dir) -}}
-      {{- $tag = .Values.global.images.metris.version | toString -}}
+      {{- $repository := printf "%s/%smetris" .Values.global.images.containerRegistry.path (default "" .Values.global.images.metris.dir) -}}
+      {{- $tag := .Values.global.images.metris.version | toString -}}
+      {{- printf "%s:%s" $repository $tag -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
-
-{{- if .Values.image -}}
-{{- if .Values.image.repository -}}
-{{- $repository = .Values.image.repository -}}
-{{- end -}}
-{{- if .Values.image.tag -}}
-{{- $tag = .Values.image.tag | toString -}}
-{{- end -}}
-{{- end -}}
-{{- printf "%s:%s" $repository $tag -}}
 {{- end -}}

@@ -1,4 +1,4 @@
-{{ if .Values.tests.enabled }}
+{{ if .Values.global.tests.enabled }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:

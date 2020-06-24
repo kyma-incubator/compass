@@ -7,7 +7,7 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/name: {{ template "fullname" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
@@ -32,13 +32,13 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/name: {{ template "fullname" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.metrics.port }}
+    - port: {{ .Values.global.metrics.port }}
       protocol: TCP
       name: http-metrics
   selector:

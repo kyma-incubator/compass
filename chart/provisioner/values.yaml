@@ -1,75 +1,6 @@
-deployment:
-  replicaCount: 1
-  image:
-    pullPolicy: IfNotPresent
-  resources: {}
-  securityContext: # Set on container level
-    runAsUser: 2000
-    allowPrivilegeEscalation: false
-  strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
-  nodeSelector: {}
 
-security:
-  skipTLSCertificateVeryfication: false
-
-gardener:
-  project: "" # Gardener project connected to SA
-  kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
-  kubeconfig: "" # Base64 encoded Gardener SA key
-  auditLogTenantConfigPath: "" # "/gardener/tenant/config"
-  auditLogTenantConfigMapName: ""
-  maintenanceWindowConfigPath: "" # "/gardener/maintenance/config"
-  maintenanceWindowConfigMapName: ""
-  secretName: "gardener-credentials"
-  auditLogsPolicyConfigMap: ""
-  manageSecrets: true
-  clusterCreationTimeout: 2h
-  clusterDeletionTimeout: 30m
-  waitingForClusterDeletionTimeout: 4h
-  clusterCleanupTimeout: 20m
-  clusterCleanupResourceSelector: "https://service-manager."
-
-provisioner: "gardener"
-  graphql:
-    port: 3000
-  secrets:
-    integrationSystemCredentials:
-      name: compass-provisioner-credentials
-
-kymaRelease:
-  preReleases:
-    enabled: true
-  onDemand:
-    enabled: true
-
-installation:
-  timeout: 22h
-
-runtimeAgent:
-  configurationTimeout: 1h
-  connectionTimeout: 1h
-
-metrics:
-  port: 9000
-
-logs:
-  level: "info"
-
-tests:
-  enabled: false
-  gcp:
-    credentials: ""
-    projectName: ""
-  gardener:
-    providers: "Azure"
-    azureSecret: "" # Name of Gardener secret for Azure
-    gcpSecret: "" # Name of Gardener secret for GCP
-  kyma:
-    version: "1.12.0"
-  queryLogging: false
 
 global:
-
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -120,3 +51,59 @@ global:
       port: 15020
 
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+
+  gardener:
+    project: "" # Gardener project connected to SA
+    kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
+    kubeconfig: "" # Base64 encoded Gardener SA key
+    auditLogTenantConfigPath: "" # "/gardener/tenant/config"
+    auditLogTenantConfigMapName: ""
+    maintenanceWindowConfigPath: "" # "/gardener/maintenance/config"
+    maintenanceWindowConfigMapName: ""
+    secretName: "gardener-credentials"
+    auditLogsPolicyConfigMap: ""
+    manageSecrets: true
+    clusterCreationTimeout: 2h
+    clusterDeletionTimeout: 30m
+    waitingForClusterDeletionTimeout: 4h
+    clusterCleanupTimeout: 20m
+    clusterCleanupResourceSelector: "https://service-manager."
+
+  provisioner:
+    graphql:
+      port: 3000
+    secrets:
+      integrationSystemCredentials:
+        name: compass-provisioner-credentials
+
+  kymaRelease:
+    preReleases:
+      enabled: true
+    onDemand:
+      enabled: true
+
+  installation:
+    timeout: 22h
+
+  runtimeAgent:
+    configurationTimeout: 1h
+    connectionTimeout: 1h
+
+  metrics:
+    port: 9000
+
+  logs:
+    level: "info"
+
+  tests:
+    enabled: false
+    gcp:
+      credentials: ""
+      projectName: ""
+    gardener:
+      providers: "Azure"
+      azureSecret: "" # Name of Gardener secret for Azure
+      gcpSecret: "" # Name of Gardener secret for GCP
+    kyma:
+      version: "1.12.0"
+    queryLogging: false
