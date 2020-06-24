@@ -3,30 +3,20 @@ FROM golang:1.14.4-alpine3.12 as builder
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/connectivity-adapter
 WORKDIR ${BASE_APP_DIR}
 
-#
-# Copy files
-#
 COPY . ${BASE_APP_DIR}
 
-#
-# Build app
-#
+RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 
 RUN go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
-FROM alpine:3.11.3
+
+
+FROM scratch
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
-#
-# Copy binary
-#
-
 COPY --from=builder /app /app
-
-#
-# Run app
-#
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 CMD ["/app/main"]
