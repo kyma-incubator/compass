@@ -11,6 +11,7 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
 ## Steps
 
 1. Export these values as environment variables:
+
 ```bash
 export BROKER_URL={KYMA_ENVIRONMENT_BROKER_URL}
 export INSTANCE_ID={INSTANCE_ID}
