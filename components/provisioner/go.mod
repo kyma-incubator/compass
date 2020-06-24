@@ -46,7 +46,7 @@ replace (
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 
-	github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20200623094931-c83b89ae6798
+	github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20200624094728-dc29dc68284f
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.2 => k8s.io/api v0.15.8-beta.1
