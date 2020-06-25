@@ -353,115 +353,6 @@ func TestClient_SetLabel(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestClient_GetInstanceId(t *testing.T) {
-	var (
-		accountID          = "ad568853-ecf3-433a-8638-e53aa6bead5d"
-		runtimeID          = "775dc85e-825b-4ddf-abf6-da0dd002b66e"
-		expectedInstanceID = "a5fb2c81-91f6-a440-415e-6f625609aeb3"
-		token              = oauth.Token{
-			AccessToken: "1234xyza",
-			Expiration:  time.Now().Unix() + 999,
-		}
-		oc = &mocks.OauthClient{}
-	)
-
-	t.Run("instanceID returned successfully", func(t *testing.T) {
-		// Given
-		qc := &mocks.GraphQLClient{}
-
-		client := NewDirectorClient(oc, qc)
-		client.token = token
-
-		// #create request
-		request := createGraphQLRuntimeLabelsRequest(client, accountID, runtimeID)
-
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getLabelsResponse")).Run(func(args mock.Arguments) {
-			arg, ok := args.Get(2).(*getLabelsResponse)
-			if !ok {
-				return
-			}
-			arg.Result = graphql.RuntimeExt{
-				Labels: map[string]interface{}{
-					instanceIDLabelKey: expectedInstanceID,
-				},
-			}
-		}).Return(nil)
-		defer qc.AssertExpectations(t)
-
-		// when
-		instanceID, err := client.GetInstanceId(accountID, runtimeID)
-
-		// then
-		assert.NoError(t, err)
-		assert.Equal(t, expectedInstanceID, instanceID)
-	})
-
-	t.Run("response from director has no proper labels", func(t *testing.T) {
-		// Given
-		qc := &mocks.GraphQLClient{}
-
-		client := NewDirectorClient(oc, qc)
-		client.token = token
-
-		// #create request
-		request := createGraphQLRuntimeLabelsRequest(client, accountID, runtimeID)
-
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getLabelsResponse")).Run(func(args mock.Arguments) {
-			arg, ok := args.Get(2).(*getLabelsResponse)
-			if !ok {
-				return
-			}
-			arg.Result = graphql.RuntimeExt{
-				Labels: map[string]interface{}{
-					consoleURLLabelKey: "some-value",
-				},
-			}
-		}).Return(nil)
-		defer qc.AssertExpectations(t)
-
-		// when
-		instanceID, err := client.GetInstanceId(accountID, runtimeID)
-
-		// Then
-		assert.Error(t, err)
-		assert.True(t, kebError.IsTemporaryError(err))
-		assert.Equal(t, "", instanceID)
-	})
-
-	t.Run("response from director has label with wrong type", func(t *testing.T) {
-		// Given
-		qc := &mocks.GraphQLClient{}
-
-		client := NewDirectorClient(oc, qc)
-		client.token = token
-
-		// #create request
-		request := createGraphQLRuntimeLabelsRequest(client, accountID, runtimeID)
-
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getLabelsResponse")).Run(func(args mock.Arguments) {
-			arg, ok := args.Get(2).(*getLabelsResponse)
-			if !ok {
-				return
-			}
-			arg.Result = graphql.RuntimeExt{
-				Labels: map[string]interface{}{
-					instanceIDLabelKey: 123,
-				},
-			}
-		}).Return(nil)
-		defer qc.AssertExpectations(t)
-
-		// when
-		instanceID, err := client.GetInstanceId(accountID, runtimeID)
-
-		// Then
-		assert.Error(t, err)
-		assert.False(t, kebError.IsTemporaryError(err))
-		assert.Equal(t, "", instanceID)
-	})
-
-}
-
 func createGraphQLRequest(client *Client, accountID, runtimeID string) *machineGraphql.Request {
 	query := client.queryProvider.Runtime(runtimeID)
 	request := machineGraphql.NewRequest(query)
@@ -473,15 +364,6 @@ func createGraphQLRequest(client *Client, accountID, runtimeID string) *machineG
 
 func createGraphQLLabelRequest(client *Client, accountID, runtimeID, key, label string) *machineGraphql.Request {
 	query := client.queryProvider.SetRuntimeLabel(runtimeID, key, label)
-	request := machineGraphql.NewRequest(query)
-	request.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", client.token.AccessToken))
-	request.Header.Add(accountIDKey, accountID)
-
-	return request
-}
-
-func createGraphQLRuntimeLabelsRequest(client *Client, accountID, runtimeID string) *machineGraphql.Request {
-	query := client.queryProvider.RuntimeLabels(runtimeID)
 	request := machineGraphql.NewRequest(query)
 	request.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", client.token.AccessToken))
 	request.Header.Add(accountIDKey, accountID)
