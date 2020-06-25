@@ -1,4 +1,4 @@
-FROM golang:1.14.2-alpine3.11 as builder
+FROM golang:1.14.4-alpine3.12 as builder
 
 
 ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests/director
@@ -10,9 +10,7 @@ RUN CGO_ENABLED=0 go test -c ./api && \
     CGO_ENABLED=0 go test -c ./gateway-integration && \
     CGO_ENABLED=0 go test -c ./external-services-mock-integration
 
-# After the next release of alpine is available (3.12) we should set it here instead of the edge tag
-# We can't do it now cause alpine:3.11 contains a vulnerable version of curl
-FROM alpine:edge
+FROM alpine:3.12.0
 
 RUN apk add --no-cache curl
 

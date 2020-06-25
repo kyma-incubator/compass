@@ -24,7 +24,7 @@ RUN wget https://github.com/kyma-incubator/terraform-provider-gardener/releases/
 
 
 
-FROM alpine:3.12
+FROM alpine:3.12.0
 LABEL source = git@github.com:kyma-incubator/compass.git
 # Hydroform needs write permissions
 RUN mkdir /app && chmod 777 /app
