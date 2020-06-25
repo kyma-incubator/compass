@@ -45,7 +45,7 @@ func (cl *certLoader) loadSecretToCache(name types.NamespacedName) {
 	secretData, appError := cl.repository.Get(name)
 
 	if appError != nil {
-		log.Infof("Failed to get %s secret: %s", name.String(), appError.Error())
+		log.Errorf("Failed to get %s secret: %s", name.String(), appError.Error())
 		return
 	}
 
