@@ -78,11 +78,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				KubernetesVersion: "version",
 				ClusterID:         "runtimeID",
 			},
-			Kubeconfig:            nil,
-			KymaConfig:            fixKymaConfig(),
-			CredentialsSecretName: "",
-			Tenant:                tenant,
-			SubAccountId:          util.StringPtr(subAccountId),
+			Kubeconfig:   nil,
+			KymaConfig:   fixKymaConfig(),
+			Tenant:       tenant,
+			SubAccountId: util.StringPtr(subAccountId),
 		}
 	}
 
@@ -147,11 +146,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:              "runtimeID",
 			GardenerProviderConfig: expectedGCPProviderCfg,
 		},
-		Kubeconfig:            nil,
-		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "",
-		Tenant:                tenant,
-		SubAccountId:          util.StringPtr(subAccountId),
+		Kubeconfig:   nil,
+		KymaConfig:   fixKymaConfig(),
+		Tenant:       tenant,
+		SubAccountId: util.StringPtr(subAccountId),
 	}
 
 	createGQLRuntimeInputAzure := func(zones []string) gqlschema.ProvisionRuntimeInput {
@@ -219,11 +217,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ClusterID:              "runtimeID",
 				GardenerProviderConfig: expectedAzureProviderCfg,
 			},
-			Kubeconfig:            nil,
-			KymaConfig:            fixKymaConfig(),
-			CredentialsSecretName: "",
-			Tenant:                tenant,
-			SubAccountId:          util.StringPtr(subAccountId),
+			Kubeconfig:   nil,
+			KymaConfig:   fixKymaConfig(),
+			Tenant:       tenant,
+			SubAccountId: util.StringPtr(subAccountId),
 		}
 	}
 
@@ -293,11 +290,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:              "runtimeID",
 			GardenerProviderConfig: expectedAWSProviderCfg,
 		},
-		Kubeconfig:            nil,
-		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "",
-		Tenant:                tenant,
-		SubAccountId:          util.StringPtr(subAccountId),
+		Kubeconfig:   nil,
+		KymaConfig:   fixKymaConfig(),
+		Tenant:       tenant,
+		SubAccountId: util.StringPtr(subAccountId),
 	}
 
 	zone := "zone"

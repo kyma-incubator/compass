@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -26,10 +25,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
@@ -195,22 +191,14 @@ func main() {
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
 
-	var provisioner provisioning.Provisioner
-	switch strings.ToLower(cfg.Provisioner) {
-	case "hydroform":
-		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
-		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
-	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
-		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
-		exitOnError(err, "Failed to create Shoot controller.")
-		go func() {
-			err := shootController.StartShootController()
-			exitOnError(err, "Failed to start Shoot Controller")
-		}()
-	default:
-		log.Fatalf("Error: invalid provisioner provided: %s", cfg.Provisioner)
-	}
+	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
+	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
+	exitOnError(err, "Failed to create Shoot controller.")
+	go func() {
+		err := shootController.StartShootController()
+		exitOnError(err, "Failed to start Shoot Controller")
+	}()
+
 	httpClient := newHTTPClient(false)
 	fileDownloader := release.NewFileDownloader(httpClient)
 

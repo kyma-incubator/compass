@@ -53,12 +53,11 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}
 
 	return model.Cluster{
-		ID:                    runtimeID,
-		CredentialsSecretName: "",
-		KymaConfig:            kymaConfig,
-		ClusterConfig:         providerConfig,
-		Tenant:                tenant,
-		SubAccountId:          &subAccountId,
+		ID:            runtimeID,
+		KymaConfig:    kymaConfig,
+		ClusterConfig: providerConfig,
+		Tenant:        tenant,
+		SubAccountId:  &subAccountId,
 	}, nil
 }
 

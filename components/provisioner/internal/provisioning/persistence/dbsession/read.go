@@ -61,7 +61,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	err := r.session.
 		Select(
 			"id", "kubeconfig", "terraform_state", "tenant",
-			"credentials_secret_name", "creation_timestamp", "deleted", "sub_account_id", "active_kyma_config_id").
+			"creation_timestamp", "deleted", "sub_account_id", "active_kyma_config_id").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&cluster)
@@ -97,7 +97,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	err := r.session.
 		Select(
 			"cluster.id", "cluster.kubeconfig", "cluster.tenant",
-			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted", "cluster.active_kyma_config_id",
+			"cluster.creation_timestamp", "cluster.deleted", "cluster.active_kyma_config_id",
 			"name", "project_name", "kubernetes_version",
 			"volume_size_gb", "disk_type", "machine_type", "provider", "seed",
 			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",

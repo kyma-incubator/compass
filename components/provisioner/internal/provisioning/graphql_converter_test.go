@@ -65,7 +65,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		zone := "zone"
 		kubeversion := "kubeversion"
 		kubeconfig := "kubeconfig"
-		secretName := "secretName"
 
 		runtimeStatus := model.RuntimeStatus{
 			LastOperationStatus: model.Operation{
@@ -89,9 +88,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					KubernetesVersion: "kubeversion",
 					ClusterID:         "runtimeID",
 				},
-				Kubeconfig:            &kubeconfig,
-				KymaConfig:            fixKymaConfig(),
-				CredentialsSecretName: secretName,
+				Kubeconfig: &kubeconfig,
+				KymaConfig: fixKymaConfig(),
 			},
 		}
 
@@ -153,7 +151,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		autoScMin := 2
 		surge := 1
 		unavailable := 1
-		secretName := "secretName"
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -187,9 +184,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:         unavailable,
 					GardenerProviderConfig: gardenerProviderConfig,
 				},
-				Kubeconfig:            &kubeconfig,
-				KymaConfig:            fixKymaConfig(),
-				CredentialsSecretName: secretName,
+				Kubeconfig: &kubeconfig,
+				KymaConfig: fixKymaConfig(),
 			},
 		}
 
@@ -260,7 +256,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		autoScMin := 2
 		surge := 1
 		unavailable := 1
-		secretName := "secretName"
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"vnetCidr":"10.10.11.11/255"}`)
 		require.NoError(t, err)
@@ -294,9 +289,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:         unavailable,
 					GardenerProviderConfig: gardenerProviderConfig,
 				},
-				Kubeconfig:            &kubeconfig,
-				KymaConfig:            fixKymaConfig(),
-				CredentialsSecretName: secretName,
+				Kubeconfig: &kubeconfig,
+				KymaConfig: fixKymaConfig(),
 			},
 		}
 
