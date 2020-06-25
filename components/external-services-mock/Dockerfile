@@ -16,7 +16,7 @@ COPY . .
 RUN go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main
 
-FROM alpine:3.11.3
+FROM alpine:3.12.0
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 

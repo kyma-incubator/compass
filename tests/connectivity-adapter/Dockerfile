@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 go test -c ./test/api
 
 
 
-FROM alpine:3.12
+FROM alpine:3.12.0
 
 RUN apk add --no-cache curl
 
