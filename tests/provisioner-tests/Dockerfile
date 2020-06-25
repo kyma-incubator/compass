@@ -1,4 +1,4 @@
-FROM golang:1.14.2-alpine3.11 as builder
+FROM golang:1.14.4-alpine3.12 as builder
 
 ENV SRC_DIR=/go/src/github.com/kyma-incubator/compass/tests/provisioner-tests
 
@@ -7,9 +7,9 @@ COPY . $SRC_DIR
 
 RUN CGO_ENABLED=0 GOOS=linux go test -c ./test/provisioner
 
-# After the next release of alpine is available (3.12) we should set it here instead of the edge tag
-# We can't do it now cause alpine:3.11 contains a vulnerable version of curl
-FROM alpine:edge
+
+
+FROM alpine:3.12
 
 LABEL source=git@github.com:kyma-project/kyma.git
 
