@@ -35,8 +35,12 @@ func NewCertificateLoader(certificatesCache Cache,
 
 func (cl *certLoader) Run() {
 	for {
-		cl.loadSecretToCache(cl.caSecretName)
-		cl.loadSecretToCache(cl.rootCACertificateSecretName)
+		if cl.caSecretName.Name != "" {
+			cl.loadSecretToCache(cl.caSecretName)
+		}
+		if cl.rootCACertificateSecretName.Name != "" {
+			cl.loadSecretToCache(cl.rootCACertificateSecretName)
+		}
 		time.Sleep(interval)
 	}
 }
@@ -45,7 +49,7 @@ func (cl *certLoader) loadSecretToCache(name types.NamespacedName) {
 	secretData, appError := cl.repository.Get(name)
 
 	if appError != nil {
-		log.Errorf("Failed to get %s secret: %s", name.String(), appError.Error())
+		log.Errorf("Failed to load secret %s to cache: %s", name.String(), appError.Error())
 		return
 	}
 
