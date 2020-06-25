@@ -26,6 +26,7 @@ type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error)
 	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error)
 	DeprovisionRuntime(id, tenant string) (string, error)
+	UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, error)
 	ReconnectRuntimeAgent(id string) (string, error)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
@@ -50,6 +51,8 @@ type service struct {
 	provisioningQueue   queue.OperationQueue
 	deprovisioningQueue queue.OperationQueue
 	upgradeQueue        queue.OperationQueue
+	shootUpgradeQueue   queue.OperationQueue
+
 }
 
 func NewProvisioningService(
@@ -62,6 +65,8 @@ func NewProvisioningService(
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
+	shootUpgradeQueue queue.OperationQueue,
+
 ) Service {
 	return &service{
 		inputConverter:      inputConverter,
@@ -156,10 +161,54 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 	return operation.ID, nil
 }
 
+func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, error) {
+
+	if input.GardenerConfig == nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("error: Gardener config is nil")
+	}
+
+	session := r.dbSessionFactory.NewReadWriteSession()
+
+	err := r.verifyLastOperationFinished(session, runtimeID)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, err
+	}
+
+	cluster, dberr := session.GetCluster(runtimeID)
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to get cluster: %s", dberr.Error())
+	}
+
+	gardenerConfig, err := r.inputConverter.GardenerConfigFromUpgradeShootInput(*input.GardenerConfig)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
+	}
+
+	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
+	if err != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to start database transaction: %s", err.Error())
+	}
+	defer txSession.RollbackUnlessCommitted()
+
+	operation, err := r.setGardenerShootUpgradeStarted(txSession, cluster.ID, gardenerConfig)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to set shoot upgrade started: %s", err.Error())
+	}
+
+	err = txSession.Commit()
+	if err != nil {
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to commit upgrade transaction: %s", err.Error())
+	}
+
+	r.shootUpgradeQueue.Add(operation.ID)
+
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+}
+
 func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) error {
 	lastOperation, dberr := session.GetLastOperation(runtimeId)
 	if dberr != nil {
-		return fmt.Errorf("Failed to get last operation: %s", dberr.Error())
+		return fmt.Errorf("failed to get last operation: %s", dberr.Error())
 	}
 
 	if lastOperation.State == model.InProgress {
@@ -331,6 +380,21 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, model.WaitingForClusterDomain, timestamp, "Provisioning started")
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to set provisioning started: %s")
+	}
+
+	return operation, nil
+}
+
+func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, clusterId string, gardenerConfig model.GardenerClusterUpgradeConfig) (model.Operation, dberrors.Error) {
+
+	err := txSession.UpdateGardenerClusterConfig(clusterId, gardenerConfig)
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to insert updated Gardener Config")
+	}
+
+	operation, err := r.setOperationStarted(txSession, clusterId, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to set Gardener Shoot upgrade operation started")
 	}
 
 	return operation, nil

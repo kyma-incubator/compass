@@ -195,6 +195,8 @@ func main() {
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
 
+	shootUpgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
+
 	var provisioner provisioning.Provisioner
 	switch strings.ToLower(cfg.Provisioner) {
 	case "hydroform":
@@ -220,7 +222,7 @@ func main() {
 		releaseProvider = release.NewOnDemandWrapper(fileDownloader, releaseRepository)
 	}
 
-	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient, provisioningQueue, deprovisioningQueue, upgradeQueue)
+	provisioningSVC := newProvisioningService(cfg.Gardener.Project, provisioner, dbsFactory, releaseProvider, directorClient, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue)
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 
 	resolver := api.NewResolver(provisioningSVC, validator)

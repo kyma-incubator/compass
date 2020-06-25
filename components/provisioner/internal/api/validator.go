@@ -14,6 +14,7 @@ const RuntimeAgent = "compass-runtime-agent"
 type Validator interface {
 	ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) error
 	ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) error
+	ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) error
 	ValidateTenant(runtimeID, tenant string) error
 	ValidateTenantForOperation(operationID, tenant string) error
 }
@@ -62,6 +63,12 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) er
 	if !configContainsRuntimeAgentComponent(kymaConfig.Components) {
 		return errors.New("error: Kyma components list does not contain Compass Runtime Agent")
 	}
+
+	return nil
+}
+
+
+func (v *validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) error {
 
 	return nil
 }

@@ -17,6 +17,7 @@ type OperationType string
 const (
 	Provision        OperationType = "PROVISION"
 	Upgrade          OperationType = "UPGRADE"
+	ShootUpgrade     OperationType = "SHOOT_UPGRADE"
 	Deprovision      OperationType = "DEPROVISION"
 	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
 )
@@ -38,6 +39,8 @@ const (
 
 	StartingUpgrade      OperationStage = "StartingUpgrade"
 	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"
+
+	StartingShootUpgrade      OperationStage = "StartingShootUpgrade"
 
 	FinishedStage OperationStage = "Finished"
 )

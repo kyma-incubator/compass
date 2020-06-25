@@ -17,6 +17,7 @@ import (
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error)
 	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error)
+	GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput) (model.GardenerClusterUpgradeConfig, error)
 }
 
 func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
@@ -72,6 +73,29 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 		return c.gcpConfigFromInput(runtimeID, *config), nil
 	}
 	return nil, errors.New("cluster config does not match any provider")
+}
+
+func (c converter) GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput) (model.GardenerClusterUpgradeConfig, error){
+
+	//if err != nil {
+	//	return model.GardenerClusterUpgradeConfig{}, err
+	//}
+
+	//providerSpecificConfig, err := c.providerSpecificUpgradeConfigFromInput(*input.ProviderSpecificConfig)
+
+	return model.GardenerClusterUpgradeConfig{
+		KubernetesVersion: util.UnwrapStr(input.KubernetesVersion),
+		MachineType:       util.UnwrapStr(input.MachineType),
+		DiskType:          util.UnwrapStr(input.DiskType),
+		VolumeSizeGb:      util.UnwrapInt(input.VolumeSizeGb),
+		Region:            input.Region,
+		WorkerCidr:        util.UnwrapStr(input.WorkerCidr),
+		AutoScalerMin:     util.UnwrapInt(input.AutoScalerMin),
+		AutoScalerMax:     util.UnwrapInt(input.AutoScalerMax),
+		MaxSurge:          util.UnwrapInt(input.MaxSurge),
+		MaxUnavailable:    util.UnwrapInt(input.MaxUnavailable),
+		//ProviderSpecificConfig GardenerProviderConfig TODO Add method providerSpecificConfigFromInput!!!
+	}, nil
 }
 
 func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {

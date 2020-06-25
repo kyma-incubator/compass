@@ -63,6 +63,32 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 	return nil
 }
 
+func (ws writeSession) UpdateGardenerClusterConfig(configID string, config model.GardenerClusterUpgradeConfig) dberrors.Error {
+
+	// this implies that all fiels are set with their final values, check it!!!!
+
+	res, err := ws.update("gardener_config").
+		Where(dbr.Eq("id", configID)).
+		Set("KubernetesVersion", config.KubernetesVersion).
+		Set("MachineType", config.MachineType).
+		Set("disk_type", config.DiskType).
+		Set("volume_size_gb", config.VolumeSizeGb).
+		Set("region", config.Region).
+		Set("worker_cidr", config.WorkerCidr).
+		Set("auto_scaler_min", config.AutoScalerMin).
+		Set("auto_scaler_max", config.AutoScalerMax).
+		Set("max_surge", config.MaxSurge).
+		Set("max_unavailable", config.MaxUnavailable).
+		Set("provider_specific_config", config.ProviderSpecificConfig.RawJSON()).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update record of gardener cluster configuration %s: %s", configID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update record of gardener cluster configuration %s state: %s", configID, err))
+}
+
 func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
 	_, err := ws.insertInto("gcp_config").
 		Columns("id", "cluster_id", "name", "project_name", "kubernetes_version", "number_of_nodes", "boot_disk_size_gb",

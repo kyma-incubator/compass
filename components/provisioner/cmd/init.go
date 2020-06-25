@@ -43,13 +43,14 @@ func newProvisioningService(
 	directorService director.DirectorClient,
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
-	upgradeQueue queue.OperationQueue) provisioning.Service {
+	upgradeQueue queue.OperationQueue,
+	shootUpgradeQueue queue.OperationQueue) provisioning.Service {
 	uuidGenerator := uuid.NewUUIDGenerator()
 
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue)
+	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {

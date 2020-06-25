@@ -33,6 +33,7 @@ type ReadSession interface {
 type WriteSession interface {
 	InsertCluster(cluster model.Cluster) dberrors.Error
 	InsertGardenerConfig(config model.GardenerConfig) dberrors.Error
+	UpdateGardenerClusterConfig(configID string, config model.GardenerClusterUpgradeConfig) dberrors.Error
 	InsertGCPConfig(config model.GCPConfig) dberrors.Error
 	InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error
 	InsertOperation(operation model.Operation) dberrors.Error

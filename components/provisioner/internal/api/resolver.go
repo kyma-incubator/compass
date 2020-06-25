@@ -173,6 +173,32 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 	return status, nil
 }
 
+func (r *Resolver) UpgradeShoot(ctx context.Context, runtimeID string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, error) {
+	log.Infof("Requested to upgrade Gardener Shoot cluster specification for Runtime : %s.", runtimeID)
+
+	_, err := r.getAndValidateTenant(ctx, runtimeID)
+	if err != nil {
+		log.Errorf("Failed to upgrade Gardener Shoot cluster specification for Runtime  %s: %s", runtimeID, err)
+		return nil, err
+	}
+
+	err = r.validator.ValidateUpgradeShootInput(input)
+	if err != nil {
+		log.Errorf("Failed to upgrade Gardener Shoot cluster specification for Runtime %s", err)
+		return nil, err
+	}
+
+	status, err := r.provisioning.UpgradeGardenerShoot(runtimeID, input)
+	if err != nil {
+		log.Errorf("Failed to upgrade Gardener Shoot cluster specification for Runtime %s: %s", runtimeID, err)
+		return nil, err
+	}
+
+	log.Infof("Upgrade Gardener Shoot cluster specification for Runtime %s succeeded", runtimeID)
+
+	return status, nil
+}
+
 func (r *Resolver) getAndValidateTenant(ctx context.Context, runtimeID string) (string, error) {
 	tenant, err := getTenant(ctx)
 	if err != nil {
