@@ -23,7 +23,7 @@ spec:
           restartPolicy: Never
           containers:
           - name: environments-cleanup
-            image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
+            image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environments_cleanup_job.dir }}kyma-environments-cleanup-job:{{ .Values.global.images.kyma_environments_cleanup_job.version }}"
             imagePullPolicy: IfNotPresent
             env:
               - name: APP_MAX_AGE_HOURS

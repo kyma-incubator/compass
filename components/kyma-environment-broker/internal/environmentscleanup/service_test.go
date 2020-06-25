@@ -37,7 +37,7 @@ func TestService_PerformCleanup(t *testing.T) {
 			RuntimeID:  fixRuntimeID,
 		})
 		memoryStorage.Instances().Insert(internal.Instance{
-			InstanceID: "should-not-delete-me",
+			InstanceID: "second-instance",
 			RuntimeID:  "some-runtime-id",
 		})
 

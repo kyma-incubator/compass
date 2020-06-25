@@ -107,10 +107,7 @@ func (s *Service) getShootsToDelete(labelSelector string) ([]v1beta1.Shoot, erro
 
 	var shoots []v1beta1.Shoot
 	for _, shoot := range shootList.Items {
-		log.Infof("Processing shoot %q created on %q", shoot.GetName(), shoot.GetCreationTimestamp())
-
 		shootCreationTimestamp := shoot.GetCreationTimestamp()
-
 		shootAge := time.Since(shootCreationTimestamp.Time)
 
 		if shootAge.Hours() >= s.MaxShootAge.Hours() {
@@ -134,24 +131,23 @@ func (s *Service) getInstanceIds(instancesToDelete []instanceDetailsDTO) ([]inst
 	for _, instanceDetails := range instancesToDelete {
 		runtimeIdList = append(runtimeIdList, instanceDetails.RuntimeID)
 	}
-	log.Infof("RuntimeID list to process: '%+q'", runtimeIdList)
 
 	instances, err := s.instanceStorage.FindAllInstancesForRuntimes(runtimeIdList)
 	if err != nil {
 		return []instanceDetailsDTO{}, err
 	}
-	log.Infof("Instances to process: %v", instances)
 
+	var toDelete []instanceDetailsDTO
 	for _, instance := range instances {
 		for _, instanceToDeleteDetails := range instancesToDelete {
 			if instance.RuntimeID == instanceToDeleteDetails.RuntimeID {
 				instanceToDeleteDetails.InstanceID = instance.InstanceID
+				toDelete = append(toDelete, instanceToDeleteDetails)
 			}
 		}
 	}
-	log.Infof("Instances to delete: %v", instancesToDelete)
 
-	return instancesToDelete, nil
+	return toDelete, nil
 }
 
 func (s *Service) triggerEnvironmentDeprovisioning(instanceDetails instanceDetailsDTO) error {
@@ -159,7 +155,6 @@ func (s *Service) triggerEnvironmentDeprovisioning(instanceDetails instanceDetai
 		InstanceID:       instanceDetails.InstanceID,
 		CloudProfileName: instanceDetails.CloudProfileName,
 	}
-	log.Infof("Deprovision call payload: %v", payload)
 	opID, err := s.brokerService.Deprovision(payload)
 	if err != nil {
 		return err
