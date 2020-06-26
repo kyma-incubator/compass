@@ -6,11 +6,11 @@ source ${ROOT_PATH}/kyma-scripts/testing-common.sh
 readonly TMP_DIR=$(mktemp -d)
 
 echo "ARTIFACTS: ${ARTIFACTS}"
-readonly JUNIT_REPORT_PATH="${ARTIFACTS:-${TMP_DIR}}/junit_compass_octopus-test-suite.xml"
+readonly JUNIT_REPORT_PATH="${ARTIFACTS:-${TMP_DIR}}/junit_kcp_octopus-test-suite.xml"
 
 suiteName="testsuite-all"
 echo "----------------------------"
-echo "- Testing Compass..."
+echo "- Testing Control Plane..."
 echo "----------------------------"
 
 kc="kubectl $(context_arg)"

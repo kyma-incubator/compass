@@ -4,12 +4,12 @@ set -o errexit
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR=${CURRENT_DIR}/../../
-IMAGE_NAME="$(${CURRENT_DIR}/extract-compass-installer-image.sh)"
+IMAGE_NAME="$(${CURRENT_DIR}/extract-kcp-installer-image.sh)"
 BUILD_ARG=""
 
 echo "
 ################################################################################
-# Compass-Installer build
+# KCP Installer build
 ################################################################################
 "
 
@@ -43,6 +43,6 @@ if [[ "$VM_DRIVER" != "none" ]]; then
     eval $(minikube docker-env --shell bash)
 fi
 
-docker build -t ${IMAGE_NAME} ${BUILD_ARG} -f ./tools/compass-installer/compass.Dockerfile .
+docker build -t ${IMAGE_NAME} ${BUILD_ARG} -f ./tools/kcp-installer/kcp.Dockerfile .
 
 popd 
