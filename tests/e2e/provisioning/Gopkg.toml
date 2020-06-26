@@ -29,6 +29,11 @@
   name = "github.com/vrischmann/envconfig"
   version = "1.2.0"
 
+[[override]]
+  name = "github.com/kyma-incubator/compass"
+  source = "github.com/Szymongib/compass"
+  branch = "remove-hydroform"
+
 [prune]
   go-tests = true
   unused-packages = true

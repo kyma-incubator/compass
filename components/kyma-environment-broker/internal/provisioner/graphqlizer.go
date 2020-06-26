@@ -55,9 +55,6 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 		{{- if .GardenerConfig }}
 		gardenerConfig: {{ GardenerConfigInputToGraphQL .GardenerConfig }},
 		{{- end }}
-		{{- if .GcpConfig }}
-		gcpConfig: {{ GCPConfigInputToGraphQL .GcpConfig }},
-		{{- end }}
 	}`)
 }
 
@@ -109,21 +106,6 @@ func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderCo
 		vpcCidr: "%s",
         internalCidr: "%s",
 }`, in.Zone, in.PublicCidr, in.VpcCidr, in.InternalCidr), nil
-}
-
-func (g *Graphqlizer) GCPConfigInputToGraphQL(in gqlschema.GCPConfigInput) (string, error) {
-	return g.genericToGraphQL(in, `{
-		name: "{{.Name}}",
-		kubernetesVersion: "{{.KubernetesVersion}}",
-        projectName: "{{.ProjectName}}",
-		numberOfNodes: {{.NumberOfNodes}},
-		bootDiskSizeGB: {{ .BootDiskSizeGb }},
-		machineType: "{{.MachineType}}",
-		region: "{{.Region}}",
-		{{- if .Zone }}
-		zone: "{{.Zone}}",
-		{{- end }}
-	}`)
 }
 
 func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
@@ -210,7 +192,6 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL
 	fm["GardenerConfigInputToGraphQL"] = g.GardenerConfigInputToGraphQL
-	fm["GCPConfigInputToGraphQL"] = g.GCPConfigInputToGraphQL
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL
 	fm["GCPProviderConfigInputToGraphQL"] = g.GCPProviderConfigInputToGraphQL
 	fm["AWSProviderConfigInputToGraphQL"] = g.AWSProviderConfigInputToGraphQL

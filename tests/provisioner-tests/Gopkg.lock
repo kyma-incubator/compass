@@ -208,7 +208,8 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:bfa965009e096bf20a3ebf3170b2d4c94bc1eeb98ffd40999b01f5a049aa61d7"
+  branch = "remove-hydroform"
+  digest = "1:3d0e9bfd5d251030d6b5f2fbeef51024406aaa67b943267168a862cac8ea27bd"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -217,11 +218,13 @@
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
     "components/director/pkg/pagination",
+    "components/director/pkg/resource",
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "64f737ad7e1db26e2c3e9b71335bd67e69199092"
+  revision = "813a397aa12d2a12b2f2c589f122ef78bb0a1595"
+  source = "github.com/Szymongib/compass"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
