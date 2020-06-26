@@ -1,6 +1,6 @@
 BEGIN;
 
-ALTER TABLE cluster DROP COLUMN terraform_state;
-ALTER TABLE cluster DROP COLUMN credentials_secret_name;
+ALTER TABLE cluster ADD COLUMN terraform_state bytea;
+ALTER TABLE cluster ADD COLUMN credentials_secret_name varchar(256) NOT NULL default '';
 
 COMMIT;
