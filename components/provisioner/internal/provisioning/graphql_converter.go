@@ -83,7 +83,7 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		VolumeSizeGb:           &config.VolumeSizeGB,
 		MachineType:            &config.MachineType,
 		Provider:               &config.Provider,
-		Purpose:                &config.Purpose,
+		Purpose:                config.Purpose,
 		Seed:                   &config.Seed,
 		TargetSecret:           &config.TargetSecret,
 		WorkerCidr:             &config.WorkerCidr,

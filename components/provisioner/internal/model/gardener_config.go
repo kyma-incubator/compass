@@ -30,7 +30,7 @@ type GardenerConfig struct {
 	DiskType               string
 	MachineType            string
 	Provider               string
-	Purpose                string
+	Purpose                *string
 	Seed                   string
 	TargetSecret           string
 	Region                 string
@@ -51,8 +51,8 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		seed = util.StringPtr(c.Seed)
 	}
 	var purpose *gardener_types.ShootPurpose = nil
-	if c.Purpose != "" {
-		p := gardener_types.ShootPurpose(c.Purpose)
+	if c.Purpose != nil && *c.Purpose != "" {
+		p := gardener_types.ShootPurpose(*c.Purpose)
 		purpose = &p
 	}
 
