@@ -42,3 +42,7 @@ func (c GCPConfig) ToHydroformConfiguration(credentialsFileName string) (*types.
 func (c GCPConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, error) {
 	panic("Method not supported for GCP Config")
 }
+
+func (c GCPConfig) GetLicenceType() string {
+	return ""
+}

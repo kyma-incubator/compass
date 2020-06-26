@@ -43,6 +43,10 @@ func (c mockProviderConfiguration) ToShootTemplate(namespace string, accountId s
 	return nil, nil
 }
 
+func (c mockProviderConfiguration) GetLicenceType() string {
+	return ""
+}
+
 const (
 	credentialsSecret = "credentials-secret"
 	secretsNamespace  = "namespace"

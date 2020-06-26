@@ -31,6 +31,7 @@ type GardenerConfig struct {
 	MachineType            string
 	Provider               string
 	Purpose                *string
+	LicenceType            string
 	Seed                   string
 	TargetSecret           string
 	Region                 string
@@ -131,6 +132,10 @@ func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*t
 	}
 
 	return cluster, provider, nil
+}
+
+func (c GardenerConfig) GetLicenceType() string {
+	return c.LicenceType
 }
 
 type ProviderSpecificConfig string

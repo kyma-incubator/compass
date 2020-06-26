@@ -63,6 +63,9 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 
 	annotate(shootTemplate, operationIdAnnotation, operationId)
 	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
+	if cluster.LicenceType != "" {
+		annotate(shootTemplate, licenceTypeAnnotation, cluster.LicenceType)
+	}
 
 	if g.policyConfigMapName != "" {
 		g.applyAuditConfig(shootTemplate)

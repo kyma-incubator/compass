@@ -8,4 +8,5 @@ import (
 type ProviderConfiguration interface {
 	ToHydroformConfiguration(credentialsFileName string) (*types.Cluster, *types.Provider, error)
 	ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, error)
+	GetLicenceType() string
 }
