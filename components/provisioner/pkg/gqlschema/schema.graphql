@@ -1,12 +1,10 @@
 
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
-    clusterConfig: ClusterConfig
+    clusterConfig: GardenerConfig
     kymaConfig: KymaConfig
     kubeconfig: String
 }
-
-union ClusterConfig = GardenerConfig | GCPConfig
 
 type GardenerConfig {
     name: String
@@ -43,17 +41,6 @@ type AWSProviderConfig {
     vpcCidr: String
     publicCidr: String
     internalCidr: String
-}
-
-type GCPConfig {
-    name: String
-    projectName: String
-    kubernetesVersion: String
-    numberOfNodes: Int
-    bootDiskSizeGB: Int
-    machineType: String
-    region: String
-    zone: String
 }
 
 type ConfigEntry {
@@ -133,16 +120,10 @@ input ProvisionRuntimeInput {
     runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
     kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
-    credentials: CredentialsInput       # Credentials # Field is ignored for now
-}
-
-input CredentialsInput {
-    secretName: String!     # Secret name
 }
 
 input ClusterConfigInput {
-    gardenerConfig: GardenerConfigInput     # Gardener-specific configuration for the cluster to be provisioned
-    gcpConfig: GCPConfigInput               # GCP-specific configuration for the cluster to be provisioned
+    gardenerConfig: GardenerConfigInput!     # Gardener-specific configuration for the cluster to be provisioned
 }
 
 input GardenerConfigInput {                   # Gardener project in which the cluster is created
@@ -183,17 +164,6 @@ input AWSProviderConfigInput {
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
     publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
     internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
-}
-
-input GCPConfigInput {
-    name: String!                   # Name of the cluster to create
-    projectName: String!            # GCP project in which to create the cluster
-    kubernetesVersion: String!      # Kubernetes version to be installed on the cluster
-    numberOfNodes: Int!             # Number of nodes to create
-    bootDiskSizeGB: Int!            # Size of the available disk, provided in GB
-    machineType: String!            # Type of node machines
-    region: String! # TODO: later we may require either Region or Zone ## Region in which to create the cluster
-    zone: String                    # Zone in which to create the cluster
 }
 
 input KymaConfigInput {

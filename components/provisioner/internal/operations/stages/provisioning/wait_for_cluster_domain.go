@@ -46,13 +46,7 @@ func (s *WaitForClusterDomainStep) TimeLimit() time.Duration {
 
 func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
-	gardenerConfig, ok := cluster.GardenerConfig()
-	if !ok {
-		err := errors.New("failed to convert to GardenerConfig")
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
-	}
-
-	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
+	shoot, err := s.gardenerClient.Get(cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}

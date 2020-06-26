@@ -98,13 +98,6 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		unrecoverableError bool
 	}{
 		{
-			description: "should return unrecoverable error when failed to get GardenerConfig",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
-			},
-			unrecoverableError: true,
-			cluster:            model.Cluster{},
-		},
-		{
 			description: "should return error if failed to read Shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))

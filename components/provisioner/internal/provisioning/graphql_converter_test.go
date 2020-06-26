@@ -55,82 +55,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 	graphQLConverter := NewGraphQLConverter()
 
-	t.Run("Should create proper runtime status struct for GCP config", func(t *testing.T) {
-		clusterName := "Something"
-		project := "Project"
-		numberOfNodes := 3
-		bootDiskSize := 256
-		machine := "machine"
-		region := "region"
-		zone := "zone"
-		kubeversion := "kubeversion"
-		kubeconfig := "kubeconfig"
-
-		runtimeStatus := model.RuntimeStatus{
-			LastOperationStatus: model.Operation{
-				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
-				Type:      model.Provision,
-				State:     model.Succeeded,
-				Message:   "Some message",
-				ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
-			},
-			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusConnected,
-			RuntimeConfiguration: model.Cluster{
-				ClusterConfig: model.GCPConfig{
-					ID:                "id",
-					Name:              "Something",
-					ProjectName:       "Project",
-					NumberOfNodes:     3,
-					BootDiskSizeGB:    256,
-					MachineType:       "machine",
-					Region:            "region",
-					Zone:              "zone",
-					KubernetesVersion: "kubeversion",
-					ClusterID:         "runtimeID",
-				},
-				Kubeconfig: &kubeconfig,
-				KymaConfig: fixKymaConfig(),
-			},
-		}
-
-		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
-		message := "Some message"
-		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
-
-		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
-			LastOperationStatus: &gqlschema.OperationStatus{
-				ID:        &operationID,
-				Operation: gqlschema.OperationTypeProvision,
-				State:     gqlschema.OperationStateSucceeded,
-				Message:   &message,
-				RuntimeID: &runtimeID,
-			},
-			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
-				Status: gqlschema.RuntimeAgentConnectionStatusConnected,
-			},
-			RuntimeConfiguration: &gqlschema.RuntimeConfig{
-				ClusterConfig: gqlschema.GCPConfig{
-					Name:              &clusterName,
-					ProjectName:       &project,
-					MachineType:       &machine,
-					Region:            &region,
-					Zone:              &zone,
-					NumberOfNodes:     &numberOfNodes,
-					BootDiskSizeGb:    &bootDiskSize,
-					KubernetesVersion: &kubeversion,
-				},
-				KymaConfig: fixKymaGraphQLConfig(),
-				Kubeconfig: &kubeconfig,
-			},
-		}
-
-		//when
-		gqlStatus := graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus)
-
-		//then
-		assert.Equal(t, expectedRuntimeStatus, gqlStatus)
-	})
-
 	t.Run("Should create proper runtime status struct for gardener config with zones", func(t *testing.T) {
 		//given
 		clusterName := "Something"
@@ -205,7 +129,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
-				ClusterConfig: gqlschema.GardenerConfig{
+				ClusterConfig: &gqlschema.GardenerConfig{
 					Name:              &clusterName,
 					DiskType:          &disk,
 					MachineType:       &machine,
@@ -310,7 +234,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
-				ClusterConfig: gqlschema.GardenerConfig{
+				ClusterConfig: &gqlschema.GardenerConfig{
 					Name:              &clusterName,
 					DiskType:          &disk,
 					MachineType:       &machine,

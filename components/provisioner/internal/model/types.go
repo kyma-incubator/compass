@@ -51,20 +51,8 @@ type Cluster struct {
 	SubAccountId       *string
 	ActiveKymaConfigId string
 
-	ClusterConfig ProviderConfiguration `db:"-"`
-	KymaConfig    KymaConfig            `db:"-"`
-}
-
-func (c Cluster) GCPConfig() (GCPConfig, bool) {
-	gcpConfig, ok := c.ClusterConfig.(GCPConfig)
-
-	return gcpConfig, ok
-}
-
-func (c Cluster) GardenerConfig() (GardenerConfig, bool) {
-	gardenerConfig, ok := c.ClusterConfig.(GardenerConfig)
-
-	return gardenerConfig, ok
+	ClusterConfig GardenerConfig `db:"-"`
+	KymaConfig    KymaConfig     `db:"-"`
 }
 
 type Operation struct {

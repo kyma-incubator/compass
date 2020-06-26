@@ -65,22 +65,6 @@ func (_m *WriteSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	return r0
 }
 
-// InsertGCPConfig provides a mock function with given fields: config
-func (_m *WriteSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
-	ret := _m.Called(config)
-
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.GCPConfig) dberrors.Error); ok {
-		r0 = rf(config)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
-		}
-	}
-
-	return r0
-}
-
 // InsertGardenerConfig provides a mock function with given fields: config
 func (_m *WriteSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
 	ret := _m.Called(config)

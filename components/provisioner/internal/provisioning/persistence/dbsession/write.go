@@ -62,20 +62,6 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 	return nil
 }
 
-func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
-	_, err := ws.insertInto("gcp_config").
-		Columns("id", "cluster_id", "name", "project_name", "kubernetes_version", "number_of_nodes", "boot_disk_size_gb",
-			"machine_type", "zone", "region").
-		Record(config).
-		Exec()
-
-	if err != nil {
-		return dberrors.Internal("Failed to insert record to GCPConfig table: %s", err)
-	}
-
-	return nil
-}
-
 func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
 	jsonConfig, err := json.Marshal(kymaConfig.GlobalConfiguration)
 	if err != nil {

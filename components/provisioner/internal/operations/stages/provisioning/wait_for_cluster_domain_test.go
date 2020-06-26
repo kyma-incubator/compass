@@ -93,12 +93,6 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		unrecoverableError bool
 	}{
 		{
-			description: "should return unrecoverable error when failed to get GardenerConfig",
-			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
-			},
-			unrecoverableError: true,
-		},
-		{
 			description: "should return error if failed to read Shoot",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))

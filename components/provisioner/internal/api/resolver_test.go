@@ -50,8 +50,6 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		Description: new(string),
 	}
 
-	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
-
 	t.Run("Should start provisioning and return operation ID", func(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
@@ -79,7 +77,6 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
 			ClusterConfig: clusterConfig,
-			Credentials:   providerCredentials,
 			KymaConfig:    kymaConfig,
 		}
 
@@ -101,47 +98,6 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		assert.Equal(t, util.StringPtr("Message"), status.Message)
 	})
 
-	t.Run("Should return error when requested provisioning on GCP", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
-
-		clusterConfig := &gqlschema.ClusterConfigInput{
-			GcpConfig: &gqlschema.GCPConfigInput{
-				Name:              "Something",
-				ProjectName:       "Project",
-				NumberOfNodes:     3,
-				BootDiskSizeGb:    256,
-				MachineType:       "machine",
-				Region:            "region",
-				Zone:              new(string),
-				KubernetesVersion: "version",
-			},
-		}
-
-		kymaConfig := &gqlschema.KymaConfigInput{
-			Version: "1.5",
-			Components: []*gqlschema.ComponentConfigurationInput{
-				{
-					Component:     "core",
-					Configuration: nil,
-				},
-			},
-		}
-
-		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
-
-		validator.On("ValidateProvisioningInput", config).Return(nil)
-
-		//when
-		status, err := provisioner.ProvisionRuntime(ctx, config)
-
-		//then
-		require.Error(t, err)
-		assert.Nil(t, status)
-	})
-
 	t.Run("Should return error when Kyma config validation fails", func(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
@@ -152,7 +108,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			Version: "1.5",
 		}
 
-		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
 		validator.On("ValidateProvisioningInput", config).Return(errors.New("Some error"))
 
@@ -180,7 +136,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			},
 		}
 
-		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
 		provisioningService.On("ProvisionRuntime", config, tenant, "").Return(nil, errors.New("Provisioning failed"))
 		validator.On("ValidateProvisioningInput", config).Return(nil)
@@ -212,7 +168,6 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
 			ClusterConfig: clusterConfig,
-			Credentials:   providerCredentials,
 			KymaConfig:    kymaConfig,
 		}
 
