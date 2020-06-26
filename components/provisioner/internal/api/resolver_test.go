@@ -3,8 +3,9 @@ package api_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	validatorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/api/mocks"

@@ -1,6 +1,8 @@
 package fake
 
 import (
+	"testing"
+
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/stretchr/testify/require"
@@ -11,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	"testing"
 )
 
 func NewFakeShootsInterface(t *testing.T, config *rest.Config) gardener_apis.ShootInterface {

@@ -1,6 +1,10 @@
 package api_test
 
 import (
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -8,11 +12,8 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"testing"
 )
 
 func TestMain(m *testing.M) {

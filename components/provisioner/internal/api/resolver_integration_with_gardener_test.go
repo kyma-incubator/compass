@@ -3,10 +3,11 @@ package api_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s/mocks"
 
