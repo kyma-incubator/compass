@@ -85,7 +85,7 @@ func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster
 		return operations.StageResult{}, err
 	}
 
-	dberr := s.dbSession.UpdateCluster(cluster.ID, string(kubeconfig), nil)
+	dberr := s.dbSession.UpdateKubeconfig(cluster.ID, string(kubeconfig))
 	if dberr != nil {
 		return operations.StageResult{}, dberr
 	}

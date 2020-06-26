@@ -45,7 +45,6 @@ const (
 type Cluster struct {
 	ID                 string
 	Kubeconfig         *string
-	TerraformState     []byte
 	CreationTimestamp  time.Time
 	Deleted            bool
 	Tenant             string

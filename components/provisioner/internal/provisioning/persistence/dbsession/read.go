@@ -60,7 +60,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 
 	err := r.session.
 		Select(
-			"id", "kubeconfig", "terraform_state", "tenant",
+			"id", "kubeconfig", "tenant",
 			"creation_timestamp", "deleted", "sub_account_id", "active_kyma_config_id").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).

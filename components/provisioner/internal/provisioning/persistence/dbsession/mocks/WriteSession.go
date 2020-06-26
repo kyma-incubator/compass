@@ -193,13 +193,13 @@ func (_m *WriteSession) TransitionOperation(operationID string, message string, 
 	return r0
 }
 
-// UpdateCluster provides a mock function with given fields: runtimeID, kubeconfig, terraformState
-func (_m *WriteSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
-	ret := _m.Called(runtimeID, kubeconfig, terraformState)
+// UpdateKubeconfig provides a mock function with given fields: runtimeID, kubeconfig
+func (_m *WriteSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
+	ret := _m.Called(runtimeID, kubeconfig)
 
 	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string, []byte) dberrors.Error); ok {
-		r0 = rf(runtimeID, kubeconfig, terraformState)
+	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+		r0 = rf(runtimeID, kubeconfig)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)

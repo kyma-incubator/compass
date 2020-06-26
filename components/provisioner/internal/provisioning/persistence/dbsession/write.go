@@ -19,7 +19,6 @@ type writeSession struct {
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).
-		Pair("terraform_state", cluster.TerraformState).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
@@ -212,11 +211,10 @@ func (ws writeSession) FixShootProvisioningStage(message string, newStage model.
 	return nil
 }
 
-func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
+func (ws writeSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
 		Set("kubeconfig", kubeconfig).
-		Set("terraform_state", terraformState).
 		Exec()
 
 	if err != nil {

@@ -64,7 +64,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
 				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
 
-				dbSession.On("UpdateCluster", cluster.ID, "kubeconfig", []byte(nil)).Return(nil)
+				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(nil)
 
 			},
 			expectedStage: nextStageName,
@@ -135,7 +135,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
 				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
 
-				dbSession.On("UpdateCluster", cluster.ID, "kubeconfig", []byte(nil)).Return(dberrors.Internal("some error"))
+				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(dberrors.Internal("some error"))
 			},
 			unrecoverableError: false,
 			cluster:            cluster,

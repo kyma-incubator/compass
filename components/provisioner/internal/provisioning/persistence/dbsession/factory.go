@@ -38,7 +38,7 @@ type WriteSession interface {
 	InsertOperation(operation model.Operation) dberrors.Error
 	UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error
 	TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error
-	UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error
+	UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error
 	SetActiveKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error
 	UpdateUpgradeState(operationID string, upgradeState model.UpgradeState) dberrors.Error
 	DeleteCluster(runtimeID string) dberrors.Error
