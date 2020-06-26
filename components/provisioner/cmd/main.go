@@ -80,8 +80,6 @@ type config struct {
 		ClusterCleanupResourceSelector string `envconfig:"default=https://service-manager."`
 	}
 
-	Provisioner string `envconfig:"default=gardener"`
-
 	LatestDownloadedReleases int  `envconfig:"default=5"`
 	DownloadPreReleases      bool `envconfig:"default=true"`
 	SupportOnDemandReleases  bool `envconfig:"default=false"`
@@ -103,7 +101,6 @@ func (c *config) String() string {
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
-		"Provisioner: %s, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
@@ -116,7 +113,6 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
-		c.Provisioner,
 		c.LatestDownloadedReleases, c.DownloadPreReleases, c.SupportOnDemandReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel)
