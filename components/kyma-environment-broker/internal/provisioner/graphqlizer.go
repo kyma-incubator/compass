@@ -75,14 +75,16 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
         autoScalerMax: {{ .AutoScalerMax }},
         maxSurge: {{ .MaxSurge }},
 		maxUnavailable: {{ .MaxUnavailable }},
+		{{- if .ProviderSpecificConfig }}	
 		providerSpecificConfig: {
-		{{- if .ProviderSpecificConfig.AzureConfig }}
+			{{- if .ProviderSpecificConfig.AzureConfig }}
 			azureConfig: {{ AzureProviderConfigInputToGraphQL .ProviderSpecificConfig.AzureConfig }},
-		{{- end}}
-		{{- if .ProviderSpecificConfig.GcpConfig }}
+			{{- end}}
+			{{- if .ProviderSpecificConfig.GcpConfig }}
 			gcpConfig: {{ GCPProviderConfigInputToGraphQL .ProviderSpecificConfig.GcpConfig }},
-		{{- end}}
+			{{- end}}
         }
+		{{- end}}
 	}`)
 }
 
