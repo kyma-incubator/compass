@@ -3,9 +3,11 @@ package provisioner
 import (
 	"crypto/tls"
 	"io/ioutil"
+	"k8s.io/client-go/util/homedir"
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -78,7 +80,14 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 func newDirectorClient(config testkit.TestConfig) (director.Client, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get in cluster config")
+		logrus.Warnf("Failed to read in cluster config: %s", err.Error())
+		logrus.Info("Trying to initialize with local config")
+		home := homedir.HomeDir()
+		k8sConfPath := filepath.Join(home, ".kube", "config")
+		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
+		if err != nil {
+			return nil, errors.Errorf("failed to read k8s in-cluster configuration, %s", err.Error())
+		}
 	}
 	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
 	if err != nil {

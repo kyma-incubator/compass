@@ -32,7 +32,7 @@
 [[override]]
   name = "github.com/kyma-incubator/compass"
   source = "github.com/Szymongib/compass"
-  branch = "remove-hydroform"
+  revision = "478d8e03b3df9f0cf7c9e67fcb450b56843905b6"
 
 [prune]
   go-tests = true

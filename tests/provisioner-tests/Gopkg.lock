@@ -208,8 +208,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "remove-hydroform"
-  digest = "1:3d0e9bfd5d251030d6b5f2fbeef51024406aaa67b943267168a862cac8ea27bd"
+  digest = "1:146352eb550b407b778e4d52d5facae3b7b7efaee881744ff7100165496a3ff5"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -223,7 +222,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "813a397aa12d2a12b2f2c589f122ef78bb0a1595"
+  revision = "478d8e03b3df9f0cf7c9e67fcb450b56843905b6"
   source = "github.com/Szymongib/compass"
 
 [[projects]]
@@ -757,7 +756,6 @@
   input-imports = [
     "github.com/Masterminds/sprig",
     "github.com/avast/retry-go",
-    "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
@@ -779,6 +777,7 @@
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
+    "k8s.io/client-go/util/homedir",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
