@@ -206,7 +206,7 @@ func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfi
 		MachineType:       input.MachineType,
 		Region:            input.Region,
 		Zone:              zone,
-			ClusterID:         runtimeID,
+		ClusterID:         runtimeID,
 	}
 }
 

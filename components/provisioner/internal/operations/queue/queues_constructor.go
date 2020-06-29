@@ -13,8 +13,8 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/failure"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/deprovisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/upgrade"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/shootupgrade"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/upgrade"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -138,7 +138,7 @@ func CreateShootUpgradeQueue(
 	shootUpgradeStep := shootupgrade.NewWaitForShootClusterUpgradeStep(shootClient, model.FinishedStage, timeouts.ShootUpgrade)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
-		model.StartingShootUpgrade:   shootUpgradeStep,
+		model.StartingShootUpgrade: shootUpgradeStep,
 	}
 
 	upgradeClusterExecutor := operations.NewExecutor(

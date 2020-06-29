@@ -3,9 +3,10 @@ package gardener
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
@@ -76,12 +77,11 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	return nil
 }
 
-
 func (g *GardenerProvisioner) UpgradeCluster(currentCluster model.Cluster, upgradeConfig model.GardenerConfig) error {
 
 	gardenerCfg, ok := currentCluster.GardenerConfig()
 	if !ok {
-		return /*model.Operation{}, */fmt.Errorf("cluster to upgrade does not have Gardener configuration")
+		return /*model.Operation{}, */ fmt.Errorf("cluster to upgrade does not have Gardener configuration")
 	}
 
 	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
@@ -107,7 +107,7 @@ func (g *GardenerProvisioner) UpgradeCluster(currentCluster model.Cluster, upgra
 	err = upgradeConfig.GardenerProviderConfig.ExtendShootConfig(upgradeConfig, shoot)
 
 	if err != nil {
-		return /*model.Operation{}, */fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
+		return /*model.Operation{}, */ fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
 	}
 
 	_, err = g.shootClient.Update(shoot)

@@ -67,7 +67,6 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) er
 	return nil
 }
 
-
 func (v *validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) error {
 
 	return nil

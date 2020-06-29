@@ -37,7 +37,7 @@ type Service interface {
 type Provisioner interface {
 	ProvisionCluster(cluster model.Cluster, operationId string) error
 	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error)
-	UpgradeCluster(currentCluster model.Cluster, upgradeConfig model.GardenerConfig) (error)
+	UpgradeCluster(currentCluster model.Cluster, upgradeConfig model.GardenerConfig) error
 }
 
 type service struct {
@@ -53,7 +53,6 @@ type service struct {
 	deprovisioningQueue queue.OperationQueue
 	upgradeQueue        queue.OperationQueue
 	shootUpgradeQueue   queue.OperationQueue
-
 }
 
 func NewProvisioningService(
