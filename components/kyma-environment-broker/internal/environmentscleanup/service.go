@@ -7,7 +7,7 @@ import (
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/hashicorp/go-multierror"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/environmentscleanup/broker"
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -25,7 +25,7 @@ type GardenerClient interface {
 
 //go:generate mockery -name=BrokerClient -output=automock
 type BrokerClient interface {
-	Deprovision(details broker.DeprovisionDetails) (string, error)
+	Deprovision(instance internal.Instance) (string, error)
 }
 
 type Service struct {
@@ -54,33 +54,30 @@ func (s *Service) PerformCleanup() error {
 		result = multierror.Append(result, err)
 	}
 
-	var instancesDetails []instanceDetailsDTO
+	var runtimeIDsToDelete []string
 	for _, shoot := range shootsToDelete {
-		runtimeId, ok := shoot.Annotations[shootAnnotationRuntimeId]
+		runtimeID, ok := shoot.Annotations[shootAnnotationRuntimeId]
 		if !ok {
 			err = errors.New(fmt.Sprintf("shoot %q has no runtime-id annotation", shoot.Name))
 			log.Error(err)
 			result = multierror.Append(result, err)
 			continue
 		}
-		instancesDetails = append(instancesDetails, instanceDetailsDTO{
-			RuntimeID:        runtimeId,
-			CloudProfileName: shoot.Spec.CloudProfileName,
-		})
+		runtimeIDsToDelete = append(runtimeIDsToDelete, runtimeID)
 	}
-	log.Infof("Instances Details to process: %v", instancesDetails)
+	log.Infof("Runtime IDs to process: %v", runtimeIDsToDelete)
 
-	instancesToDelete, err := s.getInstanceIds(instancesDetails)
+	instancesToDelete, err := s.getInstancesForRuntimes(runtimeIDsToDelete)
 	if err != nil {
-		log.Error(errors.Wrap(err, "while getting instance IDs for runtimes"))
+		log.Error(errors.Wrap(err, "while getting instance IDs for Runtimes"))
 		result = multierror.Append(result, err)
 	}
 
-	for _, payload := range instancesToDelete {
-		log.Infof("Triggering environment deprovisioning for instance ID %q", payload.InstanceID)
-		currentErr := s.triggerEnvironmentDeprovisioning(payload)
+	for _, instance := range instancesToDelete {
+		log.Infof("Triggering environment deprovisioning for instance ID %q", instance.InstanceID)
+		currentErr := s.triggerEnvironmentDeprovisioning(instance)
 		if currentErr != nil {
-			log.Error(errors.Wrapf(currentErr, "while triggering deprovisioning for instance ID %q", payload.InstanceID))
+			log.Error(errors.Wrapf(currentErr, "while triggering deprovisioning for instance ID %q", instance.InstanceID))
 			result = multierror.Append(result, currentErr)
 		}
 	}
@@ -119,59 +116,20 @@ func (s *Service) getShootsToDelete(labelSelector string) ([]v1beta1.Shoot, erro
 	return shoots, nil
 }
 
-type instanceDetailsDTO struct {
-	InstanceID       string
-	RuntimeID        string
-	CloudProfileName string
-}
-
-func (s *Service) getInstanceIds(instancesToDelete []instanceDetailsDTO) ([]instanceDetailsDTO, error) {
-	var runtimeIdList []string
-
-	for _, instanceDetails := range instancesToDelete {
-		runtimeIdList = append(runtimeIdList, instanceDetails.RuntimeID)
-	}
-
-	instances, err := s.instanceStorage.FindAllInstancesForRuntimes(runtimeIdList)
+func (s *Service) getInstancesForRuntimes(runtimeIDsToDelete []string) ([]internal.Instance, error) {
+	instances, err := s.instanceStorage.FindAllInstancesForRuntimes(runtimeIDsToDelete)
 	if err != nil {
-		return []instanceDetailsDTO{}, err
+		return []internal.Instance{}, err
 	}
 
-	var toDelete []instanceDetailsDTO
-	for _, instance := range instances {
-		for _, instanceToDeleteDetails := range instancesToDelete {
-			if instance.RuntimeID == instanceToDeleteDetails.RuntimeID {
-				instanceToDeleteDetails.InstanceID = instance.InstanceID
-				toDelete = append(toDelete, instanceToDeleteDetails)
-			}
-		}
-	}
-
-	return toDelete, nil
+	return instances, nil
 }
 
-func (s *Service) triggerEnvironmentDeprovisioning(instanceDetails instanceDetailsDTO) error {
-	payload := broker.DeprovisionDetails{
-		InstanceID:       instanceDetails.InstanceID,
-		CloudProfileName: instanceDetails.CloudProfileName,
-	}
-	opID, err := s.brokerService.Deprovision(payload)
+func (s *Service) triggerEnvironmentDeprovisioning(instance internal.Instance) error {
+	opID, err := s.brokerService.Deprovision(instance)
 	if err != nil {
 		return err
 	}
 	log.Infof("Successfully send deprovision request, got operation ID %q", opID)
 	return nil
-}
-
-func (s *Service) getInstanceIDForShoots(shoot v1beta1.Shoot) (string, error) {
-	runtimeId, ok := shoot.Annotations[shootAnnotationRuntimeId]
-	if !ok {
-		return "", errors.New("shoot's runtimeID should not be nil")
-	}
-	instance, err := s.instanceStorage.GetByRuntimeID(runtimeId)
-	if err != nil {
-		return "", err
-	}
-
-	return instance.InstanceID, nil
 }

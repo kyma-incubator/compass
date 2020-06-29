@@ -29,7 +29,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
-		bcMock.On("Deprovision", mock.AnythingOfType("DeprovisionDetails")).Return(fixOperationID, nil)
+		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
 
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{
@@ -47,6 +47,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		err := svc.PerformCleanup()
 
 		// then
+		bcMock.AssertExpectations(t)
+		gcMock.AssertExpectations(t)
 		assert.NoError(t, err)
 	})
 
@@ -63,6 +65,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		err := svc.PerformCleanup()
 
 		// then
+		bcMock.AssertExpectations(t)
+		gcMock.AssertExpectations(t)
 		assert.Error(t, err)
 	})
 
@@ -71,7 +75,6 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
-		bcMock.On("Deprovision", mock.AnythingOfType("DeprovisionDetails")).Return(fixOperationID, nil)
 
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{
@@ -85,6 +88,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		err := svc.PerformCleanup()
 
 		// then
+		bcMock.AssertExpectations(t)
+		gcMock.AssertExpectations(t)
 		assert.Error(t, err)
 	})
 
@@ -93,7 +98,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
-		bcMock.On("Deprovision", mock.AnythingOfType("DeprovisionDetails")).Return("", errors.New("failed to deprovision instance"))
+		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("", errors.New("failed to deprovision instance"))
 
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{
@@ -107,6 +112,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		err := svc.PerformCleanup()
 
 		// then
+		bcMock.AssertExpectations(t)
+		gcMock.AssertExpectations(t)
 		assert.Error(t, err)
 	})
 
@@ -134,7 +141,6 @@ func TestService_PerformCleanup(t *testing.T) {
 				}},
 		}, nil)
 		bcMock := &mocks.BrokerClient{}
-		bcMock.On("Deprovision", mock.AnythingOfType("DeprovisionDetails")).Return("", errors.New("failed to deprovision instance"))
 
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{
@@ -148,6 +154,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		err := svc.PerformCleanup()
 
 		// then
+		bcMock.AssertExpectations(t)
+		gcMock.AssertExpectations(t)
 		assert.Error(t, err)
 	})
 }

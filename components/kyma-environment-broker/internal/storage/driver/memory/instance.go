@@ -92,16 +92,6 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	return &inst, nil
 }
 
-func (s *Instance) GetByRuntimeID(runtimeID string) (*internal.Instance, error) {
-	for _, inst := range s.instances {
-		if inst.RuntimeID == runtimeID {
-			return &inst, nil
-		}
-	}
-
-	return nil, dberr.NotFound("instance with runtime id %s not exist", runtimeID)
-}
-
 func (s *Instance) Delete(instanceID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -84,27 +84,6 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	return &instance, nil
 }
 
-func (s *Instance) GetByRuntimeID(runtimeID string) (*internal.Instance, error) {
-	sess := s.NewReadSession()
-	instance := internal.Instance{}
-	var lastErr dberr.Error
-	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		instance, lastErr = sess.GetInstanceByRuntimeID(runtimeID)
-		if lastErr != nil {
-			if dberr.IsNotFound(lastErr) {
-				return false, dberr.NotFound("Instance with runtime ID %s not exist", runtimeID)
-			}
-			log.Warn(errors.Wrapf(lastErr, "while getting instance by runtime ID %s", runtimeID).Error())
-			return false, nil
-		}
-		return true, nil
-	})
-	if err != nil {
-		return nil, lastErr
-	}
-	return &instance, nil
-}
-
 func (s *Instance) Insert(instance internal.Instance) error {
 	_, err := s.GetByID(instance.InstanceID)
 	if err == nil {

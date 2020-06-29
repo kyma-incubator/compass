@@ -10,7 +10,6 @@ type Instances interface {
 	FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error)
 	FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, error)
 	GetByID(instanceID string) (*internal.Instance, error)
-	GetByRuntimeID(runtimeID string) (*internal.Instance, error)
 	Insert(instance internal.Instance) error
 	Update(instance internal.Instance) error
 	Delete(instanceID string) error

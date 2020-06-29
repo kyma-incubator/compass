@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -17,8 +18,6 @@ import (
 
 const (
 	kymaClassID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
-	gcpPlanID   = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	azurePlanID = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 
 	instancesURL    = "/oauth/v2/service_instances"
 	deprovisionTmpl = "%s%s/%s?service_id=%s&plan_id=%s"
@@ -53,22 +52,20 @@ func NewClient(ctx context.Context, config Config) *Client {
 	}
 }
 
-type DeprovisionDetails struct {
-	InstanceID       string
-	CloudProfileName string
-}
-
 type deprovisionResponse struct {
 	Operation string `json:"operation"`
 }
 
 // Deprovision requests Runtime deprovisioning in KEB with given details
-func (c *Client) Deprovision(details DeprovisionDetails) (string, error) {
-	deprovisionURL := c.formatDeprovisionUrl(details)
+func (c *Client) Deprovision(instance internal.Instance) (string, error) {
+	deprovisionURL, err := c.formatDeprovisionUrl(instance)
+	if err != nil {
+		return "", err
+	}
 
 	response := deprovisionResponse{}
-	log.Infof("Requesting deprovisioning of the environment with instance id: %q", details.InstanceID)
-	err := wait.Poll(time.Second, time.Second*5, func() (bool, error) {
+	log.Infof("Requesting deprovisioning of the environment with instance id: %q", instance.InstanceID)
+	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequest(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
 		if err != nil {
 			log.Warn(errors.Wrap(err, "while executing request").Error())
@@ -82,15 +79,12 @@ func (c *Client) Deprovision(details DeprovisionDetails) (string, error) {
 	return response.Operation, nil
 }
 
-func (c *Client) formatDeprovisionUrl(details DeprovisionDetails) string {
-	switch details.CloudProfileName {
-	case "az":
-		return fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, details.InstanceID, kymaClassID, azurePlanID)
-	case "gcp":
-		return fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, details.InstanceID, kymaClassID, gcpPlanID)
-	default:
-		return ""
+func (c *Client) formatDeprovisionUrl(instance internal.Instance) (string, error) {
+	if len(instance.ServicePlanID) == 0 {
+		return "", errors.Errorf("empty ServicePlanID")
 	}
+
+	return fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, instance.InstanceID, kymaClassID, instance.ServicePlanID), nil
 }
 
 func (c *Client) executeRequest(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {

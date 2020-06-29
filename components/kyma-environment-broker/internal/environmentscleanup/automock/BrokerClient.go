@@ -3,8 +3,7 @@
 package mocks
 
 import (
-	broker "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/environmentscleanup/broker"
-
+	internal "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,20 +12,20 @@ type BrokerClient struct {
 	mock.Mock
 }
 
-// Deprovision provides a mock function with given fields: details
-func (_m *BrokerClient) Deprovision(details broker.DeprovisionDetails) (string, error) {
-	ret := _m.Called(details)
+// Deprovision provides a mock function with given fields: instance
+func (_m *BrokerClient) Deprovision(instance internal.Instance) (string, error) {
+	ret := _m.Called(instance)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(broker.DeprovisionDetails) string); ok {
-		r0 = rf(details)
+	if rf, ok := ret.Get(0).(func(internal.Instance) string); ok {
+		r0 = rf(instance)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(broker.DeprovisionDetails) error); ok {
-		r1 = rf(details)
+	if rf, ok := ret.Get(1).(func(internal.Instance) error); ok {
+		r1 = rf(instance)
 	} else {
 		r1 = ret.Error(1)
 	}
