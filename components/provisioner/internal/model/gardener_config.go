@@ -20,20 +20,6 @@ const (
 	AccountLabel    = "account"
 )
 
-type GardenerClusterUpgradeConfig struct {
-	KubernetesVersion      string
-	MachineType            string
-	DiskType               string
-	VolumeSizeGb           int
-	Region                 string
-	WorkerCidr             string
-	AutoScalerMin          int
-	AutoScalerMax          int
-	MaxSurge               int
-	MaxUnavailable         int
-	ProviderSpecificConfig GardenerProviderConfig
-}
-
 type GardenerConfig struct {
 	ID                     string
 	ClusterID              string

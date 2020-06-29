@@ -37,6 +37,7 @@ type Service interface {
 type Provisioner interface {
 	ProvisionCluster(cluster model.Cluster, operationId string) error
 	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error)
+	UpgradeCluster( operationId string) (model.Operation, error)
 }
 
 type service struct {
@@ -78,6 +79,7 @@ func NewProvisioningService(
 		provisioningQueue:   provisioningQueue,
 		deprovisioningQueue: deprovisioningQueue,
 		upgradeQueue:        upgradeQueue,
+		shootUpgradeQueue:   shootUpgradeQueue,
 	}
 }
 
@@ -169,22 +171,24 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 
 	session := r.dbSessionFactory.NewReadWriteSession()
 
-	err := r.verifyLastOperationFinished(session, runtimeID)
+	err := r.verifyLastOperationFinished(session, runtimeID) // for given runtime
 	if err != nil {
 		return &gqlschema.OperationStatus{}, err
 	}
 
 	cluster, dberr := session.GetCluster(runtimeID)
 	if dberr != nil {
-		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to get cluster: %s", dberr.Error())
+		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to find shoot cluster to upgrade: %s", dberr.Error())
 	}
 
-	gardenerConfig, err := r.inputConverter.GardenerConfigFromUpgradeShootInput(*input.GardenerConfig)
+	gardenerConfig, err := r.inputConverter.GardenerConfigFromUpgradeShootInput(*input.GardenerConfig, cluster)
 	if err != nil {
 		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
 
-	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
+	//operation, err := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
+
+	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction() // it is maybe not necessary
 	if err != nil {
 		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to start database transaction: %s", err.Error())
 	}
@@ -448,7 +452,7 @@ func (r *service) setOperationStarted(
 		StartTimestamp: timestamp,
 		State:          model.InProgress,
 		Message:        message,
-		ClusterID:      runtimeID,
+		ClusterID:      runtimeID, // referencja do tab cluster
 		Stage:          operationStage,
 		LastTransition: &timestamp,
 	}

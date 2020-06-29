@@ -3,6 +3,7 @@ package gardener
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"os"
 	"time"
 
@@ -72,6 +73,67 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	if err != nil {
 		return fmt.Errorf("error creating Shoot for %s cluster: %s", cluster.ID, err.Error())
 	}
+
+	return nil
+}
+
+
+func (g *GardenerProvisioner) UpgradeCluster(currentCluster model.Cluster, upgradeConfig model.GardenerClusterUpgradeConfig, operationId string) (model.Operation, error) {
+
+	gardenerCfg, ok := currentCluster.GardenerConfig()
+	if !ok {
+		return model.Operation{}, fmt.Errorf("cluster does not have Gardener configuration")
+	}
+
+	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
+	if err != nil {
+		return model.Operation{}, fmt.Errorf("error getting Shoot for %s cluster: %s", currentCluster.ID, err.Error())
+	}
+
+	//allowPrivlagedContainers := true
+	//enableBasicAuthentication := false
+	//
+	//shoot.Spec.Region = gardenerCfg.Region
+	//
+	//shoot := &gardener_types.Shoot{
+	//	ObjectMeta: v1.ObjectMeta{
+	//		Name:      c.Name,
+	//		Namespace: namespace,
+	//		Labels: map[string]string{
+	//			SubAccountLabel: subAccountId,
+	//			AccountLabel:    accountId,
+	//		},
+	//	},
+	//	Spec: gardener_types.ShootSpec{
+	//		SecretBindingName: c.TargetSecret,
+	//		SeedName:          seed,
+	//		Region:            c.Region,
+	//		Kubernetes: gardener_types.Kubernetes{
+	//			AllowPrivilegedContainers: &allowPrivlagedContainers,
+	//			Version:                   c.KubernetesVersion,
+	//			KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+	//				EnableBasicAuthentication: &enableBasicAuthentication,
+	//			},
+	//		},
+	//		Networking: gardener_types.Networking{
+	//			Type:  "calico",        // Default value - we may consider adding it to API (if Hydroform will support it)
+	//			Nodes: "10.250.0.0/19", // TODO: it is required - provide configuration in API (when Hydroform will support it)
+	//		},
+	//		Maintenance: &gardener_types.Maintenance{
+	//			AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
+	//				KubernetesVersion:   false,
+	//				MachineImageVersion: false,
+	//			},
+	//		},
+	//	},
+	//}
+	//
+	//err := c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
+	//if err != nil {
+	//	return nil, fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
+	//}
+	//
+	//return shoot, nil
 
 	return nil
 }

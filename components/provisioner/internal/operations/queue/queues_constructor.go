@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/deprovisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/upgrade"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/shootupgrade"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -23,6 +24,7 @@ type ProvisioningTimeouts struct {
 	ClusterCreation    time.Duration `envconfig:"default=60m"`
 	Installation       time.Duration `envconfig:"default=60m"`
 	Upgrade            time.Duration `envconfig:"default=60m"`
+	ShootUpgrade       time.Duration `envconfig:"default=60m"`
 	AgentConfiguration time.Duration `envconfig:"default=15m"`
 	AgentConnection    time.Duration `envconfig:"default=15m"`
 }
@@ -125,4 +127,27 @@ func CreateDeprovisioningQueue(
 	)
 
 	return NewQueue(deprovisioningExecutor)
+}
+
+func CreateShootUpgradeQueue(
+	timeouts ProvisioningTimeouts,
+	factory dbsession.Factory,
+	directorClient director.DirectorClient,
+	shootClient gardener_apis.ShootInterface) OperationQueue {
+
+	shootUpgradeStep := shootupgrade.NewWaitForShootClusterUpgradeStep(shootClient, nil, model.FinishedStage, timeouts.ShootUpgrade)
+
+	upgradeSteps := map[model.OperationStage]operations.Step{
+		model.StartingShootUpgrade:   shootUpgradeStep,
+	}
+
+	upgradeClusterExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.ShootUpgrade,
+		upgradeSteps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
+
+	return NewQueue(upgradeClusterExecutor)
 }

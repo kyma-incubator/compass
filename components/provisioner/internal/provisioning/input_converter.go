@@ -17,7 +17,7 @@ import (
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error)
 	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error)
-	GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput) (model.GardenerClusterUpgradeConfig, error)
+	GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput, existing model.Cluster) (model.Cluster, error)
 }
 
 func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
@@ -75,27 +75,32 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 	return nil, errors.New("cluster config does not match any provider")
 }
 
-func (c converter) GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput) (model.GardenerClusterUpgradeConfig, error){
+func (c converter) GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.Cluster, error) {
 
-	//if err != nil {
-	//	return model.GardenerClusterUpgradeConfig{}, err
-	//}
+	currentShootCfg, ok := cluster.GardenerConfig()
+	if !ok {
+		return model.Cluster{}, fmt.Errorf("cluster does not have Gardener configuration")
+	}
 
-	//providerSpecificConfig, err := c.providerSpecificUpgradeConfigFromInput(*input.ProviderSpecificConfig)
+	if input.Region != "" {
+		currentShootCfg.Region = input.Region
+	}
 
-	return model.GardenerClusterUpgradeConfig{
-		KubernetesVersion: util.UnwrapStr(input.KubernetesVersion),
-		MachineType:       util.UnwrapStr(input.MachineType),
-		DiskType:          util.UnwrapStr(input.DiskType),
-		VolumeSizeGb:      util.UnwrapInt(input.VolumeSizeGb),
-		Region:            input.Region,
-		WorkerCidr:        util.UnwrapStr(input.WorkerCidr),
-		AutoScalerMin:     util.UnwrapInt(input.AutoScalerMin),
-		AutoScalerMax:     util.UnwrapInt(input.AutoScalerMax),
-		MaxSurge:          util.UnwrapInt(input.MaxSurge),
-		MaxUnavailable:    util.UnwrapInt(input.MaxUnavailable),
-		//ProviderSpecificConfig GardenerProviderConfig TODO Add method providerSpecificConfigFromInput!!!
-	}, nil
+	currentShootCfg.KubernetesVersion = util.UnwrapStrOrGiveValue(input.KubernetesVersion, currentShootCfg.KubernetesVersion)
+	currentShootCfg.MachineType = util.UnwrapStrOrGiveValue(input.MachineType, currentShootCfg.MachineType)
+	currentShootCfg.DiskType = util.UnwrapStrOrGiveValue(input.DiskType, currentShootCfg.DiskType)
+	currentShootCfg.VolumeSizeGB = util.UnwrapIntOrGiveValue(input.VolumeSizeGb, currentShootCfg.VolumeSizeGB)
+	currentShootCfg.WorkerCidr = util.UnwrapStrOrGiveValue(input.WorkerCidr, currentShootCfg.WorkerCidr)
+	currentShootCfg.AutoScalerMin = util.UnwrapIntOrGiveValue(input.AutoScalerMin, currentShootCfg.AutoScalerMin)
+	currentShootCfg.AutoScalerMax = util.UnwrapIntOrGiveValue(input.AutoScalerMax, currentShootCfg.AutoScalerMax)
+	currentShootCfg.MaxSurge = util.UnwrapIntOrGiveValue(input.MaxSurge, currentShootCfg.MaxSurge)
+	currentShootCfg.MaxUnavailable = util.UnwrapIntOrGiveValue(input.MaxUnavailable, currentShootCfg.MaxUnavailable)
+
+	//	//ProviderSpecificConfig GardenerProviderConfig TODO Remember to add method providerSpecificConfigFromInput!!!
+
+	cluster.ClusterConfig = currentShootCfg
+
+	return cluster, nil
 }
 
 func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {

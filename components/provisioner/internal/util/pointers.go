@@ -47,3 +47,17 @@ func UnwrapInt(intPtr *int) int {
 	}
 	return *intPtr
 }
+
+func UnwrapStrOrGiveValue(strPtr *string, value string) string {
+	if strPtr == nil {
+		return value
+	}
+	return *strPtr
+}
+
+func UnwrapIntOrGiveValue(intPtr *int, value int) int {
+	if intPtr == nil {
+		return value
+	}
+	return *intPtr
+}
