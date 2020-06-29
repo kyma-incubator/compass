@@ -17,7 +17,7 @@ import (
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error)
 	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error)
-	GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput, existing model.Cluster) (model.Cluster, error)
+	GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput, existing model.Cluster) (model.GardenerConfig, error)
 }
 
 func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
@@ -75,15 +75,21 @@ func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.Clu
 	return nil, errors.New("cluster config does not match any provider")
 }
 
-func (c converter) GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.Cluster, error) {
+func (c converter) GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.GardenerConfig, error) {
 
 	currentShootCfg, ok := cluster.GardenerConfig()
 	if !ok {
-		return model.Cluster{}, fmt.Errorf("cluster does not have Gardener configuration")
+		return model.GardenerConfig{}, fmt.Errorf("cluster does not have Gardener configuration")
 	}
 
 	if input.Region != "" {
 		currentShootCfg.Region = input.Region
+	}
+
+	providerSpecificConfig, err := c.providerSpecificConfigFromUpgradeInput(input.ProviderSpecificConfig)
+
+	if err == nil {
+		currentShootCfg.GardenerProviderConfig = providerSpecificConfig
 	}
 
 	currentShootCfg.KubernetesVersion = util.UnwrapStrOrGiveValue(input.KubernetesVersion, currentShootCfg.KubernetesVersion)
@@ -96,11 +102,7 @@ func (c converter) GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerU
 	currentShootCfg.MaxSurge = util.UnwrapIntOrGiveValue(input.MaxSurge, currentShootCfg.MaxSurge)
 	currentShootCfg.MaxUnavailable = util.UnwrapIntOrGiveValue(input.MaxUnavailable, currentShootCfg.MaxUnavailable)
 
-	//	//ProviderSpecificConfig GardenerProviderConfig TODO Remember to add method providerSpecificConfigFromInput!!!
-
-	cluster.ClusterConfig = currentShootCfg
-
-	return cluster, nil
+	return currentShootCfg, nil
 }
 
 func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
@@ -168,6 +170,24 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	return nil, errors.New("provider config not specified")
 }
 
+func (c converter) providerSpecificConfigFromUpgradeInput(input *gqlschema.ProviderSpecificUpgradeInput) (model.GardenerProviderConfig, error) {
+	if input == nil {
+		return nil, errors.New("provider config not specified")
+	}
+
+	if input.GcpConfig != nil {
+		return model.NewGCPGardenerConfig(input.GcpConfig)
+	}
+	if input.AzureConfig != nil {
+		return model.NewAzureGardenerConfig(input.AzureConfig)
+	}
+	if input.AwsConfig != nil {
+		return model.NewAWSGardenerConfig(input.AwsConfig)
+	}
+
+	return nil, errors.New("provider config not specified")
+}
+
 func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) model.GCPConfig {
 	id := c.uuidGenerator.New()
 
@@ -186,7 +206,7 @@ func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfi
 		MachineType:       input.MachineType,
 		Region:            input.Region,
 		Zone:              zone,
-		ClusterID:         runtimeID,
+			ClusterID:         runtimeID,
 	}
 }
 

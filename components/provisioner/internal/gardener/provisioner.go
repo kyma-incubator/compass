@@ -3,7 +3,7 @@ package gardener
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/sirupsen/logrus"
 	"os"
 	"time"
 
@@ -11,7 +11,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/sirupsen/logrus"
 	v12 "k8s.io/api/core/v1"
 
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -78,11 +77,11 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 }
 
 
-func (g *GardenerProvisioner) UpgradeCluster(currentCluster model.Cluster, upgradeConfig model.GardenerClusterUpgradeConfig, operationId string) (model.Operation, error) {
+func (g *GardenerProvisioner) UpgradeCluster(currentCluster model.Cluster, upgradeConfig model.GardenerConfig, operationId string) (model.Operation, error) {
 
 	gardenerCfg, ok := currentCluster.GardenerConfig()
 	if !ok {
-		return model.Operation{}, fmt.Errorf("cluster does not have Gardener configuration")
+		return model.Operation{}, fmt.Errorf("cluster to upgrade does not have Gardener configuration")
 	}
 
 	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
@@ -90,10 +89,30 @@ func (g *GardenerProvisioner) UpgradeCluster(currentCluster model.Cluster, upgra
 		return model.Operation{}, fmt.Errorf("error getting Shoot for %s cluster: %s", currentCluster.ID, err.Error())
 	}
 
-	//allowPrivlagedContainers := true
-	//enableBasicAuthentication := false
+	allowPrivlagedContainers := true
+	enableBasicAuthentication := false
 	//
-	//shoot.Spec.Region = gardenerCfg.Region
+	// update needed parameters
+
+	shoot.Spec.Region = gardenerCfg.Region
+	shoot.Spec.Kubernetes = gardener_types.Kubernetes{
+		AllowPrivilegedContainers: &allowPrivlagedContainers,
+		Version:                   gardenerCfg.KubernetesVersion,
+		KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+			EnableBasicAuthentication: &enableBasicAuthentication,
+		},
+	}
+
+	// ????? wtf %(o)%
+	err = upgradeConfig.GardenerProviderConfig.ExtendShootConfig(upgradeConfig, shoot)
+
+	if err != nil {
+		return model.Operation{}, fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
+	}
+
+
+	g.shootClient.Update(shoot)
+
 	//
 	//shoot := &gardener_types.Shoot{
 	//	ObjectMeta: v1.ObjectMeta{

@@ -37,7 +37,7 @@ type Service interface {
 type Provisioner interface {
 	ProvisionCluster(cluster model.Cluster, operationId string) error
 	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error)
-	UpgradeCluster( operationId string) (model.Operation, error)
+	UpgradeCluster(currentCluster model.Cluster, upgradeConfig model.GardenerConfig, operationId string) (model.Operation, error)
 }
 
 type service struct {
@@ -186,15 +186,13 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
 
-	//operation, err := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
-
 	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction() // it is maybe not necessary
 	if err != nil {
 		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to start database transaction: %s", err.Error())
 	}
 	defer txSession.RollbackUnlessCommitted()
 
-	operation, err := r.setGardenerShootUpgradeStarted(txSession, cluster.ID, gardenerConfig)
+	operation, err := r.setGardenerShootUpgradeStarted(txSession, cluster, gardenerConfig)
 	if err != nil {
 		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to set shoot upgrade started: %s", err.Error())
 	}
@@ -389,14 +387,16 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 	return operation, nil
 }
 
-func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, clusterId string, gardenerConfig model.GardenerClusterUpgradeConfig) (model.Operation, dberrors.Error) {
+func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, dberrors.Error) {
 
-	err := txSession.UpdateGardenerClusterConfig(clusterId, gardenerConfig)
+	err := txSession.UpdateGardenerClusterConfig(currentCluster.ID, gardenerConfig)
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to insert updated Gardener Config")
 	}
 
-	operation, err := r.setOperationStarted(txSession, clusterId, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
+	operation, err = r.provisioner.UpgradeCluster(currentCluster, gardenerConfig, r.uuidGenerator.New())
+
+	operation, err := r.setOperationStarted(txSession, currentCluster.ID, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to set Gardener Shoot upgrade operation started")
 	}

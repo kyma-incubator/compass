@@ -63,23 +63,21 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 	return nil
 }
 
-func (ws writeSession) UpdateGardenerClusterConfig(configID string, config model.GardenerClusterUpgradeConfig) dberrors.Error {
-
-	// this implies that all fiels are set with their final values, check it!!!!
+func (ws writeSession) UpdateGardenerClusterConfig(configID string, config model.GardenerConfig) dberrors.Error {
 
 	res, err := ws.update("gardener_config").
 		Where(dbr.Eq("id", configID)).
 		Set("KubernetesVersion", config.KubernetesVersion).
 		Set("MachineType", config.MachineType).
 		Set("disk_type", config.DiskType).
-		Set("volume_size_gb", config.VolumeSizeGb).
+		Set("volume_size_gb", config.VolumeSizeGB).
 		Set("region", config.Region).
 		Set("worker_cidr", config.WorkerCidr).
 		Set("auto_scaler_min", config.AutoScalerMin).
 		Set("auto_scaler_max", config.AutoScalerMax).
 		Set("max_surge", config.MaxSurge).
 		Set("max_unavailable", config.MaxUnavailable).
-		Set("provider_specific_config", config.ProviderSpecificConfig.RawJSON()).
+		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 
 	if err != nil {
