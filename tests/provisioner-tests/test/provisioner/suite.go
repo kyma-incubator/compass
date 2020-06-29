@@ -3,13 +3,14 @@ package provisioner
 import (
 	"crypto/tls"
 	"io/ioutil"
-	"k8s.io/client-go/util/homedir"
 	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/pkg/errors"
 	restclient "k8s.io/client-go/rest"
