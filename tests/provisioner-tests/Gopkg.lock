@@ -756,6 +756,7 @@
   input-imports = [
     "github.com/Masterminds/sprig",
     "github.com/avast/retry-go",
+    "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
