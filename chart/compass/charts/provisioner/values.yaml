@@ -50,9 +50,6 @@ logs:
 
 tests:
   enabled: false
-  gcp:
-    credentials: ""
-    projectName: ""
   gardener:
     providers: "Azure"
     azureSecret: "" # Name of Gardener secret for Azure
