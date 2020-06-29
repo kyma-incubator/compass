@@ -2,10 +2,11 @@ package shootupgrade
 
 import (
 	"errors"
+	"fmt"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
@@ -17,15 +18,13 @@ type GardenerClient interface {
 
 type WaitForShootClusterUpgradeStep struct {
 	gardenerClient GardenerClient
-	dbSession      dbsession.ReadWriteSession
 	nextStep       model.OperationStage
 	timeLimit      time.Duration
 }
 
-func NewWaitForShootClusterUpgradeStep(gardenerClient GardenerClient, dbSession dbsession.ReadWriteSession, nextStep model.OperationStage, timeLimit time.Duration) *WaitForShootClusterUpgradeStep {
+func NewWaitForShootClusterUpgradeStep(gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForShootClusterUpgradeStep {
 	return &WaitForShootClusterUpgradeStep{
 		gardenerClient: gardenerClient,
-		dbSession:      dbSession,
 		nextStep:       nextStep,
 		timeLimit:      timeLimit,
 	}
@@ -41,8 +40,6 @@ func (s *WaitForShootClusterUpgradeStep) TimeLimit() time.Duration {
 
 func (s *WaitForShootClusterUpgradeStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
-	// here will go the implementation of the shoot uptdate
-
 	gardenerConfig, ok := cluster.GardenerConfig()
 	if !ok {
 		err := errors.New("failed to convert to GardenerConfig")
@@ -54,17 +51,22 @@ func (s *WaitForShootClusterUpgradeStep) Run(cluster model.Cluster, operation mo
 		return operations.StageResult{}, err
 	}
 
-
 	lastOperation := shoot.Status.LastOperation
 
+	if lastOperation != nil {
+		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
+			logger.Info("Shoot upgrade state updated.")
+			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+		}
 
+		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
+			logger.Warningf("Gardener Shoot cluster upgrade failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
-	// ???
-	//dberr := s.dbSession.UpdateUpgradeState(operation.ID, model.UpgradeSucceeded)
-	//if dberr != nil {
-	//	return operations.StageResult{}, dberr
-	//}
+			err := errors.New(fmt.Sprintf("Gardener Shoot cluster upgrade failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
 
-	logger.Info("Shoot upgrade state updated. Proceeding to next step...")
-	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+			return operations.StageResult{}, operations.NewNonRecoverableError(err)
+		}
+	}
+
+	return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 }

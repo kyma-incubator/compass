@@ -135,7 +135,7 @@ func CreateShootUpgradeQueue(
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface) OperationQueue {
 
-	shootUpgradeStep := shootupgrade.NewWaitForShootClusterUpgradeStep(shootClient, nil, model.FinishedStage, timeouts.ShootUpgrade)
+	shootUpgradeStep := shootupgrade.NewWaitForShootClusterUpgradeStep(shootClient, model.FinishedStage, timeouts.ShootUpgrade)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
 		model.StartingShootUpgrade:   shootUpgradeStep,
