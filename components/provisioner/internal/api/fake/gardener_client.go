@@ -38,13 +38,11 @@ func (f fakeShootsInterface) Create(shoot *gardener_types.Shoot) (*gardener_type
 	shoot.Spec.SeedName = &seedName
 
 	unstructuredShoot, err := toUnstructured(shoot)
-
 	if err != nil {
 		return nil, err
 	}
 
 	create, err := f.client.Create(unstructuredShoot, metav1.CreateOptions{})
-
 	if err != nil {
 		return nil, err
 	}
@@ -58,9 +56,7 @@ func (f *fakeShootsInterface) Update(shoot *gardener_types.Shoot) (*gardener_typ
 	if err != nil {
 		return nil, err
 	}
-
 	updated, err := f.client.Update(obj, metav1.UpdateOptions{})
-
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +78,6 @@ func (f *fakeShootsInterface) DeleteCollection(_ *metav1.DeleteOptions, _ metav1
 
 func (f *fakeShootsInterface) Get(name string, options metav1.GetOptions) (*gardener_types.Shoot, error) {
 	obj, err := f.client.Get(name, options)
-
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +86,6 @@ func (f *fakeShootsInterface) Get(name string, options metav1.GetOptions) (*gard
 }
 func (f *fakeShootsInterface) List(opts metav1.ListOptions) (*gardener_types.ShootList, error) {
 	list, err := f.client.List(opts)
-
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +119,6 @@ func fromUnstructured(object *unstructured.Unstructured) (*gardener_types.Shoot,
 	var newShoot gardener_types.Shoot
 
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(object.Object, &newShoot)
-
 	if err != nil {
 		return nil, err
 	}
