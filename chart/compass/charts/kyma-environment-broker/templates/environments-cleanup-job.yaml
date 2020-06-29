@@ -10,12 +10,15 @@ spec:
   successfulJobsHistoryLimit: 1
   concurrencyPolicy: Forbid
   jobTemplate:
+    metadata:
+      labels:
+        cronjob: environments-cleanup
     spec:
       template:
         metadata:
           name: kyma-environments-cleanup
-          annotations:
-            sidecar.istio.io/inject: "false"
+          labels:
+            cronjob: environments-cleanup
         spec:
           serviceAccountName: compass-kyma-environment-broker
           securityContext:
@@ -80,6 +83,11 @@ spec:
                     name: {{.Values.environmentsCleanup.secretName}}
               - name: APP_BROKER_SCOPE
                 value: {{.Values.environmentsCleanup.scope}}
+            command:
+              - bin/sh
+            args:
+              - -c
+              - "sleep 20; ./bin/environments-cleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
             volumeMounts:
               - mountPath: /gardener/kubeconfig
                 name: gardener-kubeconfig
