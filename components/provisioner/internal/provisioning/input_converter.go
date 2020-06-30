@@ -166,6 +166,24 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	return nil, errors.New("provider config not specified")
 }
 
+func (c converter) providerSpecificConfigFromUpgradeInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
+	if input == nil {
+		return nil, errors.New("provider config not specified")
+	}
+
+	if input.GcpConfig != nil {
+		return model.NewGCPGardenerConfig(input.GcpConfig)
+	}
+	if input.AzureConfig != nil {
+		return model.NewAzureGardenerConfig(input.AzureConfig)
+	}
+	if input.AwsConfig != nil {
+		return model.NewAWSGardenerConfig(input.AwsConfig)
+	}
+
+	return nil, errors.New("provider config not specified")
+}
+
 func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) model.GCPConfig {
 	id := c.uuidGenerator.New()
 

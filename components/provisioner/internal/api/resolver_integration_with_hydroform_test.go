@@ -124,13 +124,16 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 	require.NoError(t, err)
 
 	kymaConfig := fixKymaGraphQLConfigInput()
-	clusterConfigurations := newTestClusterConfigurations()
+	clusterConfigurations := newTestProvisioningConfigs()
 
-	for _, cfg := range clusterConfigurations {
-		t.Run(cfg.description, func(t *testing.T) {
+	for _, config := range clusterConfigurations {
+		t.Run(config.description, func(t *testing.T) {
+			runtimeID := config.runtimeID
+			clusterConfig := config.provisioningInput.config
+			runtimeInput := config.provisioningInput.runtimeInput
 
 			directorServiceMock := &directormock.DirectorClient{}
-			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(cfg.runtimeID, nil)
+			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(runtimeID, nil)
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
@@ -140,7 +143,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
 			runtimeConfigurator := runtime.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
-			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: cfg.runtimeInput, ClusterConfig: cfg.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
@@ -154,7 +157,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 			deprovisioningQueue.Run(ctx.Done())
 
 			hydroformProvisioner := hydroform.NewHydroformProvisioner(hydroformServiceMock, installationServiceMock, dbSessionFactory, directorServiceMock, runtimeConfigurator)
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, nil)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbSessionFactory, hydroformProvisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, nil, nil)
 			validator := NewValidator(dbSessionFactory.NewReadSession())
 			provisioner := NewResolver(provisioningService, validator)
 
@@ -166,7 +169,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 
 			require.NotNil(t, status)
 			require.NotNil(t, status.RuntimeID)
-			assert.Equal(t, cfg.runtimeID, *status.RuntimeID)
+			assert.Equal(t, config.runtimeID, *status.RuntimeID)
 
 			messageProvisioningStarted := "Provisioning started"
 
@@ -178,7 +181,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 				Message:   &messageProvisioningStarted,
 			}
 
-			runtimeStatusProvisioningStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
+			runtimeStatusProvisioningStarted, err := provisioner.RuntimeStatus(ctx, config.runtimeID)
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusProvisioningStarted)
 			assert.Equal(t, statusForProvisioningStarted, runtimeStatusProvisioningStarted.LastOperationStatus)
@@ -197,21 +200,21 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 				Message:   &messageProvisioningSucceeded,
 			}
 
-			runtimeStatusProvisioned, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
+			runtimeStatusProvisioned, err := provisioner.RuntimeStatus(ctx, config.runtimeID)
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusProvisioned)
 			assert.Equal(t, statusForProvisioningSucceeded, runtimeStatusProvisioned.LastOperationStatus)
 			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioningStarted.RuntimeConfiguration.KymaConfig)
 
 			session := dbSessionFactory.NewReadSession()
-			clusterData, err := session.GetCluster(cfg.runtimeID)
+			clusterData, err := session.GetCluster(config.runtimeID)
 			require.NoError(t, err)
 			require.NotNil(t, clusterData)
 			require.NotNil(t, clusterData.Kubeconfig)
 			assert.Equal(t, mockedTerraformState, clusterData.TerraformState)
 			assert.Equal(t, mockedKubeconfig, *clusterData.Kubeconfig)
 
-			deprovisionID, err := provisioner.DeprovisionRuntime(ctx, cfg.runtimeID)
+			deprovisionID, err := provisioner.DeprovisionRuntime(ctx, config.runtimeID)
 			require.NoError(t, err)
 
 			messageDeprovisioningStarted := "Deprovisioning started."
@@ -220,11 +223,11 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 				ID:        &deprovisionID,
 				Operation: gqlschema.OperationTypeDeprovision,
 				State:     gqlschema.OperationStateInProgress,
-				RuntimeID: &cfg.runtimeID,
+				RuntimeID: &config.runtimeID,
 				Message:   &messageDeprovisioningStarted,
 			}
 
-			runtimeStatusDeprovStarted, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
+			runtimeStatusDeprovStarted, err := provisioner.RuntimeStatus(ctx, config.runtimeID)
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusDeprovStarted)
 			assert.Equal(t, statusForDeprovisioningStarted, runtimeStatusDeprovStarted.LastOperationStatus)
@@ -238,11 +241,11 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 				ID:        &deprovisionID,
 				Operation: gqlschema.OperationTypeDeprovision,
 				State:     gqlschema.OperationStateSucceeded,
-				RuntimeID: &cfg.runtimeID,
+				RuntimeID: &config.runtimeID,
 				Message:   &messageDeprovSucceess,
 			}
 
-			runtimeStatusDeprovisioned, err := provisioner.RuntimeStatus(ctx, cfg.runtimeID)
+			runtimeStatusDeprovisioned, err := provisioner.RuntimeStatus(ctx, config.runtimeID)
 			require.NoError(t, err)
 			require.NotNil(t, runtimeStatusDeprovisioned)
 			assert.Equal(t, runtimeStatusDeprovSuccess, runtimeStatusDeprovisioned.LastOperationStatus)

@@ -170,6 +170,43 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 	})
 }
 
+func TestGardenerProvisioner_UpgradeShoot(t *testing.T) {
+	clientset := fake.NewSimpleClientset()
+
+	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{
+		Zones: []string{"zone-1"},
+	})
+	require.NoError(t, err)
+
+	maintWindowConfigPath := filepath.Join("testdata", "maintwindow.json")
+
+	cluster := newClusterConfig("test-cluster", nil, gcpGardenerConfig, region)
+
+	t.Run("should upgrade shoot", func(t *testing.T) {
+		// given
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName, maintWindowConfigPath)
+
+		// when
+		err := provisionerClient.ProvisionCluster(cluster, operationId)
+		require.NoError(t, err)
+
+		// then
+		shoot, err := shootClient.Get(clusterName, v1.GetOptions{})
+		require.NoError(t, err)
+		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
+		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
+		assert.Equal(t, "", shoot.Labels[model.SubAccountLabel])
+
+		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
+		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy)
+		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef)
+		require.NotNil(t, shoot.Spec.Maintenance.TimeWindow)
+		assert.Equal(t, auditLogsPolicyCMName, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef.Name)
+	})
+}
+
 func assertAnnotation(t *testing.T, shoot *gardener_types.Shoot, name, value string) {
 	annotations := shoot.Annotations
 	if annotations == nil {

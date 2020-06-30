@@ -162,9 +162,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	err = database.SetupSchema(connection, testutils.SchemaFilePath)
 	require.NoError(t, err)
 
-	kymaConfig := fixKymaGraphQLConfigInput()
-	clusterConfigurations := newTestClusterConfigurations()
-
 	directorServiceMock := &directormock.DirectorClient{}
 
 	mockK8sClientProvider := &mocks.K8sClientProvider{}
@@ -191,9 +188,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	upgradeShootQueue := queue.CreateUpgradeShootQueue(testProvisioningTimeouts(), dbsFactory, shootInterface)
-	upgradeShootQueue.Run(queueCtx.Done())
-
 	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
 	require.NoError(t, err)
 
@@ -202,8 +196,16 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
+	kymaConfig := fixKymaGraphQLConfigInput()
+	clusterConfigurations := newTestProvisioningConfigs()
+
 	for _, config := range clusterConfigurations {
 		t.Run(config.description, func(t *testing.T) {
+			runtimeID := config.runtimeID
+			clusterConfig := config.provisioningInput.config
+			runtimeInput := config.provisioningInput.runtimeInput
+			upgradeShootInput := config.upgradeShootInput
+
 			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
 			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
 
@@ -217,9 +219,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			directorServiceMock.On("GetRuntime", mock.Anything, mock.Anything).Return(graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
-					ID:          config.runtimeID,
-					Name:        config.runtimeInput.Name,
-					Description: config.runtimeInput.Description,
+					ID:          runtimeID,
+					Name:        runtimeInput.Name,
+					Description: runtimeInput.Description,
 				},
 			}, nil)
 			directorServiceMock.On("UpdateRuntime", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -233,7 +235,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, upgradeShootQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, nil)
 
 			validator := NewValidator(dbsFactory.NewReadSession())
 
@@ -242,7 +244,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			err = insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
 			require.NoError(t, err)
 
-			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: config.runtimeInput, ClusterConfig: config.config, Credentials: providerCredentials, KymaConfig: kymaConfig}
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
 
 			//when
 			provisionRuntime, err := resolver.ProvisionRuntime(ctx, fullConfig)
@@ -318,7 +320,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			// when
 			// upgrade shoot
-			err := resolver.UpgradeShoot(ctx, config.runtimeID)
+			upgradeShootOp, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
 			resolver.RollBackUpgradeOperation(ctx, config.runtimeID)
 			require.NoError(t, err)
 
