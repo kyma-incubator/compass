@@ -19,18 +19,28 @@ type InputConverter interface {
 	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error)
 }
 
-func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
+func NewInputConverter(
+	uuidGenerator uuid.UUIDGenerator,
+	releaseRepo release.Provider,
+	gardenerProject string,
+	defaultAutoUpdateKubernetesVersion,
+	defaultAutoUpdateMachineImageVersion bool) InputConverter {
+
 	return &converter{
-		uuidGenerator:   uuidGenerator,
-		releaseRepo:     releaseRepo,
-		gardenerProject: gardenerProject,
+		uuidGenerator:                        uuidGenerator,
+		releaseRepo:                          releaseRepo,
+		gardenerProject:                      gardenerProject,
+		defaultAutoUpdateKubernetesVersion:   defaultAutoUpdateKubernetesVersion,
+		defaultAutoUpdateMachineImageVersion: defaultAutoUpdateMachineImageVersion,
 	}
 }
 
 type converter struct {
-	uuidGenerator   uuid.UUIDGenerator
-	releaseRepo     release.Provider
-	gardenerProject string
+	uuidGenerator                        uuid.UUIDGenerator
+	releaseRepo                          release.Provider
+	gardenerProject                      string
+	defaultAutoUpdateKubernetesVersion   bool
+	defaultAutoUpdateMachineImageVersion bool
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error) {
@@ -81,26 +91,28 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 	}
 
 	return model.GardenerConfig{
-		ID:                     c.uuidGenerator.New(),
-		Name:                   c.createGardenerClusterName(),
-		ProjectName:            c.gardenerProject,
-		KubernetesVersion:      input.KubernetesVersion,
-		VolumeSizeGB:           input.VolumeSizeGb,
-		DiskType:               input.DiskType,
-		MachineType:            input.MachineType,
-		Provider:               input.Provider,
-		Purpose:                input.Purpose,
-		LicenceType:            input.LicenceType,
-		Seed:                   util.UnwrapStr(input.Seed),
-		TargetSecret:           input.TargetSecret,
-		WorkerCidr:             input.WorkerCidr,
-		Region:                 input.Region,
-		AutoScalerMin:          input.AutoScalerMin,
-		AutoScalerMax:          input.AutoScalerMax,
-		MaxSurge:               input.MaxSurge,
-		MaxUnavailable:         input.MaxUnavailable,
-		ClusterID:              runtimeID,
-		GardenerProviderConfig: providerSpecificConfig,
+		ID:                            c.uuidGenerator.New(),
+		Name:                          c.createGardenerClusterName(),
+		ProjectName:                   c.gardenerProject,
+		KubernetesVersion:             input.KubernetesVersion,
+		VolumeSizeGB:                  input.VolumeSizeGb,
+		DiskType:                      input.DiskType,
+		MachineType:                   input.MachineType,
+		Provider:                      input.Provider,
+		Purpose:                       input.Purpose,
+		LicenceType:                   input.LicenceType,
+		Seed:                          util.UnwrapStr(input.Seed),
+		TargetSecret:                  input.TargetSecret,
+		WorkerCidr:                    input.WorkerCidr,
+		Region:                        input.Region,
+		AutoScalerMin:                 input.AutoScalerMin,
+		AutoScalerMax:                 input.AutoScalerMax,
+		MaxSurge:                      input.MaxSurge,
+		MaxUnavailable:                input.MaxUnavailable,
+		AutoUpdateKubernetesVersion:   util.BoolFromPtrOrDefault(input.AutoUpdateKubernetesVersion, c.defaultAutoUpdateKubernetesVersion),
+		AutoUpdateMachineImageVersion: util.BoolFromPtrOrDefault(input.AutoUpdateMachineImageVersion, c.defaultAutoUpdateMachineImageVersion),
+		ClusterID:                     runtimeID,
+		GardenerProviderConfig:        providerSpecificConfig,
 	}, nil
 }
 

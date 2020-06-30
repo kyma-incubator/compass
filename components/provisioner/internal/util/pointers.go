@@ -26,6 +26,13 @@ func BoolFromPtr(val *bool) bool {
 	return *val
 }
 
+func BoolFromPtrOrDefault(ptr *bool, def bool) bool {
+	if ptr == nil {
+		return def
+	}
+	return *ptr
+}
+
 func IntOrStrPtr(intOrStr intstr.IntOrString) *intstr.IntOrString {
 	return &intOrStr
 }

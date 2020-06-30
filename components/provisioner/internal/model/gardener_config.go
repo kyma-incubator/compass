@@ -23,30 +23,32 @@ const (
 )
 
 type GardenerConfig struct {
-	ID                     string
-	ClusterID              string
-	Name                   string
-	ProjectName            string
-	KubernetesVersion      string
-	VolumeSizeGB           int
-	DiskType               string
-	MachineType            string
-	Provider               string
-	Purpose                *string
-	LicenceType            *string
-	Seed                   string
-	TargetSecret           string
-	Region                 string
-	WorkerCidr             string
-	AutoScalerMin          int
-	AutoScalerMax          int
-	MaxSurge               int
-	MaxUnavailable         int
-	GardenerProviderConfig GardenerProviderConfig
+	ID                            string
+	ClusterID                     string
+	Name                          string
+	ProjectName                   string
+	KubernetesVersion             string
+	VolumeSizeGB                  int
+	DiskType                      string
+	MachineType                   string
+	Provider                      string
+	Purpose                       *string
+	LicenceType                   *string
+	Seed                          string
+	TargetSecret                  string
+	Region                        string
+	WorkerCidr                    string
+	AutoScalerMin                 int
+	AutoScalerMax                 int
+	MaxSurge                      int
+	MaxUnavailable                int
+	AutoUpdateKubernetesVersion   bool
+	AutoUpdateMachineImageVersion bool
+	GardenerProviderConfig        GardenerProviderConfig
 }
 
 func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, error) {
-	allowPrivlagedContainers := true
+	allowPrivilegedContainers := true
 	enableBasicAuthentication := false
 
 	var seed *string = nil
@@ -79,7 +81,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			SeedName:          seed,
 			Region:            c.Region,
 			Kubernetes: gardener_types.Kubernetes{
-				AllowPrivilegedContainers: &allowPrivlagedContainers,
+				AllowPrivilegedContainers: &allowPrivilegedContainers,
 				Version:                   c.KubernetesVersion,
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					EnableBasicAuthentication: &enableBasicAuthentication,
@@ -92,8 +94,8 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Purpose: purpose,
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
-					KubernetesVersion:   false,
-					MachineImageVersion: false,
+					KubernetesVersion:   c.AutoUpdateKubernetesVersion,
+					MachineImageVersion: c.AutoUpdateMachineImageVersion,
 				},
 			},
 		},

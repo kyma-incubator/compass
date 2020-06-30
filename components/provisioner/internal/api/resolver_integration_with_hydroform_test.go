@@ -257,7 +257,7 @@ func TestResolver_ProvisionRuntimeWithDatabaseAndHydroform(t *testing.T) {
 
 			dbSessionFactory := dbsession.NewFactory(connection)
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, gardenerProject, defaultAutoUpdateKubernetesVersion, defaultAutoUpdateMachineImageVersion)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningQueue := fixFakeQueue()

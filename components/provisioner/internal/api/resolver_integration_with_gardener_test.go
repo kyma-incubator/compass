@@ -88,6 +88,9 @@ users:
 	auditLogPolicyCMName = "auditLogPolicyConfigMap"
 	auditLogTenant       = "e7382275-e835-4549-94e1-3b1101e3a1fa"
 	subAccountId         = "sub-account"
+
+	defaultAutoUpdateKubernetesVersion   = false
+	defaultAutoUpdateMachineImageVersion = false
 )
 
 func TestMain(m *testing.M) {
@@ -229,7 +232,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project", defaultAutoUpdateKubernetesVersion, defaultAutoUpdateMachineImageVersion)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue)

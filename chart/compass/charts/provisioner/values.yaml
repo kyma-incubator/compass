@@ -28,6 +28,8 @@ gardener:
   waitingForClusterDeletionTimeout: 4h
   clusterCleanupTimeout: 20m
   clusterCleanupResourceSelector: "https://service-manager."
+  defaultAutoUpdateKubernetesVersion: false
+  defaultAutoUpdateMachineImageVersion: false
 
 provisioner: "gardener"
 

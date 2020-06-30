@@ -21,15 +21,15 @@ import (
 )
 
 const (
-	kymaVersion                   = "1.5"
-	clusterEssentialsComponent    = "cluster-essentials"
-	coreComponent                 = "core"
-	rafterComponent               = "rafter"
-	applicationConnectorComponent = "application-connector"
-
-	rafterSourceURL = "github.com/kyma-project/kyma.git//resources/rafter"
-
-	gardenerProject = "gardener-project"
+	kymaVersion                          = "1.5"
+	clusterEssentialsComponent           = "cluster-essentials"
+	coreComponent                        = "core"
+	rafterComponent                      = "rafter"
+	applicationConnectorComponent        = "application-connector"
+	rafterSourceURL                      = "github.com/kyma-project/kyma.git//resources/rafter"
+	gardenerProject                      = "gardener-project"
+	defaultAutoUpdateKubernetesVersion   = false
+	defaultAutoUpdateMachineImageVersion = false
 )
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
@@ -96,20 +96,21 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				KubernetesVersion: "version",
-				VolumeSizeGb:      1024,
-				MachineType:       "n1-standard-1",
-				Region:            "region",
-				Provider:          "GCP",
-				Purpose:           util.StringPtr("testing"),
-				Seed:              util.StringPtr("gcp-eu1"),
-				TargetSecret:      "secret",
-				DiskType:          "ssd",
-				WorkerCidr:        "cidr",
-				AutoScalerMin:     1,
-				AutoScalerMax:     5,
-				MaxSurge:          1,
-				MaxUnavailable:    2,
+				KubernetesVersion:           "version",
+				VolumeSizeGb:                1024,
+				MachineType:                 "n1-standard-1",
+				Region:                      "region",
+				Provider:                    "GCP",
+				Purpose:                     util.StringPtr("testing"),
+				Seed:                        util.StringPtr("gcp-eu1"),
+				TargetSecret:                "secret",
+				DiskType:                    "ssd",
+				WorkerCidr:                  "cidr",
+				AutoScalerMin:               1,
+				AutoScalerMax:               5,
+				MaxSurge:                    1,
+				MaxUnavailable:              2,
+				AutoUpdateKubernetesVersion: util.BoolPtr(true),
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					GcpConfig: gcpGardenerProvider,
 				},
@@ -127,25 +128,27 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	expectedGardenerGCPRuntimeConfig := model.Cluster{
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
-			ID:                     "id",
-			Name:                   "verylon",
-			ProjectName:            gardenerProject,
-			MachineType:            "n1-standard-1",
-			Region:                 "region",
-			KubernetesVersion:      "version",
-			VolumeSizeGB:           1024,
-			DiskType:               "ssd",
-			Provider:               "GCP",
-			Purpose:                util.StringPtr("testing"),
-			Seed:                   "gcp-eu1",
-			TargetSecret:           "secret",
-			WorkerCidr:             "cidr",
-			AutoScalerMin:          1,
-			AutoScalerMax:          5,
-			MaxSurge:               1,
-			MaxUnavailable:         2,
-			ClusterID:              "runtimeID",
-			GardenerProviderConfig: expectedGCPProviderCfg,
+			ID:                            "id",
+			Name:                          "verylon",
+			ProjectName:                   gardenerProject,
+			MachineType:                   "n1-standard-1",
+			Region:                        "region",
+			KubernetesVersion:             "version",
+			VolumeSizeGB:                  1024,
+			DiskType:                      "ssd",
+			Provider:                      "GCP",
+			Purpose:                       util.StringPtr("testing"),
+			Seed:                          "gcp-eu1",
+			TargetSecret:                  "secret",
+			WorkerCidr:                    "cidr",
+			AutoScalerMin:                 1,
+			AutoScalerMax:                 5,
+			MaxSurge:                      1,
+			MaxUnavailable:                2,
+			ClusterID:                     "runtimeID",
+			AutoUpdateKubernetesVersion:   true,
+			AutoUpdateMachineImageVersion: false,
+			GardenerProviderConfig:        expectedGCPProviderCfg,
 		},
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
@@ -163,19 +166,20 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			},
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
-					KubernetesVersion: "version",
-					VolumeSizeGb:      1024,
-					MachineType:       "n1-standard-1",
-					Region:            "region",
-					Provider:          "Azure",
-					Purpose:           util.StringPtr("testing"),
-					TargetSecret:      "secret",
-					DiskType:          "ssd",
-					WorkerCidr:        "cidr",
-					AutoScalerMin:     1,
-					AutoScalerMax:     5,
-					MaxSurge:          1,
-					MaxUnavailable:    2,
+					KubernetesVersion:           "version",
+					VolumeSizeGb:                1024,
+					MachineType:                 "n1-standard-1",
+					Region:                      "region",
+					Provider:                    "Azure",
+					Purpose:                     util.StringPtr("testing"),
+					TargetSecret:                "secret",
+					DiskType:                    "ssd",
+					WorkerCidr:                  "cidr",
+					AutoScalerMin:               1,
+					AutoScalerMax:               5,
+					MaxSurge:                    1,
+					MaxUnavailable:              2,
+					AutoUpdateKubernetesVersion: util.BoolPtr(true),
 					ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 						AzureConfig: &gqlschema.AzureProviderConfigInput{
 							VnetCidr: "cidr",
@@ -199,25 +203,27 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		return model.Cluster{
 			ID: "runtimeID",
 			ClusterConfig: model.GardenerConfig{
-				ID:                     "id",
-				Name:                   "verylon",
-				ProjectName:            gardenerProject,
-				MachineType:            "n1-standard-1",
-				Region:                 "region",
-				KubernetesVersion:      "version",
-				VolumeSizeGB:           1024,
-				DiskType:               "ssd",
-				Provider:               "Azure",
-				Purpose:                util.StringPtr("testing"),
-				Seed:                   "",
-				TargetSecret:           "secret",
-				WorkerCidr:             "cidr",
-				AutoScalerMin:          1,
-				AutoScalerMax:          5,
-				MaxSurge:               1,
-				MaxUnavailable:         2,
-				ClusterID:              "runtimeID",
-				GardenerProviderConfig: expectedAzureProviderCfg,
+				ID:                            "id",
+				Name:                          "verylon",
+				ProjectName:                   gardenerProject,
+				MachineType:                   "n1-standard-1",
+				Region:                        "region",
+				KubernetesVersion:             "version",
+				VolumeSizeGB:                  1024,
+				DiskType:                      "ssd",
+				Provider:                      "Azure",
+				Purpose:                       util.StringPtr("testing"),
+				Seed:                          "",
+				TargetSecret:                  "secret",
+				WorkerCidr:                    "cidr",
+				AutoScalerMin:                 1,
+				AutoScalerMax:                 5,
+				MaxSurge:                      1,
+				MaxUnavailable:                2,
+				ClusterID:                     "runtimeID",
+				AutoUpdateKubernetesVersion:   true,
+				AutoUpdateMachineImageVersion: false,
+				GardenerProviderConfig:        expectedAzureProviderCfg,
 			},
 			Kubeconfig:            nil,
 			KymaConfig:            fixKymaConfig(),
@@ -242,20 +248,21 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				KubernetesVersion: "version",
-				VolumeSizeGb:      1024,
-				MachineType:       "n1-standard-1",
-				Region:            "region",
-				Provider:          "AWS",
-				Purpose:           util.StringPtr("testing"),
-				Seed:              util.StringPtr("aws-eu1"),
-				TargetSecret:      "secret",
-				DiskType:          "ssd",
-				WorkerCidr:        "cidr",
-				AutoScalerMin:     1,
-				AutoScalerMax:     5,
-				MaxSurge:          1,
-				MaxUnavailable:    2,
+				KubernetesVersion:           "version",
+				VolumeSizeGb:                1024,
+				MachineType:                 "n1-standard-1",
+				Region:                      "region",
+				Provider:                    "AWS",
+				Purpose:                     util.StringPtr("testing"),
+				Seed:                        util.StringPtr("aws-eu1"),
+				TargetSecret:                "secret",
+				DiskType:                    "ssd",
+				WorkerCidr:                  "cidr",
+				AutoScalerMin:               1,
+				AutoScalerMax:               5,
+				MaxSurge:                    1,
+				MaxUnavailable:              2,
+				AutoUpdateKubernetesVersion: util.BoolPtr(true),
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					AwsConfig: awsGardenerProvider,
 				},
@@ -273,25 +280,27 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	expectedGardenerAWSRuntimeConfig := model.Cluster{
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
-			ID:                     "id",
-			Name:                   "verylon",
-			ProjectName:            gardenerProject,
-			MachineType:            "n1-standard-1",
-			Region:                 "region",
-			KubernetesVersion:      "version",
-			VolumeSizeGB:           1024,
-			DiskType:               "ssd",
-			Provider:               "AWS",
-			Purpose:                util.StringPtr("testing"),
-			Seed:                   "aws-eu1",
-			TargetSecret:           "secret",
-			WorkerCidr:             "cidr",
-			AutoScalerMin:          1,
-			AutoScalerMax:          5,
-			MaxSurge:               1,
-			MaxUnavailable:         2,
-			ClusterID:              "runtimeID",
-			GardenerProviderConfig: expectedAWSProviderCfg,
+			ID:                            "id",
+			Name:                          "verylon",
+			ProjectName:                   gardenerProject,
+			MachineType:                   "n1-standard-1",
+			Region:                        "region",
+			KubernetesVersion:             "version",
+			VolumeSizeGB:                  1024,
+			DiskType:                      "ssd",
+			Provider:                      "AWS",
+			Purpose:                       util.StringPtr("testing"),
+			Seed:                          "aws-eu1",
+			TargetSecret:                  "secret",
+			WorkerCidr:                    "cidr",
+			AutoScalerMin:                 1,
+			AutoScalerMax:                 5,
+			MaxSurge:                      1,
+			MaxUnavailable:                2,
+			ClusterID:                     "runtimeID",
+			AutoUpdateKubernetesVersion:   true,
+			AutoUpdateMachineImageVersion: false,
+			GardenerProviderConfig:        expectedAWSProviderCfg,
 		},
 		Kubeconfig:            nil,
 		KymaConfig:            fixKymaConfig(),
@@ -347,7 +356,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			uuidGeneratorMock.On("New").Return("id").Times(6)
 			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
 
-			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
+			inputConverter := NewInputConverter(
+				uuidGeneratorMock,
+				readSession,
+				gardenerProject,
+				defaultAutoUpdateKubernetesVersion,
+				defaultAutoUpdateMachineImageVersion)
 
 			//when
 			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant, subAccountId)
@@ -380,7 +394,12 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			},
 		}
 
-		inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
+		inputConverter := NewInputConverter(
+			uuidGeneratorMock,
+			readSession,
+			gardenerProject,
+			defaultAutoUpdateKubernetesVersion,
+			defaultAutoUpdateMachineImageVersion)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -396,7 +415,12 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			ClusterConfig: &gqlschema.ClusterConfigInput{},
 		}
 
-		inputConverter := NewInputConverter(nil, nil, gardenerProject)
+		inputConverter := NewInputConverter(
+			nil,
+			nil,
+			gardenerProject,
+			defaultAutoUpdateKubernetesVersion,
+			defaultAutoUpdateMachineImageVersion)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -417,7 +441,12 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			},
 		}
 
-		inputConverter := NewInputConverter(uuidGeneratorMock, nil, gardenerProject)
+		inputConverter := NewInputConverter(
+			uuidGeneratorMock,
+			nil,
+			gardenerProject,
+			defaultAutoUpdateKubernetesVersion,
+			defaultAutoUpdateMachineImageVersion)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)

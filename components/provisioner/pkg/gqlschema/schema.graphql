@@ -25,6 +25,8 @@ type GardenerConfig {
     autoScalerMax: Int
     maxSurge: Int
     maxUnavailable: Int
+    autoUpdateKubernetesVersion: Boolean
+    autoUpdateMachineImageVersion: Boolean
     providerSpecificConfig: ProviderSpecificConfig
 }
 
@@ -161,6 +163,8 @@ input GardenerConfigInput {                   # Gardener project in which the cl
     autoScalerMax: Int!                             # Maximum number of VMs to create
     maxSurge: Int!                                  # Maximum number of VMs created during an update
     maxUnavailable: Int!                            # Maximum number of VMs that can be unavailable during an update
+    autoUpdateKubernetesVersion: Boolean            # AutoUpdate KubernetesVersion indicates whether the patch Kubernetes version may be automatically updated
+    autoUpdateMachineImageVersion: Boolean          # AutoUpdate MachineImageVersion indicates whether the machine image version may be automatically updated
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
 }

@@ -32,10 +32,10 @@ global:
       version: "PR-1460"
     schema_migrator:
       dir:
-      version: "PR-1425"
+      version: "PR-1475"
     provisioner:
       dir:
-      version: "PR-1450"
+      version: "PR-1475"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
