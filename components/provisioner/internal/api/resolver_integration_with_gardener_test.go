@@ -152,30 +152,28 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database_2")
 	require.NoError(t, err)
-
 	defer containerCleanupFunc()
 
 	connection, err := database.InitializeDatabaseConnection(connString, 5)
 	require.NoError(t, err)
 	require.NotNil(t, connection)
-
 	defer testutils.CloseDatabase(t, connection)
 
 	err = database.SetupSchema(connection, testutils.SchemaFilePath)
 	require.NoError(t, err)
 
 	kymaConfig := fixKymaGraphQLConfigInput()
+	clusterConfigurations := newTestClusterConfigurations()
 
-	clusterConfigurations := getTestClusterConfigurations()
 	directorServiceMock := &directormock.DirectorClient{}
 
 	mockK8sClientProvider := &mocks.K8sClientProvider{}
 	fakeK8sClient := fake.NewSimpleClientset()
 	mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
+
 	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
 	auditLogsConfigPath := filepath.Join("testdata", "config.json")
-
 	maintenanceWindowConfigPath := filepath.Join("testdata", "maintwindow.json")
 
 	shootInterface := newFakeShootsInterface(t, cfg)
@@ -192,6 +190,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
+
+	upgradeShootQueue := queue.CreateUpgradeShootQueue(testProvisioningTimeouts(), dbsFactory, shootInterface)
+	upgradeShootQueue.Run(queueCtx.Done())
 
 	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
 	require.NoError(t, err)
@@ -232,7 +233,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project")
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, upgradeShootQueue)
 
 			validator := NewValidator(dbsFactory.NewReadSession())
 
@@ -303,6 +304,22 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			// when
 			// Roll Back last upgrade
 			_, err = resolver.RollBackUpgradeOperation(ctx, config.runtimeID)
+			require.NoError(t, err)
+
+			// then
+			// assert db content
+			runtimeUpgrade, err = readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
+			require.NoError(t, err)
+			assert.Equal(t, model.UpgradeRolledBack, runtimeUpgrade.State)
+
+			runtimeFromDb, err = readSession.GetCluster(config.runtimeID)
+			require.NoError(t, err)
+			assert.Equal(t, runtimeFromDb.KymaConfig.ID, runtimeUpgrade.PreUpgradeKymaConfigId)
+
+			// when
+			// upgrade shoot
+			err := resolver.UpgradeShoot(ctx, config.runtimeID)
+			resolver.RollBackUpgradeOperation(ctx, config.runtimeID)
 			require.NoError(t, err)
 
 			// then

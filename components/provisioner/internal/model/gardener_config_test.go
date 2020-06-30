@@ -236,7 +236,6 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 			assert.Equal(t, testCase.expectedProviderSpecificConfig, providerSpecificConfig)
 		})
 	}
-
 }
 
 func Test_AsMap_Error(t *testing.T) {
