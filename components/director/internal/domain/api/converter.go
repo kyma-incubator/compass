@@ -105,11 +105,16 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 		return nil
 	}
 
+	fetchReq, err := c.fr.InputFromGraphQL(in.FetchRequest)
+	if err != nil {
+		// TODO
+	}
+
 	return &model.APISpecInput{
 		Data:         (*string)(in.Data),
 		Type:         model.APISpecType(in.Type),
 		Format:       model.SpecFormat(in.Format),
-		FetchRequest: c.fr.InputFromGraphQL(in.FetchRequest),
+		FetchRequest: fetchReq,
 	}
 }
 

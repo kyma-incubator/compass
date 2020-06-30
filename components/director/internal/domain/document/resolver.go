@@ -31,8 +31,8 @@ type DocumentConverter interface {
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
 type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
+	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
+	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
@@ -160,6 +160,5 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*gr
 		return nil, err
 	}
 
-	frGQL := r.frConverter.ToGraphQL(fr)
-	return frGQL, nil
+	return r.frConverter.ToGraphQL(fr)
 }

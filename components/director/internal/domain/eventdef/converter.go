@@ -101,11 +101,16 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) *mo
 		return nil
 	}
 
+	fetchReq, err := c.fr.InputFromGraphQL(in.FetchRequest)
+	if err != nil {
+		// TODO
+	}
+
 	return &model.EventSpecInput{
 		Data:          (*string)(in.Data),
 		Format:        model.SpecFormat(in.Format),
 		EventSpecType: model.EventSpecType(in.Type),
-		FetchRequest:  c.fr.InputFromGraphQL(in.FetchRequest),
+		FetchRequest:  fetchReq,
 	}
 }
 

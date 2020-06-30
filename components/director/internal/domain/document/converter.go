@@ -62,6 +62,11 @@ func (c *converter) InputFromGraphQL(in *graphql.DocumentInput) *model.DocumentI
 		data = &tmp
 	}
 
+	fetchReq, err := c.frConverter.InputFromGraphQL(in.FetchRequest)
+	if err != nil {
+		// TODO
+	}
+
 	return &model.DocumentInput{
 		Title:        in.Title,
 		DisplayName:  in.DisplayName,
@@ -69,7 +74,7 @@ func (c *converter) InputFromGraphQL(in *graphql.DocumentInput) *model.DocumentI
 		Format:       model.DocumentFormat(in.Format),
 		Kind:         in.Kind,
 		Data:         data,
-		FetchRequest: c.frConverter.InputFromGraphQL(in.FetchRequest),
+		FetchRequest: fetchReq,
 	}
 }
 

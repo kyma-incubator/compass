@@ -55,9 +55,10 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			converter := fetchrequest.NewConverter(authConv)
 
 			// when
-			res := converter.ToGraphQL(testCase.Input)
+			res, err := converter.ToGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			authConv.AssertExpectations(t)
 		})
@@ -97,9 +98,10 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			converter := fetchrequest.NewConverter(authConv)
 
 			// when
-			res := converter.InputFromGraphQL(testCase.Input)
+			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			authConv.AssertExpectations(t)
 		})

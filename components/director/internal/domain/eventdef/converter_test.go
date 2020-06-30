@@ -147,7 +147,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Expected: modelEventAPIDefinitionInput,
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
-				conv.On("InputFromGraphQL", gqlEventAPIDefinitionInput.Spec.FetchRequest).Return(modelEventAPIDefinitionInput.Spec.FetchRequest).Once()
+				conv.On("InputFromGraphQL", gqlEventAPIDefinitionInput.Spec.FetchRequest).Return(modelEventAPIDefinitionInput.Spec.FetchRequest, nil).Once()
 				return conv
 			},
 			VersionConverter: func() *automock.VersionConverter {
@@ -226,7 +226,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
 				for i, eventAPI := range gqlEventAPIDefinitionInputs {
-					conv.On("InputFromGraphQL", eventAPI.Spec.FetchRequest).Return(modelEventAPIDefinitionInputs[i].Spec.FetchRequest).Once()
+					conv.On("InputFromGraphQL", eventAPI.Spec.FetchRequest).Return(modelEventAPIDefinitionInputs[i].Spec.FetchRequest, nil).Once()
 				}
 
 				return conv
@@ -286,7 +286,7 @@ func TestEventApiSpecDataConversionNilStaysNil(t *testing.T) {
 	// GIVEN
 	mockFrConv := &automock.FetchRequestConverter{}
 	defer mockFrConv.AssertExpectations(t)
-	mockFrConv.On("InputFromGraphQL", mock.Anything).Return(nil)
+	mockFrConv.On("InputFromGraphQL", mock.Anything).Return(nil, nil)
 
 	mockVersionConv := &automock.VersionConverter{}
 	defer mockVersionConv.AssertExpectations(t)

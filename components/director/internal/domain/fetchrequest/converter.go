@@ -27,14 +27,14 @@ func NewConverter(authConverter AuthConverter) *converter {
 	return &converter{authConverter: authConverter}
 }
 
-func (c *converter) ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest {
+func (c *converter) ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	auth, err := c.authConverter.ToGraphQL(in.Auth)
 	if err != nil {
-		// TODO
+		return nil, errors.Wrap(err, "while converting Auth to GraphQL")
 	}
 
 	return &graphql.FetchRequest{
@@ -43,12 +43,12 @@ func (c *converter) ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest {
 		Mode:   graphql.FetchMode(in.Mode),
 		Filter: in.Filter,
 		Status: c.statusToGraphQL(in.Status),
-	}
+	}, nil
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput {
+func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	var mode *model.FetchMode
@@ -59,7 +59,7 @@ func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) *model.Fetch
 
 	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
 	if err != nil {
-		// TODO
+		return nil, errors.Wrap(err, "while converting Auth input from GraphQL")
 	}
 
 	return &model.FetchRequestInput{
@@ -67,7 +67,7 @@ func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) *model.Fetch
 		Auth:   auth,
 		Mode:   mode,
 		Filter: in.Filter,
-	}
+	}, nil
 }
 
 func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
