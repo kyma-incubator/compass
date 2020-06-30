@@ -30,7 +30,9 @@ func main() {
 	k8sClientSet, appErr := newCoreClientSet()
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
-	internalComponents := config.InitInternalComponents(cfg, k8sClientSet)
+	internalComponents, certificateLoader := config.InitInternalComponents(cfg, k8sClientSet)
+
+	go certificateLoader.Run()
 
 	tokenResolver := api.NewTokenResolver(internalComponents.TokenService)
 	certificateResolver := api.NewCertificateResolver(

@@ -25,24 +25,32 @@ type Components struct {
 	SubjectConsts certificates.CSRSubjectConsts
 }
 
-func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface) Components {
+func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface) (Components, certificates.Loader) {
 	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration)
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
 	revokedCertsRepository := newRevokedCertsRepository(k8sClientset, namespacedname.Parse(cfg.RevocationConfigMapName))
 
 	authenticator := authentication.NewAuthenticator()
 
+	caSecretName := namespacedname.Parse(cfg.CASecret.Name)
+	rootCASecretName := namespacedname.Parse(cfg.RootCASecret.Name)
+
+	certCache := certificates.NewCertificateCache()
+
 	secretsRepository := newSecretsRepository(k8sClientset)
 	certificateUtility := certificates.NewCertificateUtility(cfg.CertificateValidityTime)
 	certificateService := certificates.NewCertificateService(
-		secretsRepository,
+		certCache,
 		certificateUtility,
-		namespacedname.Parse(cfg.CASecret.Name),
-		namespacedname.Parse(cfg.RootCASecret.Name),
+		caSecretName.Name,
+		rootCASecretName.Name,
 		cfg.CASecret.CertificateKey,
 		cfg.CASecret.KeyKey,
 		cfg.RootCASecret.CertificateKey,
 	)
+
+	certLoader := certificates.NewCertificateLoader(certCache, secretsRepository, caSecretName, rootCASecretName)
+
 	csrSubjectConsts := certificates.CSRSubjectConsts{
 		Country:            cfg.CSRSubject.Country,
 		Organization:       cfg.CSRSubject.Organization,
@@ -60,7 +68,7 @@ func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface) Compo
 		CertificateUtility:    certificateUtility,
 		CertificateService:    certificateService,
 		SubjectConsts:         csrSubjectConsts,
-	}
+	}, certLoader
 }
 
 func newSecretsRepository(coreClientSet kubernetes.Interface) secrets.Repository {

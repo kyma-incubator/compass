@@ -394,7 +394,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		DiskType:               "SSD",
 		MachineType:            "machine",
 		Provider:               provider,
-		Purpose:                "testing",
+		Purpose:                util.StringPtr("testing"),
 		Seed:                   "eu",
 		TargetSecret:           "gardener-secret",
 		Region:                 "eu",

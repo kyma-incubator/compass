@@ -5,9 +5,6 @@ import (
 	"encoding/base64"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
-	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
-
-	"k8s.io/apimachinery/pkg/types"
 )
 
 //go:generate mockery -name=Service
@@ -18,23 +15,23 @@ type Service interface {
 }
 
 type certificateService struct {
-	secretsRepository           secrets.Repository
+	certificateCache            Cache
 	certUtil                    CertificateUtility
-	caSecretName                types.NamespacedName
+	caSecretName                string
 	caCertificateSecretKey      string
 	caKeySecretKey              string
-	rootCACertificateSecretName types.NamespacedName
+	rootCACertificateSecretName string
 	rootCACertificateSecretKey  string
 }
 
 func NewCertificateService(
-	secretRepository secrets.Repository,
+	certificateCache Cache,
 	certUtil CertificateUtility,
-	caSecretName, rootCACertificateSecretName types.NamespacedName,
+	caSecretName, rootCACertificateSecretName string,
 	caCertificateSecretKey, caKeySecretKey, rootCACertificateSecretKey string) Service {
 
 	return &certificateService{
-		secretsRepository:           secretRepository,
+		certificateCache:            certificateCache,
 		certUtil:                    certUtil,
 		caSecretName:                caSecretName,
 		caCertificateSecretKey:      caCertificateSecretKey,
@@ -59,7 +56,7 @@ func (svc *certificateService) SignCSR(encodedCSR []byte, subject CSRSubject) (E
 }
 
 func (svc *certificateService) signCSR(csr *x509.CertificateRequest) (EncodedCertificateChain, apperrors.AppError) {
-	secretData, err := svc.secretsRepository.Get(svc.caSecretName)
+	secretData, err := svc.certificateCache.Get(svc.caSecretName)
 	if err != nil {
 		return EncodedCertificateChain{}, err
 	}
@@ -86,7 +83,7 @@ func (svc *certificateService) encodeCertificates(rawCaCertificate, rawClientCer
 	caCrtBytes := svc.certUtil.AddCertificateHeaderAndFooter(rawCaCertificate)
 	signedCrtBytes := svc.certUtil.AddCertificateHeaderAndFooter(rawClientCertificate)
 
-	if svc.rootCACertificateSecretName.Name != "" && svc.rootCACertificateSecretKey != "" {
+	if svc.rootCACertificateSecretName != "" && svc.rootCACertificateSecretKey != "" {
 		rootCABytes, err := svc.loadRootCACert()
 		if err != nil {
 			return EncodedCertificateChain{}, err
@@ -101,7 +98,7 @@ func (svc *certificateService) encodeCertificates(rawCaCertificate, rawClientCer
 }
 
 func (svc *certificateService) loadRootCACert() ([]byte, apperrors.AppError) {
-	secretData, err := svc.secretsRepository.Get(svc.rootCACertificateSecretName)
+	secretData, err := svc.certificateCache.Get(svc.rootCACertificateSecretName)
 	if err != nil {
 		return nil, err
 	}

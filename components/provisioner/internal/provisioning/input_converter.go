@@ -81,7 +81,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		DiskType:               input.DiskType,
 		MachineType:            input.MachineType,
 		Provider:               input.Provider,
-		Purpose:                util.UnwrapStr(input.Purpose),
+		Purpose:                input.Purpose,
 		Seed:                   util.UnwrapStr(input.Seed),
 		TargetSecret:           input.TargetSecret,
 		WorkerCidr:             input.WorkerCidr,

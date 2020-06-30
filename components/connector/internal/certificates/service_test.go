@@ -9,10 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 
-	"k8s.io/apimachinery/pkg/types"
-
 	certificatesMocks "github.com/kyma-incubator/compass/components/connector/internal/certificates/mocks"
-	secretsMock "github.com/kyma-incubator/compass/components/connector/internal/secrets/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +17,6 @@ import (
 const (
 	authSecretName   = "nginx-auth-ca"
 	rootCASecretName = "rootCA-secret"
-	namespace        = "kyma-integration"
 
 	caCertificateSecretKey     = "ca.crt"
 	caKeySecretKey             = "ca.key"
@@ -72,24 +68,14 @@ var (
 			Province:           province,
 		},
 	}
-
-	authNamespacedName = types.NamespacedName{
-		Namespace: namespace,
-		Name:      authSecretName,
-	}
-
-	rootCANamespacedName = types.NamespacedName{
-		Namespace: namespace,
-		Name:      rootCASecretName,
-	}
 )
 
 func TestCertificateService_SignCSR(t *testing.T) {
 
 	t.Run("should create certificate", func(t *testing.T) {
 		// given
-		secretsRepository := &secretsMock.Repository{}
-		secretsRepository.On("Get", authNamespacedName).Return(certsSecretData, nil)
+		cache := certificates.NewCertificateCache()
+		cache.Put(authSecretName, certsSecretData)
 
 		certUtils := &certificatesMocks.CertificateUtility{}
 		certUtils.On("LoadCert", caCrtEncoded).Return(caCrt, nil)
@@ -101,10 +87,10 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		certUtils.On("AddCertificateHeaderAndFooter", clientCRT).Return(clientCRTBytes)
 
 		certificatesService := certificates.NewCertificateService(
-			secretsRepository,
+			cache,
 			certUtils,
-			authNamespacedName,
-			types.NamespacedName{},
+			authSecretName,
+			"",
 			caCertificateSecretKey,
 			caKeySecretKey,
 			rootCACertificateSecretKey)
@@ -124,7 +110,6 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, certChain, decodedChain)
 
-		secretsRepository.AssertExpectations(t)
 		certUtils.AssertExpectations(t)
 	})
 
@@ -132,9 +117,9 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		// given
 		certChain := append(append(clientCRTBytes, caCRTBytes...), rootCACrtBytes...)
 
-		secretsRepository := &secretsMock.Repository{}
-		secretsRepository.On("Get", authNamespacedName).Return(certsSecretData, nil).
-			On("Get", rootCANamespacedName).Return(rootCASecretData, nil, nil)
+		cache := certificates.NewCertificateCache()
+		cache.Put(authSecretName, certsSecretData)
+		cache.Put(rootCASecretName, rootCASecretData)
 
 		certUtils := &certificatesMocks.CertificateUtility{}
 		certUtils.On("LoadCert", caCrtEncoded).Return(caCrt, nil).
@@ -148,10 +133,10 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		certUtils.On("AddCertificateHeaderAndFooter", clientCRT).Return(clientCRTBytes)
 
 		certificatesService := certificates.NewCertificateService(
-			secretsRepository,
+			cache,
 			certUtils,
-			authNamespacedName,
-			rootCANamespacedName,
+			authSecretName,
+			rootCASecretName,
 			caCertificateSecretKey,
 			caKeySecretKey,
 			rootCACertificateSecretKey)
@@ -171,24 +156,21 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, certChain, decodedChain)
 
-		secretsRepository.AssertExpectations(t)
 		certUtils.AssertExpectations(t)
 	})
 
 	t.Run("should return Not Found error when secret not found", func(t *testing.T) {
 		// given
-		secretsRepository := &secretsMock.Repository{}
-		secretsRepository.On("Get", authNamespacedName).Return(nil, apperrors.NotFound("error"))
-
+		cache := certificates.NewCertificateCache()
 		certUtils := &certificatesMocks.CertificateUtility{}
 		certUtils.On("LoadCSR", rawCSR).Return(csr, nil)
 		certUtils.On("CheckCSRValues", csr, subjectValues).Return(nil)
 
 		certificatesService := certificates.NewCertificateService(
-			secretsRepository,
+			cache,
 			certUtils,
-			authNamespacedName,
-			types.NamespacedName{},
+			authSecretName,
+			"",
 			caCertificateSecretKey,
 			caKeySecretKey,
 			rootCACertificateSecretKey)
@@ -200,57 +182,21 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, apperrors.CodeNotFound, err.Code())
 		assert.Empty(t, encodedChain)
-		secretsRepository.AssertExpectations(t)
-		certUtils.AssertExpectations(t)
-	})
-
-	t.Run("should return error when failed to read root CA certificate from secret", func(t *testing.T) {
-		// given
-		secretsRepository := &secretsMock.Repository{}
-		secretsRepository.On("Get", authNamespacedName).Return(certsSecretData, nil).
-			On("Get", rootCANamespacedName).Return(nil, apperrors.Internal("error"))
-
-		certUtils := &certificatesMocks.CertificateUtility{}
-		certUtils.On("LoadCert", caCrtEncoded).Return(caCrt, nil)
-		certUtils.On("LoadKey", caKeyEncoded).Return(caKey, nil)
-		certUtils.On("LoadCSR", rawCSR).Return(csr, nil)
-		certUtils.On("CheckCSRValues", csr, subjectValues).Return(nil)
-		certUtils.On("SignCSR", caCrt, csr, caKey).Return(clientCRT, nil)
-		certUtils.On("AddCertificateHeaderAndFooter", caCrt.Raw).Return(caCRTBytes)
-		certUtils.On("AddCertificateHeaderAndFooter", clientCRT).Return(clientCRTBytes)
-
-		certificatesService := certificates.NewCertificateService(
-			secretsRepository,
-			certUtils,
-			authNamespacedName,
-			rootCANamespacedName,
-			caCertificateSecretKey,
-			caKeySecretKey,
-			rootCACertificateSecretKey)
-
-		// when
-		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues)
-
-		// then
-		require.Error(t, err)
-		assert.Equal(t, apperrors.CodeInternal, err.Code())
-		assert.Empty(t, encodedChain)
-		secretsRepository.AssertExpectations(t)
 		certUtils.AssertExpectations(t)
 	})
 
 	t.Run("should return error when couldn't load csr", func(t *testing.T) {
 		// given
-		secretsRepository := &secretsMock.Repository{}
+		cache := certificates.NewCertificateCache()
 
 		certUtils := &certificatesMocks.CertificateUtility{}
 		certUtils.On("LoadCSR", rawCSR).Return(nil, apperrors.Internal("error"))
 
 		certificatesService := certificates.NewCertificateService(
-			secretsRepository,
+			cache,
 			certUtils,
-			authNamespacedName,
-			types.NamespacedName{},
+			authSecretName,
+			"",
 			caCertificateSecretKey,
 			caKeySecretKey,
 			rootCACertificateSecretKey)
@@ -262,23 +208,22 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		require.Error(t, err)
 		assert.Empty(t, encodedChain)
 		assert.Equal(t, apperrors.CodeInternal, err.Code())
-		secretsRepository.AssertExpectations(t)
 		certUtils.AssertExpectations(t)
 	})
 
 	t.Run("should return error when subject check failed", func(t *testing.T) {
 		// given
-		secretsRepository := &secretsMock.Repository{}
+		cache := certificates.NewCertificateCache()
 
 		certUtils := &certificatesMocks.CertificateUtility{}
 		certUtils.On("LoadCSR", rawCSR).Return(csr, nil)
 		certUtils.On("CheckCSRValues", csr, subjectValues).Return(apperrors.Forbidden("error"))
 
 		certificatesService := certificates.NewCertificateService(
-			secretsRepository,
+			cache,
 			certUtils,
-			authNamespacedName,
-			types.NamespacedName{},
+			authSecretName,
+			"",
 			caCertificateSecretKey,
 			caKeySecretKey,
 			rootCACertificateSecretKey)
@@ -290,14 +235,13 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		require.Error(t, err)
 		assert.Empty(t, encodedChain)
 		assert.Equal(t, apperrors.CodeForbidden, err.Code())
-		secretsRepository.AssertExpectations(t)
 		certUtils.AssertExpectations(t)
 	})
 
 	t.Run("should return error when couldn't load cert", func(t *testing.T) {
 		// given
-		secretsRepository := &secretsMock.Repository{}
-		secretsRepository.On("Get", authNamespacedName).Return(certsSecretData, nil)
+		cache := certificates.NewCertificateCache()
+		cache.Put(authSecretName, certsSecretData)
 
 		certUtils := &certificatesMocks.CertificateUtility{}
 		certUtils.On("LoadCSR", rawCSR).Return(csr, nil)
@@ -305,10 +249,10 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		certUtils.On("LoadCert", caCrtEncoded).Return(nil, apperrors.Internal("error"))
 
 		certificatesService := certificates.NewCertificateService(
-			secretsRepository,
+			cache,
 			certUtils,
-			authNamespacedName,
-			types.NamespacedName{},
+			authSecretName,
+			"",
 			caCertificateSecretKey,
 			caKeySecretKey,
 			rootCACertificateSecretKey)
@@ -320,14 +264,13 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		require.Error(t, err)
 		assert.Empty(t, encodedChain)
 		assert.Equal(t, apperrors.CodeInternal, err.Code())
-		secretsRepository.AssertExpectations(t)
 		certUtils.AssertExpectations(t)
 	})
 
 	t.Run("should return error when couldn't load key", func(t *testing.T) {
 		// given
-		secretsRepository := &secretsMock.Repository{}
-		secretsRepository.On("Get", authNamespacedName).Return(certsSecretData, nil)
+		cache := certificates.NewCertificateCache()
+		cache.Put(authSecretName, certsSecretData)
 
 		certUtils := &certificatesMocks.CertificateUtility{}
 		certUtils.On("LoadCSR", rawCSR).Return(csr, nil)
@@ -336,10 +279,10 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		certUtils.On("LoadKey", caKeyEncoded).Return(nil, apperrors.Internal("error"))
 
 		certificatesService := certificates.NewCertificateService(
-			secretsRepository,
+			cache,
 			certUtils,
-			authNamespacedName,
-			types.NamespacedName{},
+			authSecretName,
+			"",
 			caCertificateSecretKey,
 			caKeySecretKey,
 			rootCACertificateSecretKey)
@@ -351,14 +294,13 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		require.Error(t, err)
 		assert.Empty(t, encodedChain)
 		assert.Equal(t, apperrors.CodeInternal, err.Code())
-		secretsRepository.AssertExpectations(t)
 		certUtils.AssertExpectations(t)
 	})
 
 	t.Run("should return error when failed to sign CSR", func(t *testing.T) {
 		// given
-		secretsRepository := &secretsMock.Repository{}
-		secretsRepository.On("Get", authNamespacedName).Return(certsSecretData, nil)
+		cache := certificates.NewCertificateCache()
+		cache.Put(authSecretName, certsSecretData)
 
 		certUtils := &certificatesMocks.CertificateUtility{}
 		certUtils.On("LoadCert", caCrtEncoded).Return(caCrt, nil)
@@ -368,10 +310,10 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		certUtils.On("SignCSR", caCrt, csr, caKey).Return(nil, apperrors.Internal("error"))
 
 		certificatesService := certificates.NewCertificateService(
-			secretsRepository,
+			cache,
 			certUtils,
-			authNamespacedName,
-			types.NamespacedName{},
+			authSecretName,
+			"",
 			caCertificateSecretKey,
 			caKeySecretKey,
 			rootCACertificateSecretKey)
@@ -383,7 +325,6 @@ func TestCertificateService_SignCSR(t *testing.T) {
 		require.Error(t, err)
 		assert.Empty(t, encodedChain)
 		assert.Equal(t, apperrors.CodeInternal, err.Code())
-		secretsRepository.AssertExpectations(t)
 		certUtils.AssertExpectations(t)
 	})
 }
