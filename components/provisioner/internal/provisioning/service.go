@@ -386,24 +386,24 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 	return operation, nil
 }
 
-func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, dberrors.Error) {
+func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
 
 	// 1. update entry in DB
 	err := txSession.UpdateGardenerClusterConfig(currentCluster.ID, gardenerConfig)
 	if err != nil {
-		return model.Operation{}, err.Append("Failed to insert updated Gardener Config")
+		return model.Operation{}, fmt.Errorf("failed to insert updated Gardener Config: %s", err.Error())
 	}
 
 	// 2. execute update on Shoot CR
 	error := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
 
 	if error != nil {
-		return model.Operation{}, err.Append("Failed to set Gardener Shoot upgrade operation started")
+		return model.Operation{}, fmt.Errorf("Failed to set Gardener Shoot upgrade operation started: %s", error.Error())
 	}
 
-	operation, err := r.setOperationStarted(txSession, currentCluster.ID, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
+	operation, error := r.setOperationStarted(txSession, currentCluster.ID, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
 
-	if err != nil {
+	if error != nil {
 		return model.Operation{}, err.Append("Failed to start operation of Gardener Shoot upgrade")
 	}
 
