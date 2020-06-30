@@ -18,22 +18,38 @@ func (c *converter) ToGraphQL(in *model.Auth) *graphql.Auth {
 	}
 
 	var headers *graphql.HttpHeaders
+	var headersSerialized *graphql.HttpHeadersSerialized
 	if len(in.AdditionalHeaders) != 0 {
 		var value graphql.HttpHeaders = in.AdditionalHeaders
 		headers = &value
+
+		serialized, err := graphql.NewHttpHeadersSerialized(in.AdditionalHeaders)
+		if err != nil {
+			// TODO: handle error
+		}
+		headersSerialized = &serialized
 	}
 
 	var params *graphql.QueryParams
+	var paramsSerialized *graphql.QueryParamsSerialized
 	if len(in.AdditionalQueryParams) != 0 {
 		var value graphql.QueryParams = in.AdditionalQueryParams
 		params = &value
+
+		serialized, err := graphql.NewQueryParamsSerialized(in.AdditionalQueryParams)
+		if err != nil {
+			// TODO: handle error
+		}
+		paramsSerialized = &serialized
 	}
 
 	return &graphql.Auth{
-		Credential:            c.credentialToGraphQL(in.Credential),
-		AdditionalHeaders:     headers,
-		AdditionalQueryParams: params,
-		RequestAuth:           c.requestAuthToGraphQL(in.RequestAuth),
+		Credential:                      c.credentialToGraphQL(in.Credential),
+		AdditionalHeaders:               headers,
+		AdditionalHeadersSerialized:     headersSerialized,
+		AdditionalQueryParams:           params,
+		AdditionalQueryParamsSerialized: paramsSerialized,
+		RequestAuth:                     c.requestAuthToGraphQL(in.RequestAuth),
 	}
 }
 
@@ -43,10 +59,21 @@ func (c *converter) InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput {
 	}
 
 	credential := c.credentialInputFromGraphQL(in.Credential)
+
+	additionalHeaders, err := c.headersFromGraphQL(in.AdditionalHeaders, in.AdditionalHeadersSerialized)
+	if err != nil {
+		// TODO: handle error
+	}
+
+	additionalQueryParams, err := c.queryParamsFromGraphQL(in.AdditionalQueryParams, in.AdditionalQueryParamsSerialized)
+	if err != nil {
+		// TODO: handle error
+	}
+
 	return &model.AuthInput{
 		Credential:            credential,
-		AdditionalHeaders:     c.headersFromGraphQL(in.AdditionalHeaders),
-		AdditionalQueryParams: c.queryParamsFromGraphQL(in.AdditionalQueryParams),
+		AdditionalHeaders:     additionalHeaders,
+		AdditionalQueryParams: additionalQueryParams,
 		RequestAuth:           c.requestAuthInputFromGraphQL(in.RequestAuth),
 	}
 }
@@ -90,10 +117,20 @@ func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAut
 
 	var csrf *model.CSRFTokenCredentialRequestAuthInput
 	if in.Csrf != nil {
+		additionalHeaders, err := c.headersFromGraphQL(in.Csrf.AdditionalHeaders, in.Csrf.AdditionalHeadersSerialized)
+		if err != nil {
+			// TODO: handle error
+		}
+
+		additionalQueryParams, err := c.queryParamsFromGraphQL(in.Csrf.AdditionalQueryParams, in.Csrf.AdditionalQueryParamsSerialized)
+		if err != nil {
+			// TODO: handle error
+		}
+
 		csrf = &model.CSRFTokenCredentialRequestAuthInput{
 			TokenEndpointURL:      in.Csrf.TokenEndpointURL,
-			AdditionalQueryParams: c.queryParamsFromGraphQL(in.Csrf.AdditionalQueryParams),
-			AdditionalHeaders:     c.headersFromGraphQL(in.Csrf.AdditionalHeaders),
+			AdditionalQueryParams: additionalQueryParams,
+			AdditionalHeaders:     additionalHeaders,
 			Credential:            c.credentialInputFromGraphQL(in.Csrf.Credential),
 		}
 	}
@@ -103,22 +140,28 @@ func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAut
 	}
 }
 
-func (c *converter) headersFromGraphQL(headers *graphql.HttpHeaders) map[string][]string {
+func (c *converter) headersFromGraphQL(headers *graphql.HttpHeaders, headersSerialized *graphql.HttpHeadersSerialized) (map[string][]string, error) {
 	var h map[string][]string
-	if headers != nil {
+
+	if headersSerialized != nil {
+		return headersSerialized.Unmarshal()
+	} else if headers != nil {
 		h = *headers
 	}
 
-	return h
+	return h, nil
 }
 
-func (c *converter) queryParamsFromGraphQL(params *graphql.QueryParams) map[string][]string {
-	var h map[string][]string
-	if params != nil {
-		h = *params
+func (c *converter) queryParamsFromGraphQL(params *graphql.QueryParams, paramsSerialized *graphql.QueryParamsSerialized) (map[string][]string, error) {
+	var p map[string][]string
+
+	if paramsSerialized != nil {
+		return paramsSerialized.Unmarshal()
+	} else if params != nil {
+		p = *params
 	}
 
-	return h
+	return p, nil
 }
 
 func (c *converter) credentialInputFromGraphQL(in *graphql.CredentialDataInput) *model.CredentialDataInput {
