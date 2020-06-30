@@ -1,7 +1,7 @@
 package provisioning
 
 import (
-	"errors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
 	"time"
 
@@ -173,7 +173,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
-		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(errors.New("error"))
+		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(apperrors.Internal("error"))
 		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil)
@@ -195,7 +195,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		//given
 		directorServiceMock := &directormock.DirectorClient{}
 
-		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", errors.New("error"))
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", apperrors.Internal("error"))
 
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator, nil, nil, nil)
 
@@ -270,7 +270,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, errors.New("error"))
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, apperrors.Internal("error"))
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil)
 

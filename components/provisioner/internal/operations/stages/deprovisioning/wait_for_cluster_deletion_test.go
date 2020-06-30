@@ -2,6 +2,7 @@ package deprovisioning
 
 import (
 	"errors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
 	"time"
 
@@ -141,7 +142,7 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
-				directorClient.On("RuntimeExists", runtimeID, tenant).Return(false, errors.New("some error"))
+				directorClient.On("RuntimeExists", runtimeID, tenant).Return(false, apperrors.Internal("some error"))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
@@ -155,7 +156,7 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
 				directorClient.On("RuntimeExists", runtimeID, tenant).Return(true, nil)
-				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(errors.New("some error"))
+				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(apperrors.Internal("some error"))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,

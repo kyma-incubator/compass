@@ -2,6 +2,7 @@ package operations
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
 	"time"
 
@@ -135,7 +136,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		}
 
 		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", clusterId, graphql.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(fmt.Errorf("some error"))
+		directorClient.On("SetRuntimeStatusCondition", clusterId, graphql.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(apperrors.Internal("error"))
 
 		failureHandler := MockFailureHandler{}
 

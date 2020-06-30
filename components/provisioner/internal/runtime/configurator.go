@@ -1,7 +1,8 @@
 package runtime
 
 import (
-	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 
@@ -19,7 +20,7 @@ const (
 
 //go:generate mockery -name=Configurator
 type Configurator interface {
-	ConfigureRuntime(cluster model.Cluster, kubeconfigRaw string) error
+	ConfigureRuntime(cluster model.Cluster, kubeconfigRaw string) apperrors.AppError
 }
 
 type configurator struct {
@@ -34,27 +35,28 @@ func NewRuntimeConfigurator(builder k8s.K8sClientProvider, directorClient direct
 	}
 }
 
-func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw string) error {
+func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw string) apperrors.AppError {
 	runtimeAgentComponent, found := cluster.KymaConfig.GetComponentConfig(runtimeAgentComponentName)
 	if found {
 		err := c.configureAgent(cluster, runtimeAgentComponent.Namespace, kubeconfigRaw)
 		if err != nil {
-			return fmt.Errorf("error configuring Runtime Agent: %s", err.Error())
+			return err.Append("error configuring Runtime Agent")
 		}
 	}
 
 	return nil
 }
 
-func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconfigRaw string) error {
+func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconfigRaw string) apperrors.AppError {
+	var err apperrors.AppError
 	token, err := c.directorClient.GetConnectionToken(cluster.ID, cluster.Tenant)
 	if err != nil {
-		return fmt.Errorf("error getting one time token from Director: %s", err.Error())
+		return err.Append("error getting one time token from Director")
 	}
 
 	k8sClient, err := c.builder.CreateK8SClient(kubeconfigRaw)
 	if err != nil {
-		return fmt.Errorf("error creating Config Map client: %s", err.Error())
+		return err.Append("error creating Config Map client")
 	}
 
 	configurationData := map[string]string{
@@ -82,14 +84,14 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 
 	// Creating Config Map is deprecated
 	// It should be removed when Kyma older than 1.12 is no longer supported
-	_, err = k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap)
-	if err != nil {
-		return fmt.Errorf("error creating Config Map on Runtime: %s", err.Error())
+	_, k8serr := k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap)
+	if k8serr != nil {
+		return util.K8SErrorToAppError(k8serr).Append("error creating Config Map on Runtime")
 	}
 
-	_, err = k8sClient.CoreV1().Secrets(namespace).Create(secret)
-	if err != nil {
-		return fmt.Errorf("error creating Secret on Runtime: %s", err.Error())
+	_, k8serr = k8sClient.CoreV1().Secrets(namespace).Create(secret)
+	if k8serr != nil {
+		return util.K8SErrorToAppError(k8serr).Append("error creating Secret on Runtime")
 	}
 
 	return nil

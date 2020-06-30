@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
 	"time"
 
@@ -73,7 +74,7 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			})
 
 			directorClient := &directorMocks.DirectorClient{}
-			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(fmt.Errorf("some error"))
+			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(apperrors.Internal("some error"))
 
 			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 

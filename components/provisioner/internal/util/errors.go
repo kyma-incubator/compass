@@ -1,32 +1,16 @@
 package util
 
 import (
-	"encoding/json"
-	"net/http"
-
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-const (
-	ContentTypeApplicationJSON = "application/json"
-	HeaderContentType          = "Content-Type"
-)
-
-type ErrorResponse struct {
-	Errors []Error `json:"errors"`
-}
-
-type Error struct {
-	Message string `json:"message"`
-}
-
-func RespondWithError(w http.ResponseWriter, status int, err error) {
-	logrus.Error(err.Error())
-	w.Header().Add(HeaderContentType, ContentTypeApplicationJSON)
-	w.WriteHeader(status)
-	errorResponse := ErrorResponse{[]Error{{Message: err.Error()}}}
-	encodingErr := json.NewEncoder(w).Encode(errorResponse)
-	if encodingErr != nil {
-		logrus.Error("Failed to encode error response")
+func K8SErrorToAppError(err error) apperrors.AppError {
+	if k8serrors.IsBadRequest(err) {
+		return apperrors.BadRequest(err.Error())
 	}
+	if k8serrors.IsForbidden(err) {
+		return apperrors.Forbidden(err.Error())
+	}
+	return apperrors.Internal(err.Error())
 }

@@ -1,8 +1,7 @@
 package runtime
 
 import (
-	"errors"
-	"fmt"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -63,10 +62,10 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 
 		//then
 		require.NoError(t, err)
-		configMap, err := k8sClientProvider.fakeClient.CoreV1().ConfigMaps(namespace).Get(AgentConfigurationSecretName, v1.GetOptions{})
-		require.NoError(t, err)
-		secret, err := k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Get(AgentConfigurationSecretName, v1.GetOptions{})
-		require.NoError(t, err)
+		configMap, k8serr := k8sClientProvider.fakeClient.CoreV1().ConfigMaps(namespace).Get(AgentConfigurationSecretName, v1.GetOptions{})
+		require.NoError(t, k8serr)
+		secret, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Get(AgentConfigurationSecretName, v1.GetOptions{})
+		require.NoError(t, k8serr)
 
 		assertData := func(data map[string]string) {
 			assert.Equal(t, connectorURL, data["CONNECTOR_URL"])
@@ -106,7 +105,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 	t.Run("Should return error when failed to create client", func(t *testing.T) {
 		//given
 
-		k8sClientProvider := newErrorClientProvider(t, fmt.Errorf("error"))
+		k8sClientProvider := newErrorClientProvider(t, apperrors.Internal("error"))
 		directorClient := &mocks2.DirectorClient{}
 
 		directorClient.On("GetConnectionToken", runtimeID, tenant).Return(oneTimeToken, nil)
@@ -124,7 +123,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		//given
 		directorClient := &mocks2.DirectorClient{}
 
-		directorClient.On("GetConnectionToken", runtimeID, tenant).Return(graphql.OneTimeTokenForRuntimeExt{}, errors.New("error"))
+		directorClient.On("GetConnectionToken", runtimeID, tenant).Return(graphql.OneTimeTokenForRuntimeExt{}, apperrors.Internal("error"))
 
 		configProvider := NewRuntimeConfigurator(nil, directorClient)
 
@@ -139,7 +138,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 type mockClientProvider struct {
 	t          *testing.T
 	fakeClient *fake.Clientset
-	err        error
+	err        apperrors.AppError
 }
 
 func newMockClientProvider(t *testing.T, objects ...runtime.Object) *mockClientProvider {
@@ -149,14 +148,14 @@ func newMockClientProvider(t *testing.T, objects ...runtime.Object) *mockClientP
 	}
 }
 
-func newErrorClientProvider(t *testing.T, err error) *mockClientProvider {
+func newErrorClientProvider(t *testing.T, err apperrors.AppError) *mockClientProvider {
 	return &mockClientProvider{
 		t:   t,
 		err: err,
 	}
 }
 
-func (m *mockClientProvider) CreateK8SClient(kubeconfigRaw string) (kubernetes.Interface, error) {
+func (m *mockClientProvider) CreateK8SClient(kubeconfigRaw string) (kubernetes.Interface, apperrors.AppError) {
 	assert.Equal(m.t, kubeconfig, kubeconfigRaw)
 
 	if m.err != nil {
