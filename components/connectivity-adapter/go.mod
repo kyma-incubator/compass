@@ -30,5 +30,5 @@ require (
 replace (
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-	github.com/kyma-incubator/compass/components/director => github.com/crabtree/compass/components/director v0.0.0-20200602194341-2280f445af43
+	github.com/kyma-incubator/compass/components/director => github.com/crabtree/compass/components/director v0.0.0-20200630071308-8fb302a11edd
 )
