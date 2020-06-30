@@ -188,9 +188,10 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 			// when
 			converter := api.NewConverter(frConverter, versionConverter)
-			res := converter.InputFromGraphQL(testCase.Input)
+			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			frConverter.AssertExpectations(t)
 			versionConverter.AssertExpectations(t)
@@ -267,9 +268,10 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 
 			// when
 			converter := api.NewConverter(frConverter, versionConverter)
-			res := converter.MultipleInputFromGraphQL(testCase.Input)
+			res, err := converter.MultipleInputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			frConverter.AssertExpectations(t)
 			versionConverter.AssertExpectations(t)
@@ -291,7 +293,8 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 
 	converter := api.NewConverter(mockFrConv, mockVersionConv)
 	// WHEN & THEN
-	convertedInputModel := converter.InputFromGraphQL(&graphql.APIDefinitionInput{Spec: &graphql.APISpecInput{}})
+	convertedInputModel, err := converter.InputFromGraphQL(&graphql.APIDefinitionInput{Spec: &graphql.APISpecInput{}})
+	require.NoError(t, err)
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)

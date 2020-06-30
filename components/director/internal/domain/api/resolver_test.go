@@ -58,7 +58,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
 				return conv
 			},
@@ -97,7 +97,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedAPI: nil,
@@ -117,7 +117,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedAPI: nil,
@@ -138,7 +138,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedAPI: nil,
@@ -160,7 +160,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedAPI: nil,
@@ -182,7 +182,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedAPI: nil,
@@ -376,7 +376,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, nil).Once()
 				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
@@ -411,7 +411,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, nil).Once()
 				return conv
 			},
 			InputWebhookID:        id,
@@ -430,7 +430,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, nil).Once()
 				return conv
 			},
 			InputWebhookID:        id,
@@ -449,7 +449,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, nil).Once()
 				return conv
 			},
 			InputWebhookID:        id,

@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
@@ -56,19 +57,28 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APID
 	return apis
 }
 
-func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput {
+func (c *converter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, error) {
 	var arr []*model.APIDefinitionInput
 	for _, item := range in {
-		api := c.InputFromGraphQL(item)
+		api, err := c.InputFromGraphQL(item)
+		if err != nil {
+			return nil, err
+		}
+
 		arr = append(arr, api)
 	}
 
-	return arr
+	return arr, nil
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput {
+func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
+	}
+
+	spec, err := c.apiSpecInputFromGraphQL(in.Spec)
+	if err != nil {
+		return nil, err
 	}
 
 	return &model.APIDefinitionInput{
@@ -76,9 +86,9 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APID
 		Description: in.Description,
 		TargetURL:   in.TargetURL,
 		Group:       in.Group,
-		Spec:        c.apiSpecInputFromGraphQL(in.Spec),
+		Spec:        spec,
 		Version:     c.version.InputFromGraphQL(in.Version),
-	}
+	}, nil
 }
 
 func (c *converter) SpecToGraphQL(definitionID string, in *model.APISpec) *graphql.APISpec {
@@ -100,14 +110,14 @@ func (c *converter) SpecToGraphQL(definitionID string, in *model.APISpec) *graph
 	}
 }
 
-func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.APISpecInput {
+func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) (*model.APISpecInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	fetchReq, err := c.fr.InputFromGraphQL(in.FetchRequest)
 	if err != nil {
-		// TODO
+		return nil, errors.Wrap(err, "while converting FetchRequest from GraphQL input")
 	}
 
 	return &model.APISpecInput{
@@ -115,7 +125,7 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) *model.API
 		Type:         model.APISpecType(in.Type),
 		Format:       model.SpecFormat(in.Format),
 		FetchRequest: fetchReq,
-	}
+	}, nil
 }
 
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {

@@ -634,7 +634,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
-				conv.On("ToGraphQL", frModel).Return(frGQL).Once()
+				conv.On("ToGraphQL", frModel).Return(frGQL, nil).Once()
 				return conv
 			},
 			EventApiSpec:   eventAPISpec,

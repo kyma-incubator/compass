@@ -51,7 +51,7 @@ type APIService interface {
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
 	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
-	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, error)
 }
 
 //go:generate mockery -name=EventService -output=automock -outpkg=automock -case=underscore
