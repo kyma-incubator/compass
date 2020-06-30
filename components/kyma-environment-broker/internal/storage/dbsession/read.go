@@ -55,24 +55,6 @@ func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dber
 	return instance, nil
 }
 
-func (r readSession) GetInstanceByRuntimeID(runtimeID string) (internal.Instance, dberr.Error) {
-	var instance internal.Instance
-
-	err := r.session.
-		Select("*").
-		From(postsql.InstancesTableName).
-		Where(dbr.Eq("runtime_id", runtimeID)).
-		LoadOne(&instance)
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return internal.Instance{}, dberr.NotFound("Cannot find Instance for runtime ID:'%s'", runtimeID)
-		}
-		return internal.Instance{}, dberr.Internal("Failed to get Instance: %s", err)
-	}
-	return instance, nil
-}
-
 func (r readSession) FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, dberr.Error) {
 	var instances []internal.Instance
 
