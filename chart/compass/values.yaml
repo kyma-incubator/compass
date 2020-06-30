@@ -32,10 +32,10 @@ global:
       version: "PR-1460"
     schema_migrator:
       dir:
-      version: "PR-1425"
+      version: "PR-1461"
     provisioner:
       dir:
-      version: "PR-1450"
+      version: "PR-1461"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -43,7 +43,7 @@ global:
       version: "0a651695"
     kyma_environment_broker:
       dir:
-      version: "PR-1449"
+      version: "PR-1461"
     external_services_mock:
       dir:
       version: "PR-1460"
@@ -59,10 +59,10 @@ global:
         version: "PR-1453"
       provisioner:
         dir:
-        version: "PR-1453"
+        version: "PR-1461"
       e2e_provisioning:
         dir:
-        version: "9103d980"
+        version: "PR-1461"
       connectivity_adapter:
         dir:
         version: "PR-1453"
