@@ -57,4 +57,4 @@ replace (
 	sigs.k8s.io/controller-runtime v0.5.0 => sigs.k8s.io/controller-runtime v0.3.0
 )
 
-replace github.com/kyma-incubator/compass/components/provisioner => github.com/rafalpotempa/compass/components/director v0.0.0-20200625072702-97031592e893
+replace github.com/kyma-incubator/compass/components/provisioner => github.com/rafalpotempa/compass/components/provisioner v0.0.0-20200608084054-64f737ad7e1d
