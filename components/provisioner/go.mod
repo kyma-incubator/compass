@@ -16,7 +16,7 @@ require (
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
 	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
-	github.com/kyma-incubator/hydroform/install v0.0.0-20200608065102-102f8232317b
+	github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6
 	github.com/lib/pq v1.2.0
@@ -46,7 +46,6 @@ replace (
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 
-	github.com/kyma-incubator/hydroform/install => github.com/Szymongib/hydroform/install v0.0.0-20200624110311-6105cbe77a2d
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.2 => k8s.io/api v0.15.8-beta.1
