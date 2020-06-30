@@ -1,6 +1,7 @@
 package hydroform
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -81,6 +82,10 @@ func (h *HydroformProvisioner) Deprovision(clusterConfig model.Cluster, operatio
 		Message:        "Deprovisioning started.",
 		ClusterID:      clusterConfig.ID,
 	}, finished, nil
+}
+
+func (h *HydroformProvisioner) UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) error {
+	return errors.New("Hydroform Upgrade is not implemented")
 }
 
 func (h *HydroformProvisioner) startProvisioning(operationID string, cluster model.Cluster, finished chan<- struct{}) {

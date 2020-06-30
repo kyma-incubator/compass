@@ -37,7 +37,7 @@ type Service interface {
 type Provisioner interface {
 	ProvisionCluster(cluster model.Cluster, operationId string) error
 	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error)
-	UpgradeCluster(currentCluster model.Cluster, upgradeConfig model.GardenerConfig) error
+	UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) error
 }
 
 type service struct {
@@ -393,7 +393,7 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 		return model.Operation{}, err.Append("Failed to insert updated Gardener Config")
 	}
 
-	error := r.provisioner.UpgradeCluster(currentCluster, gardenerConfig)
+	error := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
 
 	operation, err := r.setOperationStarted(txSession, currentCluster.ID, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
 	if error != nil {

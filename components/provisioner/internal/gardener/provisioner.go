@@ -77,16 +77,11 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	return nil
 }
 
-func (g *GardenerProvisioner) UpgradeCluster(currentCluster model.Cluster, upgradeConfig model.GardenerConfig) error {
+func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) error {
 
-	gardenerCfg, ok := currentCluster.GardenerConfig()
-	if !ok {
-		return /*model.Operation{}, */ fmt.Errorf("cluster to upgrade does not have Gardener configuration")
-	}
-
-	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
+	shoot, err := g.shootClient.Get(upgradeConfig.Name, v1.GetOptions{})
 	if err != nil {
-		return /*model.Operation{}, */ fmt.Errorf("error getting Shoot for %s cluster: %s", currentCluster.ID, err.Error())
+		return /*model.Operation{}, */ fmt.Errorf("error getting Shoot for cluster ID %s and name %s : %s", clusterID, upgradeConfig.Name, err.Error())
 	}
 
 	allowPrivlagedContainers := true
@@ -94,10 +89,10 @@ func (g *GardenerProvisioner) UpgradeCluster(currentCluster model.Cluster, upgra
 
 	// update needed parameters
 
-	shoot.Spec.Region = gardenerCfg.Region
+	shoot.Spec.Region = upgradeConfig.Region
 	shoot.Spec.Kubernetes = gardener_types.Kubernetes{
 		AllowPrivilegedContainers: &allowPrivlagedContainers,
-		Version:                   gardenerCfg.KubernetesVersion,
+		Version:                   upgradeConfig.KubernetesVersion,
 		KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 			EnableBasicAuthentication: &enableBasicAuthentication,
 		},
