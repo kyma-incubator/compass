@@ -43,7 +43,10 @@ global:
       version: "0a651695"
     kyma_environment_broker:
       dir:
-      version: "PR-1449"
+      version: "PR-1428"
+    kyma_environments_cleanup_job:
+      dir:
+      version: "PR-1428"
     external_services_mock:
       dir:
       version: "PR-1460"
@@ -137,6 +140,8 @@ global:
     secrets:
       integrationSystemCredentials:
         name: compass-kyma-environment-broker-credentials
+    environmentsCleanup:
+      enabled: false
 
   provisioner:
     graphql:
