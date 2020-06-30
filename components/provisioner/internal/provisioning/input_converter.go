@@ -59,7 +59,6 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		ClusterConfig:         providerConfig,
 		Tenant:                tenant,
 		SubAccountId:          &subAccountId,
-		LicenceType:           providerConfig.GetLicenceType(),
 	}, nil
 }
 

@@ -53,7 +53,6 @@ type Cluster struct {
 	Tenant                string
 	SubAccountId          *string
 	ActiveKymaConfigId    string
-	LicenceType           string
 
 	ClusterConfig ProviderConfiguration `db:"-"`
 	KymaConfig    KymaConfig            `db:"-"`
