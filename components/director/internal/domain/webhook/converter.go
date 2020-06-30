@@ -13,8 +13,8 @@ import (
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
+	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
+	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
 }
 
 type converter struct {
@@ -30,12 +30,17 @@ func (c *converter) ToGraphQL(in *model.Webhook) *graphql.Webhook {
 		return nil
 	}
 
+	auth, err := c.authConverter.ToGraphQL(in.Auth)
+	if err != nil {
+		// TODO
+	}
+
 	return &graphql.Webhook{
 		ID:            in.ID,
 		ApplicationID: in.ApplicationID,
 		Type:          graphql.ApplicationWebhookType(in.Type),
 		URL:           in.URL,
-		Auth:          c.authConverter.ToGraphQL(in.Auth),
+		Auth:          auth,
 	}
 }
 
@@ -57,10 +62,15 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) *model.WebhookInp
 		return nil
 	}
 
+	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
+	if err != nil {
+		// TODO
+	}
+
 	return &model.WebhookInput{
 		Type: model.WebhookType(in.Type),
 		URL:  in.URL,
-		Auth: c.authConverter.InputFromGraphQL(in.Auth),
+		Auth: auth,
 	}
 }
 

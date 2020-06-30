@@ -12,7 +12,7 @@ type AuthConverter struct {
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *AuthConverter) ToGraphQL(in *model.Auth) *graphql.Auth {
+func (_m *AuthConverter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	ret := _m.Called(in)
 
 	var r0 *graphql.Auth
@@ -24,5 +24,12 @@ func (_m *AuthConverter) ToGraphQL(in *model.Auth) *graphql.Auth {
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.Auth) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

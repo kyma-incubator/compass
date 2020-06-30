@@ -16,8 +16,8 @@ import (
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
+	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
+	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
 }
 
 type converter struct {
@@ -87,12 +87,17 @@ func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
 		return nil, apperrors.NewInternalError("the model Package is nil")
 	}
 
+	auth, err := c.auth.ToGraphQL(in.DefaultInstanceAuth)
+	if err != nil {
+		// TODO
+	}
+
 	return &graphql.Package{
 		ID:                             in.ID,
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.strPtrToJSONSchemaPtr(in.InstanceAuthRequestInputSchema),
-		DefaultInstanceAuth:            c.auth.ToGraphQL(in.DefaultInstanceAuth),
+		DefaultInstanceAuth:            auth,
 	}, nil
 }
 
@@ -113,11 +118,16 @@ func (c *converter) MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, 
 }
 
 func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) model.PackageCreateInput {
+	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
+	if err != nil {
+		// TODO
+	}
+
 	return model.PackageCreateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
-		DefaultInstanceAuth:            c.auth.InputFromGraphQL(in.DefaultInstanceAuth),
+		DefaultInstanceAuth:            auth,
 		APIDefinitions:                 c.api.MultipleInputFromGraphQL(in.APIDefinitions),
 		EventDefinitions:               c.event.MultipleInputFromGraphQL(in.EventDefinitions),
 		Documents:                      c.document.MultipleInputFromGraphQL(in.Documents),
@@ -138,11 +148,16 @@ func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateIn
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error) {
+	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
+	if err != nil {
+		// TODO
+	}
+
 	return &model.PackageUpdateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
-		DefaultInstanceAuth:            c.auth.InputFromGraphQL(in.DefaultInstanceAuth),
+		DefaultInstanceAuth:            auth,
 	}, nil
 }
 

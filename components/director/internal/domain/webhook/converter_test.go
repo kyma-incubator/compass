@@ -43,7 +43,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
-				authConv.On("ToGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
+				authConv.On("ToGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth, nil)
 			}
 			converter := webhook.NewConverter(authConv)
 
@@ -71,8 +71,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		{},
 	}
 	authConv := &automock.AuthConverter{}
-	authConv.On("ToGraphQL", input[0].Auth).Return(expected[0].Auth)
-	authConv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil)
+	authConv.On("ToGraphQL", input[0].Auth).Return(expected[0].Auth, nil)
+	authConv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil)
 	converter := webhook.NewConverter(authConv)
 
 	// when
@@ -111,7 +111,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
-				authConv.On("InputFromGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
+				authConv.On("InputFromGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth, nil)
 			}
 			converter := webhook.NewConverter(authConv)
 
@@ -139,8 +139,8 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		{},
 	}
 	authConv := &automock.AuthConverter{}
-	authConv.On("InputFromGraphQL", input[0].Auth).Return(expected[0].Auth)
-	authConv.On("InputFromGraphQL", (*graphql.AuthInput)(nil)).Return(nil)
+	authConv.On("InputFromGraphQL", input[0].Auth).Return(expected[0].Auth, nil)
+	authConv.On("InputFromGraphQL", (*graphql.AuthInput)(nil)).Return(nil, nil)
 	converter := webhook.NewConverter(authConv)
 
 	// when

@@ -40,7 +40,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Name: "Success",
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", piaModel.Auth).Return(piaGQL.Auth).Once()
+				conv.On("ToGraphQL", piaModel.Auth).Return(piaGQL.Auth, nil).Once()
 				return conv
 			},
 			Input:    piaModel,
@@ -50,7 +50,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Name: "Success when context and input params empty",
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil).Once()
+				conv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil).Once()
 				return conv
 			},
 			Input:    fixModelPackageInstanceAuthWithoutContextAndInputParams(testID, testPackageID, testTenant, nil, fixModelStatusPending()),
@@ -60,7 +60,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Name: "Success when context and input params empty",
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil).Once()
+				conv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil).Once()
 				return conv
 			},
 			Input:    fixModelPackageInstanceAuthWithoutContextAndInputParams(testID, testPackageID, testTenant, nil, nil),
@@ -116,8 +116,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			Name: "Success",
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", piaModels[0].Auth).Return(piaGQLs[0].Auth).Once()
-				conv.On("ToGraphQL", piaModels[1].Auth).Return(piaGQLs[1].Auth).Once()
+				conv.On("ToGraphQL", piaModels[0].Auth).Return(piaGQLs[0].Auth, nil).Once()
+				conv.On("ToGraphQL", piaModels[1].Auth).Return(piaGQLs[1].Auth, nil).Once()
 				return conv
 			},
 			Input:    piaModels,
@@ -203,7 +203,7 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 			Name: "Success",
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", authInputGQL).Return(authInputModel).Once()
+				conv.On("InputFromGraphQL", authInputGQL).Return(authInputModel, nil).Once()
 				return conv
 			},
 			Input: graphql.PackageInstanceAuthSetInput{
@@ -219,7 +219,7 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 			Name: "Success when no status",
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", authInputGQL).Return(authInputModel).Once()
+				conv.On("InputFromGraphQL", authInputGQL).Return(authInputModel, nil).Once()
 				return conv
 			},
 			Input: graphql.PackageInstanceAuthSetInput{
@@ -235,7 +235,7 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 			Name: "Success when no auth",
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", (*graphql.AuthInput)(nil)).Return(nil).Once()
+				conv.On("InputFromGraphQL", (*graphql.AuthInput)(nil)).Return(nil, nil).Once()
 				return conv
 			},
 			Input: graphql.PackageInstanceAuthSetInput{

@@ -14,7 +14,7 @@ import (
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
+	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
 }
 
 type converter struct {
@@ -32,9 +32,14 @@ func (c *converter) ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth {
 		return nil
 	}
 
+	auth, err := c.authConverter.ToGraphQL(in.Value)
+	if err != nil {
+		// TODO
+	}
+
 	return &graphql.SystemAuth{
 		ID:   in.ID,
-		Auth: c.authConverter.ToGraphQL(in.Value),
+		Auth: auth,
 	}
 }
 

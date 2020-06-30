@@ -15,8 +15,8 @@ import (
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
+	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
+	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
 }
 
 type converter struct {
@@ -32,9 +32,14 @@ func (c *converter) ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest {
 		return nil
 	}
 
+	auth, err := c.authConverter.ToGraphQL(in.Auth)
+	if err != nil {
+		// TODO
+	}
+
 	return &graphql.FetchRequest{
 		URL:    in.URL,
-		Auth:   c.authConverter.ToGraphQL(in.Auth),
+		Auth:   auth,
 		Mode:   graphql.FetchMode(in.Mode),
 		Filter: in.Filter,
 		Status: c.statusToGraphQL(in.Status),
@@ -52,9 +57,14 @@ func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) *model.Fetch
 		mode = &tmp
 	}
 
+	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
+	if err != nil {
+		// TODO
+	}
+
 	return &model.FetchRequestInput{
 		URL:    in.URL,
-		Auth:   c.authConverter.InputFromGraphQL(in.Auth),
+		Auth:   auth,
 		Mode:   mode,
 		Filter: in.Filter,
 	}

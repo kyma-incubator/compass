@@ -50,7 +50,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
-				authConv.On("ToGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
+				authConv.On("ToGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth, nil)
 			}
 			converter := fetchrequest.NewConverter(authConv)
 
@@ -92,7 +92,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
-				authConv.On("InputFromGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
+				authConv.On("InputFromGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth, nil)
 			}
 			converter := fetchrequest.NewConverter(authConv)
 

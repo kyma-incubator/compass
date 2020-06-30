@@ -35,7 +35,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Name: "Success when converting auth for Runtime",
 			AuthConvFn: func() *automock.AuthConverter {
 				authConv := &automock.AuthConverter{}
-				authConv.On("ToGraphQL", modelAuth).Return(gqlAuth).Once()
+				authConv.On("ToGraphQL", modelAuth).Return(gqlAuth, nil).Once()
 				return authConv
 			},
 			Input:          modelRtmSysAuth,
@@ -45,7 +45,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Name: "Success when converting auth for Application",
 			AuthConvFn: func() *automock.AuthConverter {
 				authConv := &automock.AuthConverter{}
-				authConv.On("ToGraphQL", modelAuth).Return(gqlAuth).Once()
+				authConv.On("ToGraphQL", modelAuth).Return(gqlAuth, nil).Once()
 				return authConv
 			},
 			Input:          modelAppSysAuth,
@@ -55,7 +55,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Name: "Success when converting auth for Integration System",
 			AuthConvFn: func() *automock.AuthConverter {
 				authConv := &automock.AuthConverter{}
-				authConv.On("ToGraphQL", modelAuth).Return(gqlAuth).Once()
+				authConv.On("ToGraphQL", modelAuth).Return(gqlAuth, nil).Once()
 				return authConv
 			},
 			Input:          modelIntSysAuth,

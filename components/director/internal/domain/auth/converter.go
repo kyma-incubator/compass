@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 type converter struct {
@@ -12,9 +13,9 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-func (c *converter) ToGraphQL(in *model.Auth) *graphql.Auth {
+func (c *converter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	var headers *graphql.HttpHeaders
@@ -25,7 +26,7 @@ func (c *converter) ToGraphQL(in *model.Auth) *graphql.Auth {
 
 		serialized, err := graphql.NewHttpHeadersSerialized(in.AdditionalHeaders)
 		if err != nil {
-			// TODO: handle error
+			return nil, errors.Wrap(err, "while marshaling AdditionalHeaders")
 		}
 		headersSerialized = &serialized
 	}
@@ -38,7 +39,7 @@ func (c *converter) ToGraphQL(in *model.Auth) *graphql.Auth {
 
 		serialized, err := graphql.NewQueryParamsSerialized(in.AdditionalQueryParams)
 		if err != nil {
-			// TODO: handle error
+			return nil, errors.Wrap(err, "while marshaling AdditionalQueryParams")
 		}
 		paramsSerialized = &serialized
 	}
@@ -50,32 +51,37 @@ func (c *converter) ToGraphQL(in *model.Auth) *graphql.Auth {
 		AdditionalQueryParams:           params,
 		AdditionalQueryParamsSerialized: paramsSerialized,
 		RequestAuth:                     c.requestAuthToGraphQL(in.RequestAuth),
-	}
+	}, nil
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput {
+func (c *converter) InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	credential := c.credentialInputFromGraphQL(in.Credential)
 
 	additionalHeaders, err := c.headersFromGraphQL(in.AdditionalHeaders, in.AdditionalHeadersSerialized)
 	if err != nil {
-		// TODO: handle error
+		return nil, errors.Wrap(err, "while converting AdditionalHeaders from GraphQL input")
 	}
 
 	additionalQueryParams, err := c.queryParamsFromGraphQL(in.AdditionalQueryParams, in.AdditionalQueryParamsSerialized)
 	if err != nil {
-		// TODO: handle error
+		return nil, errors.Wrap(err, "while converting AdditionalQueryParams from GraphQL input")
+	}
+
+	reqAuth, err := c.requestAuthInputFromGraphQL(in.RequestAuth)
+	if err != nil {
+		return nil, err
 	}
 
 	return &model.AuthInput{
 		Credential:            credential,
 		AdditionalHeaders:     additionalHeaders,
 		AdditionalQueryParams: additionalQueryParams,
-		RequestAuth:           c.requestAuthInputFromGraphQL(in.RequestAuth),
-	}
+		RequestAuth:           reqAuth,
+	}, nil
 }
 
 func (c *converter) requestAuthToGraphQL(in *model.CredentialRequestAuth) *graphql.CredentialRequestAuth {
@@ -110,21 +116,21 @@ func (c *converter) requestAuthToGraphQL(in *model.CredentialRequestAuth) *graph
 	}
 }
 
-func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAuthInput) *model.CredentialRequestAuthInput {
+func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAuthInput) (*model.CredentialRequestAuthInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	var csrf *model.CSRFTokenCredentialRequestAuthInput
 	if in.Csrf != nil {
 		additionalHeaders, err := c.headersFromGraphQL(in.Csrf.AdditionalHeaders, in.Csrf.AdditionalHeadersSerialized)
 		if err != nil {
-			// TODO: handle error
+			return nil, errors.Wrap(err, "while converting CSRF AdditionalHeaders from GraphQL input")
 		}
 
 		additionalQueryParams, err := c.queryParamsFromGraphQL(in.Csrf.AdditionalQueryParams, in.Csrf.AdditionalQueryParamsSerialized)
 		if err != nil {
-			// TODO: handle error
+			return nil, errors.Wrap(err, "while converting CSRF AdditionalQueryParams from GraphQL input")
 		}
 
 		csrf = &model.CSRFTokenCredentialRequestAuthInput{
@@ -137,7 +143,7 @@ func (c *converter) requestAuthInputFromGraphQL(in *graphql.CredentialRequestAut
 
 	return &model.CredentialRequestAuthInput{
 		Csrf: csrf,
-	}
+	}, nil
 }
 
 func (c *converter) headersFromGraphQL(headers *graphql.HttpHeaders, headersSerialized *graphql.HttpHeadersSerialized) (map[string][]string, error) {

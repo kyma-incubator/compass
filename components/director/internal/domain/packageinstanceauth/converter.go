@@ -13,8 +13,8 @@ import (
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
+	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
+	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
 }
 
 type converter struct {
@@ -32,11 +32,16 @@ func (c *converter) ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageIns
 		return nil
 	}
 
+	auth, err := c.authConverter.ToGraphQL(in.Auth)
+	if err != nil {
+		// TODO
+	}
+
 	return &graphql.PackageInstanceAuth{
 		ID:          in.ID,
 		Context:     c.strPtrToJSONPtr(in.Context),
 		InputParams: c.strPtrToJSONPtr(in.InputParams),
-		Auth:        c.authConverter.ToGraphQL(in.Auth),
+		Auth:        auth,
 		Status:      c.statusToGraphQL(in.Status),
 	}
 }
@@ -62,8 +67,13 @@ func (c *converter) RequestInputFromGraphQL(in graphql.PackageInstanceAuthReques
 }
 
 func (c *converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) model.PackageInstanceAuthSetInput {
+	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
+	if err != nil {
+		// TODO
+	}
+
 	out := model.PackageInstanceAuthSetInput{
-		Auth: c.authConverter.InputFromGraphQL(in.Auth),
+		Auth: auth,
 	}
 
 	if in.Status != nil {

@@ -15,6 +15,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		Name     string
 		Input    *model.Auth
 		Expected *graphql.Auth
+		Error    error
 	}{
 		{
 			Name:     "All properties given",
@@ -37,9 +38,10 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// when
 			converter := auth.NewConverter()
-			res := converter.ToGraphQL(testCase.Input)
+			res, err := converter.ToGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}
@@ -73,9 +75,10 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// when
 			converter := auth.NewConverter()
-			res := converter.InputFromGraphQL(testCase.Input)
+			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}
