@@ -418,6 +418,22 @@ func (_m *ReadWriteSession) UpdateCluster(runtimeID string, kubeconfig string, t
 	return r0
 }
 
+// UpdateGardenerClusterConfig provides a mock function with given fields: configID, config
+func (_m *ReadWriteSession) UpdateGardenerClusterConfig(configID string, config model.GardenerConfig) dberrors.Error {
+	ret := _m.Called(configID, config)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(string, model.GardenerConfig) dberrors.Error); ok {
+		r0 = rf(configID, config)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
 // UpdateOperationState provides a mock function with given fields: operationID, message, state, endTime
 func (_m *ReadWriteSession) UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error {
 	ret := _m.Called(operationID, message, state, endTime)
