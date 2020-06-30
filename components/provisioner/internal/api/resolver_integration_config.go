@@ -177,3 +177,53 @@ func newAzureUpgradeShootInput() gqlschema.UpgradeShootInput {
 	}
 	return input
 }
+
+func expectedShootConfig(initConfig, upgradeConfig gqlschema.GardenerConfig) gqlschema.GardenerConfig {
+	var expectedProviderConfig gqlschema.ProviderSpecificConfig
+
+	switch upgradedConfig := upgradeConfig.ProviderSpecificConfig.(type) {
+	case gqlschema.AWSProviderConfig, gqlschema.GCPProviderConfig:
+		expectedProviderConfig = upgradedConfig
+	case gqlschema.AzureProviderConfig:
+		azureConfig := initConfig.ProviderSpecificConfig.(gqlschema.AzureProviderConfig)
+		expectedProviderConfig = gqlschema.AzureProviderConfig{
+			Zones:    azureConfig.Zones,
+			VnetCidr: upgradedConfig.VnetCidr,
+		}
+	}
+
+	// if upgraded.ProviderSpecificConfig != nil {
+	// 	expectedProviderConfig = config.ProviderSpecificConfig
+	// }
+	// if upgraded.ProviderSpecificConfig.AzureConfig != nil {
+	// 	initConfig := config.ProviderSpecificConfig.(gqlschema.AzureProviderConfig)
+
+	// 	expectedProviderConfig = gqlschema.AzureProviderConfig{
+	// 		Zones:    initConfig.Zones,
+	// 		VnetCidr: &upgraded.ProviderSpecificConfig.AzureConfig.VnetCidr,
+	// 	}
+	// }
+	// if upgraded.ProviderSpecificConfig.GcpConfig != nil {
+	// 	expectedProviderConfig = config.ProviderSpecificConfig
+	// }
+
+	return gqlschema.GardenerConfig{
+		Name:         initConfig.Name,
+		Provider:     initConfig.Provider,
+		TargetSecret: initConfig.TargetSecret,
+		Seed:         initConfig.Seed,
+		Region:       initConfig.Region,
+
+		KubernetesVersion: upgradeConfig.KubernetesVersion,
+		MachineType:       upgradeConfig.MachineType,
+		DiskType:          upgradeConfig.DiskType,
+		VolumeSizeGb:      upgradeConfig.VolumeSizeGb,
+		AutoScalerMin:     upgradeConfig.AutoScalerMin,
+		AutoScalerMax:     upgradeConfig.AutoScalerMax,
+		MaxSurge:          upgradeConfig.MaxSurge,
+		MaxUnavailable:    upgradeConfig.MaxUnavailable,
+		WorkerCidr:        upgradeConfig.WorkerCidr,
+
+		ProviderSpecificConfig: expectedProviderConfig,
+	}
+}
