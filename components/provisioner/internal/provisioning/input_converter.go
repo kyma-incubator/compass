@@ -79,10 +79,10 @@ func (c converter) GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerU
 
 	currentShootCfg, ok := cluster.GardenerConfig()
 	if !ok {
-		return model.GardenerConfig{}, fmt.Errorf("cluster does not have Gardener configuration")
+		return model.GardenerConfig{}, fmt.Errorf("base cluster does not have Gardener configuration")
 	}
 
-	providerSpecificConfig, err := c.providerSpecificConfigFromUpgradeInput(input.ProviderSpecificConfig)
+	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 
 	if err == nil {
 		currentShootCfg.GardenerProviderConfig = providerSpecificConfig
@@ -149,24 +149,6 @@ func (c converter) createGardenerClusterName(provider string) string {
 }
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
-	if input == nil {
-		return nil, errors.New("provider config not specified")
-	}
-
-	if input.GcpConfig != nil {
-		return model.NewGCPGardenerConfig(input.GcpConfig)
-	}
-	if input.AzureConfig != nil {
-		return model.NewAzureGardenerConfig(input.AzureConfig)
-	}
-	if input.AwsConfig != nil {
-		return model.NewAWSGardenerConfig(input.AwsConfig)
-	}
-
-	return nil, errors.New("provider config not specified")
-}
-
-func (c converter) providerSpecificConfigFromUpgradeInput(input *gqlschema.ProviderSpecificUpgradeInput) (model.GardenerProviderConfig, error) {
 	if input == nil {
 		return nil, errors.New("provider config not specified")
 	}

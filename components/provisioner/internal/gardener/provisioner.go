@@ -84,14 +84,13 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 		return /*model.Operation{}, */ fmt.Errorf("error getting Shoot for cluster ID %s and name %s : %s", clusterID, upgradeConfig.Name, err.Error())
 	}
 
-	allowPrivlagedContainers := true
+	allowPrivilegedContainers := true
 	enableBasicAuthentication := false
 
 	// update needed parameters
 
-	shoot.Spec.Region = upgradeConfig.Region
 	shoot.Spec.Kubernetes = gardener_types.Kubernetes{
-		AllowPrivilegedContainers: &allowPrivlagedContainers,
+		AllowPrivilegedContainers: &allowPrivilegedContainers,
 		Version:                   upgradeConfig.KubernetesVersion,
 		KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 			EnableBasicAuthentication: &enableBasicAuthentication,

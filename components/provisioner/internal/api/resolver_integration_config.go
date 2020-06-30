@@ -152,7 +152,7 @@ func newTestShootUpgradeConfigs() []upgradeShootTestCase {
 			AutoScalerMax:  util.IntPtr(6),
 			MaxSurge:       util.IntPtr(2),
 			MaxUnavailable: util.IntPtr(1),
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificUpgradeInput{
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: newCidr,
 				},

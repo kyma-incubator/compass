@@ -185,7 +185,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
 
-	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction() // it is maybe not necessary
+	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction() // this it is maybe not necessary
 	if err != nil {
 		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to start database transaction: %s", err.Error())
 	}
@@ -388,11 +388,13 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 
 func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, dberrors.Error) {
 
+	// 1. update entry in DB
 	err := txSession.UpdateGardenerClusterConfig(currentCluster.ID, gardenerConfig)
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to insert updated Gardener Config")
 	}
 
+	// 2. execute update on Shoot CR
 	error := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
 
 	operation, err := r.setOperationStarted(txSession, currentCluster.ID, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
