@@ -34,7 +34,7 @@ func (_m *DocumentConverter) FromEntity(in document.Entity) (model.Document, err
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *DocumentConverter) InputFromGraphQL(in *graphql.DocumentInput) *model.DocumentInput {
+func (_m *DocumentConverter) InputFromGraphQL(in *graphql.DocumentInput) (*model.DocumentInput, error) {
 	ret := _m.Called(in)
 
 	var r0 *model.DocumentInput
@@ -46,7 +46,14 @@ func (_m *DocumentConverter) InputFromGraphQL(in *graphql.DocumentInput) *model.
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*graphql.DocumentInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ToEntity provides a mock function with given fields: in

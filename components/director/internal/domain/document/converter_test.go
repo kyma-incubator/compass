@@ -111,9 +111,10 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			converter := document.NewConverter(frConv)
 
 			// when
-			res := converter.InputFromGraphQL(testCase.Input)
+			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			frConv.AssertExpectations(t)
 		})
@@ -139,9 +140,10 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	converter := document.NewConverter(frConv)
 
 	// when
-	res := converter.MultipleInputFromGraphQL(input)
+	res, err := converter.MultipleInputFromGraphQL(input)
 
 	// then
+	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
 	frConv.AssertExpectations(t)
 }

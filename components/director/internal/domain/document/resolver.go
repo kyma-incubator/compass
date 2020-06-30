@@ -24,7 +24,7 @@ type DocumentService interface {
 //go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
-	InputFromGraphQL(in *graphql.DocumentInput) *model.DocumentInput
+	InputFromGraphQL(in *graphql.DocumentInput) (*model.DocumentInput, error)
 	ToEntity(in model.Document) (Entity, error)
 	FromEntity(in Entity) (model.Document, error)
 }
@@ -73,7 +73,10 @@ func (r *Resolver) AddDocumentToPackage(ctx context.Context, packageID string, i
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.converter.InputFromGraphQL(&in)
+	convertedIn, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting DocumentInput from GraphQL")
+	}
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {

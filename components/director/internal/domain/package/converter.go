@@ -128,6 +128,11 @@ func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) model.
 		// TODO
 	}
 
+	documents, err := c.document.MultipleInputFromGraphQL(in.Documents)
+	if err != nil {
+		// TODO
+	}
+
 	return model.PackageCreateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
@@ -135,7 +140,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) model.
 		DefaultInstanceAuth:            auth,
 		APIDefinitions:                 apiDefs,
 		EventDefinitions:               c.event.MultipleInputFromGraphQL(in.EventDefinitions),
-		Documents:                      c.document.MultipleInputFromGraphQL(in.Documents),
+		Documents:                      documents,
 	}
 }
 

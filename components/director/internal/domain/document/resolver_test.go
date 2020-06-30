@@ -71,7 +71,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("InputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
 				conv.On("ToGraphQL", modelDocument).Return(gqlDocument).Once()
 				return conv
 			},
@@ -102,7 +102,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("InputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
 				return conv
 			},
 
@@ -133,7 +133,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("InputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
 				return conv
 			},
 
@@ -165,7 +165,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("InputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
 				return conv
 			},
 			ExpectedDocument: nil,
@@ -197,7 +197,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("InputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
 				return conv
 			},
 			ExpectedDocument: nil,

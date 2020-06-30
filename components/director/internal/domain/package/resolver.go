@@ -77,7 +77,7 @@ type DocumentService interface {
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
 	MultipleToGraphQL(in []*model.Document) []*graphql.Document
-	MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput
+	MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*model.DocumentInput, error)
 }
 
 type Resolver struct {
