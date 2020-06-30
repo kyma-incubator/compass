@@ -706,8 +706,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2
 github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283/go.mod h1:ZcUC6E1u/IwP7JfozHmHnmN6u6ZA5gEa95gDB0ZO3hk=
 github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9 h1:YERsmPrrApdKkGuOOUwznIZxfIURticqgJpKjN5AYu0=
 github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9/go.mod h1:AxIzJWwHlpqqSdLjwV+bMBK2dpTaQaVpFRprmum1BB8=
-github.com/kyma-incubator/hydroform/install v0.0.0-20200608065102-102f8232317b h1:jpwEOxIcaLRpX4n4Y8XO2MhT3qyNQaSIw1dRF6PSqzI=
-github.com/kyma-incubator/hydroform/install v0.0.0-20200608065102-102f8232317b/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
+github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188 h1:SY4B7zOrBXucqgcB288rEkXxMmPPFLp/LLt8HWe/IMg=
+github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20200317154738-0bb20217c2cb/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
