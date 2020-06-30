@@ -127,3 +127,31 @@ func fixDetailedGQLAuthInput() *graphql.AuthInput {
 		},
 	}
 }
+
+func fixDetailedGQLAuthInputDeprecated() *graphql.AuthInput {
+	return &graphql.AuthInput{
+		Credential: &graphql.CredentialDataInput{
+			Basic: &graphql.BasicCredentialDataInput{
+				Username: authUsername,
+				Password: authPassword,
+			},
+			Oauth: nil,
+		},
+		AdditionalHeaders:     &authHeaders,
+		AdditionalQueryParams: &authParams,
+		RequestAuth: &graphql.CredentialRequestAuthInput{
+			Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
+				TokenEndpointURL: authEndpoint,
+				Credential: &graphql.CredentialDataInput{
+					Basic: &graphql.BasicCredentialDataInput{
+						Username: authUsername,
+						Password: authPassword,
+					},
+					Oauth: nil,
+				},
+				AdditionalHeaders:     &authHeaders,
+				AdditionalQueryParams: &authParams,
+			},
+		},
+	}
+}

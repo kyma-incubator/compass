@@ -58,6 +58,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Expected: fixDetailedAuthInput(),
 		},
 		{
+			Name:     "All properties given - deprecated",
+			Input:    fixDetailedGQLAuthInputDeprecated(),
+			Expected: fixDetailedAuthInput(),
+		},
+		{
 			Name:     "Empty",
 			Input:    &graphql.AuthInput{},
 			Expected: &model.AuthInput{},
