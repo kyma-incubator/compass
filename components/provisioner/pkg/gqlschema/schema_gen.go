@@ -945,31 +945,8 @@ input GardenerUpgradeInput {
     autoScalerMax: Int                                     # Maximum number of VMs to create
     maxSurge: Int                                          # Maximum number of VMs created during an update
     maxUnavailable: Int                                    # Maximum number of VMs that can be unavailable during an update
-    providerSpecificConfig: ProviderSpecificUpgradeInput   # Additional parameters, vary depending on the target provider
+    providerSpecificConfig: ProviderSpecificInput          # Additional parameters, vary depending on the target provider
 }
-
-input ProviderSpecificUpgradeInput {
-    gcpConfig: GCPProviderConfigInput        # GCP-specific configuration for the cluster to be provisioned
-    azureConfig: AzureProviderConfigInput    # Azure-specific configuration for the cluster to be provisioned
-    awsConfig: AWSProviderConfigInput        # AWS-specific configuration for the cluster to be provisioned
-}
-
-input GCPProviderUpgradeInput {
-    zones: [String!]      # Zones in which to create the cluster
-}
-
-input AzureProviderUpgradeInput {
-    vnetCidr: String      # Classless Inter-Domain Routing for the Azure Virtual Network
-    zones: [String!]      # Zones in which to create the cluster
-}
-
-input AWSProviderUpgradeInput {
-    zone: String           # Zone in which to create the cluster
-    vpcCidr: String        # Classless Inter-Domain Routing for the virtual public cloud
-    publicCidr: String     # Classless Inter-Domain Routing for the public subnet
-    internalCidr: String   # Classless Inter-Domain Routing for the private subnet
-}
-
 input UpgradeShootInput {
     gardenerConfig: GardenerUpgradeInput! # Gardener-specific configuration for the cluster to be upgraded
 }
@@ -4639,42 +4616,6 @@ func (ec *executionContext) unmarshalInputAWSProviderConfigInput(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAWSProviderUpgradeInput(ctx context.Context, obj interface{}) (AWSProviderUpgradeInput, error) {
-	var it AWSProviderUpgradeInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "zone":
-			var err error
-			it.Zone, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "vpcCidr":
-			var err error
-			it.VpcCidr, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "publicCidr":
-			var err error
-			it.PublicCidr, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "internalCidr":
-			var err error
-			it.InternalCidr, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputAzureProviderConfigInput(ctx context.Context, obj interface{}) (AzureProviderConfigInput, error) {
 	var it AzureProviderConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -4684,30 +4625,6 @@ func (ec *executionContext) unmarshalInputAzureProviderConfigInput(ctx context.C
 		case "vnetCidr":
 			var err error
 			it.VnetCidr, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "zones":
-			var err error
-			it.Zones, err = ec.unmarshalOString2ᚕstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputAzureProviderUpgradeInput(ctx context.Context, obj interface{}) (AzureProviderUpgradeInput, error) {
-	var it AzureProviderUpgradeInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "vnetCidr":
-			var err error
-			it.VnetCidr, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4909,24 +4826,6 @@ func (ec *executionContext) unmarshalInputGCPProviderConfigInput(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputGCPProviderUpgradeInput(ctx context.Context, obj interface{}) (GCPProviderUpgradeInput, error) {
-	var it GCPProviderUpgradeInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "zones":
-			var err error
-			it.Zones, err = ec.unmarshalOString2ᚕstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Context, obj interface{}) (GardenerConfigInput, error) {
 	var it GardenerConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -5085,7 +4984,7 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 			}
 		case "providerSpecificConfig":
 			var err error
-			it.ProviderSpecificConfig, err = ec.unmarshalOProviderSpecificUpgradeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificUpgradeInput(ctx, v)
+			it.ProviderSpecificConfig, err = ec.unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5127,36 +5026,6 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 
 func (ec *executionContext) unmarshalInputProviderSpecificInput(ctx context.Context, obj interface{}) (ProviderSpecificInput, error) {
 	var it ProviderSpecificInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "gcpConfig":
-			var err error
-			it.GcpConfig, err = ec.unmarshalOGCPProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "azureConfig":
-			var err error
-			it.AzureConfig, err = ec.unmarshalOAzureProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "awsConfig":
-			var err error
-			it.AwsConfig, err = ec.unmarshalOAWSProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputProviderSpecificUpgradeInput(ctx context.Context, obj interface{}) (ProviderSpecificUpgradeInput, error) {
-	var it ProviderSpecificUpgradeInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -6880,15 +6749,15 @@ func (ec *executionContext) marshalOProviderSpecificConfig2githubᚗcomᚋkyma�
 	return ec._ProviderSpecificConfig(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalOProviderSpecificUpgradeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificUpgradeInput(ctx context.Context, v interface{}) (ProviderSpecificUpgradeInput, error) {
-	return ec.unmarshalInputProviderSpecificUpgradeInput(ctx, v)
+func (ec *executionContext) unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (ProviderSpecificInput, error) {
+	return ec.unmarshalInputProviderSpecificInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOProviderSpecificUpgradeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificUpgradeInput(ctx context.Context, v interface{}) (*ProviderSpecificUpgradeInput, error) {
+func (ec *executionContext) unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (*ProviderSpecificInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOProviderSpecificUpgradeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificUpgradeInput(ctx, v)
+	res, err := ec.unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
 	return &res, err
 }
 

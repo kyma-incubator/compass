@@ -32,13 +32,6 @@ type AWSProviderConfigInput struct {
 	InternalCidr string `json:"internalCidr"`
 }
 
-type AWSProviderUpgradeInput struct {
-	Zone         *string `json:"zone"`
-	VpcCidr      *string `json:"vpcCidr"`
-	PublicCidr   *string `json:"publicCidr"`
-	InternalCidr *string `json:"internalCidr"`
-}
-
 type AzureProviderConfig struct {
 	VnetCidr *string  `json:"vnetCidr"`
 	Zones    []string `json:"zones"`
@@ -48,11 +41,6 @@ func (AzureProviderConfig) IsProviderSpecificConfig() {}
 
 type AzureProviderConfigInput struct {
 	VnetCidr string   `json:"vnetCidr"`
-	Zones    []string `json:"zones"`
-}
-
-type AzureProviderUpgradeInput struct {
-	VnetCidr *string  `json:"vnetCidr"`
 	Zones    []string `json:"zones"`
 }
 
@@ -129,10 +117,6 @@ type GCPProviderConfigInput struct {
 	Zones []string `json:"zones"`
 }
 
-type GCPProviderUpgradeInput struct {
-	Zones []string `json:"zones"`
-}
-
 type GardenerConfig struct {
 	Name                   *string                `json:"name"`
 	KubernetesVersion      *string                `json:"kubernetesVersion"`
@@ -171,16 +155,16 @@ type GardenerConfigInput struct {
 }
 
 type GardenerUpgradeInput struct {
-	KubernetesVersion      *string                       `json:"kubernetesVersion"`
-	MachineType            *string                       `json:"machineType"`
-	DiskType               *string                       `json:"diskType"`
-	VolumeSizeGb           *int                          `json:"volumeSizeGB"`
-	WorkerCidr             *string                       `json:"workerCidr"`
-	AutoScalerMin          *int                          `json:"autoScalerMin"`
-	AutoScalerMax          *int                          `json:"autoScalerMax"`
-	MaxSurge               *int                          `json:"maxSurge"`
-	MaxUnavailable         *int                          `json:"maxUnavailable"`
-	ProviderSpecificConfig *ProviderSpecificUpgradeInput `json:"providerSpecificConfig"`
+	KubernetesVersion      *string                `json:"kubernetesVersion"`
+	MachineType            *string                `json:"machineType"`
+	DiskType               *string                `json:"diskType"`
+	VolumeSizeGb           *int                   `json:"volumeSizeGB"`
+	WorkerCidr             *string                `json:"workerCidr"`
+	AutoScalerMin          *int                   `json:"autoScalerMin"`
+	AutoScalerMax          *int                   `json:"autoScalerMax"`
+	MaxSurge               *int                   `json:"maxSurge"`
+	MaxUnavailable         *int                   `json:"maxUnavailable"`
+	ProviderSpecificConfig *ProviderSpecificInput `json:"providerSpecificConfig"`
 }
 
 type KymaConfig struct {
@@ -204,12 +188,6 @@ type OperationStatus struct {
 }
 
 type ProviderSpecificInput struct {
-	GcpConfig   *GCPProviderConfigInput   `json:"gcpConfig"`
-	AzureConfig *AzureProviderConfigInput `json:"azureConfig"`
-	AwsConfig   *AWSProviderConfigInput   `json:"awsConfig"`
-}
-
-type ProviderSpecificUpgradeInput struct {
 	GcpConfig   *GCPProviderConfigInput   `json:"gcpConfig"`
 	AzureConfig *AzureProviderConfigInput `json:"azureConfig"`
 	AwsConfig   *AWSProviderConfigInput   `json:"awsConfig"`
