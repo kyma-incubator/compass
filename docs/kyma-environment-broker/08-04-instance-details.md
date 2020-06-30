@@ -38,7 +38,7 @@ A successful call returns the instance details:
         "region": "westeurope",
         "targetSecret": "azrspn-ce-skr-dev-00001",
         "volumeSizeGb": 50,
-        "zone": null
+        "zones": ["1", "2", "3"]
     }
 }
 ```

@@ -74,7 +74,9 @@ func TestMain(m *testing.M) {
 		},
 	)
 
-	internalComponents := config.InitInternalComponents(cfg, k8sClientSet)
+	internalComponents, certLoader := config.InitInternalComponents(cfg, k8sClientSet)
+
+	go certLoader.Run()
 
 	tokenService = internalComponents.TokenService
 	externalAPIUrl = fmt.Sprintf("https://%s%s", cfg.ExternalAddress, cfg.APIEndpoint)

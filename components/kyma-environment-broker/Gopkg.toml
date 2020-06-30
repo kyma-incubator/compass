@@ -19,9 +19,8 @@
   version = "1.4.2"
 
 [[constraint]]
+  revision = "aa7a78c76a97e933d932f8c99619e2d9265b768a"
   name = "github.com/kyma-incubator/compass"
-  source = "https://github.com/franpog859/compass"
-  branch = "385-add-purpose-to-provisioners-api"
 
 [[constraint]]
   name = "github.com/kyma-project/kyma"
