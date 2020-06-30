@@ -326,7 +326,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			// then
 			// assert db content
-			runtimeUpgrade, err = readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
+			runtimeUpgrade, err = readSession.GetShootUpgrade(*upgradeRuntimeOp.ID)
 			require.NoError(t, err)
 			assert.Equal(t, model.UpgradeRolledBack, runtimeUpgrade.State)
 

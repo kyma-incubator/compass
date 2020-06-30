@@ -237,13 +237,11 @@ input GardenerUpgradeInput {
 }
 
 type Mutation {
-    # upgradeShoot upgrades Gardener cluster configuration
-    upgradeShoot(id: String!, config: UpgradeShootInput!): OperationStatus
-
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): OperationStatus
     deprovisionRuntime(id: String!): String!
+    upgradeShoot(id: String!, config: UpgradeShootInput!): OperationStatus
 
     # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
     # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
