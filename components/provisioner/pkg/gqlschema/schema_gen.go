@@ -935,6 +935,10 @@ input UpgradeRuntimeInput {
 
 # Shoot Upgrade Input
 
+input UpgradeShootInput {
+    gardenerConfig: GardenerUpgradeInput! # Gardener-specific configuration for the cluster to be upgraded
+}
+
 input GardenerUpgradeInput {
     kubernetesVersion: String                              # Kubernetes version to be installed on the cluster
     machineType: String                                    # Type of node machines, varies depending on the target provider
@@ -946,9 +950,6 @@ input GardenerUpgradeInput {
     maxSurge: Int                                          # Maximum number of VMs created during an update
     maxUnavailable: Int                                    # Maximum number of VMs that can be unavailable during an update
     providerSpecificConfig: ProviderSpecificInput          # Additional parameters, vary depending on the target provider
-}
-input UpgradeShootInput {
-    gardenerConfig: GardenerUpgradeInput! # Gardener-specific configuration for the cluster to be upgraded
 }
 
 type Mutation {
