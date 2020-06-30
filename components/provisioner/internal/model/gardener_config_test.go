@@ -543,7 +543,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		MachineType:            "machine",
 		Provider:               provider,
 		Purpose:                util.StringPtr("testing"),
-		LicenceType:            "",
+		LicenceType:            nil,
 		Seed:                   "eu",
 		TargetSecret:           "gardener-secret",
 		Region:                 "eu",

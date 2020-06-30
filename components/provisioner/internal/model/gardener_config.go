@@ -33,7 +33,7 @@ type GardenerConfig struct {
 	MachineType            string
 	Provider               string
 	Purpose                *string
-	LicenceType            string
+	LicenceType            *string
 	Seed                   string
 	TargetSecret           string
 	Region                 string
@@ -60,8 +60,8 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	}
 
 	annotations := make(map[string]string)
-	if c.LicenceType != "" {
-		annotations[LicenceTypeAnnotation] = c.LicenceType
+	if c.LicenceType != nil {
+		annotations[LicenceTypeAnnotation] = *c.LicenceType
 	}
 
 	shoot := &gardener_types.Shoot{
