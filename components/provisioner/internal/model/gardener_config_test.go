@@ -304,6 +304,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						"account":    "account",
 						"subaccount": "sub-account",
 					},
+					Annotations: map[string]string{},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "gcp",
@@ -359,6 +360,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						"account":    "account",
 						"subaccount": "sub-account",
 					},
+					Annotations: map[string]string{},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
@@ -413,6 +415,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						"account":    "account",
 						"subaccount": "sub-account",
 					},
+					Annotations: map[string]string{},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
@@ -468,6 +471,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						"account":    "account",
 						"subaccount": "sub-account",
 					},
+					Annotations: map[string]string{},
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "aws",
@@ -539,6 +543,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		MachineType:            "machine",
 		Provider:               provider,
 		Purpose:                util.StringPtr("testing"),
+		LicenceType:            nil,
 		Seed:                   "eu",
 		TargetSecret:           "gardener-secret",
 		Region:                 "eu",

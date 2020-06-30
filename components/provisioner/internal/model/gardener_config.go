@@ -18,6 +18,8 @@ import (
 const (
 	SubAccountLabel = "subaccount"
 	AccountLabel    = "account"
+
+	LicenceTypeAnnotation = "compass.provisioner.kyma-project.io/licence-type"
 )
 
 type GardenerConfig struct {
@@ -31,6 +33,7 @@ type GardenerConfig struct {
 	MachineType            string
 	Provider               string
 	Purpose                *string
+	LicenceType            *string
 	Seed                   string
 	TargetSecret           string
 	Region                 string
@@ -56,6 +59,11 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		purpose = &p
 	}
 
+	annotations := make(map[string]string)
+	if c.LicenceType != nil {
+		annotations[LicenceTypeAnnotation] = *c.LicenceType
+	}
+
 	shoot := &gardener_types.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      c.Name,
@@ -64,6 +72,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				SubAccountLabel: subAccountId,
 				AccountLabel:    accountId,
 			},
+			Annotations: annotations,
 		},
 		Spec: gardener_types.ShootSpec{
 			SecretBindingName: c.TargetSecret,

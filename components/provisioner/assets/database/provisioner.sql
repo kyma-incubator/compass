@@ -28,6 +28,7 @@ CREATE TABLE gardener_config
     region varchar(256) NOT NULL,
     provider varchar(256) NOT NULL,
     purpose varchar(256),
+    licence_type varchar(256),
     seed varchar(256) NOT NULL,
     target_secret varchar(256) NOT NULL,
     disk_type varchar(256) NOT NULL,

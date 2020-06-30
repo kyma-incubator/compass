@@ -90,6 +90,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		MachineType:            input.MachineType,
 		Provider:               input.Provider,
 		Purpose:                input.Purpose,
+		LicenceType:            input.LicenceType,
 		Seed:                   util.UnwrapStr(input.Seed),
 		TargetSecret:           input.TargetSecret,
 		WorkerCidr:             input.WorkerCidr,
