@@ -90,25 +90,41 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 		// old way of providing request headers
 		if deprecated.Api.Headers != nil {
-			h := (graphql.HttpHeaders)(*deprecated.Api.Headers)
-			defaultInstanceAuth.AdditionalHeaders = &h
+			h, err := graphql.NewHttpHeadersSerialized(*deprecated.Api.Headers)
+			if err != nil {
+				return graphql.PackageCreateInput{}, err
+			}
+
+			defaultInstanceAuth.AdditionalHeadersSerialized = &h
 		}
 
 		// old way of providing request headers
 		if deprecated.Api.QueryParameters != nil {
-			q := (graphql.QueryParams)(*deprecated.Api.QueryParameters)
-			defaultInstanceAuth.AdditionalQueryParams = &q
+			q, err := graphql.NewQueryParamsSerialized(*deprecated.Api.QueryParameters)
+			if err != nil {
+				return graphql.PackageCreateInput{}, err
+			}
+
+			defaultInstanceAuth.AdditionalQueryParamsSerialized = &q
 		}
 
 		// new way
 		if deprecated.Api.RequestParameters != nil {
 			if deprecated.Api.RequestParameters.Headers != nil {
-				h := (graphql.HttpHeaders)(*deprecated.Api.RequestParameters.Headers)
-				defaultInstanceAuth.AdditionalHeaders = &h
+				h, err := graphql.NewHttpHeadersSerialized(*deprecated.Api.RequestParameters.Headers)
+				if err != nil {
+					return graphql.PackageCreateInput{}, err
+				}
+
+				defaultInstanceAuth.AdditionalHeadersSerialized = &h
 			}
 			if deprecated.Api.RequestParameters.QueryParameters != nil {
-				q := (graphql.QueryParams)(*deprecated.Api.RequestParameters.QueryParameters)
-				defaultInstanceAuth.AdditionalQueryParams = &q
+				q, err := graphql.NewQueryParamsSerialized(*deprecated.Api.RequestParameters.QueryParameters)
+				if err != nil {
+					return graphql.PackageCreateInput{}, err
+				}
+
+				defaultInstanceAuth.AdditionalQueryParamsSerialized = &q
 			}
 		}
 
@@ -148,8 +164,8 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 				url := deprecated.Api.SpecificationUrl
 				if lowercaseDeprecatedAPIType == oDataSpecType && url == "" {
-					targetUrl := strings.TrimSuffix(apiDef.TargetURL, "/")
-					url = fmt.Sprintf(oDataSpecFormat, targetUrl)
+					targetURL := strings.TrimSuffix(apiDef.TargetURL, "/")
+					url = fmt.Sprintf(oDataSpecFormat, targetURL)
 				}
 
 				apiDef.Spec.FetchRequest = &graphql.FetchRequestInput{
@@ -185,12 +201,20 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 
 			if deprecated.Api.SpecificationRequestParameters != nil && apiDef.Spec.FetchRequest != nil {
 				if deprecated.Api.SpecificationRequestParameters.Headers != nil {
-					h := (graphql.HttpHeaders)(*deprecated.Api.SpecificationRequestParameters.Headers)
-					apiDef.Spec.FetchRequest.Auth.AdditionalHeaders = &h
+					h, err := graphql.NewHttpHeadersSerialized(*deprecated.Api.SpecificationRequestParameters.Headers)
+					if err != nil {
+						return graphql.PackageCreateInput{}, err
+					}
+
+					apiDef.Spec.FetchRequest.Auth.AdditionalHeadersSerialized = &h
 				}
 				if deprecated.Api.SpecificationRequestParameters.QueryParameters != nil {
-					q := (graphql.QueryParams)(*deprecated.Api.SpecificationRequestParameters.QueryParameters)
-					apiDef.Spec.FetchRequest.Auth.AdditionalQueryParams = &q
+					q, err := graphql.NewQueryParamsSerialized(*deprecated.Api.SpecificationRequestParameters.QueryParameters)
+					if err != nil {
+						return graphql.PackageCreateInput{}, err
+					}
+
+					apiDef.Spec.FetchRequest.Auth.AdditionalQueryParamsSerialized = &q
 				}
 			}
 		}
