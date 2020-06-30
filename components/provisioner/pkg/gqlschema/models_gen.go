@@ -175,7 +175,6 @@ type GardenerUpgradeInput struct {
 	MachineType            *string                       `json:"machineType"`
 	DiskType               *string                       `json:"diskType"`
 	VolumeSizeGb           *int                          `json:"volumeSizeGB"`
-	Region                 string                        `json:"region"`
 	WorkerCidr             *string                       `json:"workerCidr"`
 	AutoScalerMin          *int                          `json:"autoScalerMin"`
 	AutoScalerMax          *int                          `json:"autoScalerMax"`

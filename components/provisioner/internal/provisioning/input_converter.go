@@ -82,10 +82,6 @@ func (c converter) GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerU
 		return model.GardenerConfig{}, fmt.Errorf("cluster does not have Gardener configuration")
 	}
 
-	if input.Region != "" {
-		currentShootCfg.Region = input.Region
-	}
-
 	providerSpecificConfig, err := c.providerSpecificConfigFromUpgradeInput(input.ProviderSpecificConfig)
 
 	if err == nil {

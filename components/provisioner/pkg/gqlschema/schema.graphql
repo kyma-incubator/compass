@@ -224,7 +224,6 @@ input GardenerUpgradeInput {
     machineType: String                                    # Type of node machines, varies depending on the target provider
     diskType: String                                       # Disk type, varies depending on the target provider
     volumeSizeGB: Int                                      # Size of the available disk, provided in GB
-    region: String!                                        # Region in which the cluster is created
     workerCidr: String                                     # Classless Inter-Domain Routing range for the nodes
     autoScalerMin: Int                                     # Minimum number of VMs to create
     autoScalerMax: Int                                     # Maximum number of VMs to create
