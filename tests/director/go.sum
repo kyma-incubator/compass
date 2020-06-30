@@ -46,6 +46,8 @@ github.com/crabtree/compass/components/director v0.0.0-20200602193953-2302178b82
 github.com/crabtree/compass/components/director v0.0.0-20200602193953-2302178b82c1/go.mod h1:LOyA6g4YWEGNfhhLygUdmZ+3SKRmZQVRVvJcAje40B8=
 github.com/crabtree/compass/components/director v0.0.0-20200602194341-2280f445af43 h1:UPBAFtqPpeLQRl+ff2F7QEb/q5brz1e/xKQSswyMjRk=
 github.com/crabtree/compass/components/director v0.0.0-20200602194341-2280f445af43/go.mod h1:LOyA6g4YWEGNfhhLygUdmZ+3SKRmZQVRVvJcAje40B8=
+github.com/crabtree/compass/components/director v0.0.0-20200630071308-8fb302a11edd h1:YDfTEvThTCVv2lDfY8aEhCyyDFcpp49LFf41cWOlJtw=
+github.com/crabtree/compass/components/director v0.0.0-20200630071308-8fb302a11edd/go.mod h1:mXQbZvsoQH+zJB8ywkFIqtG2Rp8Lt7bhwIzKPRRnlNA=
 github.com/davecgh/go-spew v0.0.0-20151105211317-5215b55f46b2/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
