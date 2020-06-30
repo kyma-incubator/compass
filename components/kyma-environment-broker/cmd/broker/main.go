@@ -6,6 +6,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
@@ -120,7 +125,8 @@ func main() {
 	// create kubernetes client
 	k8sCfg, err := config.GetConfig()
 	fatalOnError(err)
-	cli, err := client.New(k8sCfg, client.Options{})
+
+	cli, err := initClient(k8sCfg)
 	fatalOnError(err)
 
 	// create director client on the base of graphQL client and OAuth client
@@ -369,6 +375,27 @@ func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.
 		log.Infof("Resuming the processing of %s operation ID: %s", opType, operation.ID)
 	}
 	return nil
+}
+
+func initClient(cfg *rest.Config) (client.Client, error) {
+	mapper, err := apiutil.NewDiscoveryRESTMapper(cfg)
+	if err != nil {
+		err = wait.Poll(time.Second, time.Minute, func() (bool, error) {
+			mapper, err = apiutil.NewDiscoveryRESTMapper(cfg)
+			if err != nil {
+				return false, nil
+			}
+			return true, nil
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "while waiting for client mapper")
+		}
+	}
+	cli, err := client.New(cfg, client.Options{Mapper: mapper})
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating a client")
+	}
+	return cli, nil
 }
 
 func fatalOnError(err error) {

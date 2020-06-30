@@ -279,10 +279,16 @@ spec:
             httpGet:
               path: /healthz
               port: {{ .Values.broker.statusPort }}
-            failureThreshold: 3
             periodSeconds: 10
             timeoutSeconds: 3
             initialDelaySeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.broker.statusPort }}
+            periodSeconds: 5
+            timeoutSeconds: 2
+            initialDelaySeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
