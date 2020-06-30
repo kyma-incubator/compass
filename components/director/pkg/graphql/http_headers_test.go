@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHttpHeaders_UnmarshalGQL(t *testing.T) {
@@ -68,4 +69,34 @@ func TestHttpHeaders_MarshalGQL(t *testing.T) {
 	//then
 	assert.NotNil(t, buf)
 	assert.Equal(t, expectedHeaders, buf.String())
+}
+
+func Test_NewHttpHeadersSerialized(t *testing.T) {
+	t.Run("Success when invoking NewHttpHeadersSerialized", func(t *testing.T) {
+		// GIVEN
+		expected := HttpHeadersSerialized("{\"header1\":[\"val1\",\"val2\"]}")
+		given := map[string][]string{"header1": []string{"val1", "val2"}}
+
+		// WHEN
+		marshaled, err := NewHttpHeadersSerialized(given)
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, expected, marshaled)
+	})
+}
+
+func Test_HttpHeadersSerializedUnmarshal(t *testing.T) {
+	t.Run("Success when unmarshaling serialized HttpHeaders", func(t *testing.T) {
+		// GIVEN
+		expected := map[string][]string{"header1": []string{"val1", "val2"}}
+		marshaled := HttpHeadersSerialized("{\"header1\":[\"val1\",\"val2\"]}")
+
+		// WHEN
+		headers, err := marshaled.Unmarshal()
+
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, expected, headers)
+	})
 }

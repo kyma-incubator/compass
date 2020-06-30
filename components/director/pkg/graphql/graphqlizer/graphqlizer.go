@@ -148,21 +148,33 @@ func (g *Graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) 
 }
 
 func (g *Graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFTokenCredentialRequestAuthInput) (string, error) {
+	in.AdditionalHeadersSerialized = quoteHTTPHeadersSerialized(in.AdditionalHeadersSerialized)
+	in.AdditionalQueryParamsSerialized = quoteQueryParamsSerialized(in.AdditionalQueryParamsSerialized)
+
 	return g.genericToGQL(in, `{
 			tokenEndpointURL: "{{ .TokenEndpointURL }}",
 			{{- if .Credential }}
 			credential: {{ CredentialDataInputToGQL .Credential }},
 			{{- end }}
 			{{- if .AdditionalHeaders }}
-			additionalHeaders : {{ HTTPHeadersToGQL .AdditionalHeaders }},
+			additionalHeaders: {{ HTTPHeadersToGQL .AdditionalHeaders }},
+			{{- end }}
+			{{- if .AdditionalHeadersSerialized }}
+			additionalHeadersSerialized: {{ .AdditionalHeadersSerialized }},
 			{{- end }}
 			{{- if .AdditionalQueryParams }}
-			additionalQueryParams : {{ QueryParamsToGQL .AdditionalQueryParams }},
+			additionalQueryParams: {{ QueryParamsToGQL .AdditionalQueryParams }},
+			{{- end }}
+			{{- if .AdditionalQueryParamsSerialized }}
+			additionalQueryParamsSerialized: {{ .AdditionalQueryParamsSerialized }},
 			{{- end }}
 	}`)
 }
 
 func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
+	in.AdditionalHeadersSerialized = quoteHTTPHeadersSerialized(in.AdditionalHeadersSerialized)
+	in.AdditionalQueryParamsSerialized = quoteQueryParamsSerialized(in.AdditionalQueryParamsSerialized)
+
 	return g.genericToGQL(in, `{
 		{{- if .Credential }}
 		credential: {{ CredentialDataInputToGQL .Credential }},
@@ -170,8 +182,14 @@ func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 		{{- if .AdditionalHeaders }}
 		additionalHeaders: {{ HTTPHeadersToGQL .AdditionalHeaders }},
 		{{- end }}
+		{{- if .AdditionalHeadersSerialized }}
+		additionalHeadersSerialized: {{ .AdditionalHeadersSerialized }},
+		{{- end }}
 		{{- if .AdditionalQueryParams }}
 		additionalQueryParams: {{ QueryParamsToGQL .AdditionalQueryParams}},
+		{{- end }}
+		{{- if .AdditionalQueryParamsSerialized }}
+		additionalQueryParamsSerialized: {{ .AdditionalQueryParamsSerialized }},
 		{{- end }}
 		{{- if .RequestAuth }}
 		requestAuth: {{ CredentialRequestAuthInputToGQL .RequestAuth }},
@@ -254,7 +272,7 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 }
 
 func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string, error) {
-	in.Data = quoteString(in.Data)
+	in.Data = quoteCLOB(in.Data)
 	return g.genericToGQL(in, `{
 		{{- if .Data }}
 		data: {{.Data}},
@@ -268,7 +286,7 @@ func (g *Graphqlizer) EventAPISpecInputToGQL(in graphql.EventSpecInput) (string,
 }
 
 func (g *Graphqlizer) ApiSpecInputToGQL(in graphql.APISpecInput) (string, error) {
-	in.Data = quoteString(in.Data)
+	in.Data = quoteCLOB(in.Data)
 	return g.genericToGQL(in, `{
 		{{- if .Data}}
 		data: {{.Data}},
@@ -529,10 +547,29 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	return b.String(), nil
 }
 
-func quoteString(in *graphql.CLOB) *graphql.CLOB {
-	if in != nil {
-		quotedData := strconv.Quote(string(*in))
-		return (*graphql.CLOB)(&quotedData)
+func quoteCLOB(in *graphql.CLOB) *graphql.CLOB {
+	if in == nil {
+		return nil
 	}
-	return nil
+
+	quoted := strconv.Quote(string(*in))
+	return (*graphql.CLOB)(&quoted)
+}
+
+func quoteHTTPHeadersSerialized(in *graphql.HttpHeadersSerialized) *graphql.HttpHeadersSerialized {
+	if in == nil {
+		return nil
+	}
+
+	quoted := strconv.Quote(string(*in))
+	return (*graphql.HttpHeadersSerialized)(&quoted)
+}
+
+func quoteQueryParamsSerialized(in *graphql.QueryParamsSerialized) *graphql.QueryParamsSerialized {
+	if in == nil {
+		return nil
+	}
+
+	quoted := strconv.Quote(string(*in))
+	return (*graphql.QueryParamsSerialized)(&quoted)
 }

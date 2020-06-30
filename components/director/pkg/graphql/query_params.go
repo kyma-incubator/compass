@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"encoding/json"
 	"io"
 
 	log "github.com/sirupsen/logrus"
@@ -27,4 +28,26 @@ func (y QueryParams) MarshalGQL(w io.Writer) {
 		log.Errorf("while writing %T: %s", y, err)
 		return
 	}
+}
+
+type QueryParamsSerialized string
+
+func (y *QueryParamsSerialized) Unmarshal() (map[string][]string, error) {
+	var data map[string][]string
+	if y == nil {
+		return data, nil
+	}
+
+	err := json.Unmarshal([]byte(*y), &data)
+
+	return data, err
+}
+
+func NewQueryParamsSerialized(h map[string][]string) (QueryParamsSerialized, error) {
+	data, err := json.Marshal(h)
+	if err != nil {
+		return "", err
+	}
+
+	return QueryParamsSerialized(data), nil
 }

@@ -12,6 +12,8 @@ scalar CLOB
 
 scalar HttpHeaders
 
+scalar HttpHeadersSerialized
+
 """
 Stringified JSON
 """
@@ -27,6 +29,8 @@ scalar Labels
 scalar PageCursor
 
 scalar QueryParams
+
+scalar QueryParamsSerialized
 
 scalar Timestamp
 
@@ -247,10 +251,12 @@ input AuthInput {
 	**Validation:** if provided, headers name and value required
 	"""
 	additionalHeaders: HttpHeaders
+	additionalHeadersSerialized: HttpHeadersSerialized
 	"""
 	**Validation:** if provided, query parameters name and value required
 	"""
 	additionalQueryParams: QueryParams
+	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuthInput
 }
 
@@ -277,10 +283,12 @@ input CSRFTokenCredentialRequestAuthInput {
 	**Validation:** if provided, headers name and value required
 	"""
 	additionalHeaders: HttpHeaders
+	additionalHeadersSerialized: HttpHeadersSerialized
 	"""
 	**Validation:** if provided, query parameters name and value required
 	"""
 	additionalQueryParams: QueryParams
+	additionalQueryParamsSerialized: QueryParamsSerialized
 }
 
 """
@@ -631,7 +639,9 @@ type ApplicationTemplatePage implements Pageable {
 type Auth {
 	credential: CredentialData
 	additionalHeaders: HttpHeaders
+	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
+	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuth
 }
 
@@ -655,7 +665,9 @@ type CSRFTokenCredentialRequestAuth {
 	tokenEndpointURL: String!
 	credential: CredentialData
 	additionalHeaders: HttpHeaders
+	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
+	additionalQueryParamsSerialized: QueryParamsSerialized
 }
 
 type CredentialRequestAuth {
