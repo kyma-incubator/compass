@@ -397,9 +397,14 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 	// 2. execute update on Shoot CR
 	error := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
 
-	operation, err := r.setOperationStarted(txSession, currentCluster.ID, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
 	if error != nil {
 		return model.Operation{}, err.Append("Failed to set Gardener Shoot upgrade operation started")
+	}
+
+	operation, err := r.setOperationStarted(txSession, currentCluster.ID, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
+
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to start operation of Gardener Shoot upgrade")
 	}
 
 	return operation, nil

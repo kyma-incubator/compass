@@ -67,11 +67,17 @@ func (ws writeSession) UpdateGardenerClusterConfig(configID string, config model
 
 	res, err := ws.update("gardener_config").
 		Where(dbr.Eq("id", configID)).
-		Set("KubernetesVersion", config.KubernetesVersion).
-		Set("MachineType", config.MachineType).
+		Set("cluster_id", config.ClusterID).
+		Set("project_name", config.ProjectName).
+		Set("name", config.Name).
+		Set("kubernetes_version", config.KubernetesVersion).
+		Set("region", config.Region).
+		Set("provider", config.Provider).
+		Set("seed", config.Seed).
+		Set("target_secret", config.TargetSecret).
+		Set("machine_type", config.MachineType).
 		Set("disk_type", config.DiskType).
 		Set("volume_size_gb", config.VolumeSizeGB).
-		Set("region", config.Region).
 		Set("worker_cidr", config.WorkerCidr).
 		Set("auto_scaler_min", config.AutoScalerMin).
 		Set("auto_scaler_max", config.AutoScalerMax).
