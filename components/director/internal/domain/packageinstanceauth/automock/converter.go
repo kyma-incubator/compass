@@ -26,7 +26,7 @@ func (_m *Converter) RequestInputFromGraphQL(in graphql.PackageInstanceAuthReque
 }
 
 // SetInputFromGraphQL provides a mock function with given fields: in
-func (_m *Converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) model.PackageInstanceAuthSetInput {
+func (_m *Converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) (model.PackageInstanceAuthSetInput, error) {
 	ret := _m.Called(in)
 
 	var r0 model.PackageInstanceAuthSetInput
@@ -36,11 +36,18 @@ func (_m *Converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput)
 		r0 = ret.Get(0).(model.PackageInstanceAuthSetInput)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.PackageInstanceAuthSetInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *Converter) ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageInstanceAuth {
+func (_m *Converter) ToGraphQL(in *model.PackageInstanceAuth) (*graphql.PackageInstanceAuth, error) {
 	ret := _m.Called(in)
 
 	var r0 *graphql.PackageInstanceAuth
@@ -52,5 +59,12 @@ func (_m *Converter) ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageIn
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.PackageInstanceAuth) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

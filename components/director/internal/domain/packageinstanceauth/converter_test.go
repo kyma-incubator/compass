@@ -74,9 +74,10 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 			conv := packageinstanceauth.NewConverter(authConv)
 			// WHEN
-			result := conv.ToGraphQL(testCase.Input)
+			result, err := conv.ToGraphQL(testCase.Input)
 
 			// THEN
+			require.NoError(t, err)
 			require.Equal(t, testCase.Expected, result)
 
 			mock.AssertExpectationsForObjects(t, authConv)
@@ -131,9 +132,10 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 
 			conv := packageinstanceauth.NewConverter(authConv)
 			// WHEN
-			result := conv.MultipleToGraphQL(testCase.Input)
+			result, err := conv.MultipleToGraphQL(testCase.Input)
 
 			// THEN
+			require.NoError(t, err)
 			require.Equal(t, testCase.Expected, result)
 
 			mock.AssertExpectationsForObjects(t, authConv)
@@ -255,9 +257,10 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 
 			conv := packageinstanceauth.NewConverter(authConv)
 			// WHEN
-			result := conv.SetInputFromGraphQL(testCase.Input)
+			result, err := conv.SetInputFromGraphQL(testCase.Input)
 
 			// THEN
+			require.NoError(t, err)
 			require.Equal(t, testCase.Expected, result)
 
 			mock.AssertExpectationsForObjects(t, authConv)
