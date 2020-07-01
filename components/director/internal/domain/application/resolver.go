@@ -39,7 +39,7 @@ type ApplicationService interface {
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
-	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput
+	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
@@ -267,7 +267,10 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.appConverter.CreateInputFromGraphQL(in)
+	convertedIn, err := r.appConverter.CreateInputFromGraphQL(in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting ApplicationRegister input")
+	}
 	id, err := r.appSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err

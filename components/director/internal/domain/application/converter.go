@@ -93,7 +93,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 	return runtimes
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput {
+func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
 	var labels map[string]interface{}
 	if in.Labels != nil {
 		labels = *in.Labels
@@ -101,12 +101,12 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 
 	webhooks, err := c.webhook.MultipleInputFromGraphQL(in.Webhooks)
 	if err != nil {
-		// TODO kci
+		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Webhooks")
 	}
 
 	packages, err := c.pkg.MultipleCreateInputFromGraphQL(in.Packages)
 	if err != nil {
-		// TODO kci
+		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Packages")
 	}
 
 	return model.ApplicationRegisterInput{
@@ -119,7 +119,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		ProviderName:        in.ProviderName,
 		Webhooks:            webhooks,
 		Packages:            packages,
-	}
+	}, nil
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {

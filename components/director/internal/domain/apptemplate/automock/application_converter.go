@@ -12,7 +12,7 @@ type ApplicationConverter struct {
 }
 
 // CreateInputFromGraphQL provides a mock function with given fields: in
-func (_m *ApplicationConverter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput {
+func (_m *ApplicationConverter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
 	ret := _m.Called(in)
 
 	var r0 model.ApplicationRegisterInput
@@ -22,7 +22,14 @@ func (_m *ApplicationConverter) CreateInputFromGraphQL(in graphql.ApplicationReg
 		r0 = ret.Get(0).(model.ApplicationRegisterInput)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.ApplicationRegisterInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // CreateInputJSONToGQL provides a mock function with given fields: in
