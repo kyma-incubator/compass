@@ -325,7 +325,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			// upgrade shoot
 			runtimeBeforeUpgrade, err := readSession.GetCluster(runtimeID)
 			require.NoError(t, err)
-			shootBeforeUpgrade, _ := runtimeBeforeUpgrade.GardenerConfig()
 
 			upgradeShootOp, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
 			require.NoError(t, err)
@@ -342,18 +341,13 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			time.Sleep(waitPeriod)
 
 			// assert db content
-
-			// runtimeUpgrade, err := readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
-			// require.NoError(t, err)
-			// assert.Equal(t, model.UpgradeSucceeded, runtimeUpgrade.State)
-			// assert.NotEmpty(t, runtimeUpgrade.PostUpgradeKymaConfigId)
-
 			runtimeAfterUpgrade, err := readSession.GetCluster(runtimeID)
 			require.NoError(t, err)
 			shootAfterUpgrade, _ := runtimeAfterUpgrade.GardenerConfig()
 
+			expectedShootConfig, err := inputConverter.GardenerConfigFromUpgradeShootInput(*upgradeShootInput.GardenerConfig, runtimeBeforeUpgrade)
 			require.NoError(t, err)
-			assert.Equal(t, expectedShootConfig(shootBeforeUpgrade, upgradeShootInput), shootAfterUpgrade)
+			assert.Equal(t, expectedShootConfig, shootAfterUpgrade)
 
 			//when
 			deprovisionRuntimeID, err := resolver.DeprovisionRuntime(ctx, runtimeID)

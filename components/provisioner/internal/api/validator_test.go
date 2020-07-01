@@ -180,6 +180,58 @@ func TestValidator_ValidateUpgradeInput(t *testing.T) {
 	})
 }
 
+func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
+
+	t.Run("Should return nil when input is correct", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		input := gqlschema.UpgradeShootInput{}
+
+		//when
+		err := validator.ValidateUpgradeShootInput(input)
+
+		//then
+		require.NoError(t, err)
+	})
+
+	t.Run("Should return error when kyma config input not provided", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		config := gqlschema.UpgradeRuntimeInput{}
+
+		//when
+		err := validator.ValidateUpgradeInput(config)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("Should return error when Runtime Agent component is not passed in kyma input", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		kymaConfig := &gqlschema.KymaConfigInput{
+			Version: "1.5",
+			Components: []*gqlschema.ComponentConfigurationInput{
+				{
+					Component:     "core",
+					Configuration: nil,
+				},
+			},
+		}
+
+		input := gqlschema.UpgradeRuntimeInput{KymaConfig: kymaConfig}
+
+		//when
+		err := validator.ValidateUpgradeInput(input)
+
+		//then
+		require.Error(t, err)
+	})
+}
+
 func TestValidator_ValidateTenant(t *testing.T) {
 	tenant := "tenant"
 	runtimeID := "123-123-123"
