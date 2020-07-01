@@ -19,7 +19,7 @@ There are two main reasons for the Compass project split:
 
 The Compass project is split into two repositories:
 
-- Compass, which contains Application Connectivity components:
+- Compass, which contains the Application Connectivity components and its dependencies:
   - Director
   - Connector
   - Gateway
@@ -27,11 +27,16 @@ The Compass project is split into two repositories:
   - External Services Mock
   - Connectivity Adapter
   - Schema Migrator
-- Kyma Control Plane, which contains Runtime-related components:
+- Kyma Control Plane, which contains Runtime-related components and its dependencies:
   - Kyma Environment Broker
   - Provisioner
   - Metris
   - Kubeconfig Service
+  - Schema Migrator
+
+Schema Migrator source code and chart is split into two places, to handle database migrations for Application Connectivity and Runtime-related components.
+
+Additionally, the PostgreSQL chart is copied to both of the repositories, as it is a dependency for both group of the components. 
 
 To preserve Git history, complete Compass history is pushed to the Kyma Control Plane repository. All changes are made on top of the Compass history, including Application Connectivity components removal or code imports change.
 
