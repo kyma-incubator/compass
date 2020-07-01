@@ -28,7 +28,7 @@ For more information about the Compass architecture, technical details, and comp
 
 ### Enable Compass in Kyma
 
-Read [this](https://kyma-project.io/docs/master/components/compass/#installation-installation) document to learn about different modes in which you can enable Compass in Kyma.
+Read [this](https://github.com/kyma-incubator/compass/blob/master/docs/compass/04-01-installation.md) document to learn about different modes in which you can enable Compass in Kyma.
 
 ### Chart installation
 
