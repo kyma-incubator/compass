@@ -41,6 +41,18 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	op, when, err := s.run(operation, log)
+
+	if op.State == domain.Succeeded {
+		repeat, err := s.removeInstance(operation.InstanceID)
+		if err != nil || repeat != 0 {
+			return operation, repeat, err
+		}
+	}
+	return op, when, err
+}
+
+func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	// rewrite necessary data from ProvisioningOperation to operation internal.DeprovisioningOperation
 	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
@@ -70,6 +82,7 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 	switch {
 	case err == nil:
 		if operation.ProvisionerOperationID == "" {
+
 			return operation, 0, nil
 		}
 		log.Info("instance being removed, check operation status")
@@ -112,10 +125,6 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		repeat, err := s.removeInstance(instance.InstanceID)
-		if err != nil || repeat != 0 {
-			return operation, repeat, err
-		}
 		return s.operationManager.OperationSucceeded(operation, msg)
 	case gqlschema.OperationStateInProgress:
 		return operation, 1 * time.Minute, nil
