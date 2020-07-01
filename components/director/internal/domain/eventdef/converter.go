@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
@@ -53,28 +54,37 @@ func (c *converter) MultipleToGraphQL(in []*model.EventDefinition) []*graphql.Ev
 	return apis
 }
 
-func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput {
+func (c *converter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, error) {
 	var arr []*model.EventDefinitionInput
 	for _, item := range in {
-		api := c.InputFromGraphQL(item)
+		api, err := c.InputFromGraphQL(item)
+		if err != nil {
+			return nil, err
+		}
+
 		arr = append(arr, api)
 	}
 
-	return arr
+	return arr, nil
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventDefinitionInput {
+func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
+	}
+
+	spec, err := c.eventAPISpecInputFromGraphQL(in.Spec)
+	if err != nil {
+		return nil, err
 	}
 
 	return &model.EventDefinitionInput{
 		Name:        in.Name,
 		Description: in.Description,
-		Spec:        c.eventAPISpecInputFromGraphQL(in.Spec),
+		Spec:        spec,
 		Group:       in.Group,
 		Version:     c.vc.InputFromGraphQL(in.Version),
-	}
+	}, nil
 }
 
 func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventSpec) *graphql.EventSpec {
@@ -96,14 +106,14 @@ func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventSp
 	}
 }
 
-func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) *model.EventSpecInput {
+func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) (*model.EventSpecInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	fetchReq, err := c.fr.InputFromGraphQL(in.FetchRequest)
 	if err != nil {
-		// TODO
+		return nil, errors.Wrap(err, "while converting FetchRequest from GraphQL input")
 	}
 
 	return &model.EventSpecInput{
@@ -111,7 +121,7 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) *mo
 		Format:        model.SpecFormat(in.Format),
 		EventSpecType: model.EventSpecType(in.Type),
 		FetchRequest:  fetchReq,
-	}
+	}, nil
 }
 
 func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {

@@ -12,7 +12,7 @@ type EventDefConverter struct {
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *EventDefConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventDefinitionInput {
+func (_m *EventDefConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, error) {
 	ret := _m.Called(in)
 
 	var r0 *model.EventDefinitionInput
@@ -24,11 +24,18 @@ func (_m *EventDefConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) 
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*graphql.EventDefinitionInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleInputFromGraphQL provides a mock function with given fields: in
-func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput {
+func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, error) {
 	ret := _m.Called(in)
 
 	var r0 []*model.EventDefinitionInput
@@ -40,7 +47,14 @@ func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinit
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*graphql.EventDefinitionInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in
