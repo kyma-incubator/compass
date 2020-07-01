@@ -4,7 +4,7 @@
 
 This document describes the technical implementation of the Compass project split into two separate projects.
 
-Previously, Compass consisted of two main areas: Application Connectivity and Runtime provisioning. Mixed concerns of Compass made confusion around understanding of the project. The goal of the splitting Compass project is to separate the concerns and develop these two areas independently.
+Previously, Compass consisted of two main areas: Application Connectivity and Runtime provisioning. Mixed responsibilities of Compass made confusion around understanding of the project. The goal of the splitting Compass project is to separate the responsibilities and develop these two areas independently.
 
 Compass project split is a next step after making Compass separated from Kyma. To read more about the separation, see the [Compass as a separate component](../separate-compass/separate-compass.md) document.
 
@@ -12,7 +12,7 @@ Compass project split is a next step after making Compass separated from Kyma. T
 
 There are two main reasons for the Compass project split:
 
-- Separation of concerns: Application Connectivity components are separated from Runtime-related components.
+- Separation of responsibilities: Application Connectivity components are separated from Runtime-related components.
 - Change of the Application Connectivity components ownership.
 
 ## Implementation
