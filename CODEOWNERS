@@ -19,6 +19,13 @@
 /docs/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 /components/schema-migrator/migrations/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 
+# Runtime Provisioner
+/chart/compass/charts/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
+/components/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
+/docs/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
+/components/schema-migrator/migrations/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
+/tests/provisioner-tests @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
+
 # Director
 /chart/compass/charts/director @PK85 @crabtree @pkosiec @kfurgol @tgorgol @dbadura @kjaksik
 /chart/compass/templates/director-api-test.yaml @PK85 @crabtree @pkosiec @kfurgol @tgorgol @dbadura @kjaksik
@@ -59,6 +66,10 @@
 # Metris
 /chart/compass/charts/metris @maksd
 /components/metris @maksd
+
+# OIDC-Kubeconfig-Service
+/components/kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
+/chart/oidc-kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
 
 # All .md files
 *.md @klaudiagrz @kazydek @tomekpapiernik @bszwarc @mmitoraj @majakurcius @alexandra-simeonova

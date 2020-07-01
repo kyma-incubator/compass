@@ -44,3 +44,19 @@ data:
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
   director.deployment.allowJWTSigningNone: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-installation-oidc-kubeconfig-service-overrides
+  namespace: compass-installer
+  labels:
+    component: oidc-kubeconfig-service
+    installer: overrides
+    kyma-project.io/installation: ""
+data:
+  global.isLocalEnv: "true"
+  global.domainName: "kyma.local"
+  global.minikubeIP: ""
+  global.ingress.domainName: "kyma.local"
+  config.oidc.caFile: "/etc/dex-tls-cert/tls.crt"

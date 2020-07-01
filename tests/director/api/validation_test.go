@@ -31,7 +31,7 @@ func TestCreateRuntime_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=Invalid data [reason=cannot start with digit]]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=cannot start with digit]")
 }
 
 func TestUpdateRuntime_Validation(t *testing.T) {
@@ -53,7 +53,7 @@ func TestUpdateRuntime_Validation(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=Invalid data [reason=cannot start with digit]]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=cannot start with digit]")
 }
 
 // Label Definition Validation

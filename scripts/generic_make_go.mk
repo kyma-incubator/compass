@@ -5,6 +5,13 @@ else
 IMG_NAME := $(APP_NAME)
 endif
 
+# Configuration for Kyma Environment Broker cleanup job image
+ifneq ($(strip $(DOCKER_PUSH_REPOSITORY)),)
+CLEANUP_IMG_NAME := $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(APP_CLEANUP_NAME)
+else
+CLEANUP_IMG_NAME := $(APP_CLEANUP_NAME)
+endif
+
 TAG := $(DOCKER_TAG)
 # BASE_PKG is a root packge of the component
 BASE_PKG := github.com/kyma-incubator/compass

@@ -18,6 +18,8 @@ import (
 const (
 	SubAccountLabel = "subaccount"
 	AccountLabel    = "account"
+
+	LicenceTypeAnnotation = "compass.provisioner.kyma-project.io/licence-type"
 )
 
 type GardenerConfig struct {
@@ -30,6 +32,8 @@ type GardenerConfig struct {
 	DiskType               string
 	MachineType            string
 	Provider               string
+	Purpose                *string
+	LicenceType            *string
 	Seed                   string
 	TargetSecret           string
 	Region                 string
@@ -49,6 +53,16 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	if c.Seed != "" {
 		seed = util.StringPtr(c.Seed)
 	}
+	var purpose *gardener_types.ShootPurpose = nil
+	if c.Purpose != nil && *c.Purpose != "" {
+		p := gardener_types.ShootPurpose(*c.Purpose)
+		purpose = &p
+	}
+
+	annotations := make(map[string]string)
+	if c.LicenceType != nil {
+		annotations[LicenceTypeAnnotation] = *c.LicenceType
+	}
 
 	shoot := &gardener_types.Shoot{
 		ObjectMeta: v1.ObjectMeta{
@@ -58,6 +72,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				SubAccountLabel: subAccountId,
 				AccountLabel:    accountId,
 			},
+			Annotations: annotations,
 		},
 		Spec: gardener_types.ShootSpec{
 			SecretBindingName: c.TargetSecret,
@@ -71,9 +86,10 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				},
 			},
 			Networking: gardener_types.Networking{
-				Type:  "calico",        // Default value - we may consider adding it to API (if Hydroform will support it)
-				Nodes: "10.250.0.0/19", // TODO: it is required - provide configuration in API (when Hydroform will support it)
+				Type:  "calico",                        // Default value - we may consider adding it to API (if Hydroform will support it)
+				Nodes: util.StringPtr("10.250.0.0/19"), // TODO: it is required - provide configuration in API (when Hydroform will support it)
 			},
+			Purpose: purpose,
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 					KubernetesVersion:   false,

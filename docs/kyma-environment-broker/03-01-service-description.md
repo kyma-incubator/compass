@@ -21,7 +21,8 @@ These are the provisioning parameters for this plan:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D8_v3` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
-| **zone** | string | Defines the cluster zone. | No | None |
+| **zones** | string | Defines the list of zones in which the Runtime Provisioner creates the cluster. | No | `["1", "2", "3"]` |
+| **purpose** | string | Defines the purpose of the created cluster. The possible values are: `development`, `evaluation`, `production`, `testing`. | No | `development` |
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |

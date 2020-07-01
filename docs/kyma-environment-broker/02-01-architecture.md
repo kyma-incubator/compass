@@ -12,7 +12,7 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
     
     c. If the authorization ends with success, the request is redirected to KEB.
     
-2. KEB proxies the request to create a new cluster to the Provisioner component.
+2. KEB proxies the request to create a new cluster to the Runtime Provisioner component.
 3. Provisioner registers a new cluster in the Director component.
 4. Provisioner creates a new cluster and installs Kyma Runtime.
 5. When the operation is successful, KEB keeps sending a request for a Dashboard URL to Director:

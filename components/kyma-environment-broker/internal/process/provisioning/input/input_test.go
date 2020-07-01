@@ -126,6 +126,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		SetProvisioningParameters(internal.ProvisioningParametersDTO{
 			Name:         "azure-cluster",
 			TargetSecret: ptr.String("azure-secret"),
+			Purpose:      ptr.String("development"),
 		}).
 		SetLabel("label1", "value1").
 		AppendOverrides("keb", kebOverrides).Create()
@@ -136,6 +137,8 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.Equal(t, "azure-cluster", input.RuntimeInput.Name)
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
+	require.NotNil(t, input.ClusterConfig.GardenerConfig.Purpose)
+	assert.Equal(t, "development", *input.ClusterConfig.GardenerConfig.Purpose)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Equal(t, &gqlschema.Labels{
 		"label1": "value1",
