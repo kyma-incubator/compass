@@ -82,7 +82,6 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	switch {
 	case err == nil:
 		if operation.ProvisionerOperationID == "" {
-
 			return operation, 0, nil
 		}
 		log.Info("instance being removed, check operation status")
