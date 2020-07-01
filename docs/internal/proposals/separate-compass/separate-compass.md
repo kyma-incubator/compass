@@ -73,6 +73,8 @@ The following section lists all steps needed to implement the Compass separation
 
 - Move the Prow GKE Provisioner tests pipeline from Kyma to Compass
 
+- Prepare periodic Kyma Compass GKE Integration job
+
 - Modify the API Gateway test:
 
   - Make Gateway configurable for test API rules (currently there is [a hardcoded `kyma-gateway`](https://github.com/kyma-project/kyma/blob/master/tests/integration/api-gateway/gateway-tests/manifests/no_access_strategy.yaml#L11); this component is used by KEB).

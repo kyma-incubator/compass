@@ -108,3 +108,4 @@ Once a pipeline is modified to install Kyma Control Plane components from `contr
 Once Compass components are migrated to a separate internal environment:
 
 - Remove Compass installation step from internal environment pipelines
+- Remove Registration Job in Kyma Control Plane
