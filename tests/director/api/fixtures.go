@@ -2,13 +2,35 @@ package api
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-func fixBasicAuth() *graphql.AuthInput {
+func fixBasicAuth(t *testing.T) *graphql.AuthInput {
+	additionalHeaders, err := graphql.NewHttpHeadersSerialized(map[string][]string{
+		"header-A": []string{"ha1", "ha2"},
+		"header-B": []string{"hb1", "hb2"},
+	})
+	require.NoError(t, err)
+
+	additionalQueryParams, err := graphql.NewQueryParamsSerialized(map[string][]string{
+		"qA": []string{"qa1", "qa2"},
+		"qB": []string{"qb1", "qb2"},
+	})
+	require.NoError(t, err)
+
+	return &graphql.AuthInput{
+		Credential:                      fixBasicCredential(),
+		AdditionalHeadersSerialized:     &additionalHeaders,
+		AdditionalQueryParamsSerialized: &additionalQueryParams,
+	}
+}
+
+func fixBasicAuthLegacy() *graphql.AuthInput {
 	return &graphql.AuthInput{
 		Credential: fixBasicCredential(),
 		AdditionalHeaders: &graphql.HttpHeaders{
@@ -100,7 +122,7 @@ func fixPackageCreateInput(name string) graphql.PackageCreateInput {
 	}
 }
 
-func fixPackageCreateInputWithRelatedObjects(name string) graphql.PackageCreateInput {
+func fixPackageCreateInputWithRelatedObjects(t *testing.T, name string) graphql.PackageCreateInput {
 	desc := "Foo bar"
 	return graphql.PackageCreateInput{
 		Name:        name,
@@ -128,7 +150,7 @@ func fixPackageCreateInputWithRelatedObjects(name string) graphql.PackageCreateI
 						URL:    "http://mywordpress.com/apis",
 						Mode:   ptr.FetchMode(graphql.FetchModePackage),
 						Filter: ptr.String("odata.json"),
-						Auth:   fixBasicAuth(),
+						Auth:   fixBasicAuth(t),
 					},
 				},
 			},
@@ -179,7 +201,7 @@ func fixPackageCreateInputWithRelatedObjects(name string) graphql.PackageCreateI
 					URL:    "kyma-project.io",
 					Mode:   ptr.FetchMode(graphql.FetchModePackage),
 					Filter: ptr.String("/docs/README.md"),
-					Auth:   fixBasicAuth(),
+					Auth:   fixBasicAuth(t),
 				},
 			},
 			{
@@ -230,7 +252,7 @@ func fixEventAPIDefinitionInputWithName(name string) graphql.EventDefinitionInpu
 		}}
 }
 
-func fixDocumentInputWithName(name string) graphql.DocumentInput {
+func fixDocumentInputWithName(t *testing.T, name string) graphql.DocumentInput {
 	return graphql.DocumentInput{
 		Title:       name,
 		Description: "Detailed description of project",
@@ -240,7 +262,7 @@ func fixDocumentInputWithName(name string) graphql.DocumentInput {
 			URL:    "kyma-project.io",
 			Mode:   ptr.FetchMode(graphql.FetchModePackage),
 			Filter: ptr.String("/docs/README.md"),
-			Auth:   fixBasicAuth(),
+			Auth:   fixBasicAuth(t),
 		},
 	}
 }
@@ -258,9 +280,9 @@ func fixPackageInstanceAuthSetInputSucceeded(auth *graphql.AuthInput) graphql.Pa
 	}
 }
 
-func fixApplicationRegisterInputWithPackages() graphql.ApplicationRegisterInput {
-	pkg1 := fixPackageCreateInputWithRelatedObjects("foo")
-	pkg2 := fixPackageCreateInputWithRelatedObjects("bar")
+func fixApplicationRegisterInputWithPackages(t *testing.T) graphql.ApplicationRegisterInput {
+	pkg1 := fixPackageCreateInputWithRelatedObjects(t, "foo")
+	pkg2 := fixPackageCreateInputWithRelatedObjects(t, "bar")
 	return graphql.ApplicationRegisterInput{
 		Name:         "create-application-with-documents",
 		ProviderName: ptr.String("compass"),

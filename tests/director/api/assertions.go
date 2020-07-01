@@ -62,8 +62,9 @@ func assertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 		return
 	}
 	require.NotNil(t, actual)
-	assert.Equal(t, in.AdditionalHeaders, actual.AdditionalHeaders)
-	assert.Equal(t, in.AdditionalQueryParams, actual.AdditionalQueryParams)
+	assertHttpHeaders(t, in.AdditionalHeadersSerialized, actual.AdditionalHeaders)
+	assertQueryParams(t, in.AdditionalQueryParamsSerialized, actual.AdditionalQueryParams)
+
 	if in.Credential != nil {
 		if in.Credential.Basic != nil {
 			basic, ok := actual.Credential.(*graphql.BasicCredentialData)
@@ -417,4 +418,40 @@ func assertTenants(t *testing.T, in []*graphql.Tenant, actual []*graphql.Tenant)
 		}
 		assert.True(t, found)
 	}
+}
+
+func assertHttpHeaders(t *testing.T, in *graphql.HttpHeadersSerialized, actual *graphql.HttpHeaders) {
+	if in == nil && actual == nil {
+		return
+	}
+
+	require.NotNil(t, in)
+	require.NotNil(t, actual)
+
+	unquoted, err := strconv.Unquote(string(*in))
+	require.NoError(t, err)
+
+	var headersIn graphql.HttpHeaders
+	err = json.Unmarshal([]byte(unquoted), &headersIn)
+	require.NoError(t, err)
+
+	require.Equal(t, &headersIn, actual)
+}
+
+func assertQueryParams(t *testing.T, in *graphql.QueryParamsSerialized, actual *graphql.QueryParams) {
+	if in == nil && actual == nil {
+		return
+	}
+
+	require.NotNil(t, in)
+	require.NotNil(t, actual)
+
+	unquoted, err := strconv.Unquote(string(*in))
+	require.NoError(t, err)
+
+	var queryParamsIn graphql.QueryParams
+	err = json.Unmarshal([]byte(unquoted), &queryParamsIn)
+	require.NoError(t, err)
+
+	require.Equal(t, &queryParamsIn, actual)
 }

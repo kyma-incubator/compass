@@ -18,13 +18,12 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/vektah/gqlparser v1.3.1 // indirect
 	github.com/vrischmann/envconfig v1.2.0
-	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	k8s.io/apimachinery v0.17.3 // indirect
 )
 
 replace (
+	github.com/kyma-incubator/compass/components/director => github.com/crabtree/compass/components/director v0.0.0-20200701153132-10b1a5023eae
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-	github.com/kyma-incubator/compass/components/director => github.com/crabtree/compass/components/director v0.0.0-20200701153132-10b1a5023eae
 )
