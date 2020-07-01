@@ -99,7 +99,7 @@ type PackageService interface {
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
 	MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, error)
-	MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) []*model.PackageCreateInput
+	MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error)
 }
 
 type Resolver struct {

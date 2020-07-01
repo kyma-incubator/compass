@@ -104,6 +104,11 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		// TODO kci
 	}
 
+	packages, err := c.pkg.MultipleCreateInputFromGraphQL(in.Packages)
+	if err != nil {
+		// TODO kci
+	}
+
 	return model.ApplicationRegisterInput{
 		Name:                in.Name,
 		Description:         in.Description,
@@ -113,7 +118,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
 		ProviderName:        in.ProviderName,
 		Webhooks:            webhooks,
-		Packages:            c.pkg.MultipleCreateInputFromGraphQL(in.Packages),
+		Packages:            packages,
 	}
 }
 

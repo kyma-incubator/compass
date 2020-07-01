@@ -105,7 +105,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			},
 			PackageConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
-				conv.On("MultipleCreateInputFromGraphQL", allPropsInput.Packages).Return(allPropsExpected.Packages)
+				conv.On("MultipleCreateInputFromGraphQL", allPropsInput.Packages).Return(allPropsExpected.Packages, nil)
 				return conv
 			},
 		},
@@ -120,7 +120,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			},
 			PackageConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
-				conv.On("MultipleCreateInputFromGraphQL", []*graphql.PackageCreateInput(nil)).Return(nil)
+				conv.On("MultipleCreateInputFromGraphQL", []*graphql.PackageCreateInput(nil)).Return(nil, nil)
 				return conv
 			},
 		},

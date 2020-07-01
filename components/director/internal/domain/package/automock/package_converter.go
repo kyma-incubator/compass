@@ -12,7 +12,7 @@ type PackageConverter struct {
 }
 
 // CreateInputFromGraphQL provides a mock function with given fields: in
-func (_m *PackageConverter) CreateInputFromGraphQL(in graphql.PackageCreateInput) model.PackageCreateInput {
+func (_m *PackageConverter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error) {
 	ret := _m.Called(in)
 
 	var r0 model.PackageCreateInput
@@ -22,7 +22,14 @@ func (_m *PackageConverter) CreateInputFromGraphQL(in graphql.PackageCreateInput
 		r0 = ret.Get(0).(model.PackageCreateInput)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(graphql.PackageCreateInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ToGraphQL provides a mock function with given fields: in

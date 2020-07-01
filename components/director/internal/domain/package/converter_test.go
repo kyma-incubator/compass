@@ -305,9 +305,10 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 
 			// when
 			converter := mp_package.NewConverter(authConverter, apiConverter, eventConverter, documentConverter)
-			res := converter.CreateInputFromGraphQL(testCase.Input)
+			res, err := converter.CreateInputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			mock.AssertExpectationsForObjects(t, apiConverter, eventConverter, documentConverter, authConverter)
 		})
@@ -348,9 +349,10 @@ func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 	converter := mp_package.NewConverter(authConv, apiConv, eventConv, docConv)
 
 	// when
-	res := converter.MultipleCreateInputFromGraphQL(input)
+	res, err := converter.MultipleCreateInputFromGraphQL(input)
 
 	// then
+	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
 	mock.AssertExpectationsForObjects(t, apiConv, eventConv, docConv, authConv)
 }

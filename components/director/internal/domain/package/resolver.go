@@ -25,7 +25,7 @@ type PackageService interface {
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
-	CreateInputFromGraphQL(in graphql.PackageCreateInput) model.PackageCreateInput
+	CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error)
 	UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error)
 }
 
@@ -132,7 +132,11 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.packageConverter.CreateInputFromGraphQL(in)
+	convertedIn, err := r.packageConverter.CreateInputFromGraphQL(in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting input from GraphQL")
+	}
+
 	id, err := r.packageSvc.Create(ctx, applicationID, convertedIn)
 	if err != nil {
 		return nil, err

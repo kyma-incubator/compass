@@ -89,7 +89,7 @@ func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
 
 	auth, err := c.auth.ToGraphQL(in.DefaultInstanceAuth)
 	if err != nil {
-		// TODO
+		return nil, errors.Wrap(err, "while converting DefaultInstanceAuth to GraphQL")
 	}
 
 	return &graphql.Package{
@@ -117,25 +117,25 @@ func (c *converter) MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, 
 	return packages, nil
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) model.PackageCreateInput {
+func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error) {
 	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
 	if err != nil {
-		// TODO
+		return model.PackageCreateInput{}, errors.Wrap(err, "while converting DefaultInstanceAuth input")
 	}
 
 	apiDefs, err := c.api.MultipleInputFromGraphQL(in.APIDefinitions)
 	if err != nil {
-		// TODO
+		return model.PackageCreateInput{}, errors.Wrap(err, "while converting APIDefinitions input")
 	}
 
 	documents, err := c.document.MultipleInputFromGraphQL(in.Documents)
 	if err != nil {
-		// TODO
+		return model.PackageCreateInput{}, errors.Wrap(err, "while converting Documents input")
 	}
 
 	eventDefs, err := c.event.MultipleInputFromGraphQL(in.EventDefinitions)
 	if err != nil {
-		// TODO
+		return model.PackageCreateInput{}, errors.Wrap(err, "while converting EventDefinitions input")
 	}
 
 	return model.PackageCreateInput{
@@ -146,26 +146,29 @@ func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) model.
 		APIDefinitions:                 apiDefs,
 		EventDefinitions:               eventDefs,
 		Documents:                      documents,
-	}
+	}, nil
 }
 
-func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) []*model.PackageCreateInput {
+func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error) {
 	var packages []*model.PackageCreateInput
 	for _, item := range in {
 		if item == nil {
 			continue
 		}
-		pkg := c.CreateInputFromGraphQL(*item)
+		pkg, err := c.CreateInputFromGraphQL(*item)
+		if err != nil {
+			return nil, err
+		}
 		packages = append(packages, &pkg)
 	}
 
-	return packages
+	return packages, nil
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error) {
 	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
 	if err != nil {
-		// TODO
+		return nil, errors.Wrap(err, "while converting DefaultInstanceAuth from GraphQL")
 	}
 
 	return &model.PackageUpdateInput{

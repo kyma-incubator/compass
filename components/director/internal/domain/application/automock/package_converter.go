@@ -12,7 +12,7 @@ type PackageConverter struct {
 }
 
 // MultipleCreateInputFromGraphQL provides a mock function with given fields: in
-func (_m *PackageConverter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) []*model.PackageCreateInput {
+func (_m *PackageConverter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error) {
 	ret := _m.Called(in)
 
 	var r0 []*model.PackageCreateInput
@@ -24,7 +24,14 @@ func (_m *PackageConverter) MultipleCreateInputFromGraphQL(in []*graphql.Package
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*graphql.PackageCreateInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in
