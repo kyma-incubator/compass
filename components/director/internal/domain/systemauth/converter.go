@@ -27,20 +27,20 @@ func NewConverter(authConverter AuthConverter) *converter {
 	}
 }
 
-func (c *converter) ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth {
+func (c *converter) ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	auth, err := c.authConverter.ToGraphQL(in.Value)
 	if err != nil {
-		// TODO
+		return nil, errors.Wrap(err, "while converting Auth")
 	}
 
 	return &graphql.SystemAuth{
 		ID:   in.ID,
 		Auth: auth,
-	}
+	}, nil
 }
 
 func (c *converter) ToEntity(in model.SystemAuth) (Entity, error) {

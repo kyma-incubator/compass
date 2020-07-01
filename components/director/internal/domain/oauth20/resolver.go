@@ -37,7 +37,7 @@ type IntegrationSystemService interface {
 
 //go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(model *model.SystemAuth) *graphql.SystemAuth
+	ToGraphQL(model *model.SystemAuth) (*graphql.SystemAuth, error)
 }
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
@@ -128,8 +128,7 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 		return nil, finalErr
 	}
 
-	gqlSysAuth := r.systemAuthConv.ToGraphQL(sysAuth)
-	return gqlSysAuth, nil
+	return r.systemAuthConv.ToGraphQL(sysAuth)
 }
 
 func (r *Resolver) checkObjectExist(ctx context.Context, objType model.SystemAuthReferenceObjectType, objID string) (bool, error) {

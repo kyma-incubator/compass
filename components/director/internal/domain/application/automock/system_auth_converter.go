@@ -12,7 +12,7 @@ type SystemAuthConverter struct {
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *SystemAuthConverter) ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth {
+func (_m *SystemAuthConverter) ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error) {
 	ret := _m.Called(in)
 
 	var r0 *graphql.SystemAuth
@@ -24,5 +24,12 @@ func (_m *SystemAuthConverter) ToGraphQL(in *model.SystemAuth) *graphql.SystemAu
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.SystemAuth) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

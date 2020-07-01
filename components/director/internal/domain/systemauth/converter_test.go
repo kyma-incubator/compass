@@ -78,11 +78,11 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			conv := systemauth.NewConverter(authConv)
 
 			// WHEN
-			result := conv.ToGraphQL(testCase.Input)
+			result, err := conv.ToGraphQL(testCase.Input)
 
 			// THEN
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.ExpectedOutput, result)
-
 			authConv.AssertExpectations(t)
 		})
 	}

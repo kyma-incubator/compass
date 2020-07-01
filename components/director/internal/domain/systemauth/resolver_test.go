@@ -62,7 +62,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
-				conv.On("ToGraphQL", modelSystemAuth).Return(gqlSystemAuth).Once()
+				conv.On("ToGraphQL", modelSystemAuth).Return(gqlSystemAuth, nil).Once()
 				return conv
 			},
 			ExpectedSystemAuth: gqlSystemAuth,
@@ -84,7 +84,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
-				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth).Once()
+				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth, nil).Once()
 				return conv
 			},
 			ExpectedSystemAuth: gqlSystemAuth,
@@ -124,7 +124,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
-				conv.On("ToGraphQL", modelSystemAuth).Return(gqlSystemAuth).Once()
+				conv.On("ToGraphQL", modelSystemAuth).Return(gqlSystemAuth, nil).Once()
 				return conv
 			},
 			ExpectedSystemAuth: nil,
@@ -145,7 +145,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
-				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth).Once()
+				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth, nil).Once()
 				return conv
 			},
 			ExpectedSystemAuth: nil,
@@ -185,7 +185,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
-				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth).Once()
+				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth, nil).Once()
 				return conv
 			},
 			ExpectedErr: testErr,

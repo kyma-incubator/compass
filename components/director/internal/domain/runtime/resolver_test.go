@@ -1218,9 +1218,9 @@ func TestResolver_Auths(t *testing.T) {
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
 				sysAuthConv := &automock.SystemAuthConverter{}
-				sysAuthConv.On("ToGraphQL", &modelSysAuths[0]).Return(gqlSysAuths[0]).Once()
-				sysAuthConv.On("ToGraphQL", &modelSysAuths[1]).Return(gqlSysAuths[1]).Once()
-				sysAuthConv.On("ToGraphQL", &modelSysAuths[2]).Return(gqlSysAuths[2]).Once()
+				sysAuthConv.On("ToGraphQL", &modelSysAuths[0]).Return(gqlSysAuths[0], nil).Once()
+				sysAuthConv.On("ToGraphQL", &modelSysAuths[1]).Return(gqlSysAuths[1], nil).Once()
+				sysAuthConv.On("ToGraphQL", &modelSysAuths[2]).Return(gqlSysAuths[2], nil).Once()
 				return sysAuthConv
 			},
 			ExpectedOutput: gqlSysAuths,
