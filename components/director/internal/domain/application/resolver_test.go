@@ -1174,7 +1174,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("MultipleToGraphQL", modelWebhooks).Return(gqlWebhooks).Once()
+				conv.On("MultipleToGraphQL", modelWebhooks).Return(gqlWebhooks, nil).Once()
 				return conv
 			},
 			ExpectedResult: gqlWebhooks,

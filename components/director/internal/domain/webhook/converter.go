@@ -25,14 +25,14 @@ func NewConverter(authConverter AuthConverter) *converter {
 	return &converter{authConverter: authConverter}
 }
 
-func (c *converter) ToGraphQL(in *model.Webhook) *graphql.Webhook {
+func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	auth, err := c.authConverter.ToGraphQL(in.Auth)
 	if err != nil {
-		// TODO
+		return nil, errors.Wrap(err, "while converting Auth input")
 	}
 
 	return &graphql.Webhook{
@@ -41,50 +41,59 @@ func (c *converter) ToGraphQL(in *model.Webhook) *graphql.Webhook {
 		Type:          graphql.ApplicationWebhookType(in.Type),
 		URL:           in.URL,
 		Auth:          auth,
-	}
+	}, nil
 }
 
-func (c *converter) MultipleToGraphQL(in []*model.Webhook) []*graphql.Webhook {
+func (c *converter) MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error) {
 	var webhooks []*graphql.Webhook
 	for _, r := range in {
 		if r == nil {
 			continue
 		}
 
-		webhooks = append(webhooks, c.ToGraphQL(r))
+		webhook, err := c.ToGraphQL(r)
+		if err != nil {
+			return nil, err
+		}
+
+		webhooks = append(webhooks, webhook)
 	}
 
-	return webhooks
+	return webhooks, nil
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) *model.WebhookInput {
+func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
 	if err != nil {
-		// TODO
+		return nil, errors.Wrap(err, "while converting Auth input")
 	}
 
 	return &model.WebhookInput{
 		Type: model.WebhookType(in.Type),
 		URL:  in.URL,
 		Auth: auth,
-	}
+	}, nil
 }
 
-func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*model.WebhookInput {
+func (c *converter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error) {
 	var inputs []*model.WebhookInput
 	for _, r := range in {
 		if r == nil {
 			continue
 		}
+		webhookIn, err := c.InputFromGraphQL(r)
+		if err != nil {
+			return nil, err
+		}
 
-		inputs = append(inputs, c.InputFromGraphQL(r))
+		inputs = append(inputs, webhookIn)
 	}
 
-	return inputs
+	return inputs, nil
 }
 
 func (c *converter) ToEntity(in model.Webhook) (Entity, error) {

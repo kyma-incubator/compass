@@ -66,10 +66,10 @@ type SystemAuthService interface {
 
 //go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
 type WebhookConverter interface {
-	ToGraphQL(in *model.Webhook) *graphql.Webhook
-	MultipleToGraphQL(in []*model.Webhook) []*graphql.Webhook
-	InputFromGraphQL(in *graphql.WebhookInput) *model.WebhookInput
-	MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*model.WebhookInput
+	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
+	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
+	InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error)
+	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
 //go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
@@ -446,9 +446,8 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	gqlWebhooks := r.webhookConverter.MultipleToGraphQL(webhooks)
 
-	return gqlWebhooks, nil
+	return r.webhookConverter.MultipleToGraphQL(webhooks)
 }
 
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (*graphql.Labels, error) {

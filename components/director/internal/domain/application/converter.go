@@ -99,6 +99,11 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		labels = *in.Labels
 	}
 
+	webhooks, err := c.webhook.MultipleInputFromGraphQL(in.Webhooks)
+	if err != nil {
+		// TODO kci
+	}
+
 	return model.ApplicationRegisterInput{
 		Name:                in.Name,
 		Description:         in.Description,
@@ -107,7 +112,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		IntegrationSystemID: in.IntegrationSystemID,
 		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
 		ProviderName:        in.ProviderName,
-		Webhooks:            c.webhook.MultipleInputFromGraphQL(in.Webhooks),
+		Webhooks:            webhooks,
 		Packages:            c.pkg.MultipleCreateInputFromGraphQL(in.Packages),
 	}
 }

@@ -48,9 +48,10 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			converter := webhook.NewConverter(authConv)
 
 			// when
-			res := converter.ToGraphQL(testCase.Input)
+			res, err := converter.ToGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			authConv.AssertExpectations(t)
 		})
@@ -76,9 +77,10 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	converter := webhook.NewConverter(authConv)
 
 	// when
-	res := converter.MultipleToGraphQL(input)
+	res, err := converter.MultipleToGraphQL(input)
 
 	// then
+	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
 	authConv.AssertExpectations(t)
 }
@@ -116,9 +118,10 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			converter := webhook.NewConverter(authConv)
 
 			// when
-			res := converter.InputFromGraphQL(testCase.Input)
+			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			authConv.AssertExpectations(t)
 		})
@@ -144,9 +147,10 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	converter := webhook.NewConverter(authConv)
 
 	// when
-	res := converter.MultipleInputFromGraphQL(input)
+	res, err := converter.MultipleInputFromGraphQL(input)
 
 	// then
+	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
 	authConv.AssertExpectations(t)
 }
