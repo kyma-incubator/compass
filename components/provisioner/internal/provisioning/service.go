@@ -307,20 +307,9 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	gcpConfig, isGCP := cluster.GCPConfig()
-	if isGCP {
-		err = dbSession.InsertGCPConfig(gcpConfig)
-		if err != nil {
-			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
-		}
-	}
-
-	gardenerConfig, isGardener := cluster.GardenerConfig()
-	if isGardener {
-		err = dbSession.InsertGardenerConfig(gardenerConfig)
-		if err != nil {
-			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
-		}
+	err = dbSession.InsertGardenerConfig(cluster.ClusterConfig)
+	if err != nil {
+		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
 	err = dbSession.InsertKymaConfig(cluster.KymaConfig)

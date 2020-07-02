@@ -1,7 +1,6 @@
 package deprovisioning
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -43,13 +42,7 @@ func (s *WaitForClusterDeletionStep) TimeLimit() time.Duration {
 
 func (s *WaitForClusterDeletionStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
-	gardenerConfig, ok := cluster.GardenerConfig()
-	if !ok {
-		err := errors.New("failed to read GardenerConfig")
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
-	}
-
-	shootExists, err := s.shootExists(gardenerConfig.Name, logger)
+	shootExists, err := s.shootExists(cluster.ClusterConfig.Name, logger)
 	if err != nil {
 		return operations.StageResult{}, err
 	}

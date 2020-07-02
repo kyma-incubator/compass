@@ -128,8 +128,6 @@ spec:
               value: {{ .Values.gardener.defaultAutoUpdateKubernetesVersion | quote }}
             - name: APP_GARDENER_DEFAULT_AUTO_UPDATE_MACHINE_IMAGE_VERSION
               value: {{ .Values.gardener.defaultAutoUpdateMachineImageVersion | quote }}
-            - name: APP_PROVISIONER
-              value: {{ .Values.provisioner }}
             - name: APP_LATEST_DOWNLOADED_RELEASES
               value: "5"
             - name: APP_SUPPORT_ON_DEMAND_RELEASES

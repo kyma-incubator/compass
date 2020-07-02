@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 
@@ -54,12 +53,6 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	subAccount := getSubAccount(ctx)
 
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
-	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
-		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime : %s", config.RuntimeInput.Name)
-		strError := err.Error()
-		log.Errorf(strError)
-		return nil, err
-	}
 
 	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant, subAccount)
 	if err != nil {

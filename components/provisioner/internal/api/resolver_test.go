@@ -1,9 +1,11 @@
-package api
+package api_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
 	validatorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/api/mocks"
@@ -49,13 +51,11 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		Description: new(string),
 	}
 
-	providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
-
 	t.Run("Should start provisioning and return operation ID", func(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		resolver := NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -78,7 +78,6 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
 			ClusterConfig: clusterConfig,
-			Credentials:   providerCredentials,
 			KymaConfig:    kymaConfig,
 		}
 
@@ -100,58 +99,17 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		assert.Equal(t, util.StringPtr("Message"), status.Message)
 	})
 
-	t.Run("Should return error when requested provisioning on GCP", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
-
-		clusterConfig := &gqlschema.ClusterConfigInput{
-			GcpConfig: &gqlschema.GCPConfigInput{
-				Name:              "Something",
-				ProjectName:       "Project",
-				NumberOfNodes:     3,
-				BootDiskSizeGb:    256,
-				MachineType:       "machine",
-				Region:            "region",
-				Zone:              new(string),
-				KubernetesVersion: "version",
-			},
-		}
-
-		kymaConfig := &gqlschema.KymaConfigInput{
-			Version: "1.5",
-			Components: []*gqlschema.ComponentConfigurationInput{
-				{
-					Component:     "core",
-					Configuration: nil,
-				},
-			},
-		}
-
-		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
-
-		validator.On("ValidateProvisioningInput", config).Return(nil)
-
-		//when
-		status, err := provisioner.ProvisionRuntime(ctx, config)
-
-		//then
-		require.Error(t, err)
-		assert.Nil(t, status)
-	})
-
 	t.Run("Should return error when Kyma config validation fails", func(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
 		}
 
-		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
 		validator.On("ValidateProvisioningInput", config).Return(errors.New("Some error"))
 
@@ -167,7 +125,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -179,7 +137,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			},
 		}
 
-		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
+		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
 		provisioningService.On("ProvisionRuntime", config, tenant, "").Return(nil, errors.New("Provisioning failed"))
 		validator.On("ValidateProvisioningInput", config).Return(nil)
@@ -196,7 +154,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -211,7 +169,6 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
 			ClusterConfig: clusterConfig,
-			Credentials:   providerCredentials,
 			KymaConfig:    kymaConfig,
 		}
 
@@ -235,7 +192,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
@@ -254,7 +211,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return("", errors.New("Deprovisioning fails because reasons"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
@@ -271,7 +228,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
@@ -291,7 +248,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
@@ -331,7 +288,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
-		resolver := NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator)
 
 		//when
 		status, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
@@ -353,7 +310,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
-		resolver := NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator)
 
 		//when
 		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
@@ -370,7 +327,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
 		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.Errorf("error"))
 
-		resolver := NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator)
 
 		//when
 		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
@@ -387,7 +344,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		validator.On("ValidateUpgradeInput", upgradeInput).Return(errors.Errorf("error"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
-		resolver := NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator)
 
 		//when
 		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
@@ -410,7 +367,7 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(&runtimeStatus, nil)
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
-		resolver := NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator)
 
 		//when
 		status, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
@@ -428,7 +385,7 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(nil, fmt.Errorf("error"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
-		resolver := NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator)
 
 		//when
 		_, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
@@ -442,7 +399,7 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 		validator := &validatorMocks.Validator{}
 		validator.On("ValidateTenant", runtimeID, tenant).Return(fmt.Errorf("error"))
 
-		resolver := NewResolver(nil, validator)
+		resolver := api.NewResolver(nil, validator)
 
 		//when
 		_, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
@@ -460,7 +417,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 		message := "some message"
@@ -492,7 +449,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		provisioningService.On("RuntimeStatus", runtimeID).Return(nil, errors.New("Runtime status fails"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
@@ -509,7 +466,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		provisioningService.On("RuntimeStatus", runtimeID).Return(nil, nil)
 		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.New("Bad error"))
@@ -531,7 +488,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 		message := "some message"
@@ -559,7 +516,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 		message := "some message"
@@ -587,7 +544,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 		validator.On("ValidateTenantForOperation", operationID, tenant).Return(nil)
-		provisioner := NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator)
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(nil, errors.New("Some error"))
 

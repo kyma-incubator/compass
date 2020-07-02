@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-incubator/hydroform/types"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -107,41 +106,6 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	}
 
 	return shoot, nil
-}
-
-func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*types.Cluster, *types.Provider, error) {
-	cluster := &types.Cluster{
-		KubernetesVersion: c.KubernetesVersion,
-		Name:              c.Name,
-		NodeCount:         1,
-		DiskSizeGB:        c.VolumeSizeGB,
-		Location:          c.Region,
-		MachineType:       c.MachineType,
-	}
-
-	customConfiguration, err := c.GardenerProviderConfig.AsMap()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	customConfiguration["target_provider"] = c.Provider
-	customConfiguration["target_seed"] = c.Seed
-	customConfiguration["target_secret"] = c.TargetSecret
-	customConfiguration["disk_type"] = c.DiskType
-	customConfiguration["workercidr"] = c.WorkerCidr
-	customConfiguration["autoscaler_min"] = c.AutoScalerMin
-	customConfiguration["autoscaler_max"] = c.AutoScalerMax
-	customConfiguration["max_surge"] = c.MaxSurge
-	customConfiguration["max_unavailable"] = c.MaxUnavailable
-
-	provider := &types.Provider{
-		Type:                 types.Gardener,
-		ProjectName:          c.ProjectName,
-		CredentialsFilePath:  credentialsFilePath,
-		CustomConfigurations: customConfiguration,
-	}
-
-	return cluster, provider, nil
 }
 
 type ProviderSpecificConfig string

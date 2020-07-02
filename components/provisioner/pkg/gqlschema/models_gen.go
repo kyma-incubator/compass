@@ -8,10 +8,6 @@ import (
 	"strconv"
 )
 
-type ClusterConfig interface {
-	IsClusterConfig()
-}
-
 type ProviderSpecificConfig interface {
 	IsProviderSpecificConfig()
 }
@@ -46,7 +42,6 @@ type AzureProviderConfigInput struct {
 
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
-	GcpConfig      *GCPConfigInput      `json:"gcpConfig"`
 }
 
 type ComponentConfiguration struct {
@@ -75,36 +70,8 @@ type ConfigEntryInput struct {
 	Secret *bool  `json:"secret"`
 }
 
-type CredentialsInput struct {
-	SecretName string `json:"secretName"`
-}
-
 type Error struct {
 	Message *string `json:"message"`
-}
-
-type GCPConfig struct {
-	Name              *string `json:"name"`
-	ProjectName       *string `json:"projectName"`
-	KubernetesVersion *string `json:"kubernetesVersion"`
-	NumberOfNodes     *int    `json:"numberOfNodes"`
-	BootDiskSizeGb    *int    `json:"bootDiskSizeGB"`
-	MachineType       *string `json:"machineType"`
-	Region            *string `json:"region"`
-	Zone              *string `json:"zone"`
-}
-
-func (GCPConfig) IsClusterConfig() {}
-
-type GCPConfigInput struct {
-	Name              string  `json:"name"`
-	ProjectName       string  `json:"projectName"`
-	KubernetesVersion string  `json:"kubernetesVersion"`
-	NumberOfNodes     int     `json:"numberOfNodes"`
-	BootDiskSizeGb    int     `json:"bootDiskSizeGB"`
-	MachineType       string  `json:"machineType"`
-	Region            string  `json:"region"`
-	Zone              *string `json:"zone"`
 }
 
 type GCPProviderConfig struct {
@@ -138,8 +105,6 @@ type GardenerConfig struct {
 	AutoUpdateMachineImageVersion *bool                  `json:"autoUpdateMachineImageVersion"`
 	ProviderSpecificConfig        ProviderSpecificConfig `json:"providerSpecificConfig"`
 }
-
-func (GardenerConfig) IsClusterConfig() {}
 
 type GardenerConfigInput struct {
 	KubernetesVersion             string                 `json:"kubernetesVersion"`
@@ -192,13 +157,12 @@ type ProvisionRuntimeInput struct {
 	RuntimeInput  *RuntimeInput       `json:"runtimeInput"`
 	ClusterConfig *ClusterConfigInput `json:"clusterConfig"`
 	KymaConfig    *KymaConfigInput    `json:"kymaConfig"`
-	Credentials   *CredentialsInput   `json:"credentials"`
 }
 
 type RuntimeConfig struct {
-	ClusterConfig ClusterConfig `json:"clusterConfig"`
-	KymaConfig    *KymaConfig   `json:"kymaConfig"`
-	Kubeconfig    *string       `json:"kubeconfig"`
+	ClusterConfig *GardenerConfig `json:"clusterConfig"`
+	KymaConfig    *KymaConfig     `json:"kymaConfig"`
+	Kubeconfig    *string         `json:"kubeconfig"`
 }
 
 type RuntimeConnectionStatus struct {

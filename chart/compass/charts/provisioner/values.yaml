@@ -31,8 +31,6 @@ gardener:
   defaultAutoUpdateKubernetesVersion: false
   defaultAutoUpdateMachineImageVersion: false
 
-provisioner: "gardener"
-
 kymaRelease:
   preReleases:
     enabled: true
@@ -54,9 +52,6 @@ logs:
 
 tests:
   enabled: false
-  gcp:
-    credentials: ""
-    projectName: ""
   gardener:
     providers: "Azure"
     azureSecret: "" # Name of Gardener secret for Azure

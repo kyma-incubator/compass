@@ -54,37 +54,29 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		}
 	}
 
-	var providerConfig model.ProviderConfiguration
-	if input.ClusterConfig != nil {
-		providerConfig, err = c.providerConfigFromInput(runtimeID, *input.ClusterConfig)
-		if err != nil {
-			return model.Cluster{}, err
-		}
+	if input.ClusterConfig == nil {
+		return model.Cluster{}, fmt.Errorf("error: ClusterConfig not provided")
+	}
+
+	gardenerConfig, err := c.gardenerConfigFromInput(runtimeID, input.ClusterConfig.GardenerConfig)
+	if err != nil {
+		return model.Cluster{}, err
 	}
 
 	return model.Cluster{
-		ID:                    runtimeID,
-		CredentialsSecretName: "",
-		KymaConfig:            kymaConfig,
-		ClusterConfig:         providerConfig,
-		Tenant:                tenant,
-		SubAccountId:          &subAccountId,
+		ID:            runtimeID,
+		KymaConfig:    kymaConfig,
+		ClusterConfig: gardenerConfig,
+		Tenant:        tenant,
+		SubAccountId:  &subAccountId,
 	}, nil
 }
 
-func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput) (model.ProviderConfiguration, error) {
-	if input.GardenerConfig != nil {
-		config := input.GardenerConfig
-		return c.gardenerConfigFromInput(runtimeID, *config)
+func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
+	if input == nil {
+		return model.GardenerConfig{}, fmt.Errorf("error: GardenerConfig not provided")
 	}
-	if input.GcpConfig != nil {
-		config := input.GcpConfig
-		return c.gcpConfigFromInput(runtimeID, *config), nil
-	}
-	return nil, errors.New("cluster config does not match any provider")
-}
 
-func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
 		return model.GardenerConfig{}, err
@@ -142,28 +134,6 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	}
 
 	return nil, errors.New("provider config not specified")
-}
-
-func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) model.GCPConfig {
-	id := c.uuidGenerator.New()
-
-	zone := ""
-	if input.Zone != nil {
-		zone = *input.Zone
-	}
-
-	return model.GCPConfig{
-		ID:                id,
-		Name:              input.Name,
-		ProjectName:       input.ProjectName,
-		KubernetesVersion: input.KubernetesVersion,
-		NumberOfNodes:     input.NumberOfNodes,
-		BootDiskSizeGB:    input.BootDiskSizeGb,
-		MachineType:       input.MachineType,
-		Region:            input.Region,
-		Zone:              zone,
-		ClusterID:         runtimeID,
-	}
 }
 
 func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error) {

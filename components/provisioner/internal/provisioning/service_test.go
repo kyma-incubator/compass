@@ -83,7 +83,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  runtimeInput,
 		ClusterConfig: clusterConfig,
-		Credentials:   &gqlschema.CredentialsInput{},
 		KymaConfig:    fixKymaGraphQLConfigInput(),
 	}
 
@@ -125,53 +124,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		directorServiceMock.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
 		releaseRepo.AssertExpectations(t)
-	})
-
-	t.Run("Should start runtime provisioning of GCP cluster and return operation ID", func(t *testing.T) {
-		//given
-		provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
-			RuntimeInput: runtimeInput,
-			ClusterConfig: &gqlschema.ClusterConfigInput{
-				GcpConfig: &gqlschema.GCPConfigInput{
-					Name:        "cluster",
-					ProjectName: "project",
-				},
-			},
-			Credentials: &gqlschema.CredentialsInput{},
-			KymaConfig:  fixKymaGraphQLConfigInput(),
-		}
-
-		sessionFactoryMock := &sessionMocks.Factory{}
-		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-		directorServiceMock := &directormock.DirectorClient{}
-		provisioner := &mocks2.Provisioner{}
-
-		provisioningQueue := &mocks.OperationQueue{}
-
-		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
-		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
-		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertGCPConfig", mock.AnythingOfType("model.GCPConfig")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-		writeSessionWithinTransactionMock.On("Commit").Return(nil)
-		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
-		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
-
-		provisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, provisioningQueue, nil, nil)
-
-		//when
-		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
-		require.NoError(t, err)
-
-		//then
-		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
-		assert.NotEmpty(t, operationStatus.ID)
-		sessionFactoryMock.AssertExpectations(t)
-		writeSessionWithinTransactionMock.AssertExpectations(t)
-		directorServiceMock.AssertExpectations(t)
 	})
 
 	t.Run("Should return error and unregister Runtime when failed to commit transaction", func(t *testing.T) {

@@ -61,5 +61,4 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_GARDENER_KUBECONFIG_PATH** | Filepath for the Gardener kubeconfig  | `./dev/kubeconfig.yaml`|
 | **APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP** | Name of the Config Map containing the audit logs policy  | **optional** |
 | **APP_GARDENER_AUDIT_LOGS_TENANT** | Tenant used for storing audit logs  | **optional** |
-| **APP_PROVISIONER** | Provisioning mechanism used by the Runtime Provisioner (Gardener or Hydroform) | `gardener`|
 | **APP_ENQUEUE_IN_PROGRESS_OPERATIONS** | Specifies whether operations in the `InProgress` state should be enqueued on the application startup | `true`|

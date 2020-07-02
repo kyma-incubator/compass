@@ -54,12 +54,9 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 			},
 		}
 
-		providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
-
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
 			ClusterConfig: clusterConfig,
-			Credentials:   providerCredentials,
 			KymaConfig:    kymaConfig,
 		}
 
@@ -97,12 +94,9 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 			},
 		}
 
-		providerCredentials := &gqlschema.CredentialsInput{SecretName: "secret_1"}
-
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
 			ClusterConfig: clusterConfig,
-			Credentials:   providerCredentials,
 			KymaConfig:    kymaConfig,
 		}
 

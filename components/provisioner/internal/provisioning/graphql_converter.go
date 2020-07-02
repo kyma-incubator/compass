@@ -53,30 +53,20 @@ func (c graphQLConverter) runtimeAgentConnectionStatusToGraphQLStatus(status mod
 
 func (c graphQLConverter) clusterToToGraphQLRuntimeConfiguration(config model.Cluster) *gqlschema.RuntimeConfig {
 	return &gqlschema.RuntimeConfig{
-		ClusterConfig: c.clusterConfigToGraphQLConfig(config.ClusterConfig),
+		ClusterConfig: c.gardenerConfigToGraphQLConfig(config.ClusterConfig),
 		KymaConfig:    c.kymaConfigToGraphQLConfig(config.KymaConfig),
 		Kubeconfig:    config.Kubeconfig,
 	}
 }
 
-func (c graphQLConverter) clusterConfigToGraphQLConfig(config interface{}) gqlschema.ClusterConfig {
-	gardenerConfig, ok := config.(model.GardenerConfig)
-	if ok {
-		return c.gardenerConfigToGraphQLConfig(gardenerConfig)
+func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerConfig) *gqlschema.GardenerConfig {
+
+	var providerSpecificConfig gqlschema.ProviderSpecificConfig
+	if config.GardenerProviderConfig != nil {
+		providerSpecificConfig = config.GardenerProviderConfig.AsProviderSpecificConfig()
 	}
 
-	gcpConfig, ok := config.(model.GCPConfig)
-	if ok {
-		return c.gcpConfigToGraphQLConfig(gcpConfig)
-	}
-	return nil
-}
-
-func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerConfig) gqlschema.ClusterConfig {
-
-	providerSpecificConfig := config.GardenerProviderConfig.AsProviderSpecificConfig()
-
-	return gqlschema.GardenerConfig{
+	return &gqlschema.GardenerConfig{
 		Name:                   &config.Name,
 		KubernetesVersion:      &config.KubernetesVersion,
 		DiskType:               &config.DiskType,
@@ -94,19 +84,6 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		MaxSurge:               &config.MaxSurge,
 		MaxUnavailable:         &config.MaxUnavailable,
 		ProviderSpecificConfig: providerSpecificConfig,
-	}
-}
-
-func (c graphQLConverter) gcpConfigToGraphQLConfig(config model.GCPConfig) gqlschema.ClusterConfig {
-	return gqlschema.GCPConfig{
-		Name:              &config.Name,
-		ProjectName:       &config.ProjectName,
-		KubernetesVersion: &config.KubernetesVersion,
-		NumberOfNodes:     &config.NumberOfNodes,
-		BootDiskSizeGb:    &config.BootDiskSizeGB,
-		MachineType:       &config.MachineType,
-		Region:            &config.Region,
-		Zone:              &config.Zone,
 	}
 }
 
