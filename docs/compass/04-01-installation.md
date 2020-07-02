@@ -46,6 +46,7 @@ Follow these steps to install Compass on a cluster:
     ```
 ​
 4. Check the installation progress. To do so, download the script that checks the progress of the installation:
+
     ```bash
     wget https://storage.cloud.google.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/is-installed.sh && chmod +x ./is-installed.sh
     ```
