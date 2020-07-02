@@ -228,7 +228,7 @@
   name = "github.com/kyma-project/control-plane"
   packages = ["components/provisioner/pkg/gqlschema"]
   pruneopts = "UT"
-  revision = "3236dcca50b1a15132989c32c7242733552ccb9c"
+  revision = "d5c043eb0dbe34e64759b23bcbd1e49505eee7c0"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"

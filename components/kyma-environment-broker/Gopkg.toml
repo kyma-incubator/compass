@@ -23,6 +23,10 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[constraint]]
+  name = "github.com/kyma-project/control-plane"
+  revision = "d5c043eb0dbe34e64759b23bcbd1e49505eee7c0"
+
+[[constraint]]
   name = "github.com/kyma-project/kyma"
   version = "1.11.0"
 

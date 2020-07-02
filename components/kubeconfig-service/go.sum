@@ -478,8 +478,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20200421071627-8604
 github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283 h1:yQNZGjjcqS9557xdwpfPj6H1LiG+Wq6LgCpVsu4wWLI=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283/go.mod h1:ZcUC6E1u/IwP7JfozHmHnmN6u6ZA5gEa95gDB0ZO3hk=
 github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200702121812-3236dcca50b1 h1:4wVt+0WHZDSRPXE1MzIjCON1ue3TalpIPb1bWde/mjw=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200702121812-3236dcca50b1/go.mod h1:kej5mA0lXpMuwh8iFu48vqaXyVByulBFZlXUmaFvIgk=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200702142454-d5c043eb0dbe h1:uUhyUQaA5vzE1kVOyY+L6IysHX2IcVt9CAwPvO7olcw=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200702142454-d5c043eb0dbe/go.mod h1:kej5mA0lXpMuwh8iFu48vqaXyVByulBFZlXUmaFvIgk=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20200317154738-0bb20217c2cb/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=

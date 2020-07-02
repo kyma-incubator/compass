@@ -9,7 +9,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  revision = "3236dcca50b1a15132989c32c7242733552ccb9c"
+  revision = "d5c043eb0dbe34e64759b23bcbd1e49505eee7c0"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
