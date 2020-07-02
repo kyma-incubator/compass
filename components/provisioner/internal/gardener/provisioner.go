@@ -81,7 +81,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 
 	shoot, err := g.shootClient.Get(upgradeConfig.Name, v1.GetOptions{})
 	if err != nil {
-		return /*model.Operation{}, */ fmt.Errorf("error getting Shoot for cluster ID %s and name %s : %s", clusterID, upgradeConfig.Name, err.Error())
+		return fmt.Errorf("error getting Shoot for cluster ID %s and name %s : %s", clusterID, upgradeConfig.Name, err.Error())
 	}
 
 	allowPrivilegedContainers := true
@@ -101,13 +101,13 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 	err = upgradeConfig.GardenerProviderConfig.ExtendShootConfig(upgradeConfig, shoot)
 
 	if err != nil {
-		return /*model.Operation{}, */ fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
+		return fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
 	}
 
 	_, err = g.shootClient.Update(shoot)
 
 	if err != nil {
-		return /*model.Operation{},*/ fmt.Errorf("error executing update shoot configuration: %s", err.Error())
+		return  fmt.Errorf("error executing update shoot configuration: %s", err.Error())
 	}
 
 	return nil
