@@ -26,50 +26,50 @@ func newTestProvisioningConfigs() []testCase {
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct GCP configuration for Gardener",
 			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bbb",
 			provisioningInput: provisioningInput{
-				config: gcpClusterConfig(),
+				config: gcpGardenerClusterConfigInput(),
 				runtimeInput: gqlschema.RuntimeInput{
 					Name:        "test runtime 1",
 					Description: new(string),
 				}},
-			upgradeShootInput: newUpgradeShootInput(),
+			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "Azure on Gardener (with zones)",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
 			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
 			provisioningInput: provisioningInput{
-				config: azureClusterConfigInput("fix-az-zone-1", "fix-az-zone-2"),
+				config: azureGardenerClusterConfigInput("fix-az-zone-1", "fix-az-zone-2"),
 				runtimeInput: gqlschema.RuntimeInput{
 					Name:        "test runtime 2",
 					Description: new(string),
 				}},
-			upgradeShootInput: newAzureUpgradeShootInput(),
+			upgradeShootInput: NewAzureUpgradeShootInput(),
 		},
 		{name: "Azure on Gardener (without zones)",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones are empty",
 			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb1",
 			provisioningInput: provisioningInput{
-				config: azureClusterConfigInput(),
+				config: azureGardenerClusterConfigInput(),
 				runtimeInput: gqlschema.RuntimeInput{
 					Name:        "test runtime 3",
 					Description: new(string),
 				}},
-			upgradeShootInput: newAzureUpgradeShootInput(),
+			upgradeShootInput: NewAzureUpgradeShootInput(),
 		},
 		{name: "AWS on Gardener",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct AWS configuration for Gardener",
 			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb5",
 			provisioningInput: provisioningInput{
-				config: awsClusterConfigInput(),
+				config: awsGardenerClusterConfigInput(),
 				runtimeInput: gqlschema.RuntimeInput{
 					Name:        "test runtime4",
 					Description: new(string),
 				}},
-			upgradeShootInput: newUpgradeShootInput(),
+			upgradeShootInput: NewUpgradeShootInput(),
 		},
 	}
 }
 
-func gcpClusterConfig() gqlschema.ClusterConfigInput {
+func gcpGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
@@ -94,7 +94,7 @@ func gcpClusterConfig() gqlschema.ClusterConfigInput {
 	}
 }
 
-func azureClusterConfigInput(zones ...string) gqlschema.ClusterConfigInput {
+func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
@@ -120,7 +120,7 @@ func azureClusterConfigInput(zones ...string) gqlschema.ClusterConfigInput {
 	}
 }
 
-func awsClusterConfigInput() gqlschema.ClusterConfigInput {
+func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Provider:       "AWS",
@@ -147,7 +147,7 @@ func awsClusterConfigInput() gqlschema.ClusterConfigInput {
 	}
 }
 
-func newUpgradeShootInput() gqlschema.UpgradeShootInput {
+func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 	newMachineType := "new-machine"
 	newDiskType := "papyrus"
 	newVolumeSizeGb := 50
@@ -168,62 +168,12 @@ func newUpgradeShootInput() gqlschema.UpgradeShootInput {
 	}
 }
 
-func newAzureUpgradeShootInput() gqlschema.UpgradeShootInput {
-	input := newUpgradeShootInput()
+func NewAzureUpgradeShootInput() gqlschema.UpgradeShootInput {
+	input := NewUpgradeShootInput()
 	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
 		AzureConfig: &gqlschema.AzureProviderConfigInput{
 			VnetCidr: "cidr2",
 		},
 	}
 	return input
-}
-
-func expectedShootConfig(initConfig, upgradeConfig gqlschema.GardenerConfig) gqlschema.GardenerConfig {
-	var expectedProviderConfig gqlschema.ProviderSpecificConfig
-
-	switch upgradedConfig := upgradeConfig.ProviderSpecificConfig.(type) {
-	case gqlschema.AWSProviderConfig, gqlschema.GCPProviderConfig:
-		expectedProviderConfig = upgradedConfig
-	case gqlschema.AzureProviderConfig:
-		azureConfig := initConfig.ProviderSpecificConfig.(gqlschema.AzureProviderConfig)
-		expectedProviderConfig = gqlschema.AzureProviderConfig{
-			Zones:    azureConfig.Zones,
-			VnetCidr: upgradedConfig.VnetCidr,
-		}
-	}
-
-	// if upgraded.ProviderSpecificConfig != nil {
-	// 	expectedProviderConfig = config.ProviderSpecificConfig
-	// }
-	// if upgraded.ProviderSpecificConfig.AzureConfig != nil {
-	// 	initConfig := config.ProviderSpecificConfig.(gqlschema.AzureProviderConfig)
-
-	// 	expectedProviderConfig = gqlschema.AzureProviderConfig{
-	// 		Zones:    initConfig.Zones,
-	// 		VnetCidr: &upgraded.ProviderSpecificConfig.AzureConfig.VnetCidr,
-	// 	}
-	// }
-	// if upgraded.ProviderSpecificConfig.GcpConfig != nil {
-	// 	expectedProviderConfig = config.ProviderSpecificConfig
-	// }
-
-	return gqlschema.GardenerConfig{
-		Name:         initConfig.Name,
-		Provider:     initConfig.Provider,
-		TargetSecret: initConfig.TargetSecret,
-		Seed:         initConfig.Seed,
-		Region:       initConfig.Region,
-
-		KubernetesVersion: upgradeConfig.KubernetesVersion,
-		MachineType:       upgradeConfig.MachineType,
-		DiskType:          upgradeConfig.DiskType,
-		VolumeSizeGb:      upgradeConfig.VolumeSizeGb,
-		AutoScalerMin:     upgradeConfig.AutoScalerMin,
-		AutoScalerMax:     upgradeConfig.AutoScalerMax,
-		MaxSurge:          upgradeConfig.MaxSurge,
-		MaxUnavailable:    upgradeConfig.MaxUnavailable,
-		WorkerCidr:        upgradeConfig.WorkerCidr,
-
-		ProviderSpecificConfig: expectedProviderConfig,
-	}
 }

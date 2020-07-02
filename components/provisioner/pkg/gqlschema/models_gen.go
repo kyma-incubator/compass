@@ -124,6 +124,8 @@ type GardenerConfig struct {
 	MachineType            *string                `json:"machineType"`
 	Region                 *string                `json:"region"`
 	Provider               *string                `json:"provider"`
+	Purpose                *string                `json:"purpose"`
+	LicenceType            *string                `json:"licenceType"`
 	Seed                   *string                `json:"seed"`
 	TargetSecret           *string                `json:"targetSecret"`
 	DiskType               *string                `json:"diskType"`
@@ -140,6 +142,8 @@ func (GardenerConfig) IsClusterConfig() {}
 type GardenerConfigInput struct {
 	KubernetesVersion      string                 `json:"kubernetesVersion"`
 	Provider               string                 `json:"provider"`
+	Purpose                *string                `json:"purpose"`
+	LicenceType            *string                `json:"licenceType"`
 	TargetSecret           string                 `json:"targetSecret"`
 	MachineType            string                 `json:"machineType"`
 	DiskType               string                 `json:"diskType"`

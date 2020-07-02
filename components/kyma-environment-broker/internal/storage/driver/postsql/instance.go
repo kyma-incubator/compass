@@ -41,6 +41,27 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 	return instances, nil
 }
 
+func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, error) {
+	sess := s.NewReadSession()
+	var instances []internal.Instance
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		instances, lastErr = sess.FindAllInstancesForRuntimes(runtimeIdList)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				return false, dberr.NotFound("Instances with runtime IDs from list '%+q' not exist", runtimeIdList)
+			}
+			log.Warn(errors.Wrapf(lastErr, "while getting instances from runtime ID list '%+q'", runtimeIdList).Error())
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	return instances, nil
+}
+
 // TODO: Wrap retries in single method WithRetries
 func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	sess := s.NewReadSession()

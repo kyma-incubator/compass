@@ -429,19 +429,21 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:7104890b67c4b703b6c80f612886bedf6bc182be563da09a3173df4b871e8142"
+  digest = "1:5ce6b91c8063fb1acbf93adfd56391968c668cc2e9ec4bc28c797fdcf9228e74"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
+    "components/director/pkg/apperrors",
     "components/director/pkg/graphql",
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
     "components/director/pkg/pagination",
+    "components/director/pkg/resource",
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "3f19fcd363a5a9fd5d3c99dcd9b855718f820efb"
+  revision = "aa7a78c76a97e933d932f8c99619e2d9265b768a"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
@@ -1185,6 +1187,7 @@
     "github.com/Azure/go-autorest/autorest/azure",
     "github.com/Masterminds/sprig",
     "github.com/dlmiddlecote/sqlstats",
+    "github.com/gardener/gardener/pkg/apis/core/v1beta1",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gocraft/dbr",
     "github.com/google/uuid",

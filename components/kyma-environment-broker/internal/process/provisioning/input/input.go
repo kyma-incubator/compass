@@ -10,9 +10,10 @@ import (
 )
 
 type Config struct {
-	URL               string
-	Timeout           time.Duration `envconfig:"default=12h"`
-	KubernetesVersion string        `envconfig:"default=1.16.9"`
+	URL                         string
+	Timeout                     time.Duration `envconfig:"default=12h"`
+	KubernetesVersion           string        `envconfig:"default=1.16.9"`
+	DefaultGardenerShootPurpose string        `envconfig:"default=development"`
 }
 
 type RuntimeInput struct {
@@ -115,6 +116,7 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	updateString(&r.input.ClusterConfig.GardenerConfig.Region, r.provisioningParameters.Region)
 	updateString(&r.input.ClusterConfig.GardenerConfig.MachineType, r.provisioningParameters.MachineType)
 	updateString(&r.input.ClusterConfig.GardenerConfig.TargetSecret, r.provisioningParameters.TargetSecret)
+	updateString(r.input.ClusterConfig.GardenerConfig.Purpose, r.provisioningParameters.Purpose)
 
 	r.hyperscalerInputProvider.ApplyParameters(r.input.ClusterConfig, r.provisioningParameters)
 

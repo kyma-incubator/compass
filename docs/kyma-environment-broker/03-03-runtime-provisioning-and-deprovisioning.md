@@ -8,7 +8,7 @@ Both provisioning and deprovisioning operation consist of several steps. Each st
 
 The provisioning and deprovisioning timeouts for processing an operation are set to `24h`.
 
-> **NOTE:** It's important to have lower timeouts for the Kyma installation in the Provisioner .
+> **NOTE:** It's important to have lower timeouts for the Kyma installation in the Runtime Provisioner .
 
 ## Provisioning
 
@@ -17,21 +17,21 @@ The provisioning process contains the following steps:
 
 | Name                                   | Domain                   | Description                                                                                                                                     | Owner            |
 |----------------------------------------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
-| Initialisation                         | Provisioning             | Starts the provisioning process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished.                                | @jasiu001 (Team Gopher)       |
+| Initialization                         | Provisioning             | Starts the provisioning process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished.                                | @jasiu001 (Team Gopher)       |
 | Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of a Gardener Secret that contains  Hypescaler account credentials used during cluster provisioning.                                | @koala7659 (Team Framefrog)      |
 | AVS_Configuration_Step                 | AvS                      | Sets up external and internal monitoring of Kyma Runtime.                                      | @abbi-guarav     |
 | Create_LMS_Tenant                      | LMS                      | Requests a tenant in the LMS system or provides a tenant ID if it was created before.                                                              | @piotrmiskiewicz (Team Gopher) |
 | IAS_Registration                       | Identity Authentication Service | Registers a new ServiceProvider on IAS, generates client ID and Secret, and inserts them to Grafana overrides. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
-| EDP_Registration                       | Event Data Platform      | Registers a SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
+| EDP_Registration                       | Event Data Platform      | Registers an SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
 | Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @anishj0shi (Team SkyDivingTunas)     |
 | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001 (Team Gopher)        |
 | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | @mszostok (Team Gopher)        |
-| Request_LMS_Certificates               | LMS                      | Checks if the LMS tenant is ready and requests certificates. The step configures Fluent Bit in a Kyma Runtime. It requires the Create_LMS_Tenant step to be completed before. The step does not fail the provisioning operation. | @piotrmiskiewicz (Team Gopher) |
+| Request_LMS_Certificates               | LMS                      | Checks if the LMS tenant is ready and requests certificates. The step configures Fluent Bit in a Kyma Runtime. It requires the Create_LMS_Tenant step to be completed beforehand. The step does not fail the provisioning operation. | @piotrmiskiewicz (Team Gopher) |
 | Create_Runtime                         | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                                                       | @jasiu001 (Team Gopher)        |
 
 ## Deprovisioning
 
-Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialisation](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
+Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-incubator/compass/blob/master/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
 
 Any deprovisioning step shouldn't block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip your step in case of retry timeout. Set at most 5min timeout for retries in your step.
 

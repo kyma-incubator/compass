@@ -15,6 +15,8 @@ type GardenerConfig {
     machineType: String
     region: String
     provider: String
+    purpose: String
+    licenceType: String
     seed: String
     targetSecret: String
     diskType: String
@@ -147,6 +149,8 @@ input ClusterConfigInput {
 input GardenerConfigInput {
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
+    purpose: String                                 # Purpose is the purpose class for this cluster
+    licenceType: String                             # LicenceType informs about the licence type of the cluster (TestDevelopmentAndDemo)
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
     machineType: String!                            # Type of node machines, varies depending on the target provider
     diskType: String!                               # Disk type, varies depending on the target provider

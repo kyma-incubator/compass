@@ -91,12 +91,14 @@ type ComplexityRoot struct {
 		AutoScalerMin          func(childComplexity int) int
 		DiskType               func(childComplexity int) int
 		KubernetesVersion      func(childComplexity int) int
+		LicenceType            func(childComplexity int) int
 		MachineType            func(childComplexity int) int
 		MaxSurge               func(childComplexity int) int
 		MaxUnavailable         func(childComplexity int) int
 		Name                   func(childComplexity int) int
 		Provider               func(childComplexity int) int
 		ProviderSpecificConfig func(childComplexity int) int
+		Purpose                func(childComplexity int) int
 		Region                 func(childComplexity int) int
 		Seed                   func(childComplexity int) int
 		TargetSecret           func(childComplexity int) int
@@ -367,6 +369,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.KubernetesVersion(childComplexity), true
 
+	case "GardenerConfig.licenceType":
+		if e.complexity.GardenerConfig.LicenceType == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.LicenceType(childComplexity), true
+
 	case "GardenerConfig.machineType":
 		if e.complexity.GardenerConfig.MachineType == nil {
 			break
@@ -408,6 +417,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.ProviderSpecificConfig(childComplexity), true
+
+	case "GardenerConfig.purpose":
+		if e.complexity.GardenerConfig.Purpose == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.Purpose(childComplexity), true
 
 	case "GardenerConfig.region":
 		if e.complexity.GardenerConfig.Region == nil {
@@ -731,6 +747,8 @@ type GardenerConfig {
     machineType: String
     region: String
     provider: String
+    purpose: String
+    licenceType: String
     seed: String
     targetSecret: String
     diskType: String
@@ -863,6 +881,8 @@ input ClusterConfigInput {
 input GardenerConfigInput {
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
+    purpose: String                                 # Purpose is the purpose class for this cluster
+    licenceType: String                             # LicenceType informs about the licence type of the cluster (TestDevelopmentAndDemo)
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
     machineType: String!                            # Type of node machines, varies depending on the target provider
     diskType: String!                               # Disk type, varies depending on the target provider
@@ -2146,6 +2166,74 @@ func (ec *executionContext) _GardenerConfig_provider(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Provider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_purpose(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Purpose, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_licenceType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LicenceType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4843,6 +4931,18 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "purpose":
+			var err error
+			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "licenceType":
+			var err error
+			it.LicenceType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "targetSecret":
 			var err error
 			it.TargetSecret, err = ec.unmarshalNString2string(ctx, v)
@@ -5439,6 +5539,10 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_region(ctx, field, obj)
 		case "provider":
 			out.Values[i] = ec._GardenerConfig_provider(ctx, field, obj)
+		case "purpose":
+			out.Values[i] = ec._GardenerConfig_purpose(ctx, field, obj)
+		case "licenceType":
+			out.Values[i] = ec._GardenerConfig_licenceType(ctx, field, obj)
 		case "seed":
 			out.Values[i] = ec._GardenerConfig_seed(ctx, field, obj)
 		case "targetSecret":

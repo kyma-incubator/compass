@@ -14,28 +14,28 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1434"
+      version: "PR-1441"
     connectivity_adapter:
       dir:
-      version: "PR-1434"
+      version: "PR-1460"
     pairing_adapter:
       dir:
-      version: "PR-1434"
+      version: "PR-1460"
     director:
       dir:
-      version: "PR-1430"
+      version: "PR-1442"
     gateway:
       dir:
-      version: "PR-1434"
+      version: "PR-1460"
     healthchecker:
       dir:
-      version: "PR-1434"
+      version: "PR-1460"
     schema_migrator:
       dir:
-      version: "PR-1434"
+      version: "PR-1425"
     provisioner:
       dir:
-      version: "PR-1434"
+      version: "PR-1450"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -43,29 +43,32 @@ global:
       version: "0a651695"
     kyma_environment_broker:
       dir:
-      version: "PR-1434"
+      version: "PR-1428"
+    kyma_environments_cleanup_job:
+      dir:
+      version: "PR-1428"
     external_services_mock:
       dir:
-      version: "PR-1434"
+      version: "PR-1460"
     metris:
       dir:
       version: "PR-1434"
     tests:
       director:
         dir:
-        version: "PR-1416"
+        version: "PR-1442"
       connector:
         dir:
-        version: "d068b250"
+        version: "PR-1453"
       provisioner:
         dir:
-        version: "8fb2e53b"
+        version: "PR-1453"
       e2e_provisioning:
         dir:
         version: "9103d980"
       connectivity_adapter:
         dir:
-        version: "d068b250"
+        version: "PR-1453"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -137,6 +140,8 @@ global:
     secrets:
       integrationSystemCredentials:
         name: compass-kyma-environment-broker-credentials
+    environmentsCleanup:
+      enabled: false
 
   provisioner:
     graphql:

@@ -30,8 +30,7 @@ func NewValidator(readSession dbsession.ReadSession) Validator {
 }
 
 func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) error {
-	err := v.validateKymaConfig(input.KymaConfig)
-	if err != nil {
+	if err := v.validateKymaConfig(input.KymaConfig); err != nil {
 		return fmt.Errorf("validation error while starting Runtime provisioning: %s", err.Error())
 	}
 
@@ -46,22 +45,6 @@ func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) er
 	err := v.validateKymaConfig(input.KymaConfig)
 	if err != nil {
 		return fmt.Errorf("validation error while starting Runtime upgrade: %s", err.Error())
-	}
-
-	return nil
-}
-
-func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) error {
-	if kymaConfig == nil {
-		return errors.New("error: Kyma config not provided")
-	}
-
-	if len(kymaConfig.Components) == 0 {
-		return errors.New("error: Kyma components list is empty")
-	}
-
-	if !configContainsRuntimeAgentComponent(kymaConfig.Components) {
-		return errors.New("error: Kyma components list does not contain Compass Runtime Agent")
 	}
 
 	return nil
@@ -93,6 +76,22 @@ func (v *validator) ValidateTenantForOperation(operationID, tenant string) error
 	if tenant != dbTenant {
 		return errors.New("provided tenant does not match tenant used to provision cluster")
 	}
+	return nil
+}
+
+func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) error {
+	if kymaConfig == nil {
+		return errors.New("error: Kyma config not provided")
+	}
+
+	if len(kymaConfig.Components) == 0 {
+		return errors.New("error: Kyma components list is empty")
+	}
+
+	if !configContainsRuntimeAgentComponent(kymaConfig.Components) {
+		return errors.New("error: Kyma components list does not contain Compass Runtime Agent")
+	}
+
 	return nil
 }
 
