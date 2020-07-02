@@ -9,8 +9,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	mocks2 "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

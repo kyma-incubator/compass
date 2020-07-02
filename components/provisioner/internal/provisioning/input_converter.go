@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 type InputConverter interface {

@@ -38,7 +38,7 @@ const (
 )
 
 var (
-	SchemaFilePath = os.Getenv("GOPATH") + "/src/github.com/kyma-incubator/compass/components/provisioner/assets/database/provisioner.sql"
+	SchemaFilePath = os.Getenv("GOPATH") + "/src/github.com/kyma-project/control-plane/components/provisioner/assets/database/provisioner.sql"
 )
 
 func makeConnectionString(hostname string, port string) string {

@@ -10,9 +10,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/sirupsen/logrus"
 )
 

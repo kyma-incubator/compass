@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
 	"github.com/stretchr/testify/assert"
 

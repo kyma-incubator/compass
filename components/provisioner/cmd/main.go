@@ -7,34 +7,34 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/metrics"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 
-	provisioningStages "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning"
+	provisioningStages "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 
 	retry "github.com/avast/retry-go"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 	"k8s.io/client-go/rest"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/healthz"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/healthz"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -42,7 +42,7 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/kubernetes"

@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS runtimes_on_name;

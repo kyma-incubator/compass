@@ -1,4 +1,4 @@
-module github.com/kyma-incubator/compass/components/provisioner
+module github.com/kyma-project/control-plane/components/provisioner
 
 go 1.13
 

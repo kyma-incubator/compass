@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 
-	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

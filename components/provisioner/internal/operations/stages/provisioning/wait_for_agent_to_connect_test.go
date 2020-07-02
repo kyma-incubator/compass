@@ -7,9 +7,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	directorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
 	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
 	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"

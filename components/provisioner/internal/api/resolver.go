@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 type Resolver struct {

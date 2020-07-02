@@ -1,4 +1,4 @@
-module github.com/kyma-incubator/compass/components/metris
+module github.com/kyma-project/control-plane/components/metris
 
 go 1.14
 

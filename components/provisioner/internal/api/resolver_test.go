@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
-	validatorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/api/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
+	validatorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/api/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

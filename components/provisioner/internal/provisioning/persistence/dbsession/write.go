@@ -7,8 +7,8 @@ import (
 	"time"
 
 	dbr "github.com/gocraft/dbr/v2"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
 
 type writeSession struct {
@@ -178,7 +178,7 @@ func (ws writeSession) TransitionOperation(operationID string, message string, s
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
 }
 
-// Clean up this code when not needed (https://github.com/kyma-incubator/compass/issues/1371)
+// Clean up this code when not needed (https://github.com/kyma-project/control-plane/issues/1371)
 func (ws writeSession) FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error {
 	legacyStageCondition := dbr.Eq("stage", "ShootProvisioning")
 	provisioningOperation := dbr.Eq("type", model.Provision)

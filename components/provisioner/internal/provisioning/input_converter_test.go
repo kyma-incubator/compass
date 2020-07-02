@@ -3,20 +3,20 @@ package provisioning
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	realeaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 )
 

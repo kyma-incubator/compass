@@ -5,23 +5,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	uuidMocks "github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 
-	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/mocks"
-	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	mocks2 "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/mocks"
+	sessionMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
-	releaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
+	releaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
-	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	oauth "github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
+	oauth "github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
 	mock "github.com/stretchr/testify/mock"
 )
 

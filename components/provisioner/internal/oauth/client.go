@@ -11,7 +11,7 @@ import (
 	"time"
 
 	v1 "github.com/kubernetes/client-go/kubernetes/typed/core/v1"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

@@ -5,9 +5,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -182,7 +182,7 @@ func (cc *directorClient) RuntimeExists(id, tenant string) (bool, error) {
 func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) error {
 	// TODO: Set StatusCondition without getting the Runtime
 	//       It'll be possible after this issue implementation:
-	//       - https://github.com/kyma-incubator/compass/issues/1186
+	//       - https://github.com/kyma-project/control-plane/issues/1186
 	runtime, err := cc.GetRuntime(id, tenant)
 	if err != nil {
 		log.Errorf("Failed to get Runtime by ID: %s", err.Error())

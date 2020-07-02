@@ -1,15 +1,15 @@
 package director
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
-	oauthmocks "github.com/kyma-incubator/compass/components/provisioner/internal/oauth/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
+	oauthmocks "github.com/kyma-project/control-plane/components/provisioner/internal/oauth/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
+	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
 	gcli "github.com/machinebox/graphql"
 
 	"fmt"

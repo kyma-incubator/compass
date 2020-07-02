@@ -1,1 +1,0 @@
-ALTER TABLE runtimes DROP COLUMN creation_timestamp;

@@ -9,7 +9,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2019-12-01/network"
 	"github.com/Azure/azure-sdk-for-go/services/preview/monitor/mgmt/2019-06-01/insights"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
-	"github.com/kyma-incubator/compass/components/metris/internal/gardener"
+	"github.com/kyma-project/control-plane/components/metris/internal/gardener"
 	"go.uber.org/zap"
 	"k8s.io/client-go/util/workqueue"
 )
