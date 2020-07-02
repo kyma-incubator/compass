@@ -4931,6 +4931,18 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "purpose":
+			var err error
+			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "licenceType":
+			var err error
+			it.LicenceType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "targetSecret":
 			var err error
 			it.TargetSecret, err = ec.unmarshalNString2string(ctx, v)
@@ -4946,18 +4958,6 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		case "diskType":
 			var err error
 			it.DiskType, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "purpose":
-			var err error
-			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "licenceType":
-			var err error
-			it.LicenceType, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -251,6 +251,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//when
 			provisionRuntime, err := resolver.ProvisionRuntime(ctx, fullConfig)
+			t.Log(*provisionRuntime.RuntimeID, runtimeID)
 
 			//then
 			require.NoError(t, err)
@@ -264,6 +265,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NoError(t, err)
 
 			shoot := &list.Items[0]
+
+			for _, shoot := range list.Items {
+				t.Log(shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+			}
 
 			//then
 			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])

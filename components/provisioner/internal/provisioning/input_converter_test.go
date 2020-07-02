@@ -429,6 +429,211 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 }
 
+func Test_UpgradeShootInputToCluster(t *testing.T) {
+
+	readSession := &realeaseMocks.Repository{}
+	readSession.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
+
+	gardenerGCPGQLUpgradeShootInput := &gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			KubernetesVersion: "version",
+			VolumeSizeGb:      1024,
+			MachineType:       "n1-standard-1",
+			Purpose:           util.StringPtr("testing"),
+			DiskType:          "ssd",
+			WorkerCidr:        "cidr",
+			AutoScalerMin:     1,
+			AutoScalerMax:     5,
+			MaxSurge:          1,
+			MaxUnavailable:    2,
+		},
+	}
+
+	expectedGCPProviderCfg, err := model.NewGCPGardenerConfig(gcpGardenerProvider)
+	require.NoError(t, err)
+
+	expectedGardenerGCPRuntimeConfig := model.Cluster{
+		ID: "runtimeID",
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "verylon",
+			ProjectName:            gardenerProject,
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "GCP",
+			Purpose:                util.StringPtr("testing"),
+			Seed:                   "gcp-eu1",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			GardenerProviderConfig: expectedGCPProviderCfg,
+		},
+		Kubeconfig:            nil,
+		KymaConfig:            fixKymaConfig(),
+		CredentialsSecretName: "",
+		Tenant:                tenant,
+		SubAccountId:          util.StringPtr(subAccountId),
+	}
+
+	createGQLRuntimeInputAzure := func(zones []string) gqlschema.ProvisionRuntimeInput {
+		return gqlschema.ProvisionRuntimeInput{
+			RuntimeInput: &gqlschema.RuntimeInput{
+				Name:        "runtimeName",
+				Description: nil,
+				Labels:      &gqlschema.Labels{},
+			},
+			ClusterConfig: &gqlschema.ClusterConfigInput{
+				GardenerConfig: &gqlschema.GardenerConfigInput{
+					KubernetesVersion: "version",
+					VolumeSizeGb:      1024,
+					MachineType:       "n1-standard-1",
+					Region:            "region",
+					Provider:          "Azure",
+					Purpose:           util.StringPtr("testing"),
+					TargetSecret:      "secret",
+					DiskType:          "ssd",
+					WorkerCidr:        "cidr",
+					AutoScalerMin:     1,
+					AutoScalerMax:     5,
+					MaxSurge:          1,
+					MaxUnavailable:    2,
+					ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+						AzureConfig: &gqlschema.AzureProviderConfigInput{
+							VnetCidr: "cidr",
+							Zones:    zones,
+						},
+					},
+				},
+			},
+			Credentials: &gqlschema.CredentialsInput{
+				SecretName: "secretName",
+			},
+			KymaConfig: fixKymaGraphQLConfigInput(),
+		}
+	}
+
+	expectedGardenerAzureRuntimeConfig := func(zones []string) model.Cluster {
+
+		expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{VnetCidr: "cidr", Zones: zones})
+		require.NoError(t, err)
+
+		return model.Cluster{
+			ID: "runtimeID",
+			ClusterConfig: model.GardenerConfig{
+				ID:                     "id",
+				Name:                   "verylon",
+				ProjectName:            gardenerProject,
+				MachineType:            "n1-standard-1",
+				Region:                 "region",
+				KubernetesVersion:      "version",
+				VolumeSizeGB:           1024,
+				DiskType:               "ssd",
+				Provider:               "Azure",
+				Purpose:                util.StringPtr("testing"),
+				Seed:                   "",
+				TargetSecret:           "secret",
+				WorkerCidr:             "cidr",
+				AutoScalerMin:          1,
+				AutoScalerMax:          5,
+				MaxSurge:               1,
+				MaxUnavailable:         2,
+				ClusterID:              "runtimeID",
+				GardenerProviderConfig: expectedAzureProviderCfg,
+			},
+			Kubeconfig:            nil,
+			KymaConfig:            fixKymaConfig(),
+			CredentialsSecretName: "",
+			Tenant:                tenant,
+			SubAccountId:          util.StringPtr(subAccountId),
+		}
+	}
+
+	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
+		Zone:         "zone",
+		InternalCidr: "cidr",
+		VpcCidr:      "cidr",
+		PublicCidr:   "cidr",
+	}
+
+	gardenerAWSGQLShootUpgradeInput := gqlschema.ProvisionRuntimeInput{
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				KubernetesVersion: "version",
+				VolumeSizeGb:      1024,
+				MachineType:       "n1-standard-1",
+				Region:            "region",
+				Provider:          "AWS",
+				Purpose:           util.StringPtr("testing"),
+				Seed:              util.StringPtr("aws-eu1"),
+				TargetSecret:      "secret",
+				DiskType:          "ssd",
+				WorkerCidr:        "cidr",
+				AutoScalerMin:     1,
+				AutoScalerMax:     5,
+				MaxSurge:          1,
+				MaxUnavailable:    2,
+			},
+		},
+	}
+
+	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(awsGardenerProvider)
+	require.NoError(t, err)
+
+	expectedGardenerAWSRuntimeConfig := model.Cluster{
+		ID: "runtimeID",
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			Name:                   "verylon",
+			ProjectName:            gardenerProject,
+			MachineType:            "n1-standard-1",
+			Region:                 "region",
+			KubernetesVersion:      "version",
+			VolumeSizeGB:           1024,
+			DiskType:               "ssd",
+			Provider:               "AWS",
+			Purpose:                util.StringPtr("testing"),
+			Seed:                   "aws-eu1",
+			TargetSecret:           "secret",
+			WorkerCidr:             "cidr",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               1,
+			MaxUnavailable:         2,
+			ClusterID:              "runtimeID",
+			GardenerProviderConfig: expectedAWSProviderCfg,
+		},
+	}
+
+	zone := "zone"
+	gardenerZones := []string{"fix-az-zone-1", "fix-az-zone-2"}
+
+	for _, testCase := range configurations {
+		t.Run(testCase.description, func(t *testing.T) {
+			//given
+			uuidGeneratorMock := &mocks.UUIDGenerator{}
+			uuidGeneratorMock.On("New").Return("id").Times(6)
+			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
+
+			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
+
+			//when
+			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant, subAccountId)
+
+			//then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expected, runtimeConfig)
+			uuidGeneratorMock.AssertExpectations(t)
+		})
+	}
+}
+
 func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider) *converter {
 	return &converter{
 		uuidGenerator: uuidGenerator,
