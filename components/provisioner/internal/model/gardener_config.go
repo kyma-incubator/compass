@@ -356,63 +356,14 @@ func (c AzureGardenerConfig) UpdateExistingShootWithAzureConfig(gardenerConfig G
 	azInfra.Networks.Workers = gardenerConfig.WorkerCidr
 	azInfra.Networks.VNet.CIDR = &c.input.VnetCidr
 
-	/*
-	isZoned := len(azConfig.input.Zones) > 0
-		return &azure.InfrastructureConfig{
-			TypeMeta: v1.TypeMeta{
-				Kind:       infrastructureConfigKind,
-				APIVersion: azureAPIVersion,
-			},
-			Networks: azure.NetworkConfig{
-				Workers: workerCIDR,
-				VNet: azure.VNet{
-					CIDR: &azConfig.input.VnetCidr,
-				},
-			},
-			Zoned: isZoned,
-		}
-	*/
+	jsonData, err := json.Marshal(azInfra)
+	if err != nil {
+		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
+	}
+
+	shoot.Spec.Provider.InfrastructureConfig.RawExtension = apimachineryRuntime.RawExtension{Raw: jsonData}
 
 	return nil
-	//GCP
-	/*
-	updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
-
-		var gcpInfra gcp.InfrastructureConfig
-		err := json.Unmarshal(shoot.Spec.Provider.InfrastructureConfig.RawExtension.Raw, &gcpInfra)
-
-		if err != nil {
-			return fmt.Errorf("error decoding infrastructure config: %s", err.Error())
-		}
-
-		gcpInfra.Networks.Workers = util.StringPtr(gardenerConfig.WorkerCidr)
-		gcpInfra.Networks.Worker = gardenerConfig.WorkerCidr
-
-		var gcpControlPlane gcp.ControlPlaneConfig
-		err = json.Unmarshal(shoot.Spec.Provider.ControlPlaneConfig.RawExtension.Raw, &gcpControlPlane)
-
-		if err != nil {
-			return fmt.Errorf("error decoding control plane config: %s", err.Error())
-		}
-
-		gcpControlPlane.Zone = c.input.Zones[0]
-
-		jsonCPData, err := json.Marshal(gcpControlPlane)
-		if err != nil {
-			return fmt.Errorf("error encoding control plane config: %s", err.Error())
-		}
-
-		jsonData, err := json.Marshal(gcpInfra)
-		if err != nil {
-			return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
-		}
-
-		shoot.Spec.Provider.ControlPlaneConfig.RawExtension = apimachineryRuntime.RawExtension{Raw: jsonCPData}
-		shoot.Spec.Provider.InfrastructureConfig.RawExtension = apimachineryRuntime.RawExtension{Raw: jsonData}
-
-		return nil
-
-	*/
 }
 
 func (c AzureGardenerConfig) ExtendShootWithNewAzureConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
@@ -480,6 +431,41 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 }
 
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+	if len(shoot.Spec.Provider.Workers) == 0 {
+		return c.ExtendShootWithNewAWSConfig(gardenerConfig, shoot)
+	}
+
+	return c.UpdateExistingShootWithAWSConfig(gardenerConfig, shoot)
+}
+
+func (c AWSGardenerConfig) UpdateExistingShootWithAWSConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+
+	updateWorkerConfig(gardenerConfig, shoot, []string{c.input.Zone})
+
+	var awsInfra aws.InfrastructureConfig
+	err := json.Unmarshal(shoot.Spec.Provider.InfrastructureConfig.RawExtension.Raw, &awsInfra)
+
+	if err != nil {
+		return fmt.Errorf("error decoding infrastructure config: %s", err.Error())
+	}
+
+	awsInfra.Networks.Zones[0].Name = c.input.Zone
+	awsInfra.Networks.Zones[0].Internal = c.input.InternalCidr
+	awsInfra.Networks.Zones[0].Public = c.input.PublicCidr
+	awsInfra.Networks.Zones[0].Workers = gardenerConfig.WorkerCidr
+	awsInfra.Networks.VPC.CIDR = &c.input.VpcCidr
+
+	jsonData, err := json.Marshal(awsInfra)
+	if err != nil {
+		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
+	}
+
+	shoot.Spec.Provider.InfrastructureConfig.RawExtension = apimachineryRuntime.RawExtension{Raw: jsonData}
+
+	return nil
+}
+
+func (c AWSGardenerConfig) ExtendShootWithNewAWSConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "aws"
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
