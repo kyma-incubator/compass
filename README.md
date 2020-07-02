@@ -26,43 +26,16 @@ For more information about the Compass architecture, technical details, and comp
 
 ## Installation
 
-### Enable Compass in Kyma
+Install Compass locally or on a cluster. See the [installation document](https://github.com/kyma-incubator/compass/blob/master/docs/compass/04-01-installation.md) for details.
 
-Read [this](https://github.com/kyma-incubator/compass/blob/master/docs/compass/04-01-installation.md) document to learn about different modes in which you can enable Compass in Kyma.
 
-### Chart installation
+## Testing
 
-If you already have a running Kyma instance in at least 1.6 version, with created Secrets and Tiller client certificates, you can install the Compass Helm chart using this command:
-```bash
-helm install --name "compass" ./chart/compass --tls
-```
-
-For local installation, specify additional parameters:
-```bash
-helm install --set=global.isLocalEnv=true --set=global.minikubeIP=$(eval minikube ip) --name "compass" ./chart/compass --tls
-```
-
-### Local installation with Kyma
-
-To install Compass along with the minimal Kyma installation from the `master` branch, run this script:
-```bash
-./installation/cmd/run.sh
-```
-
-You can also specify Kyma version, such as 1.6 or newer:
-```bash
-./installation/cmd/run.sh {version}
-```
-
-### Testing
-
-Compass, as a part of Kyma, uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/README.md) for testing. To run the Compass tests, run:
+Compass uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/README.md) for both cluster and local testing. To run the Compass tests, use this script:
 
 ```bash
 ./installation/scripts/testing.sh
 ```
-
-Read [this](https://kyma-project.io/docs/root/kyma#details-testing-kyma) document to learn more about testing in Kyma.
 
 ## Usage
 
@@ -73,3 +46,5 @@ Currently, the Compass Gateway is accessible under three different hosts secured
 - `https://compass-gateway-auth-oauth.{domain}` - secured with OAuth 2.0 access token issued by [Hydra](https://kyma-project.io/docs/components/security/#details-o-auth2-and-open-id-connect-server)
 
 You can access Director GraphQL API under the `/director/graphql` endpoint, and Connector GraphQL API under `/connector/graphql`.
+
+To access Connectivity, use `https://adapter-gateway.{domain}` host secured with one-time tokens or `https://adapter-gateway-mtls.{domain}` secured with client certificates (mTLS).
