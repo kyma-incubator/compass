@@ -156,6 +156,7 @@ type GardenerProviderConfig interface {
 	RawJSON() string
 	AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig
 	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error
+	EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error
 }
 
 func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, error) { //TODO: change to detect Provider correctly
@@ -214,16 +215,7 @@ func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	return gqlschema.GCPProviderConfig{Zones: c.input.Zones}
 }
 
-func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
-
-	if len(shoot.Spec.Provider.Workers) == 0 {
-		return c.ExtendShootWithNewGCPConfig(gardenerConfig, shoot)
-	}
-
-	return c.UpdateExistingShootWithGCPConfig(gardenerConfig, shoot)
-}
-
-func (c GCPGardenerConfig) UpdateExistingShootWithGCPConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 
 	updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
 
@@ -262,7 +254,7 @@ func (c GCPGardenerConfig) UpdateExistingShootWithGCPConfig(gardenerConfig Garde
 	return nil
 }
 
-func (c GCPGardenerConfig) ExtendShootWithNewGCPConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "gcp"
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
@@ -333,15 +325,7 @@ type AWSGardenerConfig struct {
 	input *gqlschema.AWSProviderConfigInput `db:"-"`
 }
 
-func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
-	if len(shoot.Spec.Provider.Workers) == 0 {
-		return c.ExtendShootWithNewAzureConfig(gardenerConfig, shoot)
-	}
-
-	return c.UpdateExistingShootWithAzureConfig(gardenerConfig, shoot)
-}
-
-func (c AzureGardenerConfig) UpdateExistingShootWithAzureConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 
 	updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
 
@@ -366,7 +350,7 @@ func (c AzureGardenerConfig) UpdateExistingShootWithAzureConfig(gardenerConfig G
 	return nil
 }
 
-func (c AzureGardenerConfig) ExtendShootWithNewAzureConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "az"
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
@@ -430,15 +414,7 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	}
 }
 
-func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
-	if len(shoot.Spec.Provider.Workers) == 0 {
-		return c.ExtendShootWithNewAWSConfig(gardenerConfig, shoot)
-	}
-
-	return c.UpdateExistingShootWithAWSConfig(gardenerConfig, shoot)
-}
-
-func (c AWSGardenerConfig) UpdateExistingShootWithAWSConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 
 	updateWorkerConfig(gardenerConfig, shoot, []string{c.input.Zone})
 
@@ -465,7 +441,7 @@ func (c AWSGardenerConfig) UpdateExistingShootWithAWSConfig(gardenerConfig Garde
 	return nil
 }
 
-func (c AWSGardenerConfig) ExtendShootWithNewAWSConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
 	shoot.Spec.CloudProfileName = "aws"
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
