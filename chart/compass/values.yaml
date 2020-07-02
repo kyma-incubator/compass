@@ -43,10 +43,10 @@ global:
       version: "0a651695"
     kyma_environment_broker:
       dir:
-      version: "PR-1479"
+      version: "PR-1476"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1428"
+      version: "PR-1476"
     external_services_mock:
       dir:
       version: "PR-1460"
