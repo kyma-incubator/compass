@@ -3100,12 +3100,12 @@ input AuthInput {
 	"""
 	**Validation:** if provided, headers name and value required
 	"""
-	additionalHeaders: HttpHeaders
+	additionalHeaders: HttpHeaders @deprecated(reason: "Use ` + "`" + `additionalHeadersSerialized` + "`" + `.")
 	additionalHeadersSerialized: HttpHeadersSerialized
 	"""
 	**Validation:** if provided, query parameters name and value required
 	"""
-	additionalQueryParams: QueryParams
+	additionalQueryParams: QueryParams @deprecated(reason: "Use ` + "`" + `additionalHeadersSerialized` + "`" + `.")
 	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuthInput
 }
@@ -3132,12 +3132,12 @@ input CSRFTokenCredentialRequestAuthInput {
 	"""
 	**Validation:** if provided, headers name and value required
 	"""
-	additionalHeaders: HttpHeaders
+	additionalHeaders: HttpHeaders @deprecated(reason: "Use ` + "`" + `additionalHeadersSerialized` + "`" + `.")
 	additionalHeadersSerialized: HttpHeadersSerialized
 	"""
 	**Validation:** if provided, query parameters name and value required
 	"""
-	additionalQueryParams: QueryParams
+	additionalQueryParams: QueryParams @deprecated(reason: "Use ` + "`" + `additionalQueryParamsSerialized` + "`" + `.")
 	additionalQueryParamsSerialized: QueryParamsSerialized
 }
 
