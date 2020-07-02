@@ -43,7 +43,7 @@ global:
       version: "0a651695"
     kyma_environment_broker:
       dir:
-      version: "PR-1461"
+      version: "PR-1479"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1428"
@@ -62,10 +62,10 @@ global:
         version: "PR-1453"
       provisioner:
         dir:
-        version: "PR-1461"
+        version: "PR-1479"
       e2e_provisioning:
         dir:
-        version: "PR-1461"
+        version: "PR-1479"
       connectivity_adapter:
         dir:
         version: "PR-1453"

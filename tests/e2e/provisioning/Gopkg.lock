@@ -234,7 +234,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:146352eb550b407b778e4d52d5facae3b7b7efaee881744ff7100165496a3ff5"
+  digest = "1:60593a5847aa8492eae07f6c8d86a4dc41acaf0fe15808de1128ccedd927f065"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -248,8 +248,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "478d8e03b3df9f0cf7c9e67fcb450b56843905b6"
-  source = "github.com/Szymongib/compass"
+  revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
   digest = "1:49f1c5f12d36c5529f52e6b1aa3ae3673039f186be3115b8254020fafd6aa8eb"
