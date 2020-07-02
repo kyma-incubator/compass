@@ -209,13 +209,13 @@ func (_m *WriteSession) UpdateCluster(runtimeID string, kubeconfig string, terra
 	return r0
 }
 
-// UpdateGardenerClusterConfig provides a mock function with given fields: configID, config
-func (_m *WriteSession) UpdateGardenerClusterConfig(configID string, config model.GardenerConfig) dberrors.Error {
-	ret := _m.Called(configID, config)
+// UpdateGardenerClusterConfig provides a mock function with given fields: config
+func (_m *WriteSession) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
+	ret := _m.Called(config)
 
 	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, model.GardenerConfig) dberrors.Error); ok {
-		r0 = rf(configID, config)
+	if rf, ok := ret.Get(0).(func(model.GardenerConfig) dberrors.Error); ok {
+		r0 = rf(config)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)

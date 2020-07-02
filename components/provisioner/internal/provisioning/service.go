@@ -163,6 +163,7 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 }
 
 func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, error) {
+	log.Infof("Starting Upgrade of Gardener Shoot for  Runtime %s...", runtimeID)
 
 	if input.GardenerConfig == nil {
 		return &gqlschema.OperationStatus{}, fmt.Errorf("error: Gardener config is nil")
@@ -387,25 +388,32 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 }
 
 func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
+	log.Infof("Starting Upgrade of Gardener Shoot operation")
 
 	// 1. update entry in DB
-	err := txSession.UpdateGardenerClusterConfig(currentCluster.ID, gardenerConfig)
+	err := txSession.UpdateGardenerClusterConfig(gardenerConfig)
 	if err != nil {
 		return model.Operation{}, fmt.Errorf("failed to insert updated Gardener Config: %s", err.Error())
 	}
+
+	log.Infof("DB Update OK")
 
 	// 2. execute update on Shoot CR
 	error := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
 
 	if error != nil {
-		return model.Operation{}, fmt.Errorf("Failed to set Gardener Shoot upgrade operation started: %s", error.Error())
+		return model.Operation{}, fmt.Errorf("failed to set Gardener Shoot upgrade operation started: %s", error.Error())
 	}
+
+	log.Infof("Shoot update OK")
 
 	operation, error := r.setOperationStarted(txSession, currentCluster.ID, model.ShootUpgrade, model.StartingShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
 
 	if error != nil {
 		return model.Operation{}, err.Append("Failed to start operation of Gardener Shoot upgrade")
 	}
+
+	log.Infof("Operation started OK")
 
 	return operation, nil
 }

@@ -63,10 +63,10 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 	return nil
 }
 
-func (ws writeSession) UpdateGardenerClusterConfig(configID string, config model.GardenerConfig) dberrors.Error {
+func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
 
 	res, err := ws.update("gardener_config").
-		Where(dbr.Eq("id", configID)).
+		Where(dbr.Eq("id", config.ID)).
 		Set("cluster_id", config.ClusterID).
 		Set("project_name", config.ProjectName).
 		Set("name", config.Name).
@@ -87,10 +87,10 @@ func (ws writeSession) UpdateGardenerClusterConfig(configID string, config model
 		Exec()
 
 	if err != nil {
-		return dberrors.Internal("Failed to update record of gardener cluster configuration %s: %s", configID, err)
+		return dberrors.Internal("Failed to update record of configuration for gardener shoot cluster %s: %s", config.Name ,err)
 	}
 
-	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update record of gardener cluster configuration %s state: %s", configID, err))
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update record of configuration for gardener shoot cluster %s state: %s", config.Name, err))
 }
 
 func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
