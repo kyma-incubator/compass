@@ -84,21 +84,8 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 		return fmt.Errorf("error getting Shoot for cluster ID %s and name %s : %s", clusterID, upgradeConfig.Name, err.Error())
 	}
 
-	allowPrivilegedContainers := true
-	enableBasicAuthentication := false
-
-	// update needed parameters
-
-	shoot.Spec.Kubernetes = gardener_types.Kubernetes{
-		AllowPrivilegedContainers: &allowPrivilegedContainers,
-		Version:                   upgradeConfig.KubernetesVersion,
-		KubeAPIServer: &gardener_types.KubeAPIServerConfig{
-			EnableBasicAuthentication: &enableBasicAuthentication,
-		},
-	}
-
-	// ????? wtf %(o)%
-	err = upgradeConfig.GardenerProviderConfig.ExtendShootConfig(upgradeConfig, shoot)
+	shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
+	err = upgradeConfig.GardenerProviderConfig.EditShootConfig(upgradeConfig, shoot)
 
 	if err != nil {
 		return fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
