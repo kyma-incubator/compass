@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )

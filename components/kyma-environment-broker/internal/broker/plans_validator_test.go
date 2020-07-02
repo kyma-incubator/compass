@@ -58,7 +58,7 @@ func TestNewPlansSchemaValidatorSuccess(t *testing.T) {
 		// then
 		assert.True(t, result.Valid)
 
-		// Currently there is a "bug" in /kyma-incubator/compass/components/director/pkg/jsonschema/validator.go:84
+		// Currently there is a "bug" in /kyma-project/control-plane/components/director/pkg/jsonschema/validator.go:84
 		// which missing executing method `.ErrorOrNil()` so we cannot use `assert.NoError`
 		assert.Nil(t, result.Error)
 	}

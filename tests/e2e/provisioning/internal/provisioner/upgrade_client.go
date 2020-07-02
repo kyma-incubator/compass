@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
+	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/director"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

@@ -1,7 +1,7 @@
 # Build image
 FROM golang:1.14.4-alpine3.12 AS build
 
-WORKDIR /go/src/github.com/kyma-incubator/compass/components/kyma-environment-broker
+WORKDIR /go/src/github.com/kyma-project/control-plane/components/kyma-environment-broker
 
 COPY cmd cmd
 COPY internal internal

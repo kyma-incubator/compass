@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	mocks "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/environmentscleanup/automock"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	mocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

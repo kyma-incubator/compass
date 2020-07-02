@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
-	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/director/oauth"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
 	machineGraph "github.com/machinebox/graphql"
 	"github.com/pkg/errors"

@@ -2,10 +2,10 @@ package storage
 
 import (
 	"github.com/gocraft/dbr"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/driver/memory"
-	postgres "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/driver/postsql"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/memory"
+	postgres "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/sirupsen/logrus"
 )
 

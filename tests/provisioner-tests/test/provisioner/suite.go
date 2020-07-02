@@ -15,18 +15,18 @@ import (
 	"github.com/pkg/errors"
 	restclient "k8s.io/client-go/rest"
 
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
-	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director/oauth"
+	gql "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/graphql"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	v1meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1client "k8s.io/client-go/kubernetes/typed/core/v1"
 
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/provisioner"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"

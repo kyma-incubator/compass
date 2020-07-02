@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/provisioner"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/provisioner"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"

@@ -3,10 +3,10 @@ package endpoints
 import (
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/transformer"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/transformer"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/caller"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/caller"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -7,12 +7,12 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
-	processazure "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/azure"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	processazure "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/azure"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 type DeprovisionAzureEventHubStep struct {

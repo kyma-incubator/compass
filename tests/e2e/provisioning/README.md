@@ -2,7 +2,7 @@
 
 ## Overview
 
-Kyma Runtime end-to-end provisioning test checks if [Runtime provisioning](https://github.com/kyma-incubator/compass/blob/master/docs/kyma-environment-broker/02-01-architecture.md) works as expected. The test is based on the Kyma Environment Broker (KEB), Runtime Provisioner and Director implementation. External dependencies relevant for this scenario are mocked. 
+Kyma Runtime end-to-end provisioning test checks if [Runtime provisioning](https://github.com/kyma-project/control-plane/blob/master/docs/kyma-environment-broker/02-01-architecture.md) works as expected. The test is based on the Kyma Environment Broker (KEB), Runtime Provisioner and Director implementation. External dependencies relevant for this scenario are mocked. 
 
 The test is executed on a dev cluster. It is executed after every merge to the `kyma` repository that changes the `compass` chart.
 
@@ -12,7 +12,7 @@ To run this test, you must have the following Secrets inside your cluster:
 - Gardener Secret per provider
 - Service Manager Secret
 
-You must also have the Kyma Environment Broker [configured](https://github.com/kyma-incubator/compass/tree/master/components/kyma-environment-broker#configuration) to use these Secrets in order to successfully create a Runtime.
+You must also have the Kyma Environment Broker [configured](https://github.com/kyma-project/control-plane/tree/master/components/kyma-environment-broker#configuration) to use these Secrets in order to successfully create a Runtime.
 
 ## Details
 

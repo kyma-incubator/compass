@@ -10,8 +10,8 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler/azure"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 )
 
 // ensure the fake Client is implementing the interface

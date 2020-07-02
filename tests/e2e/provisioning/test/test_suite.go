@@ -10,14 +10,14 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director/oauth"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/gardener"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/hyperscaler"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/hyperscaler/azure"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/broker"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/runtime"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/pkg/client/v1_client"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/director"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/director/oauth"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/gardener"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler/azure"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/v1_client"
 
 	gcli "github.com/machinebox/graphql"
 	"github.com/ory/hydra-maester/api/v1alpha1"

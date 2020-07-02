@@ -429,7 +429,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:60593a5847aa8492eae07f6c8d86a4dc41acaf0fe15808de1128ccedd927f065"
+  digest = "1:d3505bb0d9b8d3038f9259b8fac2c1b2580bece8dee0ea6c45b22adb4cb07c41"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -440,10 +440,17 @@
     "components/director/pkg/pagination",
     "components/director/pkg/resource",
     "components/director/pkg/scalar",
-    "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
+
+[[projects]]
+  branch = "master"
+  digest = "1:c2c62123d0ab8a81cbd8aff0776ab7fd768a8e13e149951d5cfb2a8b8942f689"
+  name = "github.com/kyma-project/control-plane"
+  packages = ["components/provisioner/pkg/gqlschema"]
+  pruneopts = "UT"
+  revision = "33edddc75ebea1c4944c2839d539da76288c77ad"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
@@ -1196,7 +1203,7 @@
     "github.com/hashicorp/go-multierror",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
-    "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
+    "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",

@@ -7,8 +7,8 @@ import (
 	"path"
 	"testing"
 
-	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/runtime"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"

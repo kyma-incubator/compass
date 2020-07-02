@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	internal "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	internal "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	mock "github.com/stretchr/testify/mock"
 )
 

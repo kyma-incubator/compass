@@ -3,9 +3,9 @@ package provisioning
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
 
 	"github.com/sirupsen/logrus"
 )

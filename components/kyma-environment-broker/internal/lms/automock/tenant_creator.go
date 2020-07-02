@@ -2,7 +2,7 @@
 package automock
 
 import (
-	lms "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/lms"
+	lms "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	mock "github.com/stretchr/testify/mock"
 )
 

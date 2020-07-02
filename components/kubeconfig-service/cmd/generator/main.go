@@ -8,13 +8,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/authn"
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/reload"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/authn"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/reload"
 	"k8s.io/apiserver/pkg/authentication/authenticator"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/endpoints"
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/env"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/endpoints"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/env"
 
 	log "github.com/sirupsen/logrus"
 )

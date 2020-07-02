@@ -13,7 +13,7 @@ import (
 	"net/http"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/iosafety"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/iosafety"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )

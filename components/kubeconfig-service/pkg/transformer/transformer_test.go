@@ -3,8 +3,8 @@ package transformer_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/env"
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/transformer"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/env"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/transformer"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
