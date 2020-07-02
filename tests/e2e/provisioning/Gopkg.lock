@@ -234,20 +234,22 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0ec3e5ffef4f79e483e2d272aa81af32412c3de9f1889b8dd660bfb4a4a27fa7"
+  digest = "1:146352eb550b407b778e4d52d5facae3b7b7efaee881744ff7100165496a3ff5"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
+    "components/director/pkg/apperrors",
     "components/director/pkg/graphql",
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
     "components/director/pkg/pagination",
+    "components/director/pkg/resource",
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "c8c00d22a01b64380d7da84ef6246c9c33b2d41e"
+  revision = "478d8e03b3df9f0cf7c9e67fcb450b56843905b6"
+  source = "github.com/Szymongib/compass"
 
 [[projects]]
   digest = "1:49f1c5f12d36c5529f52e6b1aa3ae3673039f186be3115b8254020fafd6aa8eb"

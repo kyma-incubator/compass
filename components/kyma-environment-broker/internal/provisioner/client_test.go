@@ -341,7 +341,11 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 			Description: nil,
 			Labels:      nil,
 		},
-		ClusterConfig: &schema.ClusterConfigInput{},
+		ClusterConfig: &schema.ClusterConfigInput{
+			GardenerConfig: &schema.GardenerConfigInput{
+				ProviderSpecificConfig: &schema.ProviderSpecificInput{},
+			},
+		},
 		KymaConfig: &schema.KymaConfigInput{
 			Components: []*schema.ComponentConfigurationInput{
 				{

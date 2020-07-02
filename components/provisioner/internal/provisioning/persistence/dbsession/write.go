@@ -19,8 +19,6 @@ type writeSession struct {
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).
-		Pair("terraform_state", cluster.TerraformState).
-		Pair("credentials_secret_name", cluster.CredentialsSecretName).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
@@ -60,20 +58,6 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 
 	if err != nil {
 		return dberrors.Internal("Failed to insert record to GardenerConfig table: %s", err)
-	}
-
-	return nil
-}
-
-func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
-	_, err := ws.insertInto("gcp_config").
-		Columns("id", "cluster_id", "name", "project_name", "kubernetes_version", "number_of_nodes", "boot_disk_size_gb",
-			"machine_type", "zone", "region").
-		Record(config).
-		Exec()
-
-	if err != nil {
-		return dberrors.Internal("Failed to insert record to GCPConfig table: %s", err)
 	}
 
 	return nil
@@ -214,11 +198,10 @@ func (ws writeSession) FixShootProvisioningStage(message string, newStage model.
 	return nil
 }
 
-func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
+func (ws writeSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
 		Set("kubeconfig", kubeconfig).
-		Set("terraform_state", terraformState).
 		Exec()
 
 	if err != nil {

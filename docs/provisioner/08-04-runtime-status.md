@@ -22,14 +22,23 @@ query { runtimeStatus(id: "{RUNTIME_ID}") {
 
     runtimeConfiguration {
       clusterConfig {
-        __typename ... on GCPConfig {
-          bootDiskSizeGB name numberOfNodes kubernetesVersion projectName machineType zone region }
-          ... on GardenerConfig { 
-          name workerCidr region diskType maxSurge volumeSizeGB machineType targetSecret 
-          autoScalerMin autoScalerMax provider maxUnavailable kubernetesVersion }
+        name 
+        workerCidr
+        region 
+        diskType 
+        maxSurge 
+        volumeSizeGB 
+        machineType 
+        targetSecret 
+        autoScalerMin 
+        autoScalerMax 
+        provider 
+        maxUnavailable 
+        kubernetesVersion
       }
       kymaConfig {
-        version  components {
+        version  
+        components {
           component
           namespace 
           configuration {
@@ -40,7 +49,9 @@ query { runtimeStatus(id: "{RUNTIME_ID}") {
           sourceURL
         }
         configuration {
-          key value secret
+          key 
+          value 
+          secret
         }
       }
     	kubeconfig

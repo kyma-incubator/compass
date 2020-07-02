@@ -12,14 +12,9 @@ type TestConfig struct {
 	InternalProvisionerURL string `envconfig:"default=http://localhost:3000/graphql"`
 	Tenant                 string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
 
-	Gardener GardenerConfig
-
+	Gardener       GardenerConfig
 	DirectorClient DirectorClientConfig
-
-	// Currently Provisioner do not support standalone GCP
-	GCP GCPConfig
-
-	Kyma KymaConfig
+	Kyma           KymaConfig
 
 	QueryLogging bool `envconfig:"default=false"`
 }
@@ -34,13 +29,6 @@ type GardenerConfig struct {
 	Providers   []string `envconfig:"default=Azure"`
 	AzureSecret string   `envconfig:"default=''"`
 	GCPSecret   string   `envconfig:"default=''"`
-}
-
-// GCPConfig specifies config for test on GCP
-type GCPConfig struct {
-	// Credentials is base64 encoded service account key
-	Credentials string `envconfig:"default=''"`
-	ProjectName string `envconfig:"default=''"`
 }
 
 type DirectorClientConfig struct {

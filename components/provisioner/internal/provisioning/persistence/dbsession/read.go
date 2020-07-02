@@ -60,8 +60,8 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 
 	err := r.session.
 		Select(
-			"id", "kubeconfig", "terraform_state", "tenant",
-			"credentials_secret_name", "creation_timestamp", "deleted", "sub_account_id", "active_kyma_config_id").
+			"id", "kubeconfig", "tenant",
+			"creation_timestamp", "deleted", "sub_account_id", "active_kyma_config_id").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&cluster)
@@ -73,7 +73,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 		return model.Cluster{}, dberrors.Internal("Failed to get Cluster: %s", err)
 	}
 
-	providerConfig, dberr := r.getProviderConfig(runtimeID)
+	providerConfig, dberr := r.getGardenerConfig(runtimeID)
 	if dberr != nil {
 		return model.Cluster{}, dberr.Append("Cannot get Provider config for runtimeID: %s", runtimeID)
 	}
@@ -97,7 +97,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	err := r.session.
 		Select(
 			"cluster.id", "cluster.kubeconfig", "cluster.tenant",
-			"cluster.credentials_secret_name", "cluster.creation_timestamp", "cluster.deleted", "cluster.active_kyma_config_id",
+			"cluster.creation_timestamp", "cluster.deleted", "cluster.active_kyma_config_id",
 			"name", "project_name", "kubernetes_version",
 			"volume_size_gb", "disk_type", "machine_type", "provider", "seed",
 			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
@@ -247,7 +247,7 @@ func (gcr *gardenerConfigRead) DecodeProviderConfig() error {
 	return nil
 }
 
-func (r readSession) getProviderConfig(runtimeID string) (model.ProviderConfiguration, dberrors.Error) {
+func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, dberrors.Error) {
 	gardenerConfig := gardenerConfigRead{}
 
 	err := r.session.
@@ -260,37 +260,20 @@ func (r readSession) getProviderConfig(runtimeID string) (model.ProviderConfigur
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&gardenerConfig)
 
-	if err == nil {
-		err := gardenerConfig.DecodeProviderConfig()
-		if err != nil {
-			return nil, dberrors.Internal("Failed to decode Gardener provider config fetched from database: %s", err.Error())
-		}
-
-		return gardenerConfig.GardenerConfig, nil
-	}
-
-	if err != dbr.ErrNotFound {
-		return model.GardenerConfig{}, dberrors.Internal("Failed to get Gardener Config: %s", err)
-	}
-
-	var gcpConfig model.GCPConfig
-
-	err = r.session.
-		Select("gcp_config.id", "cluster_id", "name", "project_name", "kubernetes_version",
-			"number_of_nodes", "boot_disk_size_gb", "machine_type", "region", "zone").
-		From("cluster").
-		Join("gcp_config", "cluster.id=gcp_config.cluster_id").
-		Where(dbr.Eq("cluster.id", runtimeID)).
-		LoadOne(&gcpConfig)
-
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return model.GCPConfig{}, dberrors.NotFound("Cluster configuration not found for runtime: %s", runtimeID)
+			return model.GardenerConfig{}, dberrors.NotFound("Gardener config for %s Runtime not found: %s", runtimeID, err.Error())
 		}
-		return model.GCPConfig{}, dberrors.Internal("Failed to get GCP Config: %s", err)
+
+		return model.GardenerConfig{}, dberrors.Internal("Failed to get Gardener config for %s Runtime: %s", runtimeID, err.Error())
 	}
 
-	return gcpConfig, nil
+	err = gardenerConfig.DecodeProviderConfig()
+	if err != nil {
+		return model.GardenerConfig{}, dberrors.Internal("Failed to decode Gardener provider config fetched from database: %s", err.Error())
+	}
+
+	return gardenerConfig.GardenerConfig, nil
 }
 
 var (

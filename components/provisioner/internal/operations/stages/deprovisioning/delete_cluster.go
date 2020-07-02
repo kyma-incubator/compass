@@ -1,7 +1,6 @@
 package deprovisioning
 
 import (
-	"errors"
 	"time"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -40,15 +39,9 @@ func (s *DeleteClusterStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *DeleteClusterStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *DeleteClusterStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
-	gardenerConfig, ok := cluster.GardenerConfig()
-	if !ok {
-		err := errors.New("failed to read GardenerConfig")
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
-	}
-
-	err := s.deleteShoot(gardenerConfig.Name, logger)
+	err := s.deleteShoot(cluster.ClusterConfig.Name)
 	if err != nil {
 		return operations.StageResult{}, err
 	}
@@ -56,7 +49,7 @@ func (s *DeleteClusterStep) Run(cluster model.Cluster, operation model.Operation
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func (s *DeleteClusterStep) deleteShoot(gardenerClusterName string, logger logrus.FieldLogger) error {
+func (s *DeleteClusterStep) deleteShoot(gardenerClusterName string) error {
 	err := s.gardenerClient.Delete(gardenerClusterName, &v1.DeleteOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {

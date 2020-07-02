@@ -29,8 +29,6 @@ gardener:
   clusterCleanupTimeout: 20m
   clusterCleanupResourceSelector: "https://service-manager."
 
-provisioner: "gardener"
-
 kymaRelease:
   preReleases:
     enabled: true
@@ -52,9 +50,6 @@ logs:
 
 tests:
   enabled: false
-  gcp:
-    credentials: ""
-    projectName: ""
   gardener:
     providers: "Azure"
     azureSecret: "" # Name of Gardener secret for Azure

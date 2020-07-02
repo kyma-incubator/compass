@@ -51,7 +51,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		return fmt.Errorf("failed to convert cluster config to Shoot template")
 	}
 
-	region := getRegion(cluster)
+	region := cluster.ClusterConfig.Region
 
 	if g.shouldSetMaintenanceWindow() {
 		err := g.setMaintenanceWindow(shootTemplate, region)
@@ -77,13 +77,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 }
 
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error) {
-
-	gardenerCfg, ok := cluster.GardenerConfig()
-	if !ok {
-		return model.Operation{}, fmt.Errorf("cluster does not have Gardener configuration")
-	}
-
-	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
+	shoot, err := g.shootClient.Get(cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s already deleted. Proceeding to DeprovisionCluster stage.", cluster.ID)
@@ -95,7 +89,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 
 	if shoot.DeletionTimestamp != nil {
 		annotate(shoot, operationIdAnnotation, operationId)
-		message := fmt.Sprintf("Cluster %s already %s scheduled for deletion.", gardenerCfg.Name, cluster.ID)
+		message := fmt.Sprintf("Cluster %s with id %s already scheduled for deletion.", cluster.ClusterConfig.Name, cluster.ID)
 		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, shoot.DeletionTimestamp.Time), nil
 	}
 
@@ -213,12 +207,4 @@ func getDataFromFile(filepath, region string) (interface{}, error) {
 		return "", err
 	}
 	return data[region], nil
-}
-
-func getRegion(cluster model.Cluster) string {
-	config, ok := cluster.GardenerConfig()
-	if ok {
-		return config.Region
-	}
-	return ""
 }

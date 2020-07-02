@@ -7,56 +7,6 @@ import (
 	"fmt"
 )
 
-// UnmarshalJSON is used to handle unmarshalling ClusterConfig interface properly
-func (a *RuntimeConfig) UnmarshalJSON(data []byte) error {
-	err := a.unmarshalGardener(data)
-	if err != nil {
-		return a.unmarshalGCP(data)
-	}
-
-	return nil
-}
-
-func (a *RuntimeConfig) unmarshalGardener(data []byte) error {
-	type Alias RuntimeConfig
-
-	tempGardener := &struct {
-		*Alias
-		ClusterConfig *GardenerConfig `json:"clusterConfig"`
-	}{
-		Alias: (*Alias)(a),
-	}
-
-	decoder := newDecoder(data)
-	if err := decoder.Decode(&tempGardener); err != nil {
-		return err
-	}
-
-	a.ClusterConfig = tempGardener.ClusterConfig
-
-	return nil
-}
-
-func (a *RuntimeConfig) unmarshalGCP(data []byte) error {
-	type Alias RuntimeConfig
-
-	tempGCP := &struct {
-		*Alias
-		ClusterConfig *GCPConfig `json:"clusterConfig"`
-	}{
-		Alias: (*Alias)(a),
-	}
-
-	decoder := newDecoder(data)
-	if err := decoder.Decode(&tempGCP); err != nil {
-		return err
-	}
-
-	a.ClusterConfig = tempGCP.ClusterConfig
-
-	return nil
-}
-
 // UnmarshalJSON is used to handle unmarshaling ProviderSpecificConfig interface properly
 func (g *GardenerConfig) UnmarshalJSON(data []byte) error {
 	type Alias GardenerConfig

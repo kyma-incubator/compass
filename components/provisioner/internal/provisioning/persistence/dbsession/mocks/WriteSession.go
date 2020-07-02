@@ -65,22 +65,6 @@ func (_m *WriteSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	return r0
 }
 
-// InsertGCPConfig provides a mock function with given fields: config
-func (_m *WriteSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
-	ret := _m.Called(config)
-
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.GCPConfig) dberrors.Error); ok {
-		r0 = rf(config)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
-		}
-	}
-
-	return r0
-}
-
 // InsertGardenerConfig provides a mock function with given fields: config
 func (_m *WriteSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
 	ret := _m.Called(config)
@@ -193,13 +177,13 @@ func (_m *WriteSession) TransitionOperation(operationID string, message string, 
 	return r0
 }
 
-// UpdateCluster provides a mock function with given fields: runtimeID, kubeconfig, terraformState
-func (_m *WriteSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
-	ret := _m.Called(runtimeID, kubeconfig, terraformState)
+// UpdateKubeconfig provides a mock function with given fields: runtimeID, kubeconfig
+func (_m *WriteSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
+	ret := _m.Called(runtimeID, kubeconfig)
 
 	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string, []byte) dberrors.Error); ok {
-		r0 = rf(runtimeID, kubeconfig, terraformState)
+	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+		r0 = rf(runtimeID, kubeconfig)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)

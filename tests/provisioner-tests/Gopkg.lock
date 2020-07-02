@@ -208,7 +208,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:bfa965009e096bf20a3ebf3170b2d4c94bc1eeb98ffd40999b01f5a049aa61d7"
+  digest = "1:146352eb550b407b778e4d52d5facae3b7b7efaee881744ff7100165496a3ff5"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -217,11 +217,13 @@
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
     "components/director/pkg/pagination",
+    "components/director/pkg/resource",
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "64f737ad7e1db26e2c3e9b71335bd67e69199092"
+  revision = "478d8e03b3df9f0cf7c9e67fcb450b56843905b6"
+  source = "github.com/Szymongib/compass"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
@@ -776,6 +778,7 @@
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
+    "k8s.io/client-go/util/homedir",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

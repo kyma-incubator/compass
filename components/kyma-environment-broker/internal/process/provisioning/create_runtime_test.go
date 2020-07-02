@@ -82,7 +82,6 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				},
 				Seed: nil,
 			},
-			GcpConfig: nil,
 		},
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version: kymaVersion,
@@ -95,7 +94,6 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 			},
 			Configuration: []*gqlschema.ConfigEntryInput{},
 		},
-		Credentials: nil,
 	}).Return(gqlschema.OperationStatus{
 		ID:        ptr.String(provisionerOperationID),
 		Operation: "",

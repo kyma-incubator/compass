@@ -105,13 +105,6 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 		unrecoverableError bool
 	}{
 		{
-			description: "should return unrecoverable error when failed to get GardenerConfig",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-			},
-			cluster:            model.Cluster{},
-			unrecoverableError: true,
-		},
-		{
 			description: "should return error when failed to get shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))

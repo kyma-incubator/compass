@@ -84,13 +84,6 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		unrecoverableError bool
 	}{
 		{
-			description: "should return unrecoverable error when failed to get GardenerConfig",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-			},
-			cluster:            model.Cluster{},
-			unrecoverableError: true,
-		},
-		{
 			description: "should return error when failed to delete shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
 				gardenerClient.On("Delete", clusterName, mock.Anything).Return(errors.New("some error"))
