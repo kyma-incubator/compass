@@ -1,0 +1,123 @@
+global:
+  defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+
+  images:
+    containerRegistry:
+      path: eu.gcr.io/kyma-project/incubator
+    schema_migrator:
+      dir:
+      version: "PR-1461"
+    provisioner:
+      dir:
+      version: "PR-1461"
+    kyma_environment_broker:
+      dir:
+      version: "PR-1461"
+    kyma_environments_cleanup_job:
+      dir:
+      version: "PR-1428"
+    metris:
+      dir:
+      version: "PR-1434"
+    tests:
+      provisioner:
+        dir:
+        version: "PR-1461"
+      e2e_provisioning:
+        dir:
+        version: "PR-1461"
+  isLocalEnv: false
+  oauth2:
+    host: oauth2
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 1
+    periodSeconds: 10
+  readinessProbe:
+    initialDelaySeconds: 5
+    timeoutSeconds: 1
+    periodSeconds: 2
+
+  auditlog:
+    configMapName: "kcp-auditlog-config"
+    secretName: "kcp-auditlog-secret"
+    script:
+      configMapName: "kcp-auditlog-script"
+
+  provisioning:
+    enabled: false
+
+  kyma_environment_broker:
+    enabled: false
+    secrets:
+      integrationSystemCredentials:
+        name: kcp-kyma-environment-broker-credentials
+    environmentsCleanup:
+      enabled: false
+
+  provisioner:
+    graphql:
+      port: 3000
+    secrets:
+      integrationSystemCredentials:
+        name: kcp-provisioner-credentials
+
+  gateway: #TODO: Prepare values for external Compass
+    tls:
+      host: compass-gateway
+      secure:
+        oauth:
+          host: compass-gateway-auth-oauth
+    mtls:
+      host: compass-gateway-mtls
+
+  istio:
+    gateway:
+      name: "compass-istio-gateway"
+      namespace: "compass-system"
+    proxy:
+      port: 15020
+
+  database:
+    manageSecrets: true
+    embedded:
+      enabled: true
+      provisioner:
+        name: "provisioner"
+      broker:
+        name: "broker"
+
+      #TODO remove below after migration to separate user will be done
+      provisionerDBName: "provisioner"
+      brokerDBName: "broker"
+    # Values for GCP managed PostgreSQL database
+    managedGCP:
+      serviceAccountKey: ""
+      instanceConnectionName: ""
+      provisioner:
+        name: ""
+        user: ""
+        password: ""
+      broker:
+        name: ""
+        user: ""
+        password: ""
+      host: "localhost"
+      hostPort: "5432"
+      sslMode: ""
+
+      #TODO remove below after migration to separate user will be done
+      dbUser: ""
+      dbPassword: ""
+      provisionerDBName: ""
+      brokerDBName: ""
+
+  metris:
+    enabled: false
+
+pairing-adapter:
+  enabled: false
+
+gateway:
+  gateway:
+    enabled: false

@@ -1,36 +1,37 @@
-# This file provides an overview of code owners in the `compass` repository.
+# This file provides an overview of code owners in the `control-plane` repository.
 
 # Each line is a file pattern followed by one or more owners.
 # The last matching pattern has the most precedence.
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
-# These are the default owners for the whole content of the `compass` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
+# These are the default owners for the whole content of the `control-plane` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
 * @PK85 @crabtree @pkosiec @kfurgol @tgorgol @dbadura @kjaksik @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
 
 # All developers working on this repository are able to edit main values.yaml file.
-/chart/compass/values.yaml @PK85 @crabtree @pkosiec @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
+/resources/kcp/values.yaml @PK85 @crabtree @pkosiec @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
 
 # Registration job is used by provisioner and kyma-environment-broker
-/chart/compass/templates/registration-job.yaml @PK85 @crabtree @pkosiec @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
+/resources/kcp/templates/registration-job.yaml @PK85 @crabtree @pkosiec @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
 
 # Kyma Environment Broker
-/chart/compass/charts/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
+/resources/kcp/charts/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 /components/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 /docs/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 /components/schema-migrator/migrations/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 
 # Runtime Provisioner
-/chart/compass/charts/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
+/resources/kcp/charts/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
 /components/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
 /docs/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
 /components/schema-migrator/migrations/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
 /tests/provisioner-tests @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
 
+
 # e2e-provisioning
 /tests/e2e/provisioning @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 
 # Metris
-/chart/compass/charts/metris @maksd
+/resources/kcp/charts/metris @maksd
 /components/metris @maksd
 
 # OIDC-Kubeconfig-Service

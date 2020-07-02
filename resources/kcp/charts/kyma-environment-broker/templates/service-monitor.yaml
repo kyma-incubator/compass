@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+{{ include "kyma-env-broker.labels" . | indent 4 }}
+  name: {{ include "kyma-env-broker.fullname" . }}
+  namespace: kcp-system
+spec:
+  endpoints:
+   - port: http
+  namespaceSelector:
+    matchNames:
+    - kcp-system
+  selector:
+    matchLabels:
+{{ include "kyma-env-broker.labels" . | indent 8 }}

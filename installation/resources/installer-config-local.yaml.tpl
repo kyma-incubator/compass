@@ -41,9 +41,6 @@ data:
   global.istio.gateway.name: "compass-istio-gateway"
   global.istio.gateway.namespace: "compass-system"
   global.externalServicesMock.enabled: "true"
-  gateway.gateway.auditlog.enabled: "true"
-  gateway.gateway.auditlog.authMode: "oauth"
-  director.deployment.allowJWTSigningNone: "true"
 ---
 apiVersion: v1
 kind: ConfigMap
