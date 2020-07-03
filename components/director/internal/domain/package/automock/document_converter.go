@@ -12,7 +12,7 @@ type DocumentConverter struct {
 }
 
 // MultipleInputFromGraphQL provides a mock function with given fields: in
-func (_m *DocumentConverter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput {
+func (_m *DocumentConverter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*model.DocumentInput, error) {
 	ret := _m.Called(in)
 
 	var r0 []*model.DocumentInput
@@ -24,7 +24,14 @@ func (_m *DocumentConverter) MultipleInputFromGraphQL(in []*graphql.DocumentInpu
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*graphql.DocumentInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in

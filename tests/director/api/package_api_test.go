@@ -144,7 +144,7 @@ func TestAddDocumentToPackage(t *testing.T) {
 	pkg := createPackage(t, ctx, application.ID, pkgName)
 	defer deletePackage(t, ctx, pkg.ID)
 
-	input := fixDocumentInput()
+	input := fixDocumentInput(t)
 	inStr, err := tc.graphqlizer.DocumentInputToGQL(&input)
 	require.NoError(t, err)
 
@@ -318,10 +318,10 @@ func TestDocumentsInPackage(t *testing.T) {
 	pkg := createPackage(t, ctx, application.ID, pkgName)
 	defer deletePackage(t, ctx, pkg.ID)
 
-	inputA := fixDocumentInputWithName("foo")
+	inputA := fixDocumentInputWithName(t, "foo")
 	addDocumentToPackageWithInput(t, ctx, pkg.ID, inputA)
 
-	inputB := fixDocumentInputWithName("bar")
+	inputB := fixDocumentInputWithName(t, "bar")
 	addDocumentToPackageWithInput(t, ctx, pkg.ID, inputB)
 
 	queryDocsForPkg := fixDocumentsInPackageRequest(application.ID, pkg.ID)
@@ -342,7 +342,7 @@ func TestAddPackage(t *testing.T) {
 	application := registerApplication(t, ctx, "app-test-package")
 	defer unregisterApplication(t, application.ID)
 
-	pkgInput := fixPackageCreateInputWithRelatedObjects("pkg-app-1")
+	pkgInput := fixPackageCreateInputWithRelatedObjects(t, "pkg-app-1")
 	pkg, err := tc.graphqlizer.PackageCreateInputToGQL(pkgInput)
 	require.NoError(t, err)
 

@@ -39,7 +39,7 @@ type ApplicationService interface {
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
-	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) model.ApplicationRegisterInput
+	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
@@ -66,15 +66,15 @@ type SystemAuthService interface {
 
 //go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
 type WebhookConverter interface {
-	ToGraphQL(in *model.Webhook) *graphql.Webhook
-	MultipleToGraphQL(in []*model.Webhook) []*graphql.Webhook
-	InputFromGraphQL(in *graphql.WebhookInput) *model.WebhookInput
-	MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*model.WebhookInput
+	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
+	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
+	InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error)
+	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
 //go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
+	ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
 }
 
 //go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
@@ -99,7 +99,7 @@ type PackageService interface {
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
 	MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, error)
-	MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) []*model.PackageCreateInput
+	MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error)
 }
 
 type Resolver struct {
@@ -267,7 +267,10 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.appConverter.CreateInputFromGraphQL(in)
+	convertedIn, err := r.appConverter.CreateInputFromGraphQL(in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting ApplicationRegister input")
+	}
 	id, err := r.appSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
@@ -446,9 +449,8 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	gqlWebhooks := r.webhookConverter.MultipleToGraphQL(webhooks)
 
-	return gqlWebhooks, nil
+	return r.webhookConverter.MultipleToGraphQL(webhooks)
 }
 
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *string) (*graphql.Labels, error) {
@@ -513,7 +515,11 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 
 	var out []*graphql.SystemAuth
 	for _, sa := range sysAuths {
-		c := r.sysAuthConv.ToGraphQL(&sa)
+		c, err := r.sysAuthConv.ToGraphQL(&sa)
+		if err != nil {
+			return nil, err
+		}
+
 		out = append(out, c)
 	}
 

@@ -12,7 +12,7 @@ type WebhookConverter struct {
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *WebhookConverter) InputFromGraphQL(in *graphql.WebhookInput) *model.WebhookInput {
+func (_m *WebhookConverter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error) {
 	ret := _m.Called(in)
 
 	var r0 *model.WebhookInput
@@ -24,11 +24,18 @@ func (_m *WebhookConverter) InputFromGraphQL(in *graphql.WebhookInput) *model.We
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*graphql.WebhookInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleInputFromGraphQL provides a mock function with given fields: in
-func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*model.WebhookInput {
+func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error) {
 	ret := _m.Called(in)
 
 	var r0 []*model.WebhookInput
@@ -40,11 +47,18 @@ func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.WebhookInput)
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*graphql.WebhookInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in
-func (_m *WebhookConverter) MultipleToGraphQL(in []*model.Webhook) []*graphql.Webhook {
+func (_m *WebhookConverter) MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error) {
 	ret := _m.Called(in)
 
 	var r0 []*graphql.Webhook
@@ -56,11 +70,18 @@ func (_m *WebhookConverter) MultipleToGraphQL(in []*model.Webhook) []*graphql.We
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*model.Webhook) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *WebhookConverter) ToGraphQL(in *model.Webhook) *graphql.Webhook {
+func (_m *WebhookConverter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 	ret := _m.Called(in)
 
 	var r0 *graphql.Webhook
@@ -72,5 +93,12 @@ func (_m *WebhookConverter) ToGraphQL(in *model.Webhook) *graphql.Webhook {
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.Webhook) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

@@ -106,14 +106,15 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			frConv := &automock.FetchRequestConverter{}
 			if testCase.Input != nil {
-				frConv.On("InputFromGraphQL", testCase.Input.FetchRequest).Return(testCase.Expected.FetchRequest)
+				frConv.On("InputFromGraphQL", testCase.Input.FetchRequest).Return(testCase.Expected.FetchRequest, nil)
 			}
 			converter := document.NewConverter(frConv)
 
 			// when
-			res := converter.InputFromGraphQL(testCase.Input)
+			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			frConv.AssertExpectations(t)
 		})
@@ -134,14 +135,15 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		{},
 	}
 	frConv := &automock.FetchRequestConverter{}
-	frConv.On("InputFromGraphQL", input[0].FetchRequest).Return(expected[0].FetchRequest)
-	frConv.On("InputFromGraphQL", (*graphql.FetchRequestInput)(nil)).Return(nil)
+	frConv.On("InputFromGraphQL", input[0].FetchRequest).Return(expected[0].FetchRequest, nil)
+	frConv.On("InputFromGraphQL", (*graphql.FetchRequestInput)(nil)).Return(nil, nil)
 	converter := document.NewConverter(frConv)
 
 	// when
-	res := converter.MultipleInputFromGraphQL(input)
+	res, err := converter.MultipleInputFromGraphQL(input)
 
 	// then
+	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
 	frConv.AssertExpectations(t)
 }

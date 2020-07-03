@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
@@ -19,9 +20,9 @@ type Service interface {
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageInstanceAuth
+	ToGraphQL(in *model.PackageInstanceAuth) (*graphql.PackageInstanceAuth, error)
 	RequestInputFromGraphQL(in graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput
-	SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) model.PackageInstanceAuthSetInput
+	SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) (model.PackageInstanceAuthSetInput, error)
 }
 
 //go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
@@ -73,7 +74,7 @@ func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string)
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(instanceAuth), nil
+	return r.conv.ToGraphQL(instanceAuth)
 }
 
 func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
@@ -85,7 +86,11 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.conv.SetInputFromGraphQL(in)
+	convertedIn, err := r.conv.SetInputFromGraphQL(in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting PackageInstanceAuth from GraphQL")
+	}
+
 	err = r.svc.SetAuth(ctx, authID, convertedIn)
 	if err != nil {
 		return nil, err
@@ -101,7 +106,7 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(instanceAuth), nil
+	return r.conv.ToGraphQL(instanceAuth)
 }
 
 func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
@@ -135,7 +140,7 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(instanceAuth), nil
+	return r.conv.ToGraphQL(instanceAuth)
 }
 
 func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
@@ -174,5 +179,5 @@ func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authI
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(instanceAuth), nil
+	return r.conv.ToGraphQL(instanceAuth)
 }

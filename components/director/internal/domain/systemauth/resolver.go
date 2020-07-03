@@ -23,7 +23,7 @@ type OAuth20Service interface {
 
 //go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(model *model.SystemAuth) *graphql.SystemAuth
+	ToGraphQL(model *model.SystemAuth) (*graphql.SystemAuth, error)
 }
 
 type Resolver struct {
@@ -52,7 +52,10 @@ func (r *Resolver) GenericDeleteSystemAuth(objectType model.SystemAuthReferenceO
 			return nil, err
 		}
 
-		deletedItem := r.conv.ToGraphQL(item)
+		deletedItem, err := r.conv.ToGraphQL(item)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting SystemAuth to GraphQL")
+		}
 
 		if item.Value != nil && item.Value.Credential.Oauth != nil {
 			err := r.oAuth20Svc.DeleteClientCredentials(ctx, item.Value.Credential.Oauth.ClientID)

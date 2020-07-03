@@ -186,7 +186,7 @@ func TestAddDocument_Validation(t *testing.T) {
 	pkg := createPackage(t, ctx, app.ID, "pkg")
 	defer deletePackage(t, ctx, pkg.ID)
 
-	doc := fixDocumentInput()
+	doc := fixDocumentInput(t)
 	doc.DisplayName = strings.Repeat("a", 129)
 	docInputGQL, err := tc.graphqlizer.DocumentInputToGQL(&doc)
 	require.NoError(t, err)
@@ -425,7 +425,7 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 	assert.Contains(t, err.Error(), "templateName=cannot be blank")
 }
 
-func fixDocumentInput() graphql.DocumentInput {
+func fixDocumentInput(t *testing.T) graphql.DocumentInput {
 	return graphql.DocumentInput{
 		Title:       "Readme",
 		Description: "Detailed description of project",
@@ -435,7 +435,7 @@ func fixDocumentInput() graphql.DocumentInput {
 			URL:    "kyma-project.io",
 			Mode:   ptr.FetchMode(graphql.FetchModePackage),
 			Filter: ptr.String("/docs/README.md"),
-			Auth:   fixBasicAuth(),
+			Auth:   fixBasicAuth(t),
 		},
 	}
 }

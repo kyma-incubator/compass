@@ -12,7 +12,7 @@ type APIConverter struct {
 }
 
 // MultipleInputFromGraphQL provides a mock function with given fields: in
-func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput {
+func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, error) {
 	ret := _m.Called(in)
 
 	var r0 []*model.APIDefinitionInput
@@ -24,7 +24,14 @@ func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInpu
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*graphql.APIDefinitionInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in

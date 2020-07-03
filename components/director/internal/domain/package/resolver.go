@@ -25,7 +25,7 @@ type PackageService interface {
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
-	CreateInputFromGraphQL(in graphql.PackageCreateInput) model.PackageCreateInput
+	CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error)
 	UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error)
 }
 
@@ -37,8 +37,8 @@ type PackageInstanceAuthService interface {
 
 //go:generate mockery -name=PackageInstanceAuthConverter -output=automock -outpkg=automock -case=underscore
 type PackageInstanceAuthConverter interface {
-	ToGraphQL(in *model.PackageInstanceAuth) *graphql.PackageInstanceAuth
-	MultipleToGraphQL(in []*model.PackageInstanceAuth) []*graphql.PackageInstanceAuth
+	ToGraphQL(in *model.PackageInstanceAuth) (*graphql.PackageInstanceAuth, error)
+	MultipleToGraphQL(in []*model.PackageInstanceAuth) ([]*graphql.PackageInstanceAuth, error)
 }
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
@@ -51,7 +51,7 @@ type APIService interface {
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
 	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
-	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, error)
 }
 
 //go:generate mockery -name=EventService -output=automock -outpkg=automock -case=underscore
@@ -64,7 +64,7 @@ type EventService interface {
 type EventConverter interface {
 	ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition
 	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
-	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, error)
 }
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
@@ -77,7 +77,7 @@ type DocumentService interface {
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
 	MultipleToGraphQL(in []*model.Document) []*graphql.Document
-	MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput
+	MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*model.DocumentInput, error)
 }
 
 type Resolver struct {
@@ -132,7 +132,11 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.packageConverter.CreateInputFromGraphQL(in)
+	convertedIn, err := r.packageConverter.CreateInputFromGraphQL(in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting input from GraphQL")
+	}
+
 	id, err := r.packageSvc.Create(ctx, applicationID, convertedIn)
 	if err != nil {
 		return nil, err
@@ -251,7 +255,7 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 		return nil, err
 	}
 
-	return r.packageInstanceAuthConverter.ToGraphQL(pkg), nil
+	return r.packageInstanceAuthConverter.ToGraphQL(pkg)
 
 }
 
@@ -277,9 +281,7 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*
 		return nil, err
 	}
 
-	out := r.packageInstanceAuthConverter.MultipleToGraphQL(pkgInstanceAuths)
-
-	return out, nil
+	return r.packageInstanceAuthConverter.MultipleToGraphQL(pkgInstanceAuths)
 }
 
 func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.APIDefinition, error) {

@@ -24,15 +24,15 @@ type DocumentService interface {
 //go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
-	InputFromGraphQL(in *graphql.DocumentInput) *model.DocumentInput
+	InputFromGraphQL(in *graphql.DocumentInput) (*model.DocumentInput, error)
 	ToEntity(in model.Document) (Entity, error)
 	FromEntity(in Entity) (model.Document, error)
 }
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
 type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
+	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
+	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
@@ -73,7 +73,10 @@ func (r *Resolver) AddDocumentToPackage(ctx context.Context, packageID string, i
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.converter.InputFromGraphQL(&in)
+	convertedIn, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting DocumentInput from GraphQL")
+	}
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
@@ -160,6 +163,5 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*gr
 		return nil, err
 	}
 
-	frGQL := r.frConverter.ToGraphQL(fr)
-	return frGQL, nil
+	return r.frConverter.ToGraphQL(fr)
 }

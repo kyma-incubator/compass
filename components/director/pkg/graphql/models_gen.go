@@ -136,19 +136,23 @@ type ApplicationUpdateInput struct {
 }
 
 type Auth struct {
-	Credential            CredentialData         `json:"credential"`
-	AdditionalHeaders     *HttpHeaders           `json:"additionalHeaders"`
-	AdditionalQueryParams *QueryParams           `json:"additionalQueryParams"`
-	RequestAuth           *CredentialRequestAuth `json:"requestAuth"`
+	Credential                      CredentialData         `json:"credential"`
+	AdditionalHeaders               *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeadersSerialized     *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
+	AdditionalQueryParams           *QueryParams           `json:"additionalQueryParams"`
+	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
+	RequestAuth                     *CredentialRequestAuth `json:"requestAuth"`
 }
 
 type AuthInput struct {
 	Credential *CredentialDataInput `json:"credential"`
 	// **Validation:** if provided, headers name and value required
-	AdditionalHeaders *HttpHeaders `json:"additionalHeaders"`
+	AdditionalHeaders           *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeadersSerialized *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
 	// **Validation:** if provided, query parameters name and value required
-	AdditionalQueryParams *QueryParams                `json:"additionalQueryParams"`
-	RequestAuth           *CredentialRequestAuthInput `json:"requestAuth"`
+	AdditionalQueryParams           *QueryParams                `json:"additionalQueryParams"`
+	AdditionalQueryParamsSerialized *QueryParamsSerialized      `json:"additionalQueryParamsSerialized"`
+	RequestAuth                     *CredentialRequestAuthInput `json:"requestAuth"`
 }
 
 type AutomaticScenarioAssignment struct {
@@ -183,10 +187,12 @@ type BasicCredentialDataInput struct {
 }
 
 type CSRFTokenCredentialRequestAuth struct {
-	TokenEndpointURL      string         `json:"tokenEndpointURL"`
-	Credential            CredentialData `json:"credential"`
-	AdditionalHeaders     *HttpHeaders   `json:"additionalHeaders"`
-	AdditionalQueryParams *QueryParams   `json:"additionalQueryParams"`
+	TokenEndpointURL                string                 `json:"tokenEndpointURL"`
+	Credential                      CredentialData         `json:"credential"`
+	AdditionalHeaders               *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeadersSerialized     *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
+	AdditionalQueryParams           *QueryParams           `json:"additionalQueryParams"`
+	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 }
 
 type CSRFTokenCredentialRequestAuthInput struct {
@@ -194,9 +200,11 @@ type CSRFTokenCredentialRequestAuthInput struct {
 	TokenEndpointURL string               `json:"tokenEndpointURL"`
 	Credential       *CredentialDataInput `json:"credential"`
 	// **Validation:** if provided, headers name and value required
-	AdditionalHeaders *HttpHeaders `json:"additionalHeaders"`
+	AdditionalHeaders           *HttpHeaders           `json:"additionalHeaders"`
+	AdditionalHeadersSerialized *HttpHeadersSerialized `json:"additionalHeadersSerialized"`
 	// **Validation:** if provided, query parameters name and value required
-	AdditionalQueryParams *QueryParams `json:"additionalQueryParams"`
+	AdditionalQueryParams           *QueryParams           `json:"additionalQueryParams"`
+	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 }
 
 // **Validation:** basic or oauth field required

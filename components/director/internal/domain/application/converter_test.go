@@ -100,12 +100,12 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			Expected: allPropsExpected,
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("MultipleInputFromGraphQL", allPropsInput.Webhooks).Return(allPropsExpected.Webhooks)
+				conv.On("MultipleInputFromGraphQL", allPropsInput.Webhooks).Return(allPropsExpected.Webhooks, nil)
 				return conv
 			},
 			PackageConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
-				conv.On("MultipleCreateInputFromGraphQL", allPropsInput.Packages).Return(allPropsExpected.Packages)
+				conv.On("MultipleCreateInputFromGraphQL", allPropsInput.Packages).Return(allPropsExpected.Packages, nil)
 				return conv
 			},
 		},
@@ -115,12 +115,12 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			Expected: model.ApplicationRegisterInput{},
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil)
+				conv.On("MultipleInputFromGraphQL", []*graphql.WebhookInput(nil)).Return(nil, nil)
 				return conv
 			},
 			PackageConverterFn: func() *automock.PackageConverter {
 				conv := &automock.PackageConverter{}
-				conv.On("MultipleCreateInputFromGraphQL", []*graphql.PackageCreateInput(nil)).Return(nil)
+				conv.On("MultipleCreateInputFromGraphQL", []*graphql.PackageCreateInput(nil)).Return(nil, nil)
 				return conv
 			},
 		},
@@ -133,9 +133,10 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 				testCase.WebhookConverterFn(),
 				testCase.PackageConverterFn(),
 			)
-			res := converter.CreateInputFromGraphQL(testCase.Input)
+			res, err := converter.CreateInputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 		})
 	}

@@ -29,10 +29,10 @@ type ApplicationService interface {
 
 //go:generate mockery -name=WebhookConverter -output=automock -outpkg=automock -case=underscore
 type WebhookConverter interface {
-	ToGraphQL(in *model.Webhook) *graphql.Webhook
-	MultipleToGraphQL(in []*model.Webhook) []*graphql.Webhook
-	InputFromGraphQL(in *graphql.WebhookInput) *model.WebhookInput
-	MultipleInputFromGraphQL(in []*graphql.WebhookInput) []*model.WebhookInput
+	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
+	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
+	InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookInput, error)
+	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
 type Resolver struct {
@@ -59,7 +59,10 @@ func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID stri
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
+	convertedIn, err := r.webhookConverter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting the WebhookInput")
+	}
 
 	found, err := r.appSvc.Exist(ctx, applicationID)
 	if err != nil {
@@ -84,9 +87,7 @@ func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID stri
 		return nil, err
 	}
 
-	gqlWebhook := r.webhookConverter.ToGraphQL(webhook)
-
-	return gqlWebhook, nil
+	return r.webhookConverter.ToGraphQL(webhook)
 }
 
 func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID string, in graphql.WebhookInput) (*graphql.Webhook, error) {
@@ -97,7 +98,10 @@ func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID strin
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.webhookConverter.InputFromGraphQL(&in)
+	convertedIn, err := r.webhookConverter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting the WebhookInput")
+	}
 
 	err = r.webhookSvc.Update(ctx, webhookID, *convertedIn)
 	if err != nil {
@@ -113,9 +117,7 @@ func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID strin
 		return nil, err
 	}
 
-	gqlWebhook := r.webhookConverter.ToGraphQL(webhook)
-
-	return gqlWebhook, nil
+	return r.webhookConverter.ToGraphQL(webhook)
 }
 
 func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID string) (*graphql.Webhook, error) {
@@ -131,7 +133,10 @@ func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID strin
 		return nil, err
 	}
 
-	deletedWebhook := r.webhookConverter.ToGraphQL(webhook)
+	deletedWebhook, err := r.webhookConverter.ToGraphQL(webhook)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting the Webhook model to GraphQL")
+	}
 
 	err = r.webhookSvc.Delete(ctx, webhookID)
 	if err != nil {

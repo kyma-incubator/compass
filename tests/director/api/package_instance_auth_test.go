@@ -64,7 +64,7 @@ func TestRequestPackageInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	application := registerApplication(t, ctx, "app-test-package")
 	defer unregisterApplication(t, application.ID)
 
-	authInput := fixBasicAuth()
+	authInput := fixBasicAuth(t)
 
 	pkgInput := fixPackageCreateInputWithDefaultAuth("pkg-app-1", authInput)
 	pkg, err := tc.graphqlizer.PackageCreateInputToGQL(pkgInput)
@@ -151,7 +151,7 @@ func TestSetPackageInstanceAuth(t *testing.T) {
 
 	pkgInstanceAuth := createPackageInstanceAuth(t, ctx, pkg.ID)
 
-	authInput := fixBasicAuth()
+	authInput := fixBasicAuth(t)
 	pkgInstanceAuthSetInput := fixPackageInstanceAuthSetInputSucceeded(authInput)
 	pkgInstanceAuthSetInputStr, err := tc.graphqlizer.PackageInstanceAuthSetInputToGQL(pkgInstanceAuthSetInput)
 	require.NoError(t, err)

@@ -50,14 +50,15 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
-				authConv.On("ToGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
+				authConv.On("ToGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth, nil)
 			}
 			converter := fetchrequest.NewConverter(authConv)
 
 			// when
-			res := converter.ToGraphQL(testCase.Input)
+			res, err := converter.ToGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			authConv.AssertExpectations(t)
 		})
@@ -92,14 +93,15 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
 			if testCase.Input != nil {
-				authConv.On("InputFromGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth)
+				authConv.On("InputFromGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth, nil)
 			}
 			converter := fetchrequest.NewConverter(authConv)
 
 			// when
-			res := converter.InputFromGraphQL(testCase.Input)
+			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			authConv.AssertExpectations(t)
 		})

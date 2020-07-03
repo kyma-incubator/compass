@@ -15,8 +15,8 @@ import (
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
+	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
+	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
 }
 
 type converter struct {
@@ -27,23 +27,28 @@ func NewConverter(authConverter AuthConverter) *converter {
 	return &converter{authConverter: authConverter}
 }
 
-func (c *converter) ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest {
+func (c *converter) ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error) {
 	if in == nil {
-		return nil
+		return nil, nil
+	}
+
+	auth, err := c.authConverter.ToGraphQL(in.Auth)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting Auth to GraphQL")
 	}
 
 	return &graphql.FetchRequest{
 		URL:    in.URL,
-		Auth:   c.authConverter.ToGraphQL(in.Auth),
+		Auth:   auth,
 		Mode:   graphql.FetchMode(in.Mode),
 		Filter: in.Filter,
 		Status: c.statusToGraphQL(in.Status),
-	}
+	}, nil
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput {
+func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	var mode *model.FetchMode
@@ -52,12 +57,17 @@ func (c *converter) InputFromGraphQL(in *graphql.FetchRequestInput) *model.Fetch
 		mode = &tmp
 	}
 
+	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting Auth input from GraphQL")
+	}
+
 	return &model.FetchRequestInput{
 		URL:    in.URL,
-		Auth:   c.authConverter.InputFromGraphQL(in.Auth),
+		Auth:   auth,
 		Mode:   mode,
 		Filter: in.Filter,
-	}
+	}, nil
 }
 
 func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {

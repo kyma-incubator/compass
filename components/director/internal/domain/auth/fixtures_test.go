@@ -13,8 +13,11 @@ var (
 		"foo": {"bar", "baz"},
 		"too": {"tar", "taz"},
 	}
-	authHeaders = graphql.HttpHeaders(authMap)
-	authParams  = graphql.QueryParams(authMap)
+	authMapSerialized     = "{\"foo\":[\"bar\",\"baz\"],\"too\":[\"tar\",\"taz\"]}"
+	authHeaders           = graphql.HttpHeaders(authMap)
+	authHeadersSerialized = graphql.HttpHeadersSerialized(authMapSerialized)
+	authParams            = graphql.QueryParams(authMap)
+	authParamsSerialized  = graphql.QueryParamsSerialized(authMapSerialized)
 )
 
 func fixDetailedAuth() *model.Auth {
@@ -51,8 +54,10 @@ func fixDetailedGQLAuth() *graphql.Auth {
 			Username: authUsername,
 			Password: authPassword,
 		},
-		AdditionalHeaders:     &authHeaders,
-		AdditionalQueryParams: &authParams,
+		AdditionalHeaders:               &authHeaders,
+		AdditionalHeadersSerialized:     &authHeadersSerialized,
+		AdditionalQueryParams:           &authParams,
+		AdditionalQueryParamsSerialized: &authParamsSerialized,
 		RequestAuth: &graphql.CredentialRequestAuth{
 			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
 				TokenEndpointURL: authEndpoint,
@@ -96,6 +101,34 @@ func fixDetailedAuthInput() *model.AuthInput {
 }
 
 func fixDetailedGQLAuthInput() *graphql.AuthInput {
+	return &graphql.AuthInput{
+		Credential: &graphql.CredentialDataInput{
+			Basic: &graphql.BasicCredentialDataInput{
+				Username: authUsername,
+				Password: authPassword,
+			},
+			Oauth: nil,
+		},
+		AdditionalHeadersSerialized:     &authHeadersSerialized,
+		AdditionalQueryParamsSerialized: &authParamsSerialized,
+		RequestAuth: &graphql.CredentialRequestAuthInput{
+			Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
+				TokenEndpointURL: authEndpoint,
+				Credential: &graphql.CredentialDataInput{
+					Basic: &graphql.BasicCredentialDataInput{
+						Username: authUsername,
+						Password: authPassword,
+					},
+					Oauth: nil,
+				},
+				AdditionalHeadersSerialized:     &authHeadersSerialized,
+				AdditionalQueryParamsSerialized: &authParamsSerialized,
+			},
+		},
+	}
+}
+
+func fixDetailedGQLAuthInputDeprecated() *graphql.AuthInput {
 	return &graphql.AuthInput{
 		Credential: &graphql.CredentialDataInput{
 			Basic: &graphql.BasicCredentialDataInput{

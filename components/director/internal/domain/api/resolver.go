@@ -31,15 +31,15 @@ type RuntimeService interface {
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
 	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
-	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) []*model.APIDefinitionInput
-	InputFromGraphQL(in *graphql.APIDefinitionInput) *model.APIDefinitionInput
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, error)
+	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, error)
 	SpecToGraphQL(definitionID string, in *model.APISpec) *graphql.APISpec
 }
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
 type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
+	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
+	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
@@ -83,7 +83,10 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.converter.InputFromGraphQL(&in)
+	convertedIn, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting APIDefinition input from GraphQL")
+	}
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
@@ -123,7 +126,10 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.converter.InputFromGraphQL(&in)
+	convertedIn, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting APIDefinition input from GraphQL")
+	}
 
 	err = r.svc.Update(ctx, id, *convertedIn)
 	if err != nil {
@@ -223,6 +229,5 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 		return nil, err
 	}
 
-	frGQL := r.frConverter.ToGraphQL(fr)
-	return frGQL, nil
+	return r.frConverter.ToGraphQL(fr)
 }

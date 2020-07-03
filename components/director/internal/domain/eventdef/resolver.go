@@ -28,14 +28,14 @@ type EventDefService interface {
 type EventDefConverter interface {
 	ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition
 	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
-	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) []*model.EventDefinitionInput
-	InputFromGraphQL(in *graphql.EventDefinitionInput) *model.EventDefinitionInput
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, error)
+	InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, error)
 }
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
 type FetchRequestConverter interface {
-	ToGraphQL(in *model.FetchRequest) *graphql.FetchRequest
-	InputFromGraphQL(in *graphql.FetchRequestInput) *model.FetchRequestInput
+	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
+	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
@@ -77,7 +77,10 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.converter.InputFromGraphQL(&in)
+	convertedIn, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting EventDefinition input")
+	}
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
@@ -117,7 +120,10 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn := r.converter.InputFromGraphQL(&in)
+	convertedIn, err := r.converter.InputFromGraphQL(&in)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting EventDefinition input")
+	}
 
 	err = r.svc.Update(ctx, id, *convertedIn)
 	if err != nil {
@@ -223,6 +229,5 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 		return nil, err
 	}
 
-	frGQL := r.frConverter.ToGraphQL(fr)
-	return frGQL, nil
+	return r.frConverter.ToGraphQL(fr)
 }

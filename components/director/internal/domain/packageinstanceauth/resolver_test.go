@@ -45,7 +45,7 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth).Once()
+				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
 			ExpectedResult: gqlInstanceAuth,
@@ -175,7 +175,7 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput).Once()
-				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth).Once()
+				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
 			ExpectedResult: gqlInstanceAuth,
@@ -215,7 +215,7 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput).Once()
+				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -255,7 +255,7 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput).Once()
+				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -277,7 +277,7 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput).Once()
+				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -339,8 +339,8 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput).Once()
-				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth).Once()
+				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
+				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
 			ExpectedResult: gqlInstanceAuth,
@@ -371,7 +371,7 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput).Once()
+				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -387,7 +387,7 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput).Once()
+				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -404,7 +404,7 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput).Once()
+				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
 				return conv
 			},
 			ExpectedResult: nil,
@@ -470,7 +470,7 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth).Once()
+				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
 			ExpectedResult: gqlInstanceAuth,
@@ -492,7 +492,7 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth).Once()
+				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
 			ExpectedResult: gqlInstanceAuth,

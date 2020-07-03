@@ -140,7 +140,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Expected: gqlPackage,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", modelPackage.DefaultInstanceAuth).Return(gqlPackage.DefaultInstanceAuth).Once()
+				conv.On("ToGraphQL", modelPackage.DefaultInstanceAuth).Return(gqlPackage.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},
@@ -150,7 +150,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Expected: emptyGraphQLPackage,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", emptyModelPackage.DefaultInstanceAuth).Return(nil).Once()
+				conv.On("ToGraphQL", emptyModelPackage.DefaultInstanceAuth).Return(nil, nil).Once()
 				return conv
 			},
 		},
@@ -212,7 +212,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		if api == nil {
 			continue
 		}
-		authConverter.On("ToGraphQL", api.DefaultInstanceAuth).Return(expected[i].DefaultInstanceAuth).Once()
+		authConverter.On("ToGraphQL", api.DefaultInstanceAuth).Return(expected[i].DefaultInstanceAuth, nil).Once()
 	}
 
 	// when
@@ -249,22 +249,22 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			Expected: modelPackageCreateInput,
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", gqlPackageCreateInput.APIDefinitions).Return(modelPackageCreateInput.APIDefinitions)
+				conv.On("MultipleInputFromGraphQL", gqlPackageCreateInput.APIDefinitions).Return(modelPackageCreateInput.APIDefinitions, nil)
 				return conv
 			},
 			EventAPIConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleInputFromGraphQL", gqlPackageCreateInput.EventDefinitions).Return(modelPackageCreateInput.EventDefinitions)
+				conv.On("MultipleInputFromGraphQL", gqlPackageCreateInput.EventDefinitions).Return(modelPackageCreateInput.EventDefinitions, nil)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("MultipleInputFromGraphQL", gqlPackageCreateInput.Documents).Return(modelPackageCreateInput.Documents)
+				conv.On("MultipleInputFromGraphQL", gqlPackageCreateInput.Documents).Return(modelPackageCreateInput.Documents, nil)
 				return conv
 			},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlPackageCreateInput.DefaultInstanceAuth).Return(modelPackageCreateInput.DefaultInstanceAuth).Once()
+				conv.On("InputFromGraphQL", gqlPackageCreateInput.DefaultInstanceAuth).Return(modelPackageCreateInput.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},
@@ -274,22 +274,22 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			Expected: model.PackageCreateInput{},
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", emptyGQLPackageCreateInput.APIDefinitions).Return(emptyModelPackageCreateInput.APIDefinitions)
+				conv.On("MultipleInputFromGraphQL", emptyGQLPackageCreateInput.APIDefinitions).Return(emptyModelPackageCreateInput.APIDefinitions, nil)
 				return conv
 			},
 			EventAPIConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleInputFromGraphQL", emptyGQLPackageCreateInput.EventDefinitions).Return(emptyModelPackageCreateInput.EventDefinitions)
+				conv.On("MultipleInputFromGraphQL", emptyGQLPackageCreateInput.EventDefinitions).Return(emptyModelPackageCreateInput.EventDefinitions, nil)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("MultipleInputFromGraphQL", emptyGQLPackageCreateInput.Documents).Return(emptyModelPackageCreateInput.Documents)
+				conv.On("MultipleInputFromGraphQL", emptyGQLPackageCreateInput.Documents).Return(emptyModelPackageCreateInput.Documents, nil)
 				return conv
 			},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", emptyGQLPackageCreateInput.DefaultInstanceAuth).Return(emptyModelPackageCreateInput.DefaultInstanceAuth).Once()
+				conv.On("InputFromGraphQL", emptyGQLPackageCreateInput.DefaultInstanceAuth).Return(emptyModelPackageCreateInput.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},
@@ -305,9 +305,10 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 
 			// when
 			converter := mp_package.NewConverter(authConverter, apiConverter, eventConverter, documentConverter)
-			res := converter.CreateInputFromGraphQL(testCase.Input)
+			res, err := converter.CreateInputFromGraphQL(testCase.Input)
 
 			// then
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.Expected, res)
 			mock.AssertExpectationsForObjects(t, apiConverter, eventConverter, documentConverter, authConverter)
 		})
@@ -330,27 +331,28 @@ func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 	}
 
 	apiConv := &automock.APIConverter{}
-	apiConv.On("MultipleInputFromGraphQL", gqlPkg1.APIDefinitions).Return(modPkg1.APIDefinitions).Once()
-	apiConv.On("MultipleInputFromGraphQL", gqlPkg2.APIDefinitions).Return(modPkg2.APIDefinitions).Once()
+	apiConv.On("MultipleInputFromGraphQL", gqlPkg1.APIDefinitions).Return(modPkg1.APIDefinitions, nil).Once()
+	apiConv.On("MultipleInputFromGraphQL", gqlPkg2.APIDefinitions).Return(modPkg2.APIDefinitions, nil).Once()
 
 	eventConv := &automock.EventConverter{}
-	eventConv.On("MultipleInputFromGraphQL", gqlPkg1.EventDefinitions).Return(modPkg1.EventDefinitions).Once()
-	eventConv.On("MultipleInputFromGraphQL", gqlPkg2.EventDefinitions).Return(modPkg2.EventDefinitions).Once()
+	eventConv.On("MultipleInputFromGraphQL", gqlPkg1.EventDefinitions).Return(modPkg1.EventDefinitions, nil).Once()
+	eventConv.On("MultipleInputFromGraphQL", gqlPkg2.EventDefinitions).Return(modPkg2.EventDefinitions, nil).Once()
 
 	docConv := &automock.DocumentConverter{}
-	docConv.On("MultipleInputFromGraphQL", gqlPkg1.Documents).Return(modPkg1.Documents).Once()
-	docConv.On("MultipleInputFromGraphQL", gqlPkg2.Documents).Return(modPkg2.Documents).Once()
+	docConv.On("MultipleInputFromGraphQL", gqlPkg1.Documents).Return(modPkg1.Documents, nil).Once()
+	docConv.On("MultipleInputFromGraphQL", gqlPkg2.Documents).Return(modPkg2.Documents, nil).Once()
 
 	authConv := &automock.AuthConverter{}
-	authConv.On("InputFromGraphQL", gqlPkg1.DefaultInstanceAuth).Return(modPkg1.DefaultInstanceAuth).Once()
-	authConv.On("InputFromGraphQL", gqlPkg2.DefaultInstanceAuth).Return(modPkg2.DefaultInstanceAuth).Once()
+	authConv.On("InputFromGraphQL", gqlPkg1.DefaultInstanceAuth).Return(modPkg1.DefaultInstanceAuth, nil).Once()
+	authConv.On("InputFromGraphQL", gqlPkg2.DefaultInstanceAuth).Return(modPkg2.DefaultInstanceAuth, nil).Once()
 
 	converter := mp_package.NewConverter(authConv, apiConv, eventConv, docConv)
 
 	// when
-	res := converter.MultipleCreateInputFromGraphQL(input)
+	res, err := converter.MultipleCreateInputFromGraphQL(input)
 
 	// then
+	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
 	mock.AssertExpectationsForObjects(t, apiConv, eventConv, docConv, authConv)
 }
@@ -375,7 +377,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 			Expected: &modelPackageCreateInput,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlPackageCreateInput.DefaultInstanceAuth).Return(modelPackageCreateInput.DefaultInstanceAuth).Once()
+				conv.On("InputFromGraphQL", gqlPackageCreateInput.DefaultInstanceAuth).Return(modelPackageCreateInput.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},
@@ -385,7 +387,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 			Expected: &model.PackageUpdateInput{},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", emptyGQLPackageCreateInput.DefaultInstanceAuth).Return(emptyModelPackageCreateInput.DefaultInstanceAuth).Once()
+				conv.On("InputFromGraphQL", emptyGQLPackageCreateInput.DefaultInstanceAuth).Return(emptyModelPackageCreateInput.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},

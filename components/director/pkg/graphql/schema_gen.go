@@ -125,10 +125,12 @@ type ComplexityRoot struct {
 	}
 
 	Auth struct {
-		AdditionalHeaders     func(childComplexity int) int
-		AdditionalQueryParams func(childComplexity int) int
-		Credential            func(childComplexity int) int
-		RequestAuth           func(childComplexity int) int
+		AdditionalHeaders               func(childComplexity int) int
+		AdditionalHeadersSerialized     func(childComplexity int) int
+		AdditionalQueryParams           func(childComplexity int) int
+		AdditionalQueryParamsSerialized func(childComplexity int) int
+		Credential                      func(childComplexity int) int
+		RequestAuth                     func(childComplexity int) int
 	}
 
 	AutomaticScenarioAssignment struct {
@@ -148,10 +150,12 @@ type ComplexityRoot struct {
 	}
 
 	CSRFTokenCredentialRequestAuth struct {
-		AdditionalHeaders     func(childComplexity int) int
-		AdditionalQueryParams func(childComplexity int) int
-		Credential            func(childComplexity int) int
-		TokenEndpointURL      func(childComplexity int) int
+		AdditionalHeaders               func(childComplexity int) int
+		AdditionalHeadersSerialized     func(childComplexity int) int
+		AdditionalQueryParams           func(childComplexity int) int
+		AdditionalQueryParamsSerialized func(childComplexity int) int
+		Credential                      func(childComplexity int) int
+		TokenEndpointURL                func(childComplexity int) int
 	}
 
 	CredentialRequestAuth struct {
@@ -909,12 +913,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Auth.AdditionalHeaders(childComplexity), true
 
+	case "Auth.additionalHeadersSerialized":
+		if e.complexity.Auth.AdditionalHeadersSerialized == nil {
+			break
+		}
+
+		return e.complexity.Auth.AdditionalHeadersSerialized(childComplexity), true
+
 	case "Auth.additionalQueryParams":
 		if e.complexity.Auth.AdditionalQueryParams == nil {
 			break
 		}
 
 		return e.complexity.Auth.AdditionalQueryParams(childComplexity), true
+
+	case "Auth.additionalQueryParamsSerialized":
+		if e.complexity.Auth.AdditionalQueryParamsSerialized == nil {
+			break
+		}
+
+		return e.complexity.Auth.AdditionalQueryParamsSerialized(childComplexity), true
 
 	case "Auth.credential":
 		if e.complexity.Auth.Credential == nil {
@@ -986,12 +1004,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CSRFTokenCredentialRequestAuth.AdditionalHeaders(childComplexity), true
 
+	case "CSRFTokenCredentialRequestAuth.additionalHeadersSerialized":
+		if e.complexity.CSRFTokenCredentialRequestAuth.AdditionalHeadersSerialized == nil {
+			break
+		}
+
+		return e.complexity.CSRFTokenCredentialRequestAuth.AdditionalHeadersSerialized(childComplexity), true
+
 	case "CSRFTokenCredentialRequestAuth.additionalQueryParams":
 		if e.complexity.CSRFTokenCredentialRequestAuth.AdditionalQueryParams == nil {
 			break
 		}
 
 		return e.complexity.CSRFTokenCredentialRequestAuth.AdditionalQueryParams(childComplexity), true
+
+	case "CSRFTokenCredentialRequestAuth.additionalQueryParamsSerialized":
+		if e.complexity.CSRFTokenCredentialRequestAuth.AdditionalQueryParamsSerialized == nil {
+			break
+		}
+
+		return e.complexity.CSRFTokenCredentialRequestAuth.AdditionalQueryParamsSerialized(childComplexity), true
 
 	case "CSRFTokenCredentialRequestAuth.credential":
 		if e.complexity.CSRFTokenCredentialRequestAuth.Credential == nil {
@@ -2830,6 +2862,8 @@ scalar CLOB
 
 scalar HttpHeaders
 
+scalar HttpHeadersSerialized
+
 """
 Stringified JSON
 """
@@ -2845,6 +2879,8 @@ scalar Labels
 scalar PageCursor
 
 scalar QueryParams
+
+scalar QueryParamsSerialized
 
 scalar Timestamp
 
@@ -3064,11 +3100,13 @@ input AuthInput {
 	"""
 	**Validation:** if provided, headers name and value required
 	"""
-	additionalHeaders: HttpHeaders
+	additionalHeaders: HttpHeaders @deprecated(reason: "Use ` + "`" + `additionalHeadersSerialized` + "`" + `.")
+	additionalHeadersSerialized: HttpHeadersSerialized
 	"""
 	**Validation:** if provided, query parameters name and value required
 	"""
-	additionalQueryParams: QueryParams
+	additionalQueryParams: QueryParams @deprecated(reason: "Use ` + "`" + `additionalHeadersSerialized` + "`" + `.")
+	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuthInput
 }
 
@@ -3094,11 +3132,13 @@ input CSRFTokenCredentialRequestAuthInput {
 	"""
 	**Validation:** if provided, headers name and value required
 	"""
-	additionalHeaders: HttpHeaders
+	additionalHeaders: HttpHeaders @deprecated(reason: "Use ` + "`" + `additionalHeadersSerialized` + "`" + `.")
+	additionalHeadersSerialized: HttpHeadersSerialized
 	"""
 	**Validation:** if provided, query parameters name and value required
 	"""
-	additionalQueryParams: QueryParams
+	additionalQueryParams: QueryParams @deprecated(reason: "Use ` + "`" + `additionalQueryParamsSerialized` + "`" + `.")
+	additionalQueryParamsSerialized: QueryParamsSerialized
 }
 
 """
@@ -3449,7 +3489,9 @@ type ApplicationTemplatePage implements Pageable {
 type Auth {
 	credential: CredentialData
 	additionalHeaders: HttpHeaders
+	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
+	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuth
 }
 
@@ -3473,7 +3515,9 @@ type CSRFTokenCredentialRequestAuth {
 	tokenEndpointURL: String!
 	credential: CredentialData
 	additionalHeaders: HttpHeaders
+	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
+	additionalQueryParamsSerialized: QueryParamsSerialized
 }
 
 type CredentialRequestAuth {
@@ -7419,6 +7463,40 @@ func (ec *executionContext) _Auth_additionalHeaders(ctx context.Context, field g
 	return ec.marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Auth_additionalHeadersSerialized(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Auth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AdditionalHeadersSerialized, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*HttpHeadersSerialized)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Auth_additionalQueryParams(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -7451,6 +7529,40 @@ func (ec *executionContext) _Auth_additionalQueryParams(ctx context.Context, fie
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Auth_additionalQueryParamsSerialized(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Auth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AdditionalQueryParamsSerialized, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*QueryParamsSerialized)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_requestAuth(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -7851,6 +7963,40 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeaders(ct
 	return ec.marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeadersSerialized(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "CSRFTokenCredentialRequestAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AdditionalHeadersSerialized, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*HttpHeadersSerialized)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParams(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -7883,6 +8029,40 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParam
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParamsSerialized(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "CSRFTokenCredentialRequestAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AdditionalQueryParamsSerialized, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*QueryParamsSerialized)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CredentialRequestAuth_csrf(ctx context.Context, field graphql.CollectedField, obj *CredentialRequestAuth) (ret graphql.Marshaler) {
@@ -18388,9 +18568,21 @@ func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj int
 			if err != nil {
 				return it, err
 			}
+		case "additionalHeadersSerialized":
+			var err error
+			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "additionalQueryParams":
 			var err error
 			it.AdditionalQueryParams, err = ec.unmarshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "additionalQueryParamsSerialized":
+			var err error
+			it.AdditionalQueryParamsSerialized, err = ec.unmarshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -18478,9 +18670,21 @@ func (ec *executionContext) unmarshalInputCSRFTokenCredentialRequestAuthInput(ct
 			if err != nil {
 				return it, err
 			}
+		case "additionalHeadersSerialized":
+			var err error
+			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "additionalQueryParams":
 			var err error
 			it.AdditionalQueryParams, err = ec.unmarshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "additionalQueryParamsSerialized":
+			var err error
+			it.AdditionalQueryParamsSerialized, err = ec.unmarshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19698,8 +19902,12 @@ func (ec *executionContext) _Auth(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Auth_credential(ctx, field, obj)
 		case "additionalHeaders":
 			out.Values[i] = ec._Auth_additionalHeaders(ctx, field, obj)
+		case "additionalHeadersSerialized":
+			out.Values[i] = ec._Auth_additionalHeadersSerialized(ctx, field, obj)
 		case "additionalQueryParams":
 			out.Values[i] = ec._Auth_additionalQueryParams(ctx, field, obj)
+		case "additionalQueryParamsSerialized":
+			out.Values[i] = ec._Auth_additionalQueryParamsSerialized(ctx, field, obj)
 		case "requestAuth":
 			out.Values[i] = ec._Auth_requestAuth(ctx, field, obj)
 		default:
@@ -19834,8 +20042,12 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth(ctx context.Context,
 			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_credential(ctx, field, obj)
 		case "additionalHeaders":
 			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_additionalHeaders(ctx, field, obj)
+		case "additionalHeadersSerialized":
+			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_additionalHeadersSerialized(ctx, field, obj)
 		case "additionalQueryParams":
 			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_additionalQueryParams(ctx, field, obj)
+		case "additionalQueryParamsSerialized":
+			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_additionalQueryParamsSerialized(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24139,6 +24351,30 @@ func (ec *executionContext) marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubat
 	return v
 }
 
+func (ec *executionContext) unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, v interface{}) (HttpHeadersSerialized, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	return HttpHeadersSerialized(tmp), err
+}
+
+func (ec *executionContext) marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v HttpHeadersSerialized) graphql.Marshaler {
+	return graphql.MarshalString(string(v))
+}
+
+func (ec *executionContext) unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, v interface{}) (*HttpHeadersSerialized, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v *HttpHeadersSerialized) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, sel, *v)
+}
+
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalID(v)
 }
@@ -24442,6 +24678,30 @@ func (ec *executionContext) marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubat
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, v interface{}) (QueryParamsSerialized, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	return QueryParamsSerialized(tmp), err
+}
+
+func (ec *executionContext) marshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, sel ast.SelectionSet, v QueryParamsSerialized) graphql.Marshaler {
+	return graphql.MarshalString(string(v))
+}
+
+func (ec *executionContext) unmarshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, v interface{}) (*QueryParamsSerialized, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, sel ast.SelectionSet, v *QueryParamsSerialized) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalORuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v Runtime) graphql.Marshaler {

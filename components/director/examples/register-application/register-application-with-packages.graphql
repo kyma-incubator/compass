@@ -39,14 +39,8 @@ mutation {
                     credential: {
                       basic: { username: "admin", password: "secret" }
                     }
-                    additionalHeaders: {
-                      headerA: ["ha1", "ha2"]
-                      headerB: ["hb1", "hb2"]
-                    }
-                    additionalQueryParams: {
-                      qA: ["qa1", "qa2"]
-                      qB: ["qb1", "qb2"]
-                    }
+                    additionalHeadersSerialized: "{\"header-A\":[\"ha1\",\"ha2\"],\"header-B\":[\"hb1\",\"hb2\"]}"
+                    additionalQueryParamsSerialized: "{\"qA\":[\"qa1\",\"qa2\"],\"qB\":[\"qb1\",\"qb2\"]}"
                   }
                   mode: PACKAGE
                   filter: "odata.json"
@@ -111,14 +105,8 @@ mutation {
                   credential: {
                     basic: { username: "admin", password: "secret" }
                   }
-                  additionalHeaders: {
-                    headerA: ["ha1", "ha2"]
-                    headerB: ["hb1", "hb2"]
-                  }
-                  additionalQueryParams: {
-                    qA: ["qa1", "qa2"]
-                    qB: ["qb1", "qb2"]
-                  }
+                  additionalHeadersSerialized: "{\"header-A\":[\"ha1\",\"ha2\"],\"header-B\":[\"hb1\",\"hb2\"]}"
+                  additionalQueryParamsSerialized: "{\"qA\":[\"qa1\",\"qa2\"],\"qB\":[\"qb1\",\"qb2\"]}"
                 }
                 mode: PACKAGE
                 filter: "/docs/README.md"
@@ -166,14 +154,8 @@ mutation {
                     credential: {
                       basic: { username: "admin", password: "secret" }
                     }
-                    additionalHeaders: {
-                      headerA: ["ha1", "ha2"]
-                      headerB: ["hb1", "hb2"]
-                    }
-                    additionalQueryParams: {
-                      qA: ["qa1", "qa2"]
-                      qB: ["qb1", "qb2"]
-                    }
+                    additionalHeadersSerialized: "{\"header-A\":[\"ha1\",\"ha2\"],\"header-B\":[\"hb1\",\"hb2\"]}"
+                    additionalQueryParamsSerialized: "{\"qA\":[\"qa1\",\"qa2\"],\"qB\":[\"qb1\",\"qb2\"]}"
                   }
                   mode: PACKAGE
                   filter: "odata.json"
@@ -238,14 +220,8 @@ mutation {
                   credential: {
                     basic: { username: "admin", password: "secret" }
                   }
-                  additionalHeaders: {
-                    headerA: ["ha1", "ha2"]
-                    headerB: ["hb1", "hb2"]
-                  }
-                  additionalQueryParams: {
-                    qA: ["qa1", "qa2"]
-                    qB: ["qb1", "qb2"]
-                  }
+                  additionalHeadersSerialized: "{\"header-A\":[\"ha1\",\"ha2\"],\"header-B\":[\"hb1\",\"hb2\"]}"
+                  additionalQueryParamsSerialized: "{\"qA\":[\"qa1\",\"qa2\"],\"qB\":[\"qb1\",\"qb2\"]}"
                 }
                 mode: PACKAGE
                 filter: "/docs/README.md"

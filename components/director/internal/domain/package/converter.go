@@ -16,8 +16,8 @@ import (
 
 //go:generate mockery -name=AuthConverter -output=automock -outpkg=automock -case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *model.Auth) *graphql.Auth
-	InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput
+	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
+	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
 }
 
 type converter struct {
@@ -87,12 +87,17 @@ func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
 		return nil, apperrors.NewInternalError("the model Package is nil")
 	}
 
+	auth, err := c.auth.ToGraphQL(in.DefaultInstanceAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting DefaultInstanceAuth to GraphQL")
+	}
+
 	return &graphql.Package{
 		ID:                             in.ID,
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.strPtrToJSONSchemaPtr(in.InstanceAuthRequestInputSchema),
-		DefaultInstanceAuth:            c.auth.ToGraphQL(in.DefaultInstanceAuth),
+		DefaultInstanceAuth:            auth,
 	}, nil
 }
 
@@ -112,37 +117,65 @@ func (c *converter) MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, 
 	return packages, nil
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) model.PackageCreateInput {
+func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error) {
+	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
+	if err != nil {
+		return model.PackageCreateInput{}, errors.Wrap(err, "while converting DefaultInstanceAuth input")
+	}
+
+	apiDefs, err := c.api.MultipleInputFromGraphQL(in.APIDefinitions)
+	if err != nil {
+		return model.PackageCreateInput{}, errors.Wrap(err, "while converting APIDefinitions input")
+	}
+
+	documents, err := c.document.MultipleInputFromGraphQL(in.Documents)
+	if err != nil {
+		return model.PackageCreateInput{}, errors.Wrap(err, "while converting Documents input")
+	}
+
+	eventDefs, err := c.event.MultipleInputFromGraphQL(in.EventDefinitions)
+	if err != nil {
+		return model.PackageCreateInput{}, errors.Wrap(err, "while converting EventDefinitions input")
+	}
+
 	return model.PackageCreateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
-		DefaultInstanceAuth:            c.auth.InputFromGraphQL(in.DefaultInstanceAuth),
-		APIDefinitions:                 c.api.MultipleInputFromGraphQL(in.APIDefinitions),
-		EventDefinitions:               c.event.MultipleInputFromGraphQL(in.EventDefinitions),
-		Documents:                      c.document.MultipleInputFromGraphQL(in.Documents),
-	}
+		DefaultInstanceAuth:            auth,
+		APIDefinitions:                 apiDefs,
+		EventDefinitions:               eventDefs,
+		Documents:                      documents,
+	}, nil
 }
 
-func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) []*model.PackageCreateInput {
+func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error) {
 	var packages []*model.PackageCreateInput
 	for _, item := range in {
 		if item == nil {
 			continue
 		}
-		pkg := c.CreateInputFromGraphQL(*item)
+		pkg, err := c.CreateInputFromGraphQL(*item)
+		if err != nil {
+			return nil, err
+		}
 		packages = append(packages, &pkg)
 	}
 
-	return packages
+	return packages, nil
 }
 
 func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error) {
+	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting DefaultInstanceAuth from GraphQL")
+	}
+
 	return &model.PackageUpdateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
-		DefaultInstanceAuth:            c.auth.InputFromGraphQL(in.DefaultInstanceAuth),
+		DefaultInstanceAuth:            auth,
 	}, nil
 }
 

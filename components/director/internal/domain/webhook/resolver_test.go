@@ -62,8 +62,8 @@ func TestResolver_AddWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
-				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
+				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: gqlWebhook,
@@ -109,7 +109,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
 			ExpectedErr: givenError(),
@@ -129,7 +129,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: nil, ExpectedErr: errors.New("cannot add Webhook to not existing Application"),
@@ -149,7 +149,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: nil,
@@ -171,7 +171,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: nil,
@@ -194,7 +194,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: nil,
@@ -265,8 +265,8 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
-				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
+				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: gqlWebhook,
@@ -304,7 +304,7 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
 			ExpectedErr: givenError(),
@@ -320,7 +320,7 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: nil,
@@ -338,7 +338,7 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput).Once()
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: nil,
@@ -401,7 +401,7 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
+				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: gqlWebhook,
@@ -440,7 +440,7 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
+				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook, nil).Once()
 				return conv
 			},
 			ExpectedErr: givenError(),
@@ -473,7 +473,7 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 			},
 			ConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook).Once()
+				conv.On("ToGraphQL", modelWebhook).Return(gqlWebhook, nil).Once()
 				return conv
 			},
 			ExpectedWebhook: nil,

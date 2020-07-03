@@ -133,7 +133,7 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 			defer systemAuthSvc.AssertExpectations(t)
 
 			systemAuthConv := &automock.SystemAuthConverter{}
-			systemAuthConv.On("ToGraphQL", modelSystemAuth).Return(expectedResult).Once()
+			systemAuthConv.On("ToGraphQL", modelSystemAuth).Return(expectedResult, nil).Once()
 			defer systemAuthConv.AssertExpectations(t)
 
 			resolver := oauth20.NewResolver(transact, svc, appSvc, rtmSvc, isSvc, systemAuthSvc, systemAuthConv)

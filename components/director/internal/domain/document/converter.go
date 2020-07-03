@@ -2,6 +2,7 @@ package document
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -51,15 +52,20 @@ func (c *converter) MultipleToGraphQL(in []*model.Document) []*graphql.Document 
 	return documents
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.DocumentInput) *model.DocumentInput {
+func (c *converter) InputFromGraphQL(in *graphql.DocumentInput) (*model.DocumentInput, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	var data *string
 	if in.Data != nil {
 		tmp := string(*in.Data)
 		data = &tmp
+	}
+
+	fetchReq, err := c.frConverter.InputFromGraphQL(in.FetchRequest)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting FetchRequestInput input")
 	}
 
 	return &model.DocumentInput{
@@ -69,21 +75,26 @@ func (c *converter) InputFromGraphQL(in *graphql.DocumentInput) *model.DocumentI
 		Format:       model.DocumentFormat(in.Format),
 		Kind:         in.Kind,
 		Data:         data,
-		FetchRequest: c.frConverter.InputFromGraphQL(in.FetchRequest),
-	}
+		FetchRequest: fetchReq,
+	}, nil
 }
 
-func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) []*model.DocumentInput {
+func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*model.DocumentInput, error) {
 	var inputs []*model.DocumentInput
 	for _, r := range in {
 		if r == nil {
 			continue
 		}
 
-		inputs = append(inputs, c.InputFromGraphQL(r))
+		docInput, err := c.InputFromGraphQL(r)
+		if err != nil {
+			return nil, err
+		}
+
+		inputs = append(inputs, docInput)
 	}
 
-	return inputs
+	return inputs, nil
 }
 
 func (c *converter) ToEntity(in model.Document) (Entity, error) {

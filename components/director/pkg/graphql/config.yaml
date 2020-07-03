@@ -27,8 +27,12 @@ models:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Timestamp"
   HttpHeaders:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.HttpHeaders"
+  HttpHeadersSerialized:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.HttpHeadersSerialized"
   QueryParams:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.QueryParams"
+  QueryParamsSerialized:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.QueryParamsSerialized"
   CLOB:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.CLOB"
   JSONSchema:

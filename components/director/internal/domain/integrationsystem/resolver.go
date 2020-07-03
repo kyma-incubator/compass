@@ -33,7 +33,7 @@ type SystemAuthService interface {
 
 //go:generate mockery -name=SystemAuthConverter -output=automock -outpkg=automock -case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(in *model.SystemAuth) *graphql.SystemAuth
+	ToGraphQL(in *model.SystemAuth) (*graphql.SystemAuth, error)
 }
 
 //go:generate mockery -name=OAuth20Service -output=automock -outpkg=automock -case=underscore
@@ -251,7 +251,10 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([
 
 	var out []*graphql.SystemAuth
 	for _, sa := range sysAuths {
-		c := r.sysAuthConverter.ToGraphQL(&sa)
+		c, err := r.sysAuthConverter.ToGraphQL(&sa)
+		if err != nil {
+			return nil, err
+		}
 		out = append(out, c)
 	}
 

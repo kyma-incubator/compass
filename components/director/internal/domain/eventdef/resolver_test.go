@@ -41,7 +41,7 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn        func() *automock.EventDefService
 		PkgServiceFn     func() *automock.PackageService
-		ConverterFn      func() *automock.EventAPIConverter
+		ConverterFn      func() *automock.EventDefConverter
 		ExpectedEventDef *graphql.EventDefinition
 		ExpectedErr      error
 	}{
@@ -59,9 +59,9 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
 				return appSvc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				conv.On("ToGraphQL", modelAPI).Return(gqlAPI).Once()
 				return conv
 			},
@@ -79,8 +79,8 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				appSvc := &automock.PackageService{}
 				return appSvc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				return conv
 			},
 			ExpectedEventDef: nil,
@@ -98,9 +98,9 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				appSvc.On("Exist", contextParam, packageID).Return(false, nil)
 				return appSvc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedEventDef: nil,
@@ -118,9 +118,9 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				appSvc.On("Exist", contextParam, packageID).Return(false, testErr)
 				return appSvc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedEventDef: nil,
@@ -139,9 +139,9 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
 				return appSvc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedEventDef: nil,
@@ -161,9 +161,9 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
 				return appSvc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedEventDef: nil,
@@ -183,9 +183,9 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
 				return appSvc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIInput).Return(modelAPIInput, nil).Once()
 				return conv
 			},
 			ExpectedEventDef: nil,
@@ -237,7 +237,7 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 		Name             string
 		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn        func() *automock.EventDefService
-		ConverterFn      func() *automock.EventAPIConverter
+		ConverterFn      func() *automock.EventDefConverter
 		ExpectedEventDef *graphql.EventDefinition
 		ExpectedErr      error
 	}{
@@ -250,8 +250,8 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 				svc.On("Delete", contextParam, id).Return(nil).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
@@ -265,8 +265,8 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 				svc := &automock.EventDefService{}
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				return conv
 			},
 			ExpectedEventDef: nil,
@@ -280,8 +280,8 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				return conv
 			},
 			ExpectedEventDef: nil,
@@ -296,8 +296,8 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 				svc.On("Delete", contextParam, id).Return(testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
@@ -313,8 +313,8 @@ func TestResolver_DeleteEventAPI(t *testing.T) {
 				svc.On("Delete", contextParam, id).Return(nil).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
@@ -363,7 +363,7 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 		Name             string
 		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn        func() *automock.EventDefService
-		ConverterFn      func() *automock.EventAPIConverter
+		ConverterFn      func() *automock.EventDefConverter
 		InputWebhookID   string
 		InputDefinition  graphql.EventDefinitionInput
 		ExpectedEventDef *graphql.EventDefinition
@@ -378,9 +378,9 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, nil).Once()
 				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
@@ -396,8 +396,8 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 				svc := &automock.EventDefService{}
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				return conv
 			},
 			ExpectedEventDef: nil,
@@ -411,9 +411,9 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 				svc.On("Update", contextParam, id, *modelAPIDefinitionInput).Return(testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, nil).Once()
 				return conv
 			},
 			InputWebhookID:   id,
@@ -430,9 +430,9 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, nil).Once()
 				return conv
 			},
 			InputWebhookID:   id,
@@ -449,9 +449,9 @@ func TestResolver_UpdateEventAPI(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(modelAPIDefinition, nil).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput).Once()
+			ConverterFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput).Return(modelAPIDefinitionInput, nil).Once()
 				conv.On("ToGraphQL", modelAPIDefinition).Return(gqlAPIDefinition).Once()
 				return conv
 			},
@@ -513,7 +513,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 		Name              string
 		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn         func() *automock.EventDefService
-		ConvFn            func() *automock.EventAPIConverter
+		ConvFn            func() *automock.EventDefConverter
 		ExpectedEventSpec *graphql.EventSpec
 		ExpectedErr       error
 	}{
@@ -525,9 +525,9 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 				svc.On("RefetchAPISpec", txtest.CtxWithDBMatcher(), apiID).Return(modelEventAPISpec, nil).Once()
 				return svc
 			},
-			ConvFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
-				conv.On("ToGraphQL", modelEventAPIDefinition).Return(gqlEventDefinition).Once()
+			ConvFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
+				conv.On("ToGraphQL", modelEventAPIDefinition).Return(gqlEventDefinition, nil).Once()
 				return conv
 			},
 			ExpectedEventSpec: gqlEventSpec,
@@ -541,8 +541,8 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 				svc.On("RefetchAPISpec", txtest.CtxWithDBMatcher(), apiID).Return(modelEventAPISpec, nil).Once()
 				return svc
 			},
-			ConvFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConvFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				return conv
 			},
 			ExpectedEventSpec: nil,
@@ -556,8 +556,8 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 				svc.On("RefetchAPISpec", txtest.CtxWithDBMatcher(), apiID).Return(nil, testErr).Once()
 				return svc
 			},
-			ConvFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConvFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				return conv
 			},
 			ExpectedEventSpec: nil,
@@ -570,8 +570,8 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 				svc := &automock.EventDefService{}
 				return svc
 			},
-			ConvFn: func() *automock.EventAPIConverter {
-				conv := &automock.EventAPIConverter{}
+			ConvFn: func() *automock.EventDefConverter {
+				conv := &automock.EventDefConverter{}
 				return conv
 			},
 			ExpectedEventSpec: nil,
@@ -634,7 +634,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			},
 			ConverterFn: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
-				conv.On("ToGraphQL", frModel).Return(frGQL).Once()
+				conv.On("ToGraphQL", frModel).Return(frGQL, nil).Once()
 				return conv
 			},
 			EventApiSpec:   eventAPISpec,
