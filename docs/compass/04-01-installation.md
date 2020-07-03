@@ -34,7 +34,7 @@ Follow these steps to install Compass on a cluster:
 
 3. Install Compass. ​There are three possible installation options:
 
-    | Installation option     	| Value to use in the installation command   	| Example value          	|
+    | Installation option     	| Value to use with the installation command   	| Example value          	|
     |-------------------------	|-------------------	|-------------------------	|
     | From the `master` branch 	| `master`          	| `master`                	|
     | From the specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
