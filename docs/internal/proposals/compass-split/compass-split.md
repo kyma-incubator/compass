@@ -1,12 +1,11 @@
-# Splitting Compass project
+# Splitting the Compass project
 
-## Overview
 
 This document describes the technical implementation of the Compass project split into two separate projects.
 
-Previously, Compass consisted of two main areas: Application Connectivity and Runtime provisioning. Mixed responsibilities of Compass made confusion around understanding of the project. The goal of the splitting Compass project is to separate the responsibilities and develop these two areas independently.
+Previously, Compass consisted of two main areas: Application Connectivity and Runtime provisioning. The mixed responsibilities of Compass caused some misunderstanding of the project. The goal of splitting the Compass project is to separate the responsibilities and develop these two areas independently.
 
-Compass project split is a next step after making Compass separated from Kyma. To read more about the separation, see the [Compass as a separate component](../separate-compass/separate-compass.md) document.
+The Compass project split is the next step after separating Compass from Kyma. To read more about the separation, see the [Compass as a separate component](../separate-compass/separate-compass.md) document.
 
 ## Reasons
 
@@ -27,85 +26,85 @@ The Compass project is split into two repositories:
   - External Services Mock
   - Connectivity Adapter
   - Schema Migrator
-- Kyma Control Plane, which contains Runtime-related components and its dependencies:
+- Kyma Control Plane (KCP), which contains Runtime-related components and its dependencies:
   - Kyma Environment Broker
-  - Provisioner
+  - Runtime Provisioner
   - Metris
   - Kubeconfig Service
   - Schema Migrator
 
-Schema Migrator source code and chart is split into two places, to handle database migrations for Application Connectivity and Runtime-related components.
+Schema Migrator source code and chart stay in both places to handle database migrations for Application Connectivity and Runtime-related components.
 
-Additionally, the PostgreSQL chart is copied to both of the repositories, as it is a dependency for both group of the components. 
+Additionally, the PostgreSQL chart is copied to both repositories as it is a dependency for both groups of components. 
 
-To preserve Git history, complete Compass history is pushed to the Kyma Control Plane repository. All changes are made on top of the Compass history, including Application Connectivity components removal or code imports change.
+To preserve Git history, the complete Compass history is pushed to the Kyma Control Plane repository. All changes are made on top of the Compass history, including Application Connectivity components removal and code import changes.
 
 ### Steps
 
-The following steps have to be executed, to complete Compass project split:
+The following steps have to be executed to complete the Compass project split:
 
 - Create new repository `control-plane` under `kyma-project` GitHub organization
 
-  - follow the process described in kyma-project/community
-  - configure repository (labels, branch protection etc.)
+  - Follow the process described in the `kyma-project/community` repository.
+  - Configure the repository (add labels, branch protection, etc.).
 
 - Split Chart
 
   - Step 1: do it in the same repository
   - Step 2: move KCP chart to new repository
   - Make Compass-KCP communication external
-  - Modify components if needed
+  - Modify the components, if needed.
   - Remove KCP components on Compass repo, and Compass components on KCP repo
 
-- Create Kyma Control Plane Installer
+- Create Kyma Control Plane Installer.
 
-  - base on compass installer (copy & modify needed files)
-  - Prepare Prow pipeline to build KCP installer
-  - Prepare installation CR for Kyma, Compass and KCP
-    - Use separate namespace
+  - Base on the Compass Installer (copy and modify the needed files).
+  - Prepare a Prow pipeline to build the KCP installer.
+  - Prepare installation CRs for Kyma, Compass, and KCP.
+    - Use separate Namespaces.
 
-- Define fixed Compass release version in the Kyma Control Plane repo
+- Define a fixed Compass release version in the Kyma Control Plane repo.
 
-- Copy `KYMA_VERSION` file to Control Plane repo
+- Copy the `KYMA_VERSION` file to the Kyma Control Plane repo.
 
-- Modify run.sh script to install: Kyma (from `KYMA_VERSION`), Compass (from `COMPASS_VERSION`), KCP straight from the repo
-- Prepare KCP-integration Prow pipeline for new KCP repo (base on existing compass-integration job)
-- Prepare KCP-GKE-integration Prow pipeline for new KCP repo (base on existing compass-gke-integration job on Compass)
+- Modify the `run.sh` script to install Kyma (from the `KYMA_VERSION` file), Compass (from the `COMPASS_VERSION` file), and KCP straight from the repo.
+- Prepare the KCP-integration Prow pipeline for the new KCP repo (base on the existing Compass-integration job).
+- Prepare the KCP-GKE-integration Prow pipeline for the new KCP repo (base on the existing Compass-GKE-integration job on Compass).
 
-- Duplicate GKE-compass-provisioner tests Prow pipeline and run it on KCP repo
+- Duplicate the GKE-Compass-Provisioner tests Prow pipeline and run it on the KCP repo.
 
-- Prepare Prow jobs for building KCP components
+- Prepare Prow jobs for building the KCP components.
 
-- Prepare KCP development artifacts Prowjob
+- Prepare the KCP development artifacts Prowjob.
 
-  - Base on Compass artifacts jobs
+  - Base on Compass artifacts jobs.
 
-- Prepare installation CR for KCP
+- Prepare the installation CR for KCP.
 
-  - Use separate namespace
+  - Use separate Namespaces.
 
-- Split documentation
+- Split the documentation.
 
-  - Discuss how the docs should look on the website (which node)
+  - Discuss how the docs should look on the website (which node to use).
 
-- Configure Test Grid to display KCP dashboard
+- Configure TestGrid to display the KCP dashboard.
 
 - Modify pipelines for the internal environments:
 
-  - Watch KCP repo for changes
-  - Install Compass from fixed `COMPASS_VERSION` from KCP repo
-  - Modify from where we get Kyma version to install: Install Kyma from fixed `KYMA_VERSION` from KCP repo
-  - Install KCP installer as a new step
+  - Watch the KCP repo for changes.
+  - Install Compass from the fixed `COMPASS_VERSION` from the KCP repo.
+  - Modify the file from which we get the Kyma version to install (install Kyma from the fixed `KYMA_VERSION` file from the KCP repo).
+  - Install the KCP installer as a new step.
 
-### Migration of existing Compass installations
+### Migration of the existing Compass installations
 
 Migration of the existing Compass installation doesn't require any custom operations.
 
-Once a pipeline is modified to install Kyma Control Plane components from `control-plane` repository on top of existing Compass installation, the transition period begins. In the transition period, there will be duplicated KCP components on the cluster. They will be deployed in two different namespaces: `compass-system` and `kcp-system`. The transition period ends once the Compass chart is modified and all KCP components are deleted from the Compass chart.
+Once a pipeline is modified to install Kyma Control Plane components from the `control-plane` repository on top of the existing Compass installation, the transition period begins. In the transition period, there will be duplicated KCP components on the cluster. They will be deployed in two different Namespaces: `compass-system` and `kcp-system`. The transition period ends when the Compass chart is modified and all KCP components are deleted from the Compass chart.
 
 ### Cleanup
 
-Once Compass components are migrated to a separate internal environment:
+Once the Compass components are migrated to a separate internal environment:
 
-- Remove Compass installation step from internal environment pipelines
-- Remove Registration Job in Kyma Control Plane
+- Remove the Compass installation step from internal environment pipelines.
+- Remove the registration job from Kyma Control Plane.
