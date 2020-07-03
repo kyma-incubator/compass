@@ -1,3 +1,4 @@
+{{- if .Values.e2e.enabled }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -137,3 +138,4 @@ spec:
               value: "false"
           command: ["/bin/sh"]
           args: ["-c", "echo 'Starting e2e-provisioning cleanup test on GCP. Waiting 20s for api server...'; sleep 20; ./test.test -test.run Test_E2E_Provisioning; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+      {{- end -}}
