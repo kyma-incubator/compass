@@ -47,4 +47,4 @@ Currently, the Compass Gateway is accessible under three different hosts secured
 
 You can access Director GraphQL API under the `/director/graphql` endpoint, and Connector GraphQL API under `/connector/graphql`.
 
-To access Connectivity, use `https://adapter-gateway.{domain}` host secured with one-time tokens or `https://adapter-gateway-mtls.{domain}` secured with client certificates (mTLS).
+To access Connectivity Adapter, use the `https://adapter-gateway.{DOMAIN}` host secured with one-time tokens or `https://adapter-gateway-mtls.{DOMAIN}` secured with client certificates (mTLS).
