@@ -270,10 +270,10 @@ spec:
             readOnly: true
         resources:
           requests:
-            memory: 256Mi
+            memory: 32Mi
             cpu: 40m
           limits:
-            memory: 512Mi
+            memory: 1Gi
             cpu: 400m
       volumes:
       - name: helm-certs
