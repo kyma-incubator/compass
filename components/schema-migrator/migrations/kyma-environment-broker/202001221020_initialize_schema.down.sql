@@ -1,3 +1,0 @@
--- Instances
-
-DROP TABLE instances;

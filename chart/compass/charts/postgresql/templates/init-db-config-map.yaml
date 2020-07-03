@@ -6,7 +6,3 @@ metadata:
 data:
   init-director-db.sql: |
     CREATE DATABASE {{ .Values.global.database.embedded.director.name }};
-  init-provisioner-db.sql: |
-    CREATE DATABASE {{ .Values.global.database.embedded.provisioner.name }};
-  init-broker-db.sql: |
-    CREATE DATABASE {{ .Values.global.database.embedded.broker.name }};
