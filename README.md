@@ -31,7 +31,7 @@ Install Compass locally or on a cluster. See the [installation document](https:/
 
 ## Testing
 
-Compass uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/README.md) for testing both locally and on cluster. To run the Compass tests, use this script:
+Compass uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/README.md) for testing both locally and on a cluster. To run the Compass tests, use this script:
 
 ```bash
 ./installation/scripts/testing.sh
