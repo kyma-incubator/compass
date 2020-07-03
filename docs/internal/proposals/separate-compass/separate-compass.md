@@ -71,9 +71,9 @@ The following section lists all steps needed to implement the Compass separation
   - Install the lite version of Kyma with Kyma Installer (any overrides are placed in the Compass repository; minimal list of components).
   - Install Compass with Compass Operator (use latest artifacts).
 
-- Move the Prow GKE Provisioner tests pipeline from Kyma to Compass
+- Move the Prow GKE Provisioner tests pipeline from Kyma to Compass.
 
-- Prepare periodic Kyma Compass GKE integration job
+- Prepare the periodic Kyma Compass GKE integration job.
 
 - Modify the API Gateway test:
 
