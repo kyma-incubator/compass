@@ -1,10 +1,11 @@
 package director
 
 import (
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
 	oauthmocks "github.com/kyma-project/control-plane/components/provisioner/internal/oauth/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -153,7 +154,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 	t.Run("Should not register Runtime and return error when the client fails to get an access token for Director", func(t *testing.T) {
 		// given
 		mockedOAuthClient := &oauthmocks.Client{}
-		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token{}, errors.New("Failed token error"))
+		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token{}, apperrors.Internal("Failed token error"))
 
 		configClient := NewDirectorClient(nil, mockedOAuthClient)
 
@@ -162,6 +163,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 
 		// then
 		assert.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		assert.Empty(t, receivedRuntimeID)
 	})
 
@@ -300,7 +302,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 	t.Run("Should not unregister Runtime and return error when the client fails to get an access token for Director", func(t *testing.T) {
 		// given
 		mockedOAuthClient := &oauthmocks.Client{}
-		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token{}, errors.New("Failed token error"))
+		mockedOAuthClient.On("GetAuthorizationToken").Return(oauth.Token{}, apperrors.Internal("Failed token error"))
 
 		configClient := NewDirectorClient(nil, mockedOAuthClient)
 
@@ -309,6 +311,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 
 		// then
 		assert.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 	})
 
 	t.Run("Should return error when the result of the call to Director service is nil", func(t *testing.T) {

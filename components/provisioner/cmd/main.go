@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
@@ -230,12 +232,14 @@ func main() {
 	}
 	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
 
+	presenter := apperrors.NewPresenter(log.StandardLogger())
+
 	log.Infof("Registering endpoint on %s...", cfg.APIEndpoint)
 	router := mux.NewRouter()
 	router.Use(middlewares.ExtractTenant)
 
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
+	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema, handler.ErrorPresenter(presenter.Do)))
 	router.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
 	// Metrics

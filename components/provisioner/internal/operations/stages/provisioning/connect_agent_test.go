@@ -1,9 +1,10 @@
 package provisioning
 
 import (
-	"fmt"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime/mocks"
@@ -40,7 +41,7 @@ func TestConnectAgentStep_Run(t *testing.T) {
 	t.Run("should return error when failed to configure cluster", func(t *testing.T) {
 		// given
 		configurator := &mocks.Configurator{}
-		configurator.On("ConfigureRuntime", cluster, "kubeconfig").Return(fmt.Errorf("error"))
+		configurator.On("ConfigureRuntime", cluster, "kubeconfig").Return(apperrors.Internal("error"))
 
 		stage := NewConnectAgentStep(configurator, nextStageName, time.Minute)
 

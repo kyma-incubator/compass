@@ -2,8 +2,9 @@ package api_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
 
@@ -14,7 +15,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -111,7 +111,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
-		validator.On("ValidateProvisioningInput", config).Return(errors.New("Some error"))
+		validator.On("ValidateProvisioningInput", config).Return(apperrors.BadRequest("Some error"))
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
@@ -139,7 +139,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
-		provisioningService.On("ProvisionRuntime", config, tenant, "").Return(nil, errors.New("Provisioning failed"))
+		provisioningService.On("ProvisionRuntime", config, tenant, "").Return(nil, apperrors.Internal("Provisioning failed"))
 		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		//when
@@ -147,6 +147,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		assert.Nil(t, status)
 	})
 
@@ -213,7 +214,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		validator := &validatorMocks.Validator{}
 		provisioner := api.NewResolver(provisioningService, validator)
 
-		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return("", errors.New("Deprovisioning fails because reasons"))
+		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return("", apperrors.Internal("Deprovisioning fails because reasons"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
 		//when
@@ -221,6 +222,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		assert.Empty(t, operationID)
 	})
 
@@ -253,13 +255,14 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
 		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return(expectedID, nil, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.New("Very bad error"))
+		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("Very bad error"))
 
 		//when
 		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		assert.Empty(t, operationID)
 	})
 }
@@ -306,7 +309,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 
-		provisioningService.On("UpgradeRuntime", runtimeID, upgradeInput).Return(nil, errors.Errorf("error"))
+		provisioningService.On("UpgradeRuntime", runtimeID, upgradeInput).Return(nil, apperrors.Internal("error"))
 		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
@@ -317,6 +320,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 	})
 
 	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
@@ -325,7 +329,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		validator := &validatorMocks.Validator{}
 
 		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.Errorf("error"))
+		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("error"))
 
 		resolver := api.NewResolver(provisioningService, validator)
 
@@ -334,6 +338,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
 
 	t.Run("Should return error when validation fails", func(t *testing.T) {
@@ -341,7 +346,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 
-		validator.On("ValidateUpgradeInput", upgradeInput).Return(errors.Errorf("error"))
+		validator.On("ValidateUpgradeInput", upgradeInput).Return(apperrors.BadRequest("error"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
 		resolver := api.NewResolver(provisioningService, validator)
@@ -351,6 +356,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
 }
 
@@ -382,7 +388,7 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
 
-		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(nil, fmt.Errorf("error"))
+		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(nil, apperrors.Internal("error"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
 		resolver := api.NewResolver(provisioningService, validator)
@@ -392,12 +398,13 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 	})
 
 	t.Run("Should return error when failed to validate tenant", func(t *testing.T) {
 		//given
 		validator := &validatorMocks.Validator{}
-		validator.On("ValidateTenant", runtimeID, tenant).Return(fmt.Errorf("error"))
+		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("error"))
 
 		resolver := api.NewResolver(nil, validator)
 
@@ -406,6 +413,7 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
 }
 
@@ -451,7 +459,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		validator := &validatorMocks.Validator{}
 		provisioner := api.NewResolver(provisioningService, validator)
 
-		provisioningService.On("RuntimeStatus", runtimeID).Return(nil, errors.New("Runtime status fails"))
+		provisioningService.On("RuntimeStatus", runtimeID).Return(nil, apperrors.Internal("Runtime status fails"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
 		//when
@@ -459,6 +467,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		require.Empty(t, status)
 	})
 
@@ -469,13 +478,14 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		provisioner := api.NewResolver(provisioningService, validator)
 
 		provisioningService.On("RuntimeStatus", runtimeID).Return(nil, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(errors.New("Bad error"))
+		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("Bad error"))
 
 		//when
 		status, err := provisioner.RuntimeStatus(ctx, runtimeID)
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		require.Empty(t, status)
 	})
 }
@@ -530,12 +540,13 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		}
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(operationStatus, nil)
-		validator.On("ValidateTenantForOperation", operationID, tenant).Return(errors.New("oh no"))
+		validator.On("ValidateTenantForOperation", operationID, tenant).Return(apperrors.BadRequest("oh no"))
 		//when
 		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		require.Empty(t, status)
 	})
 
@@ -546,13 +557,14 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		validator.On("ValidateTenantForOperation", operationID, tenant).Return(nil)
 		provisioner := api.NewResolver(provisioningService, validator)
 
-		provisioningService.On("RuntimeOperationStatus", operationID).Return(nil, errors.New("Some error"))
+		provisioningService.On("RuntimeOperationStatus", operationID).Return(nil, apperrors.Internal("Some error"))
 
 		//when
 		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		require.Empty(t, status)
 	})
 }

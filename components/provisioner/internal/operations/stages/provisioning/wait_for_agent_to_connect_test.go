@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
@@ -73,7 +75,7 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			})
 
 			directorClient := &directorMocks.DirectorClient{}
-			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(fmt.Errorf("some error"))
+			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(apperrors.Internal("some error"))
 
 			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
 

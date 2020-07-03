@@ -2,7 +2,8 @@ package api
 
 import (
 	"context"
-	"errors"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 
@@ -194,10 +195,10 @@ func (r *Resolver) getAndValidateTenantForOp(ctx context.Context, operationID st
 	return tenant, nil
 }
 
-func getTenant(ctx context.Context) (string, error) {
+func getTenant(ctx context.Context) (string, apperrors.AppError) {
 	tenant, ok := ctx.Value(middlewares.Tenant).(string)
 	if !ok || tenant == "" {
-		return "", errors.New("tenant header is empty")
+		return "", apperrors.BadRequest("tenant header is empty")
 	}
 
 	return tenant, nil

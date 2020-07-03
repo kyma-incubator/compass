@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
@@ -135,7 +137,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		}
 
 		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", clusterId, graphql.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(fmt.Errorf("some error"))
+		directorClient.On("SetRuntimeStatusCondition", clusterId, graphql.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(apperrors.Internal("error"))
 
 		failureHandler := MockFailureHandler{}
 

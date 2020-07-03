@@ -534,10 +534,14 @@ github.com/kubernetes/client-go v11.0.0+incompatible h1:g8FB7QVXKKp4imk86Dgc+Fxj
 github.com/kubernetes/client-go v11.0.0+incompatible/go.mod h1:kszVi2i+FeqECZHhjpkV5h5zM0GnURfJv897YzgoAQ8=
 github.com/kyma-incubator/compass v0.0.0-20200421071627-8604d53a20a2 h1:/rk3EVS3Jls62msFfnM/vLZ6y53QdZWXK/q0M7ow73g=
 github.com/kyma-incubator/compass v0.0.0-20200421071627-8604d53a20a2/go.mod h1:QzxfnmINIGUzElyHs9KhdeMDsYRJTS8TxYtqMZo0YHc=
+github.com/kyma-incubator/compass v0.0.0-20200703104319-1c4490318bfd h1:Bhtd9mz8/6XIZLLx86A4eE+pyAvyzu9QsnMV4Emxcuo=
+github.com/kyma-incubator/compass v0.0.0-20200703114359-9f220446a990 h1:/K/BSeEHz1Ydzkry0XGCaRAOB/ypT26Kwuz8wyMV0m0=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200421071627-8604d53a20a2 h1:97Kefi+Dxsy10b4OgmRnMEqRyUmwgEXJikAyVz5cWaE=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200421071627-8604d53a20a2/go.mod h1:C41YpM1c0uzB8mzfFifxmsljBvhhycUxHg/kkUospDo=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283 h1:yQNZGjjcqS9557xdwpfPj6H1LiG+Wq6LgCpVsu4wWLI=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283/go.mod h1:ZcUC6E1u/IwP7JfozHmHnmN6u6ZA5gEa95gDB0ZO3hk=
+github.com/kyma-incubator/compass/components/provisioner v0.0.0-20200703104319-1c4490318bfd h1:FoylXr2LeBxi/4kqpPKY+UY2B5sWFHHtAO1x7abVcU0=
+github.com/kyma-incubator/compass/components/provisioner v0.0.0-20200703104319-1c4490318bfd/go.mod h1:P3MJj4LeeNZ/zALN38b0165+V3Wx8XYh74dariLAlpc=
 github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188 h1:SY4B7zOrBXucqgcB288rEkXxMmPPFLp/LLt8HWe/IMg=
 github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=

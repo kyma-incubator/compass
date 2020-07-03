@@ -2,13 +2,14 @@ package oauth
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	v1 "github.com/kubernetes/client-go/kubernetes/typed/core/v1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -18,7 +19,7 @@ import (
 
 //go:generate mockery -name=Client
 type Client interface {
-	GetAuthorizationToken() (Token, error)
+	GetAuthorizationToken() (Token, apperrors.AppError)
 }
 
 type oauthClient struct {
@@ -35,7 +36,7 @@ func NewOauthClient(client *http.Client, secrets v1.SecretInterface, secretName 
 	}
 }
 
-func (c *oauthClient) GetAuthorizationToken() (Token, error) {
+func (c *oauthClient) GetAuthorizationToken() (Token, apperrors.AppError) {
 	credentials, err := c.getCredentials()
 
 	if err != nil {
@@ -45,11 +46,11 @@ func (c *oauthClient) GetAuthorizationToken() (Token, error) {
 	return c.getAuthorizationToken(credentials)
 }
 
-func (c *oauthClient) getCredentials() (credentials, error) {
+func (c *oauthClient) getCredentials() (credentials, apperrors.AppError) {
 	secret, err := c.secretsClient.Get(c.secretName, metav1.GetOptions{})
 
 	if err != nil {
-		return credentials{}, err
+		return credentials{}, util.K8SErrorToAppError(err)
 	}
 
 	return credentials{
@@ -59,7 +60,7 @@ func (c *oauthClient) getCredentials() (credentials, error) {
 	}, nil
 }
 
-func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, error) {
+func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, apperrors.AppError) {
 	log.Infof("Getting authorisation token for credentials to access Director from endpoint: %s", credentials.tokensEndpoint)
 
 	form := url.Values{}
@@ -69,7 +70,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 	request, err := http.NewRequest(http.MethodPost, credentials.tokensEndpoint, strings.NewReader(form.Encode()))
 	if err != nil {
 		log.Errorf("Failed to create authorisation token request")
-		return Token{}, err
+		return Token{}, apperrors.Internal("Failed to create authorisation token request: %s", err.Error())
 	}
 
 	now := time.Now().Unix()
@@ -79,7 +80,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {
-		return Token{}, err
+		return Token{}, apperrors.Internal("Failed to execute http call: %s", err.Error())
 	}
 	defer util.Close(response.Body)
 
@@ -88,19 +89,19 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, err
 		if err != nil {
 			dump = []byte("failed to dump response body")
 		}
-		return Token{}, fmt.Errorf("Get token call returned unexpected status: %s. Response dump: %s", response.Status, string(dump))
+		return Token{}, apperrors.Internal("Get token call returned unexpected status: %s. Response dump: %s", response.Status, string(dump))
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return Token{}, fmt.Errorf("Failed to read token response body from '%s': %s", credentials.tokensEndpoint, err.Error())
+		return Token{}, apperrors.Internal("Failed to read token response body from '%s': %s", credentials.tokensEndpoint, err.Error())
 	}
 
 	tokenResponse := Token{}
 
 	err = json.Unmarshal(body, &tokenResponse)
 	if err != nil {
-		return Token{}, fmt.Errorf("failed to unmarshal token response body: %s", err.Error())
+		return Token{}, apperrors.Internal("failed to unmarshal token response body: %s", err.Error())
 	}
 
 	log.Infof("Successfully unmarshal response oauth token for accessing Director")
