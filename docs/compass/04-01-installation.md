@@ -64,5 +64,5 @@ For local development, install Compass along with the minimal Kyma installation 
 
 You can also specify Kyma version, such as 1.6 or newer:
 ```bash
-./installation/cmd/run.sh {version}
+./installation/cmd/run.sh {VERSION}
 ```
