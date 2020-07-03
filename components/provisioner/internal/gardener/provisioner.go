@@ -3,9 +3,10 @@ package gardener
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"

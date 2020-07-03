@@ -2,13 +2,14 @@ package oauth
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	v1 "github.com/kubernetes/client-go/kubernetes/typed/core/v1"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util"

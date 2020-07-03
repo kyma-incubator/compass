@@ -2,8 +2,9 @@ package api_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
 
@@ -146,6 +147,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		assert.Nil(t, status)
 	})
 
@@ -220,6 +222,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		assert.Empty(t, operationID)
 	})
 
@@ -259,6 +262,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		assert.Empty(t, operationID)
 	})
 }
@@ -316,6 +320,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 	})
 
 	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
@@ -333,6 +338,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
 
 	t.Run("Should return error when validation fails", func(t *testing.T) {
@@ -350,6 +356,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
 }
 
@@ -391,6 +398,7 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 	})
 
 	t.Run("Should return error when failed to validate tenant", func(t *testing.T) {
@@ -405,6 +413,7 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
 }
 
@@ -458,6 +467,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		require.Empty(t, status)
 	})
 
@@ -475,6 +485,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		require.Empty(t, status)
 	})
 }
@@ -535,6 +546,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		require.Empty(t, status)
 	})
 
@@ -552,6 +564,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		require.Empty(t, status)
 	})
 }

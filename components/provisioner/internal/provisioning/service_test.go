@@ -1,9 +1,10 @@
 package provisioning
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/mocks"
 
@@ -181,6 +182,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		//when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 
 		//then
 		assert.Contains(t, err.Error(), "Failed to start provisioning")
@@ -202,6 +204,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		//when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 
 		//then
 		assert.Contains(t, err.Error(), "Failed to register Runtime")
@@ -277,6 +280,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		//when
 		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 
 		//then
 		assert.Contains(t, err.Error(), "Failed to start deprovisioning")

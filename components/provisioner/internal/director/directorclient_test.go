@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
 	oauthmocks "github.com/kyma-incubator/compass/components/provisioner/internal/oauth/mocks"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -162,6 +163,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 
 		// then
 		assert.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 		assert.Empty(t, receivedRuntimeID)
 	})
 
@@ -309,6 +311,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 
 		// then
 		assert.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 	})
 
 	t.Run("Should return error when the result of the call to Director service is nil", func(t *testing.T) {

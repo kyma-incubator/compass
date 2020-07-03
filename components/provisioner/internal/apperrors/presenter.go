@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -27,13 +28,12 @@ func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 
 	if customErr.Code() == CodeInternal {
 		p.Logger.Errorf("Internal Server Error: %s", err.Error())
-		return newGraphqlErrorResponse(ctx, CodeInternal, err.Error())
 	}
 	return newGraphqlErrorResponse(ctx, customErr.Code(), customErr.Error())
 
 }
 
-func newGraphqlErrorResponse(ctx context.Context, errCode errCode, msg string, args ...interface{}) *gqlerror.Error {
+func newGraphqlErrorResponse(ctx context.Context, errCode ErrCode, msg string, args ...interface{}) *gqlerror.Error {
 	return &gqlerror.Error{
 		Message:    fmt.Sprintf(msg, args...),
 		Path:       graphql.GetResolverContext(ctx).Path(),

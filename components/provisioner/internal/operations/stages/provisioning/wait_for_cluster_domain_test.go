@@ -2,9 +2,10 @@ package provisioning
 
 import (
 	"errors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
 	"github.com/stretchr/testify/mock"

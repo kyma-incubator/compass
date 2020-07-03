@@ -2,9 +2,10 @@ package deprovisioning
 
 import (
 	"errors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 

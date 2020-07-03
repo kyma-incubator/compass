@@ -1,7 +1,11 @@
 package util
 
 import (
+	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
+	"gotest.tools/assert"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -13,4 +17,12 @@ func K8SErrorToAppError(err error) apperrors.AppError {
 		return apperrors.Forbidden(err.Error())
 	}
 	return apperrors.Internal(err.Error())
+}
+
+func CheckErrorType(t *testing.T, err error, errCode apperrors.ErrCode) {
+	var appErr apperrors.AppError
+	if !errors.As(err, &appErr) {
+		t.Fail()
+	}
+	assert.Equal(t, appErr.Code(), errCode)
 }

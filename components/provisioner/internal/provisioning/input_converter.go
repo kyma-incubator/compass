@@ -2,8 +2,9 @@ package provisioning
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
 	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
@@ -108,7 +109,7 @@ func (c converter) createGardenerClusterName() string {
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, apperrors.AppError) {
 	if input == nil {
-		return nil, apperrors.BadRequest("provider config not specified")
+		return nil, apperrors.Internal("provider config not specified")
 	}
 
 	if input.GcpConfig != nil {

@@ -1,8 +1,10 @@
 package runtime
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
+	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -117,6 +119,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 	})
 
 	t.Run("Should return error when failed to fetch token", func(t *testing.T) {
@@ -132,6 +135,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 	})
 }
 

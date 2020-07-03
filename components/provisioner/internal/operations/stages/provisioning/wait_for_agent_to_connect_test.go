@@ -2,9 +2,10 @@ package provisioning
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 

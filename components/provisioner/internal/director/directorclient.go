@@ -2,6 +2,7 @@ package director
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -101,10 +102,10 @@ func (cc *directorClient) GetRuntime(id, tenant string) (graphql.RuntimeExt, app
 		return graphql.RuntimeExt{}, err.Append("Failed to get runtime %s from Director", id)
 	}
 	if response.Result == nil {
-		return graphql.RuntimeExt{}, apperrors.Internal("Failed to get runtime %s get Director: received nil response.", id)
+		return graphql.RuntimeExt{}, apperrors.Internal("Failed to get runtime %s from Director: received nil response.", id)
 	}
 	if response.Result.ID != id {
-		return graphql.RuntimeExt{}, apperrors.Internal("Failed to get correctly runtime %s in Director: Received wrong Runtime in the response", id)
+		return graphql.RuntimeExt{}, apperrors.Internal("Failed to get runtime %s from Director: received unexpected RuntimeID", id)
 	}
 
 	log.Infof("Successfully got Runtime %s from Director for tenant %s", id, tenant)
@@ -134,7 +135,7 @@ func (cc *directorClient) UpdateRuntime(id string, directorInput *graphql.Runtim
 		return apperrors.Internal("Failed to update runtime %s in Director: received nil response.", id)
 	}
 	if response.Result.ID != id {
-		return apperrors.Internal("Failed to update correctly the runtime %s in Director: Received bad Runtime id in response", id)
+		return apperrors.Internal("Failed to update runtime %s in Director: received unexpected RuntimeID", id)
 	}
 
 	log.Infof("Successfully updated Runtime %s in Director for tenant %s", id, tenant)
@@ -155,7 +156,7 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) apperrors.AppError {
 	}
 
 	if response.Result.ID != id {
-		return apperrors.Internal("Failed to unregister correctly the runtime %s in Director: Received bad Runtime id in response", id)
+		return apperrors.Internal("Failed to unregister runtime %s in Director: received unexpected RuntimeID.", id)
 	}
 
 	log.Infof("Successfully unregistered Runtime %s in Director for tenant %s", id, tenant)

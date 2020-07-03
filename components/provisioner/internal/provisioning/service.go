@@ -1,8 +1,9 @@
 package provisioning
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
 
