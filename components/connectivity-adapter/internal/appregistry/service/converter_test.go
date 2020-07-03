@@ -12,6 +12,9 @@ import (
 )
 
 func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
+	additionalQueryParamsSerialized := graphql.QueryParamsSerialized(`{"q1":["a","b"],"q2":["c","d"]}`)
+	additionalHeadersSerialized := graphql.HttpHeadersSerialized(`{"h1":["e","f"],"h2":["g","h"]}`)
+
 	type testCase struct {
 		given    model.ServiceDetails
 		expected graphql.PackageCreateInput
@@ -185,14 +188,8 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 			expected: graphql.PackageCreateInput{
 				Name: "foo",
 				DefaultInstanceAuth: &graphql.AuthInput{
-					AdditionalQueryParams: &graphql.QueryParams{
-						"q1": {"a", "b"},
-						"q2": {"c", "d"},
-					},
-					AdditionalHeaders: &graphql.HttpHeaders{
-						"h1": {"e", "f"},
-						"h2": {"g", "h"},
-					},
+					AdditionalQueryParamsSerialized: &additionalQueryParamsSerialized,
+					AdditionalHeadersSerialized:     &additionalHeadersSerialized,
 				},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{Name: "foo"},
@@ -216,14 +213,8 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 			},
 			expected: graphql.PackageCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{
-					AdditionalQueryParams: &graphql.QueryParams{
-						"q1": {"a", "b"},
-						"q2": {"c", "d"},
-					},
-					AdditionalHeaders: &graphql.HttpHeaders{
-						"h1": {"e", "f"},
-						"h2": {"g", "h"},
-					},
+					AdditionalQueryParamsSerialized: &additionalQueryParamsSerialized,
+					AdditionalHeadersSerialized:     &additionalHeadersSerialized,
 				},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{},
@@ -235,10 +226,12 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 				Api: &model.API{
 					RequestParameters: &model.RequestParameters{
 						QueryParameters: &map[string][]string{
-							"new": {"new"},
+							"q1": {"a", "b"},
+							"q2": {"c", "d"},
 						},
 						Headers: &map[string][]string{
-							"new": {"new"},
+							"h1": {"e", "f"},
+							"h2": {"g", "h"},
 						}},
 					QueryParameters: &map[string][]string{
 						"old": {"old"},
@@ -250,12 +243,8 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 			},
 			expected: graphql.PackageCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{
-					AdditionalQueryParams: &graphql.QueryParams{
-						"new": {"new"},
-					},
-					AdditionalHeaders: &graphql.HttpHeaders{
-						"new": {"new"},
-					},
+					AdditionalQueryParamsSerialized: &additionalQueryParamsSerialized,
+					AdditionalHeadersSerialized:     &additionalHeadersSerialized,
 				},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{},
@@ -454,14 +443,8 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 							FetchRequest: &graphql.FetchRequestInput{
 								URL: "http://specification.url",
 								Auth: &graphql.AuthInput{
-									AdditionalQueryParams: &graphql.QueryParams{
-										"q1": {"a", "b"},
-										"q2": {"c", "d"},
-									},
-									AdditionalHeaders: &graphql.HttpHeaders{
-										"h1": {"e", "f"},
-										"h2": {"g", "h"},
-									},
+									AdditionalQueryParamsSerialized: &additionalQueryParamsSerialized,
+									AdditionalHeadersSerialized:     &additionalHeadersSerialized,
 								},
 							},
 							Format: graphql.SpecFormatJSON,
