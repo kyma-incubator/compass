@@ -21,7 +21,7 @@ DB_USER="usr"
 DB_PWD="pwd"
 DB_PORT="5432"
 DB_SSL_PARAM="disable"
-POSTGRES_MULTIPLE_DATABASES="compass, broker, provisioner"
+POSTGRES_MULTIPLE_DATABASES="compass"
 
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container and network${NC}"
@@ -62,7 +62,7 @@ function migrationUP() {
         ${IMG_NAME}
 
     echo -e "${GREEN}Show schema_migrations table after UP migrations${NC}"
-    docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_migrations"
+    docker exec ${POSTGRES_CONTAINER} psql --username usr "${db_name}" --command "select * from schema_migrations"
 }
 
 function migrationDOWN() {
@@ -83,7 +83,7 @@ function migrationDOWN() {
         ${IMG_NAME}
 
     echo -e "${GREEN}Show schema_migrations table after DOWN migrations${NC}"
-    docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_migrations"
+    docker exec ${POSTGRES_CONTAINER} psql --username usr "${db_name}" --command "select * from schema_migrations"
 }
 
 function migrationProcess() {
@@ -96,5 +96,3 @@ function migrationProcess() {
 }
 
 migrationProcess "director" "compass"
-migrationProcess "kyma-environment-broker" "broker"
-migrationProcess "provisioner" "provisioner"
