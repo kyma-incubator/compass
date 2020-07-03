@@ -1,6 +1,6 @@
 # Compass installation
 
-You can install Compass both on a cluster or on your local machine.
+You can install Compass both on a cluster and on your local machine.
 
 ## Cluster installation
 
