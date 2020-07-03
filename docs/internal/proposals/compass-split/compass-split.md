@@ -43,7 +43,7 @@ To preserve Git history, the complete Compass history is pushed to the Kyma Cont
 
 The following steps have to be executed to complete the Compass project split:
 
-- Create new repository `control-plane` under `kyma-project` GitHub organization
+- Create a new `control-plane` repository under the `kyma-project` GitHub organization.
 
   - Follow the process described in the `kyma-project/community` repository.
   - Configure the repository (add labels, branch protection, etc.).
