@@ -10,7 +10,6 @@ RUN CGO_ENABLED=0 GOOS=linux go test -c ./test/provisioner
 
 
 FROM alpine:3.12.0
-
 LABEL source=git@github.com:kyma-project/kyma.git
 
 RUN apk --no-cache add ca-certificates curl

@@ -3,29 +3,29 @@ global:
 
   images:
     containerRegistry:
-      path: eu.gcr.io/kyma-project/incubator
+      path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-1461"
+      version: "PR-20"
     provisioner:
       dir:
-      version: "PR-1461"
+      version: "PR-20"
     kyma_environment_broker:
       dir:
-      version: "PR-1461"
+      version: "PR-20"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1428"
+      version: "PR-20"
     metris:
       dir:
-      version: "PR-1434"
+      version: "PR-20"
     tests:
       provisioner:
         dir:
-        version: "PR-1461"
+        version: "PR-20"
       e2e_provisioning:
         dir:
-        version: "PR-1461"
+        version: "PR-20"
   isLocalEnv: false
   oauth2:
     host: oauth2

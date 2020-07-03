@@ -14,8 +14,8 @@ global:
 replicaCount: 1
 
 image:
-  repository: eu.gcr.io/kyma-project/incubator/kubeconfig-service
-  tag: PR-1460
+  repository: eu.gcr.io/kyma-project/control-plane/kubeconfig-service
+  tag: PR-20
   pullPolicy: Always
 
 config:

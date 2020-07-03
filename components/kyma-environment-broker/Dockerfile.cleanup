@@ -15,8 +15,9 @@ RUN apk --update add ca-certificates
 
 # Final image
 FROM alpine:3.12.0
-RUN apk --no-cache add curl
 LABEL source = git@github.com:kyma-project/control-plane.git
+
+RUN apk --no-cache add curl
 
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /bin/environments-cleanup /bin/environments-cleanup

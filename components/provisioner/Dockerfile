@@ -23,9 +23,9 @@ RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 RUN wget https://github.com/kyma-incubator/terraform-provider-gardener/releases/download/v0.0.3/terraform-provider-gardener-linux-amd64
 
 
-
 FROM alpine:3.12.0
 LABEL source = git@github.com:kyma-project/control-plane.git
+
 # Hydroform needs write permissions
 RUN mkdir /app && chmod 777 /app
 WORKDIR /app

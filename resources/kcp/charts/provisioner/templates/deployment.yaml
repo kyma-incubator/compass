@@ -42,7 +42,7 @@ spec:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.provisioner.dir }}compass-provisioner:{{ .Values.global.images.provisioner.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.provisioner.dir }}provisioner:{{ .Values.global.images.provisioner.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http

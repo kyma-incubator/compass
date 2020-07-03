@@ -19,6 +19,7 @@ RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
 FROM alpine:3.12.0
 LABEL source = git@github.com:kyma-project/control-plane.git
+
 WORKDIR /app
 
 #
