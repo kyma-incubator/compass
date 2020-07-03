@@ -57,7 +57,7 @@ Then, use the script to check the progress of the Compass installation:
 
 ## Local installation
 
-For local development, install Compass along the minimal Kyma installation from the `master` branch. To do so, run this script:
+For local development, install Compass along with the minimal Kyma installation from the `master` branch. To do so, run this script:
 ```bash
 ./installation/cmd/run.sh
 ```
