@@ -48,13 +48,13 @@ The following steps have to be executed to complete the Compass project split:
   - Follow the process described in the `kyma-project/community` repository.
   - Configure the repository (add labels, branch protection, etc.).
 
-- Split Chart
+- Split Compass chart.
 
-  - Step 1: do it in the same repository
-  - Step 2: move KCP chart to new repository
-  - Make Compass-KCP communication external
-  - Modify the components, if needed.
-  - Remove KCP components on Compass repo, and Compass components on KCP repo
+  - Split Kyma Control Plane components from the Compass chart to new repository.
+  - Remove references between Compass and KCP charts.
+  - Make the Compass-KCP communication external.
+  - Modify components, if needed.
+  - Remove KCP components from the Compass repo and Compass components from the KCP repo.
 
 - Create Kyma Control Plane Installer.
 
