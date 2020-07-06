@@ -234,20 +234,27 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0ec3e5ffef4f79e483e2d272aa81af32412c3de9f1889b8dd660bfb4a4a27fa7"
+  digest = "1:60593a5847aa8492eae07f6c8d86a4dc41acaf0fe15808de1128ccedd927f065"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
+    "components/director/pkg/apperrors",
     "components/director/pkg/graphql",
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
     "components/director/pkg/pagination",
+    "components/director/pkg/resource",
     "components/director/pkg/scalar",
-    "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "c8c00d22a01b64380d7da84ef6246c9c33b2d41e"
+  revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
+
+[[projects]]
+  digest = "1:967420ccfcff8928e5a937449bbfbc8655d22ead8c10d500cc42f73e80b193cd"
+  name = "github.com/kyma-project/control-plane"
+  packages = ["components/provisioner/pkg/gqlschema"]
+  pruneopts = "UT"
+  revision = "d5c043eb0dbe34e64759b23bcbd1e49505eee7c0"
 
 [[projects]]
   digest = "1:49f1c5f12d36c5529f52e6b1aa3ae3673039f186be3115b8254020fafd6aa8eb"
@@ -772,7 +779,7 @@
     "github.com/avast/retry-go",
     "github.com/google/uuid",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
-    "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
+    "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/machinebox/graphql",
     "github.com/ory/hydra-maester/api/v1alpha1",

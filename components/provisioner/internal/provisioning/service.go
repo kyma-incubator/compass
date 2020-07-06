@@ -4,40 +4,41 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
-	uuid "github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	uuid "github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"github.com/pkg/errors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 //go:generate mockery -name=Service
 type Service interface {
-	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error)
-	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error)
-	DeprovisionRuntime(id, tenant string) (string, error)
-	UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, error)
-	ReconnectRuntimeAgent(id string) (string, error)
-	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error)
-	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error)
-	RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, error)
+	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError)
+	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError)
+	DeprovisionRuntime(id, tenant string) (string, apperrors.AppError)
+	UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, apperrors.AppError)
+	ReconnectRuntimeAgent(id string) (string, apperrors.AppError)
+	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, apperrors.AppError)
+	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, apperrors.AppError)
+	RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError)
 }
 
 //go:generate mockery -name=Provisioner
 type Provisioner interface {
-	ProvisionCluster(cluster model.Cluster, operationId string) error
-	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error)
-	UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) error
+	ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError
+	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError)
+	UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
 }
 
 type service struct {
@@ -82,12 +83,12 @@ func NewProvisioningService(
 	}
 }
 
-func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, error) {
+func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError) {
 	runtimeInput := config.RuntimeInput
 
 	runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to register Runtime: %s", err.Error())
+		return nil, err.Append("Failed to register Runtime")
 	}
 
 	cluster, err := r.inputConverter.ProvisioningInputToCluster(runtimeID, config, tenant, subAccount)
@@ -96,29 +97,29 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return nil, err
 	}
 
-	dbSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to start database transaction: %s", err)
+	dbSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
+	if dberr != nil {
+		return nil, apperrors.Internal("Failed to start database transaction: %s", dberr.Error())
 	}
 	defer dbSession.RollbackUnlessCommitted()
 
 	// Try to set provisioning started before triggering it (which is hard to interrupt) to verify all unique constraints
-	operation, err := r.setProvisioningStarted(dbSession, runtimeID, cluster)
-	if err != nil {
+	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster)
+	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
-		return nil, err
+		return nil, apperrors.Internal(dberr.Error())
 	}
 
 	err = r.provisioner.ProvisionCluster(cluster, operation.ID)
 	if err != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
-		return nil, fmt.Errorf("Failed to start provisioning: %s", err.Error())
+		return nil, err.Append("Failed to start provisioning")
 	}
 
-	err = dbSession.Commit()
-	if err != nil {
+	dberr = dbSession.Commit()
+	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
-		return nil, fmt.Errorf("Failed to commit transaction: %s", err.Error())
+		return nil, apperrors.Internal("Failed to commit transaction: %s", dberr.Error())
 	}
 
 	r.provisioningQueue.Add(operation.ID)
@@ -134,7 +135,7 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 	}
 }
 
-func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
+func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadWriteSession()
 
 	err := r.verifyLastOperationFinished(session, id)
@@ -144,17 +145,17 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, error) {
 
 	cluster, dberr := session.GetCluster(id)
 	if dberr != nil {
-		return "", fmt.Errorf("Failed to get cluster: %s", dberr.Error())
+		return "", apperrors.Internal("Failed to get cluster: %s", dberr.Error())
 	}
 
 	operation, err := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
 	if err != nil {
-		return "", fmt.Errorf("Failed to start deprovisioning: %s", err.Error())
+		return "", apperrors.Internal("Failed to start deprovisioning: %s", err.Error())
 	}
 
 	dberr = session.InsertOperation(operation)
 	if dberr != nil {
-		return "", fmt.Errorf("Failed to insert operation to database: %s", dberr.Error())
+		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
 	}
 
 	r.deprovisioningQueue.Add(operation.ID)
@@ -181,7 +182,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to find shoot cluster to upgrade: %s", dberr.Error())
 	}
 
-	gardenerConfig, err := r.inputConverter.GardenerConfigFromUpgradeShootInput(*input.GardenerConfig, cluster)
+	gardenerConfig, err := r.inputConverter.UgradeShootInputToGardenerConfig(*input.GardenerConfig, cluster)
 	if err != nil {
 		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
@@ -207,22 +208,22 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
-func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) error {
+func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) apperrors.AppError {
 	lastOperation, dberr := session.GetLastOperation(runtimeId)
 	if dberr != nil {
-		return fmt.Errorf("failed to get last operation: %s", dberr.Error())
+		return apperrors.Internal("failed to get last operation: %s", dberr.Error())
 	}
 
 	if lastOperation.State == model.InProgress {
-		return errors.Errorf("cannot start new operation for %s Runtime while previous one is in progress", runtimeId)
+		return apperrors.BadRequest("cannot start new operation for %s Runtime while previous one is in progress", runtimeId)
 	}
 
 	return nil
 }
 
-func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
+func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError) {
 	if input.KymaConfig == nil {
-		return &gqlschema.OperationStatus{}, fmt.Errorf("error: Kyma config is nil")
+		return &gqlschema.OperationStatus{}, apperrors.BadRequest("error: Kyma config is nil")
 	}
 
 	session := r.dbSessionFactory.NewReadSession()
@@ -234,28 +235,28 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 
 	kymaConfig, err := r.inputConverter.KymaConfigFromInput(runtimeId, *input.KymaConfig)
 	if err != nil {
-		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to convert KymaConfigInput: %s", err.Error())
+		return &gqlschema.OperationStatus{}, err.Append("failed to convert KymaConfigInput")
 	}
 
-	cluster, err := session.GetCluster(runtimeId)
-	if err != nil {
-		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to read cluster from database: %s", err.Error())
+	cluster, dberr := session.GetCluster(runtimeId)
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to read cluster from database: %s", dberr.Error())
 	}
 
-	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
-	if err != nil {
-		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to start database transaction: %s", err.Error())
+	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dberr.Error())
 	}
 	defer txSession.RollbackUnlessCommitted()
 
-	operation, err := r.setUpgradeStarted(txSession, cluster, kymaConfig)
-	if err != nil {
-		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to set upgrade started: %s", err.Error())
+	operation, dberr := r.setUpgradeStarted(txSession, cluster, kymaConfig)
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set upgrade started: %s", dberr.Error())
 	}
 
-	err = txSession.Commit()
-	if err != nil {
-		return &gqlschema.OperationStatus{}, fmt.Errorf("failed to commit upgrade transaction: %s", err.Error())
+	dberr = txSession.Commit()
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to commit upgrade transaction: %s", dberr.Error())
 	}
 
 	r.upgradeQueue.Add(operation.ID)
@@ -263,67 +264,67 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
-func (r *service) ReconnectRuntimeAgent(id string) (string, error) {
+func (r *service) ReconnectRuntimeAgent(id string) (string, apperrors.AppError) {
 	return "", nil
 }
 
-func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	runtimeStatus, err := r.getRuntimeStatus(runtimeID)
-	if err != nil {
-		return nil, err
+func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError) {
+	runtimeStatus, dberr := r.getRuntimeStatus(runtimeID)
+	if dberr != nil {
+		return nil, apperrors.Internal("failed to get Runtime Status: %s", dberr.Error())
 	}
 
 	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus), nil
 }
 
-func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, error) {
+func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.OperationStatus, apperrors.AppError) {
 	readSession := r.dbSessionFactory.NewReadSession()
 
-	operation, err := readSession.GetOperation(operationID)
-	if err != nil {
-		return nil, err
+	operation, dberr := readSession.GetOperation(operationID)
+	if dberr != nil {
+		return nil, apperrors.Internal("failed to get Runtime Operation Status: %s", dberr.Error())
 	}
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
-func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, error) {
+func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError) {
 
 	readSession := r.dbSessionFactory.NewReadSession()
 
 	lastOp, err := readSession.GetLastOperation(runtimeID)
 	if err != nil {
-		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
 	}
 
 	if lastOp.Type != model.Upgrade || lastOp.State == model.InProgress {
-		return nil, fmt.Errorf("error: upgrade can be rolled back only if it is the last operation that is already finished")
+		return nil, apperrors.BadRequest("error: upgrade can be rolled back only if it is the last operation that is already finished")
 	}
 
 	runtimeUpgrade, err := readSession.GetRuntimeUpgrade(lastOp.ID)
 	if err != nil {
-		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
 	}
 
 	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
 	if err != nil {
-		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
 	}
 	defer txSession.RollbackUnlessCommitted()
 
 	err = txSession.SetActiveKymaConfig(runtimeID, runtimeUpgrade.PreUpgradeKymaConfigId)
 	if err != nil {
-		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
 	}
 
 	err = txSession.UpdateUpgradeState(lastOp.ID, model.UpgradeRolledBack)
 	if err != nil {
-		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
 	}
 
 	err = txSession.Commit()
 	if err != nil {
-		return nil, fmt.Errorf("error rolling back last upgrade: %s", err.Error())
+		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
 	}
 
 	return r.RuntimeStatus(runtimeID)
@@ -358,20 +359,9 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	gcpConfig, isGCP := cluster.GCPConfig()
-	if isGCP {
-		err = dbSession.InsertGCPConfig(gcpConfig)
-		if err != nil {
-			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
-		}
-	}
-
-	gardenerConfig, isGardener := cluster.GardenerConfig()
-	if isGardener {
-		err = dbSession.InsertGardenerConfig(gardenerConfig)
-		if err != nil {
-			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
-		}
+	err = dbSession.InsertGardenerConfig(cluster.ClusterConfig)
+	if err != nil {
+		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
 	err = dbSession.InsertKymaConfig(cluster.KymaConfig)

@@ -3,7 +3,7 @@
 package automock
 
 import (
-	ias "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
+	ias "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
 	mock "github.com/stretchr/testify/mock"
 )
 

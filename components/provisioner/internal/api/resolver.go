@@ -2,15 +2,15 @@ package api
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 type Resolver struct {
@@ -54,12 +54,6 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 	subAccount := getSubAccount(ctx)
 
 	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
-	if config.ClusterConfig.GcpConfig != nil && config.ClusterConfig.GardenerConfig == nil {
-		err := fmt.Errorf("Provisioning on GCP is currently not supported, Runtime : %s", config.RuntimeInput.Name)
-		strError := err.Error()
-		log.Errorf(strError)
-		return nil, err
-	}
 
 	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant, subAccount)
 	if err != nil {
@@ -227,10 +221,10 @@ func (r *Resolver) getAndValidateTenantForOp(ctx context.Context, operationID st
 	return tenant, nil
 }
 
-func getTenant(ctx context.Context) (string, error) {
+func getTenant(ctx context.Context) (string, apperrors.AppError) {
 	tenant, ok := ctx.Value(middlewares.Tenant).(string)
 	if !ok || tenant == "" {
-		return "", errors.New("tenant header is empty")
+		return "", apperrors.BadRequest("tenant header is empty")
 	}
 
 	return tenant, nil

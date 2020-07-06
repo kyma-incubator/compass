@@ -23,9 +23,9 @@ const (
 
 	TableCluster             = "cluster"
 	TableGardenerConfig      = "gardener_config"
-	TableGCPConfig           = "gcp_config"
 	TableOperation           = "kyma_config"
 	TableKymaComponentConfig = "kyma_component_config"
+	TableRuntimeUpgrade      = "runtime_upgrade"
 
 	ClusterTableName  = "cluster"
 	SchemaName        = "public"
@@ -38,7 +38,7 @@ const (
 )
 
 var (
-	SchemaFilePath = os.Getenv("GOPATH") + "/src/github.com/kyma-incubator/compass/components/provisioner/assets/database/provisioner.sql"
+	SchemaFilePath = os.Getenv("GOPATH") + "/src/github.com/kyma-project/control-plane/components/provisioner/assets/database/provisioner.sql"
 )
 
 func makeConnectionString(hostname string, port string) string {
@@ -119,7 +119,7 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 
 func CheckIfAllDatabaseTablesArePresent(db *dbr.Connection) error {
 
-	tables := []string{TableCluster, TableGardenerConfig, TableGCPConfig, TableOperation, TableKymaComponentConfig}
+	tables := []string{TableCluster, TableGardenerConfig, TableOperation, TableKymaComponentConfig, TableRuntimeUpgrade}
 
 	for _, table := range tables {
 		checkError := checkIfDBTableIsPresent(table, db)

@@ -11,11 +11,3 @@ func DecodeJson(jsonConfig string, target interface{}) error {
 
 	return decoder.Decode(target)
 }
-
-func EncodeJson(state interface{}) (string, error) {
-	bytesEncoded, err := json.Marshal(state)
-	if err != nil {
-		return "", err
-	}
-	return string(bytesEncoded), nil
-}

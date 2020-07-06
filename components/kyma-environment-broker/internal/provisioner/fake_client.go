@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 type runtime struct {

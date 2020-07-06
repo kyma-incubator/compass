@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"html/template"
 
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/env"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/env"
 
 	"gopkg.in/yaml.v2"
 )

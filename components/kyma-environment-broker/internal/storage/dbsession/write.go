@@ -3,12 +3,12 @@ package dbsession
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 
 	"github.com/gocraft/dbr"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/lib/pq"
 )
 

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/metris/internal/edp"
+	"github.com/kyma-project/control-plane/components/metris/internal/edp"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )

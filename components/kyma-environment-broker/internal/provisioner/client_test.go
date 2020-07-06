@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
-	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
@@ -341,7 +341,11 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 			Description: nil,
 			Labels:      nil,
 		},
-		ClusterConfig: &schema.ClusterConfigInput{},
+		ClusterConfig: &schema.ClusterConfigInput{
+			GardenerConfig: &schema.GardenerConfigInput{
+				ProviderSpecificConfig: &schema.ProviderSpecificInput{},
+			},
+		},
 		KymaConfig: &schema.KymaConfigInput{
 			Components: []*schema.ComponentConfigurationInput{
 				{

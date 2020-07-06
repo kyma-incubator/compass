@@ -7,7 +7,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	model "github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	model "github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
 	rest "k8s.io/client-go/rest"
 )

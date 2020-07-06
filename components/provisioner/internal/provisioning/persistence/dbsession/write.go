@@ -7,8 +7,8 @@ import (
 	"time"
 
 	dbr "github.com/gocraft/dbr/v2"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
 
 type writeSession struct {
@@ -19,8 +19,6 @@ type writeSession struct {
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).
-		Pair("terraform_state", cluster.TerraformState).
-		Pair("credentials_secret_name", cluster.CredentialsSecretName).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
@@ -89,24 +87,10 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Exec()
 
 	if err != nil {
-		return dberrors.Internal("Failed to update record of configuration for gardener shoot cluster %s: %s", config.Name ,err)
+		return dberrors.Internal("Failed to update record of configuration for gardener shoot cluster %s: %s", config.Name, err)
 	}
 
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update record of configuration for gardener shoot cluster %s state: %s", config.Name, err))
-}
-
-func (ws writeSession) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
-	_, err := ws.insertInto("gcp_config").
-		Columns("id", "cluster_id", "name", "project_name", "kubernetes_version", "number_of_nodes", "boot_disk_size_gb",
-			"machine_type", "zone", "region").
-		Record(config).
-		Exec()
-
-	if err != nil {
-		return dberrors.Internal("Failed to insert record to GCPConfig table: %s", err)
-	}
-
-	return nil
 }
 
 func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
@@ -224,7 +208,7 @@ func (ws writeSession) TransitionOperation(operationID string, message string, s
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
 }
 
-// Clean up this code when not needed (https://github.com/kyma-incubator/compass/issues/1371)
+// Clean up this code when not needed (https://github.com/kyma-project/control-plane/issues/1371)
 func (ws writeSession) FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error {
 	legacyStageCondition := dbr.Eq("stage", "ShootProvisioning")
 	provisioningOperation := dbr.Eq("type", model.Provision)
@@ -244,11 +228,10 @@ func (ws writeSession) FixShootProvisioningStage(message string, newStage model.
 	return nil
 }
 
-func (ws writeSession) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
+func (ws writeSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
 		Set("kubeconfig", kubeconfig).
-		Set("terraform_state", terraformState).
 		Exec()
 
 	if err != nil {

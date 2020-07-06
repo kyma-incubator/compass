@@ -3,8 +3,8 @@ package memory
 import (
 	"sync"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 )
 
 type lmsTenants struct {

@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/apimachinery/pkg/util/wait"

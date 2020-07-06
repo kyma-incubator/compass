@@ -1,15 +1,14 @@
 package deprovisioning
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,13 +42,7 @@ func (s *WaitForClusterDeletionStep) TimeLimit() time.Duration {
 
 func (s *WaitForClusterDeletionStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
-	gardenerConfig, ok := cluster.GardenerConfig()
-	if !ok {
-		err := errors.New("failed to read GardenerConfig")
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
-	}
-
-	shootExists, err := s.shootExists(gardenerConfig.Name, logger)
+	shootExists, err := s.shootExists(cluster.ClusterConfig.Name, logger)
 	if err != nil {
 		return operations.StageResult{}, err
 	}

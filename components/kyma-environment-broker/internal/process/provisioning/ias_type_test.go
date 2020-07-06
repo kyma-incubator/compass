@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ias/automock"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 
 	"github.com/stretchr/testify/assert"
 )

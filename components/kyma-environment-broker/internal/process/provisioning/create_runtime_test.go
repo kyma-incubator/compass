@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input"
-	inputAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process/provisioning/input/automock"
-	provisionerAutomock "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provisioner/automock"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
+	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
@@ -82,7 +82,6 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				},
 				Seed: nil,
 			},
-			GcpConfig: nil,
 		},
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version: kymaVersion,
@@ -95,7 +94,6 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 			},
 			Configuration: []*gqlschema.ConfigEntryInput{},
 		},
-		Credentials: nil,
 	}).Return(gqlschema.OperationStatus{
 		ID:        ptr.String(provisionerOperationID),
 		Operation: "",

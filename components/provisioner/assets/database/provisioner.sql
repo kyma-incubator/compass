@@ -6,9 +6,7 @@ CREATE TABLE cluster
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     kubeconfig text,
-    terraform_state bytea,
     tenant varchar(256) NOT NULL,
-    credentials_secret_name varchar(256) NOT NULL,
     creation_timestamp timestamp without time zone NOT NULL,
     deleted boolean default false,
     sub_account_id varchar(256)
@@ -38,22 +36,6 @@ CREATE TABLE gardener_config
     max_surge integer NOT NULL,
     max_unavailable integer NOT NULL,
     provider_specific_config jsonb,
-    UNIQUE(cluster_id),
-    foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
-);
-
-CREATE TABLE gcp_config
-(
-    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    cluster_id uuid NOT NULL,
-    name varchar(256) NOT NULL,
-    project_name varchar(256) NOT NULL,
-    kubernetes_version varchar(256) NOT NULL,
-    number_of_nodes integer NOT NULL,
-    boot_disk_size_gb varchar(256) NOT NULL,
-    machine_type varchar(256) NOT NULL,
-    region varchar(256) NOT NULL,
-    zone varchar(256) NOT NULL,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
 );

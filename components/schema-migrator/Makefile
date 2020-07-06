@@ -1,4 +1,4 @@
-APP_NAME = compass-schema-migrator
+APP_NAME = schema-migrator
 APP_PATH = components/schema-migrator
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts

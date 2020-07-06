@@ -19,8 +19,12 @@
   version = "1.4.2"
 
 [[constraint]]
-  revision = "aa7a78c76a97e933d932f8c99619e2d9265b768a"
   name = "github.com/kyma-incubator/compass"
+  revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
+
+[[constraint]]
+  name = "github.com/kyma-project/control-plane"
+  revision = "d5c043eb0dbe34e64759b23bcbd1e49505eee7c0"
 
 [[constraint]]
   name = "github.com/kyma-project/kyma"

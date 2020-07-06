@@ -5,16 +5,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	directorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
-	gardener_mocks "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/deprovisioning/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	dbMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	dbMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -105,13 +107,6 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 		unrecoverableError bool
 	}{
 		{
-			description: "should return unrecoverable error when failed to get GardenerConfig",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
-			},
-			cluster:            model.Cluster{},
-			unrecoverableError: true,
-		},
-		{
 			description: "should return error when failed to get shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))
@@ -148,7 +143,7 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
-				directorClient.On("RuntimeExists", runtimeID, tenant).Return(false, errors.New("some error"))
+				directorClient.On("RuntimeExists", runtimeID, tenant).Return(false, apperrors.Internal("some error"))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
@@ -162,7 +157,7 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
 				directorClient.On("RuntimeExists", runtimeID, tenant).Return(true, nil)
-				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(errors.New("some error"))
+				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(apperrors.Internal("some error"))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,

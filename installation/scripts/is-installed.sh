@@ -2,8 +2,8 @@
 
 #################################################################################
 #
-# Follow the process of Compass installation
-# Returns exit code 0 if Compass is installed successfully
+# Follow the process of KCP installation
+# Returns exit code 0 if KCP is installed successfully
 #
 # Options:
 # --verbose - reduce the delay between status checks; print the installation CR
@@ -75,38 +75,38 @@ if [ "$TIMEOUT_SET" -ne 0 ]; then
   ITERATIONS_LEFT=$(( TIMEOUT/DELAY ))
 fi
 
-echo "Checking state of compass installation...hold on"
+echo "Checking state of control plane installation...hold on"
 while :
 do
-  STATUS="$(kubectl -n default get installation/compass-installation -o jsonpath='{.status.state}')"
-  DESC="$(kubectl -n default get installation/compass-installation -o jsonpath='{.status.description}')"
+  STATUS="$(kubectl -n default get installation/kcp-installation -o jsonpath='{.status.state}')"
+  DESC="$(kubectl -n default get installation/kcp-installation -o jsonpath='{.status.description}')"
   if [ "$STATUS" = "Installed" ]
   then
-      echo "compass is installed..."
+      echo "control plane is installed..."
       break
   elif [ "$STATUS" = "Error" ]
   then
-    echo "compass installation error, description: ${DESC}"
+    echo "control plane installation error, description: ${DESC}"
     if [ "$TIMEOUT_SET" -eq 0 ]; then
-      echo "to fetch the logs from the installer execute: kubectl logs -n compass-installer $(kubectl get pods --all-namespaces -l name=compass-installer --no-headers -o jsonpath='{.items[*].metadata.name}')"
+      echo "to fetch the logs from the installer execute: kubectl logs -n kcp-installer $(kubectl get pods --all-namespaces -l name=kcp-installer --no-headers -o jsonpath='{.items[*].metadata.name}')"
     fi
     if [ "$TIMEOUT_SET" -ne 0 ] && [ "$ITERATIONS_LEFT" -le 0 ]; then
       echo "Installation errors until timeout:"
       echo "----------"
-      kubectl -n default get installation compass-installation -o go-template --template='{{- range .status.errorLog }}
+      kubectl -n default get installation kcp-installation -o go-template --template='{{- range .status.errorLog }}
 {{.component}}:
   {{.log}}
 {{- end}}
 '
       echo "----------"
-      echo "timeout reached on compass installation error. Exiting"
+      echo "timeout reached on control plane installation error. Exiting"
       exit 1
     fi
   else
     echo "Status: ${STATUS}, description: ${DESC}"
     if [ "$TIMEOUT_SET" -ne 0 ] && [ "$ITERATIONS_LEFT" -le 0 ]; then
       echo "----------"
-      kubectl -n default get installation compass-installation -o go-template --template='{{- range .status.errorLog }}
+      kubectl -n default get installation kcp-installation -o go-template --template='{{- range .status.errorLog }}
 {{.component}}:
   {{.log}}
 {{- end}}
@@ -117,7 +117,7 @@ do
     fi
   fi
   if [ "${VERBOSE}" -eq 1 ]; then
-    kubectl -n default get installation/compass-installation -o yaml
+    kubectl -n default get installation/kcp-installation -o yaml
     echo "----------"
     kubectl get po --all-namespaces
   fi

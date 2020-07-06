@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/caller"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/caller"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

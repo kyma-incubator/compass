@@ -3,8 +3,8 @@
 package mocks
 
 import (
-	dberrors "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	dbsession "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	dberrors "github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	dbsession "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	mock "github.com/stretchr/testify/mock"
 )

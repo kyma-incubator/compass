@@ -1,8 +1,8 @@
 package metrics
 
 import (
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

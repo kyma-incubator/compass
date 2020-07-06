@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/metris/internal/gardener"
-	"github.com/kyma-incubator/compass/components/metris/internal/provider/azure"
+	"github.com/kyma-project/control-plane/components/metris/internal/gardener"
+	"github.com/kyma-project/control-plane/components/metris/internal/provider/azure"
 	"go.uber.org/zap"
 )
 

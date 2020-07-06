@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
 	"github.com/sirupsen/logrus"
 )
 

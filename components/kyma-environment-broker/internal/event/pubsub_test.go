@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/wait"
 )

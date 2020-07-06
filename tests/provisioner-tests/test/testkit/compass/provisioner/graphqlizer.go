@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Masterminds/sprig"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 )
 
@@ -53,15 +53,6 @@ func (g *graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 		{{- if .GardenerConfig }}
 		gardenerConfig: {{ GardenerConfigInputToGraphQL .GardenerConfig }}
 		{{- end }}
-		{{- if .GcpConfig }}
-		gcpConfig: {{ GCPConfigInputToGraphQL .GcpConfig }}
-		{{- end }}
-	}`)
-}
-
-func (g *graphqlizer) CredentialsInputToGraphQL(in gqlschema.CredentialsInput) (string, error) {
-	return g.genericToGraphQL(in, `{
-		secretName: "{{.SecretName}}",
 	}`)
 }
 
@@ -110,21 +101,6 @@ func (g *graphqlizer) AzureProviderConfigInputToGraphQL(in *gqlschema.AzureProvi
 func (g *graphqlizer) GcpProviderConfigInputToGraphQL(in *gqlschema.GCPProviderConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		zones: "{{ .Zones | marshal }}"
-	}`)
-}
-
-func (g *graphqlizer) GCPConfigInputToGraphQL(in gqlschema.GCPConfigInput) (string, error) {
-	return g.genericToGraphQL(in, `{
-		name: "{{.Name}}"
-		kubernetesVersion: "{{.KubernetesVersion}}"
-        projectName: "{{.ProjectName}}"
-		numberOfNodes: {{.NumberOfNodes}}
-		bootDiskSizeGB: {{ .BootDiskSizeGb }}
-		machineType: "{{.MachineType}}"
-		region: "{{.Region}}"
-		{{- if .Zone }}
-		zone: "{{.Zone}}"
-		{{- end }}
 	}`)
 }
 
@@ -218,12 +194,10 @@ func (g *graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL
 	fm["UpgradeClusterConfigToGraphQL"] = g.UpgradeClusterConfigToGraphQL
-	fm["CredentialsInputToGraphQL"] = g.CredentialsInputToGraphQL
 	fm["GardenerConfigInputToGraphQL"] = g.GardenerConfigInputToGraphQL
 	fm["ProviderSpecificInputToGraphQL"] = g.ProviderSpecificInputToGraphQL
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL
 	fm["GcpProviderConfigInputToGraphQL"] = g.GcpProviderConfigInputToGraphQL
-	fm["GCPConfigInputToGraphQL"] = g.GCPConfigInputToGraphQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

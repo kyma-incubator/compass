@@ -1,1 +1,0 @@
-ALTER TABLE runtimes ADD COLUMN auth jsonb;

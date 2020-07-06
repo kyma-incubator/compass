@@ -1,0 +1,16 @@
+apiVersion: "installer.kyma-project.io/v1alpha1"
+kind: Installation
+metadata:
+  name: compass-installation
+  namespace: default
+  labels:
+    action: install
+    kyma-project.io/installation: ""
+  finalizers:
+    - finalizer.installer.kyma-project.io
+spec:
+  version: "0.0.1"
+  url: ""
+  components:
+    - name: "compass"
+      namespace: "compass-system"

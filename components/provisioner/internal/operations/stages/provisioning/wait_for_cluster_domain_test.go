@@ -5,15 +5,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/stretchr/testify/mock"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	gardenerMocks "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	gardenerMocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -93,15 +95,9 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		unrecoverableError bool
 	}{
 		{
-			description: "should return unrecoverable error when failed to get GardenerConfig",
-			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
-			},
-			unrecoverableError: true,
-		},
-		{
 			description: "should return error if failed to read Shoot",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, apperrors.Internal("some error"))
 			},
 			unrecoverableError: false,
 			cluster:            cluster,
@@ -110,7 +106,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 			description: "should return error if failed to get Runtime from Director",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
-				directorClient.On("GetRuntime", runtimeID, tenant).Return(graphql.RuntimeExt{}, errors.New("some error"))
+				directorClient.On("GetRuntime", runtimeID, tenant).Return(graphql.RuntimeExt{}, apperrors.Internal("some error"))
 
 			},
 			unrecoverableError: false,
@@ -125,7 +121,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 					"label": "value",
 				})
 				directorClient.On("GetRuntime", runtimeID, tenant).Return(runtime, nil)
-				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Return(errors.New("some error"))
+				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Return(apperrors.Internal("some error"))
 			},
 			unrecoverableError: false,
 			cluster:            cluster,

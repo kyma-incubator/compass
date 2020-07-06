@@ -1,21 +1,18 @@
-module github.com/kyma-incubator/compass/components/provisioner
+module github.com/kyma-project/control-plane/components/provisioner
 
 go 1.13
 
 require (
 	github.com/99designs/gqlgen v0.9.3
-	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/avast/retry-go v2.6.0+incompatible
 	github.com/gardener/gardener v0.35.0
 	github.com/gocraft/dbr/v2 v2.6.3
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3
-	github.com/hashicorp/hil v0.0.0-20190212132231-97b3a9cdfa93 // indirect
-	github.com/hashicorp/terraform v0.12.25-0.20200512183839-7c646ddeced3
 	github.com/kubernetes-sigs/service-catalog v0.3.0-beta.2
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
-	github.com/kyma-incubator/hydroform v0.0.0-20191217171037-affe7099c3b9
+	github.com/kyma-incubator/compass/components/provisioner v0.0.0-20200703104319-1c4490318bfd
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6
@@ -31,10 +28,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.3.1
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.2.0
-	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
-	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
-	google.golang.org/genproto v0.0.0-20190927181202-20e1ac93f88c // indirect
-	google.golang.org/grpc v1.24.0 // indirect
+	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible // tag kubernetes-1.15.6

@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/assertions"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/assertions"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -161,23 +161,22 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assert.NotEmpty(t, status)
 	assertRuntimeConfiguration(t, status)
 
-	clusterConfig, ok := status.RuntimeConfiguration.ClusterConfig.(*gqlschema.GardenerConfig)
-	require.True(t, ok, "Cluster Config does not match GardenerConfig type")
+	gardenerConfig := status.RuntimeConfiguration.ClusterConfig
 
-	assertions.AssertNotNilAndNotEmptyString(t, clusterConfig.Name)
-	assertions.AssertNotNilAndNotEmptyString(t, clusterConfig.Seed)
+	assertions.AssertNotNilAndNotEmptyString(t, gardenerConfig.Name)
+	assertions.AssertNotNilAndNotEmptyString(t, gardenerConfig.Seed)
 
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Region, clusterConfig.Region)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.KubernetesVersion, clusterConfig.KubernetesVersion)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.VolumeSizeGb, clusterConfig.VolumeSizeGb)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.MachineType, clusterConfig.MachineType)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.DiskType, clusterConfig.DiskType)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Provider, clusterConfig.Provider)
-	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.WorkerCidr, clusterConfig.WorkerCidr)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxUnavailable, clusterConfig.MaxUnavailable)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMin, clusterConfig.AutoScalerMin)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMax, clusterConfig.AutoScalerMax)
-	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxSurge, clusterConfig.MaxSurge)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Region, gardenerConfig.Region)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.KubernetesVersion, gardenerConfig.KubernetesVersion)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.VolumeSizeGb, gardenerConfig.VolumeSizeGb)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.MachineType, gardenerConfig.MachineType)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.DiskType, gardenerConfig.DiskType)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.Provider, gardenerConfig.Provider)
+	assertions.AssertNotNilAndEqualString(t, input.ClusterConfig.GardenerConfig.WorkerCidr, gardenerConfig.WorkerCidr)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxUnavailable, gardenerConfig.MaxUnavailable)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMin, gardenerConfig.AutoScalerMin)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMax, gardenerConfig.AutoScalerMax)
+	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxSurge, gardenerConfig.MaxSurge)
 
 	verifyProviderConfig(t, *input.ClusterConfig.GardenerConfig.ProviderSpecificConfig, status.RuntimeConfiguration.ClusterConfig)
 }

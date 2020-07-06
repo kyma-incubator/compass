@@ -60,35 +60,23 @@ func runtimeStatusData() string {
 
 func clusterConfig() string {
 	return fmt.Sprintf(`
-		... on GardenerConfig {
-			name 
-			kubernetesVersion
-			volumeSizeGB
-			diskType
-			machineType
-			region
-		  	provider
-			seed
-			targetSecret
-			diskType
-			workerCidr
-			autoScalerMin
-			autoScalerMax
-			maxSurge
-			maxUnavailable
-			providerSpecificConfig {
-				%s
-			}
-		}
-		...  on GCPConfig {
-			name 
-			kubernetesVersion
-			projectName
-			numberOfNodes 
-			bootDiskSizeGB
-			machineType
-			region
-			zone
+		name 
+		kubernetesVersion
+		volumeSizeGB
+		diskType
+		machineType
+		region
+		provider
+		seed
+		targetSecret
+		diskType
+		workerCidr
+		autoScalerMin
+		autoScalerMax
+		maxSurge
+		maxUnavailable
+		providerSpecificConfig {
+			%s
 		}
 `, providerSpecificConfig())
 }

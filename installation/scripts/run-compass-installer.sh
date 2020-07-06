@@ -3,66 +3,38 @@
 set -o errexit
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
-DOMAIN="kyma.local"
+RESOURCES_DIR="${CURRENT_DIR}/../resources"
+COMPASS_OVERRIDES="${RESOURCES_DIR}/installer-overrides-compass.yaml"
+COMPASS_CR="${RESOURCES_DIR}/installer-cr-compass-dependencies.yaml"
+TMP_DIR="${CURRENT_DIR}/tmp-compass"
 
-VM_DRIVER="virtualbox"
-if [ `uname -s` = "Darwin" ]; then
-    VM_DRIVER="hyperkit"
-fi
+function cleanup {
+  rm -rf "${TMP_DIR}"
+}
+trap cleanup EXIT
 
-source $SCRIPTS_DIR/utils.sh
+echo "
+################################################################################
+# Prepare Compass artifacts
+################################################################################
+"
 
-POSITIONAL=()
-while [[ $# -gt 0 ]]
-do
+mkdir -p "$TMP_DIR"
+readonly RELEASE=$(<"${RESOURCES_DIR}"/COMPASS_VERSION)
+curl -L "https://storage.googleapis.com/kyma-development-artifacts/compass/${RELEASE}/compass-installer.yaml" -o "${TMP_DIR}/compass-installer.yaml"
+curl -L "https://storage.googleapis.com/kyma-development-artifacts/compass/${RELEASE}/is-installed.sh" -o "${TMP_DIR}/is-compass-installed.sh"
 
-    key="$1"
+sed -i.bak '/action: install/d' "${TMP_DIR}/compass-installer.yaml"
+COMBO_YAML=$(bash ${CURRENT_DIR}/concat-yamls.sh ${COMPASS_OVERRIDES} ${TMP_DIR}/compass-installer.yaml ${COMPASS_CR})
+MINIKUBE_IP=$(minikube ip)
+COMBO_YAML=$(sed 's/\.minikubeIP: .*/\.minikubeIP: '"${MINIKUBE_IP}"'/g' <<<"$COMBO_YAML")
 
-    case ${key} in
-        --skip-minikube-start)
-            SKIP_MINIKUBE_START=true
-            shift # past argument
-        ;;
-        --cr)
-            checkInputParameterValue "$2"
-            CR_PATH="$2"
-            shift # past argument
-            shift # past value
-        ;;
-        --vm-driver)
-            checkInputParameterValue "$2"
-            VM_DRIVER="$2"
-            shift
-            shift
-        ;;
-        --password)
-            checkInputParameterValue "$2"
-            ADMIN_PASSWORD="${2}"
-            shift # past argument
-            shift # past value
-        ;;
-        --*)
-            echo "Unknown flag ${1}"
-            exit 1
-        ;;
-        *)    # unknown option
-            POSITIONAL+=("$1") # save it in an array for later
-            shift # past argument
-        ;;
-    esac
-done
-set -- "${POSITIONAL[@]}" # restore positional parameters
+echo "
+################################################################################
+# Install Compass version ${RELEASE}
+################################################################################
+"
 
-bash ${SCRIPTS_DIR}/build-compass-installer.sh --vm-driver "${VM_DRIVER}"
-
-if [ -z "$CR_PATH" ]; then
-
-    TMPDIR=`mktemp -d "${CURRENT_DIR}/../../temp-XXXXXXXXXX"`
-    CR_PATH="${TMPDIR}/installer-cr-local.yaml"
-    bash ${SCRIPTS_DIR}/create-cr.sh --output "${CR_PATH}"
-
-fi
-
-bash ${SCRIPTS_DIR}/installer.sh --cr "${CR_PATH}" --password "${ADMIN_PASSWORD}"
-rm -rf $TMPDIR
+kubectl create ns compass-installer
+kubectl apply -f - <<< "$COMBO_YAML"
+bash "${TMP_DIR}/is-compass-installed.sh"

@@ -3,7 +3,7 @@ package testkit
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
 

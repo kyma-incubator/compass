@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	autorestazure "github.com/Azure/go-autorest/autorest/azure"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/hyperscaler"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler"
 )
 
 // GetConfig returns Azure config

@@ -7,11 +7,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 
 	"k8s.io/client-go/util/retry"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/sirupsen/logrus"

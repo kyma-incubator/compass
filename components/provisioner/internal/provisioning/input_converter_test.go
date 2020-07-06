@@ -3,20 +3,20 @@ package provisioning
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	realeaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,55 +36,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	readSession := &realeaseMocks.Repository{}
 	readSession.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
-
-	createGQLRuntimeInputGCP := func(zone *string) gqlschema.ProvisionRuntimeInput {
-		return gqlschema.ProvisionRuntimeInput{
-			RuntimeInput: &gqlschema.RuntimeInput{
-				Name:        "runtimeName",
-				Description: nil,
-				Labels:      &gqlschema.Labels{},
-			},
-			ClusterConfig: &gqlschema.ClusterConfigInput{
-				GcpConfig: &gqlschema.GCPConfigInput{
-					Name:              "Something",
-					ProjectName:       "Project",
-					NumberOfNodes:     3,
-					BootDiskSizeGb:    256,
-					MachineType:       "n1-standard-1",
-					Region:            "region",
-					Zone:              zone,
-					KubernetesVersion: "version",
-				},
-			},
-			Credentials: &gqlschema.CredentialsInput{
-				SecretName: "secretName",
-			},
-			KymaConfig: fixKymaGraphQLConfigInput(),
-		}
-	}
-
-	createExpectedRuntimeInputGCP := func(zone string) model.Cluster {
-		return model.Cluster{
-			ID: "runtimeID",
-			ClusterConfig: model.GCPConfig{
-				ID:                "id",
-				Name:              "Something",
-				ProjectName:       "Project",
-				NumberOfNodes:     3,
-				BootDiskSizeGB:    256,
-				MachineType:       "n1-standard-1",
-				Region:            "region",
-				Zone:              zone,
-				KubernetesVersion: "version",
-				ClusterID:         "runtimeID",
-			},
-			Kubeconfig:            nil,
-			KymaConfig:            fixKymaConfig(),
-			CredentialsSecretName: "",
-			Tenant:                tenant,
-			SubAccountId:          util.StringPtr(subAccountId),
-		}
-	}
 
 	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}}
 
@@ -115,9 +66,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				},
 			},
 		},
-		Credentials: &gqlschema.CredentialsInput{
-			SecretName: "secretName",
-		},
 		KymaConfig: fixKymaGraphQLConfigInput(),
 	}
 
@@ -147,11 +95,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:              "runtimeID",
 			GardenerProviderConfig: expectedGCPProviderCfg,
 		},
-		Kubeconfig:            nil,
-		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "",
-		Tenant:                tenant,
-		SubAccountId:          util.StringPtr(subAccountId),
+		Kubeconfig:   nil,
+		KymaConfig:   fixKymaConfig(),
+		Tenant:       tenant,
+		SubAccountId: util.StringPtr(subAccountId),
 	}
 
 	createGQLRuntimeInputAzure := func(zones []string) gqlschema.ProvisionRuntimeInput {
@@ -183,9 +130,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 						},
 					},
 				},
-			},
-			Credentials: &gqlschema.CredentialsInput{
-				SecretName: "secretName",
 			},
 			KymaConfig: fixKymaGraphQLConfigInput(),
 		}
@@ -219,11 +163,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ClusterID:              "runtimeID",
 				GardenerProviderConfig: expectedAzureProviderCfg,
 			},
-			Kubeconfig:            nil,
-			KymaConfig:            fixKymaConfig(),
-			CredentialsSecretName: "",
-			Tenant:                tenant,
-			SubAccountId:          util.StringPtr(subAccountId),
+			Kubeconfig:   nil,
+			KymaConfig:   fixKymaConfig(),
+			Tenant:       tenant,
+			SubAccountId: util.StringPtr(subAccountId),
 		}
 	}
 
@@ -261,9 +204,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				},
 			},
 		},
-		Credentials: &gqlschema.CredentialsInput{
-			SecretName: "secretName",
-		},
 		KymaConfig: fixKymaGraphQLConfigInput(),
 	}
 
@@ -293,14 +233,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:              "runtimeID",
 			GardenerProviderConfig: expectedAWSProviderCfg,
 		},
-		Kubeconfig:            nil,
-		KymaConfig:            fixKymaConfig(),
-		CredentialsSecretName: "",
-		Tenant:                tenant,
-		SubAccountId:          util.StringPtr(subAccountId),
+		Kubeconfig:   nil,
+		KymaConfig:   fixKymaConfig(),
+		Tenant:       tenant,
+		SubAccountId: util.StringPtr(subAccountId),
 	}
 
-	zone := "zone"
 	gardenerZones := []string{"fix-az-zone-1", "fix-az-zone-2"}
 
 	configurations := []struct {
@@ -308,16 +246,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		expected    model.Cluster
 		description string
 	}{
-		{
-			input:       createGQLRuntimeInputGCP(&zone),
-			expected:    createExpectedRuntimeInputGCP(zone),
-			description: "Should create proper runtime config struct with GCP input",
-		},
-		{
-			input:       createGQLRuntimeInputGCP(nil),
-			expected:    createExpectedRuntimeInputGCP(""),
-			description: "Should create proper runtime config struct with GCP input (empty zone)",
-		},
 		{
 			input:       gardenerGCPGQLInput,
 			expected:    expectedGardenerGCPRuntimeConfig,
@@ -370,10 +298,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
-				GcpConfig: &gqlschema.GCPConfigInput{},
-			},
-			Credentials: &gqlschema.CredentialsInput{
-				SecretName: "secretName",
+				GardenerConfig: &gqlschema.GardenerConfigInput{},
 			},
 			KymaConfig: &gqlschema.KymaConfigInput{
 				Version: kymaVersion,
@@ -390,10 +315,26 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		uuidGeneratorMock.AssertExpectations(t)
 	})
 
-	t.Run("should return error when no provider input provided", func(t *testing.T) {
+	t.Run("should return error when Cluster Config not provided", func(t *testing.T) {
+		// given
+		input := gqlschema.ProvisionRuntimeInput{}
+
+		inputConverter := NewInputConverter(nil, nil, gardenerProject)
+
+		//when
+		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
+
+		//then
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "ClusterConfig not provided")
+	})
+
+	t.Run("should return error when Gardener Config not provided", func(t *testing.T) {
 		// given
 		input := gqlschema.ProvisionRuntimeInput{
-			ClusterConfig: &gqlschema.ClusterConfigInput{},
+			ClusterConfig: &gqlschema.ClusterConfigInput{
+				GardenerConfig: nil,
+			},
 		}
 
 		inputConverter := NewInputConverter(nil, nil, gardenerProject)
@@ -403,7 +344,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 		//then
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "does not match any provider")
+		assert.Contains(t, err.Error(), "GardenerConfig not provided")
 	})
 
 	t.Run("should return error when no Gardener provider specified", func(t *testing.T) {

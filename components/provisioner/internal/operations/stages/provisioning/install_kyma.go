@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/sirupsen/logrus"
 )
 

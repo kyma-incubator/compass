@@ -1,9 +1,9 @@
 package provisioner
 
 import (
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/graphql"
 
-	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )

@@ -208,7 +208,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:bfa965009e096bf20a3ebf3170b2d4c94bc1eeb98ffd40999b01f5a049aa61d7"
+  digest = "1:d3505bb0d9b8d3038f9259b8fac2c1b2580bece8dee0ea6c45b22adb4cb07c41"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -217,11 +217,18 @@
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
     "components/director/pkg/pagination",
+    "components/director/pkg/resource",
     "components/director/pkg/scalar",
-    "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "64f737ad7e1db26e2c3e9b71335bd67e69199092"
+  revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
+
+[[projects]]
+  digest = "1:967420ccfcff8928e5a937449bbfbc8655d22ead8c10d500cc42f73e80b193cd"
+  name = "github.com/kyma-project/control-plane"
+  packages = ["components/provisioner/pkg/gqlschema"]
+  pruneopts = "UT"
+  revision = "d5c043eb0dbe34e64759b23bcbd1e49505eee7c0"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
@@ -757,7 +764,7 @@
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
-    "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
+    "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
@@ -776,6 +783,7 @@
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
+    "k8s.io/client-go/util/homedir",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/metris/internal/metrics"
+	"github.com/kyma-project/control-plane/components/metris/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"k8s.io/client-go/util/workqueue"

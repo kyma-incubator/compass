@@ -6,9 +6,9 @@ import (
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
@@ -46,13 +46,7 @@ func (s *WaitForClusterDomainStep) TimeLimit() time.Duration {
 
 func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
-	gardenerConfig, ok := cluster.GardenerConfig()
-	if !ok {
-		err := errors.New("failed to convert to GardenerConfig")
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
-	}
-
-	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
+	shoot, err := s.gardenerClient.Get(cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}
@@ -64,7 +58,7 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 
 	// TODO: Consider updating Labels and StatusCondition separately without getting the Runtime
 	//       It'll be possible after this issue implementation:
-	//       - https://github.com/kyma-incubator/compass/issues/1186
+	//       - https://github.com/kyma-project/control-plane/issues/1186
 	runtimeInput, err := s.prepareProvisioningUpdateRuntimeInput(cluster.ID, cluster.Tenant, shoot)
 	if err != nil {
 		return operations.StageResult{}, err

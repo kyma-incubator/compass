@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
 // OptionalComponentDisabler disables component form the given list and returns modified list

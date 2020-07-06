@@ -4,20 +4,21 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-	"github.com/pkg/errors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 type InputConverter interface {
-	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error)
-	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error)
-	GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput, existing model.Cluster) (model.GardenerConfig, error)
+	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError)
+	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError)
+	UgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, existing model.Cluster) (model.GardenerConfig, apperrors.AppError)
 }
 
 func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
@@ -34,8 +35,8 @@ type converter struct {
 	gardenerProject string
 }
 
-func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error) {
-	var err error
+func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError) {
+	var err apperrors.AppError
 
 	var kymaConfig model.KymaConfig
 	if input.KymaConfig != nil {
@@ -45,37 +46,30 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		}
 	}
 
-	var providerConfig model.ProviderConfiguration
-	if input.ClusterConfig != nil {
-		providerConfig, err = c.providerConfigFromInput(runtimeID, *input.ClusterConfig)
-		if err != nil {
-			return model.Cluster{}, err
-		}
+	if input.ClusterConfig == nil {
+		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided")
+	}
+
+	gardenerConfig, err := c.gardenerConfigFromInput(runtimeID, input.ClusterConfig.GardenerConfig)
+	if err != nil {
+		return model.Cluster{}, err
 	}
 
 	return model.Cluster{
-		ID:                    runtimeID,
-		CredentialsSecretName: "",
-		KymaConfig:            kymaConfig,
-		ClusterConfig:         providerConfig,
-		Tenant:                tenant,
-		SubAccountId:          &subAccountId,
+		ID:            runtimeID,
+		KymaConfig:    kymaConfig,
+		ClusterConfig: gardenerConfig,
+		Tenant:        tenant,
+		SubAccountId:  &subAccountId,
 	}, nil
 }
 
-func (c converter) providerConfigFromInput(runtimeID string, input gqlschema.ClusterConfigInput) (model.ProviderConfiguration, error) {
-	if input.GardenerConfig != nil {
-		config := input.GardenerConfig
-		return c.gardenerConfigFromInput(runtimeID, *config)
+func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput) (model.GardenerConfig, apperrors.AppError) {
+	if input == nil {
+		return model.GardenerConfig{}, apperrors.BadRequest("error: GardenerConfig not provided")
 	}
-	if input.GcpConfig != nil {
-		config := input.GcpConfig
-		return c.gcpConfigFromInput(runtimeID, *config), nil
-	}
-	return nil, errors.New("cluster config does not match any provider")
-}
 
-func (c converter) GardenerConfigFromUpgradeShootInput(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.GardenerConfig, error) {
+func (c converter) UgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.GardenerConfig, error) {
 
 	currentShootCfg, ok := cluster.GardenerConfig()
 	if !ok {
@@ -141,9 +135,9 @@ func (c converter) createGardenerClusterName() string {
 	return name
 }
 
-func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
+func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, apperrors.AppError) {
 	if input == nil {
-		return nil, errors.New("provider config not specified")
+		return nil, apperrors.Internal("provider config not specified")
 	}
 
 	if input.GcpConfig != nil {
@@ -156,7 +150,7 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 		return model.NewAWSGardenerConfig(input.AwsConfig)
 	}
 
-	return nil, errors.New("provider config not specified")
+	return nil, apperrors.BadRequest("provider config not specified")
 }
 
 func (c converter) providerSpecificConfigFromUpgradeInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
@@ -174,39 +168,18 @@ func (c converter) providerSpecificConfigFromUpgradeInput(input *gqlschema.Provi
 		return model.NewAWSGardenerConfig(input.AwsConfig)
 	}
 
-	return nil, errors.New("provider config not specified")
+	return nil, apperrors.BadRequest("provider config not specified")
+}
 }
 
-func (c converter) gcpConfigFromInput(runtimeID string, input gqlschema.GCPConfigInput) model.GCPConfig {
-	id := c.uuidGenerator.New()
-
-	zone := ""
-	if input.Zone != nil {
-		zone = *input.Zone
-	}
-
-	return model.GCPConfig{
-		ID:                id,
-		Name:              input.Name,
-		ProjectName:       input.ProjectName,
-		KubernetesVersion: input.KubernetesVersion,
-		NumberOfNodes:     input.NumberOfNodes,
-		BootDiskSizeGB:    input.BootDiskSizeGb,
-		MachineType:       input.MachineType,
-		Region:            input.Region,
-		Zone:              zone,
-		ClusterID:         runtimeID,
-	}
-}
-
-func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
+func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
 	kymaRelease, err := c.releaseRepo.GetReleaseByVersion(input.Version)
 	if err != nil {
 		if err.Code() == dberrors.CodeNotFound {
-			return model.KymaConfig{}, errors.Errorf("Kyma Release %s not found", input.Version)
+			return model.KymaConfig{}, apperrors.BadRequest("Kyma Release %s not found", input.Version)
 		}
 
-		return model.KymaConfig{}, errors.WithMessagef(err, "Failed to get Kyma Release with version %s", input.Version)
+		return model.KymaConfig{}, apperrors.Internal("Failed to get Kyma Release with version %s: %s", input.Version, err.Error())
 	}
 
 	var components []model.KymaComponentConfig

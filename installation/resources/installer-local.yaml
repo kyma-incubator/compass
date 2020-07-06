@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: compass-installer
+  name: kcp-installer
   labels:
     istio-injection: disabled
     kyma-project.io/installation: ""
@@ -10,8 +10,8 @@ metadata:
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: compass-default
-  namespace: compass-installer
+  name: kcp-default
+  namespace: kcp-installer
   labels:
     kyma-project.io/installation: ""
 spec:
@@ -77,7 +77,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: helm-certs-job-sa
-  namespace: compass-installer
+  namespace: kcp-installer
 roleRef:
   kind: ClusterRole
   name: all-psp
@@ -86,24 +86,24 @@ roleRef:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: compass-installer
-  namespace: compass-installer
+  name: kcp-installer
+  namespace: kcp-installer
   labels:
     kyma-project.io/installation: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: compass-installer
-  namespace: compass-installer
+  name: kcp-installer
+  namespace: kcp-installer
   labels:
-    name: compass-installer
-    kyma-project.io/installation: "compass-installer"
+    name: kcp-installer
+    kyma-project.io/installation: "kcp-installer"
     kyma-project.io/installation: ""
 spec:
   selector:
     matchLabels:
-      name: compass-installer
+      name: kcp-installer
   # Installer is designed to be run as a single instance only
   # We enforce it by changing default rolling update to recreate startegy.
   # With that k8s will first delete old pod and then provision new one during upgrade.
@@ -112,9 +112,9 @@ spec:
   template:
     metadata:
       labels:
-        name: compass-installer
+        name: kcp-installer
     spec:
-      serviceAccountName: compass-installer
+      serviceAccountName: kcp-installer
       initContainers:
         - name: certhelper
           image: eu.gcr.io/kyma-project/test-infra/alpine-kubectl:v20200617-32c1f3ff
@@ -185,7 +185,7 @@ spec:
                   installer: overrides
                   kyma-project.io/installation: ""
                 name: helm-secret
-                namespace: compass-installer
+                namespace: kcp-installer
               type: Opaque
               EOF
               timeout 60s bash -c 'until kubectl create -f /tmp/secret.yaml ; do sleep 2; done'
@@ -204,7 +204,7 @@ spec:
               HELM_2_BINARY=$(which helm)
               HELM_3_BINARY=$(which helm3)
               SECRET_NAME="helm-secret"
-              NAMESPACE="compass-installer"
+              NAMESPACE="kcp-installer"
               CHART_BLACKLIST=( "gateway-0.0.1" "application-0.0.1" )
               echo "---> Install requirements"
               apk add git jq
@@ -247,14 +247,14 @@ spec:
                 fi
               done < helm2-releases
       containers:
-      - name: compass-installer-container
+      - name: kcp-installer-container
         image: eu.gcr.io/kyma-project/develop/kyma-installer:63f27f76
         imagePullPolicy: IfNotPresent
         env:
           - name: INST_RESOURCE
-            value: "compass-installation"
+            value: "kcp-installation"
           - name: OVERRIDES_NAMESPACE
-            value: "compass-installer"
+            value: "kcp-installer"
 
         args:
           - -overrideLogFile=/app/overrides.txt
@@ -262,7 +262,13 @@ spec:
           - mountPath: /etc/certs
             name: helm-certs
             readOnly: true
-
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 40m
+          limits:
+            memory: 512Mi
+            cpu: 400m
       volumes:
       - name: helm-certs
         secret:
@@ -277,7 +283,7 @@ spec:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: compass-installer-reader
+  name: kcp-installer-reader
   labels:
     kyma-project.io/installation: ""
 rules:
@@ -288,14 +294,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: compass-installer
+  name: kcp-installer
   labels:
     kyma-project.io/installation: ""
 subjects:
 - kind: ServiceAccount
-  name: compass-installer
-  namespace: compass-installer
+  name: kcp-installer
+  namespace: kcp-installer
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: compass-installer-reader
+  name: kcp-installer-reader

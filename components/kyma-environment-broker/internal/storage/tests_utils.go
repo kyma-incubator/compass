@@ -10,7 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 
 	"github.com/gocraft/dbr"
 	"github.com/pkg/errors"

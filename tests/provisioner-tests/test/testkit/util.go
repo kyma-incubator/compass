@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	gqlschema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	gqlschema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v3"

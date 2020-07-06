@@ -3,7 +3,7 @@ package predicate
 import (
 	"sort"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/gocraft/dbr"
 )

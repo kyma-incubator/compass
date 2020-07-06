@@ -2,7 +2,7 @@
 
 # This script is responsible for validating if migrations scripts are correct.
 # It starts Postgres, executes UP and DOWN migrations.
-# This script requires `compass-schema-migrator` Docker image.
+# This script requires `kcp-schema-migrator` Docker image.
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 set -e
 
 
-IMG_NAME="compass-schema-migrator"
+IMG_NAME="kcp-schema-migrator"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
 POSTGRES_VERSION="11"
@@ -21,7 +21,7 @@ DB_USER="usr"
 DB_PWD="pwd"
 DB_PORT="5432"
 DB_SSL_PARAM="disable"
-POSTGRES_MULTIPLE_DATABASES="compass, broker, provisioner"
+POSTGRES_MULTIPLE_DATABASES="broker, provisioner"
 
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container and network${NC}"
@@ -62,7 +62,7 @@ function migrationUP() {
         ${IMG_NAME}
 
     echo -e "${GREEN}Show schema_migrations table after UP migrations${NC}"
-    docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_migrations"
+    docker exec ${POSTGRES_CONTAINER} psql -U usr ${db_name} -c "select * from schema_migrations"
 }
 
 function migrationDOWN() {
@@ -83,7 +83,7 @@ function migrationDOWN() {
         ${IMG_NAME}
 
     echo -e "${GREEN}Show schema_migrations table after DOWN migrations${NC}"
-    docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_migrations"
+    docker exec ${POSTGRES_CONTAINER} psql -U usr ${db_name} -c "select * from schema_migrations"
 }
 
 function migrationProcess() {
@@ -95,6 +95,5 @@ function migrationProcess() {
     migrationDOWN "${path}" "${db}"
 }
 
-migrationProcess "director" "compass"
 migrationProcess "kyma-environment-broker" "broker"
 migrationProcess "provisioner" "provisioner"

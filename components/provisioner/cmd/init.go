@@ -8,17 +8,17 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 

@@ -3,11 +3,11 @@
 package mocks
 
 import (
-	dberrors "github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	dberrors "github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 
 	mock "github.com/stretchr/testify/mock"
 
-	model "github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	model "github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
 	time "time"
 )
@@ -72,22 +72,6 @@ func (_m *WriteSessionWithinTransaction) InsertCluster(cluster model.Cluster) db
 	var r0 dberrors.Error
 	if rf, ok := ret.Get(0).(func(model.Cluster) dberrors.Error); ok {
 		r0 = rf(cluster)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
-		}
-	}
-
-	return r0
-}
-
-// InsertGCPConfig provides a mock function with given fields: config
-func (_m *WriteSessionWithinTransaction) InsertGCPConfig(config model.GCPConfig) dberrors.Error {
-	ret := _m.Called(config)
-
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.GCPConfig) dberrors.Error); ok {
-		r0 = rf(config)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)
@@ -214,13 +198,13 @@ func (_m *WriteSessionWithinTransaction) TransitionOperation(operationID string,
 	return r0
 }
 
-// UpdateCluster provides a mock function with given fields: runtimeID, kubeconfig, terraformState
-func (_m *WriteSessionWithinTransaction) UpdateCluster(runtimeID string, kubeconfig string, terraformState []byte) dberrors.Error {
-	ret := _m.Called(runtimeID, kubeconfig, terraformState)
+// UpdateKubeconfig provides a mock function with given fields: runtimeID, kubeconfig
+func (_m *WriteSessionWithinTransaction) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
+	ret := _m.Called(runtimeID, kubeconfig)
 
 	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string, []byte) dberrors.Error); ok {
-		r0 = rf(runtimeID, kubeconfig, terraformState)
+	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+		r0 = rf(runtimeID, kubeconfig)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)

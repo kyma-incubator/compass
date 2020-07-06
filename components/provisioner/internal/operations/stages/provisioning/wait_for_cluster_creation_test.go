@@ -7,12 +7,12 @@ import (
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
-	gardener_mocks "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/deprovisioning/mocks"
-	provisioning_mocks "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
-	dbMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
+	provisioning_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	dbMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -64,7 +64,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
 				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
 
-				dbSession.On("UpdateCluster", cluster.ID, "kubeconfig", []byte(nil)).Return(nil)
+				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(nil)
 
 			},
 			expectedStage: nextStageName,
@@ -98,13 +98,6 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 		unrecoverableError bool
 	}{
 		{
-			description: "should return unrecoverable error when failed to get GardenerConfig",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
-			},
-			unrecoverableError: true,
-			cluster:            model.Cluster{},
-		},
-		{
 			description: "should return error if failed to read Shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))
@@ -135,7 +128,7 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
 				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
 
-				dbSession.On("UpdateCluster", cluster.ID, "kubeconfig", []byte(nil)).Return(dberrors.Internal("some error"))
+				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(dberrors.Internal("some error"))
 			},
 			unrecoverableError: false,
 			cluster:            cluster,

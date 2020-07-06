@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/iosafety"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/iosafety"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"

@@ -3,20 +3,20 @@ package queue
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/failure"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/deprovisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/shootupgrade"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/upgrade"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/failure"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/shootupgrade"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/upgrade"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 

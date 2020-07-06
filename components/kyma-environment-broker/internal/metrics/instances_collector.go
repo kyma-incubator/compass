@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )

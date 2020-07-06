@@ -6,24 +6,27 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/pkg/errors"
 	restclient "k8s.io/client-go/rest"
 
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
-	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director/oauth"
+	gql "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/graphql"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	v1meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1client "k8s.io/client-go/kubernetes/typed/core/v1"
 
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/provisioner"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/provisioner"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -78,7 +81,14 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 func newDirectorClient(config testkit.TestConfig) (director.Client, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get in cluster config")
+		logrus.Warnf("Failed to read in cluster config: %s", err.Error())
+		logrus.Info("Trying to initialize with local config")
+		home := homedir.HomeDir()
+		k8sConfPath := filepath.Join(home, ".kube", "config")
+		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
+		if err != nil {
+			return nil, errors.Errorf("failed to read k8s in-cluster configuration, %s", err.Error())
+		}
 	}
 	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
 	if err != nil {

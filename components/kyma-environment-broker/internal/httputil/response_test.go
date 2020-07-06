@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

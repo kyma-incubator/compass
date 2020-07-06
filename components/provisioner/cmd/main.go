@@ -4,41 +4,39 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/metrics"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
 
-	provisioningStages "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/provisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
+
+	provisioningStages "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 
 	retry "github.com/avast/retry-go"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 	"k8s.io/client-go/rest"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/healthz"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/healthz"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/gardener"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -46,7 +44,7 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/kubernetes"
@@ -84,8 +82,6 @@ type config struct {
 		ClusterCleanupResourceSelector string `envconfig:"default=https://service-manager."`
 	}
 
-	Provisioner string `envconfig:"default=gardener"`
-
 	LatestDownloadedReleases int  `envconfig:"default=5"`
 	DownloadPreReleases      bool `envconfig:"default=true"`
 	SupportOnDemandReleases  bool `envconfig:"default=false"`
@@ -107,7 +103,6 @@ func (c *config) String() string {
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
-		"Provisioner: %s, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
@@ -120,7 +115,6 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
-		c.Provisioner,
 		c.LatestDownloadedReleases, c.DownloadPreReleases, c.SupportOnDemandReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel)
@@ -195,24 +189,14 @@ func main() {
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient)
+	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
+	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
+	exitOnError(err, "Failed to create Shoot controller.")
+	go func() {
+		err := shootController.StartShootController()
+		exitOnError(err, "Failed to start Shoot Controller")
+	}()
 
-	var provisioner provisioning.Provisioner
-	switch strings.ToLower(cfg.Provisioner) {
-	case "hydroform":
-		hydroformSvc := hydroform.NewHydroformService(client.NewHydroformClient(), cfg.Gardener.KubeconfigPath)
-		provisioner = hydroform.NewHydroformProvisioner(hydroformSvc, installationService, dbsFactory, directorClient, runtimeConfigurator)
-	case "gardener":
-		provisioner = gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
-		shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
-		exitOnError(err, "Failed to create Shoot controller.")
-		go func() {
-			err := shootController.StartShootController()
-			exitOnError(err, "Failed to start Shoot Controller")
-		}()
-	default:
-		log.Fatalf("Error: invalid provisioner provided: %s", cfg.Provisioner)
-	}
 	httpClient := newHTTPClient(false)
 	fileDownloader := release.NewFileDownloader(httpClient)
 
@@ -248,12 +232,14 @@ func main() {
 	}
 	executableSchema := gqlschema.NewExecutableSchema(gqlCfg)
 
+	presenter := apperrors.NewPresenter(log.StandardLogger())
+
 	log.Infof("Registering endpoint on %s...", cfg.APIEndpoint)
 	router := mux.NewRouter()
 	router.Use(middlewares.ExtractTenant)
 
 	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema))
+	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema, handler.ErrorPresenter(presenter.Do)))
 	router.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
 	// Metrics

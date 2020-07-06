@@ -71,17 +71,6 @@ type ComplexityRoot struct {
 		Message func(childComplexity int) int
 	}
 
-	GCPConfig struct {
-		BootDiskSizeGb    func(childComplexity int) int
-		KubernetesVersion func(childComplexity int) int
-		MachineType       func(childComplexity int) int
-		Name              func(childComplexity int) int
-		NumberOfNodes     func(childComplexity int) int
-		ProjectName       func(childComplexity int) int
-		Region            func(childComplexity int) int
-		Zone              func(childComplexity int) int
-	}
-
 	GCPProviderConfig struct {
 		Zones func(childComplexity int) int
 	}
@@ -277,62 +266,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Error.Message(childComplexity), true
-
-	case "GCPConfig.bootDiskSizeGB":
-		if e.complexity.GCPConfig.BootDiskSizeGb == nil {
-			break
-		}
-
-		return e.complexity.GCPConfig.BootDiskSizeGb(childComplexity), true
-
-	case "GCPConfig.kubernetesVersion":
-		if e.complexity.GCPConfig.KubernetesVersion == nil {
-			break
-		}
-
-		return e.complexity.GCPConfig.KubernetesVersion(childComplexity), true
-
-	case "GCPConfig.machineType":
-		if e.complexity.GCPConfig.MachineType == nil {
-			break
-		}
-
-		return e.complexity.GCPConfig.MachineType(childComplexity), true
-
-	case "GCPConfig.name":
-		if e.complexity.GCPConfig.Name == nil {
-			break
-		}
-
-		return e.complexity.GCPConfig.Name(childComplexity), true
-
-	case "GCPConfig.numberOfNodes":
-		if e.complexity.GCPConfig.NumberOfNodes == nil {
-			break
-		}
-
-		return e.complexity.GCPConfig.NumberOfNodes(childComplexity), true
-
-	case "GCPConfig.projectName":
-		if e.complexity.GCPConfig.ProjectName == nil {
-			break
-		}
-
-		return e.complexity.GCPConfig.ProjectName(childComplexity), true
-
-	case "GCPConfig.region":
-		if e.complexity.GCPConfig.Region == nil {
-			break
-		}
-
-		return e.complexity.GCPConfig.Region(childComplexity), true
-
-	case "GCPConfig.zone":
-		if e.complexity.GCPConfig.Zone == nil {
-			break
-		}
-
-		return e.complexity.GCPConfig.Zone(childComplexity), true
 
 	case "GCPProviderConfig.zones":
 		if e.complexity.GCPProviderConfig.Zones == nil {
@@ -733,12 +666,10 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
-    clusterConfig: ClusterConfig
+    clusterConfig: GardenerConfig
     kymaConfig: KymaConfig
     kubeconfig: String
 }
-
-union ClusterConfig = GardenerConfig | GCPConfig
 
 type GardenerConfig {
     name: String
@@ -776,17 +707,6 @@ type AWSProviderConfig {
     vpcCidr: String
     publicCidr: String
     internalCidr: String
-}
-
-type GCPConfig {
-    name: String
-    projectName: String
-    kubernetesVersion: String
-    numberOfNodes: Int
-    bootDiskSizeGB: Int
-    machineType: String
-    region: String
-    zone: String
 }
 
 type ConfigEntry {
@@ -866,16 +786,10 @@ input ProvisionRuntimeInput {
     runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
     kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
-    credentials: CredentialsInput       # Credentials # Field is ignored for now
-}
-
-input CredentialsInput {
-    secretName: String!     # Secret name
 }
 
 input ClusterConfigInput {
-    gardenerConfig: GardenerConfigInput     # Gardener-specific configuration for the cluster to be provisioned
-    gcpConfig: GCPConfigInput               # GCP-specific configuration for the cluster to be provisioned
+    gardenerConfig: GardenerConfigInput!     # Gardener-specific configuration for the cluster to be provisioned
 }
 
 input GardenerConfigInput {
@@ -917,17 +831,6 @@ input AWSProviderConfigInput {
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
     publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
     internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
-}
-
-input GCPConfigInput {
-    name: String!                   # Name of the cluster to create
-    projectName: String!            # GCP project in which to create the cluster
-    kubernetesVersion: String!      # Kubernetes version to be installed on the cluster
-    numberOfNodes: Int!             # Number of nodes to create
-    bootDiskSizeGB: Int!            # Size of the available disk, provided in GB
-    machineType: String!            # Type of node machines
-    region: String! # TODO: later we may require either Region or Zone ## Region in which to create the cluster
-    zone: String                    # Zone in which to create the cluster
 }
 
 input KymaConfigInput {
@@ -1020,7 +923,7 @@ func (ec *executionContext) field_Mutation_provisionRuntime_args(ctx context.Con
 	args := map[string]interface{}{}
 	var arg0 ProvisionRuntimeInput
 	if tmp, ok := rawArgs["config"]; ok {
-		arg0, err = ec.unmarshalNProvisionRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx, tmp)
+		arg0, err = ec.unmarshalNProvisionRuntimeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1070,7 +973,7 @@ func (ec *executionContext) field_Mutation_upgradeRuntime_args(ctx context.Conte
 	args["id"] = arg0
 	var arg1 UpgradeRuntimeInput
 	if tmp, ok := rawArgs["config"]; ok {
-		arg1, err = ec.unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1092,7 +995,7 @@ func (ec *executionContext) field_Mutation_upgradeShoot_args(ctx context.Context
 	args["id"] = arg0
 	var arg1 UpgradeShootInput
 	if tmp, ok := rawArgs["config"]; ok {
-		arg1, err = ec.unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1488,7 +1391,7 @@ func (ec *executionContext) _ComponentConfiguration_configuration(ctx context.Co
 	res := resTmp.([]*ConfigEntry)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, field.Selections, res)
+	return ec.marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ComponentConfiguration_sourceURL(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) (ret graphql.Marshaler) {
@@ -1653,278 +1556,6 @@ func (ec *executionContext) _Error_message(ctx context.Context, field graphql.Co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Message, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GCPConfig_name(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GCPConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GCPConfig_projectName(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GCPConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProjectName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GCPConfig_kubernetesVersion(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GCPConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.KubernetesVersion, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GCPConfig_numberOfNodes(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GCPConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.NumberOfNodes, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GCPConfig_bootDiskSizeGB(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GCPConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.BootDiskSizeGb, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GCPConfig_machineType(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GCPConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MachineType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GCPConfig_region(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GCPConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Region, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GCPConfig_zone(ctx context.Context, field graphql.CollectedField, obj *GCPConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GCPConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Zone, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2551,7 +2182,7 @@ func (ec *executionContext) _GardenerConfig_providerSpecificConfig(ctx context.C
 	res := resTmp.(ProviderSpecificConfig)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx, field.Selections, res)
+	return ec.marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KymaConfig_version(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) (ret graphql.Marshaler) {
@@ -2619,7 +2250,7 @@ func (ec *executionContext) _KymaConfig_components(ctx context.Context, field gr
 	res := resTmp.([]*ComponentConfiguration)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOComponentConfiguration2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx, field.Selections, res)
+	return ec.marshalOComponentConfiguration2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KymaConfig_configuration(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) (ret graphql.Marshaler) {
@@ -2653,7 +2284,7 @@ func (ec *executionContext) _KymaConfig_configuration(ctx context.Context, field
 	res := resTmp.([]*ConfigEntry)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, field.Selections, res)
+	return ec.marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_provisionRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2694,7 +2325,7 @@ func (ec *executionContext) _Mutation_provisionRuntime(ctx context.Context, fiel
 	res := resTmp.(*OperationStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_upgradeRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2735,7 +2366,7 @@ func (ec *executionContext) _Mutation_upgradeRuntime(ctx context.Context, field 
 	res := resTmp.(*OperationStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deprovisionRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2820,7 +2451,7 @@ func (ec *executionContext) _Mutation_upgradeShoot(ctx context.Context, field gr
 	res := resTmp.(*OperationStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_rollBackUpgradeOperation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2861,7 +2492,7 @@ func (ec *executionContext) _Mutation_rollBackUpgradeOperation(ctx context.Conte
 	res := resTmp.(*RuntimeStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx, field.Selections, res)
+	return ec.marshalORuntimeStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2976,7 +2607,7 @@ func (ec *executionContext) _OperationStatus_operation(ctx context.Context, fiel
 	res := resTmp.(OperationType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationType(ctx, field.Selections, res)
+	return ec.marshalNOperationType2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OperationStatus_state(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
@@ -3013,7 +2644,7 @@ func (ec *executionContext) _OperationStatus_state(ctx context.Context, field gr
 	res := resTmp.(OperationState)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOperationState2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationState(ctx, field.Selections, res)
+	return ec.marshalNOperationState2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationState(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OperationStatus_message(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
@@ -3122,7 +2753,7 @@ func (ec *executionContext) _Query_runtimeStatus(ctx context.Context, field grap
 	res := resTmp.(*RuntimeStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx, field.Selections, res)
+	return ec.marshalORuntimeStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtimeOperationStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3163,7 +2794,7 @@ func (ec *executionContext) _Query_runtimeOperationStatus(ctx context.Context, f
 	res := resTmp.(*OperationStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3269,10 +2900,10 @@ func (ec *executionContext) _RuntimeConfig_clusterConfig(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(ClusterConfig)
+	res := resTmp.(*GardenerConfig)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOClusterConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfig(ctx, field.Selections, res)
+	return ec.marshalOGardenerConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfig(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeConfig_kymaConfig(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) (ret graphql.Marshaler) {
@@ -3306,7 +2937,7 @@ func (ec *executionContext) _RuntimeConfig_kymaConfig(ctx context.Context, field
 	res := resTmp.(*KymaConfig)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOKymaConfig2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfig(ctx, field.Selections, res)
+	return ec.marshalOKymaConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfig(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeConfig_kubeconfig(ctx context.Context, field graphql.CollectedField, obj *RuntimeConfig) (ret graphql.Marshaler) {
@@ -3377,7 +3008,7 @@ func (ec *executionContext) _RuntimeConnectionStatus_status(ctx context.Context,
 	res := resTmp.(RuntimeAgentConnectionStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeAgentConnectionStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeAgentConnectionStatus(ctx, field.Selections, res)
+	return ec.marshalNRuntimeAgentConnectionStatus2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeAgentConnectionStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeConnectionStatus_errors(ctx context.Context, field graphql.CollectedField, obj *RuntimeConnectionStatus) (ret graphql.Marshaler) {
@@ -3411,7 +3042,7 @@ func (ec *executionContext) _RuntimeConnectionStatus_errors(ctx context.Context,
 	res := resTmp.([]*Error)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, field.Selections, res)
+	return ec.marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeStatus_lastOperationStatus(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
@@ -3445,7 +3076,7 @@ func (ec *executionContext) _RuntimeStatus_lastOperationStatus(ctx context.Conte
 	res := resTmp.(*OperationStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeStatus_runtimeConnectionStatus(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
@@ -3479,7 +3110,7 @@ func (ec *executionContext) _RuntimeStatus_runtimeConnectionStatus(ctx context.C
 	res := resTmp.(*RuntimeConnectionStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntimeConnectionStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConnectionStatus(ctx, field.Selections, res)
+	return ec.marshalORuntimeConnectionStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConnectionStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeStatus_runtimeConfiguration(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
@@ -3513,7 +3144,7 @@ func (ec *executionContext) _RuntimeStatus_runtimeConfiguration(ctx context.Cont
 	res := resTmp.(*RuntimeConfig)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntimeConfig2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx, field.Selections, res)
+	return ec.marshalORuntimeConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -4735,13 +4366,7 @@ func (ec *executionContext) unmarshalInputClusterConfigInput(ctx context.Context
 		switch k {
 		case "gardenerConfig":
 			var err error
-			it.GardenerConfig, err = ec.unmarshalOGardenerConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfigInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "gcpConfig":
-			var err error
-			it.GcpConfig, err = ec.unmarshalOGCPConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPConfigInput(ctx, v)
+			it.GardenerConfig, err = ec.unmarshalNGardenerConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4771,7 +4396,7 @@ func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx contex
 			}
 		case "configuration":
 			var err error
-			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
+			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4808,84 +4433,6 @@ func (ec *executionContext) unmarshalInputConfigEntryInput(ctx context.Context, 
 		case "secret":
 			var err error
 			it.Secret, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputCredentialsInput(ctx context.Context, obj interface{}) (CredentialsInput, error) {
-	var it CredentialsInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "secretName":
-			var err error
-			it.SecretName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputGCPConfigInput(ctx context.Context, obj interface{}) (GCPConfigInput, error) {
-	var it GCPConfigInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "projectName":
-			var err error
-			it.ProjectName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "kubernetesVersion":
-			var err error
-			it.KubernetesVersion, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "numberOfNodes":
-			var err error
-			it.NumberOfNodes, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "bootDiskSizeGB":
-			var err error
-			it.BootDiskSizeGb, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "machineType":
-			var err error
-			it.MachineType, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "region":
-			var err error
-			it.Region, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "zone":
-			var err error
-			it.Zone, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5005,7 +4552,7 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			}
 		case "providerSpecificConfig":
 			var err error
-			it.ProviderSpecificConfig, err = ec.unmarshalNProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+			it.ProviderSpecificConfig, err = ec.unmarshalNProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5083,7 +4630,7 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 			}
 		case "providerSpecificConfig":
 			var err error
-			it.ProviderSpecificConfig, err = ec.unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+			it.ProviderSpecificConfig, err = ec.unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5107,13 +4654,13 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 			}
 		case "components":
 			var err error
-			it.Components, err = ec.unmarshalNComponentConfigurationInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, v)
+			it.Components, err = ec.unmarshalNComponentConfigurationInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "configuration":
 			var err error
-			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
+			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5131,19 +4678,19 @@ func (ec *executionContext) unmarshalInputProviderSpecificInput(ctx context.Cont
 		switch k {
 		case "gcpConfig":
 			var err error
-			it.GcpConfig, err = ec.unmarshalOGCPProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx, v)
+			it.GcpConfig, err = ec.unmarshalOGCPProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "azureConfig":
 			var err error
-			it.AzureConfig, err = ec.unmarshalOAzureProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx, v)
+			it.AzureConfig, err = ec.unmarshalOAzureProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "awsConfig":
 			var err error
-			it.AwsConfig, err = ec.unmarshalOAWSProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx, v)
+			it.AwsConfig, err = ec.unmarshalOAWSProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5161,25 +4708,19 @@ func (ec *executionContext) unmarshalInputProvisionRuntimeInput(ctx context.Cont
 		switch k {
 		case "runtimeInput":
 			var err error
-			it.RuntimeInput, err = ec.unmarshalNRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
+			it.RuntimeInput, err = ec.unmarshalNRuntimeInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "clusterConfig":
 			var err error
-			it.ClusterConfig, err = ec.unmarshalNClusterConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx, v)
+			it.ClusterConfig, err = ec.unmarshalNClusterConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "kymaConfig":
 			var err error
-			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "credentials":
-			var err error
-			it.Credentials, err = ec.unmarshalOCredentialsInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx, v)
+			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5209,7 +4750,7 @@ func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, obj 
 			}
 		case "labels":
 			var err error
-			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx, v)
+			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5227,7 +4768,7 @@ func (ec *executionContext) unmarshalInputUpgradeRuntimeInput(ctx context.Contex
 		switch k {
 		case "kymaConfig":
 			var err error
-			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5245,7 +4786,7 @@ func (ec *executionContext) unmarshalInputUpgradeShootInput(ctx context.Context,
 		switch k {
 		case "gardenerConfig":
 			var err error
-			it.GardenerConfig, err = ec.unmarshalNGardenerUpgradeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx, v)
+			it.GardenerConfig, err = ec.unmarshalNGardenerUpgradeInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5258,23 +4799,6 @@ func (ec *executionContext) unmarshalInputUpgradeShootInput(ctx context.Context,
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
-
-func (ec *executionContext) _ClusterConfig(ctx context.Context, sel ast.SelectionSet, obj *ClusterConfig) graphql.Marshaler {
-	switch obj := (*obj).(type) {
-	case nil:
-		return graphql.Null
-	case GardenerConfig:
-		return ec._GardenerConfig(ctx, sel, &obj)
-	case *GardenerConfig:
-		return ec._GardenerConfig(ctx, sel, obj)
-	case GCPConfig:
-		return ec._GCPConfig(ctx, sel, &obj)
-	case *GCPConfig:
-		return ec._GCPConfig(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
 
 func (ec *executionContext) _ProviderSpecificConfig(ctx context.Context, sel ast.SelectionSet, obj *ProviderSpecificConfig) graphql.Marshaler {
 	switch obj := (*obj).(type) {
@@ -5451,44 +4975,6 @@ func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
-var gCPConfigImplementors = []string{"GCPConfig", "ClusterConfig"}
-
-func (ec *executionContext) _GCPConfig(ctx context.Context, sel ast.SelectionSet, obj *GCPConfig) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, gCPConfigImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("GCPConfig")
-		case "name":
-			out.Values[i] = ec._GCPConfig_name(ctx, field, obj)
-		case "projectName":
-			out.Values[i] = ec._GCPConfig_projectName(ctx, field, obj)
-		case "kubernetesVersion":
-			out.Values[i] = ec._GCPConfig_kubernetesVersion(ctx, field, obj)
-		case "numberOfNodes":
-			out.Values[i] = ec._GCPConfig_numberOfNodes(ctx, field, obj)
-		case "bootDiskSizeGB":
-			out.Values[i] = ec._GCPConfig_bootDiskSizeGB(ctx, field, obj)
-		case "machineType":
-			out.Values[i] = ec._GCPConfig_machineType(ctx, field, obj)
-		case "region":
-			out.Values[i] = ec._GCPConfig_region(ctx, field, obj)
-		case "zone":
-			out.Values[i] = ec._GCPConfig_zone(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var gCPProviderConfigImplementors = []string{"GCPProviderConfig", "ProviderSpecificConfig"}
 
 func (ec *executionContext) _GCPProviderConfig(ctx context.Context, sel ast.SelectionSet, obj *GCPProviderConfig) graphql.Marshaler {
@@ -5516,7 +5002,7 @@ func (ec *executionContext) _GCPProviderConfig(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var gardenerConfigImplementors = []string{"GardenerConfig", "ClusterConfig"}
+var gardenerConfigImplementors = []string{"GardenerConfig"}
 
 func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.SelectionSet, obj *GardenerConfig) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.RequestContext, sel, gardenerConfigImplementors)
@@ -6078,19 +5564,19 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNClusterConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx context.Context, v interface{}) (ClusterConfigInput, error) {
+func (ec *executionContext) unmarshalNClusterConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx context.Context, v interface{}) (ClusterConfigInput, error) {
 	return ec.unmarshalInputClusterConfigInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNClusterConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx context.Context, v interface{}) (*ClusterConfigInput, error) {
+func (ec *executionContext) unmarshalNClusterConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx context.Context, v interface{}) (*ClusterConfigInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNClusterConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx, v)
+	res, err := ec.unmarshalNClusterConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfigInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNComponentConfigurationInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx context.Context, v interface{}) ([]*ComponentConfigurationInput, error) {
+func (ec *executionContext) unmarshalNComponentConfigurationInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx context.Context, v interface{}) ([]*ComponentConfigurationInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -6102,7 +5588,7 @@ func (ec *executionContext) unmarshalNComponentConfigurationInput2ᚕᚖgithub�
 	var err error
 	res := make([]*ComponentConfigurationInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalOComponentConfigurationInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOComponentConfigurationInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -6110,11 +5596,11 @@ func (ec *executionContext) unmarshalNComponentConfigurationInput2ᚕᚖgithub�
 	return res, nil
 }
 
-func (ec *executionContext) marshalNError2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v Error) graphql.Marshaler {
+func (ec *executionContext) marshalNError2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v Error) graphql.Marshaler {
 	return ec._Error(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v *Error) graphql.Marshaler {
+func (ec *executionContext) marshalNError2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v *Error) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6124,15 +5610,15 @@ func (ec *executionContext) marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋc
 	return ec._Error(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNGardenerUpgradeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx context.Context, v interface{}) (GardenerUpgradeInput, error) {
-	return ec.unmarshalInputGardenerUpgradeInput(ctx, v)
+func (ec *executionContext) unmarshalNGardenerConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfigInput(ctx context.Context, v interface{}) (GardenerConfigInput, error) {
+	return ec.unmarshalInputGardenerConfigInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNGardenerUpgradeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx context.Context, v interface{}) (*GardenerUpgradeInput, error) {
+func (ec *executionContext) unmarshalNGardenerConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfigInput(ctx context.Context, v interface{}) (*GardenerConfigInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNGardenerUpgradeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx, v)
+	res, err := ec.unmarshalNGardenerConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfigInput(ctx, v)
 	return &res, err
 }
 
@@ -6150,70 +5636,70 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNKymaConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx context.Context, v interface{}) (KymaConfigInput, error) {
+func (ec *executionContext) unmarshalNKymaConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx context.Context, v interface{}) (KymaConfigInput, error) {
 	return ec.unmarshalInputKymaConfigInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx context.Context, v interface{}) (*KymaConfigInput, error) {
+func (ec *executionContext) unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx context.Context, v interface{}) (*KymaConfigInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNKymaConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+	res, err := ec.unmarshalNKymaConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNOperationState2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationState(ctx context.Context, v interface{}) (OperationState, error) {
+func (ec *executionContext) unmarshalNOperationState2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationState(ctx context.Context, v interface{}) (OperationState, error) {
 	var res OperationState
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNOperationState2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationState(ctx context.Context, sel ast.SelectionSet, v OperationState) graphql.Marshaler {
+func (ec *executionContext) marshalNOperationState2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationState(ctx context.Context, sel ast.SelectionSet, v OperationState) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationType(ctx context.Context, v interface{}) (OperationType, error) {
+func (ec *executionContext) unmarshalNOperationType2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationType(ctx context.Context, v interface{}) (OperationType, error) {
 	var res OperationType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationType(ctx context.Context, sel ast.SelectionSet, v OperationType) graphql.Marshaler {
+func (ec *executionContext) marshalNOperationType2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationType(ctx context.Context, sel ast.SelectionSet, v OperationType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNProviderSpecificInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (ProviderSpecificInput, error) {
+func (ec *executionContext) unmarshalNProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (ProviderSpecificInput, error) {
 	return ec.unmarshalInputProviderSpecificInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (*ProviderSpecificInput, error) {
+func (ec *executionContext) unmarshalNProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (*ProviderSpecificInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNProviderSpecificInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+	res, err := ec.unmarshalNProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNProvisionRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx context.Context, v interface{}) (ProvisionRuntimeInput, error) {
+func (ec *executionContext) unmarshalNProvisionRuntimeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProvisionRuntimeInput(ctx context.Context, v interface{}) (ProvisionRuntimeInput, error) {
 	return ec.unmarshalInputProvisionRuntimeInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNRuntimeAgentConnectionStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeAgentConnectionStatus(ctx context.Context, v interface{}) (RuntimeAgentConnectionStatus, error) {
+func (ec *executionContext) unmarshalNRuntimeAgentConnectionStatus2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeAgentConnectionStatus(ctx context.Context, v interface{}) (RuntimeAgentConnectionStatus, error) {
 	var res RuntimeAgentConnectionStatus
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNRuntimeAgentConnectionStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeAgentConnectionStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeAgentConnectionStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeAgentConnectionStatus2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeAgentConnectionStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeAgentConnectionStatus) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
+func (ec *executionContext) unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
 	return ec.unmarshalInputRuntimeInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNRuntimeInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (*RuntimeInput, error) {
+func (ec *executionContext) unmarshalNRuntimeInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx context.Context, v interface{}) (*RuntimeInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
+	res, err := ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeInput(ctx, v)
 	return &res, err
 }
 
@@ -6260,11 +5746,11 @@ func (ec *executionContext) marshalNString2ᚕstring(ctx context.Context, sel as
 	return ret
 }
 
-func (ec *executionContext) unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx context.Context, v interface{}) (UpgradeRuntimeInput, error) {
+func (ec *executionContext) unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx context.Context, v interface{}) (UpgradeRuntimeInput, error) {
 	return ec.unmarshalInputUpgradeRuntimeInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx context.Context, v interface{}) (UpgradeShootInput, error) {
+func (ec *executionContext) unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx context.Context, v interface{}) (UpgradeShootInput, error) {
 	return ec.unmarshalInputUpgradeShootInput(ctx, v)
 }
 
@@ -6494,27 +5980,27 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) unmarshalOAWSProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx context.Context, v interface{}) (AWSProviderConfigInput, error) {
+func (ec *executionContext) unmarshalOAWSProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx context.Context, v interface{}) (AWSProviderConfigInput, error) {
 	return ec.unmarshalInputAWSProviderConfigInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOAWSProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx context.Context, v interface{}) (*AWSProviderConfigInput, error) {
+func (ec *executionContext) unmarshalOAWSProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx context.Context, v interface{}) (*AWSProviderConfigInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOAWSProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx, v)
+	res, err := ec.unmarshalOAWSProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOAzureProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx context.Context, v interface{}) (AzureProviderConfigInput, error) {
+func (ec *executionContext) unmarshalOAzureProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx context.Context, v interface{}) (AzureProviderConfigInput, error) {
 	return ec.unmarshalInputAzureProviderConfigInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOAzureProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx context.Context, v interface{}) (*AzureProviderConfigInput, error) {
+func (ec *executionContext) unmarshalOAzureProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx context.Context, v interface{}) (*AzureProviderConfigInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOAzureProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx, v)
+	res, err := ec.unmarshalOAzureProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx, v)
 	return &res, err
 }
 
@@ -6541,15 +6027,11 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
-func (ec *executionContext) marshalOClusterConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐClusterConfig(ctx context.Context, sel ast.SelectionSet, v ClusterConfig) graphql.Marshaler {
-	return ec._ClusterConfig(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOComponentConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx context.Context, sel ast.SelectionSet, v ComponentConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalOComponentConfiguration2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx context.Context, sel ast.SelectionSet, v ComponentConfiguration) graphql.Marshaler {
 	return ec._ComponentConfiguration(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOComponentConfiguration2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx context.Context, sel ast.SelectionSet, v []*ComponentConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalOComponentConfiguration2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx context.Context, sel ast.SelectionSet, v []*ComponentConfiguration) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6576,7 +6058,7 @@ func (ec *executionContext) marshalOComponentConfiguration2ᚕᚖgithubᚗcomᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOComponentConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx, sel, v[i])
+			ret[i] = ec.marshalOComponentConfiguration2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -6589,30 +6071,30 @@ func (ec *executionContext) marshalOComponentConfiguration2ᚕᚖgithubᚗcomᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOComponentConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx context.Context, sel ast.SelectionSet, v *ComponentConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalOComponentConfiguration2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfiguration(ctx context.Context, sel ast.SelectionSet, v *ComponentConfiguration) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._ComponentConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOComponentConfigurationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx context.Context, v interface{}) (ComponentConfigurationInput, error) {
+func (ec *executionContext) unmarshalOComponentConfigurationInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx context.Context, v interface{}) (ComponentConfigurationInput, error) {
 	return ec.unmarshalInputComponentConfigurationInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOComponentConfigurationInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx context.Context, v interface{}) (*ComponentConfigurationInput, error) {
+func (ec *executionContext) unmarshalOComponentConfigurationInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx context.Context, v interface{}) (*ComponentConfigurationInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOComponentConfigurationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, v)
+	res, err := ec.unmarshalOComponentConfigurationInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOConfigEntry2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx context.Context, sel ast.SelectionSet, v ConfigEntry) graphql.Marshaler {
+func (ec *executionContext) marshalOConfigEntry2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx context.Context, sel ast.SelectionSet, v ConfigEntry) graphql.Marshaler {
 	return ec._ConfigEntry(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx context.Context, sel ast.SelectionSet, v []*ConfigEntry) graphql.Marshaler {
+func (ec *executionContext) marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx context.Context, sel ast.SelectionSet, v []*ConfigEntry) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6639,7 +6121,7 @@ func (ec *executionContext) marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincu
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOConfigEntry2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, sel, v[i])
+			ret[i] = ec.marshalOConfigEntry2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -6652,18 +6134,18 @@ func (ec *executionContext) marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑincu
 	return ret
 }
 
-func (ec *executionContext) marshalOConfigEntry2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx context.Context, sel ast.SelectionSet, v *ConfigEntry) graphql.Marshaler {
+func (ec *executionContext) marshalOConfigEntry2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx context.Context, sel ast.SelectionSet, v *ConfigEntry) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._ConfigEntry(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOConfigEntryInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx context.Context, v interface{}) (ConfigEntryInput, error) {
+func (ec *executionContext) unmarshalOConfigEntryInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx context.Context, v interface{}) (ConfigEntryInput, error) {
 	return ec.unmarshalInputConfigEntryInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx context.Context, v interface{}) ([]*ConfigEntryInput, error) {
+func (ec *executionContext) unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx context.Context, v interface{}) ([]*ConfigEntryInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -6675,7 +6157,7 @@ func (ec *executionContext) unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkyma
 	var err error
 	res := make([]*ConfigEntryInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalOConfigEntryInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOConfigEntryInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -6683,27 +6165,15 @@ func (ec *executionContext) unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkyma
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOConfigEntryInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx context.Context, v interface{}) (*ConfigEntryInput, error) {
+func (ec *executionContext) unmarshalOConfigEntryInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx context.Context, v interface{}) (*ConfigEntryInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOConfigEntryInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
+	res, err := ec.unmarshalOConfigEntryInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOCredentialsInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx context.Context, v interface{}) (CredentialsInput, error) {
-	return ec.unmarshalInputCredentialsInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOCredentialsInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx context.Context, v interface{}) (*CredentialsInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOCredentialsInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐCredentialsInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v []*Error) graphql.Marshaler {
+func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v []*Error) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6730,7 +6200,7 @@ func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubator�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNError2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
+			ret[i] = ec.marshalNError2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -6743,40 +6213,27 @@ func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑincubator�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOGCPConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPConfigInput(ctx context.Context, v interface{}) (GCPConfigInput, error) {
-	return ec.unmarshalInputGCPConfigInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOGCPConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPConfigInput(ctx context.Context, v interface{}) (*GCPConfigInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOGCPConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPConfigInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOGCPProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx context.Context, v interface{}) (GCPProviderConfigInput, error) {
+func (ec *executionContext) unmarshalOGCPProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx context.Context, v interface{}) (GCPProviderConfigInput, error) {
 	return ec.unmarshalInputGCPProviderConfigInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOGCPProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx context.Context, v interface{}) (*GCPProviderConfigInput, error) {
+func (ec *executionContext) unmarshalOGCPProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx context.Context, v interface{}) (*GCPProviderConfigInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOGCPProviderConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx, v)
+	res, err := ec.unmarshalOGCPProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGCPProviderConfigInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOGardenerConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfigInput(ctx context.Context, v interface{}) (GardenerConfigInput, error) {
-	return ec.unmarshalInputGardenerConfigInput(ctx, v)
+func (ec *executionContext) marshalOGardenerConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfig(ctx context.Context, sel ast.SelectionSet, v GardenerConfig) graphql.Marshaler {
+	return ec._GardenerConfig(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalOGardenerConfigInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfigInput(ctx context.Context, v interface{}) (*GardenerConfigInput, error) {
+func (ec *executionContext) marshalOGardenerConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfig(ctx context.Context, sel ast.SelectionSet, v *GardenerConfig) graphql.Marshaler {
 	if v == nil {
-		return nil, nil
+		return graphql.Null
 	}
-	res, err := ec.unmarshalOGardenerConfigInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfigInput(ctx, v)
-	return &res, err
+	return ec._GardenerConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
@@ -6802,95 +6259,95 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
-func (ec *executionContext) marshalOKymaConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfig(ctx context.Context, sel ast.SelectionSet, v KymaConfig) graphql.Marshaler {
+func (ec *executionContext) marshalOKymaConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfig(ctx context.Context, sel ast.SelectionSet, v KymaConfig) graphql.Marshaler {
 	return ec._KymaConfig(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOKymaConfig2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfig(ctx context.Context, sel ast.SelectionSet, v *KymaConfig) graphql.Marshaler {
+func (ec *executionContext) marshalOKymaConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfig(ctx context.Context, sel ast.SelectionSet, v *KymaConfig) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._KymaConfig(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, v interface{}) (Labels, error) {
+func (ec *executionContext) unmarshalOLabels2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, v interface{}) (Labels, error) {
 	var res Labels
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, sel ast.SelectionSet, v Labels) graphql.Marshaler {
+func (ec *executionContext) marshalOLabels2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, sel ast.SelectionSet, v Labels) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, v interface{}) (*Labels, error) {
+func (ec *executionContext) unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, v interface{}) (*Labels, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx, v)
+	res, err := ec.unmarshalOLabels2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, sel ast.SelectionSet, v *Labels) graphql.Marshaler {
+func (ec *executionContext) marshalOLabels2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, sel ast.SelectionSet, v *Labels) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOOperationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx context.Context, sel ast.SelectionSet, v OperationStatus) graphql.Marshaler {
+func (ec *executionContext) marshalOOperationStatus2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx context.Context, sel ast.SelectionSet, v OperationStatus) graphql.Marshaler {
 	return ec._OperationStatus(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx context.Context, sel ast.SelectionSet, v *OperationStatus) graphql.Marshaler {
+func (ec *executionContext) marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx context.Context, sel ast.SelectionSet, v *OperationStatus) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._OperationStatus(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx context.Context, sel ast.SelectionSet, v ProviderSpecificConfig) graphql.Marshaler {
+func (ec *executionContext) marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx context.Context, sel ast.SelectionSet, v ProviderSpecificConfig) graphql.Marshaler {
 	return ec._ProviderSpecificConfig(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (ProviderSpecificInput, error) {
+func (ec *executionContext) unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (ProviderSpecificInput, error) {
 	return ec.unmarshalInputProviderSpecificInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (*ProviderSpecificInput, error) {
+func (ec *executionContext) unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (*ProviderSpecificInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+	res, err := ec.unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalORuntimeConfig2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx context.Context, sel ast.SelectionSet, v RuntimeConfig) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeConfig2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx context.Context, sel ast.SelectionSet, v RuntimeConfig) graphql.Marshaler {
 	return ec._RuntimeConfig(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalORuntimeConfig2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx context.Context, sel ast.SelectionSet, v *RuntimeConfig) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx context.Context, sel ast.SelectionSet, v *RuntimeConfig) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._RuntimeConfig(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORuntimeConnectionStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConnectionStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeConnectionStatus) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeConnectionStatus2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConnectionStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeConnectionStatus) graphql.Marshaler {
 	return ec._RuntimeConnectionStatus(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalORuntimeConnectionStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConnectionStatus(ctx context.Context, sel ast.SelectionSet, v *RuntimeConnectionStatus) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeConnectionStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConnectionStatus(ctx context.Context, sel ast.SelectionSet, v *RuntimeConnectionStatus) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._RuntimeConnectionStatus(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeStatus) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeStatus2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeStatus) graphql.Marshaler {
 	return ec._RuntimeStatus(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalORuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v *RuntimeStatus) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v *RuntimeStatus) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

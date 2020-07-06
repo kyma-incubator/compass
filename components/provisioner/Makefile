@@ -1,4 +1,4 @@
-APP_NAME = compass-provisioner
+APP_NAME = provisioner
 APP_PATH = components/provisioner
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-kubebuilder2:v20200506-76a53983

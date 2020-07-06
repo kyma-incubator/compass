@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/hyperscaler/azure"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler/azure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

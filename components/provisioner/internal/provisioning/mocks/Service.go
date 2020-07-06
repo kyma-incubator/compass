@@ -3,7 +3,9 @@
 package mocks
 
 import (
-	gqlschema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	apperrors "github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	gqlschema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,7 +15,7 @@ type Service struct {
 }
 
 // DeprovisionRuntime provides a mock function with given fields: id, tenant
-func (_m *Service) DeprovisionRuntime(id string, tenant string) (string, error) {
+func (_m *Service) DeprovisionRuntime(id string, tenant string) (string, apperrors.AppError) {
 	ret := _m.Called(id, tenant)
 
 	var r0 string
@@ -23,18 +25,20 @@ func (_m *Service) DeprovisionRuntime(id string, tenant string) (string, error) 
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string, string) apperrors.AppError); ok {
 		r1 = rf(id, tenant)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
 	}
 
 	return r0, r1
 }
 
 // ProvisionRuntime provides a mock function with given fields: config, tenant, subAccount
-func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string, subAccount string) (*gqlschema.OperationStatus, error) {
+func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError) {
 	ret := _m.Called(config, tenant, subAccount)
 
 	var r0 *gqlschema.OperationStatus
@@ -46,18 +50,20 @@ func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tena
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(gqlschema.ProvisionRuntimeInput, string, string) error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(gqlschema.ProvisionRuntimeInput, string, string) apperrors.AppError); ok {
 		r1 = rf(config, tenant, subAccount)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
 	}
 
 	return r0, r1
 }
 
 // ReconnectRuntimeAgent provides a mock function with given fields: id
-func (_m *Service) ReconnectRuntimeAgent(id string) (string, error) {
+func (_m *Service) ReconnectRuntimeAgent(id string) (string, apperrors.AppError) {
 	ret := _m.Called(id)
 
 	var r0 string
@@ -67,18 +73,20 @@ func (_m *Service) ReconnectRuntimeAgent(id string) (string, error) {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(id)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
 	}
 
 	return r0, r1
 }
 
 // RollBackLastUpgrade provides a mock function with given fields: runtimeID
-func (_m *Service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, error) {
+func (_m *Service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError) {
 	ret := _m.Called(runtimeID)
 
 	var r0 *gqlschema.RuntimeStatus
@@ -90,18 +98,20 @@ func (_m *Service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStat
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(runtimeID)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
 	}
 
 	return r0, r1
 }
 
 // RuntimeOperationStatus provides a mock function with given fields: id
-func (_m *Service) RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, error) {
+func (_m *Service) RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, apperrors.AppError) {
 	ret := _m.Called(id)
 
 	var r0 *gqlschema.OperationStatus
@@ -113,18 +123,20 @@ func (_m *Service) RuntimeOperationStatus(id string) (*gqlschema.OperationStatus
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(id)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
 	}
 
 	return r0, r1
 }
 
 // RuntimeStatus provides a mock function with given fields: id
-func (_m *Service) RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error) {
+func (_m *Service) RuntimeStatus(id string) (*gqlschema.RuntimeStatus, apperrors.AppError) {
 	ret := _m.Called(id)
 
 	var r0 *gqlschema.RuntimeStatus
@@ -136,11 +148,13 @@ func (_m *Service) RuntimeStatus(id string) (*gqlschema.RuntimeStatus, error) {
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(id)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
 	}
 
 	return r0, r1
@@ -170,7 +184,7 @@ func (_m *Service) UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootI
 }
 
 // UpgradeRuntime provides a mock function with given fields: id, config
-func (_m *Service) UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
+func (_m *Service) UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError) {
 	ret := _m.Called(id, config)
 
 	var r0 *gqlschema.OperationStatus
@@ -182,11 +196,13 @@ func (_m *Service) UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInpu
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, gqlschema.UpgradeRuntimeInput) error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string, gqlschema.UpgradeRuntimeInput) apperrors.AppError); ok {
 		r1 = rf(id, config)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
 	}
 
 	return r0, r1

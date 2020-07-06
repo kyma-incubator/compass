@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/compass/director/oauth"
-	gql "github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/graphql"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director/oauth"
+	gql "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/graphql"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

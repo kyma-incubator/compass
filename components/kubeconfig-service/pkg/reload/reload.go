@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/authn"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/authn"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apiserver/pkg/authentication/authenticator"
 )

@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"

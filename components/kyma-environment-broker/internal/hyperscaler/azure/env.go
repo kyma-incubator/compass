@@ -5,10 +5,10 @@ import (
 
 	"github.com/Azure/go-autorest/autorest/azure"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/hyperscaler"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/provider"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 )
 
 func GetConfig(clientID, clientSecret, tenantID, subscriptionID, location string) (*Config, error) {

@@ -10,10 +10,10 @@ import (
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
-	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	sessionMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,8 +48,8 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName, maintWindowConfigPath)
 
 		// when
-		err := provisionerClient.ProvisionCluster(cluster, operationId)
-		require.NoError(t, err)
+		apperr := provisionerClient.ProvisionCluster(cluster, operationId)
+		require.NoError(t, apperr)
 
 		// then
 		shoot, err := shootClient.Get(clusterName, v1.GetOptions{})
@@ -126,8 +126,8 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
 
-		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
-		require.NoError(t, err)
+		operation, apperr := provisionerClient.DeprovisionCluster(cluster, operationId)
+		require.NoError(t, apperr)
 
 		// then
 		assert.Equal(t, model.InProgress, operation.State)
@@ -135,7 +135,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.Equal(t, runtimeId, operation.ClusterID)
 		assert.Equal(t, model.Deprovision, operation.Type)
 
-		_, err = shootClient.Get(clusterName, v1.GetOptions{})
+		_, err := shootClient.Get(clusterName, v1.GetOptions{})
 		assert.NoError(t, err)
 	})
 
@@ -154,8 +154,8 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		sessionFactoryMock.On("NewWriteSession").Return(session)
 		session.On("MarkClusterAsDeleted", cluster.ID).Return(nil)
 
-		operation, err := provisionerClient.DeprovisionCluster(cluster, operationId)
-		require.NoError(t, err)
+		operation, apperr := provisionerClient.DeprovisionCluster(cluster, operationId)
+		require.NoError(t, apperr)
 
 		// then
 		assert.Equal(t, model.InProgress, operation.State)
@@ -164,7 +164,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.Equal(t, runtimeId, operation.ClusterID)
 		assert.Equal(t, model.Deprovision, operation.Type)
 
-		_, err = shootClient.Get(clusterName, v1.GetOptions{})
+		_, err := shootClient.Get(clusterName, v1.GetOptions{})
 		assert.Error(t, err)
 		assert.True(t, errors.IsNotFound(err))
 	})

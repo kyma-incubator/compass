@@ -1,7 +1,7 @@
 apiVersion: "installer.kyma-project.io/v1alpha1"
 kind: Installation
 metadata:
-  name: compass-installation
+  name: kcp-installation
   namespace: default
   labels:
     action: install
@@ -12,7 +12,7 @@ spec:
   version: "__VERSION__"
   url: "__URL__"
   components:
-    - name: "compass"
-      namespace: "compass-system"
+    - name: "kcp"
+      namespace: "kcp-system"
     - name: "oidc-kubeconfig-service"
       namespace: "kyma-system"

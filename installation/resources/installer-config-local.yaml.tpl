@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: application-connector-certificate-overrides
-  namespace: compass-installer
+  namespace: kcp-installer
   labels:
     installer: overrides
     kyma-project.io/installation: ""
@@ -15,7 +15,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cluster-certificate-overrides
-  namespace: compass-installer
+  namespace: kcp-installer
   labels:
     installer: overrides
     kyma-project.io/installation: ""
@@ -26,10 +26,10 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: compass-installation-config-overrides
-  namespace: compass-installer
+  name: kcp-installation-config-overrides
+  namespace: kcp-installer
   labels:
-    component: compass
+    component: kcp
     installer: overrides
     kyma-project.io/installation: ""
 data:
@@ -41,15 +41,12 @@ data:
   global.istio.gateway.name: "compass-istio-gateway"
   global.istio.gateway.namespace: "compass-system"
   global.externalServicesMock.enabled: "true"
-  gateway.gateway.auditlog.enabled: "true"
-  gateway.gateway.auditlog.authMode: "oauth"
-  director.deployment.allowJWTSigningNone: "true"
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: compass-installation-oidc-kubeconfig-service-overrides
-  namespace: compass-installer
+  name: kcp-installation-oidc-kubeconfig-service-overrides
+  namespace: kcp-installer
   labels:
     component: oidc-kubeconfig-service
     installer: overrides

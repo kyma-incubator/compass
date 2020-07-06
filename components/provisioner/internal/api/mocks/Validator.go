@@ -3,7 +3,9 @@
 package mocks
 
 import (
-	gqlschema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	apperrors "github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	gqlschema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,56 +15,64 @@ type Validator struct {
 }
 
 // ValidateProvisioningInput provides a mock function with given fields: input
-func (_m *Validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) error {
+func (_m *Validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError {
 	ret := _m.Called(input)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(gqlschema.ProvisionRuntimeInput) error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(gqlschema.ProvisionRuntimeInput) apperrors.AppError); ok {
 		r0 = rf(input)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
 	}
 
 	return r0
 }
 
 // ValidateTenant provides a mock function with given fields: runtimeID, tenant
-func (_m *Validator) ValidateTenant(runtimeID string, tenant string) error {
+func (_m *Validator) ValidateTenant(runtimeID string, tenant string) apperrors.AppError {
 	ret := _m.Called(runtimeID, tenant)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
 		r0 = rf(runtimeID, tenant)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
 	}
 
 	return r0
 }
 
 // ValidateTenantForOperation provides a mock function with given fields: operationID, tenant
-func (_m *Validator) ValidateTenantForOperation(operationID string, tenant string) error {
+func (_m *Validator) ValidateTenantForOperation(operationID string, tenant string) apperrors.AppError {
 	ret := _m.Called(operationID, tenant)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
 		r0 = rf(operationID, tenant)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
 	}
 
 	return r0
 }
 
 // ValidateUpgradeInput provides a mock function with given fields: input
-func (_m *Validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) error {
+func (_m *Validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) apperrors.AppError {
 	ret := _m.Called(input)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(gqlschema.UpgradeRuntimeInput) error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(gqlschema.UpgradeRuntimeInput) apperrors.AppError); ok {
 		r0 = rf(input)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
 	}
 
 	return r0

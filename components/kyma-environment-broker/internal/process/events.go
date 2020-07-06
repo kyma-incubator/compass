@@ -3,7 +3,7 @@ package process
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
 type StepProcessed struct {

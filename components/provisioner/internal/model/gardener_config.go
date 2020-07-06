@@ -2,17 +2,18 @@ package model
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+
 	//"github.com/kyma-incubator/compass/components/provisioner/internal/model/infrastructure/aws"
 	//"github.com/kyma-incubator/compass/components/provisioner/internal/model/infrastructure/azure"
 	//"github.com/kyma-incubator/compass/components/provisioner/internal/model/infrastructure/gcp"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-incubator/hydroform/types"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -48,7 +49,7 @@ type GardenerConfig struct {
 	GardenerProviderConfig GardenerProviderConfig
 }
 
-func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, error) {
+func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, apperrors.AppError) {
 	allowPrivlagedContainers := true
 	enableBasicAuthentication := false
 
@@ -104,45 +105,10 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 
 	err := c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
 	if err != nil {
-		return nil, fmt.Errorf("error extending shoot config with Provider: %s", err.Error())
+		return nil, err.Append("error extending shoot config with Provider")
 	}
 
 	return shoot, nil
-}
-
-func (c GardenerConfig) ToHydroformConfiguration(credentialsFilePath string) (*types.Cluster, *types.Provider, error) {
-	cluster := &types.Cluster{
-		KubernetesVersion: c.KubernetesVersion,
-		Name:              c.Name,
-		NodeCount:         1,
-		DiskSizeGB:        c.VolumeSizeGB,
-		Location:          c.Region,
-		MachineType:       c.MachineType,
-	}
-
-	customConfiguration, err := c.GardenerProviderConfig.AsMap()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	customConfiguration["target_provider"] = c.Provider
-	customConfiguration["target_seed"] = c.Seed
-	customConfiguration["target_secret"] = c.TargetSecret
-	customConfiguration["disk_type"] = c.DiskType
-	customConfiguration["workercidr"] = c.WorkerCidr
-	customConfiguration["autoscaler_min"] = c.AutoScalerMin
-	customConfiguration["autoscaler_max"] = c.AutoScalerMax
-	customConfiguration["max_surge"] = c.MaxSurge
-	customConfiguration["max_unavailable"] = c.MaxUnavailable
-
-	provider := &types.Provider{
-		Type:                 types.Gardener,
-		ProjectName:          c.ProjectName,
-		CredentialsFilePath:  credentialsFilePath,
-		CustomConfigurations: customConfiguration,
-	}
-
-	return cluster, provider, nil
 }
 
 type ProviderSpecificConfig string
@@ -152,14 +118,14 @@ func (c ProviderSpecificConfig) RawJSON() string {
 }
 
 type GardenerProviderConfig interface {
-	AsMap() (map[string]interface{}, error)
+	AsMap() (map[string]interface{}, apperrors.AppError)
 	RawJSON() string
 	AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig
-	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error
-	EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error
+	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError
+	EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError
 }
 
-func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, error) { //TODO: change to detect Provider correctly
+func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, apperrors.AppError) { //TODO: change to detect Provider correctly
 	var gcpProviderConfig gqlschema.GCPProviderConfigInput
 	err := util.DecodeJson(jsonData, &gcpProviderConfig)
 	if err == nil {
@@ -178,7 +144,7 @@ func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig,
 		return &AWSGardenerConfig{input: &awsProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
 	}
 
-	return nil, errors.New("json data does not match any of Gardener providers")
+	return nil, apperrors.BadRequest("json data does not match any of Gardener providers")
 }
 
 type GCPGardenerConfig struct {
@@ -186,10 +152,10 @@ type GCPGardenerConfig struct {
 	input *gqlschema.GCPProviderConfigInput `db:"-"`
 }
 
-func NewGCPGardenerConfig(input *gqlschema.GCPProviderConfigInput) (*GCPGardenerConfig, error) {
+func NewGCPGardenerConfig(input *gqlschema.GCPProviderConfigInput) (*GCPGardenerConfig, apperrors.AppError) {
 	config, err := json.Marshal(input)
 	if err != nil {
-		return &GCPGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
+		return &GCPGardenerConfig{}, apperrors.Internal("failed to marshal GCP Gardener config")
 	}
 
 	return &GCPGardenerConfig{
@@ -198,11 +164,11 @@ func NewGCPGardenerConfig(input *gqlschema.GCPProviderConfigInput) (*GCPGardener
 	}, nil
 }
 
-func (c *GCPGardenerConfig) AsMap() (map[string]interface{}, error) {
+func (c *GCPGardenerConfig) AsMap() (map[string]interface{}, apperrors.AppError) {
 	if c.input == nil {
 		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode Gardener GCP config: %s", err.Error())
+			return nil, apperrors.Internal("failed to decode Gardener GCP config: %s", err.Error())
 		}
 	}
 
@@ -215,7 +181,7 @@ func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	return gqlschema.GCPProviderConfig{Zones: c.input.Zones}
 }
 
-func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 
 	updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
 
@@ -254,7 +220,7 @@ func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot 
 	return nil
 }
 
-func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "gcp"
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
@@ -262,13 +228,13 @@ func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 	gcpInfra := NewGCPInfrastructure(gardenerConfig.WorkerCidr)
 	jsonData, err := json.Marshal(gcpInfra)
 	if err != nil {
-		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
+		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
 	}
 
 	gcpControlPlane := NewGCPControlPlane(c.input.Zones)
 	jsonCPData, err := json.Marshal(gcpControlPlane)
 	if err != nil {
-		return fmt.Errorf("error encoding control plane config: %s", err.Error())
+		return apperrors.Internal("error encoding control plane config: %s", err.Error())
 	}
 
 	shoot.Spec.Provider = gardener_types.Provider{
@@ -286,10 +252,10 @@ type AzureGardenerConfig struct {
 	input *gqlschema.AzureProviderConfigInput `db:"-"`
 }
 
-func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGardenerConfig, error) {
+func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGardenerConfig, apperrors.AppError) {
 	config, err := json.Marshal(input)
 	if err != nil {
-		return &AzureGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
+		return &AzureGardenerConfig{}, apperrors.Internal("failed to marshal GCP Gardener config")
 	}
 
 	return &AzureGardenerConfig{
@@ -298,11 +264,11 @@ func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGa
 	}, nil
 }
 
-func (c *AzureGardenerConfig) AsMap() (map[string]interface{}, error) {
+func (c *AzureGardenerConfig) AsMap() (map[string]interface{}, apperrors.AppError) {
 	if c.input == nil {
 		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode Gardener Azure config: %s", err.Error())
+			return nil, apperrors.Internal("failed to decode Gardener Azure config: %s", err.Error())
 		}
 	}
 
@@ -325,7 +291,7 @@ type AWSGardenerConfig struct {
 	input *gqlschema.AWSProviderConfigInput `db:"-"`
 }
 
-func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 
 	updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
 
@@ -350,7 +316,7 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 	return nil
 }
 
-func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "az"
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
@@ -358,13 +324,13 @@ func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, sh
 	azInfra := NewAzureInfrastructure(gardenerConfig.WorkerCidr, c)
 	jsonData, err := json.Marshal(azInfra)
 	if err != nil {
-		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
+		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
 	}
 
 	azureControlPlane := NewAzureControlPlane(c.input.Zones)
 	jsonCPData, err := json.Marshal(azureControlPlane)
 	if err != nil {
-		return fmt.Errorf("error encoding control plane config: %s", err.Error())
+		return apperrors.Internal("error encoding control plane config: %s", err.Error())
 	}
 
 	shoot.Spec.Provider = gardener_types.Provider{
@@ -377,10 +343,10 @@ func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, sh
 	return nil
 }
 
-func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardenerConfig, error) {
+func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardenerConfig, apperrors.AppError) {
 	config, err := json.Marshal(input)
 	if err != nil {
-		return &AWSGardenerConfig{}, errors.New("failed to marshal GCP Gardener config")
+		return &AWSGardenerConfig{}, apperrors.Internal("failed to marshal GCP Gardener config")
 	}
 
 	return &AWSGardenerConfig{
@@ -389,11 +355,11 @@ func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardener
 	}, nil
 }
 
-func (c *AWSGardenerConfig) AsMap() (map[string]interface{}, error) {
+func (c *AWSGardenerConfig) AsMap() (map[string]interface{}, apperrors.AppError) {
 	if c.input == nil {
 		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode Gardener AWS config: %s", err.Error())
+			return nil, apperrors.Internal("failed to decode Gardener AWS config: %s", err.Error())
 		}
 	}
 
@@ -414,7 +380,7 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	}
 }
 
-func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 
 	updateWorkerConfig(gardenerConfig, shoot, []string{c.input.Zone})
 
@@ -441,7 +407,7 @@ func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot 
 	return nil
 }
 
-func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) error {
+func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "aws"
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
@@ -449,13 +415,13 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 	awsInfra := NewAWSInfrastructure(gardenerConfig.WorkerCidr, c)
 	jsonData, err := json.Marshal(awsInfra)
 	if err != nil {
-		return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
+		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
 	}
 
 	awsControlPlane := NewAWSControlPlane()
 	jsonCPData, err := json.Marshal(awsControlPlane)
 	if err != nil {
-		return fmt.Errorf("error encoding control plane config: %s", err.Error())
+		return apperrors.Internal("error encoding control plane config: %s", err.Error())
 	}
 
 	shoot.Spec.Provider = gardener_types.Provider{

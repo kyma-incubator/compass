@@ -3,8 +3,8 @@ package metrics
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/metrics/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"

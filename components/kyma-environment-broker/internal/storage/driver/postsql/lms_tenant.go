@@ -1,10 +1,10 @@
 package postsql
 
 import (
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 )
 
 type lmsTenants struct {

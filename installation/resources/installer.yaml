@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: compass-installer
+  name: kcp-installer
   labels:
     istio-injection: disabled
     kyma-project.io/installation: ""
@@ -10,8 +10,8 @@ metadata:
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: compass-default
-  namespace: compass-installer
+  name: kcp-default
+  namespace: kcp-installer
   labels:
     kyma-project.io/installation: ""
 spec:
@@ -77,7 +77,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: helm-certs-job-sa
-  namespace: compass-installer
+  namespace: kcp-installer
 roleRef:
   kind: ClusterRole
   name: all-psp
@@ -86,22 +86,22 @@ roleRef:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: compass-installer
-  namespace: compass-installer
+  name: kcp-installer
+  namespace: kcp-installer
   labels:
     kyma-project.io/installation: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: compass-installer
-  namespace: compass-installer
+  name: kcp-installer
+  namespace: kcp-installer
   labels:
     kyma-project.io/installation: ""
 spec:
   selector:
     matchLabels:
-      name: compass-installer
+      name: kcp-installer
   # Installer is designed to be run as a single instance only
   # We enforce it by changing default rolling update to recreate startegy.
   # With that k8s will first delete old pod and then provision new one during upgrade.
@@ -110,9 +110,9 @@ spec:
   template:
     metadata:
       labels:
-        name: compass-installer
+        name: kcp-installer
     spec:
-      serviceAccountName: compass-installer
+      serviceAccountName: kcp-installer
       initContainers:
       - name: certhelper
         image: eu.gcr.io/kyma-project/test-infra/alpine-kubectl:v20200617-32c1f3ff
@@ -190,7 +190,7 @@ spec:
                 installer: overrides
                 kyma-project.io/installation: ""
               name: helm-secret
-              namespace: compass-installer
+              namespace: kcp-installer
             type: Opaque
             EOF
             timeout 60s bash -c 'until kubectl create -f /tmp/secret.yaml ; do sleep 2; done'
@@ -198,68 +198,15 @@ spec:
           - mountPath: /etc/certs
             name: helm-certs
             readOnly: true
-      - name: 2to3
-        image: eu.gcr.io/kyma-project/test-infra/alpine-kubectl:v20200529-34b39bd3
-        terminationMessagePolicy: "FallbackToLogsOnError"
-        command:
-          - /bin/bash
-          - -c
-          - |
-            set -e
-            HELM_2_BINARY=$(which helm)
-            HELM_3_BINARY=$(which helm3)
-            SECRET_NAME="helm-secret"
-            NAMESPACE="compass-installer"
-            CHART_BLACKLIST=( "gateway-0.0.1" "application-0.0.1" )
-            echo "---> Install requirements"
-            apk add git jq
-            echo "---> Get HELM_2 certs"
-            ${HELM_2_BINARY} init -c
-            if [[ $(kubectl get -n kube-system deploy tiller-deploy -o name) ]]; then
-              if [[ $(kubectl get -n "${NAMESPACE}" secret "${SECRET_NAME}" -o name) ]]; then
-                kubectl get -n "${NAMESPACE}" secret "${SECRET_NAME}" -o jsonpath="{.data['global\\.helm\\.ca\\.crt']}" | base64 --decode > "$(helm home)/ca.pem"
-                kubectl get -n "${NAMESPACE}" secret "${SECRET_NAME}" -o jsonpath="{.data['global\\.helm\\.tls\\.crt']}" | base64 --decode > "$(helm home)/cert.pem"
-                kubectl get -n "${NAMESPACE}" secret "${SECRET_NAME}" -o jsonpath="{.data['global\\.helm\\.tls\\.key']}" | base64 --decode > "$(helm home)/key.pem"
-              else
-                echo "------> No HELM_2 Certs found, failing"
-                exit 1
-              fi
-            else
-              echo "------> No Tiller deployment found, exiting gracefully"
-              exit 0
-            fi
-            echo "---> Get current releases"
-            ${HELM_2_BINARY} ls --tls --all --output json | jq '.Releases[] | .Name + " " + .Namespace + " " + .Chart' | tr -d '"' > helm2-releases
-            if [[ ! $(${HELM_3_BINARY} plugin list | grep '2to3') ]]; then
-              echo "---> Get migration plugin"
-              ${HELM_3_BINARY} plugin install https://github.com/helm/helm-2to3.git
-              echo "---> Migrate config files"
-              yes | ${HELM_3_BINARY} 2to3 move config
-            fi
-            echo "---> Migrate releases"
-            while read line; do
-              release=$(echo $line | cut -d " " -f1)
-              ns=$(echo $line | cut -d " " -f2)
-              chart=$(echo $line | cut -d " " -f3)
-              if [[ " ${CHART_BLACKLIST[@]} " =~ " ${chart} " ]]; then
-                echo "------> Release ${release} is blacklisted by ${chart}"
-                continue
-              fi
-              if [[ $(${HELM_3_BINARY} get all ${release} -n ${ns} 2> /dev/null) ]]; then
-                echo "------> Release ${release} in ns ${ns} already migrated!"
-              else
-                ${HELM_3_BINARY} 2to3 convert ${release}
-              fi
-            done < helm2-releases
       containers:
-      - name: compass-installer-container
+      - name: kcp-installer-container
         image: eu.gcr.io/kyma-project/develop/installer:408cb6a6
         imagePullPolicy: IfNotPresent
         env:
           - name: INST_RESOURCE
-            value: "compass-installation"
+            value: "kcp-installation"
           - name: OVERRIDES_NAMESPACE
-            value: "compass-installer"
+            value: "kcp-installer"
 
         args:
           - -overrideLogFile=/app/overrides.txt
@@ -270,10 +217,10 @@ spec:
             readOnly: true
         resources:
           requests:
-            memory: 256Mi
+            memory: 32Mi
             cpu: 40m
           limits:
-            memory: 512Mi
+            memory: 1Gi
             cpu: 400m
       volumes:
       - name: helm-certs
@@ -289,7 +236,7 @@ spec:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: compass-installer-reader
+  name: kcp-installer-reader
   labels:
     kyma-project.io/installation: ""
 rules:
@@ -300,14 +247,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: compass-installer
+  name: kcp-installer
   labels:
     kyma-project.io/installation: ""
 subjects:
 - kind: ServiceAccount
-  name: compass-installer
-  namespace: compass-installer
+  name: kcp-installer
+  namespace: kcp-installer
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: compass-installer-reader
+  name: kcp-installer-reader

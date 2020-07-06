@@ -1,10 +1,10 @@
 package model
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model/infrastructure/aws"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model/infrastructure/azure"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model/infrastructure/gcp"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/aws"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/azure"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/gcp"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

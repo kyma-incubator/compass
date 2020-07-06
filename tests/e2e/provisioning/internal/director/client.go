@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director/oauth"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/director/oauth"
 
 	machineGraph "github.com/machinebox/graphql"
 	"github.com/pkg/errors"

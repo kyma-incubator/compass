@@ -1,0 +1,3 @@
+gateway:
+  enabled: false
+  manageCerts: true

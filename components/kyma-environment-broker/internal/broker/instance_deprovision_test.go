@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/broker/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	gcorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-incubator/compass/components/metris/internal/metrics"
+	"github.com/kyma-project/control-plane/components/metris/internal/metrics"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"

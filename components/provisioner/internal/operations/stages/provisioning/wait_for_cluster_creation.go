@@ -7,9 +7,9 @@ import (
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -48,13 +48,7 @@ func (s *WaitForClusterCreationStep) TimeLimit() time.Duration {
 
 func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.Operation, logger log.FieldLogger) (operations.StageResult, error) {
 
-	gardenerConfig, ok := cluster.GardenerConfig()
-	if !ok {
-		err := errors.New("failed to convert to GardenerConfig")
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
-	}
-
-	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
+	shoot, err := s.gardenerClient.Get(cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}
@@ -85,7 +79,7 @@ func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster
 		return operations.StageResult{}, err
 	}
 
-	dberr := s.dbSession.UpdateCluster(cluster.ID, string(kubeconfig), nil)
+	dberr := s.dbSession.UpdateKubeconfig(cluster.ID, string(kubeconfig))
 	if dberr != nil {
 		return operations.StageResult{}, dberr
 	}

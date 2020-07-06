@@ -1,27 +1,28 @@
 package provisioning
 
 import (
-	"errors"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
-	uuidMocks "github.com/kyma-incubator/compass/components/provisioner/internal/uuid/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	uuidMocks "github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 
-	mocks2 "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/mocks"
-	sessionMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 
-	releaseMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/release/mocks"
+	mocks2 "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/mocks"
+	sessionMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	releaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
 
-	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
+
+	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -83,7 +84,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  runtimeInput,
 		ClusterConfig: clusterConfig,
-		Credentials:   &gqlschema.CredentialsInput{},
 		KymaConfig:    fixKymaGraphQLConfigInput(),
 	}
 
@@ -125,53 +125,6 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		directorServiceMock.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
 		releaseRepo.AssertExpectations(t)
-	})
-
-	t.Run("Should start runtime provisioning of GCP cluster and return operation ID", func(t *testing.T) {
-		//given
-		provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
-			RuntimeInput: runtimeInput,
-			ClusterConfig: &gqlschema.ClusterConfigInput{
-				GcpConfig: &gqlschema.GCPConfigInput{
-					Name:        "cluster",
-					ProjectName: "project",
-				},
-			},
-			Credentials: &gqlschema.CredentialsInput{},
-			KymaConfig:  fixKymaGraphQLConfigInput(),
-		}
-
-		sessionFactoryMock := &sessionMocks.Factory{}
-		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
-		directorServiceMock := &directormock.DirectorClient{}
-		provisioner := &mocks2.Provisioner{}
-
-		provisioningQueue := &mocks.OperationQueue{}
-
-		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
-		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
-		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertGCPConfig", mock.AnythingOfType("model.GCPConfig")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-		writeSessionWithinTransactionMock.On("Commit").Return(nil)
-		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
-		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
-
-		provisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, provisioningQueue, nil, nil)
-
-		//when
-		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
-		require.NoError(t, err)
-
-		//then
-		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
-		assert.NotEmpty(t, operationStatus.ID)
-		sessionFactoryMock.AssertExpectations(t)
-		writeSessionWithinTransactionMock.AssertExpectations(t)
-		directorServiceMock.AssertExpectations(t)
 	})
 
 	t.Run("Should return error and unregister Runtime when failed to commit transaction", func(t *testing.T) {
@@ -221,7 +174,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		writeSessionWithinTransactionMock.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
-		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(errors.New("error"))
+		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(apperrors.Internal("error"))
 		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil)
@@ -229,6 +182,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		//when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 
 		//then
 		assert.Contains(t, err.Error(), "Failed to start provisioning")
@@ -243,13 +197,14 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		//given
 		directorServiceMock := &directormock.DirectorClient{}
 
-		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", errors.New("error"))
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", apperrors.Internal("error"))
 
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator, nil, nil, nil)
 
 		//when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 
 		//then
 		assert.Contains(t, err.Error(), "Failed to register Runtime")
@@ -318,13 +273,14 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, errors.New("error"))
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, apperrors.Internal("error"))
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil)
 
 		//when
 		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
 
 		//then
 		assert.Contains(t, err.Error(), "Failed to start deprovisioning")

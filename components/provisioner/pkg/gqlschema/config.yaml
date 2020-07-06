@@ -18,4 +18,4 @@ struct_tag: json
 
 models:
   Labels:
-    model: "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema.Labels"
+    model: "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema.Labels"

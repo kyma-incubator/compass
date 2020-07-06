@@ -1,6 +1,6 @@
 package failure
 
-import "github.com/kyma-incubator/compass/components/provisioner/internal/model"
+import "github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
 type NoopFailureHandler struct {
 }

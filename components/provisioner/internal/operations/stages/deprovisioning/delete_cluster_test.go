@@ -7,12 +7,12 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	directorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations"
-	gardener_mocks "github.com/kyma-incubator/compass/components/provisioner/internal/operations/stages/deprovisioning/mocks"
-	dbMocks "github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
+	dbMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -83,13 +83,6 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		cluster            model.Cluster
 		unrecoverableError bool
 	}{
-		{
-			description: "should return unrecoverable error when failed to get GardenerConfig",
-			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-			},
-			cluster:            model.Cluster{},
-			unrecoverableError: true,
-		},
 		{
 			description: "should return error when failed to delete shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {

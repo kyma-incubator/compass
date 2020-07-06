@@ -6,9 +6,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -18,9 +19,9 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/director"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 )
 
 func NewProvisioner(
@@ -46,19 +47,19 @@ type GardenerProvisioner struct {
 	maintenanceWindowConfigPath string
 }
 
-func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) error {
+func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError {
 	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, util.UnwrapStr(cluster.SubAccountId))
 	if err != nil {
-		return fmt.Errorf("failed to convert cluster config to Shoot template")
+		return err.Append("failed to convert cluster config to Shoot template")
 	}
 
-	region := getRegion(cluster)
+	region := cluster.ClusterConfig.Region
 
 	if g.shouldSetMaintenanceWindow() {
 		err := g.setMaintenanceWindow(shootTemplate, region)
 
 		if err != nil {
-			return fmt.Errorf("error setting maintenance window for %s cluster: %s", cluster.ID, err.Error())
+			return err.Append("error setting maintenance window for %s cluster", cluster.ID)
 		}
 	}
 
@@ -69,15 +70,16 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		g.applyAuditConfig(shootTemplate)
 	}
 
-	_, err = g.shootClient.Create(shootTemplate)
-	if err != nil {
-		return fmt.Errorf("error creating Shoot for %s cluster: %s", cluster.ID, err.Error())
+	_, k8serr := g.shootClient.Create(shootTemplate)
+	if k8serr != nil {
+		appError := util.K8SErrorToAppError(k8serr)
+		return appError.Append("error creating Shoot for %s cluster: %s", cluster.ID)
 	}
 
 	return nil
 }
 
-func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) error {
+func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError {
 
 	shoot, err := g.shootClient.Get(upgradeConfig.Name, v1.GetOptions{})
 	if err != nil {
@@ -94,20 +96,14 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 	_, err = g.shootClient.Update(shoot)
 
 	if err != nil {
-		return  fmt.Errorf("error executing update shoot configuration: %s", err.Error())
+		return fmt.Errorf("error executing update shoot configuration: %s", err.Error())
 	}
 
 	return nil
 }
 
-func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, error) {
-
-	gardenerCfg, ok := cluster.GardenerConfig()
-	if !ok {
-		return model.Operation{}, fmt.Errorf("cluster does not have Gardener configuration")
-	}
-
-	shoot, err := g.shootClient.Get(gardenerCfg.Name, v1.GetOptions{})
+func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError) {
+	shoot, err := g.shootClient.Get(cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s already deleted. Proceeding to DeprovisionCluster stage.", cluster.ID)
@@ -119,7 +115,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 
 	if shoot.DeletionTimestamp != nil {
 		annotate(shoot, operationIdAnnotation, operationId)
-		message := fmt.Sprintf("Cluster %s already %s scheduled for deletion.", gardenerCfg.Name, cluster.ID)
+		message := fmt.Sprintf("Cluster %s with id %s already scheduled for deletion.", cluster.ClusterConfig.Name, cluster.ID)
 		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, shoot.DeletionTimestamp.Time), nil
 	}
 
@@ -128,13 +124,11 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	annotate(shoot, operationIdAnnotation, operationId)
 
 	annotateWithConfirmDeletion(shoot)
-	if err != nil {
-		return model.Operation{}, fmt.Errorf("error scheduling shoot %s for deletion: %s", shoot.Name, err.Error())
-	}
 
 	_, err = g.shootClient.Update(shoot)
 	if err != nil {
-		return model.Operation{}, fmt.Errorf("error updating Shoot: %s", err.Error())
+		appError := util.K8SErrorToAppError(err)
+		return model.Operation{}, appError.Append("error updating Shoot")
 	}
 
 	message := fmt.Sprintf("Deprovisioning started")
@@ -177,7 +171,7 @@ func (g *GardenerProvisioner) applyAuditConfig(template *gardener_types.Shoot) {
 	}
 }
 
-func (g *GardenerProvisioner) setMaintenanceWindow(template *gardener_types.Shoot, region string) error {
+func (g *GardenerProvisioner) setMaintenanceWindow(template *gardener_types.Shoot, region string) apperrors.AppError {
 	window, err := g.getWindowByRegion(region)
 
 	if err != nil {
@@ -196,7 +190,7 @@ func setMaintenanceWindow(window TimeWindow, template *gardener_types.Shoot) {
 	template.Spec.Maintenance.TimeWindow = &gardener_types.MaintenanceTimeWindow{Begin: window.Begin, End: window.End}
 }
 
-func (g *GardenerProvisioner) getWindowByRegion(region string) (TimeWindow, error) {
+func (g *GardenerProvisioner) getWindowByRegion(region string) (TimeWindow, apperrors.AppError) {
 	data, err := getDataFromFile(g.maintenanceWindowConfigPath, region)
 
 	if err != nil {
@@ -205,10 +199,10 @@ func (g *GardenerProvisioner) getWindowByRegion(region string) (TimeWindow, erro
 
 	var window TimeWindow
 
-	err = mapstructure.Decode(data, &window)
+	mapErr := mapstructure.Decode(data, &window)
 
-	if err != nil {
-		return TimeWindow{}, err
+	if mapErr != nil {
+		return TimeWindow{}, apperrors.Internal("failed to parse map to struct: %s", mapErr.Error())
 	}
 
 	return window, nil
@@ -223,26 +217,18 @@ func (tw TimeWindow) isEmpty() bool {
 	return tw.Begin == "" || tw.End == ""
 }
 
-func getDataFromFile(filepath, region string) (interface{}, error) {
+func getDataFromFile(filepath, region string) (interface{}, apperrors.AppError) {
 	file, err := os.Open(filepath)
 
 	if err != nil {
-		return "", err
+		return "", apperrors.Internal("failed to open file: %s", err.Error())
 	}
 
 	defer file.Close()
 
 	var data map[string]interface{}
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
-		return "", err
+		return "", apperrors.Internal("failed to decode json: %s", err.Error())
 	}
 	return data[region], nil
-}
-
-func getRegion(cluster model.Cluster) string {
-	config, ok := cluster.GardenerConfig()
-	if ok {
-		return config.Region
-	}
-	return ""
 }

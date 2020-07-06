@@ -5,12 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	directorMocks "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/failure"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/failure"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -135,7 +137,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 		}
 
 		directorClient := &directorMocks.DirectorClient{}
-		directorClient.On("SetRuntimeStatusCondition", clusterId, graphql.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(fmt.Errorf("some error"))
+		directorClient.On("SetRuntimeStatusCondition", clusterId, graphql.RuntimeStatusConditionFailed, mock.AnythingOfType("string")).Return(apperrors.Internal("error"))
 
 		failureHandler := MockFailureHandler{}
 

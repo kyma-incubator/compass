@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
 	pkgErrors "github.com/pkg/errors"
 

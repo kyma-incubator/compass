@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	mocks "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/automock"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/director/oauth"
-	kebError "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/error"
+	mocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/director/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/director/oauth"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
 	machineGraphql "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"

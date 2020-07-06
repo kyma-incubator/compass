@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
 	"github.com/pkg/errors"
 )
 

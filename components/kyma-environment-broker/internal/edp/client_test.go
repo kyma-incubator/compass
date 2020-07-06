@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/logger"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"

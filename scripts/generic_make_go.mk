@@ -13,8 +13,8 @@ CLEANUP_IMG_NAME := $(APP_CLEANUP_NAME)
 endif
 
 TAG := $(DOCKER_TAG)
-# BASE_PKG is a root packge of the component
-BASE_PKG := github.com/kyma-incubator/compass
+# BASE_PKG is a root package of the component
+BASE_PKG := github.com/kyma-project/control-plane
 # IMG_GOPATH is a path to go path in the container
 IMG_GOPATH := /workspace/go
 # IMG_GOCACHE is a path to go cache in the container
@@ -40,9 +40,9 @@ DIRS_TO_CHECK = go list ./... | grep -v "$(VERIFY_IGNORE)"
 # DIRS_TO_IGNORE is a command used to determine which directories should not be verified
 DIRS_TO_IGNORE = go list ./... | grep "$(VERIFY_IGNORE)"
 # DEPLOYMENT_NAME matches the component's deployment name in the cluster
-DEPLOYMENT_NAME="compass-"$(COMPONENT_NAME)
+DEPLOYMENT_NAME="kcp-"$(COMPONENT_NAME)
 # NAMESPACE defines the namespace into which the component is deployed
-NAMESPACE="compass-system"
+NAMESPACE="kcp-system"
 
 # Base docker configuration
 DOCKER_CREATE_OPTS := -v $(LOCAL_DIR):$(WORKSPACE_LOCAL_DIR):delegated --rm -w $(WORKSPACE_COMPONENT_DIR) $(BUILDPACK)
