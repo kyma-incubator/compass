@@ -40,7 +40,7 @@ const (
 	StartingUpgrade      OperationStage = "StartingUpgrade"
 	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"
 
-	StartingShootUpgrade OperationStage = "StartingShootUpgrade"
+	WaitingForShootUpgrade OperationStage = "WaitingForShootUpgrade"
 
 	FinishedStage OperationStage = "Finished"
 )

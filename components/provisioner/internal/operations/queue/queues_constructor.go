@@ -24,7 +24,7 @@ type ProvisioningTimeouts struct {
 	ClusterCreation    time.Duration `envconfig:"default=60m"`
 	Installation       time.Duration `envconfig:"default=60m"`
 	Upgrade            time.Duration `envconfig:"default=60m"`
-	ShootUpgrade       time.Duration `envconfig:"default=60m"`
+	ShootUpgrade       time.Duration `envconfig:"default=30m"`
 	AgentConfiguration time.Duration `envconfig:"default=15m"`
 	AgentConnection    time.Duration `envconfig:"default=15m"`
 }
@@ -138,7 +138,7 @@ func CreateShootUpgradeQueue(
 	shootUpgradeStep := shootupgrade.NewWaitForShootClusterUpgradeStep(shootClient, model.FinishedStage, timeouts.ShootUpgrade)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
-		model.StartingShootUpgrade: shootUpgradeStep,
+		model.WaitingForShootUpgrade: shootUpgradeStep,
 	}
 
 	upgradeClusterExecutor := operations.NewExecutor(
