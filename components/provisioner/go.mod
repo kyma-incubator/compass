@@ -56,4 +56,4 @@ replace (
 
 )
 
-replace github.com/kyma-incubator/compass/components/provisioner => github.com/rafalpotempa/compass/components/provisioner v0.0.0-20200701121731-4b346a397507
+replace github.com/kyma-incubator/compass/components/provisioner => github.com/rafalpotempa/compass/components/provisioner v0.0.0-20200706055442-182b22767ed3
