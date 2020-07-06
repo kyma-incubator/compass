@@ -34,7 +34,7 @@ Than look for `Instance connection name` box inside `Connect to this instance` s
 
 ![Instance connection String](./assets/instance-connection-string.png)
 
-For the `director.user`, `director.password` values, use one of the accounts from the **USERS** tab. The `director.name` is the name of available database. For the list of available names, see the **DATABASES** tab.
+For the `director.user`, `director.password` values, use one of the accounts from the **USERS** tab. The `director.name` is the name of the available database. For the list of available names, see the **DATABASES** tab.
 
 The `host` and the `hostPort` values specifies the cloudsql-proxy host and port. These are used directly by application to connect to proxy, and further to database.
 
