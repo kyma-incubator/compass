@@ -34,6 +34,7 @@ DB_USER="postgres"
 DB_PWD="pgsql@12345"
 DB_NAME="compass"
 DB_PORT="5432"
+DB_HOST="127.0.0.1"
 
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container${NC}"
@@ -44,17 +45,19 @@ trap cleanup EXIT
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
+            -e POSTGRES_HOST=${DB_HOST} \
             -e POSTGRES_USER=${DB_USER} \
             -e POSTGRES_PASSWORD=${DB_PWD} \
             -e POSTGRES_DB=${DB_NAME} \
-            -p 5432:5432 \
+            -e POSTGRES_PORT=${DB_PORT} \
+            -p ${DB_PORT}:${DB_PORT} \
             postgres:${POSTGRES_VERSION}
 
 set +e
 echo '# WAITING FOR CONNECTION WITH DATABASE #'
 for i in {1..30}
 do
-    pg_isready -U "$DB_USER" -h 127.0.0.1 -p "$DB_PORT" -d "$DB_NAME"
+    docker exec ${POSTGRES_CONTAINER} pg_isready -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
     if [ $? -eq 0 ]
     then
         dbReady=true
@@ -72,10 +75,10 @@ set -e
 
 echo -e "${GREEN}Populate DB${NC}"
 
-PGPASSWORD=pgsql@12345 psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql) ${DB_NAME}
-
-PGPASSWORD=pgsql@12345 psql -U ${DB_USER} -h 127.0.0.1 -f <(cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql) ${DB_NAME}
-
+cat ${ROOT_PATH}/../schema-migrator/migrations/director/*.up.sql | \
+    docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql | \
+    docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
 
 if [[  ${SKIP_APP_START} ]]; then
         echo -e "${GREEN}Skipping starting application${NC}"
