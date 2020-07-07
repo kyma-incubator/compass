@@ -11,7 +11,7 @@ to Compass Director and Compass Connnector GraphQL API.
 To launch Connectivity Adapter on local machine, run the following command:
 
 ```bash
-go run cmd//main.go
+go run cmd/main.go
 ```
 
 ## Configuration
