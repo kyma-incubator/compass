@@ -24,6 +24,4 @@ This is the basic terminology that appears in the Compass documentation:
 
 * [Runtime Agent](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#agent)
 
-* [Runtime Provisioner](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#runtime-provisioner)
-
 * **Tenant** - a group of users who share access to specific Applications and Runtimes.

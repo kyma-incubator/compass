@@ -9,7 +9,7 @@ Start with the overarching [Compass documentation](./compass) where you can find
 * [Director](./director)
 * [Integration System](./integration-system)
 * [Runtime Agent](./runtime-agent)
-* [Runtime Provisioner](./runtime-provisioner)
+
 
 ### Docs structure
 
