@@ -43,10 +43,6 @@ Connector establishes trust between Applications and Runtimes. Currently, only c
 
 Director handles the process of managing Applications and Runtimes. It also requests Application webhook APIs for credentials and exposes health information about Runtimes. This component has access to the storage.
 
-## Runtime Provisioner
-
-[Runtime Provisioner](https://github.com/kyma-incubator/compass/tree/master/docs/provisioner) handles the creation, modification, and deletion of Runtimes. This component is interchangeable.
-
 ## Integration System
 
 Integration System is any system that provides integration for multiple tenants. It exists in a global scope without tenant assignment.
