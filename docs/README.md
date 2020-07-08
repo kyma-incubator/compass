@@ -21,8 +21,6 @@ The directory has the following structure:
   ├── director                 # Documentation for the Director component      
   ├── integration-system       # Documentation for the Integration System component                                    
   ├── internal                 # Internal documentation, such as investigations, proposals, and standards
-  ├── kyma-environment-broker  # Documentation for the Kyma Environment Broker component
-  ├── provisioner              # Documentation for the Runtime Provisioner component                                          
   └── runtime-agent            # Documentation for the Runtime Agent component     
 ```
 
