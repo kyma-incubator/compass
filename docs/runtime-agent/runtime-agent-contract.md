@@ -14,3 +14,7 @@ Runtime Agent automates the process of establishing trusted connection between t
 ## Renewing trusted connection
 
 Depending on the type of trusted connection, during the runtime lifecycle, it may be required to periodically renew trusted connection.
+
+## Synchronizing Runtime with Director
+
+Runtime Agent is also responsible for synchronizing Applications in the Runtime down from the Director. This means it makes sure that the state in the Runtime matches the state in the Director.
