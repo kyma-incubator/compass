@@ -8,36 +8,22 @@ Tenant is mainly described by two properties:
 * the global tenant (can be any string, treated like identifier from external system) 
 * the internal tenant which is used as internal technical identifier (UUID) to which columns `tenant_id` has references to.
 Those properties are stored in table `business_tenant_mapping` with metadata.
+Internal tenant as a way to implement and unify tenancy in Compass Director.
 
 Application and Runtimes are bound to tenants.
 Integration System is not bound to any tenant and can work within multiple tenants.
 
+# Tenants seeding
+The Compass Director has two components which are responsible for seeding database with tenants:
+* Tenant importer - is one time job for importing tenants from files at the first instalation of Compass.
+Technical details can be found [here](../../components/director/cmd/tenantloader/README.md).
+* Tenant fetcher - is a periodic job which synchronize global tenants from external system.
+Technical details can be found [here](../../components/director/cmd/tenantfetcher/README.md).
+
 # Authentication flow
 Director has endpoint called `tenant-mapping-service`, which is a [hydrator](https://www.ory.sh/oathkeeper/docs/pipeline/mutator/#hydrator).
-The responsibility of this component is to map external tenant to internal tenant and put it in request.
-The mapping flow differs in case of:
-* User
-* Application, Runtime
-* Integration System 
+The responsibility of this component is to map external tenant to internal tenant and enrich the request with mapping result.
+More technical details can be found [here](../../components/director/internal/).
 
-User flow:
-- the request contains `ExternalTenant`
-- the service check if given user is stored in local configuration and has access to given tenant.
-- if yes, the application fetch data from `business_tenant_mapping` table and put internal tenant into request
-
-Application and Runtime flow:
-- the oauthkeeper put in request `client_id` which is `auth_id` primary key from `SystemAuth` table in the director database. 
-- the request also contains `ExternalTenant`. 
-- the service check if internal tenant from `SystemAuth` is the same internal tenant which is mapped by `External Tenant`.
-
-Integration System flow:
-- the oauthkeeper put in request `client_id` which is `auth_id` primary key from `SystemAuth` table in the director database.
-- the request also contains `ExternalTenant`. 
-- the service check if `SystemAuth` pointed by `auth_id` exist and then fetch internal tenant from `business_tenant_mapping` table from director database by`ExternalTenant`. 
-
-Flow for: Runtime, Application and Integration system differs:
-* Application, Runtime, Integration System - the request from those resources contains `auth_id` which is a primary key in `SystemAuth` table and `external tenant`.
-
-In case of Applications and Runtime, the request has to contain headrer `External Tenant`. 
-The service check if given `auth_id` belongs to the same internal tenant as `extenal tenant` if yes, the intenal tenant is added to the request.
-In case of Integration System, the intenal tenant is fetched by `extenral tenant`, becasue the `auth` for integration system is not tied to any specific internal tenant.
+# Tenants Query in GraphQL API
+The Compass Director GraphQL API exposes query`Tenants` which return list of all tenants with global tenant, internal tenant and metadata available in the Compass Director. 
