@@ -8,14 +8,19 @@ Tenant is mainly described by two properties:
 Those properties are stored in table `business_tenant_mapping` with metadata.
 We introduced the internal tenant identifier to implement unified tenant identification in the Director. Thanks to this approach external system can describe the tenant in their own way without any impact on the Director internals.
 
-Application and Runtimes are bound to tenants.
+Compass Director has 3 main objects:
+* Application
+* Runtime
+* Integration System
+
+Application and Runtimes and theirs child resources like APIs and etc are bound to tenants.
 Integration Systems are not bound to a tenant and can work representing multiple tenants.
 
-# Tenants seeding
-The Compass Director has two components which are responsible for seeding database with tenants:
+# Importing Tenants
+The Compass Director has two components which are responsible for importing tenants:
 * Tenant importer - is one time job for importing tenants from files at the first instalation of Compass.
 Technical details can be found [here](../../components/director/cmd/tenantloader/README.md).
-* Tenant fetcher - is a periodic job which synchronize global tenants from external system.
+* Tenant fetcher - is a periodic job which synchronize tenants from external system.
 Technical details can be found [here](../../components/director/cmd/tenantfetcher/README.md).
 
 # Authentication flow
