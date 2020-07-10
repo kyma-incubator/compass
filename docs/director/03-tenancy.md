@@ -1,17 +1,15 @@
-The Compass Director is a multitenancy service.
-Tenant is an object which is owner of resources.
+The Compass Director is a multi tenant service. Tenant is an object which owns the resources. The tenant has its own entity stored in the database.
 
 # Tenancy
-Tenancy in Director is implemented on database level.
-Every object which belongs to tenant has a special column `tenant_id`.
+Tenancy in Director is implemented on the database level. Every object which belongs to a tenant has a column `tenant_id` which points to the actual tenant entity.
 Tenant is mainly described by two properties: 
-* the global tenant (can be any string, treated like identifier from external system) 
-* the internal tenant which is used as internal technical identifier (UUID) to which columns `tenant_id` has references to.
+* the global tenant identifier (can be any string, treated like identifier from external system) 
+* the internal tenant identifier which is used as internal technical identifier (UUID) to which columns `tenant_id` references to.
 Those properties are stored in table `business_tenant_mapping` with metadata.
-Internal tenant as a way to implement and unify tenancy in Compass Director.
+We introduced the internal tenant identifier to implement unified tenant identification in the Director. Thanks to this approach external system can describe the tenant in their own way without any impact on the Director internals.
 
 Application and Runtimes are bound to tenants.
-Integration System is not bound to any tenant and can work within multiple tenants.
+Integration Systems are not bound to a tenant and can work representing multiple tenants.
 
 # Tenants seeding
 The Compass Director has two components which are responsible for seeding database with tenants:
@@ -21,9 +19,9 @@ Technical details can be found [here](../../components/director/cmd/tenantloader
 Technical details can be found [here](../../components/director/cmd/tenantfetcher/README.md).
 
 # Authentication flow
-Director has endpoint called `tenant-mapping-service`, which is a [hydrator](https://www.ory.sh/oathkeeper/docs/pipeline/mutator/#hydrator).
-The responsibility of this component is to map external tenant to internal tenant and enrich the request with mapping result.
+Tenant information takes important role during the authentication and authorization phase. The tenant mapping phase is done on the incomming request that is routed to the component called tenant mapping handler. The tenant mapping handler is a HTTP endpoint configured as the Oathkeeper [hydrator](https://www.ory.sh/oathkeeper/docs/pipeline/mutator/#hydrator). On of its responsibility is to map external tenant identifier to the internal one.
+
 More technical details can be found [here](../../components/director/internal/).
 
 # Tenants Query in GraphQL API
-The Compass Director GraphQL API exposes query`Tenants` which return list of all tenants with global tenant, internal tenant and metadata available in the Compass Director. 
+The Compass Director GraphQL API exposes `tenants` query. The query return list of all tenants with their external identifier, internal identifier, and additional metadata. 
