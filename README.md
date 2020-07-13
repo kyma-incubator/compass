@@ -19,10 +19,9 @@ For more information about the Compass architecture, technical details, and comp
 ## Prerequisites
 
 - [Docker](https://www.docker.com/get-started)
-- [Minikube](https://github.com/kubernetes/minikube) 1.0.1
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.12.5
-- [Helm](https://github.com/kubernetes/helm) 2.10.0
-- [Kyma CLI](https://github.com/kyma-project/cli) master
+- [Minikube](https://github.com/kubernetes/minikube) 1.6.2
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.16.3
+- [Kyma CLI](https://github.com/kyma-project/cli) stable
 
 ## Installation
 
