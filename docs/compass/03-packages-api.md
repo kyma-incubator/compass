@@ -1,4 +1,4 @@
-# API for Packages
+# API Packages
 
 
 Package is an entity that groups multiple API Definitions, Event Definitions, and Documents. It also stores shared credentials for all APIs defined under the particular Package.
