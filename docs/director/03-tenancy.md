@@ -17,6 +17,7 @@ Every object which belongs to a tenant has the `tenant_id` column which points t
 A tenant is mainly described by two properties: 
 * Global tenant identifier - can be any string, treated like identifier from an external system 
 * Internal tenant identifier - used as an internal technical identifier (UUID) to which `tenant_id` columns refer to
+
 Those properties are stored in the `business_tenant_mapping` table with metadata.
 Internal tenant identifier allows for unified tenant identification in Director. 
 Thanks to this approach, external systems can describe their tenants in their own way without any impact on the Director internals.
