@@ -33,6 +33,8 @@ To create tenant in Director you can insert them by hand using SQL Statement or 
 Information about tenants is used during the authentication and authorization phase in Compass. 
 Every incoming request is routed to the component called Tenant Mapping Handler. 
 The responsibility is to map an external tenant identifier to the internal one.
-The additional data is put into JWT Token and send to Director.
+The service look for external tenant identifier in headers or body under key `headers` or `extra`.
+Having external tenant identifier the component can continue tenant mapping using `business_tenant_mapping` and `system_auth` table.
+The additional data (internal tenant identifier, identifier of caller) is put into JWT Token and send to Director.
 The Director validates the token and extract `tenant` id from token, which is the internal tenant identifier.
 Having this information, director is able to work as multi tenant service.
