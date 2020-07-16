@@ -20,7 +20,7 @@ A tenant is mainly described by two properties:
 Those properties are stored together with the metadata in the `business_tenant_mapping` table in the database.
 
 The Compass Director GraphQL API exposes [tenants query](https://github.com/kyma-incubator/compass/blob/master/components/director/examples/query-tenants/query-tenants.graphql). 
-The query return list of all tenants with their external identifier, internal identifier, and additional metadata. 
+The query returns a list of all tenants with their external identifier, internal identifier, and additional metadata. 
 ## Creating tenants
 You can create a tenant in Director manually by using the [SQL statement](https://github.com/kyma-incubator/compass/blob/master/components/schema-migrator/seeds/director/add_tenants.sql) or use one of the following importing mechanisms:
 * [Tenant Loader](https://github.com/kyma-incubator/compass/tree/master/components/director/cmd/tenantloader) - a one-time job for importing tenants from files during the first Compass installation
