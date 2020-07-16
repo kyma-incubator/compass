@@ -18,20 +18,23 @@ A tenant is mainly described by two properties:
 
 Those properties are stored together with the metadata in the `business_tenant_mapping` table in the database.
 
-The Compass Director GraphQL API exposes `tenants` query. 
+The Compass Director GraphQL API exposes [tenants](https://github.com/kyma-incubator/compass/blob/master/components/director/examples/query-tenants/query-tenants.graphql) query. 
 The query return list of all tenants with their external identifier, internal identifier, and additional metadata. 
-
 ## Creating tenants
-To create tenant in Director you can insert them by hand using SQL Statement or use one of the following importing mechanism:
+To create tenant in Director you can insert them by hand using [SQL Statement](https://github.com/kyma-incubator/compass/blob/master/components/schema-migrator/seeds/director/add_tenants.sql) or use one of the following importing mechanism:
 * [Tenant Importer](https://github.com/kyma-incubator/compass/tree/master/components/director/cmd/tenantloader) - a one-time job for importing tenants from files during the first Compass installation
 * [Tenant Fetcher](https://github.com/kyma-incubator/compass/tree/master/components/director/cmd/tenantfetcher) - a periodic job that synchronizes tenants from an external system
 
 ## Authentication flow
-Information about tenants is used during the authentication and authorization phase in Compass. 
-Every incoming request is routed to the component called Tenant Mapping Handler. 
-The responsibility is to map an external tenant identifier to the internal one.
-The service look for external tenant identifier in headers or body under key `headers` or `extra`.
-Having external tenant identifier the component can continue tenant mapping using `business_tenant_mapping` and `system_auth` table.
-The additional data (internal tenant identifier, identifier of caller) is put into JWT Token and send to Director.
-The Director validates the token and extract `tenant` id from token, which is the internal tenant identifier.
+Information about tenants is used during the authentication and authorization phase in Compass.
+Every incoming request is routed to the component called Tenant Mapping Handler.
+
+The mapping flow:
+1. The tenant mapping service look for external tenant identifier in headers or body under key `headers` or `extra`.
+2. Having external tenant identifier the component can continue tenant mapping using `business_tenant_mapping` and `system_auth` table.
+3. The additional data (internal tenant identifier, identifier of caller) is put into JWT Token and send to Director.
+4. The Director validates the token and extract `tenant` id from token, which is the internal tenant identifier.
+
 Having this information, director is able to work as multi tenant service.
+
+![](./assets/tenant-mapping.svg)
