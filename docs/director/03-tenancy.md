@@ -1,7 +1,6 @@
 # Tenancy
-Tenant is the object that owns resources. 
-The Compass Director is a multi-tenant service.
-Multitenancy means that single instance of Director is being shared among different tenants (clients), but the data is isolated.
+Tenant is a single object that owns resources. Every tenant's resources are isolated from the other tenants, which ensures data security and privacy.
+Compass Director is a multi-tenant service, which means that a single instance of Director is shared among different tenants (clients), but their data is isolated.
 
 ## Tenancy in Director
 Director manages the configuration of the following main objects:
@@ -9,18 +8,15 @@ Director manages the configuration of the following main objects:
 * Runtime
 * Integration System
 
-Applications and Runtimes and their child resources, such as APIs, are bound to tenants.
-Integration Systems can represent multiple tenants.
+Applications and Runtimes and their child resources, such as APIs, are bound to tenants, whereas Integration Systems can represent multiple tenants.
 
-Tenancy in Director is implemented on the database level and tenant has its own entity.
+Tenancy in Director is implemented on the level of a database in which a given tenant has its own entity.
 Every object which belongs to a tenant has the `tenant_id` column which points to the actual tenant entity.
 A tenant is mainly described by two properties: 
-* Global tenant identifier - can be any string, treated like identifier from an external system 
-* Internal tenant identifier - used as an internal technical identifier (UUID) to which `tenant_id` columns refer to
+* Global tenant identifier - can be any string, treated like an identifier from an external system 
+* Internal tenant identifier - used as an internal technical identifier (UUID) to which `tenant_id` columns refer to. It allows for unified tenant identification in Director. Thanks to this approach, external systems can describe their tenants in their own way without any impact on the Director internals.
 
-Those properties are stored in the `business_tenant_mapping` table with metadata.
-Internal tenant identifier allows for unified tenant identification in Director. 
-Thanks to this approach, external systems can describe their tenants in their own way without any impact on the Director internals.
+Those properties are stored together with the metadata in the `business_tenant_mapping` table in the database.
 
 The Compass Director GraphQL API exposes `tenants` query. 
 The query return list of all tenants with their external identifier, internal identifier, and additional metadata. 
