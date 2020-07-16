@@ -18,10 +18,10 @@ A tenant is mainly described by two properties:
 
 Those properties are stored together with the metadata in the `business_tenant_mapping` table in the database.
 
-The Compass Director GraphQL API exposes [tenants](https://github.com/kyma-incubator/compass/blob/master/components/director/examples/query-tenants/query-tenants.graphql) query. 
+The Compass Director GraphQL API exposes [tenants query](https://github.com/kyma-incubator/compass/blob/master/components/director/examples/query-tenants/query-tenants.graphql). 
 The query return list of all tenants with their external identifier, internal identifier, and additional metadata. 
 ## Creating tenants
-To create tenant in Director you can insert them by hand using [SQL Statement](https://github.com/kyma-incubator/compass/blob/master/components/schema-migrator/seeds/director/add_tenants.sql) or use one of the following importing mechanism:
+You can create a tenant in Director manually by using the [SQL statement](https://github.com/kyma-incubator/compass/blob/master/components/schema-migrator/seeds/director/add_tenants.sql) or use one of the following importing mechanisms:
 * [Tenant Importer](https://github.com/kyma-incubator/compass/tree/master/components/director/cmd/tenantloader) - a one-time job for importing tenants from files during the first Compass installation
 * [Tenant Fetcher](https://github.com/kyma-incubator/compass/tree/master/components/director/cmd/tenantfetcher) - a periodic job that synchronizes tenants from an external system
 
@@ -29,12 +29,12 @@ To create tenant in Director you can insert them by hand using [SQL Statement](h
 Information about tenants is used during the authentication and authorization phase in Compass.
 Every incoming request is routed to the component called Tenant Mapping Handler.
 
-The mapping flow:
-1. The tenant mapping service look for external tenant identifier in headers or body under key `headers` or `extra`.
-2. Having external tenant identifier the component can continue tenant mapping using `business_tenant_mapping` and `system_auth` table.
-3. The additional data (internal tenant identifier, identifier of caller) is put into JWT Token and send to Director.
-4. The Director validates the token and extract `tenant` id from token, which is the internal tenant identifier.
+The tenant mapping flow looks as follows:
+1. Tenant Mapping Handler looks for an external tenant identifier in request headers and request body under the **headers** and **extra** keys.
+2. Tenant Mapping Handler maps an external tenant to the internal tenant using `business_tenant_mapping` and `system_auth` tables from the Director database.
+3. Tenant Mapping Handler passes additional data, such as the internal tenant identifier and caller identity, to Oauthkeeper. Oauthkeeper mutators put the data into JWT which is send to Director.
+4. Director validates the token and extracts the internal tenant identifier.
 
-Having this information, director is able to work as multi tenant service.
+Having this information, Director can work as a multi-tenant service. For more information, refer to the document about [security in Compass](https://github.com/kyma-incubator/compass/blob/master/docs/compass/03-01-security.md).
 
 ![](./assets/tenant-mapping.svg)
