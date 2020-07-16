@@ -42,7 +42,7 @@
 /chart/compass/charts/external-services-mock @PK85 @crabtree @pkosiec @kfurgol @tgorgol @dbadura @kjaksik
 
 # Compass UI
-/chart/compass/charts/cockpit @kwiatekus @dariadomagala @parostatkiem @akucharska @sjanota @Wawrzyn321
+/chart/compass/charts/cockpit @kwiatekus @dariadomagala @parostatkiem @akucharska @Wawrzyn321
 
 # All .md files
 *.md @klaudiagrz @kazydek @tomekpapiernik @bszwarc @mmitoraj @majakurcius @alexandra-simeonova
