@@ -5,15 +5,15 @@ Compass Director is a multi-tenant service, which means that a single instance o
 
 ## Tenancy in Director
 Director manages the configuration of the following main objects:
-* Application
-* Runtime
-* Label Definition
-* Automatic Scenario Assigment
-* Integration System
-* Application Template
+* [Application](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#application)
+* [Runtime](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#kyma-runtime)
+* [LabelDefinition](https://github.com/kyma-incubator/compass/blob/master/docs/compass/03-02-labels.md#labeldefinitions)
+* [Automatic Scenario Assigment](https://github.com/kyma-incubator/compass/blob/master/docs/compass/03-03-automatic-scenario-assignment.md)
+* [Integration System](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#integration-system)
+* [ApplicationTemplate](https://github.com/kyma-incubator/compass/blob/master/docs/compass/02-01-components.md#applicationtemplate)
 
-Applications, Runtimes, Label Definitions and Automatic Scenario Assigment and their child resources, such as APIs, are bound to tenants.
-Integration Systems and Application Templates are not bound to any tenant and can represent multiple tenants.
+Applications, Runtimes, LabelDefinitions, and Automatic Scenario Assignments and their child resources, such as APIs, are bound to tenants.
+Integration Systems and ApplicationTemplates are not bound to any tenant and can represent multiple tenants.
 
 Tenancy in Director is implemented on the level of a database in which a given tenant has its own entity.
 Every object which belongs to a tenant has the `tenant_id` column which points to the actual tenant entity.
