@@ -27,6 +27,10 @@ For more information about the Compass architecture, technical details, and comp
 
 Install Compass locally or on a cluster. See the [installation document](https://github.com/kyma-incubator/compass/blob/master/docs/compass/04-01-installation.md) for details.
 
+### Dependencies
+
+Compass depends on [Kyma](https://github.com/kyma-project/kyma).
+For local development and CI integration jobs, the fixed Kyma version is used. To change a Kyma version, see the [`README.md`](./installation/resources/README.md) in the `installation/resources` directory.
 
 ## Testing
 
