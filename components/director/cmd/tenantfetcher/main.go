@@ -15,6 +15,7 @@ type config struct {
 	Database     persistence.DatabaseConfig
 	OAuthConfig  tenantfetcher.OAuth2Config
 	APIConfig    tenantfetcher.APIConfig
+	QueryConfig  tenantfetcher.QueryConfig
 	FieldMapping tenantfetcher.TenantFieldMapping
 
 	TenantProvider      string `envconfig:"APP_TENANT_PROVIDER"`
@@ -73,7 +74,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, metr
 	}
 
 	tenantFetcherConverter := tenantfetcher.NewConverter(cfg.TenantProvider, cfg.FieldMapping)
-	return tenantfetcher.NewService(transact, tenantFetcherConverter, eventAPIClient, tenantStorageSvc)
+	return tenantfetcher.NewService(cfg.QueryConfig, transact, tenantFetcherConverter, eventAPIClient, tenantStorageSvc)
 }
 
 func configureLogger() {

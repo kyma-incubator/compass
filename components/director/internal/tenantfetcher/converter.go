@@ -14,6 +14,7 @@ import (
 type TenantFieldMapping struct {
 	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
+	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
 	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
 }
@@ -50,16 +51,23 @@ func (c converter) EventToTenant(eventType EventsType, event Event) (*model.Busi
 	if event == nil {
 		return nil, nil
 	}
-
-	eventDataJSON, ok := event["eventData"].(string)
-	if !ok {
-		return nil, apperrors.NewInvalidDataError("invalid event data format")
-	}
-
+	// fmt.Printf(">>>>>\n%+v\n", event[c.fieldMapping.DetailsField])
 	var eventData map[string]interface{}
-	err := json.Unmarshal([]byte(eventDataJSON), &eventData)
-	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling event data")
+	details := event[c.fieldMapping.DetailsField]
+	switch details.(type) {
+	case string:
+		eventDataJSON, ok := event[c.fieldMapping.DetailsField].(string)
+		if !ok {
+			return nil, apperrors.NewInvalidDataError("invalid event data format")
+		}
+		err := json.Unmarshal([]byte(eventDataJSON), &eventData)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshalling event data")
+		}
+	case map[string]interface{}:
+		eventData = details.(map[string]interface{})
+	default:
+		return nil, apperrors.NewInvalidDataError("invalid event data format")
 	}
 
 	tenant, err := c.eventDataToTenant(eventType, eventData)

@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -28,6 +27,10 @@ type APIConfig struct {
 	EndpointTenantCreated string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
 	EndpointTenantDeleted string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
 	EndpointTenantUpdated string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
+
+	TotalPagesField   string `envconfig:"APP_TENANT_TOTAL_PAGES_FIELD"`
+	TotalResultsField string `envconfig:"APP_TENANT_TOTAL_RESULTS_FIELD"`
+	EventsField       string `envconfig:"APP_TENANT_EVENTS_FIELD"`
 }
 
 //go:generate mockery -name=MetricsPusher -output=automock -outpkg=automock -case=underscore
@@ -35,15 +38,45 @@ type MetricsPusher interface {
 	RecordEventingRequest(method string, statusCode int, desc string)
 }
 
+type QueryParams map[string]string
+
+type tenantResponseMapper struct {
+	TotalPagesField   string
+	TotalResultsField string
+	EventsField       string
+}
+
+func (trd *tenantResponseMapper) Remap(v map[string]interface{}) TenantEventsResponse {
+	events := make([]Event, 0)
+
+	if v[trd.EventsField] == nil {
+		return TenantEventsResponse{
+			Events:       []Event{},
+			TotalResults: 0,
+			TotalPages:   1,
+		}
+	}
+
+	for _, e := range v[trd.EventsField].([]interface{}) {
+		events = append(events, Event(e.(map[string]interface{})))
+	}
+
+	return TenantEventsResponse{
+		Events:       events,
+		TotalPages:   int(v[trd.TotalPagesField].(float64)),
+		TotalResults: int(v[trd.TotalResultsField].(float64)),
+	}
+}
+
 type Client struct {
 	httpClient    *http.Client
 	metricsPusher MetricsPusher
 
-	apiConfig APIConfig
+	responseMapper tenantResponseMapper
+	apiConfig      APIConfig
 }
 
 const (
-	pageSize            = 1000
 	maxErrMessageLength = 50
 )
 
@@ -59,6 +92,11 @@ func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
 	return &Client{
 		httpClient: httpClient,
 		apiConfig:  apiConfig,
+		responseMapper: tenantResponseMapper{
+			EventsField:       apiConfig.EventsField,
+			TotalPagesField:   apiConfig.TotalPagesField,
+			TotalResultsField: apiConfig.TotalResultsField,
+		},
 	}
 }
 
@@ -66,13 +104,13 @@ func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
 	c.metricsPusher = metricsPusher
 }
 
-func (c *Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*TenantEventsResponse, error) {
+func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (*TenantEventsResponse, error) {
 	endpoint, err := c.getEndpointForEventsType(eventsType)
 	if err != nil {
 		return nil, err
 	}
 
-	reqURL, err := c.buildRequestURL(endpoint, pageNumber)
+	reqURL, err := c.buildRequestURL(endpoint, additionalQueryParams)
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +134,10 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, pageNumber int) (*
 		c.metricsPusher.RecordEventingRequest(http.MethodGet, res.StatusCode, res.Status)
 	}
 
-	var tenantEvents TenantEventsResponse
-	err = json.NewDecoder(res.Body).Decode(&tenantEvents)
+	var result map[string]interface{}
+	err = json.NewDecoder(res.Body).Decode(&result)
+	tenantEvents := c.responseMapper.Remap(result)
+
 	if err != nil {
 		if err == io.EOF {
 			return nil, nil
@@ -121,7 +161,7 @@ func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error)
 	}
 }
 
-func (c *Client) buildRequestURL(endpoint string, pageNumber int) (string, error) {
+func (c *Client) buildRequestURL(endpoint string, queryParams QueryParams) (string, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return "", err
@@ -132,9 +172,9 @@ func (c *Client) buildRequestURL(endpoint string, pageNumber int) (string, error
 		return "", err
 	}
 
-	q.Add("ts", "1")
-	q.Add("resultsPerPage", strconv.Itoa(pageSize))
-	q.Add("page", strconv.Itoa(pageNumber))
+	for qKey, qValue := range queryParams {
+		q.Add(qKey, qValue)
+	}
 
 	u.RawQuery = q.Encode()
 

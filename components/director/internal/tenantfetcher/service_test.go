@@ -61,9 +61,21 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -85,9 +97,21 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -110,11 +134,31 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 2).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 3).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "2",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "3",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -134,9 +178,21 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 2).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 3).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "2",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "3",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -154,7 +210,11 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(nil, testErr).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, testErr).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -172,8 +232,16 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(nil, testErr).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, testErr).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -191,9 +259,21 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, testErr).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, testErr).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -211,8 +291,16 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 6, 2), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 2).Return(nil, testErr).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 6, 2), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "2",
+					"timestamp": "1",
+				}).Return(nil, testErr).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -230,8 +318,16 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(fixTenantEventsResponse(tenantEvents, 6, 2), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 2).Return(fixTenantEventsResponse(tenantEvents, 7, 2), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 6, 2), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "2",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 7, 2), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -249,9 +345,21 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -269,9 +377,21 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -291,9 +411,21 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -312,9 +444,21 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -333,7 +477,13 @@ func TestService_SyncTenants(t *testing.T) {
 			conv := testCase.ConverterFn()
 			apiClient := testCase.APIClientFn()
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
-			svc := tenantfetcher.NewService(transact, conv, apiClient, tenantStorageSvc)
+			svc := tenantfetcher.NewService(tenantfetcher.QueryConfig{
+				PageNumField:   "pageNum",
+				PageSizeField:  "pageSize",
+				TimestampField: "timestamp",
+				PageSizeValue:  "1",
+				PageStartValue: "1",
+			}, transact, conv, apiClient, tenantStorageSvc)
 			svc.SetRetryAttempts(1)
 
 			// WHEN
@@ -360,16 +510,42 @@ func TestService_SyncTenants(t *testing.T) {
 		persist, transact := txGen.ThatSucceeds()
 		conv := &automock.Converter{}
 		apiClient := &automock.EventAPIClient{}
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, 1).Return(nil, nil).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, 1).Return(nil, nil).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, testErr).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, testErr).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, 1).Return(nil, nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+			"pageSize":  "1",
+			"pageNum":   "1",
+			"timestamp": "1",
+		}).Return(nil, nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+			"pageSize":  "1",
+			"pageNum":   "1",
+			"timestamp": "1",
+		}).Return(nil, nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+			"pageSize":  "1",
+			"pageNum":   "1",
+			"timestamp": "1",
+		}).Return(nil, testErr).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+			"pageSize":  "1",
+			"pageNum":   "1",
+			"timestamp": "1",
+		}).Return(nil, testErr).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+			"pageSize":  "1",
+			"pageNum":   "1",
+			"timestamp": "1",
+		}).Return(nil, nil).Once()
 		tenantStorageSvc := &automock.TenantStorageService{}
 		tenantStorageSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
 		tenantStorageSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
 
-		svc := tenantfetcher.NewService(transact, conv, apiClient, tenantStorageSvc)
+		svc := tenantfetcher.NewService(tenantfetcher.QueryConfig{
+			PageNumField:   "pageNum",
+			PageSizeField:  "pageSize",
+			TimestampField: "timestamp",
+			PageSizeValue:  "1",
+			PageStartValue: "1",
+		}, transact, conv, apiClient, tenantStorageSvc)
 
 		// WHEN
 		err := svc.SyncTenants()

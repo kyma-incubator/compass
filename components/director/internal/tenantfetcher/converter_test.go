@@ -25,6 +25,7 @@ var (
 	testMapping = tenantfetcher.TenantFieldMapping{
 		NameField:          testFieldName,
 		IDField:            testFieldID,
+		DetailsField:       "eventData",
 		DiscriminatorField: "",
 		DiscriminatorValue: "",
 	}
