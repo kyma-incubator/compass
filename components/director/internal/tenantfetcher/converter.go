@@ -64,7 +64,11 @@ func (c converter) EventToTenant(eventType EventsType, event Event) (*model.Busi
 			return nil, errors.Wrap(err, "while unmarshalling event data")
 		}
 	case map[string]interface{}:
-		eventData = details.(map[string]interface{})
+		var ok bool
+		eventData, ok = details.(map[string]interface{})
+		if !ok {
+			return nil, apperrors.NewInvalidDataError("invalid event data format")
+		}
 	default:
 		return nil, apperrors.NewInvalidDataError("invalid event data format")
 	}
