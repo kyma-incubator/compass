@@ -51,7 +51,6 @@ func (c converter) EventToTenant(eventType EventsType, event Event) (*model.Busi
 	if event == nil {
 		return nil, nil
 	}
-	// fmt.Printf(">>>>>\n%+v\n", event[c.fieldMapping.DetailsField])
 	var eventData map[string]interface{}
 	details := event[c.fieldMapping.DetailsField]
 	switch details.(type) {

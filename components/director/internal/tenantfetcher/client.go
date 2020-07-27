@@ -17,6 +17,10 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+const (
+	maxErrMessageLength = 50
+)
+
 type OAuth2Config struct {
 	ClientID           string `envconfig:"APP_CLIENT_ID"`
 	ClientSecret       string `envconfig:"APP_CLIENT_SECRET"`
@@ -75,10 +79,6 @@ type Client struct {
 	responseMapper tenantResponseMapper
 	apiConfig      APIConfig
 }
-
-const (
-	maxErrMessageLength = 50
-)
 
 func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
 	cfg := clientcredentials.Config{

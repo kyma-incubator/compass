@@ -2,7 +2,6 @@ package tenantfetcher
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -156,7 +155,6 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 	events := firstPage.Events
 	initialCount := firstPage.TotalResults
 	totalPages := firstPage.TotalPages
-	fmt.Println("eventType: ", eventsType, "totalPages: ", totalPages, "totalResults ", initialCount)
 
 	pageStart, err := strconv.Atoi(s.queryConfig.PageStartValue)
 	if err != nil {
@@ -164,7 +162,6 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 	}
 	for i := pageStart + 1; i <= totalPages; i++ {
 		params["pageNum"] = strconv.Itoa(i)
-		fmt.Printf("Retrieving page %d with params . %+v\n", i, params)
 		res, err := s.eventAPIClient.FetchTenantEventsPage(eventsType, params)
 		if err != nil {
 			return nil, errors.Wrap(err, "while fetching tenant events page")

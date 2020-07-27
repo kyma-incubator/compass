@@ -17,6 +17,7 @@ const (
 	testProvider           = "test"
 	testFieldName          = "name"
 	testFieldID            = "id"
+	testFieldDetails       = "eventData"
 	testFieldDiscriminator = "discriminator"
 	testValueDiscriminator = "default"
 )
@@ -25,7 +26,7 @@ var (
 	testMapping = tenantfetcher.TenantFieldMapping{
 		NameField:          testFieldName,
 		IDField:            testFieldID,
-		DetailsField:       "eventData",
+		DetailsField:       testFieldDetails,
 		DiscriminatorField: "",
 		DiscriminatorValue: "",
 	}
