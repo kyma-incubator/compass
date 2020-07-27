@@ -1,10 +1,42 @@
 # Compass installation
 
-You can install Compass both on a cluster and on your local machine.
+You can install Compass both on a cluster and on your local machine in two modes.
 
-## Cluster installation
+## Compass cluster with essential Kyma components
 
-Follow these steps to install Compass on a cluster:
+Compass as a central Management Plane cluster requires minimal Kyma installation. Steps to perform the installation vary depending on the installation environment.
+
+### Production cluster installation
+
+<!-- Compass as a central Management Plane cluster requires minimal Kyma installation. To install Compass along with essential Kyma components, run the following script:
+
+```bash
+./installation/cmd/run.sh
+```
+
+The script installs required Kyma components in version specified in the  [`KYMA_VERSION`](./../../installation/resources/KYMA_VERSION) file. To read more how to use specific Kyma version, read the [`README.md`](./../../installation/README.md) in the `installation` directory.
+
+On top of the Kyma installation, the script installs Compass from the repository. -->
+
+### Local Minikube installation
+
+For local development, install Compass from the `master` branch, along with the minimal Kyma installation on Minikube. To do so, run this script:
+
+```bash
+./installation/cmd/run.sh
+```
+
+The Kyma version is read from [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file. You can override it with the following command:
+
+```bash
+./installation/cmd/run.sh {KYMA_VERSION}
+```
+
+## Single cluster with Compass and Runtime Agent 
+
+You can install Compass in a single cluster with all Kyma components, including the Runtime Agent. In this mode, the Runtime Agent is already connected to Compass. This mode is useful for all kind of testing and development purposes.
+
+To install Compass and Runtime components in a single cluster, follow these steps:
 
 1. [Install Kyma with the Runtime Agent.](https://kyma-project.io/docs/master/components/runtime-agent#installation-installation)
 2. Apply the following ConfigMap before you proceed with the Compass installation:
@@ -55,14 +87,4 @@ Then, use the script to check the progress of the Compass installation:
 ./is-installed.sh
 ```
 
-## Local installation
-
-For local development, install Compass along with the minimal Kyma installation from the `master` branch. To do so, run this script:
-```bash
-./installation/cmd/run.sh
-```
-
-You can also specify Kyma version, such as 1.6 or newer:
-```bash
-./installation/cmd/run.sh {VERSION}
-```
+Once Compass is installed, Runtime Agent will be configured to fetch configuration from the Compass installation within the same cluster.
