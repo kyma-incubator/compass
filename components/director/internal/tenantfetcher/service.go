@@ -161,7 +161,7 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 		return nil, err
 	}
 	for i := pageStart + 1; i <= totalPages; i++ {
-		params["pageNum"] = strconv.Itoa(i)
+		params[s.queryConfig.PageNumField] = strconv.Itoa(i)
 		res, err := s.eventAPIClient.FetchTenantEventsPage(eventsType, params)
 		if err != nil {
 			return nil, errors.Wrap(err, "while fetching tenant events page")
