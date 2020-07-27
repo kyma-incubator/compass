@@ -177,8 +177,3 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 
 	return s.converter.EventsToTenants(eventsType, events), nil
 }
-
-func makeTimestamp(diff time.Duration) int64 {
-	t := time.Now().Add(diff)
-	return t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-}
