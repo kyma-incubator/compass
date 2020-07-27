@@ -8,15 +8,42 @@ Compass as a central Management Plane cluster requires minimal Kyma installation
 
 ### Production cluster installation
 
-<!-- Compass as a central Management Plane cluster requires minimal Kyma installation. To install Compass along with essential Kyma components, run the following script:
+To install Compass as central Management Plane on cluster, follow these steps:
 
+1. Perform minimal Kyma installation. To do so, run the following script:
+
+    ```bash
+    ./installation/scripts/install-minimal-kyma.sh
+    ```
+
+    The Kyma version is read from [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file. You can override it with the following command:
+
+    ```bash
+    ./installation/scripts/install-kyma-essential.sh {KYMA_VERSION}
+    ```
+
+2. Install Compass. ​There are three possible installation options:
+
+    | Installation option     	| Value to use with the installation command   	| Example value          	|
+    |-------------------------	|-------------------	|-------------------------	|
+    | From the `master` branch 	| `master`          	| `master`                	|
+    | From the specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+    | From the specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
+
+    Once you decide on the installation option, use this command:
+    ```bash
+    kubectl apply -f https://storage.cloud.google.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/compass-installer.yaml
+    ```
+​
+1. Check the installation progress. To do so, download the script that checks the progress of the installation:
 ```bash
-./installation/cmd/run.sh
+wget https://storage.cloud.google.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/is-installed.sh && chmod +x ./is-installed.sh
 ```
-
-The script installs required Kyma components in version specified in the  [`KYMA_VERSION`](./../../installation/resources/KYMA_VERSION) file. To read more how to use specific Kyma version, read the [`README.md`](./../../installation/README.md) in the `installation` directory.
-
-On top of the Kyma installation, the script installs Compass from the repository. -->
+​
+Then, use the script to check the progress of the Compass installation:
+```bash
+./is-installed.sh
+```
 
 ### Local Minikube installation
 
@@ -32,9 +59,11 @@ The Kyma version is read from [`KYMA_VERSION`](../../installation/resources/KYMA
 ./installation/cmd/run.sh {KYMA_VERSION}
 ```
 
-## Single cluster with Compass and Runtime Agent 
+## Single cluster with Compass and Runtime Agent
 
-You can install Compass in a single cluster with all Kyma components, including the Runtime Agent. In this mode, the Runtime Agent is already connected to Compass. This mode is useful for all kind of testing and development purposes.
+You can install Compass on a single cluster with all Kyma components, including the Runtime Agent. In this mode, the Runtime Agent is already connected to Compass. This mode is useful for all kind of testing and development purposes.
+
+> **NOTE:** This mode is not supported on the local Minikube installation.
 
 To install Compass and Runtime components in a single cluster, follow these steps:
 
@@ -77,7 +106,7 @@ To install Compass and Runtime components in a single cluster, follow these step
     kubectl apply -f https://storage.cloud.google.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/compass-installer.yaml
     ```
 ​
-4. Check the installation progress. To do so, download the script that checks the progress of the installation:
+1. Check the installation progress. To do so, download the script that checks the progress of the installation:
 ```bash
 wget https://storage.cloud.google.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/is-installed.sh && chmod +x ./is-installed.sh
 ```
