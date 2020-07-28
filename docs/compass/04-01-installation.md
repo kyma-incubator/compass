@@ -75,12 +75,10 @@ The Kyma version is read from [`KYMA_VERSION`](../../installation/resources/KYMA
 
 You can install Compass on a single cluster with all Kyma components, including the Runtime Agent. In this mode, the Runtime Agent is already connected to Compass. This mode is useful for all kind of testing and development purposes.
 
-> **NOTE:** This mode is not supported on the local Minikube installation.
-
 To install Compass and Runtime components in a single cluster, follow these steps:
 
 1. [Install Kyma with the Runtime Agent.](https://kyma-project.io/docs/master/components/runtime-agent#installation-installation)
-1. Apply the following ConfigMap before you proceed with the Compass installation:
+2. Apply the following ConfigMap before you proceed with the Compass installation:
 
     ```yaml
     apiVersion: v1
@@ -123,6 +121,5 @@ To install Compass and Runtime components in a single cluster, follow these step
     ```bash
     source <(curl -s https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTI§ON}/is-installed.sh)
     ```
-
 
 Once Compass is installed, Runtime Agent will be configured to fetch configuration from the Compass installation within the same cluster.
