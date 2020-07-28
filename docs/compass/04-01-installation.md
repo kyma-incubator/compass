@@ -10,40 +10,53 @@ Compass as a central Management Plane cluster requires minimal Kyma installation
 
 To install Compass as central Management Plane on cluster, follow these steps:
 
-1. Perform minimal Kyma installation. To do so, run the following script:
-
-    ```bash
-    ./installation/scripts/install-minimal-kyma.sh
-    ```
-
-    The Kyma version is read from [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file. You can override it with the following command:
-
-    ```bash
-    ./installation/scripts/install-kyma-essential.sh {KYMA_VERSION}
-    ```
-
-2. Install Compass. ​There are three possible installation options:
+1. Select installation option for Compass and Kyma. ​There are three possible installation options:
 
     | Installation option     	| Value to use with the installation command   	| Example value          	|
     |-------------------------	|-------------------	|-------------------------	|
-    | From the `master` branch 	| `master`          	| `master`                	|
-    | From the specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
-    | From the specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
+    | From the Compass `master` branch 	| `master`          	| `master`                	|
+    | From the specific commit on the Compass `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+    | From the specific PR on the Compass repository       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
+
+    The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
 
     Once you decide on the installation option, use this command:
+
     ```bash
-    kubectl apply -f https://storage.cloud.google.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/compass-installer.yaml
+    export INSTALLATION_OPTION={installationOption}
+    ```
+
+1. Prepare the cluster for custom installation. Read how to prepare the cluster [with `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-prepare-the-cluster) or [with custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-prepare-the-cluster).
+1. Apply overrides using the following command from the root directory of the Compass repository:
+
+    ```bash
+    kubectl create namespace kyma-installer || true \
+&& kubectl apply -f ./installation/resources/installer-overrides-compass-gateway.yaml \
+&& kubectl apply -f ./installation/resources/installer-overrides-api-gateway.yaml
+    ```
+
+1. Perform minimal Kyma installation with the following command:
+
+    ```bash
+    kubectl apply -f https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/kyma-installer.yaml
     ```
 ​
-1. Check the installation progress. To do so, download the script that checks the progress of the installation:
-```bash
-wget https://storage.cloud.google.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/is-installed.sh && chmod +x ./is-installed.sh
-```
+1. Check the Kyma installation progress. To do so, download the script and check the progress of the installation:
+    ```bash
+    source <(curl -s https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-kyma-installed.sh)
+    ```
+
+2. Perform Kyma post-installation steps for cluster [with `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-post-installation-steps) or [with custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-configure-dns-for-the-cluster-load-balancer).
+3. Install Compass with the following command: 
+
+    ```bash
+    kubectl apply -f https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml
+    ```
 ​
-Then, use the script to check the progress of the Compass installation:
-```bash
-./is-installed.sh
-```
+1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
+    ```bash
+    source <(curl -s https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh)
+    ```
 
 ### Local Minikube installation
 
@@ -103,12 +116,12 @@ To install Compass and Runtime components in a single cluster, follow these step
 
     Once you decide on the installation option, use this command:
     ```bash
-    kubectl apply -f https://storage.cloud.google.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/compass-installer.yaml
+    kubectl apply -f https://storage.googleapis.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/compass-installer.yaml
     ```
 ​
 1. Check the installation progress. To do so, download the script that checks the progress of the installation:
 ```bash
-wget https://storage.cloud.google.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/is-installed.sh && chmod +x ./is-installed.sh
+wget https://storage.googleapis.com/kyma-development-artifacts/compass/{INSTALLATION_OPTION}/is-installed.sh && chmod +x ./is-installed.sh
 ```
 ​
 Then, use the script to check the progress of the Compass installation:
