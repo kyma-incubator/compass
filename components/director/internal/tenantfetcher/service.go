@@ -24,6 +24,7 @@ type QueryConfig struct {
 
 //go:generate mockery -name=TenantStorageService -output=automock -outpkg=automock -case=underscore
 type TenantStorageService interface {
+	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	CreateManyIfNotExists(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
@@ -70,9 +71,22 @@ func (s Service) SyncTenants() error {
 	if err != nil {
 		return err
 	}
+	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
+
 	tenantsToDelete, err := s.getTenantsToDelete()
 	if err != nil {
 		return err
+	}
+
+	deleteTenantsMap := make(map[string]model.BusinessTenantMappingInput)
+	for _, ct := range tenantsToDelete {
+		deleteTenantsMap[ct.ExternalTenant] = ct
+	}
+
+	for i := len(tenantsToCreate) - 1; i >= 0; i-- {
+		if _, found := deleteTenantsMap[tenantsToCreate[i].ExternalTenant]; found {
+			tenantsToCreate = append(tenantsToCreate[:i], tenantsToCreate[i+1:]...)
+		}
 	}
 
 	tx, err := s.transact.Begin()
@@ -82,6 +96,29 @@ func (s Service) SyncTenants() error {
 	defer s.transact.RollbackUnlessCommitted(tx)
 	ctx := context.Background()
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	currentTenants, err := s.tenantStorageService.List(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while listing tenants")
+	}
+
+	currentTenantsMap := make(map[string]bool)
+	for _, ct := range currentTenants {
+		currentTenantsMap[ct.ExternalTenant] = true
+	}
+
+	for i := len(tenantsToCreate) - 1; i >= 0; i-- {
+		if currentTenantsMap[tenantsToCreate[i].ExternalTenant] {
+			tenantsToCreate = append(tenantsToCreate[:i], tenantsToCreate[i+1:]...)
+		}
+	}
+
+	tenantsToDelete = make([]model.BusinessTenantMappingInput, 0)
+	for _, toDelete := range deleteTenantsMap {
+		if currentTenantsMap[toDelete.ExternalTenant] {
+			tenantsToDelete = append(tenantsToDelete, toDelete)
+		}
+	}
 
 	err = s.tenantStorageService.CreateManyIfNotExists(ctx, tenantsToCreate)
 	if err != nil {
@@ -176,4 +213,16 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 	}
 
 	return s.converter.EventsToTenants(eventsType, events), nil
+}
+
+func (s Service) dedupeTenants(tenantsToCreate []model.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
+	elms := make(map[string]model.BusinessTenantMappingInput)
+	for _, tc := range tenantsToCreate {
+		elms[tc.ExternalTenant] = tc
+	}
+	tenantsToCreate = make([]model.BusinessTenantMappingInput, 0, len(elms))
+	for _, t := range elms {
+		tenantsToCreate = append(tenantsToCreate, t)
+	}
+	return tenantsToCreate
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +37,7 @@ func TestService_SyncTenants(t *testing.T) {
 	multiTenantEvents = append(multiTenantEvents, tenantEvents...)
 	multiBusinessTenants := append(businessTenants, businessTenants...)
 	multiBusinessTenants = append(multiBusinessTenants, businessTenants...)
-	var nilSlice []model.BusinessTenantMappingInput
+	emptySlice := []model.BusinessTenantMappingInput{}
 
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -50,7 +51,7 @@ func TestService_SyncTenants(t *testing.T) {
 		ExpectedError      error
 	}{
 		{
-			Name:            "Success when single page",
+			Name:            "Success when empty db and single page",
 			TransactionerFn: txGen.ThatSucceeds,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
@@ -80,18 +81,57 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), append(businessTenants, businessTenants...)).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants).Return(nil).Once()
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc
 			},
 			ExpectedError: nil,
 		},
 		{
-			Name:            "Success when empty page",
+			Name:            "Success when populated db and single page",
 			TransactionerFn: txGen.ThatSucceeds,
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("EventsToTenants", tenantfetcher.DeletedEventsType, tenantEvents).Return(businessTenants).Once()
+				conv.On("EventsToTenants", tenantfetcher.CreatedEventsType, tenantEvents).Return(businessTenants[1:]).Once()
+				conv.On("EventsToTenants", tenantfetcher.UpdatedEventsType, tenantEvents).Return(businessTenants).Once()
+				return conv
+			},
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, tenantfetcher.QueryParams{
+					"pageSize":  "1",
+					"pageNum":   "1",
+					"timestamp": "1",
+				}).Return(nil, nil).Once()
+				return client
+			},
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
+					businessTenants[0].ToBusinessTenantMapping(fixID()),
+				}, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants[1:])).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+				return svc
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:            "Success when empty db and page",
+			TransactionerFn: txGen.ThatSucceeds,
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
 				conv.On("EventsToTenants", tenantfetcher.UpdatedEventsType, tenantEvents).Return(businessTenants).Once()
 				return conv
 			},
@@ -111,13 +151,14 @@ func TestService_SyncTenants(t *testing.T) {
 					"pageSize":  "1",
 					"pageNum":   "1",
 					"timestamp": "1",
-				}).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				}).Return(nil, nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), businessTenants).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants).Return(nil).Once()
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants)).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc
 			},
 			ExpectedError: nil,
@@ -128,7 +169,7 @@ func TestService_SyncTenants(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				conv.On("EventsToTenants", tenantfetcher.CreatedEventsType, multiTenantEvents).Return(multiBusinessTenants).Once()
-				conv.On("EventsToTenants", tenantfetcher.DeletedEventsType, tenantEvents).Return(businessTenants).Once()
+				conv.On("EventsToTenants", tenantfetcher.DeletedEventsType, tenantEvents).Return(businessTenants[0:1]).Once()
 				conv.On("EventsToTenants", tenantfetcher.UpdatedEventsType, tenantEvents).Return(businessTenants).Once()
 				return conv
 			},
@@ -163,8 +204,11 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), append(multiBusinessTenants, businessTenants...)).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants).Return(nil).Once()
+				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
+					businessTenants[0].ToBusinessTenantMapping(fixID()),
+				}, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants[1:])).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants[0:1]).Return(nil).Once()
 				return svc
 			},
 			ExpectedError: nil,
@@ -396,8 +440,9 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc
 			},
 			ExpectedError: testErr,
@@ -430,7 +475,8 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), nilSlice).Return(testErr).Once()
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(testErr).Once()
 				return svc
 			},
 			ExpectedError: testErr,
@@ -463,8 +509,9 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), nilSlice).Return(testErr).Once()
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(testErr).Once()
 				return svc
 			},
 			ExpectedError: testErr,
@@ -473,6 +520,7 @@ func TestService_SyncTenants(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
+
 			persist, transact := testCase.TransactionerFn()
 			conv := testCase.ConverterFn()
 			apiClient := testCase.APIClientFn()
@@ -536,8 +584,9 @@ func TestService_SyncTenants(t *testing.T) {
 			"timestamp": "1",
 		}).Return(nil, nil).Once()
 		tenantStorageSvc := &automock.TenantStorageService{}
-		tenantStorageSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
-		tenantStorageSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), nilSlice).Return(nil).Once()
+		tenantStorageSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+		tenantStorageSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+		tenantStorageSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 
 		svc := tenantfetcher.NewService(tenantfetcher.QueryConfig{
 			PageNumField:   "pageNum",
@@ -558,5 +607,14 @@ func TestService_SyncTenants(t *testing.T) {
 		conv.AssertExpectations(t)
 		apiClient.AssertExpectations(t)
 		tenantStorageSvc.AssertExpectations(t)
+	})
+}
+
+func matchArrayWithoutOrderArgument(t *testing.T, expected []model.BusinessTenantMappingInput) interface{} {
+	return mock.MatchedBy(func(actual []model.BusinessTenantMappingInput) bool {
+		if len(expected) != len(actual) {
+			return false
+		}
+		return assert.ElementsMatch(t, expected, actual, "parameters do not match")
 	})
 }
