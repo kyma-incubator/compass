@@ -101,7 +101,7 @@ There is no actual usecase for an application to consume APIs owned by other own
 
 There are a few queries and mutations owned by owner type application that runtimes consume.
 
-* `query application`, `mutation requestPackageInstanceAuthCreation`, `mutation requestPackageInstanceAuthDeletion` - there should be aa scenario check baked in the resolver implementation. It seems such scenario check is currently missing. Instead of implementing a scenario check is all these places we might try to fit these in the generic design of secured resolvers.
+* `query application`, `mutation requestPackageInstanceAuthCreation`, `mutation requestPackageInstanceAuthDeletion` - there should be a scenario check baked in the resolver implementation. It seems such scenario check is currently missing. Instead of implementing a scenario check is all these places we might try to fit these in the generic design of secured resolvers.
 * `query applicationsForRuntime` already performs a scenario check baked into the code. However, as already mentioned in the document, this query also accepts a `runtime_id` as input parameter and an "ownerID equals consumerID" check must be added.
 
 #### Consumer Type Integration System
@@ -289,6 +289,7 @@ It's important to mention when the actual records in `system_auth_restrictions` 
 
 1. During creation of applications, runtimes, integration systems and application templates, when the consumer type is NOT User, a record has to be inserted so that the consumer system can later access what it created created.
 2. During issuing system credentials for applications, runtimes and integration systems a record has to be inserted so that relevant system can later on access its own metadata.
+3. (Out-of-scope) It is possible to also model scenario labeling as another input for `system_auth_access` creation. This would allow us to not have to bake scenario checks in some specific directives but rather use the system access check that is part of the `limitAccess` directive  
 
 Also, two new GraphQL mutations are introduced to allow admin users to grant and revoke access for systems. The new mutations are protected with a new scope `system_access:write` that is given to admin users.
 
