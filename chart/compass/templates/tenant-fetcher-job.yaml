@@ -105,9 +105,9 @@ spec:
               - name: APP_QUERY_TIMESTAMP_FIELD
                 value: {{ $config.queryMapping.timestampField}}
               - name: APP_QUERY_PAGE_START
-                value: {{ $config.query.startPage}}
+                value: "{{ $config.query.startPage}}"
               - name: APP_QUERY_PAGE_SIZE
-                value: {{ $config.query.pageSize}}
+                value: "{{ $config.query.pageSize}}"
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
               - name: APP_METRICS_PUSH_ENDPOINT
                 value: {{ $.Values.global.metrics.pushEndpoint}}
