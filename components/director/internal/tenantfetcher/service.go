@@ -215,14 +215,14 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 	return s.converter.EventsToTenants(eventsType, events), nil
 }
 
-func (s Service) dedupeTenants(tenantsToCreate []model.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
+func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
 	elms := make(map[string]model.BusinessTenantMappingInput)
-	for _, tc := range tenantsToCreate {
+	for _, tc := range tenants {
 		elms[tc.ExternalTenant] = tc
 	}
-	tenantsToCreate = make([]model.BusinessTenantMappingInput, 0, len(elms))
+	tenants = make([]model.BusinessTenantMappingInput, 0, len(elms))
 	for _, t := range elms {
-		tenantsToCreate = append(tenantsToCreate, t)
+		tenants = append(tenants, t)
 	}
-	return tenantsToCreate
+	return tenants
 }
