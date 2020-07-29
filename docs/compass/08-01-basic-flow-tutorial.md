@@ -12,9 +12,9 @@ For simplicity reasons, use the available Order Service as the sample external A
 - [`order-service`](./assets/order-service.yaml) file that contains the service definition, deployment, and its API
 - [API specification](./assets/order-service-api-spec.yaml) of `order-service`
 - [Lambda function](./assets/lambda.yaml) that calls `order-service` for orders
-- [Compass cluster with all Kyma components](./04-01-installation.md#single-cluster-with-compass-and-runtime-agent)
+- [Compass cluster with all Kyma components installed](./04-01-installation.md#single-cluster-with-compass-and-runtime-agent).
 
->**NOTE:** Read [this](https://kyma-project.io/docs/master/components/compass/#installation-installation) document to learn how to install Kyma with the Compass module.
+>**NOTE:** Read [this](./04-01-installation.md) document to learn how to install Kyma with the Compass module.
 
 ## Steps
 
@@ -24,17 +24,17 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 2. In the **Overview** tab in your Namespace, select the **Deploy new resource** button and use the [`order-service`](./assets/order-service.yaml) file to connect the Application.
 
-3. In the **APIs** tab, copy the URL to your Application. You will use it in the Compass UI in the next steps.
+3. In the **API Rules** tab, copy the URL to your Application. You will use it in the Compass UI in the next steps.
 
 ### Register your Application in the Compass UI
 
 1. Open a separate tab in your browser and go to `https://compass.{CLUSTER_DOMAIN}`. It will navigate you to the Compass UI. From the drop-down list on the top navigation panel, select the tenant you want to work on. For the purpose of this tutorial, select the `default` tenant. In the **Runtimes** tab, there is already the default `kymaruntime` that you can work on to complete this tutorial. Make sure that your Runtime is assigned to the `DEFAULT` scenario.
 
-2. In the left navigation panel, navigate to the **Application** tab and click **Create application...** to register your Application in Compass. Choose **From scratch** from the drop-down list. For the purpose of this tutorial, name your Application `test-app`. By default, your Application is assigned to the `DEFAULT` scenario.
+2. In the left navigation panel, navigate to the **Application** tab and click **Create application...** to register your Application in Compass. Choose **From scratch** from the drop-down list. For the purpose of this tutorial, name your Application `test-app`. By default, your Application is assigned to the `DEFAULT` scenario. Click **Create** button.
 
 3. Select `test-app` in the **Applications** view and add the API spec of the Order Service:
 
-    a. Click the **+** button in the **Packages** section and fill in all the required fields. For the purpose of this tutorial, name your Package `test-package`.
+    a. Click the **Create Package** button in the **Packages** section and fill in all the required fields. For the purpose of this tutorial, name your Package `test-package`.
 
     b. In the **Credentials** tab, choose `None` from the drop-down list to select the credentials type. For the purpose of this tutorial, there is no need to secure the connection. Click **Create**.
 
@@ -45,27 +45,36 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 ### Use your Application in the Kyma Console UI
 
-1. Go back to the Kyma Console UI. You can see that the `test-app` Application is registered in the **Applications** view. Select `test-app` and bind it to your Namespace by selecting the **Create Binding** button.
+1. Go back to the Kyma Console UI. You can see that the `test-app` Application is registered in the **Applications/Systems** view. Select `test-app` and bind it to your Namespace by selecting the **Create Binding** button.
 
-2. From the drop-down list in the top-right corner, select your Namespace and go to the **Catalog** view. You will see your services available under the **Services** tab. Provision the service instance by choosing your Package and clicking the **Add** button in the top-right corner of the page.
+2. From the drop-down list in the top-right corner, select your Namespace and go to the **Catalog** view. You will see your services available under the **Services** tab. Provision the service instance by choosing your Package as selected plan and clicking the **Add** button in the top-right corner of the page.
 
 3. Create a lambda function. In the **Overview** tab, click the **Deploy new resource** button and upload the file with the [lambda function](./assets/lambda.yaml).
 
-4. Expose your lambda:
+4. Bind your lambda:
 
     a. In the left navigation panel, go to the **Lambdas** tab and click the `call-order-service` lambda.
 
-    b. In the **Settings & Code** section, click the **Select Function Trigger** button and expose your lambda via HTTPS.
+    b. Scroll down to the end of the Configuration view and bind your lambda to your instance by clicking the **Create Service Binding** button in the **Service Binding** section. Choose the ServiceInstance you want to bind your lambda to and click **Create Service Binding**.
 
-    c. Untick the **Enable authentication** option as there is no need to secure the connection for the purpose of this tutorial. Click **Add**.
+    c. Save the settings in the right top-right corner of the page.
 
-    d. Scroll down to the end of your lambda view and bind your lambda to your instance by clicking the **Create Service Binding** button in the **Service Binding** section. Choose the ServiceInstance you want to bind your lambda to and click **Create Service Binding**.
+    d. Click the **Lambdas** tab and wait until the lambda status is completed and marked as `1/1`.
 
-    e. Save the settings in the right top-right corner of the page.
+5. Expose your lambda: 
 
-    f. Click the **Lambdas** tab and wait until the lambda status is completed and marked as `1/1`.
+    a. In the left navigation panel, go to the **API Rules** tab and click the **Add API Rule** button.
 
-5. Test your lambda. Navigate to your lambda and go to the **Testing** tab. After you click the **Send** button, you can see the following output in the **Response** field:
+    b. Type `test-lambda` in both Name and Hostname fields. From the **Service** dropdown, select `call-order-service`. Keep the **Access strategies** as they are.
+
+    c. Click **Create** button at the top right corner of the page.
+
+6. Test your lambda. Open terminal app and run the following command:
+    ```bash
+    curl https://test-lambda.{clusterDomain}
+    ```
+
+    You can see the following output:
 
     ```
     {
@@ -74,11 +83,17 @@ For simplicity reasons, use the available Order Service as the sample external A
     }
     ```
 
-    You can test your lambda by performing the following actions in the **Payload** field:
+    You can test your lambda by performing the following actions:
 
     - `{"action":"add"}` - adds the new order
     - `{"action":"list"}` - lists all orders (this is the default command executed after you click the **Send** button)
     - `{"action":"delete"}` - deletes all the orders
+
+    To perform an action, run the following command:
+
+    ```bash
+    curl --header "Content-Type: application/json" --request POST --data '{selectedAction}' https://test-lambda.{clusterDomain}
+    ```
 
 ### Cleanup
 

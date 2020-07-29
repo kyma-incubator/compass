@@ -79,13 +79,7 @@ You can install Compass on a single cluster with all Kyma components, including 
 
 To install Compass and Runtime components in a single cluster, follow these steps:
 
-1. [Install Kyma with the Runtime Agent](https://kyma-project.io/docs/master/components/runtime-agent#installation-installation). You can use the `installer-cr-cluster-runtime.yaml.tpl` Installation CR both for cluster and Minikube installation.
-
-    **NOTE:** For local Minikube installation, in order to reduce memory and CPU usage, from the `installer-cr-cluster-runtime.yaml.tpl` Installation CR you can comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, `kiali`.
-    
-    kyma provision minikube
-    kyma install -c installer-cr-cluster-runtime.yaml.tpl -o kyma/installation/resources/installer-config-local.yaml.tpl
-
+1. [Install Kyma with the Runtime Agent](https://kyma-project.io/docs/master/components/runtime-agent#installation-installation).
 1. Apply the required overrides using the following command:
 
     ```bash
@@ -113,13 +107,10 @@ To install Compass and Runtime components in a single cluster, follow these step
     EOF
     ```
 
-    For local installation, apply additional local overrides using the following command:
+    > **NOTE:** If you installed Kyma on a cluster with custom domain, remember to apply global overrides to the `compass-installer` namespace as well. You can do it with the following command:
 
     ```bash
-    MINIKUBE_IP=$(minikube ip)
-    cat <<EOF | kubectl apply -f -
-    $(sed -e 's/\.minikubeIP: .*/\.minikubeIP: '"${MINIKUBE_IP}"'/g' installation/resources/installer-config-local.yaml.tpl)
-    EOF
+    kubectl get configmap -n kyma-installer {override-name} -oyaml --export | kubectl apply -n compass-installer -f -
     ```
 
 1. Install Compass. ​There are three possible installation options:
@@ -139,11 +130,6 @@ To install Compass and Runtime components in a single cluster, follow these step
 1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
     ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
-    ```
-
-    For local machine, run the following command:
-    ```bash
-    sudo sh -c 'echo "\n$(minikube ip) adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local" >> /etc/hosts'
     ```
 
 Once Compass is installed, Runtime Agent will be configured to fetch configuration from the Compass installation within the same cluster.
