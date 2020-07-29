@@ -19,10 +19,32 @@ There are three types of supported endpoints that receive different types of eve
 - Tenant deletion endpoint
 - Tenant update endpoint
 
-Every endpoint must return a specific payload and accept the following query parameters:
-- **ts** - specifies a timestamp in Unix time, that is the date from which events are fetched
-- **page** - specifies the number of the page to be fetched, starting from `1`
-- **resultsPerPage** - specifies the number of results included on a single page
+Every endpoint must return a specific payload and accept the following type of query parameters:
+- **global.tenantFetcher.job_name.queryMapping.timestampField** - specifies a timestamp in Unix time, that is the date from which events are fetched
+- **global.tenantFetcher.job_name.queryMapping.pageNumField** - specifies the number of the page to be fetched, starting from a preconfigured number via **global.tenantFetcher.job_name.query.startPage**
+- **global.tenantFetcher.job_name.queryMapping.pageSizeField** - specifies the number of results included on a single page
+
+### Response
+
+Almost every top-level data that is expected by the tenant fetcher is configurable. Consider the following example response for the creation endpoint:
+
+```json
+{
+  "events": [
+    {
+      "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\",\"$discriminator\":\"default\"}"
+    }
+  ],
+  "totalResults": 27,
+  "totalPages": 1
+}
+```
+
+- The top-level `events` array is configured with: **global.tenantFetcher.job_name.fieldMapping.tenantEventsField**
+- The top-level `totalResults` is configured with: **global.tenantFetcher.job_name.fieldMapping.totalResultsField**
+- The top-level `totalPages` is configured with: **global.tenantFetcher.job_name.fieldMapping.totalPagesField**
+- The inner field `eventData` contains the details of an event and it is configured by: **global.tenantFetcher.job_name.fieldMapping.detailsField**. The details field is expected to be either a JSON object or a string containing JSON.
+
 
 #### Tenant creation endpoint
 
@@ -101,3 +123,13 @@ Tenant Fetcher binary allows you to override some configuration parameters. You 
 | **global.tenantFetcher.fieldMapping.nameField** | Name of the field in the event data payload that contains the tenant name | `"name"` |
 | **global.tenantFetcher.fieldMapping.discriminatorField** | Optional name of the field in the event data payload used to filter created tenants. If provided, only the events that contain this field with the value specified in **discriminatorValue** are used. | None |
 | **global.tenantFetcher.fieldMapping.discriminatorValue** | Optional value of the discriminator field used to filter  created tenants. It is used only if **discriminatorField** is provided. | None |
+| **global.tenantFetcher.fieldMapping.tenantEventsField** | Mandatory value of the field name of the top-level events array |
+| **global.tenantFetcher.fieldMapping.totalPagesField** | Mandatory value of the field name of the top-level property showing the number of pages |
+| **global.tenantFetcher.fieldMapping.totalResultsField** | Mandatory value of the field name of the top-level property showing the number of total results |
+| **global.tenantFetcher.fieldMapping.detailsField** | Mandatory value of the field name of the inner property showing the event details |
+| **global.tenantFetcher.queryMapping.pageNumField** | Mandatory value of the query parameter name for the page number |
+| **global.tenantFetcher.queryMapping.pageSizeField** | Mandatory value of the query parameter name for the page size |
+| **global.tenantFetcher.queryMapping.timestampField** | Mandatory value of the query parameter name for the timestamp |
+| **global.tenantFetcher.query.startPage** | Mandatory value of the query parameter value for the starting page, i.e `0` or `1` |
+| **global.tenantFetcher.query.pageSize** | Mandatory value of the query parameter value for the page size |
+
