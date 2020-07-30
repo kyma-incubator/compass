@@ -30,7 +30,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 1. Open a separate tab in your browser and go to `https://compass.{CLUSTER_DOMAIN}`. It will navigate you to the Compass UI. From the drop-down list on the top navigation panel, select the tenant you want to work on. For the purpose of this tutorial, select the `default` tenant. In the **Runtimes** tab, there is already the default `kymaruntime` that you can work on to complete this tutorial. Make sure that your Runtime is assigned to the `DEFAULT` scenario.
 
-2. In the left navigation panel, navigate to the **Application** tab and click **Create application...** to register your Application in Compass. Choose **From scratch** from the drop-down list. For the purpose of this tutorial, name your Application `test-app`. By default, your Application is assigned to the `DEFAULT` scenario. Click **Create** button.
+2. In the left navigation panel, navigate to the **Application** tab and click **Create application...** to register your Application in Compass. Choose **From scratch** from the drop-down list. For the purpose of this tutorial, name your Application `test-app`. By default, your Application is assigned to the `DEFAULT` scenario. Click the **Create** button.
 
 3. Select `test-app` in the **Applications** view and add the API spec of the Order Service:
 
@@ -55,26 +55,26 @@ For simplicity reasons, use the available Order Service as the sample external A
 
     a. In the left navigation panel, go to the **Lambdas** tab and click the `call-order-service` lambda.
 
-    b. Scroll down to the end of the Configuration view and bind your lambda to your instance by clicking the **Create Service Binding** button in the **Service Binding** section. Choose the ServiceInstance you want to bind your lambda to and click **Create Service Binding**.
+    b. Scroll down to the end of the Configuration view and bind your function to your instance by clicking the **Create Service Binding** button in the **Service Binding** section. Choose the ServiceInstance you want to bind your function to and click **Create Service Binding**.
 
-    c. Save the settings in the right top-right corner of the page.
+    c. Save the settings in the top right corner of the page.
 
-    d. Click the **Lambdas** tab and wait until the lambda status is completed and marked as `1/1`.
+    d. Click the **Functions** tab and wait until the function status is completed and marked as `1/1`.
 
-5. Expose your lambda: 
+5. Expose your function: 
 
     a. In the left navigation panel, go to the **API Rules** tab and click the **Add API Rule** button.
 
-    b. Type `test-lambda` in both Name and Hostname fields. From the **Service** dropdown, select `call-order-service`. Keep the **Access strategies** as they are.
+    b. Type `test-function` in both the **Name** and **Hostname** fields. From the **Service** dropdown, select `call-order-service`. Keep **Access strategies** as they are.
 
-    c. Click **Create** button at the top right corner of the page.
+    c. Click the **Create** button in the top right corner of the page.
 
-6. Test your lambda. Open terminal app and run the following command:
+6. Test your function. Open the terminal and run the following command:
     ```bash
-    curl https://test-lambda.{clusterDomain}
+    curl https://test-lambda.{CLUSTER_DOMAIN}
     ```
 
-    You can see the following output:
+    This returns the following output:
 
     ```
     {
@@ -83,7 +83,7 @@ For simplicity reasons, use the available Order Service as the sample external A
     }
     ```
 
-    You can test your lambda by performing the following actions:
+    You can test your function by performing the following actions:
 
     - `{"action":"add"}` - adds the new order
     - `{"action":"list"}` - lists all orders (this is the default command executed after you click the **Send** button)
@@ -92,7 +92,7 @@ For simplicity reasons, use the available Order Service as the sample external A
     To perform an action, run the following command:
 
     ```bash
-    curl --header "Content-Type: application/json" --request POST --data '{selectedAction}' https://test-lambda.{clusterDomain}
+    curl --header "Content-Type: application/json" --request POST --data '{SELECTED_ACTION}' https://test-function.{CLUSTER_DOMAIN}
     ```
 
 ### Cleanup
