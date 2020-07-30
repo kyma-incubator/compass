@@ -71,7 +71,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 6. Test your function. Open the terminal and run the following command:
     ```bash
-    curl https://test-lambda.{CLUSTER_DOMAIN}
+    curl https://test-function.{CLUSTER_DOMAIN}
     ```
 
     This returns the following output:

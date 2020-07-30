@@ -25,7 +25,7 @@ To install Compass as central Management Plane on a cluster, follow these steps:
     ```bash
     export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION_HERE}
     ```
-1. Prepare the cluster for custom installation. Read how to prepare the cluster [with the `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-prepare-the-cluster) or [with a custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-prepare-the-cluster). Remember to apply all global overrides both in the `kyma-installer` and `compass-installer` Namespaces.
+1. Prepare the cluster for custom installation. Read how to prepare the cluster [with the `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-prepare-the-cluster) or [with a custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-prepare-the-cluster). Remember to apply all global overrides in both the `kyma-installer` and `compass-installer` Namespaces.
 1. Apply overrides using the following command from the root directory of the Compass repository:
 
     ```bash
@@ -114,13 +114,13 @@ To install Compass and Runtime components on a single cluster, follow these step
     | Installation option     	| Value to use with the installation command   	| Example value          	|
     |-------------------------	|-------------------	|-------------------------	|
     | From the `master` branch 	| `master`          	| `master`                	|
-    | From the specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
-    | From the specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
+    | From a specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+    | From a specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
 
     Once you decide on the installation option, use these commands:
     
     ```bash
-    export INSTALLATION_OPTION={installationOption}
+    export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION}
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
     ```
 1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
@@ -203,8 +203,8 @@ To install Compass and Runtime components on Minikube, follow these steps:
     | Installation option     	| Value to use with the installation command   	| Example value          	|
     |-------------------------	|-------------------	|-------------------------	|
     | From the `master` branch 	| `master`          	| `master`                	|
-    | From the specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
-    | From the specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
+    | From a specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+    | From a specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
 
     Once you decide on the installation option, use these commands:
     ```bash
