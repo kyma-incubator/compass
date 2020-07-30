@@ -47,7 +47,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 1. Go back to the Kyma Console UI. You can see that the `test-app` Application is registered in the **Applications/Systems** view. Select `test-app` and bind it to your Namespace by selecting the **Create Binding** button.
 
-2. From the drop-down list in the top-right corner, select your Namespace and go to the **Catalog** view. You will see your services available under the **Services** tab. Provision the service instance by choosing your Package as selected plan and clicking the **Add** button in the top-right corner of the page.
+2. From the drop-down list in the top-right corner, select your Namespace and go to the **Catalog** view. You will see your services available under the **Services** tab. Provision the service instance by choosing your Package as **Selected plan** from the dropdown list and clicking the **Add** button in the top-right corner of the page.
 
 3. Create a lambda function. In the **Overview** tab, click the **Deploy new resource** button and upload the file with the [lambda function](./assets/lambda.yaml).
 
