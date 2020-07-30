@@ -50,13 +50,25 @@ spec:
           # available dbtypes are: [memory, mssql]
           value: "memory"
 ---
-apiVersion: gateway.kyma-project.io/v1alpha2
-kind: Api
+apiVersion: gateway.kyma-project.io/v1alpha1
+kind: APIRule
 metadata:
   name: order-service
 spec:
-  authentication: []
-  hostname: test
+  gateway: kyma-gateway.kyma-system.svc.cluster.local
+  rules:
+  - accessStrategies:
+    - config: {}
+      handler: allow
+    methods:
+    - GET
+    - POST
+    - PUT
+    - PATCH
+    - DELETE
+    - HEAD
+    path: /.*
   service:
+    host: test
     name: order-service
     port: 8017
