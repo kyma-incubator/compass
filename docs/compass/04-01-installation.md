@@ -25,7 +25,6 @@ To install Compass as central Management Plane on cluster, follow these steps:
     ```bash
     export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION_HERE}
     ```
-
 1. Prepare the cluster for custom installation. Read how to prepare the cluster [with the `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-prepare-the-cluster) or [with a custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-prepare-the-cluster). Remember to apply all global overrides both in the `kyma-installer` and `compass-installer` Namespaces.
 1. Apply overrides using the following command from the root directory of the Compass repository:
 
@@ -33,26 +32,22 @@ To install Compass as central Management Plane on cluster, follow these steps:
     kubectl create namespace kyma-installer || true \
         && kubectl apply -f ./installation/resources/installer-overrides-compass-gateway.yaml
     ```
-
-2. Perform minimal Kyma installation with the following command:
+1. Perform minimal Kyma installation with the following command:
 
     ```bash
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/kyma-installer.yaml"
     ```
-​
 1. Check the Kyma installation progress. To do so, download the script and check the progress of the installation:
     
     ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-kyma-installed.sh")
     ```
-
 1. Perform Kyma post-installation steps for a cluster [with the `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-post-installation-steps) or [with a custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-configure-dns-for-the-cluster-load-balancer).
 1. Install Compass with the following command: 
 
     ```bash
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
-    ```
-​
+    ```​   
 1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
    
      ```bash
@@ -114,7 +109,6 @@ To install Compass and Runtime components on a single cluster, follow these step
     ```bash
     kubectl get configmap -n kyma-installer {OVERRIDE_NAME} -oyaml --export | kubectl apply -n compass-installer -f -
     ```
-
 1. Install Compass. ​There are three possible installation options:
 
     | Installation option     	| Value to use with the installation command   	| Example value          	|
@@ -124,12 +118,13 @@ To install Compass and Runtime components on a single cluster, follow these step
     | From the specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
 
     Once you decide on the installation option, use these commands:
+    
     ```bash
     export INSTALLATION_OPTION={installationOption}
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
     ```
-
 1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
+    
     ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
     ```
@@ -145,6 +140,7 @@ To install Compass and Runtime components on Minikube, follow these steps:
     ```bash
     kyma provision minikube
     ```
+
 1. Prepare the Installation CR and overrides:
     
     ```bash
@@ -163,8 +159,8 @@ To install Compass and Runtime components on Minikube, follow these steps:
       global.disableLegacyConnectivity: "true"
     EOF
     ```
+
 1. In order to reduce memory and CPU usage, from the downloaded `installer-cr-cluster-runtime.yaml.tpl` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, and `kiali`.
-    
 1. Install Kyma with the Runtime Agent using the prepared files: 
 
     ```bash
@@ -203,7 +199,7 @@ To install Compass and Runtime components on Minikube, follow these steps:
     ```
 
 1. Install Compass. ​There are three possible installation options:
-
+    
     | Installation option     	| Value to use with the installation command   	| Example value          	|
     |-------------------------	|-------------------	|-------------------------	|
     | From the `master` branch 	| `master`          	| `master`                	|
