@@ -8,7 +8,7 @@ Compass as a central Management Plane cluster requires minimal Kyma installation
 
 ### Cluster installation
 
-To install Compass as central Management Plane on cluster, follow these steps:
+To install Compass as central Management Plane on a cluster, follow these steps:
 
 1. Select installation option for Compass and Kyma. ​There are three possible installation options:
 
