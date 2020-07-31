@@ -42,14 +42,17 @@ type MetricsPusher interface {
 	RecordEventingRequest(method string, statusCode int, desc string)
 }
 
+// QueryParams describes the key and the corresponding value for query parameters when requesting the service
 type QueryParams map[string]string
 
+// tenantResponseMapper describes which fields correspond to what value from the service's response
 type tenantResponseMapper struct {
 	TotalPagesField   string
 	TotalResultsField string
 	EventsField       string
 }
 
+// Remap returns the actual tenant event response mapped by the provided fields in the struct
 func (trd *tenantResponseMapper) Remap(v map[string]interface{}) TenantEventsResponse {
 	events := make([]Event, 0)
 
@@ -72,6 +75,7 @@ func (trd *tenantResponseMapper) Remap(v map[string]interface{}) TenantEventsRes
 	}
 }
 
+// Client implements the communication with the service
 type Client struct {
 	httpClient    *http.Client
 	metricsPusher MetricsPusher

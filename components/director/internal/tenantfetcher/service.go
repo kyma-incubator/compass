@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// QueryConfig contains the name of query parameters fields and default/start values
 type QueryConfig struct {
 	PageNumField   string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
 	PageSizeField  string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
