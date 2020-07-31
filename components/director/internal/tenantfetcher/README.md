@@ -20,9 +20,9 @@ There are three types of supported endpoints that receive different types of eve
 - Tenant update endpoint
 
 Every endpoint must return a specific payload and accept the following type of query parameters:
-- **global.tenantFetcher.job_name.queryMapping.timestampField** - specifies a timestamp in Unix time, that is the date from which events are fetched
-- **global.tenantFetcher.job_name.queryMapping.pageNumField** - specifies the number of the page to be fetched, starting from a preconfigured number via **global.tenantFetcher.job_name.query.startPage**
-- **global.tenantFetcher.job_name.queryMapping.pageSizeField** - specifies the number of results included on a single page
+- **global.tenantFetcher.*job_name*.queryMapping.timestampField** - specifies a timestamp in Unix time, that is the date from which events are fetched
+- **global.tenantFetcher.*job_name*.queryMapping.pageNumField** - specifies the number of the page to be fetched, starting from a preconfigured number via **global.tenantFetcher.*job_name*.query.startPage**
+- **global.tenantFetcher.*job_name*.queryMapping.pageSizeField** - specifies the number of results included on a single page
 
 ### Response
 
@@ -40,10 +40,10 @@ Almost every top-level data that is expected by the tenant fetcher is configurab
 }
 ```
 
-- The top-level `events` array is configured with: **global.tenantFetcher.job_name.fieldMapping.tenantEventsField**
-- The top-level `totalResults` is configured with: **global.tenantFetcher.job_name.fieldMapping.totalResultsField**
-- The top-level `totalPages` is configured with: **global.tenantFetcher.job_name.fieldMapping.totalPagesField**
-- The inner field `eventData` contains the details of an event and it is configured by: **global.tenantFetcher.job_name.fieldMapping.detailsField**. The details field is expected to be either a JSON object or a string containing JSON.
+- The top-level `events` array is configured with: **global.tenantFetcher.*job_name*.fieldMapping.tenantEventsField**
+- The top-level `totalResults` is configured with: **global.tenantFetcher.*job_name*.fieldMapping.totalResultsField**
+- The top-level `totalPages` is configured with: **global.tenantFetcher.*job_name*.fieldMapping.totalPagesField**
+- The inner field `eventData` contains the details of an event and it is configured by: **global.tenantFetcher.*job_name*.fieldMapping.detailsField**. The details field is expected to be either a JSON object or a string containing JSON.
 
 
 #### Tenant creation endpoint
