@@ -347,9 +347,64 @@ We will introduce some new scopes so that systems can't list all applications, r
 
 A possible improvement would be to grant list access to systems too but filter the response based on `system_auth_access` so that a system can list only what it is authorized to see.
 
-### Concerns
+### Benefits
 
-Since we abstract away the consumer dimension by using its system_auth/credentials, when a consumer gets a second set of credentials, these second credentials won't be authorized to access what the first set can access by default. Granting the second set of credentials the same accesses as the first set has would require copying the records from `system_auth_access` relevant for the first `system_auth_id` also for the second `system_auth_id`. This can also be mitigated by allowing a single set of credentials per system (which seems naturally the correct thing to do). It can also be considered a security improvement in the sense that if someone manages to request a second set of credentials for an existing system, he/she won't be able to tamper with the data that this system can actually access.
+1. There are foreign key constraints for everything related to the `system_auth_access` table and no custom exists checks are needed, also cascade deletions can be leveraged and no custom implementation in deletion flows in needed.  
+2. Logic in grant access api is relatively simple.
+3. Amount of data in `system_auth_access` is relatively small. 
+
+### Drawbacks
+
+1. Since we abstract away the consumer dimension by using its system_auth/credentials, when a consumer gets a second set of credentials, these second credentials won't be authorized to access what the first set can access by default. Granting the second set of credentials the same accesses as the first set has would require copying the records from `system_auth_access` relevant for the first `system_auth_id` also for the second `system_auth_id`. This can also be mitigated by allowing a single set of credentials per system (which seems naturally the correct thing to do). It can also be considered a security improvement in the sense that if someone manages to request a second set of credentials for an existing system, he/she won't be able to tamper with the data that this system can actually access.
+2. While we managed to achieve a design with a single directive, its logic still has a certain degree of complexity in it due to the concept of provider functions and the required provider key input parameter. 
+
+## Variations to the `system_auth_acesss` table
+
+### Modeling consumer to resource access 
+
+One possible variation would be to rename the table to `resource_access` and store `consumer_id`, `consumer_type`, `resource_id`, `resource_type` where the first two columns specify who the consumer (app, int system, runtime) that can access the resource is. The `resource_id` and `resource_type` columns specify which is the actual resource that can be accessed (it can be in any other table in the database).
+
+Since in this approach we store information about who can access every single resource, we could model "access filters" that will be added in the Go context and used to extend the select database query with a join and a where clause. This way we won't need to do db calls in the directive, the directive will just add access filters to the go context.
+
+#### Benefits:
+
+1. The directive logic becomes simpler. It doesn't need a map of providers but can just execute a common query for all cases:
+```sql
+SELECT 1 
+FROM resource_access 
+WHERE consumer_id='consumer-id-from-ctx' 
+    AND consumer_type='consumer-type-from-ctx' 
+    AND resource_id='input-from-graphql-args'
+```
+
+2. Also, we solve the concern from the above approach where creating a second set of credentials for a system won't have the same access rights will not require additional implementation as we are going away from system_auths. 
+
+#### Drawbacks 
+
+1. The table will be very big - it will contain as much rows as the sum of all rows of all other tables multiplied by the number of consumers.
+2. Inserting in the table will need to happen in each create, register, add resolver. In some resolvers such as RegisterApplication that create additional related resources as part of the resolver logic (`createRelatedResources` method) there would also need to be inserts to the `consumer_access` table. Basically, we would need to modify each Repository.Create method to also insert in the `consumer_access` table.
+3. The new API `grant_consumer_access` would be pretty tough to implement as if we are granting access to integration system for application and all its subentities, we would need custom logic to verify the app exists and find all subentities ids so we can insert relevant records to `consumer_access` with `resource_id` values. This custom logic will be different for runtimes and integration systems and it looks like this API will become pretty complex.
+4. Due to the fact the that id columns can represent multiple different entities, there cannot be foreign key constraints to verify that the consumer and resource actually exist and to allow cascade deletion when the consumer or resource are deleted. This means that we would need custom logic during deletion of a resource to find and delete all its `related` records in the `consumer_access` table. Basically, each Repo.Delete method would need to also check and delete relevant related `consumer_access` records. 
+5. How do we model UNRESTRICTED access for global integration systems such as UI, KEB and provisioner ? 
+
+### Modeling consumer to owner access
+
+Having access data stored for every single resource seems a bit execessive. In this approach we limit the stored access information to the owners only.
+
+Here, the two models from the previous sections meet in the middle - the table would be a `consumer_access` with columns `consumer_id`, `consumer_type`, `owner_id`, `owner_type`.
+
+#### Benefits
+
+1. This approach still solves the multiple credentials for a system drawback of the first approach 
+2. The actual table will contain less rows than the previous two approaches. 
+3. The grant access API would be much simpler to implement than in the second approach but still a bit more complex than in the first approach as we need to check if the consumer and owner exist (due to lack of FK constraints)
+
+#### Drawbacks
+
+1. It still has a more complex directive with provider functions similarly to the first approach
+2. Foreign keys are still not possible similary to the second approach so custom exists validation in grant access API and custom delete logic during deletion of an owner resource is needed. In this case we don't need to modifiy the deletion of all resources but only for the 4 owner types.
+3. How do we model UNRESTRICTED access for global integration systems such as UI, KEB and provisioner ? Maybe empty owner ? - this is not very idiomatic. 
+
 
 ## Additional Researched Approaches
 
@@ -403,7 +458,7 @@ Steps 1-9 can be replaced by a simpler alternative: User directly requesting cli
 18. Integration system verifies token with its Token Issuer Service if needed. If it's a Connector token, next step can also serve as verification
 19. Integration system does whatever is needed to setup trust with LoB app
 20. Integration system calls director with OTT and integ sys creds for credentials stacking
-21. Director verifies its a known token and grants sys auth access to the intsystem credentials for the app for which this token was issued for, deleting the merged in system auths record that was created as part of the token issuing.
+21. Director verifies its a known token and grants sys auth access to the intsystem credentials for the app for which this token was issued for, deleting the merged in system auths record that was created as part of the token issuing. The director may also return the application details (id, etc) so that the integration system would know what it has been granted access for (alternatively, this can be skipped if the application_id was encoded in the OTT).
 22. Int system can now register packages, APIs and events for the app and can set a webhook for credentials requests (package instance auth requests)
 
 Some benefits:
