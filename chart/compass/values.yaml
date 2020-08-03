@@ -211,7 +211,7 @@ global:
               give_up_after: 3s
               max_delay: 2000ms
 
-  tenantFetcher:
+  tenantFetchers:
     # job1:
     #   enabled: false
     #   manageSecrets: true
@@ -246,7 +246,7 @@ global:
     #     maxIdleConnections: 1
 
     # job2:
-    #   enabled: false
+    #   enabled: true
     #   manageSecrets: true
     #   providerName: "compass"
     #   schedule: "*/5 * * * *"
@@ -272,8 +272,8 @@ global:
     #     pageSizeField: "pageSize"
     #     timestampField: "timestamp"
     #   query:
-    #     startPage: "0"
-    #     pageSize: "100"
+    #     startPage: 0
+    #     pageSize: 100
     #   dbPool:
     #     maxOpenConnections: 1
     #     maxIdleConnections: 1
