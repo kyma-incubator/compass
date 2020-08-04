@@ -13,15 +13,15 @@ type EventAPIClient struct {
 }
 
 // FetchTenantEventsPage provides a mock function with given fields: eventsType, additionalQueryParams
-func (_m *EventAPIClient) FetchTenantEventsPage(eventsType tenantfetcher.EventsType, additionalQueryParams tenantfetcher.QueryParams) (*tenantfetcher.TenantEventsResponse, error) {
+func (_m *EventAPIClient) FetchTenantEventsPage(eventsType tenantfetcher.EventsType, additionalQueryParams tenantfetcher.QueryParams) (tenantfetcher.TenantEventsResponse, error) {
 	ret := _m.Called(eventsType, additionalQueryParams)
 
-	var r0 *tenantfetcher.TenantEventsResponse
-	if rf, ok := ret.Get(0).(func(tenantfetcher.EventsType, tenantfetcher.QueryParams) *tenantfetcher.TenantEventsResponse); ok {
+	var r0 tenantfetcher.TenantEventsResponse
+	if rf, ok := ret.Get(0).(func(tenantfetcher.EventsType, tenantfetcher.QueryParams) tenantfetcher.TenantEventsResponse); ok {
 		r0 = rf(eventsType, additionalQueryParams)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tenantfetcher.TenantEventsResponse)
+			r0 = ret.Get(0).(tenantfetcher.TenantEventsResponse)
 		}
 	}
 

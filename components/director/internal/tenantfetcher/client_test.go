@@ -33,10 +33,6 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantCreated: endpoint + "/created",
 		EndpointTenantDeleted: endpoint + "/deleted",
 		EndpointTenantUpdated: endpoint + "/updated",
-
-		EventsField:       "events",
-		TotalPagesField:   "totalPages",
-		TotalResultsField: "totalResults",
 	}
 	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
 	client.SetMetricsPusher(metricsPusherMock)
@@ -89,7 +85,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
 		// THEN
 		require.NoError(t, err)
-		require.Empty(t, res.Events)
+		require.Empty(t, res)
 	})
 
 	t.Run("Error when endpoint not parsable", func(t *testing.T) {

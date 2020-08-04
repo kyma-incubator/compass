@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/tidwall/gjson"
 
 	pkgErrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -31,10 +30,6 @@ type APIConfig struct {
 	EndpointTenantCreated string `envconfig:"APP_ENDPOINT_TENANT_CREATED"`
 	EndpointTenantDeleted string `envconfig:"APP_ENDPOINT_TENANT_DELETED"`
 	EndpointTenantUpdated string `envconfig:"APP_ENDPOINT_TENANT_UPDATED"`
-
-	TotalPagesField   string `envconfig:"APP_TENANT_TOTAL_PAGES_FIELD"`
-	TotalResultsField string `envconfig:"APP_TENANT_TOTAL_RESULTS_FIELD"`
-	EventsField       string `envconfig:"APP_TENANT_EVENTS_FIELD"`
 }
 
 //go:generate mockery -name=MetricsPusher -output=automock -outpkg=automock -case=underscore
@@ -45,41 +40,12 @@ type MetricsPusher interface {
 // QueryParams describes the key and the corresponding value for query parameters when requesting the service
 type QueryParams map[string]string
 
-// tenantResponseMapper describes which fields correspond to what value from the service's response
-type tenantResponseMapper struct {
-	TotalPagesField   string
-	TotalResultsField string
-	EventsField       string
-}
-
-// Remap returns the actual tenant event response mapped by the provided fields in the struct
-func (trd *tenantResponseMapper) Remap(b []byte) TenantEventsResponse {
-	events := gjson.GetBytes(b, trd.EventsField)
-	if !events.Exists() {
-		return TenantEventsResponse{
-			Events:       nil,
-			TotalResults: 0,
-			TotalPages:   1,
-		}
-	}
-
-	totalPages := gjson.GetBytes(b, trd.TotalPagesField).Int()
-	totalResults := gjson.GetBytes(b, trd.TotalResultsField).Int()
-
-	return TenantEventsResponse{
-		Events:       []byte(events.Raw),
-		TotalPages:   int(totalPages),
-		TotalResults: int(totalResults),
-	}
-}
-
 // Client implements the communication with the service
 type Client struct {
 	httpClient    *http.Client
 	metricsPusher MetricsPusher
 
-	responseMapper tenantResponseMapper
-	apiConfig      APIConfig
+	apiConfig APIConfig
 }
 
 func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
@@ -94,11 +60,6 @@ func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
 	return &Client{
 		httpClient: httpClient,
 		apiConfig:  apiConfig,
-		responseMapper: tenantResponseMapper{
-			EventsField:       apiConfig.EventsField,
-			TotalPagesField:   apiConfig.TotalPagesField,
-			TotalResultsField: apiConfig.TotalResultsField,
-		},
 	}
 }
 
@@ -106,7 +67,7 @@ func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
 	c.metricsPusher = metricsPusher
 }
 
-func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (*TenantEventsResponse, error) {
+func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error) {
 	endpoint, err := c.getEndpointForEventsType(eventsType)
 	if err != nil {
 		return nil, err
@@ -140,9 +101,7 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "while reading response body")
 	}
-	tenantEvents := c.responseMapper.Remap(bytes)
-
-	return &tenantEvents, nil
+	return bytes, nil
 }
 
 func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error) {

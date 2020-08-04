@@ -9,16 +9,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 )
 
-func fixEvent(id, name string, fieldMapping tenantfetcher.TenantFieldMapping) tenantfetcher.Event {
+func fixEvent(id, name string, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
 	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s"}`, fieldMapping.IDField, id, fieldMapping.NameField, name)
 
-	return tenantfetcher.Event{
-		"id":        fixID(),
-		"eventData": eventData,
-	}
+	return []byte(fmt.Sprintf(`{
+		"id":        %s,
+		"eventData": %s,
+	}`, fixID(), eventData))
 }
 
-func fixEventWithDiscriminator(id, name, discriminator string, fieldMapping tenantfetcher.TenantFieldMapping) tenantfetcher.Event {
+func fixEventWithDiscriminator(id, name, discriminator string, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
 	discriminatorData := ""
 	if fieldMapping.DiscriminatorField != "" {
 		discriminatorData = fmt.Sprintf(`"%s": "%s",`, fieldMapping.DiscriminatorField, discriminator)
@@ -26,10 +26,10 @@ func fixEventWithDiscriminator(id, name, discriminator string, fieldMapping tena
 
 	eventData := fmt.Sprintf(`{"%s":"%s",%s"%s":"%s"}`, fieldMapping.IDField, id, discriminatorData, fieldMapping.NameField, name)
 
-	return tenantfetcher.Event{
-		"id":        fixID(),
-		"eventData": eventData,
-	}
+	return []byte(fmt.Sprintf(`{
+		"id":        %s,
+		"eventData": %s,
+	}`, fixID(), eventData))
 }
 
 func fixBusinessTenantMappingInput(name, externalTenant, provider string) model.BusinessTenantMappingInput {
@@ -40,12 +40,12 @@ func fixBusinessTenantMappingInput(name, externalTenant, provider string) model.
 	}
 }
 
-func fixTenantEventsResponse(events []tenantfetcher.Event, total, pages int) *tenantfetcher.TenantEventsResponse {
-	return &tenantfetcher.TenantEventsResponse{
-		Events:       events,
-		TotalResults: total,
-		TotalPages:   pages,
-	}
+func fixTenantEventsResponse(events []byte, total, pages int) tenantfetcher.TenantEventsResponse {
+	return tenantfetcher.TenantEventsResponse(fmt.Sprintf(`{
+		"events":       %s,
+		"total": %d,
+		"pages":   %d,
+	}`, string(events), total, pages))
 }
 
 func fixID() string {

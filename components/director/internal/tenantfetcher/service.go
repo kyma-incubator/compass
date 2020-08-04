@@ -2,7 +2,6 @@ package tenantfetcher
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"time"
 
@@ -18,6 +17,10 @@ import (
 )
 
 type TenantFieldMapping struct {
+	TotalPagesField   string `envconfig:"APP_TENANT_TOTAL_PAGES_FIELD"`
+	TotalResultsField string `envconfig:"APP_TENANT_TOTAL_RESULTS_FIELD"`
+	EventsField       string `envconfig:"APP_TENANT_EVENTS_FIELD"`
+
 	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
 	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
@@ -41,14 +44,9 @@ type TenantStorageService interface {
 	DeleteMany(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput) error
 }
 
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
-type Converter interface {
-	EventsToTenants(eventsType EventsType, events []Event) []model.BusinessTenantMappingInput
-}
-
 //go:generate mockery -name=EventAPIClient -output=automock -outpkg=automock -case=underscore
 type EventAPIClient interface {
-	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (*TenantEventsResponse, error)
+	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error)
 }
 
 const (
@@ -57,9 +55,8 @@ const (
 )
 
 type Service struct {
-	queryConfig QueryConfig
-	transact    persistence.Transactioner
-	// converter            Converter
+	queryConfig          QueryConfig
+	transact             persistence.Transactioner
 	eventAPIClient       EventAPIClient
 	tenantStorageService TenantStorageService
 	providerName         string
@@ -72,6 +69,7 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, fie
 	return &Service{
 		transact:             transact,
 		fieldMapping:         fieldMapping,
+		providerName:         providerName,
 		eventAPIClient:       client,
 		tenantStorageService: tenantStorageService,
 		queryConfig:          queryConfig,
@@ -204,19 +202,16 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 	}
 
 	tenants := make([]model.BusinessTenantMappingInput, 0)
-	tenants = append(tenants, s.convert(eventsType, firstPage.Events)...)
-	// events := firstPage.Events
-	// events = append(events, firstPage.Events)
+	tenants = append(tenants, s.convert(eventsType, firstPage)...)
+	initialCount := gjson.GetBytes(firstPage, s.fieldMapping.TotalResultsField).Int()
+	totalPages := gjson.GetBytes(firstPage, s.fieldMapping.TotalPagesField).Int()
 
-	initialCount := firstPage.TotalResults
-	totalPages := firstPage.TotalPages
-
-	pageStart, err := strconv.Atoi(s.queryConfig.PageStartValue)
+	pageStart, err := strconv.ParseInt(s.queryConfig.PageStartValue, 10, 64)
 	if err != nil {
 		return nil, err
 	}
 	for i := pageStart + 1; i <= totalPages; i++ {
-		params[s.queryConfig.PageNumField] = strconv.Itoa(i)
+		params[s.queryConfig.PageNumField] = strconv.FormatInt(i, 10)
 		res, err := s.eventAPIClient.FetchTenantEventsPage(eventsType, params)
 		if err != nil {
 			return nil, errors.Wrap(err, "while fetching tenant events page")
@@ -224,59 +219,43 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 		if res == nil {
 			return nil, apperrors.NewInternalError("next page was expected but response was empty")
 		}
-		if initialCount != res.TotalResults {
+		if initialCount != gjson.GetBytes(res, s.fieldMapping.TotalResultsField).Int() {
 			return nil, apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
 		}
-		// events = append(events, res.Events)
-		tenants = append(tenants, s.convert(eventsType, res.Events)...)
+		tenants = append(tenants, s.convert(eventsType, res)...)
 	}
 
-	return nil, nil
-	// return s.converter.EventsToTenants(eventsType, events), nil
+	return tenants, nil
 }
 
 func (s Service) convert(eventType EventsType, eventsJSON []byte) []model.BusinessTenantMappingInput {
 	events := make([]model.BusinessTenantMappingInput, 0)
-	gjson.GetBytes(eventsJSON, "").ForEach(func(key gjson.Result, event gjson.Result) bool {
-		var eventData map[string]interface{}
-		details := event.Get(s.fieldMapping.DetailsField).Value()
-		switch details.(type) {
-		case string:
-			eventDataJSON, ok := details.(string)
-			if !ok {
-				log.Warnf("Invalid event data format: %+v", event)
-				return true
-			}
-			err := json.Unmarshal([]byte(eventDataJSON), &eventData)
-			if err != nil {
-				log.Warnf("Could not unmarshal event data", event)
-				return true
-			}
-		case map[string]interface{}:
-			var ok bool
-			eventData, ok = details.(map[string]interface{})
-			if !ok {
-				log.Warnf("Invalid event data format: %+v", event)
-				return true
-			}
-			tenant, err := s.eventDataToTenant(eventType, eventData)
-			if err != nil {
-				log.Warnf("Could not convert tenant: %s", err.Error())
-				return true
-			}
-			events = append(events, *tenant)
-		default:
+	gjson.GetBytes(eventsJSON, s.fieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
+		detailsType := event.Get(s.fieldMapping.DetailsField).Type
+		var details []byte
+		if detailsType == gjson.String {
+			details = []byte(gjson.Parse(event.Get(s.fieldMapping.DetailsField).String()).Raw)
+		} else if detailsType == gjson.JSON {
+			details = []byte(event.Get(s.fieldMapping.DetailsField).Raw)
+		} else {
 			log.Warnf("Invalid event data format: %+v", event)
 			return true
 		}
+
+		tenant, err := s.eventDataToTenant(eventType, details)
+		if err != nil {
+			log.Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
+			return true
+		}
+		events = append(events, *tenant)
 		return true
 	})
 	return events
 }
 
-func (s Service) eventDataToTenant(eventType EventsType, eventData map[string]interface{}) (*model.BusinessTenantMappingInput, error) {
+func (s Service) eventDataToTenant(eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
 	if eventType == CreatedEventsType && s.fieldMapping.DiscriminatorField != "" {
-		discriminator, ok := eventData[s.fieldMapping.DiscriminatorField].(string)
+		discriminator, ok := gjson.GetBytes(eventData, s.fieldMapping.DiscriminatorField).Value().(string)
 		if !ok {
 			return nil, errors.Errorf("invalid format of %s field", s.fieldMapping.DiscriminatorField)
 		}
@@ -286,12 +265,12 @@ func (s Service) eventDataToTenant(eventType EventsType, eventData map[string]in
 		}
 	}
 
-	id, ok := eventData[s.fieldMapping.IDField].(string)
+	id, ok := gjson.GetBytes(eventData, s.fieldMapping.IDField).Value().(string)
 	if !ok {
 		return nil, errors.Errorf("invalid format of %s field", s.fieldMapping.IDField)
 	}
 
-	name, ok := eventData[s.fieldMapping.NameField].(string)
+	name, ok := gjson.GetBytes(eventData, s.fieldMapping.NameField).Value().(string)
 	if !ok {
 		return nil, errors.Errorf("invalid format of %s field", s.fieldMapping.NameField)
 	}
