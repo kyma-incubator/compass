@@ -89,7 +89,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
 		// THEN
 		require.NoError(t, err)
-		require.Empty(t, res)
+		require.Empty(t, res.Events)
 	})
 
 	t.Run("Error when endpoint not parsable", func(t *testing.T) {

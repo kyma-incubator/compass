@@ -213,6 +213,8 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 		events = append(events, res.Events...)
 	}
 
+	
+
 	return s.converter.EventsToTenants(eventsType, events), nil
 }
 

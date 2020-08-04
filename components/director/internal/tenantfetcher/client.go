@@ -2,15 +2,15 @@ package tenantfetcher
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/tidwall/gjson"
 
 	pkgErrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -53,10 +53,10 @@ type tenantResponseMapper struct {
 }
 
 // Remap returns the actual tenant event response mapped by the provided fields in the struct
-func (trd *tenantResponseMapper) Remap(v map[string]interface{}) TenantEventsResponse {
+func (trd *tenantResponseMapper) Remap(b []byte) TenantEventsResponse {
 	events := make([]Event, 0)
-
-	if v[trd.EventsField] == nil {
+	eventsArray := gjson.GetBytes(b, trd.EventsField)
+	if !eventsArray.Exists() {
 		return TenantEventsResponse{
 			Events:       []Event{},
 			TotalResults: 0,
@@ -64,14 +64,17 @@ func (trd *tenantResponseMapper) Remap(v map[string]interface{}) TenantEventsRes
 		}
 	}
 
-	for _, e := range v[trd.EventsField].([]interface{}) {
-		events = append(events, Event(e.(map[string]interface{})))
-	}
+	eventsArray.ForEach(func(key gjson.Result, value gjson.Result) bool {
+		events = append(events, Event(value.Value().(map[string]interface{})))
+		return true
+	})
+	totalPages := gjson.GetBytes(b, trd.TotalPagesField).Int()
+	totalResults := gjson.GetBytes(b, trd.TotalResultsField).Int()
 
 	return TenantEventsResponse{
 		Events:       events,
-		TotalPages:   int(v[trd.TotalPagesField].(float64)),
-		TotalResults: int(v[trd.TotalResultsField].(float64)),
+		TotalPages:   int(totalPages),
+		TotalResults: int(totalResults),
 	}
 }
 
@@ -138,16 +141,11 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 		c.metricsPusher.RecordEventingRequest(http.MethodGet, res.StatusCode, res.Status)
 	}
 
-	var result map[string]interface{}
-	err = json.NewDecoder(res.Body).Decode(&result)
-	tenantEvents := c.responseMapper.Remap(result)
-
+	bytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		if err == io.EOF {
-			return nil, nil
-		}
-		return nil, pkgErrors.Wrap(err, "while decoding response body")
+		return nil, pkgErrors.Wrap(err, "while reading response body")
 	}
+	tenantEvents := c.responseMapper.Remap(bytes)
 
 	return &tenantEvents, nil
 }
