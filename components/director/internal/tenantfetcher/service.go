@@ -2,17 +2,28 @@ package tenantfetcher
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"time"
 
 	retry "github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	log "github.com/sirupsen/logrus"
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
 )
+
+type TenantFieldMapping struct {
+	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
+	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
+	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
+	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
+	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
+}
 
 // QueryConfig contains the name of query parameters fields and default/start values
 type QueryConfig struct {
@@ -46,19 +57,21 @@ const (
 )
 
 type Service struct {
-	queryConfig          QueryConfig
-	transact             persistence.Transactioner
-	converter            Converter
+	queryConfig QueryConfig
+	transact    persistence.Transactioner
+	// converter            Converter
 	eventAPIClient       EventAPIClient
 	tenantStorageService TenantStorageService
+	providerName         string
+	fieldMapping         TenantFieldMapping
 
 	retryAttempts uint
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, converter Converter, client EventAPIClient, tenantStorageService TenantStorageService) *Service {
+func NewService(queryConfig QueryConfig, transact persistence.Transactioner, fieldMapping TenantFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService) *Service {
 	return &Service{
 		transact:             transact,
-		converter:            converter,
+		fieldMapping:         fieldMapping,
 		eventAPIClient:       client,
 		tenantStorageService: tenantStorageService,
 		queryConfig:          queryConfig,
@@ -190,7 +203,11 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 		return nil, nil
 	}
 
-	events := firstPage.Events
+	tenants := make([]model.BusinessTenantMappingInput, 0)
+	tenants = append(tenants, s.convert(eventsType, firstPage.Events)...)
+	// events := firstPage.Events
+	// events = append(events, firstPage.Events)
+
 	initialCount := firstPage.TotalResults
 	totalPages := firstPage.TotalPages
 
@@ -210,12 +227,80 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 		if initialCount != res.TotalResults {
 			return nil, apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
 		}
-		events = append(events, res.Events...)
+		// events = append(events, res.Events)
+		tenants = append(tenants, s.convert(eventsType, res.Events)...)
 	}
 
-	
+	return nil, nil
+	// return s.converter.EventsToTenants(eventsType, events), nil
+}
 
-	return s.converter.EventsToTenants(eventsType, events), nil
+func (s Service) convert(eventType EventsType, eventsJSON []byte) []model.BusinessTenantMappingInput {
+	events := make([]model.BusinessTenantMappingInput, 0)
+	gjson.GetBytes(eventsJSON, "").ForEach(func(key gjson.Result, event gjson.Result) bool {
+		var eventData map[string]interface{}
+		details := event.Get(s.fieldMapping.DetailsField).Value()
+		switch details.(type) {
+		case string:
+			eventDataJSON, ok := details.(string)
+			if !ok {
+				log.Warnf("Invalid event data format: %+v", event)
+				return true
+			}
+			err := json.Unmarshal([]byte(eventDataJSON), &eventData)
+			if err != nil {
+				log.Warnf("Could not unmarshal event data", event)
+				return true
+			}
+		case map[string]interface{}:
+			var ok bool
+			eventData, ok = details.(map[string]interface{})
+			if !ok {
+				log.Warnf("Invalid event data format: %+v", event)
+				return true
+			}
+			tenant, err := s.eventDataToTenant(eventType, eventData)
+			if err != nil {
+				log.Warnf("Could not convert tenant: %s", err.Error())
+				return true
+			}
+			events = append(events, *tenant)
+		default:
+			log.Warnf("Invalid event data format: %+v", event)
+			return true
+		}
+		return true
+	})
+	return events
+}
+
+func (s Service) eventDataToTenant(eventType EventsType, eventData map[string]interface{}) (*model.BusinessTenantMappingInput, error) {
+	if eventType == CreatedEventsType && s.fieldMapping.DiscriminatorField != "" {
+		discriminator, ok := eventData[s.fieldMapping.DiscriminatorField].(string)
+		if !ok {
+			return nil, errors.Errorf("invalid format of %s field", s.fieldMapping.DiscriminatorField)
+		}
+
+		if discriminator != s.fieldMapping.DiscriminatorValue {
+			return nil, nil
+		}
+	}
+
+	id, ok := eventData[s.fieldMapping.IDField].(string)
+	if !ok {
+		return nil, errors.Errorf("invalid format of %s field", s.fieldMapping.IDField)
+	}
+
+	name, ok := eventData[s.fieldMapping.NameField].(string)
+	if !ok {
+		return nil, errors.Errorf("invalid format of %s field", s.fieldMapping.NameField)
+	}
+
+	return &model.BusinessTenantMappingInput{
+		Name:           name,
+		ExternalTenant: id,
+		Provider:       s.providerName,
+	}, nil
 }
 
 func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {

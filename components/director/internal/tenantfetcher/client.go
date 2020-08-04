@@ -54,25 +54,20 @@ type tenantResponseMapper struct {
 
 // Remap returns the actual tenant event response mapped by the provided fields in the struct
 func (trd *tenantResponseMapper) Remap(b []byte) TenantEventsResponse {
-	events := make([]Event, 0)
-	eventsArray := gjson.GetBytes(b, trd.EventsField)
-	if !eventsArray.Exists() {
+	events := gjson.GetBytes(b, trd.EventsField)
+	if !events.Exists() {
 		return TenantEventsResponse{
-			Events:       []Event{},
+			Events:       nil,
 			TotalResults: 0,
 			TotalPages:   1,
 		}
 	}
 
-	eventsArray.ForEach(func(key gjson.Result, value gjson.Result) bool {
-		events = append(events, Event(value.Value().(map[string]interface{})))
-		return true
-	})
 	totalPages := gjson.GetBytes(b, trd.TotalPagesField).Int()
 	totalResults := gjson.GetBytes(b, trd.TotalResultsField).Int()
 
 	return TenantEventsResponse{
-		Events:       events,
+		Events:       []byte(events.Raw),
 		TotalPages:   int(totalPages),
 		TotalResults: int(totalResults),
 	}

@@ -9,7 +9,7 @@ const (
 )
 
 type TenantEventsResponse struct {
-	Events       []Event
+	Events       []byte
 	TotalResults int
 	TotalPages   int
 }

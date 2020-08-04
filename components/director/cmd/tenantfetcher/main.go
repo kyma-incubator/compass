@@ -73,8 +73,8 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, metr
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	tenantFetcherConverter := tenantfetcher.NewConverter(cfg.TenantProvider, cfg.FieldMapping)
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, tenantFetcherConverter, eventAPIClient, tenantStorageSvc)
+	// tenantFetcherConverter := tenantfetcher.NewConverter(cfg.TenantProvider, cfg.FieldMapping)
+	return tenantfetcher.NewService(cfg.QueryConfig, transact, cfg.FieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc)
 }
 
 func configureLogger() {
