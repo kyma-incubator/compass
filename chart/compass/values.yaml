@@ -245,9 +245,6 @@ global:
         maxOpenConnections: 1
         maxIdleConnections: 1
 
-    job2:
-      enabled: false
-
   metrics:
     enabled: true
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
