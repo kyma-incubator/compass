@@ -2,19 +2,21 @@ aliases:
   documentation-reviewers:
     - kazydek
     - klaudiagrz
-    - tomekpapiernik
     - bszwarc
     - mmitoraj
     - majakurcius
     - alexandra-simeonova
+    - Peteva
+    - ekaterina-mitova
   documentation-approvers:
     - kazydek
     - klaudiagrz
-    - tomekpapiernik
     - bszwarc
     - mmitoraj
     - majakurcius
     - alexandra-simeonova
+    - Peteva
+    - ekaterina-mitova
   console-approvers:
     - parostatkiem
     - Wawrzyn321
