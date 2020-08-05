@@ -202,7 +202,7 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 	}
 
 	tenants := make([]model.BusinessTenantMappingInput, 0)
-	tenants = append(tenants, s.convert(eventsType, firstPage)...)
+	tenants = append(tenants, s.extractTenantMappings(eventsType, firstPage)...)
 	initialCount := gjson.GetBytes(firstPage, s.fieldMapping.TotalResultsField).Int()
 	totalPages := gjson.GetBytes(firstPage, s.fieldMapping.TotalPagesField).Int()
 
@@ -222,14 +222,14 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 		if initialCount != gjson.GetBytes(res, s.fieldMapping.TotalResultsField).Int() {
 			return nil, apperrors.NewInternalError("total results number changed during fetching consecutive events pages")
 		}
-		tenants = append(tenants, s.convert(eventsType, res)...)
+		tenants = append(tenants, s.extractTenantMappings(eventsType, res)...)
 	}
 
 	return tenants, nil
 }
 
-func (s Service) convert(eventType EventsType, eventsJSON []byte) []model.BusinessTenantMappingInput {
-	events := make([]model.BusinessTenantMappingInput, 0)
+func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) []model.BusinessTenantMappingInput {
+	bussinessTenantMappings := make([]model.BusinessTenantMappingInput, 0)
 	gjson.GetBytes(eventsJSON, s.fieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
 		detailsType := event.Get(s.fieldMapping.DetailsField).Type
 		var details []byte
@@ -247,10 +247,10 @@ func (s Service) convert(eventType EventsType, eventsJSON []byte) []model.Busine
 			log.Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
 			return true
 		}
-		events = append(events, *tenant)
+		bussinessTenantMappings = append(bussinessTenantMappings, *tenant)
 		return true
 	})
-	return events
+	return bussinessTenantMappings
 }
 
 func (s Service) eventDataToTenant(eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
