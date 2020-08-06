@@ -2,7 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
   name: {{ .Chart.Name }}-oathkeeper-token-rewrite
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.global.rewriteFilters.namespace }}
 spec:
   workloadSelector:
     labels:

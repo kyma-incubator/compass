@@ -2,31 +2,32 @@ apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
   name: {{ .Chart.Name }}-oathkeeper-header-rewrite
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.global.rewriteFilters.namespace }}
 spec:
   workloadSelector:
     labels:
       app.kubernetes.io/name: {{ .Values.global.rewriteFilters.workloadLabel }}
   configPatches:
-  - applyTo: HTTP_FILTER
-    match:
-      context: SIDECAR_INBOUND
-      listener:
-        portNumber: 4455
-        filterChain:
-          filter:
-            name: "envoy.http_connection_manager"
-            subFilter:
-              name: "envoy.router"
-    patch:
-      operation: INSERT_BEFORE
-      value:
-        name: envoy.lua
-        config:
-          inlineCode: |
-            function envoy_on_request(request_handle)
-              local headers = request_handle:headers()
-              local xForwardedClientCert = headers:get("X-Forwarded-Client-Cert")
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+        listener:
+          portNumber: 4455
+          filterChain:
+            filter:
+              name: "envoy.http_connection_manager"
+              subFilter:
+                name: "envoy.router"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.lua
+          config:
+            inlineCode: |
+              function envoy_on_request(request_handle)
+                local headers = request_handle:headers()
+                local xForwardedClientCert = headers:get("X-Forwarded-Client-Cert")
 
-              headers:add("{{ .Values.global.rewriteFilters.certificateDataHeader }}",xForwardedClientCert)
-            end
+                headers:add("{{ .Values.global.rewriteFilters.certificateDataHeader }}",xForwardedClientCert)
+              end
+
