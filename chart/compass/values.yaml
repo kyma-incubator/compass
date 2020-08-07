@@ -143,6 +143,7 @@ global:
 
   rewriteFilters:
     workloadLabel: oathkeeper
+    namespace: kyma-system
     tokenDataHeader: "Connector-Token"
     certificateDataHeader: "Certificate-Data"
 
