@@ -32,6 +32,8 @@ if [[ "$LOCAL_ENV" == "true" ]]; then
     ADDITIONAL_PARAMS="-o ${ISTIO_OVERRIDES}${ADDITIONAL_PARAMS}"
 fi
 
+echo "Configuring Tiller..."
+kubectl apply -f "${ROOT_PATH}"/installation/resources/tiller.yaml
 
 echo "Installing Kyma..."
 set -o xtrace
