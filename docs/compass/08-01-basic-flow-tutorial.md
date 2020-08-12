@@ -11,7 +11,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 - [`order-service`](./assets/order-service.yaml) file that contains the service definition, deployment, and its API
 - [API specification](./assets/order-service-api-spec.yaml) of `order-service`
-- [Function](./assets/lambda.yaml) that calls `order-service` for orders
+- [Function](./assets/function.yaml) that calls `order-service` for orders
 - [Compass cluster with all Kyma components installed](./04-01-installation.md#single-cluster-with-compass-and-runtime-agent). This tutorial won't work on local Minikube installation.
 
 >**NOTE:** Read [this](./04-01-installation.md) document to learn how to install Kyma with the Compass module.
@@ -49,7 +49,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 2. From the drop-down list in the top right corner, select your Namespace and go to the **Catalog** view. You will see your services available under the **Services** tab. Select the `test-app` service. Provision the service instance by choosing your Package as **Selected plan** from the dropdown list and clicking the **Add** button in the top right corner of the page.
 
-3. Create a Function. In the **Overview** tab, click the **Deploy new resource** button and upload the file with the [Function](./assets/lambda.yaml).
+3. Create a Function. In the **Overview** tab, click the **Deploy new resource** button and upload the file with the [Function](./assets/function.yaml).
 
 4. Bind your Function:
 
