@@ -63,12 +63,9 @@ For simplicity reasons, use the available Order Service as the sample external A
 
     b. Type `test-function` in both the **Name** and **Hostname** fields. From the **Service** dropdown, select `call-order-service`. Keep **Access strategies** as they are. Click the **Create** button in the top right corner of the page.
 
-6. Test your function. Open the terminal and run the following command:
-    ```bash
-    curl https://test-function.{CLUSTER_DOMAIN}
-    ```
+    >**CAUTION:** If you use the xip.io domain with a self-signed certificate, you must edit the Gateway deployment to be able to use your Function. To do so, go to the **Deployments** tab in the left navigation panel, unfold the vertical option menu in the `{YOUR_NAMESPACE}-gateway` row, and click **Edit**. Scroll down to line 52 and set the **--skipVerify** flag to `true`. Click **Update**.
 
-    This returns the following output:
+6. Test your Function. Open a separate tab in your browser and go to `https://test-function.{CLUSTER_DOMAIN}`. It will navigate you to your Function view that returns the following output:
 
     ```
     {
@@ -77,7 +74,7 @@ For simplicity reasons, use the available Order Service as the sample external A
     }
     ```
 
-    You can test your function by performing the following actions:
+    You can play with your Function by performing the following actions in the terminal window:
 
     - `{"action":"add"}` - adds the new order
     - `{"action":"list"}` - lists all orders (this is the default command executed after you click the **Send** button)
@@ -93,18 +90,18 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 Clean up your cluster after going through this tutorial. To do so, delete your resources in the following order:
 
-1. Go to the **Lambdas** tab, unfold the vertical option menu and delete your lambda.
+1. Go to the **Functions** tab and delete your Function.
 
-2. Go to the **Services** tab and delete `order-service`.
+2. Go to the **Services** tab and delete your services.
 
-3. Go to the **Deployments** tab and delete the `order-service` deployment.
+3. Go to the **Deployments** tab and delete your deployments.
 
-4. Go to the **APIs** tab and delete the `order-service` API.
+4. Go to the **API Rules** tab and delete your APIRules.
 
-5. Go to the **Instances** tab, navigate to **Services**, and deprovision your instance by selecting the trash bin icon.
+5. Go to the **Instances** tab and delete your instances.
 
-6. Go to the **Overview** section and unbind `test-app` from your Namespace.
+6. Go to the **Overview** section and **Unbind** `test-app` from your Namespace.
 
 7. Go back to the Namespaces view and delete your Namespace.
 
-8. In the Compass UI, remove `test-app` from the **Applications** view. If you go back to the **Applications** view in the Kyma Console UI, you can see that the `test-app` Application is removed. It can take a moment, so refresh the Console UI if the Application is still there.
+8. In the Compass UI, remove `test-app` from the **Applications** view. If you go back to the **Applications/Systems** view in the Kyma Console UI, you can see that the `test-app` Application is removed. It can take a moment, so refresh the Console UI if the Application is still there.
