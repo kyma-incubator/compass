@@ -63,7 +63,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
     b. Type `test-function` in both the **Name** and **Hostname** fields. From the **Service** dropdown, select `call-order-service`. Keep **Access strategies** as they are. Click the **Create** button in the top right corner of the page.
 
-    >**CAUTION:** If you use the xip.io domain with a self-signed certificate, you must edit the Gateway deployment to be able to use your Function. To do so, go to the **Deployments** tab in the left navigation panel, unfold the vertical option menu in the `{YOUR_NAMESPACE}-gateway` row, and click **Edit**. Scroll down to line 52 and set the **--skipVerify** flag to `true`. Click **Update**.
+    >**CAUTION:** If you use the `xip.io` domain with a self-signed certificate, you must edit the Gateway deployment to be able to use your Function. To do so, go to the **Deployments** tab in the left navigation panel, unfold the vertical option menu in the `{YOUR_NAMESPACE}-gateway` row, and click **Edit**. Scroll down to line 52 and set the **--skipVerify** flag to `true`. Click **Update**.
 
 6. Test your Function. Open a separate tab in your browser and go to `https://test-function.{CLUSTER_DOMAIN}`. It will navigate you to your Function view that returns the following output:
 
