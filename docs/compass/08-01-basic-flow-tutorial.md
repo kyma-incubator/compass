@@ -100,7 +100,7 @@ Clean up your cluster after going through this tutorial. To do so, delete your r
 
 5. Go to the **Instances** tab and delete your instances.
 
-6. Go to the **Overview** section and **Unbind** `test-app` from your Namespace.
+6. Go to the **Overview** section and unbind `test-app` from your Namespace.
 
 7. Go back to the Namespaces view and delete your Namespace.
 
