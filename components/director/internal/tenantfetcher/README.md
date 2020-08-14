@@ -20,7 +20,7 @@ There are three types of supported endpoints that receive different types of eve
 - Tenant update endpoint
 
 Every endpoint must return a specific payload and accept the following type of query parameters:
-- **global.tenantFetchers.*job_name*.queryMapping.timestampField** - specifies a timestamp in Unix time, that is the date from which events are fetched
+- **global.tenantFetchers.*job_name*.queryMapping.timestampField** - specifies a timestamp in Unix time format, that is the date from which events are fetched
 - **global.tenantFetchers.*job_name*.queryMapping.pageNumField** - specifies the number of the page to be fetched, starting from a preconfigured number via **global.tenantFetchers.*job_name*.query.startPage**
 - **global.tenantFetchers.*job_name*.queryMapping.pageSizeField** - specifies the number of results included on a single page
 
@@ -43,7 +43,21 @@ Almost every top-level data that is expected by the tenant fetcher is configurab
 - The top-level `events` array is configured with: **global.tenantFetchers.*job_name*.fieldMapping.tenantEventsField**
 - The top-level `totalResults` is configured with: **global.tenantFetchers.*job_name*.fieldMapping.totalResultsField**
 - The top-level `totalPages` is configured with: **global.tenantFetchers.*job_name*.fieldMapping.totalPagesField**
-- The inner field `eventData` contains the details of an event and it is configured by: **global.tenantFetchers.*job_name*.fieldMapping.detailsField**. The details field is expected to be either a JSON object or a string containing JSON.
+- The inner field `eventData` contains the details of an event and it is configured by: **global.tenantFetchers.*job_name*.fieldMapping.detailsField**. The details field is expected to be either a JSON object or a string containing JSON. Example:
+
+```json
+{
+  "details": {
+    "key": "value"
+  }
+}
+
+or
+
+{
+  "details": "{\"key\": \"value\"}"
+}
+```
 
 
 #### Tenant creation endpoint
@@ -130,6 +144,6 @@ Tenant Fetcher binary allows you to override some configuration parameters. You 
 | **global.tenantFetchers.*job_name*.queryMapping.pageNumField** | Mandatory value of the query parameter name for the page number |
 | **global.tenantFetchers.*job_name*.queryMapping.pageSizeField** | Mandatory value of the query parameter name for the page size |
 | **global.tenantFetchers.*job_name*.queryMapping.timestampField** | Mandatory value of the query parameter name for the timestamp |
-| **global.tenantFetchers.*job_name*.query.startPage** | Mandatory value of the query parameter value for the starting page, i.e `0` or `1` |
+| **global.tenantFetchers.*job_name*.query.startPage** | Mandatory value of the query parameter value for the starting page from which to fetch events |
 | **global.tenantFetchers.*job_name*.query.pageSize** | Mandatory value of the query parameter value for the page size |
 
