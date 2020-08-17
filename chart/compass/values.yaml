@@ -117,6 +117,12 @@ global:
     caKey: ""
     caCertificate: ""
 
+  system_broker:
+    enabled: true
+    secrets:
+      integrationSystemCredentials:
+        name: compass-system-broker-credentials
+
   gateway:
     port: 3000
     tls:

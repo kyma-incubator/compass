@@ -96,7 +96,16 @@ type service struct {
 	timestampGen       timestamp.Generator
 }
 
-func NewService(appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
+func NewService(appHideCfgProvider ApplicationHideCfgProvider,
+	app ApplicationRepository,
+	webhook WebhookRepository,
+	runtimeRepo RuntimeRepository,
+	labelRepo LabelRepository,
+	intSystemRepo IntegrationSystemRepository,
+	labelUpsertService LabelUpsertService,
+	scenariosService ScenariosService,
+	pkgService PackageService,
+	uidService UIDService) *service {
 	return &service{
 		appHideCfgProvider: appHideCfgProvider,
 		appRepo:            app,
