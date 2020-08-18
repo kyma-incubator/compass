@@ -212,27 +212,39 @@ global:
               give_up_after: 3s
               max_delay: 2000ms
 
-  tenantFetcher:
-    enabled: false
-    manageSecrets: true
-    providerName: "compass"
-    schedule: "*/5 * * * *"
-    oauth:
-      client: ""
-      secret: ""
-      tokenURL: ""
-    endpoints:
-      tenantCreated: "127.0.0.1/events?type=created"
-      tenantDeleted: "127.0.0.1/events?type=deleted"
-      tenantUpdated: "127.0.0.1/events?type=updated"
-    fieldMapping:
-      idField: "id"
-      nameField: "name"
-      discriminatorField: ""
-      discriminatorValue: ""
-    dbPool:
-      maxOpenConnections: 1
-      maxIdleConnections: 1
+  tenantFetchers:
+    job1:
+      enabled: false
+      manageSecrets: true
+      providerName: "compass"
+      schedule: "*/5 * * * *"
+      oauth:
+        client: ""
+        secret: ""
+        tokenURL: ""
+      endpoints:
+        tenantCreated: "127.0.0.1/events?type=created"
+        tenantDeleted: "127.0.0.1/events?type=deleted"
+        tenantUpdated: "127.0.0.1/events?type=updated"
+      fieldMapping:
+        totalPagesField: "totalPages"
+        totalResultsField: "totalResults"
+        tenantEventsField: "events"
+        idField: "id"
+        nameField: "name"
+        discriminatorField: ""
+        discriminatorValue: ""
+        detailsField: "details"
+      queryMapping:
+        pageNumField: "pageNum"
+        pageSizeField: "pageSize"
+        timestampField: "timestamp"
+      query:
+        startPage: "0"
+        pageSize: "100"
+      dbPool:
+        maxOpenConnections: 1
+        maxIdleConnections: 1
 
   metrics:
     enabled: true
