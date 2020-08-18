@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	errorSourceField = "error_source"
+	errorSourceField            = "error_source"
+	errorSourceFieldUnavailable = "check component log field"
 )
 
 // ErrorLocationHook provides an implementation of the sirupsen/logrus/Hook interface.
@@ -60,6 +61,8 @@ func (h *ErrorLocationHook) Fire(entry *logrus.Entry) error {
 		pkg := getPkgName(stackTrace)
 		errSource := fmt.Sprintf("%s/%s:%d:%n", pkg, stackTrace[0], stackTrace[0], stackTrace[0])
 		entry.Data[errorSourceField] = errSource
+	} else {
+		entry.Data[errorSourceField] = errorSourceFieldUnavailable
 	}
 
 	return nil

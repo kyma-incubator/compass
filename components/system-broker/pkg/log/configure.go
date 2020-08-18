@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/onrik/logrus/filename"
@@ -60,11 +62,11 @@ var (
 
 func init() {
 	// Configure default logger in init so we can log even before actual logging settings are loaded
-	hook := filename.NewHook()
-	hook.Field = fieldComponentName
+	hook := prepareLogSourceHook()
 	defaultEntry.Logger.AddHook(hook)
 	defaultEntry.Logger.AddHook(&ErrorLocationHook{})
 	defaultEntry = defaultEntry.WithField(FieldCorrelationID, currentSettings.BootstrapCorrelationID)
+
 	_, err := Configure(context.Background(), currentSettings)
 	if err != nil {
 		panic(err)
@@ -171,4 +173,16 @@ func copyEntry(entry *logrus.Entry) *logrus.Entry {
 	newEntry.Buffer = entry.Buffer
 
 	return newEntry
+}
+
+func prepareLogSourceHook() *filename.Hook {
+	hook := filename.NewHook()
+	hook.Field = fieldComponentName
+	hook.SkipPrefixes = append(hook.SkipPrefixes, "log/")
+	hook.Formatter = func(file, function string, line int) string {
+		split := strings.Split(function, string(filepath.Separator))
+		return fmt.Sprintf("%s:%d:%s", file, line, split[len(split)-1])
+	}
+
+	return hook
 }
