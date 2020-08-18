@@ -18,6 +18,7 @@ package osb
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
@@ -98,8 +99,11 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 
 	logger.Info("Successfully requested deletion of package instance credentials")
 
+	op := fmt.Sprintf("%s:%s:%s:%s", DeprovisionOp, appID, packageID, auth.ID)
+	encodedOp := base64.URLEncoding.EncodeToString([]byte(op))
+
 	return domain.DeprovisionServiceSpec{
 		IsAsync:       true,
-		OperationData: fmt.Sprintf("%s:%s:%s:%s", DeprovisionOp, appID, packageID, auth.ID),
+		OperationData: encodedOp,
 	}, nil
 }

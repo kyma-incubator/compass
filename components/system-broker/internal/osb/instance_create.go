@@ -18,6 +18,7 @@ package osb
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -38,7 +39,7 @@ type ProvisionEndpoint struct {
 // option 3 - have a storage for operations and operations also store credential coordinates (appid,packageid), in provision op in inserted, in poll last op, op is fetched and based on coords creds are fetched and status is checked - drawbacks - stroage is needed, we still have a switch on poll last op
 // preferred option is 2 - requires less cpu/memory (no extra background go routines) and also does not need persistent storage
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
-	log.C(ctx).Infof("Provision instanceID: %s parameters: %s context: %s asyncAllowed: %s", instanceID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
+	log.C(ctx).Infof("Provision instanceID: %s parameters: %s context: %s asyncAllowed: %b", instanceID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
 
 	if !asyncAllowed {
 		return domain.ProvisionedServiceSpec{}, apiresponses.ErrAsyncRequired
@@ -64,14 +65,15 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	if err != nil && !IsNotFoundError(err) {
 		return domain.ProvisionedServiceSpec{}, errors.Wrapf(err, "while getting package instance credentials from director")
 	}
-	auths = getResp.InstanceAuths
 	exists := !IsNotFoundError(err)
 	if !exists {
 		logger.Info("Package credentials for instance does not exist. Requesting new")
 
 		rawParams := director.Values{}
-		if err := json.Unmarshal(details.RawParameters, &rawParams); err != nil {
-			return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while unmarshaling raw parameters")
+		if details.RawParameters != nil {
+			if err := json.Unmarshal(details.RawParameters, &rawParams); err != nil {
+				return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while unmarshaling raw parameters")
+			}
 		}
 
 		createResp, err := b.credentialsCreator.RequestPackageInstanceCredentialsCreation(ctx, &director.RequestPackageInstanceCredentialsInput{
@@ -85,6 +87,8 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 			return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while requesting package instance credentials creation from director")
 		}
 		auths = []*schema.PackageInstanceAuth{createResp.InstanceAuth}
+	} else {
+		auths = getResp.InstanceAuths
 	}
 
 	if len(auths) != 1 {
@@ -100,9 +104,11 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	logger.Info("Successfully found package instance credentials")
 
+	op := fmt.Sprintf("%s:%s:%s:%s", ProvisionOp, appID, packageID, auth.ID)
+	encodedOp := base64.URLEncoding.EncodeToString([]byte(op))
 	return domain.ProvisionedServiceSpec{
 		IsAsync:       true,
 		AlreadyExists: exists,
-		OperationData: fmt.Sprintf("%s:%s:%s:%s", ProvisionOp, appID, packageID, auth.ID),
+		OperationData: encodedOp,
 	}, nil
 }

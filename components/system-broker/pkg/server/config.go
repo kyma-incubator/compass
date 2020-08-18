@@ -32,8 +32,8 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Port:            8080,
-		RequestTimeout:  time.Second * 5,
-		ShutdownTimeout: time.Second * 5,
+		RequestTimeout:  time.Second * 50000,
+		ShutdownTimeout: time.Second * 50000,
 	}
 }
 

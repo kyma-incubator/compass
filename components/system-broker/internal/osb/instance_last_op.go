@@ -18,6 +18,7 @@ package osb
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
@@ -33,9 +34,14 @@ type InstanceLastOperationEndpoint struct {
 }
 
 func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, instanceID string, details domain.PollDetails) (domain.LastOperation, error) {
-	args := strings.Split(details.OperationData, ":")
+	opBytes, err := base64.URLEncoding.DecodeString(details.OperationData)
+	if err != nil {
+		return domain.LastOperation{}, errors.Wrapf(err, "while decoding base64 encoded op %s", details.OperationData)
+	}
+
+	args := strings.Split(string(opBytes), ":")
 	if len(args) != 4 {
-		return domain.LastOperation{}, errors.Errorf("operation must contain 3 segments separated by : but was %s", details.OperationData)
+		return domain.LastOperation{}, errors.Errorf("operation must contain 4 segments separated by : but was %s", details.OperationData)
 	}
 	opType := args[0]
 	appID := args[1]
@@ -66,6 +72,10 @@ func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, insta
 	}
 
 	auth := resp.InstanceAuth
+
+	if auth.Context == nil {
+		return domain.LastOperation{}, errors.New("auth context must contain service instance id but was empty")
+	}
 	var authContext map[string]string
 	if err := json.Unmarshal([]byte(*auth.Context), &authContext); err != nil {
 		return domain.LastOperation{}, errors.Wrap(err, "while unmarshaling auth context")
@@ -81,7 +91,7 @@ func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, insta
 	var state domain.LastOperationState
 	var opErr error
 	switch opType {
-	case "provision_operation":
+	case string(ProvisionOp):
 		switch auth.Status.Condition {
 		case schema.PackageInstanceAuthStatusConditionSucceeded: // success
 			state = domain.Succeeded
@@ -98,8 +108,7 @@ func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, insta
 			// this should force platform to continue polling, should be the more flexiable approach
 			opErr = errors.Errorf("operation reached unexpected state: op %s, status %+v", opType, *auth.Status)
 		}
-
-	case "deprovision_operation":
+	case string(DeprovisionOp):
 		//TODO strict condition checks vs genericly force platform to continue polling
 		//switch auth.Status.Condition {
 		//case schema.PackageInstanceAuthStatusConditionFailed: // failed
@@ -108,6 +117,7 @@ func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, insta
 		//case schema.PackageInstanceAuthStatusConditionPending: // error/unexpected
 		//}
 		// this would be the more flexible approach (platform continues to poll)
+		// actual "success" return is above the switch/410 gone
 		state = domain.InProgress
 	}
 
