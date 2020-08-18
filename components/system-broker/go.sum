@@ -346,6 +346,7 @@ github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtP
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
+github.com/pivotal-cf/brokerapi v1.0.0 h1:VXskMouDTRxtARiZ4ORLIZ6cxlzTSqfGa/yi2JLA+F0=
 github.com/pivotal-cf/brokerapi v6.4.2+incompatible h1:TqOte2wNUUB7t/+Pt9vjviCsT9wlQtO2OUPyuZ67DeE=
 github.com/pivotal-cf/brokerapi v6.4.2+incompatible/go.mod h1:P+oA8NvkCTkq2t4DohBiyqQo69Ub15RKGcm/vKNP0gg=
 github.com/pivotal-cf/brokerapi/v7 v7.3.0 h1:kSPtA0fP3ZPUmrYDWOsPOvjdhNd37Ly5N8LFqfXOs+k=

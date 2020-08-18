@@ -21,6 +21,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/panic_recovery"
 	"github.com/pivotal-cf/brokerapi/v7"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/middlewares"
@@ -30,9 +31,8 @@ func API(serviceBroker domain.ServiceBroker, logger lager.Logger, service http.U
 	return func(router *mux.Router) {
 
 		router.Use(log.RequestLogger(service))
-		//TODO attach recovery middleware
+		router.Use(panic_recovery.NewRecoveryMiddleware())
 
-		//TODO these we want only on broker routes so we might need some subrouters/negroni/other and remove prefix?
 		r := router.PathPrefix("/broker").Subrouter()
 
 		r.Use(middlewares.AddCorrelationIDToContext)

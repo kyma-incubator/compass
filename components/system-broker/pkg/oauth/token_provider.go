@@ -67,7 +67,7 @@ type credentials struct {
 	tokensEndpoint string
 }
 
-func NewOAuthTokenProviderFromSecret(config *Config, httpClient *http.Client, requestProvider RequestProvider, k8sClient client.Client) *OAuthTokenProvider {
+func NewTokenProviderFromSecret(config *Config, httpClient *http.Client, requestProvider RequestProvider, k8sClient client.Client) *OAuthTokenProvider {
 	return &OAuthTokenProvider{
 		httpClient:      httpClient,
 		requestProvider: requestProvider,

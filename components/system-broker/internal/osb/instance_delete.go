@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
 )
 
@@ -60,18 +60,17 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		return domain.DeprovisionServiceSpec{}, errors.Wrapf(err, "while getting package instance credentials from director")
 	}
 
-	auths := resp.InstanceAuths
-	if len(auths) != 1 {
-		return domain.DeprovisionServiceSpec{}, errors.Errorf("expected 1 auth but got %d", len(auths))
-	}
-	auth := auths[0]
-
 	exists := !IsNotFoundError(err)
 	if !exists {
 		logger.Info("Package credentials for instance are already gone")
 		return domain.DeprovisionServiceSpec{}, apiresponses.ErrInstanceDoesNotExist
 	}
 
+	auths := resp.InstanceAuths
+	if len(auths) != 1 {
+		return domain.DeprovisionServiceSpec{}, errors.Errorf("expected 1 auth but got %d", len(auths))
+	}
+	auth := auths[0]
 	status := auth.Status
 	if IsUnused(status) {
 		logger.Info("Package credentials for instance exist and are not used. Deletion is already in progress")
