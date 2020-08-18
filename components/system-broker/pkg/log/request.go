@@ -90,8 +90,9 @@ func CorrelationIDForRequest(request *http.Request, service UUIDService) string 
 		}
 	}
 
+	//this header setting is used both for http client outbound requests and for inbound broker api requests as middlewares.AddCorrelationIDToContext will look at headers
 	correlationID, exists := logger.Data[FieldCorrelationID].(string)
-	if exists && correlationID != BootstrapCorrelationID {
+	if exists && correlationID != Configuration().BootstrapCorrelationID {
 		request.Header.Set(CorrelationIDHeaders[0], correlationID)
 	} else {
 		correlationID = service.Generate()

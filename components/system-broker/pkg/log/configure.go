@@ -32,7 +32,6 @@ type logKey struct{}
 
 const (
 	FieldCorrelationID     = "correlation_id"
-	BootstrapCorrelationID = "bootstrap"
 	fieldComponentName     = "component"
 	jsonFormatterKey       = "json"
 	textFormatterKey       = "text"
