@@ -19,6 +19,7 @@ package osb
 import (
 	"context"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 )
@@ -36,7 +37,10 @@ func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error
 
 	applications, err := b.lister.FetchApplications(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "while listing applications from director")
+		//broker api does not log catalog errors
+		err := errors.Wrap(err, "while listing applications from director")
+		log.C(ctx).WithError(err).Error("catalog failure")
+		return nil, err
 	}
 
 	for _, app := range applications.Result.Data {

@@ -18,7 +18,8 @@ package graphql
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/pkg/errors"
 	"net/http"
 
 	"github.com/machinebox/graphql"
@@ -46,15 +47,17 @@ func NewClient(config *Config, httpClient *http.Client) (*Client, error) {
 
 func (c *Client) Do(ctx context.Context, req *graphql.Request, res interface{}) error {
 	c.clearLogs()
-	err := c.gqlClient.Run(ctx, req, res)
-	if err != nil {
+
+	if err := c.gqlClient.Run(ctx, req, res); err != nil {
 		for _, l := range c.logs {
 			if l != "" {
-				logrus.Info(l)
+				log.C(ctx).Info(l)
 			}
 		}
+		return errors.Wrap(err, "while using gqlclient")
 	}
-	return err
+
+	return nil
 }
 
 func (c *Client) addLog(log string) {

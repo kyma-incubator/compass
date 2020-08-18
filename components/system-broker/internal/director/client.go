@@ -80,7 +80,7 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 
 	err := c.gcli.Do(ctx, req, &response)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to fetch Applications")
+		return nil, errors.Wrap(err, "while fetching applications in gqlclient")
 	}
 
 	// Nil check is necessary due to GraphQL client not checking response code

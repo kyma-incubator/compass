@@ -82,7 +82,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 			InputSchema: rawParams,
 		})
 		if err != nil {
-			return domain.ProvisionedServiceSpec{}, errors.Wrapf(err, "while requesting package instance credentials creation from director")
+			return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while requesting package instance credentials creation from director")
 		}
 		auths = []*schema.PackageInstanceAuth{createResp.InstanceAuth}
 	}

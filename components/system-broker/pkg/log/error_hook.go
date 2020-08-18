@@ -18,9 +18,10 @@ package log
 
 import (
 	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"path/filepath"
+	"strings"
 )
 
 const (
@@ -33,13 +34,10 @@ const (
 type ErrorLocationHook struct {
 }
 
-// Levels implements sirupsen/logrus/Hook.Levels. The hook is fired when logging on the levels specified.
 func (h *ErrorLocationHook) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
 
-// Fire implements siprupsen/logrus/Hook.Fire. When fired it includes error source information in the
-// log entry.
 func (h *ErrorLocationHook) Fire(entry *logrus.Entry) error {
 	var (
 		errObj interface{}
@@ -55,16 +53,23 @@ func (h *ErrorLocationHook) Fire(entry *logrus.Entry) error {
 		return errors.New("object logged as error does not satisfy error interface")
 	}
 
-	stackErr := getInnermostTrace(err)
+	stackErr := getInnermostStackTrace(err)
 
 	if stackErr != nil {
 		stackTrace := stackErr.StackTrace()
-		errSource := fmt.Sprintf("%s:%n:%d", stackTrace[0], stackTrace[0], stackTrace[0])
-
+		pkg := getPkgName(stackTrace)
+		errSource := fmt.Sprintf("%s/%s:%d:%n", pkg, stackTrace[0], stackTrace[0], stackTrace[0])
 		entry.Data[errorSourceField] = errSource
 	}
 
 	return nil
+}
+
+func getPkgName(trace errors.StackTrace) string {
+	formattedTrace := fmt.Sprintf("%+s", trace[0])
+	split := strings.Split(formattedTrace, string(filepath.Separator))
+
+	return split[len(split)-2]
 }
 
 type stackTracer interface {
@@ -76,7 +81,12 @@ type causer interface {
 	Cause() error
 }
 
-func getInnermostTrace(err error) stackTracer {
+type unwrapper interface {
+	Unwrap() error
+}
+
+// getInnermostStackTrace drills down into all possible error wrappings looking for the inner-most error that is annotated with a stack trace
+func getInnermostStackTrace(err error) stackTracer {
 	var tracer stackTracer
 
 	for {
@@ -88,8 +98,15 @@ func getInnermostTrace(err error) stackTracer {
 		c, isCauser := err.(causer)
 		if isCauser {
 			err = c.Cause()
-		} else {
-			return tracer
+			continue
 		}
+
+		u, inUnwrappable := err.(unwrapper)
+		if inUnwrappable {
+			err = u.Unwrap()
+			continue
+		}
+
+		return tracer
 	}
 }
