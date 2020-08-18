@@ -104,9 +104,10 @@ func IsUnused(status *schema.PackageInstanceAuthStatus) bool {
 }
 
 type BindingCredentials struct {
-	ID     string
-	Type   AuthType
-	Config Configuration
+	ID          string            `json:"id"`
+	Type        AuthType          `json:"credentials_type"`
+	TargetURLs  map[string]string `json:"target_urls"`
+	AuthDetails AuthDetails       `json:"auth_details"`
 }
 
 // AuthType determines the secret structure
@@ -114,26 +115,20 @@ type AuthType string
 
 const (
 	Undefined   AuthType = ""
-	NoAuth      AuthType = "noauth"
+	NoAuth      AuthType = "no_auth"
 	Oauth       AuthType = "oauth"
-	Basic       AuthType = "basicauth"
+	Basic       AuthType = "basic_auth"
 	Certificate AuthType = "certificate"
 )
 
-// ProxyDestinationConfig is Proxy configuration for specific target
-type ProxyDestinationConfig struct {
-	TargetURL     string        `json:"targetUrl"`
-	Configuration Configuration `json:"configuration"`
-}
-
-type Configuration struct {
-	RequestParameters *RequestParameters `json:"requestParameters,omitempty"`
-	CSRFConfig        *CSRFConfig        `json:"csrfConfig,omitempty"`
-	Credentials       Auth               `json:"credentials,omitempty"`
+type AuthDetails struct {
+	RequestParameters *RequestParameters `json:"request_parameters,omitempty"`
+	CSRFConfig        *CSRFConfig        `json:"csrf_config,omitempty"`
+	Credentials       Auth               `json:"auth,omitempty"`
 }
 
 type CSRFConfig struct {
-	TokenURL string `json:"tokenUrl"`
+	TokenURL string `json:"token_url"`
 }
 
 type Auth interface {
@@ -241,7 +236,7 @@ type CertificateGen struct {
 // RequestParameters contains Headers and QueryParameters
 type RequestParameters struct {
 	Headers         *map[string][]string `json:"headers,omitempty"`
-	QueryParameters *map[string][]string `json:"queryParameters,omitempty"`
+	QueryParameters *map[string][]string `json:"query_parameters,omitempty"`
 }
 
 func (rp *RequestParameters) unpack() (*map[string][]string, *map[string][]string) {
@@ -251,10 +246,10 @@ func (rp *RequestParameters) unpack() (*map[string][]string, *map[string][]strin
 	return rp.Headers, rp.QueryParameters
 }
 
-func mapPackageInstanceAuthToModel(pkgAuth schema.PackageInstanceAuth) (BindingCredentials, error) {
+func mapPackageInstanceAuthToModel(pkgAuth schema.PackageInstanceAuth, targets map[string]string) (BindingCredentials, error) {
 	var (
 		auth = pkgAuth.Auth
-		cfg  = Configuration{}
+		cfg  = AuthDetails{}
 	)
 
 	if auth.RequestAuth != nil && auth.RequestAuth.Csrf != nil {
@@ -305,8 +300,9 @@ func mapPackageInstanceAuthToModel(pkgAuth schema.PackageInstanceAuth) (BindingC
 	}
 
 	return BindingCredentials{
-		ID:     pkgAuth.ID,
-		Type:   credType,
-		Config: cfg,
+		ID:          pkgAuth.ID,
+		Type:        credType,
+		TargetURLs:  targets,
+		AuthDetails: cfg,
 	}, nil
 }

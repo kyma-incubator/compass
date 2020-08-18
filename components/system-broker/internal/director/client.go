@@ -53,8 +53,8 @@ func NewGraphQLClient(gqlClient Client, gqlizer GraphQLizer, gqlFieldsProvider G
 	return &GraphQLClient{
 		gcli: gqlClient,
 		//queryProvider:     queryProvider{}, - gqlizers are better
-		inputGraphqlizer:  &graphqlizer.Graphqlizer{},
-		outputGraphqlizer: &graphqlizer.GqlFieldsProvider{},
+		inputGraphqlizer:  gqlizer,
+		outputGraphqlizer: gqlFieldsProvider,
 	}
 }
 
@@ -163,39 +163,10 @@ func (c *GraphQLClient) FindPackageInstanceCredentialsForContext(ctx context.Con
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
 			result: application(id: "%s") {
 						package(id: "%s") {
-						  instanceAuths {
-							id
-							context
-							auth {
-							  additionalHeaders
-							  additionalQueryParams
-							  requestAuth {
-								csrf {
-								  tokenEndpointURL
-								}
-							  }
-							  credential {
-								... on OAuthCredentialData {
-								  clientId
-								  clientSecret
-								  url
-								}
-								... on BasicCredentialData {
-								  username
-								  password
-								}
-							  }
-							}
-							status {
-							  condition
-							  timestamp
-							  message
-							  reason
-							}
-						  }
-						}
-					  }
-					}`, in.ApplicationID, in.PackageID))
+							%s
+					 	}
+					}
+				}`, in.ApplicationID, in.PackageID, c.outputGraphqlizer.ForPackage()))
 
 	var resp struct {
 		Result schema.ApplicationExt `json:"result"`
@@ -233,8 +204,15 @@ func (c *GraphQLClient) FindPackageInstanceCredentialsForContext(ctx context.Con
 		return nil, &NotFoundError{}
 	}
 
+	targetURLs := make(map[string]string, resp.Result.Package.APIDefinitions.TotalCount)
+
+	for _, apiDefinition := range resp.Result.Package.APIDefinitions.Data {
+		targetURLs[apiDefinition.Name] = apiDefinition.TargetURL
+	}
+
 	return &FindPackageInstanceCredentialsOutput{
 		InstanceAuths: authsResp,
+		TargetURLs:    targetURLs,
 	}, nil
 }
 
@@ -249,6 +227,7 @@ func (c *GraphQLClient) FindPackageInstanceCredentials(ctx context.Context, in *
 						package(id: %q) {
 						  instanceAuth(id: %q) {
 							id
+							context
 							auth {
 							  additionalHeaders
 							  additionalQueryParams

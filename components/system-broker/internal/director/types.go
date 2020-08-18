@@ -56,6 +56,7 @@ type FindPackageInstanceCredentialsByContextInput struct {
 
 type FindPackageInstanceCredentialsOutput struct {
 	InstanceAuths []*schema.PackageInstanceAuth
+	TargetURLs    map[string]string
 }
 
 type FindPackageInstanceCredentialInput struct {

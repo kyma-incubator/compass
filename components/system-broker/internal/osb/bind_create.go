@@ -18,11 +18,10 @@ package osb
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
-	errors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 type BindEndpoint struct {
@@ -53,42 +52,25 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 	if err != nil {
 		return domain.Binding{}, errors.Wrapf(err, "while getting package instance credentials from director")
 	}
+
+	if len(resp.InstanceAuths) != 1 {
+		return domain.Binding{}, errors.Errorf("expected 1 auth but got %d", len(resp.InstanceAuths))
+	}
+
 	auth := resp.InstanceAuths[0]
 
 	if !IsSucceeded(auth.Status) {
 		return domain.Binding{}, errors.Wrapf(err, "credentials status is not success: %+v", *auth.Status)
 	}
 
-	bindingCredentials, err := mapPackageInstanceAuthToModel(*auth)
+	bindingCredentials, err := mapPackageInstanceAuthToModel(*auth, resp.TargetURLs)
 	if err != nil {
 		return domain.Binding{}, errors.Wrap(err, "while mapping to binding credentials")
-	}
-
-	formattedCredentials, err := format(bindingCredentials)
-	if err != nil {
-		return domain.Binding{}, errors.Wrap(err, "while converting to raw map")
 	}
 
 	logger.Info("Successfully obtained binding details for package instance credentials")
 
 	return domain.Binding{
-		Credentials: formattedCredentials,
-	}, nil
-}
-
-func format(c BindingCredentials) (map[string]interface{}, error) {
-	jsonConfig, err := json.Marshal(c)
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshaling")
-	}
-
-	var mapConfig map[string]interface{}
-	if err := json.Unmarshal(jsonConfig, &mapConfig); err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling")
-	}
-
-	return map[string]interface{}{
-		"CREDENTIALS_TYPE": c.Type,
-		"CONFIGURATION":    mapConfig,
+		Credentials: bindingCredentials,
 	}, nil
 }
