@@ -49,12 +49,13 @@ func (c *Client) Do(ctx context.Context, req *graphql.Request, res interface{}) 
 	c.clearLogs()
 
 	if err := c.gqlClient.Run(ctx, req, res); err != nil {
+		err = errors.Wrap(err, "while using gqlclient")
 		for _, l := range c.logs {
 			if l != "" {
-				log.C(ctx).Info(l)
+				log.C(ctx).WithError(err).Error(l)
 			}
 		}
-		return errors.Wrap(err, "while using gqlclient")
+		return err
 	}
 
 	return nil

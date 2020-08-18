@@ -23,16 +23,16 @@ import (
 //TODO first attempt at querying, probably outputGraphqlizer can do the same and this file can be removed
 type queryProvider struct{}
 
-func (qp queryProvider) applicationsForRuntimeQuery(runtimeID string) string {
+func (qp queryProvider) applicationsForRuntimeQuery() string {
 	return fmt.Sprintf(`query {
-	result: applicationsForRuntime(runtimeID: "%s") {
+	result: applications {
 		%s
 	}
-}`, runtimeID, applicationsQueryData(runtimeID))
+}`, applicationsQueryData())
 }
 
-func applicationsQueryData(runtimeID string) string {
-	return pageData(applicationData(runtimeID))
+func applicationsQueryData() string {
+	return pageData(applicationData())
 }
 
 func pageData(item string) string {
@@ -50,7 +50,7 @@ func pageInfoData() string {
 		hasNextPage`
 }
 
-func applicationData(runtimeID string) string {
+func applicationData() string {
 	return fmt.Sprintf(`id
 		name
 		providerName

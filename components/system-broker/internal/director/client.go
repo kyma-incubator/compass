@@ -69,7 +69,7 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 	response := ApplicationsOutput{}
 
 	query := fmt.Sprintf(`query {
-			result: applicationsGlobal {
+			result: applications {
 					%s
 			}
 	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForApplication()))
