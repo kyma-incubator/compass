@@ -14,6 +14,20 @@ spec:
   gateways:
     - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
   http:
+  - match:
+    - uri:
+        prefix: /broker
+    route:
+      - destination:
+          host: 'compass-system-broker.{{ .Release.Namespace }}.svc.cluster.local'
+          port:
+            number: {{ .Values.global.system_broker.port }}
+    headers:
+      request:
+        remove:
+          {{- range .Values.global.gateway.headers.request.remove }}
+          - {{ . }}
+          {{- end }}
     - match:
       - uri:
           prefix: /connector

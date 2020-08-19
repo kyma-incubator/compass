@@ -118,6 +118,7 @@ global:
     caCertificate: ""
 
   system_broker:
+    port: 5001
     enabled: true
     secrets:
       integrationSystemCredentials:

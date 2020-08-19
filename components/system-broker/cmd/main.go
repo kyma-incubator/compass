@@ -62,7 +62,7 @@ func main() {
 	fatalOnError(err)
 
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient)
-	api := osb.API(systemBroker, log.NewDefaultLagerAdapter(), uuidSrv)
+	api := osb.API(cfg.Server.RootAPI, systemBroker, log.NewDefaultLagerAdapter(), uuidSrv)
 
 	srv, err := server.New(cfg.Server, api)
 	fatalOnError(err)

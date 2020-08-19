@@ -1,0 +1,19 @@
+deployment:
+  replicaCount: 1
+  image:
+    pullPolicy: IfNotPresent
+  resources: {}
+  args:
+    containerPort: 5001
+  securityContext: # Set on container level
+    runAsUser: 2000
+    allowPrivilegeEscalation: false
+  allowJWTSigningNone: true # To run integration tests, it has to be enabled
+  dbPool:
+    maxOpenConnections: 30
+    maxIdleConnections: 2
+  strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+  nodeSelector: {}
+
+metrics:
+  port: 5002

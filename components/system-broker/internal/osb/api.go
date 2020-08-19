@@ -27,13 +27,13 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/middlewares"
 )
 
-func API(serviceBroker domain.ServiceBroker, logger lager.Logger, service http.UUIDService) func(router *mux.Router) {
+func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger, service http.UUIDService) func(router *mux.Router) {
 	return func(router *mux.Router) {
 
 		router.Use(log.RequestLogger(service))
 		router.Use(panic_recovery.NewRecoveryMiddleware())
 
-		r := router.PathPrefix("/broker").Subrouter()
+		r := router.PathPrefix(rootAPI).Subrouter()
 
 		r.Use(middlewares.AddCorrelationIDToContext)
 		r.Use(middlewares.AddOriginatingIdentityToContext)

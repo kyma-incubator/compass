@@ -44,14 +44,14 @@ func New(c *Config, routesProvider func(router *mux.Router)) (*Server, error) {
 	}
 
 	router := mux.NewRouter()
-	router.Handle("/metrics", promhttp.Handler())
-	router.Handle("/healthz", s.healthHandler())
+	router.Handle(c.RootAPI+"/metrics", promhttp.Handler())
+	router.Handle(c.RootAPI+"/healthz", s.healthHandler())
 
-	router.HandleFunc("/debug/pprof/", pprof.Index)
-	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	router.HandleFunc(c.RootAPI+"/debug/pprof/", pprof.Index)
+	router.HandleFunc(c.RootAPI+"/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc(c.RootAPI+"/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc(c.RootAPI+"/debug/pprof/symbol", pprof.Symbol)
+	router.HandleFunc(c.RootAPI+"/debug/pprof/trace", pprof.Trace)
 
 	s.routesProvider(router)
 

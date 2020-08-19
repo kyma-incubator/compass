@@ -26,6 +26,7 @@ type Config struct {
 	Port            int           `mapstructure:"port" description:"port of the server"`
 	RequestTimeout  time.Duration `mapstructure:"request_timeout" description:"read and write timeout duration for requests"`
 	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout" description:"time to wait for the server to shutdown"`
+	RootAPI         string        `mapstructure:"root_api" description:"the root api used for all other subroutes"`
 }
 
 // DefaultSettings returns the default values for configuring the Service Manager
@@ -34,6 +35,7 @@ func DefaultConfig() *Config {
 		Port:            8080,
 		RequestTimeout:  time.Second * 50000,
 		ShutdownTimeout: time.Second * 50000,
+		RootAPI:         "/broker",
 	}
 }
 
