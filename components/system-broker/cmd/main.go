@@ -89,7 +89,7 @@ func prepareGqlClient(cfg *config.Config, uudSrv http.UUIDService) (*director.Gr
 
 	// prepare secured http client with token provider picked from secret
 	requestProvider := http.NewRequestProvider(uudSrv)
-	oauthTokenProvider := oauth.NewOAuthTokenProviderFromSecret(cfg.OAuthProvider, httpClient, requestProvider, k8sClient)
+	oauthTokenProvider := oauth.NewTokenProviderFromSecret(cfg.OAuthProvider, httpClient, requestProvider, k8sClient)
 	securedClient, err := http.NewSecuredHTTPClient(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
 	if err != nil {
 		return nil, err
