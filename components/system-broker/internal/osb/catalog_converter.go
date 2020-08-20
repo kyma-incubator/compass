@@ -18,6 +18,7 @@ package osb
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
@@ -32,11 +33,16 @@ func (c Converter) Convert(app *graphql.ApplicationExt) ([]domain.Service, error
 		return nil, err
 	}
 
+	desc := ptrStrToStr(app.Description)
+	if desc == "" {
+		desc = fmt.Sprintf("service generated from system with name %s", app.Name)
+	}
+
 	return []domain.Service{
 		{
 			ID:                   app.ID,
 			Name:                 app.Name,
-			Description:          ptrStrToStr(app.Description),
+			Description:          desc,
 			Bindable:             true,
 			InstancesRetrievable: false,
 			BindingsRetrievable:  false,
@@ -52,13 +58,19 @@ func (c *Converter) toPlans(packages []*graphql.PackageExt) ([]domain.ServicePla
 	for _, p := range packages {
 
 		schemas, err := c.toSchemas(p)
+
+		desc := ptrStrToStr(p.Description)
+		if desc == "" {
+			desc = fmt.Sprintf("plan generated from package with name %s", p.Name)
+		}
+
 		if err != nil {
 			return nil, err
 		}
 		plan := domain.ServicePlan{
 			ID:          p.ID,
 			Name:        p.Name,
-			Description: ptrStrToStr(p.Description),
+			Description: desc,
 			Bindable:    boolPtr(true),
 			Metadata: &domain.ServicePlanMetadata{
 				DisplayName: p.Name,

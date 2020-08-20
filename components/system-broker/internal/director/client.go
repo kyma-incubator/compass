@@ -74,8 +74,6 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 			}
 	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForApplication()))
 
-	//applicationsQuery := c.queryProvider.applicationsForRuntimeQuery(runtimeID)
-	//TODO make gclirequestprovider so that we can set correlationid
 	req := gcli.NewRequest(query)
 
 	err := c.gcli.Do(ctx, req, &response)
@@ -85,7 +83,7 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 
 	// Nil check is necessary due to GraphQL client not checking response code
 	if response.Result == nil {
-		return nil, errors.New("Failed fetch Applications for Runtime from Director: received nil response.")
+		return nil, errors.New("Failed fetch Applications for Runtime from Director: received nil response")
 	}
 
 	//TODO paging, and dont return page details outside of the client method

@@ -19,12 +19,10 @@ package oauth
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"io/ioutil"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
@@ -160,14 +158,6 @@ func (c *OAuthTokenProvider) getAuthorizationToken(ctx context.Context, credenti
 			log.C(ctx).Warn("Cannot close connection body inside oauth client")
 		}
 	}()
-
-	if response.StatusCode != http.StatusOK {
-		dump, err := httputil.DumpResponse(response, true)
-		if err != nil {
-			dump = []byte("failed to dump response body")
-		}
-		return httputils.Token{}, fmt.Errorf("while calling to token endpoint: unexpected status code, %d, %s. Response dump: %s", response.StatusCode, response.Status, string(dump))
-	}
 
 	respBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {

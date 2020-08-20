@@ -40,7 +40,7 @@ func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, err
 		return nil, err
 	}
 
-	request.Header.Set("Authorization", c.token.AccessToken)
+	request.Header.Set("Authorization", "Bearer "+c.token.AccessToken)
 
 	return c.roundTripper.RoundTrip(request)
 }

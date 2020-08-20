@@ -78,7 +78,7 @@ func fatalOnError(err error) {
 
 func prepareGqlClient(cfg *config.Config, uudSrv http.UUIDService) (*director.GraphQLClient, error) {
 	// prepare raw http transport and http client based on cfg
-	httpTransport := http.NewCorrelationIDTransport(http.NewHTTPTransport(cfg.HttpClient), uudSrv)
+	httpTransport := http.NewCorrelationIDTransport(http.NewErrorHandlerTransport(http.NewHTTPTransport(cfg.HttpClient)), uudSrv)
 	httpClient := http.NewClient(cfg.HttpClient.Timeout, httpTransport)
 
 	//prepare k8s client
