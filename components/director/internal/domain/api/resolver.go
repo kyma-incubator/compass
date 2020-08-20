@@ -99,7 +99,7 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 	}
 
 	if !found {
-		log.Error("Error when adding APIDefinition due to not existing package. ", err.Error())
+		log.Error("Error when adding APIDefinition due to not existing package.")
 		return nil, apperrors.NewInvalidDataError("cannot add API to not existing package")
 	}
 

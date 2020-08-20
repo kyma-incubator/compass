@@ -93,7 +93,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 	}
 
 	if !found {
-		log.Error("Error when adding EventDefinition due to not existing Package. ", err.Error())
+		log.Error("Error when adding EventDefinition due to not existing Package.")
 		return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Package")
 	}
 
@@ -220,8 +220,6 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
-	log.Infof("Fetching request for EventDefinition %s", obj.DefinitionID)
-
 	if obj == nil {
 		log.Error("Error when fetching request for EventDefinition. Event Spec cannot be empty.")
 		return nil, apperrors.NewInternalError("Event Spec cannot be empty")
