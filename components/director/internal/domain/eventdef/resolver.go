@@ -132,7 +132,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		log.Error("Error while converting EventDefinition input from GraphQL with id %s : %s ", id, err.Error())
+		log.Errorf("Error while converting EventDefinition input from GraphQL with id %s : %s ", id, err.Error())
 		return nil, errors.Wrap(err, "while converting EventDefinition input")
 	}
 
