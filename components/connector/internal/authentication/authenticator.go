@@ -28,7 +28,7 @@ func (a *authenticator) Authenticate(context context.Context) (string, error) {
 
 	clientId, _, certAuthErr := a.AuthenticateCertificate(context)
 	if certAuthErr != nil {
-		return "", errors.Errorf("Failed to authenticate request. Token authentication error: %s. Certificate authentication error: %s",
+		return "", errors.Errorf("Failed to authenticate request. Token authentication error: %s Certificate authentication error: %s",
 			tokenAuthErr.Error(), certAuthErr.Error())
 	}
 

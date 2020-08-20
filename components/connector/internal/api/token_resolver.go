@@ -32,11 +32,11 @@ func (r *tokenResolver) GenerateApplicationToken(ctx context.Context, appID stri
 
 	token, err := r.tokenService.CreateToken(appID, tokens.ApplicationToken)
 	if err != nil {
-		r.log.Error(err.Error())
+		r.log.Error("Error while creating token for Application. ", err.Error())
 		return &externalschema.Token{}, errors.Wrap(err, "Failed to create Application token")
 	}
 
-	r.log.Infof("Token generated for %s Application...", appID)
+	r.log.Infof("Token generated successfully for %s Application...", appID)
 	return &externalschema.Token{Token: token}, nil
 }
 
@@ -45,11 +45,11 @@ func (r *tokenResolver) GenerateRuntimeToken(ctx context.Context, runtimeID stri
 
 	token, err := r.tokenService.CreateToken(runtimeID, tokens.RuntimeToken)
 	if err != nil {
-		r.log.Error(err.Error())
+		r.log.Error("Error while creating token for Runtime. ", err.Error())
 		return &externalschema.Token{}, errors.Wrap(err, "Failed to create Runtime token")
 	}
 
-	r.log.Infof("Token generated for %s Runtime...", runtimeID)
+	r.log.Infof("Token generated successfully for %s Runtime...", runtimeID)
 	return &externalschema.Token{Token: token}, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
+	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Service
@@ -44,11 +45,13 @@ func NewCertificateService(
 func (svc *certificateService) SignCSR(encodedCSR []byte, subject CSRSubject) (EncodedCertificateChain, apperrors.AppError) {
 	csr, err := svc.certUtil.LoadCSR(encodedCSR)
 	if err != nil {
+		log.Error("Error while loading the CSR.")
 		return EncodedCertificateChain{}, err
 	}
 
 	err = svc.checkCSR(csr, subject)
 	if err != nil {
+		log.Error("Error while checking the values of the CSR.")
 		return EncodedCertificateChain{}, err
 	}
 

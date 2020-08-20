@@ -52,9 +52,11 @@ func NewCertificateResolver(
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
+	r.log.Info("Authenticating the call for signing the Certificate Signing Request.")
+
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Failed authentication during the signing CSR process. ", err.Error())
 		return nil, errors.Wrap(err, "Failed to authenticate with token")
 	}
 
@@ -62,7 +64,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Error while decoding input CSR during the signing process. ", err.Error())
 		return nil, errors.Wrap(err, "Error while decoding Certificate Signing Request")
 	}
 
@@ -73,20 +75,22 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Error while signing the CSR. ", err.Error())
 		return nil, errors.Wrap(err, "Error while signing Certificate Signing Request")
 	}
 
 	certificationResult := certificates.ToCertificationResult(encodedCertificates)
 
-	r.log.Infof("Certificate Signing Request signed.")
+	r.log.Info("Certificate Signing Request successfully signed.")
 	return &certificationResult, nil
 }
 
 func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
+	r.log.Info("Authenticating the call for certificate revocation.")
+
 	clientId, certificateHash, err := r.authenticator.AuthenticateCertificate(ctx)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Failed authentication while revoking the certificate. ", err.Error())
 		return false, errors.Wrap(err, "Failed to authenticate with certificate")
 	}
 
@@ -94,18 +98,20 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 
 	err = r.revocationList.Insert(certificateHash)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Failed to add hash to revocation list. ", err.Error())
 		return false, errors.Wrap(err, "Failed to add hash to revocation list")
 	}
 
-	r.log.Infof("Certificate revoked.")
+	r.log.Info("Certificate successfully revoked.")
 	return true, nil
 }
 
 func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
+	r.log.Info("Authenticating the call for configuration fetching.")
+
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Failed authentication while fetching the configuration. ", err.Error())
 		return nil, err
 	}
 
@@ -113,7 +119,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 
 	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Error while creating token. ", err.Error())
 		return nil, err
 	}
 
@@ -121,6 +127,8 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 		Subject:      r.csrSubjectConsts.ToString(clientId),
 		KeyAlgorithm: "rsa2048",
 	}
+
+	r.log.Info("Configuration successfully fetched.")
 
 	return &externalschema.Configuration{
 		Token:                         &externalschema.Token{Token: token},

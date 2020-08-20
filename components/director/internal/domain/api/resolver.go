@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
@@ -81,24 +82,30 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
 
+	log.Infof("Adding APIDefinition to package %s", packageID)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
+		log.Error("Error while converting APIDefinition input from GraphQL. ", err.Error())
 		return nil, errors.Wrap(err, "while converting APIDefinition input from GraphQL")
 	}
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
+		log.Error("Error when checking existence of package when adding APIDefinition. ", err.Error())
 		return nil, errors.Wrapf(err, "while checking existence of package")
 	}
 
 	if !found {
+		log.Error("Error when adding APIDefinition due to not existing package. ", err.Error())
 		return nil, apperrors.NewInvalidDataError("cannot add API to not existing package")
 	}
 
 	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
 	if err != nil {
+		log.Errorf("Error when creating APIDefinition in package %s : %s", packageID, err.Error())
 		return nil, err
 	}
 
@@ -114,6 +121,7 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 
 	gqlAPI := r.converter.ToGraphQL(api)
 
+	log.Infof("APIDefinition successfully added to package %s", packageID)
 	return gqlAPI, nil
 }
 
@@ -124,15 +132,19 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
 
+	log.Infof("Updating APIDefinition %s", id)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
+		log.Error("Error while converting APIDefinition input from GraphQL with id %s : %s ", id, err.Error())
 		return nil, errors.Wrap(err, "while converting APIDefinition input from GraphQL")
 	}
 
 	err = r.svc.Update(ctx, id, *convertedIn)
 	if err != nil {
+		log.Errorf("Error when updating APIDefinition %s : %s", id, err.Error())
 		return nil, err
 	}
 
@@ -148,6 +160,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 
 	gqlAPI := r.converter.ToGraphQL(api)
 
+	log.Infof("APIDefinition %s successfully updated.", id)
 	return gqlAPI, nil
 }
 func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
@@ -156,6 +169,9 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
+
+	log.Infof("Deleting APIDefinition %s", id)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	api, err := r.svc.Get(ctx, id)
@@ -165,6 +181,7 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 
 	err = r.svc.Delete(ctx, id)
 	if err != nil {
+		log.Errorf("Error when deleting APIDefinition %s : %s", id, err.Error())
 		return nil, err
 	}
 
@@ -173,6 +190,7 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 		return nil, err
 	}
 
+	log.Infof("APIDefinition %s successfully deleted.", id)
 	return r.converter.ToGraphQL(api), nil
 }
 func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
@@ -182,10 +200,13 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
 
+	log.Infof("Refetching APISpec for API %s", apiID)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	spec, err := r.svc.RefetchAPISpec(ctx, apiID)
 	if err != nil {
+		log.Errorf("Error when refetching APISpec for APIDefinition %s : %s", apiID, err.Error())
 		return nil, err
 	}
 
@@ -195,11 +216,15 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 	}
 
 	converted := r.converter.SpecToGraphQL(apiID, spec)
+	log.Infof("Successfully refetched APISpec for APIDefinition %s", apiID)
 	return converted, nil
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
+	log.Infof("Fetching request for APIDefinition %s", obj.DefinitionID)
+
 	if obj == nil {
+		log.Error("Error when fetching request for APIDefinition. API Spec cannot be empty.")
 		return nil, apperrors.NewInternalError("API Spec cannot be empty")
 	}
 
@@ -212,6 +237,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if obj.DefinitionID == "" {
+		log.Error("Error when fetching FetchRequest. APIDefinition ID is empty.")
 		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition ID is empty")
 	}
 
@@ -229,5 +255,6 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 		return nil, err
 	}
 
+	log.Infof("Successfully fetched request for APIDefinition %s", obj.DefinitionID)
 	return r.frConverter.ToGraphQL(fr)
 }
