@@ -5,7 +5,7 @@ WORKDIR ${BASE_APP_DIR}
 
 COPY . .
 
-RUN go build -v -o system-broker ./cmd/main.go
+RUN go build -v -o /app/system-broker ./cmd/main.go
 
 FROM alpine:edge
 LABEL source = git@github.com:kyma-incubator/compass.git
