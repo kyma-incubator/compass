@@ -35,7 +35,7 @@ spec:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.system_broker.dir }}compass-system-broker:{{ .Values.global.images.system_broker.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.system_broker.dir }}system-broker:{{ .Values.global.images.system_broker.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
