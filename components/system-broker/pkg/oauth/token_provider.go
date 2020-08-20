@@ -129,13 +129,12 @@ func (c *OAuthTokenProvider) getAuthorizationToken(ctx context.Context, credenti
 	form.Add(grantTypeFieldName, credentialsGrantType)
 	form.Add(scopeFieldName, scopes)
 	body := strings.NewReader(form.Encode())
-	log.C(ctx).Errorf("creeeeds %+v", credentials)
-	log.C(ctx).Errorf("boooody: %s", form.Encode())
 	request, err := http.NewRequest(http.MethodPost, credentials.tokensEndpoint, body)
 	if err != nil {
 		return httputils.Token{}, errors.Wrap(err, "Failed to create authorisation token request")
 	}
 
+	//we can use a request provider or maybe its an overkill (reason for making it was correlation ids but then i moved them to a transport)
 	//input := httputils.RequestInput{
 	//	Method:  http.MethodPost,
 	//	URL:     credentials.tokensEndpoint,
