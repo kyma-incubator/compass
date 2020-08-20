@@ -28,63 +28,63 @@ spec:
           {{- range .Values.global.gateway.headers.request.remove }}
           - {{ . }}
           {{- end }}
-    - match:
-      - uri:
-          prefix: /connector
-      route:
+  - match:
+    - uri:
+        prefix: /connector
+    route:
+    - destination:
+        host: {{ .Values.global.oathkeeper.host }}
+        port:
+          number: {{ .Values.global.oathkeeper.port }}
+    headers:
+      request:
+        remove:
+          {{- range .Values.global.gateway.headers.request.remove }}
+          - {{ . }}
+          {{- end }}
+  - match:
+    - uri:
+        exact: /director
+    redirect:
+      uri: /director/
+    headers:
+      request:
+        remove:
+          {{- range .Values.global.gateway.headers.request.remove }}
+          - {{ . }}
+          {{- end }}
+    corsPolicy:
+      allowOrigin:
+        - "*"
+      allowHeaders:
+        - "authorization"
+        - "content-type"
+        - "tenant"
+      allowMethods:
+        - "GET"
+  - match:
+    - uri:
+        regex: /.*
+    route:
       - destination:
           host: {{ .Values.global.oathkeeper.host }}
           port:
             number: {{ .Values.global.oathkeeper.port }}
-      headers:
-        request:
-          remove:
-            {{- range .Values.global.gateway.headers.request.remove }}
-            - {{ . }}
-            {{- end }}
-    - match:
-      - uri:
-          exact: /director
-      redirect:
-        uri: /director/
-      headers:
-        request:
-          remove:
-            {{- range .Values.global.gateway.headers.request.remove }}
-            - {{ . }}
-            {{- end }}
-      corsPolicy:
-        allowOrigin:
-          - "*"
-        allowHeaders:
-          - "authorization"
-          - "content-type"
-          - "tenant"
-        allowMethods:
-          - "GET"
-    - match:
-      - uri:
-          regex: /.*
-      route:
-        - destination:
-            host: {{ .Values.global.oathkeeper.host }}
-            port:
-              number: {{ .Values.global.oathkeeper.port }}
-      headers:
-        request:
-          remove:
-            {{- range .Values.global.gateway.headers.request.remove }}
-            - {{ . }}
-            {{- end }}
-      corsPolicy:
-        allowOrigin:
-          - "*"
-        allowHeaders:
-          - "authorization"
-          - "content-type"
-          - "tenant"
-        allowMethods:
-          - "GET"
-          - "POST"
-          - "PUT"
-          - "DELETE"
+    headers:
+      request:
+        remove:
+          {{- range .Values.global.gateway.headers.request.remove }}
+          - {{ . }}
+          {{- end }}
+    corsPolicy:
+      allowOrigin:
+        - "*"
+      allowHeaders:
+        - "authorization"
+        - "content-type"
+        - "tenant"
+      allowMethods:
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "DELETE"

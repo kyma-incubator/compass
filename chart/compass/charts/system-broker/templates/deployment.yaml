@@ -20,8 +20,7 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
-    # Note: This is read by application code
-    #   serviceAccountName: {{ template "fullname" . }}
+      serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
@@ -81,18 +80,17 @@ spec:
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             # - name: OAUTH_PROVIDER_SECRET_NAMESPACE
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-
-        #   livenessProbe:
-        #     httpGet:
-        #       port: {{.Values.deployment.args.containerPort }}
-        #       path: "/healthz"
-        #     initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
-        #     timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
-        #     periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
-        #   readinessProbe:
-        #     httpGet:
-        #       port: {{.Values.deployment.args.containerPort }}
-        #       path: "/readyz"
-        #     initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
-        #     timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
-        #     periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.deployment.args.containerPort }}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.deployment.args.containerPort }}
+            periodSeconds: 5
+            timeoutSeconds: 2
+            initialDelaySeconds: 10
