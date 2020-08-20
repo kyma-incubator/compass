@@ -24,6 +24,7 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
@@ -42,7 +43,7 @@ const (
 	credentialsGrantType = "client_credentials"
 
 	scopeFieldName = "scope"
-	scopes         = "runtime:read runtime:write"
+	scopes         = "application:read application:write"
 
 	clientIDKey       = "client_id"
 	clientSecretKey   = "client_secret"
@@ -156,7 +157,11 @@ func (c *OAuthTokenProvider) getAuthorizationToken(ctx context.Context, credenti
 	}()
 
 	if response.StatusCode != http.StatusOK {
-		return httputils.Token{}, fmt.Errorf("while calling to token endpoint: unexpected status code, %d, %s", response.StatusCode, response.Status)
+		dump, err := httputil.DumpResponse(response, true)
+		if err != nil {
+			dump = []byte("failed to dump response body")
+		}
+		return httputils.Token{}, fmt.Errorf("while calling to token endpoint: unexpected status code, %d, %s. Response dump: %s", response.StatusCode, response.Status, string(dump))
 	}
 
 	respBody, err := ioutil.ReadAll(response.Body)
