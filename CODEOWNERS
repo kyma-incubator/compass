@@ -8,41 +8,41 @@
 * @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
 
 # All developers working on this repository are able to edit main values.yaml file.
-/chart/compass/values.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
+/chart/compass/values.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
 # Director
-/chart/compass/charts/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/chart/compass/templates/director-api-test.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/chart/compass/templates/director-gateway-integration-test.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/components/schema-migrator/migrations/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/components/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/docs/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/docs/integration-system @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/tests/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
+/chart/compass/charts/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/chart/compass/templates/director-api-test.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/chart/compass/templates/director-gateway-integration-test.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/components/schema-migrator/migrations/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/components/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/docs/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/docs/integration-system @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/tests/director @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
 # Tenant Fetcher
-/chart/compass/templates/tenant-fetcher-secret.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/chart/compass/templates/tenant-fetcher-job.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
+/chart/compass/templates/tenant-fetcher-secret.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/chart/compass/templates/tenant-fetcher-job.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
 # Gateway
-/chart/compass/charts/gateway @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/chart/compass/templates/gateway-auditlog-integration-test.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/components/gateway @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
+/chart/compass/charts/gateway @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/chart/compass/templates/gateway-auditlog-integration-test.yaml @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/components/gateway @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
 # Healthchecker
-/chart/compass/charts/healthchecker @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/components/healthchecker @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
+/chart/compass/charts/healthchecker @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/components/healthchecker @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
 # Pairing Adapter
-/chart/compass/charts/paring-adapter @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/components/pairing-adapter @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
+/chart/compass/charts/paring-adapter @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/components/pairing-adapter @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
 # External Services Mock
-/components/external-services-mock @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
-/chart/compass/charts/external-services-mock @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik
+/components/external-services-mock @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+/chart/compass/charts/external-services-mock @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
 # Compass UI
-/chart/compass/charts/cockpit @kwiatekus @dariadomagala @parostatkiem @akucharska @Wawrzyn321
+/chart/compass/charts/cockpit @kwiatekus @dariadomagala @parostatkiem @akucharska @Wawrzyn321 @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
 # All .md files
 *.md @klaudiagrz @kazydek @bszwarc @mmitoraj @majakurcius @alexandra-simeonova @Peteva @ekaterina-mitova @nkanchev
