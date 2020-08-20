@@ -41,7 +41,7 @@ const (
 	credentialsGrantType = "client_credentials"
 
 	scopeFieldName = "scope"
-	scopes         = "application:read application:write"
+	scopes         = "application:read application:write runtime:read runtime:write"
 
 	clientIDKey       = "client_id"
 	clientSecretKey   = "client_secret"
