@@ -1,4 +1,4 @@
-APP_NAME = system-broker
+APP_NAME = compass-system-broker
 APP_PATH = components/system-broker
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts

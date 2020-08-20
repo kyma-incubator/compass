@@ -81,13 +81,13 @@ func prepareGqlClient(cfg *config.Config, uudSrv http.UUIDService) (*director.Gr
 	httpTransport := http.NewCorrelationIDTransport(http.NewHTTPTransport(cfg.HttpClient), uudSrv)
 	httpClient := http.NewClient(cfg.HttpClient.Timeout, httpTransport)
 
-	// prepare k8s client
+	//prepare k8s client
 	k8sClient, err := prepareK8sClient()
 	if err != nil {
 		return nil, err
 	}
 
-	// prepare secured http client with token provider picked from secret
+	//prepare secured http client with token provider picked from secret
 	requestProvider := http.NewRequestProvider(uudSrv)
 
 	//TODO uncomment this to run locally - replace oauthTokenProvider

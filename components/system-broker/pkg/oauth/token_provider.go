@@ -129,22 +129,28 @@ func (c *OAuthTokenProvider) getAuthorizationToken(ctx context.Context, credenti
 	form.Add(grantTypeFieldName, credentialsGrantType)
 	form.Add(scopeFieldName, scopes)
 	body := strings.NewReader(form.Encode())
-
-	headers := map[string]string{
-		contentTypeHeader: contentTypeApplicationURLEncoded,
-	}
-
-	request, err := c.requestProvider.Provide(ctx, httputils.RequestInput{
-		Method:  http.MethodPost,
-		URL:     credentials.tokensEndpoint,
-		Body:    body,
-		Headers: headers,
-	})
+	log.C(ctx).Errorf("creeeeds %+v", credentials)
+	log.C(ctx).Errorf("boooody: %s", form.Encode())
+	request, err := http.NewRequest(http.MethodPost, credentials.tokensEndpoint, body)
 	if err != nil {
-		return httputils.Token{}, errors.Wrap(err, "while creating authorisation token request")
+		return httputils.Token{}, errors.Wrap(err, "Failed to create authorisation token request")
 	}
+
+	//input := httputils.RequestInput{
+	//	Method:  http.MethodPost,
+	//	URL:     credentials.tokensEndpoint,
+	//	Body:    body,
+	//	Headers: headers,
+	//}
+	//
+	//log.C(ctx).Errorf("%+v", input)
+	//request, err := c.requestProvider.Provide(ctx, input)
+	//if err != nil {
+	//	return httputils.Token{}, errors.Wrap(err, "while creating authorisation token request")
+	//}
 
 	request.SetBasicAuth(credentials.clientID, credentials.clientSecret)
+	request.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {

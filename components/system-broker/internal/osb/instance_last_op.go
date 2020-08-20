@@ -68,6 +68,12 @@ func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, insta
 
 	if IsNotFoundError(err) {
 		logger.Info("Package instance credentials not found")
+		if opType == string(DeprovisionOp) {
+			return domain.LastOperation{
+				State:       domain.Succeeded,
+				Description: "credentials were successfully deleted",
+			}, nil
+		}
 		return domain.LastOperation{}, apiresponses.ErrInstanceDoesNotExist
 	}
 

@@ -33,7 +33,7 @@ type CatalogEndpoint struct {
 }
 
 func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error) {
-	var resp []domain.Service
+	resp := make([]domain.Service, 0)
 
 	applications, err := b.lister.FetchApplications(ctx)
 	if err != nil {
