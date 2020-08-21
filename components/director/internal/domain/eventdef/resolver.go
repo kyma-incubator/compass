@@ -88,12 +88,12 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
-		log.Error("Error occurred when checking existence of Package when adding EventDefinition. ", err.Error())
+		log.Errorf("Error occurred when checking existence of Package with id %s when adding EventDefinition. %s ", packageID, err.Error())
 		return nil, errors.Wrapf(err, "while checking existence of Package")
 	}
 
 	if !found {
-		log.Error("Error occurred when adding EventDefinition due to not existing Package.")
+		log.Errorf("Failed to add EventDefinition to package with id %s: package does not exist", packageID)
 		return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Package")
 	}
 

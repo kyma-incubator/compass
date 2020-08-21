@@ -52,7 +52,7 @@ func NewCertificateResolver(
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
-	r.log.Info("Authenticating the call for signing the Certificate Signing Request.")
+	r.log.Debug("Authenticating the call for signing the Certificate Signing Request.")
 
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
@@ -64,7 +64,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
-		r.log.Error("Error occurred while decoding input CSR during the signing process. ", err.Error())
+		r.log.Errorf("Failed to decode the input CSR of client with id %s during the certificate signing process. %s", clientId, err.Error())
 		return nil, errors.Wrap(err, "Error while decoding Certificate Signing Request")
 	}
 
@@ -75,18 +75,18 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject)
 	if err != nil {
-		r.log.Error("Error occurred while signing the CSR. ", err.Error())
+		r.log.Errorf("Error occurred while signing the CSR with Common Name %s of client with id %s : %s ", subject.CommonName, clientId, err.Error())
 		return nil, errors.Wrap(err, "Error while signing Certificate Signing Request")
 	}
 
 	certificationResult := certificates.ToCertificationResult(encodedCertificates)
 
-	r.log.Info("Certificate Signing Request successfully signed.")
+	r.log.Infof("Certificate Signing Request with Common Name %s of client with id %s successfully signed.", subject.CommonName, clientId)
 	return &certificationResult, nil
 }
 
 func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
-	r.log.Info("Authenticating the call for certificate revocation.")
+	r.log.Debug("Authenticating the call for certificate revocation.")
 
 	clientId, certificateHash, err := r.authenticator.AuthenticateCertificate(ctx)
 	if err != nil {
@@ -98,16 +98,16 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 
 	err = r.revocationList.Insert(certificateHash)
 	if err != nil {
-		r.log.Error("Failed to add hash to revocation list. ", err.Error())
+		r.log.Errorf("Failed to add certificate hash of client with id %s to revocation list. %s ", clientId, err.Error())
 		return false, errors.Wrap(err, "Failed to add hash to revocation list")
 	}
 
-	r.log.Info("Certificate successfully revoked.")
+	r.log.Infof("Certificate of client with id %s successfully revoked.", clientId)
 	return true, nil
 }
 
 func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
-	r.log.Info("Authenticating the call for configuration fetching.")
+	r.log.Debug("Authenticating the call for configuration fetching.")
 
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {

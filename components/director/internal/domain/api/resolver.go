@@ -94,12 +94,12 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
-		log.Error("Error occurred when checking existence of package when adding APIDefinition. ", err.Error())
+		log.Errorf("Error occurred when checking existence of package with id %s when adding APIDefinition. %s", packageID, err.Error())
 		return nil, errors.Wrapf(err, "while checking existence of package")
 	}
 
 	if !found {
-		log.Error("Error occurred when adding APIDefinition due to not existing package.")
+		log.Errorf("Failed to add APIDefinition to package with id %s : package does not exist", packageID)
 		return nil, apperrors.NewInvalidDataError("cannot add API to not existing package")
 	}
 

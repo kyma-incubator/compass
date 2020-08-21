@@ -45,13 +45,13 @@ func NewCertificateService(
 func (svc *certificateService) SignCSR(encodedCSR []byte, subject CSRSubject) (EncodedCertificateChain, apperrors.AppError) {
 	csr, err := svc.certUtil.LoadCSR(encodedCSR)
 	if err != nil {
-		log.Error("Error occurred while loading the CSR.")
+		log.Errorf("Error occurred while loading the CSR with Common Name %s", subject.CommonName)
 		return EncodedCertificateChain{}, err
 	}
 
 	err = svc.checkCSR(csr, subject)
 	if err != nil {
-		log.Error("Error occurred while checking the values of the CSR.")
+		log.Errorf("Error occurred while checking the values of the CSR with common name %s", subject.CommonName)
 		return EncodedCertificateChain{}, err
 	}
 
