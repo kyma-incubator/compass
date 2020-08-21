@@ -82,24 +82,24 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		log.Error("Error while converting EventDefinition input from GraphQL. ", err.Error())
+		log.Error("Error occurred while converting EventDefinition input from GraphQL. ", err.Error())
 		return nil, errors.Wrap(err, "while converting EventDefinition input")
 	}
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
-		log.Error("Error when checking existence of Package when adding EventDefinition. ", err.Error())
+		log.Error("Error occurred when checking existence of Package when adding EventDefinition. ", err.Error())
 		return nil, errors.Wrapf(err, "while checking existence of Package")
 	}
 
 	if !found {
-		log.Error("Error when adding EventDefinition due to not existing Package.")
+		log.Error("Error occurred when adding EventDefinition due to not existing Package.")
 		return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Package")
 	}
 
 	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
 	if err != nil {
-		log.Errorf("Error when creating EventDefinition in package %s. %s", packageID, err.Error())
+		log.Errorf("Error occurred when creating EventDefinition in package %s. %s", packageID, err.Error())
 		return nil, err
 	}
 
@@ -115,7 +115,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	gqlAPI := r.converter.ToGraphQL(api)
 
-	log.Infof("EventDefinition successfully added to package %s", packageID)
+	log.Infof("EventDefinition with id %s successfully added to package %s", id, packageID)
 	return gqlAPI, nil
 }
 
@@ -132,13 +132,13 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		log.Errorf("Error while converting EventDefinition input from GraphQL with id %s : %s ", id, err.Error())
+		log.Errorf("Error occurred while converting EventDefinition input from GraphQL with id %s : %s ", id, err.Error())
 		return nil, errors.Wrap(err, "while converting EventDefinition input")
 	}
 
 	err = r.svc.Update(ctx, id, *convertedIn)
 	if err != nil {
-		log.Errorf("Error when updating EventDefinition %s : %s", id, err.Error())
+		log.Errorf("Error occurred when updating EventDefinition %s : %s", id, err.Error())
 		return nil, err
 	}
 
@@ -178,7 +178,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 
 	err = r.svc.Delete(ctx, id)
 	if err != nil {
-		log.Errorf("Error when deleting EventDefinition %s : %s", id, err.Error())
+		log.Errorf("Error occurred when deleting EventDefinition %s : %s", id, err.Error())
 		return nil, err
 	}
 
@@ -204,7 +204,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 	spec, err := r.svc.RefetchAPISpec(ctx, eventID)
 	if err != nil {
-		log.Errorf("Error when refetching EventDefinitionSpec for EventDefinition %s : %s", eventID, err.Error())
+		log.Errorf("Error occurred when refetching EventDefinitionSpec for EventDefinition %s : %s", eventID, err.Error())
 		return nil, err
 	}
 
@@ -221,7 +221,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
-		log.Error("Error when fetching request for EventDefinition. Event Spec cannot be empty.")
+		log.Error("Error occurred when fetching request for EventDefinition. Event Spec cannot be empty.")
 		return nil, apperrors.NewInternalError("Event Spec cannot be empty")
 	}
 
@@ -234,7 +234,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if obj.DefinitionID == "" {
-		log.Error("Error when fetching FetchRequest. EventDefinition ID is empty.")
+		log.Error("Error occurred when fetching FetchRequest. EventDefinition ID is empty.")
 		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition ID is empty")
 	}
 

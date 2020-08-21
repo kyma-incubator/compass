@@ -64,7 +64,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
-		r.log.Error("Error while decoding input CSR during the signing process. ", err.Error())
+		r.log.Error("Error occurred while decoding input CSR during the signing process. ", err.Error())
 		return nil, errors.Wrap(err, "Error while decoding Certificate Signing Request")
 	}
 
@@ -75,7 +75,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject)
 	if err != nil {
-		r.log.Error("Error while signing the CSR. ", err.Error())
+		r.log.Error("Error occurred while signing the CSR. ", err.Error())
 		return nil, errors.Wrap(err, "Error while signing Certificate Signing Request")
 	}
 
@@ -119,7 +119,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 
 	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
 	if err != nil {
-		r.log.Error("Error while creating token. ", err.Error())
+		r.log.Error("Error occurred while creating token. ", err.Error())
 		return nil, err
 	}
 
