@@ -30,6 +30,7 @@ type converter interface {
 type CatalogEndpoint struct {
 	lister    applicationsLister
 	converter converter
+	selfURL   string
 }
 
 func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error) {

@@ -81,10 +81,11 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 		return nil, errors.Wrap(err, "while fetching applications in gqlclient")
 	}
 
+	//There is a transport on http client that takes care of that now
 	// Nil check is necessary due to GraphQL client not checking response code
-	if response.Result == nil {
-		return nil, errors.New("Failed fetch Applications for Runtime from Director: received nil response")
-	}
+	//if response.Result == nil {
+	//	return nil, errors.New("Failed fetch Applications for Runtime from Director: received nil response")
+	//}
 
 	//TODO paging, and dont return page details outside of the client method
 
@@ -303,4 +304,64 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Co
 	}
 
 	return &resp.Result, nil
+}
+
+func (c *GraphQLClient) FindSpecification(ctx context.Context, in *FindPackageSpecificationInput) (*FindPackageSpecificationOutput, error) {
+	if _, err := govalidator.ValidateStruct(in); err != nil {
+		return nil, errors.Wrap(err, "while validating input")
+	}
+
+	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
+			  result: application(id: %q) {
+						package(id: %q) {
+						  apiDefinition(id: %q) {
+							  spec {
+								data
+								type
+								format
+							  }
+						  }
+						  eventDefinition(id: %q) {
+							  spec {
+								data
+								type
+								format
+							  }
+						  }
+						}
+					  }
+					}`, in.ApplicationID, in.PackageID, in.DefinitionID, in.DefinitionID))
+
+	var response struct {
+		Result schema.ApplicationExt `json:"result"`
+	}
+	if err := c.gcli.Do(ctx, gqlRequest, &response); err != nil {
+		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auth")
+	}
+
+	apidef := response.Result.Package.APIDefinition
+	if apidef.Spec != nil {
+		return &FindPackageSpecificationOutput{
+			Name:        apidef.Name,
+			Description: apidef.Description,
+			Data:        apidef.Spec.Data,
+			Format:      apidef.Spec.Format,
+			Type:        string(apidef.Spec.Type),
+			Version:     apidef.Version,
+		}, nil
+	}
+
+	eventdef := response.Result.Package.APIDefinition
+	if eventdef.Spec != nil {
+		return &FindPackageSpecificationOutput{
+			Name:        apidef.Name,
+			Description: apidef.Description,
+			Data:        apidef.Spec.Data,
+			Format:      apidef.Spec.Format,
+			Type:        string(apidef.Spec.Type),
+			Version:     apidef.Version,
+		}, nil
+	}
+
+	return nil, errors.New("definition missing from director response")
 }

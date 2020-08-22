@@ -19,19 +19,13 @@ package osb
 import (
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/panic_recovery"
 	"github.com/pivotal-cf/brokerapi/v7"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/middlewares"
 )
 
-func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger, service http.UUIDService) func(router *mux.Router) {
+func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger) func(router *mux.Router) {
 	return func(router *mux.Router) {
-
-		router.Use(log.RequestLogger(service))
-		router.Use(panic_recovery.NewRecoveryMiddleware())
 
 		r := router.PathPrefix(rootAPI).Subrouter()
 

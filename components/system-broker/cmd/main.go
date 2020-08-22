@@ -22,9 +22,10 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
+	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
@@ -61,10 +62,10 @@ func main() {
 	directorGraphQLClient, err := prepareGqlClient(cfg, uuidSrv)
 	fatalOnError(err)
 
-	systemBroker := osb.NewSystemBroker(directorGraphQLClient)
-	api := osb.API(cfg.Server.RootAPI, systemBroker, log.NewDefaultLagerAdapter(), uuidSrv)
-
-	srv, err := server.New(cfg.Server, api)
+	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL)
+	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, log.NewDefaultLagerAdapter())
+	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
+	srv, err := server.New(cfg.Server, uuidSrv, osbApi, specsApi.Routes)
 	fatalOnError(err)
 
 	srv.Start(ctx)
@@ -76,24 +77,24 @@ func fatalOnError(err error) {
 	}
 }
 
-func prepareGqlClient(cfg *config.Config, uudSrv http.UUIDService) (*director.GraphQLClient, error) {
+func prepareGqlClient(cfg *config.Config, uudSrv httputil.UUIDService) (*director.GraphQLClient, error) {
 	// prepare raw http transport and http client based on cfg
-	httpTransport := http.NewCorrelationIDTransport(http.NewErrorHandlerTransport(http.NewHTTPTransport(cfg.HttpClient)), uudSrv)
-	httpClient := http.NewClient(cfg.HttpClient.Timeout, httpTransport)
-
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
+	//httpClient := http.NewClient(cfg.HttpClient.Timeout, httpTransport)
+	//
 	//prepare k8s client
-	k8sClient, err := prepareK8sClient()
-	if err != nil {
-		return nil, err
-	}
-
+	//k8sClient, err := prepareK8sClient()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
 	//prepare secured http client with token provider picked from secret
-	requestProvider := http.NewRequestProvider(uudSrv)
-
+	//requestProvider := http.NewRequestProvider(uudSrv)
+	//
 	//TODO uncomment this to run locally - replace oauthTokenProvider
-	//oauthTokenProvider := oauth.NewTokenProviderFromValue("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0.")
-	oauthTokenProvider := oauth.NewTokenProviderFromSecret(cfg.OAuthProvider, httpClient, requestProvider, k8sClient)
-	securedClient, err := http.NewSecuredHTTPClient(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
+	oauthTokenProvider := oauth.NewTokenProviderFromValue("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0.")
+	//oauthTokenProvider := oauth.NewTokenProviderFromSecret(cfg.OAuthProvider, httpClient, requestProvider, k8sClient)
+	securedClient, err := httputil.NewSecuredHTTPClient(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
 	if err != nil {
 		return nil, err
 	}

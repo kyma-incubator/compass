@@ -77,3 +77,19 @@ type RequestPackageInstanceAuthDeletionOutput struct {
 	ID     string                           `json:"id"`
 	Status schema.PackageInstanceAuthStatus `json:"status"`
 }
+
+type FindPackageSpecificationInput struct {
+	ApplicationID string `valid:"required"`
+	PackageID     string `valid:"required"`
+	DefinitionID  string `valid:"required"`
+}
+
+type FindPackageSpecificationOutput struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+
+	Data    *schema.CLOB      `json:"data,omitempty"`
+	Format  schema.SpecFormat `json:"format"`
+	Type    string            `json:"type"`
+	Version *schema.Version   `json:"version,omitempty"`
+}

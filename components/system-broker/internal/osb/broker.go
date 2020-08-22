@@ -24,11 +24,12 @@ type GqlClientForBroker interface {
 	packageCredentialsDeleteRequester
 }
 
-func NewSystemBroker(client GqlClientForBroker) *SystemBroker {
+func NewSystemBroker(client GqlClientForBroker, selfURL string) *SystemBroker {
 	return &SystemBroker{
 		CatalogEndpoint: &CatalogEndpoint{
 			lister:    client,
 			converter: &Converter{},
+			selfURL:   selfURL,
 		},
 		ProvisionEndpoint: &ProvisionEndpoint{
 			credentialsCreator: client,
