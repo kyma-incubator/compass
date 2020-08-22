@@ -80,20 +80,20 @@ func fatalOnError(err error) {
 func prepareGqlClient(cfg *config.Config, uudSrv httputil.UUIDService) (*director.GraphQLClient, error) {
 	// prepare raw http transport and http client based on cfg
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
-	//httpClient := http.NewClient(cfg.HttpClient.Timeout, httpTransport)
-	//
+	httpClient := httputil.NewClient(cfg.HttpClient.Timeout, httpTransport)
+
 	//prepare k8s client
-	//k8sClient, err := prepareK8sClient()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
+	k8sClient, err := prepareK8sClient()
+	if err != nil {
+		return nil, err
+	}
+
 	//prepare secured http client with token provider picked from secret
-	//requestProvider := http.NewRequestProvider(uudSrv)
-	//
+	requestProvider := httputil.NewRequestProvider(uudSrv)
+
 	//TODO uncomment this to run locally - replace oauthTokenProvider
-	oauthTokenProvider := oauth.NewTokenProviderFromValue("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0.")
-	//oauthTokenProvider := oauth.NewTokenProviderFromSecret(cfg.OAuthProvider, httpClient, requestProvider, k8sClient)
+	//oauthTokenProvider := oauth.NewTokenProviderFromValue("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0.")
+	oauthTokenProvider := oauth.NewTokenProviderFromSecret(cfg.OAuthProvider, httpClient, requestProvider, k8sClient)
 	securedClient, err := httputil.NewSecuredHTTPClient(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
 	if err != nil {
 		return nil, err

@@ -27,9 +27,10 @@ type GqlClientForBroker interface {
 func NewSystemBroker(client GqlClientForBroker, selfURL string) *SystemBroker {
 	return &SystemBroker{
 		CatalogEndpoint: &CatalogEndpoint{
-			lister:    client,
-			converter: &Converter{},
-			selfURL:   selfURL,
+			lister: client,
+			converter: &Converter{
+				baseURL: selfURL,
+			},
 		},
 		ProvisionEndpoint: &ProvisionEndpoint{
 			credentialsCreator: client,

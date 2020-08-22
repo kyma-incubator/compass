@@ -92,30 +92,51 @@ func (c *Converter) toPlanMetadata(appID string, pkg *graphql.PackageExt) (*doma
 	metadata := &domain.ServicePlanMetadata{
 		AdditionalMetadata: make(map[string]interface{}),
 	}
-	specsFormatHeader, err := specs.SpecForamtToContentTypeHeader(pkg.APIDefinition.Spec.Format)
-	if err != nil {
-		return nil, err
+
+	specificationsArr := make([]map[string]interface{}, 0, 0)
+
+	for _, apiDef := range pkg.APIDefinitions.Data {
+		if apiDef.Spec != nil {
+			specsFormatHeader, err := specs.SpecForamtToContentTypeHeader(apiDef.Spec.Format)
+			if err != nil {
+				return nil, err
+			}
+			specifications := make(map[string]interface{})
+			specifications["definition_id"] = apiDef.ID
+			specifications["definition_name"] = apiDef.Name
+			specifications["specification_category"] = "api_definition"
+			specifications["specification_type"] = apiDef.Spec.Type
+			specifications["specification_format"] = specsFormatHeader
+			specifications["specification_url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
+				c.baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.PackageIDParameter, pkg.ID, specs.DefinitionIDParameter, apiDef.ID)
+
+			specificationsArr = append(specificationsArr, specifications)
+		}
 	}
 
-	if pkg.APIDefinition.Spec != nil {
-		metadata.AdditionalMetadata["specification_category"] = "api_definition"
-		metadata.AdditionalMetadata["specification_type"] = pkg.APIDefinition.Spec.Type
-		metadata.AdditionalMetadata["specification_format"] = specsFormatHeader
-		metadata.AdditionalMetadata["specification_url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s",
-			c.baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.PackageIDParameter, pkg.APIDefinition.ID)
-		return metadata, nil
+	for _, eventDef := range pkg.EventDefinitions.Data {
+		if eventDef.Spec != nil {
+			specsFormatHeader, err := specs.SpecForamtToContentTypeHeader(eventDef.Spec.Format)
+			if err != nil {
+				return nil, err
+			}
+			specifications := make(map[string]interface{})
+			specifications["definition_id"] = eventDef.ID
+			specifications["definition_name"] = eventDef.Name
+			specifications["specification_category"] = "event_definition"
+			specifications["specification_type"] = eventDef.Spec.Type
+			specifications["specification_format"] = specsFormatHeader
+			specifications["specification_url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
+				c.baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.PackageIDParameter, pkg.ID, specs.DefinitionIDParameter, eventDef.ID)
+
+			specificationsArr = append(specificationsArr, specifications)
+
+		}
 	}
 
-	if pkg.EventDefinition.Spec != nil {
-		metadata.AdditionalMetadata["specification_category"] = "event_definition"
-		metadata.AdditionalMetadata["specification_type"] = pkg.EventDefinition.Spec.Type
-		metadata.AdditionalMetadata["specification_format"] = pkg.EventDefinition.Spec.Format
-		metadata.AdditionalMetadata["specification_url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s",
-			c.baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.PackageIDParameter, pkg.EventDefinition.ID)
-		return metadata, nil
-	}
+	metadata.AdditionalMetadata["specifications"] = specificationsArr
 
-	return nil, errors.New("missing definition specifications")
+	return metadata, nil
 }
 
 func (c *Converter) toServiceMetadata(app *graphql.ApplicationExt) *domain.ServiceMetadata {
