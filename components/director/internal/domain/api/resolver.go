@@ -88,7 +88,7 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		log.Error("Error occurred while converting APIDefinition input from GraphQL. ", err.Error())
+		log.Error("Error occurred while converting GraphQL input to APIDefinition. ", err.Error())
 		return nil, errors.Wrap(err, "while converting APIDefinition input from GraphQL")
 	}
 
@@ -138,7 +138,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		log.Errorf("Error occurred while converting APIDefinition input from GraphQL with id %s : %s ", id, err.Error())
+		log.Errorf("Error occurred while converting GraphQL input to APIDefinition with id %s : %s ", id, err.Error())
 		return nil, errors.Wrap(err, "while converting APIDefinition input from GraphQL")
 	}
 

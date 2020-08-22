@@ -119,7 +119,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 
 	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
 	if err != nil {
-		r.log.Error("Error occurred while creating token. ", err.Error())
+		r.log.Errorf("Error occurred while creating token for client with id %s : %s", clientId, err.Error())
 		return nil, err
 	}
 

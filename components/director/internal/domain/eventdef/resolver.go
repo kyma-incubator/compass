@@ -82,7 +82,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		log.Error("Error occurred while converting EventDefinition input from GraphQL. ", err.Error())
+		log.Error("Error occurred while converting GraphQL input to EventDefinition. ", err.Error())
 		return nil, errors.Wrap(err, "while converting EventDefinition input")
 	}
 
@@ -132,7 +132,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		log.Errorf("Error occurred while converting EventDefinition input from GraphQL with id %s : %s ", id, err.Error())
+		log.Errorf("Error occurred while converting GraphQL input to EventDefinition with id %s : %s ", id, err.Error())
 		return nil, errors.Wrap(err, "while converting EventDefinition input")
 	}
 

@@ -137,7 +137,7 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	convertedIn, err := r.packageConverter.CreateInputFromGraphQL(in)
 	if err != nil {
-		log.Error("Error occurred while converting Package input from GraphQL. ", err.Error())
+		log.Error("Error occurred while converting GraphQL input to Package. ", err.Error())
 		return nil, errors.Wrap(err, "while converting input from GraphQL")
 	}
 
@@ -159,7 +159,7 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	gqlPackage, err := r.packageConverter.ToGraphQL(pkg)
 	if err != nil {
-		log.Errorf("Error occurred while converting Package %s to GraphQL. %s", id, err.Error())
+		log.Errorf("Error occurred while converting Package with id %s to GraphQL: %s", id, err.Error())
 		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
 	}
 
@@ -180,7 +180,7 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 
 	convertedIn, err := r.packageConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
-		log.Errorf("Error occurred while converting Package input from GraphQL with id %s : %s", id, err.Error())
+		log.Errorf("Error occurred while converting GraphQL input to Package with id %s : %s", id, err.Error())
 		return nil, errors.Wrapf(err, "while converting Package update input from GraphQL with ID: [%s]", id)
 	}
 
@@ -202,7 +202,7 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 
 	gqlPkg, err := r.packageConverter.ToGraphQL(pkg)
 	if err != nil {
-		log.Errorf("Error occurred while converting Package to GraphQL with id %s : %s", id, err.Error())
+		log.Errorf("Error occurred while converting Package with id %s to GraphQL: %s", id, err.Error())
 		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
 	}
 
@@ -239,7 +239,7 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 
 	deletedPkg, err := r.packageConverter.ToGraphQL(pkg)
 	if err != nil {
-		log.Errorf("Error occurred while converting Package to GraphQL with id %s : %s", id, err.Error())
+		log.Errorf("Error occurred while converting Package with id %s to GraphQL: %s", id, err.Error())
 		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
 	}
 
