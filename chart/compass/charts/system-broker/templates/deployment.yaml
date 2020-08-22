@@ -57,6 +57,8 @@ spec:
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             # - name: SERVER_SHUTDOWN_TIMEOUT
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+            - name: SERVER_SELF_URL
+              value: "https://{{ .Values.global.system_broker.tls.host }}.{{ .Values.global.ingress.domainName }}/broker"
             - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
 

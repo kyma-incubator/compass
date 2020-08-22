@@ -8,7 +8,8 @@ global:
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
-
+    - name: global
+      id: b2864e28-e321-11ea-87d0-0242ac130003
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -122,6 +123,8 @@ global:
 
   system_broker:
     port: 5001
+    tls:
+      host: compass-gateway
     enabled: true
     secrets:
       integrationSystemCredentials:
