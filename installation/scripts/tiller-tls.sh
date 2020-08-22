@@ -4,11 +4,20 @@ RETRY_TIME=5
 MAX_RETRIES=3
 SECRET_NAME="helm-secret"
 NAMESPACE="compass-installer"
+NAMESPACE_FALLBACK="kyma-integration"
 
 mkdir -p "$(helm home)"
 
 function findHelmSecret() {
     kubectl get -n "${NAMESPACE}" secret "${SECRET_NAME}" > /dev/null
+}
+
+function findHelmSecretFallback() {
+    kubectl get -n "${NAMESPACE_FALLBACK}" secret "${SECRET_NAME}" > /dev/null
+}
+
+function copyHelmSecret() {
+    kubectl get secret "${SECRET_NAME}" --namespace="${NAMESPACE_FALLBACK}" --export -o yaml | kubectl apply --namespace="${NAMESPACE}" -f -
 }
 
 function defer() {
@@ -30,7 +39,7 @@ function saveCerts {
 }
 
 echo "---> Finding Helm secret..."
-for i in $(seq 1 "${MAX_RETRIES}"); do findHelmSecret && break || defer "${i}" || fail ; done
+for i in $(seq 1 "${MAX_RETRIES}"); do (findHelmSecret || (findHelmSecretFallback && copyHelmSecret)) && break || defer "${i}" || fail ; done
 
 echo "---> Helm secret found. Saving Helm certificates under the \"$(helm home)\" directory..."
 saveCerts
