@@ -11,7 +11,7 @@ if [ `uname -s` = "Darwin" ]; then
     VM_DRIVER="hyperkit"
 fi
 
-source $SCRIPTS_DIR/utils.sh
+source $CURRENT_DIR/utils.sh
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -42,6 +42,12 @@ do
             shift # past argument
             shift # past value
         ;;
+        --kyma-installation)
+            checkInputParameterValue "${2}"
+            KYMA_INSTALLATION="${2}"
+            shift # past argument
+            shift # past value
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -64,5 +70,5 @@ if [ -z "$CR_PATH" ]; then
 
 fi
 
-bash ${SCRIPTS_DIR}/installer.sh --cr "${CR_PATH}" --password "${ADMIN_PASSWORD}"
+bash ${SCRIPTS_DIR}/installer.sh --cr "${CR_PATH}" --password "${ADMIN_PASSWORD}" --kyma-installation "${KYMA_INSTALLATION}"
 rm -rf $TMPDIR
