@@ -39,7 +39,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 echo "Provisioning Minikube cluster..."
-kyma provision minikube --cpus 5 --memory 9000 --vm-driver hyperkit --timeout 25m
+#kyma provision minikube --cpus 5 --memory 9000 --vm-driver hyperkit --timeout 25m
 
 if [ -z "$KYMA_RELEASE" ]; then
   KYMA_RELEASE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
@@ -49,7 +49,7 @@ if [ -z "$KYMA_INSTALLATION" ]; then
   KYMA_INSTALLATION="minimal"
 fi
 
-LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-release ${KYMA_RELEASE} --kyma-installation ${KYMA_INSTALLATION}
+#LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-release ${KYMA_RELEASE} --kyma-installation ${KYMA_INSTALLATION}
 bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh --kyma-installation ${KYMA_INSTALLATION}
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
 
