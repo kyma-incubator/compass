@@ -9,12 +9,10 @@ metadata:
   finalizers:
     - finalizer.installer.kyma-project.io
 spec:
-  version: "__VERSION__"
-  url: "__URL__"
+  version: "0.0.1"
+  url: ""
   components:
     - name: "cluster-essentials"
-      namespace: "kyma-system"
-    - name: "testing"
       namespace: "kyma-system"
     - name: "istio"
       namespace: "istio-system"
@@ -45,8 +43,6 @@ spec:
     - name: "core"
       namespace: "kyma-system"
     - name: "cluster-users"
-      namespace: "kyma-system"
-    - name: "logging"
       namespace: "kyma-system"
     - name: "permission-controller"
       namespace: "kyma-system"

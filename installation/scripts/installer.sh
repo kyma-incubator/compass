@@ -6,7 +6,7 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 RESOURCES_DIR="${CURRENT_DIR}/../resources"
 INSTALLER="${RESOURCES_DIR}/installer-local.yaml"
 INSTALLER_CONFIG="${RESOURCES_DIR}/installer-config-local.yaml.tpl"
-INSTALLER_CONFIG2="${RESOURCES_DIR}/installer-config-local-compass-with-full-kyma.yaml"
+INSTALLER_CONFIG_KYMA_OVERRIDES="${RESOURCES_DIR}/installer-config-local-compass-with-full-kyma.yaml"
 AZURE_BROKER_CONFIG=""
 HELM_VERSION=$(helm version --short -c | cut -d '.' -f 1)
 
@@ -27,6 +27,12 @@ do
             ;;
         --password)
             ADMIN_PASSWORD="$2"
+            shift
+            shift
+            ;;
+         --kyma-installation)
+            checkInputParameterValue "${2}"
+            KYMA_INSTALLATION="$2"
             shift
             shift
             ;;
@@ -66,7 +72,14 @@ if [ $CR_PATH ]; then
 fi
 
 echo -e "\nCreating installation combo yaml"
-COMBO_YAML=$(bash ${CURRENT_DIR}/concat-yamls.sh ${INSTALLER} ${INSTALLER_CONFIG} ${INSTALLER_CONFIG2} ${AZURE_BROKER_CONFIG})
+if [[ $KYMA_INSTALLATION == *full* ]]; then
+  echo -e "Preparing combo installer for compass with full kyma"
+  COMBO_YAML=$(bash ${CURRENT_DIR}/concat-yamls.sh ${INSTALLER} ${INSTALLER_CONFIG} ${INSTALLER_CONFIG_KYMA_OVERRIDES} ${AZURE_BROKER_CONFIG})
+else
+  echo -e "Preparing combo installer for compass with minimal kyma"
+  COMBO_YAML=$(bash ${CURRENT_DIR}/concat-yamls.sh ${INSTALLER} ${INSTALLER_CONFIG} ${AZURE_BROKER_CONFIG})
+fi
+
 
 rm -rf ${AZURE_BROKER_CONFIG}
 

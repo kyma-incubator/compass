@@ -65,7 +65,12 @@ For local development, install Compass with the minimal Kyma installation on Min
 The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file. You can override it with the following command:
 
 ```bash
-./installation/cmd/run.sh {KYMA_VERSION}
+./installation/cmd/run.sh --kyma-release {KYMA_VERSION}
+```
+You can also specify if you want the kyma installation to contain only minimal components or whether you want full kyma
+
+```bash
+./installation/cmd/run.sh --kyma-installation full
 ```
 
 ## Single cluster with Compass and Runtime Agent
@@ -133,94 +138,8 @@ Once Compass is installed, Runtime Agent will be configured to fetch the Runtime
 
 ### Local Minikube installation
 
-To install Compass and Runtime components on Minikube, follow these steps:
-
-1. Use the Kyma CLI to provision a Minikube cluster:
+To install Compass and Runtime components on Minikube, run the following command. Kyma source code will be picked up according to KYMA_VERSION file and compass source code will be picked up from local sources (locally checked out branch)
 
     ```bash
-    kyma provision minikube
+    ./installation/cmd/run.sh --kyma-installation full
     ```
-
-1. Prepare the Installation CR and overrides:
-    
-    ```bash
-    wget https://raw.githubusercontent.com/kyma-project/kyma/master/installation/resources/installer-cr-cluster-runtime.yaml.tpl
-    wget https://raw.githubusercontent.com/kyma-project/kyma/master/installation/resources/installer-config-local.yaml.tpl
-    cat <<EOF > disable-legacy-connectivity-override.yaml
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      name: disable-legacy-connectivity-override
-      namespace: kyma-installer
-      labels:
-        installer: overrides
-        kyma-project.io/installation: ""
-    data:
-      global.disableLegacyConnectivity: "true"
-    EOF
-    ```
-
-1. In order to reduce memory and CPU usage, from the downloaded `installer-cr-cluster-runtime.yaml.tpl` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, and `kiali`.
-1. Install Kyma with the Runtime Agent using the prepared files: 
-
-    ```bash
-    kyma install -c installer-cr-cluster-runtime.yaml.tpl -o installer-config-local.yaml.tpl -o disable-legacy-connectivity-override.yaml
-    ```
-
-1. Apply the required overrides using the following command:
-
-    ```bash
-    kubectl create namespace compass-installer || true && cat <<EOF | kubectl apply -f -
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      name: compass-overrides
-      namespace: compass-installer
-      labels:
-        installer: overrides
-        component: compass
-        kyma-project.io/installation: ""
-    data:
-          # The name of the currently used gateway
-          global.istio.gateway.name: "kyma-gateway"
-          # The Namespace of the currently used gateway
-          global.istio.gateway.namespace: "kyma-system"
-          global.connector.secrets.ca.name: "connector-service-app-ca"
-          # The Namespace with a Secret that contains a certificate for the Connector Service
-          global.connector.secrets.ca.namespace: "kyma-integration"
-          # The parameter that enables the Compass gateway, as the default Kyma gateway is disabled in this installation mode
-          gateway.gateway.enabled: "false"
-          global.agentPreconfiguration: "true"
-    EOF
-    MINIKUBE_IP=$(minikube ip)
-    cat <<EOF | kubectl apply -f -
-    $(sed -e 's/\.minikubeIP: .*/\.minikubeIP: '"${MINIKUBE_IP}"'/g' installation/resources/installer-config-local.yaml.tpl)
-    EOF
-    ```
-
-1. Install Compass. ​There are three possible installation options:
-    
-    | Installation option     	| Value to use with the installation command   	| Example value          	|
-    |-------------------------	|-------------------	|-------------------------	|
-    | From the `master` branch 	| `master`          	| `master`                	|
-    | From a specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
-    | From a specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
-
-    Once you decide on the installation option, use these commands:
-    ```bash
-    export INSTALLATION_OPTION={installationOption}
-    kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
-    ```
-
-1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
-    ```bash
-    source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
-    ```
-
-1. Once the Compass installation is finished, run the following command:
-    
-    ```bash
-    sudo sh -c 'echo "\n$(minikube ip) adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local" >> /etc/hosts'
-    ```
-
-Runtime Agent will be configured to fetch configuration from the Compass installation within the same cluster.

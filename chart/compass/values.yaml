@@ -125,7 +125,7 @@ global:
     port: 5001
     tls:
       host: compass-gateway
-    enabled: true
+    enabled: false
     secrets:
       integrationSystemCredentials:
         name: compass-system-broker-credentials
