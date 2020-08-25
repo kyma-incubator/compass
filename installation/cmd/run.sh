@@ -39,7 +39,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 echo "Provisioning Minikube cluster..."
-kyma provision minikube --cpus 5 --memory 9000 --vm-driver hyperkit --timeout 25m
+kyma provision minikube --cpus 5 --memory 9000 --timeout 25m
 
 if [ -z "$KYMA_RELEASE" ]; then
   KYMA_RELEASE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
