@@ -1,39 +1,41 @@
-# Limiting access to GraphQL resources 
+# Limiting Access to GraphQL Resources 
 
-This document describes a possible solution to the problem of unlimited resource access. The issue that has to be solved is that one application in tenant X can modify the metadata of another application in the same tenant X. The same applies for runtimes. Furthermore, integration systems have global access to all data in Compass. It is desired that an integration system would be able to access only resources that it created as well as resources to which it has been granted access.
+This document describes a possible solution to the problem of unlimited resource access. The problem that needs to be corrected is the current possibility of one application in tenant X to modify the metadata of another application in the same tenant X. This problem is also valid for runtimes. Furthermore, integration systems have global access to all data in Compass. An optimal solution features an integration system that is limited to access only its own resources (newly created in the system) or resources, to which the system has granted access already.
 
-The proposal includes limiting access to operations for `applications`, `application_templates`, `runtimes` and `integration systems`.
+The solution proposal includes limiting the access to operations for `applications`, `application_templates`, `runtimes`, and `integration systems`.
 
 ## Terminology
 
-* API Consumer - Application / Runtime / Integration System / User
-* Owner (Owning Entity) - the top level entity to which certain resource belongs to (for example the owner of packages, api definitions, documents, etc is the application). Owner Types are `application`, `runtime`, `integration system` and `application template`.
+* API Consumer - An API Consumer could be any of the following: application, runtime, integration system, or user.
+* Owner (or owning entity) - A top-level entity to which a given resource belongs. For example, an application is the owner of packages, api definitions, documents, and so on. In this context, the following owner types are available: `application`, `runtime`, `integration system`, and `application template`.
 
 ## Requirements
 
-When a user makes a query or mutation, the secured resolvers concept should not limit the user's access. Simply said, a the user consumer type should not be affected by the secured resolvers concept.
+When a user makes a query or mutation, the secured resolvers concept should not limit the user's access. Put simply, the user consumer type should not be affected by the secured resolvers concept.
 
-An application must be not be able to modify other application's metadata in the same tenant by default. This applies not only for the top level application entitiy but allso for all its related subentities such as packages, API and Event definitions, documents, etc. For example application X should not be able to insert API Definitions in package Y if package Y belongs to application Z even if applications X and Z are both in the same tenant.
+By default, an application must not be allowed to modify another application's metadata within the same tenant. This applies not only for the top-level application entity but also for all its related sub-entities such as: packages, API and event definitions, documents, and so on. For example, application X must not be allowed to insert API definitions in package Y when package Y belongs to application Z, even if both applications X and Z are in the same tenant.
 
-A runtime must be not be able to modify other runtime's metadata in the same tenant by default. A runtime must also not be able to fetch applications that belong to other runtimes.
+By default, a runtime must not be allowed to modify another runtime's metadata within the same tenant. Additionally, a runtime must not be allowed to fetch applications that belong to other runtimes.
 
-An integration system must be not be able to modify other integration system's metadata by default.
+By default, an integration system must not be allowed to modify another integration system's metadata.
 
-Integration systems in general can manage other systems and their metadata (applications and runtimes). An integration system should be able to modify only what it has created or what it was granted access to modify. For example, if an integration system registers an application, it can later also register packages for this application. However, it cannot modify metadata for applications that other consumers registered unless explicitly being granted access to do so. Another example would be when a user registers an application via the UI. In order for integration system X to get access to this application either the user must grant this access via an API call to Director (grant access to the integration system for this application) or some automated procedures must be in place (there is a concept about stacking credentials via one time tokens in the later sections of the document). While the examples so far are with applications, these requirements apply also for application subentities, application templates and runtimes managed by integration systems.
+In general, integration systems can manage other systems and their metadata (such as applications, and runtimes). However, an integration system must be allowed to modify only entities that it has created, or entities to which it has granted access for modifications. For example, if an integration system registers an application, later on, it can  also register packages for this application. However, it cannot modify metadata for applications that other consumers registered, unless it has granted access explicitly to do so. Another example is when a user registers an application via the UI. To get access to this application, the integration system X either must be granted this access by the user via an API call to Director (grant access to the integration system for this application), or some automated procedures must be in place (a concept about stacking credentials via one time tokens is available in the further sections of this document). Although the given examples are related to applications, these requirements are also valid for application sub-entities, application templates, and runtimes managed by integration systems.
 
-There are certain integration systems (such as UI applications) that require unrestricted access to the Director API. They should keep working properly having a global view/access.
+Some integration systems (such as UI applications) require unrestricted access to the Director API. They should keep working properly having a global view/access.
 
-There is an implicit requirement derived from the requirements above that no system should be able to list all applications, runtimes or integration systems.
+An implicit requirement, derived from the requirements above, is that no system must be allowed to list all applications, runtimes, or integration systems.
 
-(Out-of-scope) Limit access to the `auths` field of each type to admin Users only.
+Out-of-scope: Limit access to the `auths` field of each type to admin users only.
 
 ## Current State
 
-The following section will analyze the problem in all current queries and mutations and group them in sections providing a conceptual solution.
+The following section analyzes the problem in all current queries and mutations, and groups them in sections providing a conceptual solution.
 
-The problem with securing resolvers is three dimencional (mutations/queries X consumer X owner) There are about 40 mutations/queries that have to be secured, 4 consumer types and 4 owner types. For specific queries/mutations there is always a single owner but what is tricky is how to derive the id of that owner. For example, if in getApplication(applicationID), the owner id is passed as input to the query while in updatePackage(packageID) some special code needs to be executed to find the application id from the package id. In the case of updateAPIDefinition(apiDefID) the special code that needs to be executed to derive.
+The problem with securing resolvers is three dimensional. It features all three: mutations/queries; consumer, and owner. In total, there are about 40 mutations/queries that have to be secured, 4 consumer types, and 4 owner types. For specific queries/mutations there is always a single owner but obtaining the id of that owner is not always straight forward. For example, in getApplication(applicationID) the owner id is passed as input to the query, however, in updatePackage(packageID) some special code needs to be executed to find the application id from the package id. In the case of updateAPIDefinition(apiDefID) the special code that needs to be executed to derive (nck: To derive what?).
 
-It's worth mentioning why we care who the owner and the owner ID is. Currently, thanks to the ORY integration, the Director API always recieves an ID token no matter what the actual authentication mechanism is. From the ID token, the details about the actual caller/consumer can be extracted and then stored in the Go context. So on a very high level, we are looking for a way to see if the consumer from the Go context and the owner of the requested resource "match". More generally put (especially needed for integration systems) we are looking for a way to verify if the consumer can access the owner's resources (for example if the owner is an app, these resources would be application details, packages, etc).
+Why it is important who is the owner and what is the owner ID?
+
+Currently, with the help of the ORY integration, the Director API always recieves an ID token, regardless of the actual authentication mechanism. Then, the details about the actual caller/consumer can be extracted from the ID token, and then, stored in the Go context. Therefore, on a very high level, it is needed to ensure that the consumer from the Go context matches to the owner of the requested resource. More broadly put (and required especially for integration systems), it is important to verify that the consumer can access the owner's resources. For example, if the owner is an application, the resources that must be accessible are the application details, packages, and so on.
 
 ### Determining the owner ID
 
