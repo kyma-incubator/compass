@@ -67,7 +67,7 @@ The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/
 ```bash
 ./installation/cmd/run.sh --kyma-release {KYMA_VERSION}
 ```
-You can also specify if you want the kyma installation to contain only minimal components or whether you want full kyma
+You can also specify if you want the Kyma installation to contain only `minimal` components or whether you want `full` Kyma
 
 ```bash
 ./installation/cmd/run.sh --kyma-installation full
@@ -138,8 +138,10 @@ Once Compass is installed, Runtime Agent will be configured to fetch the Runtime
 
 ### Local Minikube installation
 
-To install Compass and Runtime components on Minikube, run the following command. Kyma source code will be picked up according to KYMA_VERSION file and compass source code will be picked up from local sources (locally checked out branch)
+To install Compass and Runtime components on Minikube, run the following command. Kyma source code will be picked up according to KYMA_VERSION file and compass source code will be picked up from local sources (locally checked out branch):
 
-    ```bash
-    ./installation/cmd/run.sh --kyma-installation full
-    ```
+```bash
+./installation/cmd/run.sh --kyma-installation full
+```
+
+> **Note:** In order to reduce memory and CPU usage, from the `installer-cr-kyma.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, and `kiali`.
