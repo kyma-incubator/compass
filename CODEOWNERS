@@ -44,5 +44,8 @@
 # Compass UI
 /chart/compass/charts/cockpit @kwiatekus @dariadomagala @parostatkiem @akucharska @Wawrzyn321 @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
+# Installation files
+/installation @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+
 # All .md files
 *.md @klaudiagrz @kazydek @bszwarc @mmitoraj @majakurcius @alexandra-simeonova @Peteva @ekaterina-mitova @nkanchev
