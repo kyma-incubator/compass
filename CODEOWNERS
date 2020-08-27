@@ -5,7 +5,7 @@
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
 # These are the default owners for the whole content of the `compass` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
-* @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
+* @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @pankrator @dzahariev
 
 # All developers working on this repository are able to edit main values.yaml file.
 /chart/compass/values.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
@@ -43,6 +43,9 @@
 
 # Compass UI
 /chart/compass/charts/cockpit @kwiatekus @dariadomagala @parostatkiem @akucharska @Wawrzyn321 @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
+
+# Installation files
+/installation @gvachkov @ataleksandrov @desislavaa @danielgospodinow @KirilKabakchiev @NickyMateev @dpanayotov @DimitarPetrov @krasish @StanislavStefanov @pankrator @alextargov @PetarTodorovv @nyordanoff @dzahariev
 
 # All .md files
 *.md @klaudiagrz @kazydek @bszwarc @mmitoraj @majakurcius @alexandra-simeonova @Peteva @ekaterina-mitova @nkanchev
