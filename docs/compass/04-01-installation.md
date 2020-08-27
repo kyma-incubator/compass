@@ -138,10 +138,10 @@ Once Compass is installed, Runtime Agent will be configured to fetch the Runtime
 
 ### Local Minikube installation
 
-To install Compass and Runtime components on Minikube, run the following command. Kyma source code will be picked up according to KYMA_VERSION file and compass source code will be picked up from local sources (locally checked out branch):
+To install Compass and Runtime components on Minikube, run the following command. Kyma source code will be picked up according to the KYMA_VERSION file and Compass source code will be picked up from the local sources (locally checked out branch):
 
 ```bash
 ./installation/cmd/run.sh --kyma-installation full
 ```
 
-> **Note:** In order to reduce memory and CPU usage, from the `installer-cr-kyma.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, and `kiali`.
+> **Note:** To reduce memory and CPU usage, from the `installer-cr-kyma.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, or `kiali`.
