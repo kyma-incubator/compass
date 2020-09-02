@@ -5,14 +5,13 @@ ALTER TABLE packages
 
 CREATE TABLE packages (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    owner_app_id uuid NOT NULL, /* if a package is returned by a system, only that system is expected iis expected to return this package, otherwise -> validation error */
+    app_id uuid NOT NULL, /* if a package is returned by a system, only that system is expected iis expected to return this package, otherwise -> validation error */
     FOREIGN KEY (owner_app_id) REFERENCES applications (id) ON DELETE CASCADE,
     title VARCHAR(256) NOT NULL,
     short_description VARCHAR(256) NOT NULL,
     description TEXT NOT NULL,
     version: VARCHAR(64) NOT NULL,
-    release_status: VARCHAR(256), /* spec doesn't define NULL fields */
-    api_protocol VARCHAR(256),
+    licence VARCHAR(512),
     licence_type VARCHAR(256),
     terms_of_service VARCHAR(512),
     logo VARCHAR(512),
@@ -21,16 +20,31 @@ CREATE TABLE packages (
     tags JSONB, /* consider how to store tags to be queriable */
     actions JSONB,
     last_updated TIMESTAMP NOT NULL,
-    extensions JSOB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
+    extensions JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
 );
 
 ALTER TABLE bundles
-    ADD COLUMN package_id UUID; /* NULLable and no foreign key because we don't have packages for existing systems */
+    RENAME COLUMN name TO title;
+
+ALTER TABLE bundles
+    ADD COLUMN short_description VARCHAR(256) NOT NULL,
+    ADD COLUMN tags JSONB, /* consider how to store tags to be queriable */
+    ADD COLUMN last_updated TIMESTAMP NOT NULL,
+    ADD COLUMN extensions JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
+
+CREATE TABLE package_bundles
+    package_id UUID NOT NULL,
+    bundle_id UUID NOT NULL,
+    FOREIGN KEY (package_id) REFERENCES packages (id) ON DELETE CASCADE,
+    FOREIGN KEY (bundle_id) REFERENCES bundles (id) ON DELETE CASCADE;
 
 ALTER TABLE api_definitions
     RENAME COLUMN name TO title,
     RENAME COLUMN package_id TO bundle_id,
-    RENAME COLUMN version_value TO version;
+    RENAME COLUMN version_value TO version
+    RENAME COLUMN target_url TO entry_point;
+
+ALTER TABLE api_definitions ALTER entry_point TYPE VARCHAR(512);
 
 ALTER TABLE api_definitions
 DROP CONSTRAINT api_definitions_package_id_fk,
@@ -50,10 +64,10 @@ ALTER TABLE api_definitions
     ADD COLUMN url VARCHAR(512),
     ADD COLUMN release_status VARCHAR(64) NOT NULL, /* should be ENUM */
     ADD COLUMN api_protocol VARCHAR(64) NOT NULL, /* should be ENUM */
-    ADD COLUMN entry_point JSONB NOT NULL,
+    ADD COLUMN entry_point VARCHAR(512),
     ADD COLUMN actions JSONB NOT NULL,
     ADD COLUMN last_updated TIMESTAMP NOT NULL,
-    ADD COLUMN extensions JSOB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
+    ADD COLUMN extensions JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
 
 ALTER TABLE event_api_definitions
     RENAME COLUMN name TO title,
@@ -78,6 +92,20 @@ ALTER TABLE event_api_definitions
     ADD COLUMN url VARCHAR(512),
     ADD COLUMN release_status VARCHAR(64) NOT NULL, /* should be ENUM */
     ADD COLUMN last_updated TIMESTAMP NOT NULL,
-    ADD COLUMN extensions JSOB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
+    ADD COLUMN extensions JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
+
+/*
+ALTER TABLE api_definitions
+    DROP COLUMN group_name,
+    DROP COLUMN version_deprecated,
+    DROP COLUMN version_deprecated_since,
+    DROP COLUMN version_for_removal;
+
+ALTER TABLE event_api_definitions
+    DROP COLUMN group_name,
+    DROP COLUMN version_deprecated,
+    DROP COLUMN version_deprecated_since,
+    DROP COLUMN version_for_removal;
+ */
 
 COMMIT;
