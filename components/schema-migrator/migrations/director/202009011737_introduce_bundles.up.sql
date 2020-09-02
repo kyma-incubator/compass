@@ -38,6 +38,19 @@ CREATE TABLE package_bundles
     FOREIGN KEY (package_id) REFERENCES packages (id) ON DELETE CASCADE,
     FOREIGN KEY (bundle_id) REFERENCES bundles (id) ON DELETE CASCADE;
 
+ALTER TABLE package_instance_auths
+  RENAME TO bundle_instance_auths;
+
+ALTER TABLE bundle_instance_auths
+    RENAME COLUMN package_id TO bundle_id;
+
+ALTER TABLE bundle_instance_auths
+DROP CONSTRAINT package_instance_auths_tenant_id_fkey,
+ADD CONSTRAINT package_instance_auths_bundle_id_fkey
+    FOREIGN KEY (bundle_id)
+    REFERENCES bundles(id)
+    ON DELETE CASCADE;
+
 ALTER TABLE api_definitions
     RENAME COLUMN name TO title,
     RENAME COLUMN package_id TO bundle_id,
