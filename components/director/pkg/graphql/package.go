@@ -3,7 +3,9 @@ package graphql
 type Package struct {
 	ID                             string      `json:"id"`
 	Name                           string      `json:"name"`
+	ShortDescription			   *string	   `json:"shortDescription"`
 	Description                    *string     `json:"description"`
+	Version			   			   *string	   `json:"version"`
 	InstanceAuthRequestInputSchema *JSONSchema `json:"InstanceAuthRequestInputSchema"`
 	// When defined, all Auth requests fallback to defaultAuth.
 	DefaultInstanceAuth *Auth `json:"defaultInstanceAuth"`

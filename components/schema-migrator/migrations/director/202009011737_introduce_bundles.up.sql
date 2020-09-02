@@ -27,7 +27,7 @@ ALTER TABLE bundles
     RENAME COLUMN name TO title;
 
 ALTER TABLE bundles
-    ADD COLUMN short_description VARCHAR(256) NOT NULL,
+    ADD COLUMN short_description VARCHAR(256) NOT NULL, /* the original description column should be NOT NULL per OD spec  */
     ADD COLUMN tags JSONB, /* consider how to store tags to be queriable */
     ADD COLUMN last_updated TIMESTAMP NOT NULL,
     ADD COLUMN extensions JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
@@ -77,7 +77,6 @@ ALTER TABLE api_definitions
     ADD COLUMN url VARCHAR(512),
     ADD COLUMN release_status VARCHAR(64) NOT NULL, /* should be ENUM */
     ADD COLUMN api_protocol VARCHAR(64) NOT NULL, /* should be ENUM */
-    ADD COLUMN entry_point VARCHAR(512),
     ADD COLUMN actions JSONB NOT NULL,
     ADD COLUMN last_updated TIMESTAMP NOT NULL,
     ADD COLUMN extensions JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */

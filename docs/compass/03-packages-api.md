@@ -40,7 +40,7 @@ type Package {
 }
 
 type PackagePage implements Pageable {
-  data: [Package!]!
+  data: [Bundle!]!
   pageInfo: PageInfo!
   totalCount: Int!
 }
@@ -68,9 +68,9 @@ type Mutation {
   addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document!
     @hasScopes(path: "graphql.mutation.addDocumentToPackage")
 
-  addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package!
-  updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package!
-  deletePackage(id: ID!): Package!
+  addPackage(applicationID: ID!, in: BundleCreateInput! @validate): Bundle!
+  updatePackage(id: ID!, in: BundleUpdateInput! @validate): Bundle!
+  deletePackage(id: ID!): Bundle!
 }
 ```
 

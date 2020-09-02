@@ -50,8 +50,8 @@ type Package {
   Optional JSON schema for validating user's input when provisioning a ServiceClass.
   """
   instanceAuthRequestInputSchema: JSONSchema
-  instanceAuth(id: ID!): PackageInstanceAuth
-  instanceAuths: [PackageInstanceAuth!]!
+  instanceAuth(id: ID!): BundleInstanceAuth
+  instanceAuths: [BundleInstanceAuth!]!
   """
   When defined, all requests via `requestPackageInstanceAuthCreation` mutation fallback to defaultInstanceAuth.
   """
@@ -75,11 +75,11 @@ type PackageInstanceAuth {
   Populated with `package.defaultInstanceAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
   """
   auth: Auth
-  status: PackageInstanceAuthStatus
+  status: BundleInstanceAuthStatus
 }
 
 type PackageInstanceAuthStatus {
-  condition: PackageInstanceAuthStatusCondition!
+  condition: BundleInstanceAuthStatusCondition!
   timestamp: Timestamp!
   message: String!
   """
@@ -115,11 +115,11 @@ input PackageInstanceAuthSetInput {
 	Optional if the auth is provided.
 	If the status condition is "FAILED", auth must be empty.
 	"""
-	status: PackageInstanceAuthStatusInput
+	status: BundleInstanceAuthStatusInput
 }
 
 input PackageInstanceAuthStatusInput {
-	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	condition: BundleInstanceAuthSetStatusConditionInput! = SUCCEEDED
 	"""
 	Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
 	"""
@@ -154,10 +154,10 @@ type Mutation {
 
   When used without error, the status of pending auth is set to success.
   """
-  setPackageInstanceAuth(authID: ID!, in: PackageInstanceAuthSetInput!): PackageInstanceAuth!
-  deletePackageInstanceAuth(authID: ID!): PackageInstanceAuth!
-  requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput!): PackageInstanceAuth!
-  requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth!
+  setPackageInstanceAuth(authID: ID!, in: BundleInstanceAuthSetInput!): BundleInstanceAuth!
+  deletePackageInstanceAuth(authID: ID!): BundleInstanceAuth!
+  requestPackageInstanceAuthCreation(packageID: ID!, in: BundleInstanceAuthRequestInput!): BundleInstanceAuth!
+  requestPackageInstanceAuthDeletion(authID: ID!): BundleInstanceAuth!
 }
 ```
 
