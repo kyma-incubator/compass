@@ -1,6 +1,7 @@
 package tenantfetcher_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -103,6 +104,24 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		require.EqualError(t, err, "while sending get request: Get \"http://127.0.0.1:8111/badpath?pageNum=1&pageSize=1&timestamp=1\": dial tcp 127.0.0.1:8111: connect: connection refused")
 		assert.Empty(t, res)
 	})
+
+	// GIVEN
+	apiCfg = tenantfetcher.APIConfig{
+		EndpointTenantCreated: endpoint + "/created",
+		EndpointTenantDeleted: endpoint + "/deleted",
+		EndpointTenantUpdated: endpoint + "/badRequest",
+	}
+	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client.SetMetricsPusher(metricsPusherMock)
+	client.SetHTTPClient(mockClient)
+
+	t.Run("Error when status code not equal to 200 OK and 204 No Content is returned", func(t *testing.T) {
+		// WHEN
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
+		// THEN
+		require.EqualError(t, err, fmt.Sprintf("request to \"%s/badRequest?pageNum=1&pageSize=1&timestamp=1\" returned status code 400 and body \"\"", endpoint))
+		assert.Empty(t, res)
+	})
 }
 
 func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {
@@ -128,6 +147,9 @@ func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {
 	})
 	mux.HandleFunc("/empty", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("/badRequest", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
 	})
 
 	ts := httptest.NewServer(mux)
@@ -221,6 +243,7 @@ func fixMetricsPusherMock() *automock.MetricsPusher {
 	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusOK, "200 OK")
 	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusNoContent, "204 No Content").Once()
 	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, 0, "connect: connection refused").Once()
+	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusBadRequest, "400 Bad Request").Once()
 
 	return metricsPusherMock
 }
