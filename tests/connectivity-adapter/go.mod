@@ -17,5 +17,5 @@ require (
 
 replace (
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
-	gobundle.in/yaml.v2 => gobundle.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
 )
