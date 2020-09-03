@@ -3,6 +3,7 @@ package tenantfetcher
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -101,6 +102,11 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "while reading response body")
 	}
+
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNoContent {
+		return nil, fmt.Errorf("request to %q returned status code %d and body %q", reqURL, res.StatusCode, bytes)
+	}
+
 	return bytes, nil
 }
 
