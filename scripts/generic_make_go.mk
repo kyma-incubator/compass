@@ -144,7 +144,7 @@ fmt-local:
 	go fmt $$($(DIRS_TO_CHECK))
 
 errcheck-local:
-	errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
+	errcheck -blank -asserts -ignorebundle '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
 vet-local:
 	go vet $$($(DIRS_TO_CHECK))
@@ -157,9 +157,9 @@ gqlgen-local:
 
 check-gqlgen:
 	@echo make gqlgen-check
-	@if [ -n "$$(git status -s pkg/graphql)" ]; then \
+	@if [ -n "$$(git status -s bundle/graphql)" ]; then \
 		echo -e "${RED}✗ gqlgen.sh modified some files, schema and code are out-of-sync${NC}"; \
-		git status -s pkg/graphql; \
+		git status -s bundle/graphql; \
 		exit 1; \
 	fi;
 

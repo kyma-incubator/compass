@@ -31,9 +31,9 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 	require.NoError(t, err)
 	externalServicesURL.Path = "external-api/spec"
 
-	pkgName := "test-bundle"
-	pkgInput := graphql.BundleCreateInput{
-		Name: pkgName,
+	bundleName := "test-bundle"
+	bundleInput := graphql.BundleCreateInput{
+		Name: bundleName,
 		APIDefinitions: []*graphql.APIDefinitionInput{{
 			Name:      "test",
 			TargetURL: "https://target.url",
@@ -48,14 +48,14 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 		},
 	}
 
-	pkg := createBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, pkgInput)
-	defer deleteBundle(t, ctx, dexGraphQLClient, tenant, pkg.ID)
-	bundleID := pkg.ID
-	assertSpecInBundleNotNil(t, pkg)
-	spec := *pkg.APIDefinitions.Data[0].Spec.APISpec.Data
+	bundle := createBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bundleInput)
+	defer deleteBundle(t, ctx, dexGraphQLClient, tenant, bundle.ID)
+	bundleID := bundle.ID
+	assertSpecInBundleNotNil(t, bundle)
+	spec := *bundle.APIDefinitions.Data[0].Spec.APISpec.Data
 
 	var refetchedSpec graphql.APISpecExt
-	apiID := pkg.APIDefinitions.Data[0].ID
+	apiID := bundle.APIDefinitions.Data[0].ID
 	req := fixRefetchAPISpecRequest(apiID)
 
 	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &refetchedSpec)
@@ -64,9 +64,9 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 	require.NotNil(t, refetchedSpec.APISpec.Data)
 	assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
 
-	pkg = getBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bundleID)
+	bundle = getBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bundleID)
 
-	assertSpecInBundleNotNil(t, pkg)
-	assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
+	assertSpecInBundleNotNil(t, bundle)
+	assert.Equal(t, *refetchedSpec.APISpec.Data, *bundle.APIDefinitions.Data[0].Spec.Data)
 
 }

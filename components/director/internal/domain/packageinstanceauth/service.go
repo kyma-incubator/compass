@@ -53,14 +53,14 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 	}
 
 	id := s.uidService.Generate()
-	pkgInstAuth := in.ToBundleInstanceAuth(id, bundleID, tnt, defaultAuth, nil)
+	bundleInstAuth := in.ToBundleInstanceAuth(id, bundleID, tnt, defaultAuth, nil)
 
-	err = s.setCreationStatusFromAuth(&pkgInstAuth, defaultAuth)
+	err = s.setCreationStatusFromAuth(&bundleInstAuth, defaultAuth)
 	if err != nil {
 		return "", err
 	}
 
-	err = s.repo.Create(ctx, &pkgInstAuth)
+	err = s.repo.Create(ctx, &bundleInstAuth)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Bundle Instance Auth")
 	}
@@ -88,12 +88,12 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 		return nil, err
 	}
 
-	pkg, err := s.repo.GetForBundle(ctx, tnt, id, bundleID)
+	bundle, err := s.repo.GetForBundle(ctx, tnt, id, bundleID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Bundle Instance Auth with ID: [%s]", id)
 	}
 
-	return pkg, nil
+	return bundle, nil
 }
 
 func (s *service) List(ctx context.Context, bundleID string) ([]*model.BundleInstanceAuth, error) {
@@ -102,12 +102,12 @@ func (s *service) List(ctx context.Context, bundleID string) ([]*model.BundleIns
 		return nil, err
 	}
 
-	pkgInstanceAuths, err := s.repo.ListByBundleID(ctx, tnt, bundleID)
+	bundleInstanceAuths, err := s.repo.ListByBundleID(ctx, tnt, bundleID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing Bundle Instance Auths")
 	}
 
-	return pkgInstanceAuths, nil
+	return bundleInstanceAuths, nil
 }
 
 func (s *service) SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error {

@@ -304,8 +304,8 @@ func setDefaultEventingForApplication(t *testing.T, ctx context.Context, appID s
 	require.NoError(t, err)
 }
 
-func createBundle(t *testing.T, ctx context.Context, appID, pkgName string) graphql.BundleExt {
-	in, err := tc.graphqlizer.BundleCreateInputToGQL(fixBundleCreateInput(pkgName))
+func createBundle(t *testing.T, ctx context.Context, appID, bundleName string) graphql.BundleExt {
+	in, err := tc.graphqlizer.BundleCreateInputToGQL(fixBundleCreateInput(bundleName))
 	require.NoError(t, err)
 
 	req := fixAddBundleRequest(appID, in)
@@ -332,9 +332,9 @@ func createBundleWithInput(t *testing.T, ctx context.Context, appID string, inpu
 
 func getBundle(t *testing.T, ctx context.Context, appID, bundleID string) graphql.BundleExt {
 	req := fixBundleRequest(appID, bundleID)
-	pkg := graphql.ApplicationExt{}
-	require.NoError(t, tc.RunOperation(ctx, req, &pkg))
-	return pkg.Bundle
+	bundle := graphql.ApplicationExt{}
+	require.NoError(t, tc.RunOperation(ctx, req, &bundle))
+	return bundle.Bundle
 }
 
 func deleteBundle(t *testing.T, ctx context.Context, id string) {

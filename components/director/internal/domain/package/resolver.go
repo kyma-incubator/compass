@@ -142,7 +142,7 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 		return nil, err
 	}
 
-	pkg, err := r.bundleSvc.Get(ctx, id)
+	bundle, err := r.bundleSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 		return nil, err
 	}
 
-	gqlBundle, err := r.bundleConverter.ToGraphQL(pkg)
+	gqlBundle, err := r.bundleConverter.ToGraphQL(bundle)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle to GraphQL with ID: [%s]", id)
 	}
@@ -179,7 +179,7 @@ func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.Bundl
 		return nil, err
 	}
 
-	pkg, err := r.bundleSvc.Get(ctx, id)
+	bundle, err := r.bundleSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -189,12 +189,12 @@ func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.Bundl
 		return nil, err
 	}
 
-	gqlPkg, err := r.bundleConverter.ToGraphQL(pkg)
+	gqlBundle, err := r.bundleConverter.ToGraphQL(bundle)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle to GraphQL with ID: [%s]", id)
 	}
 
-	return gqlPkg, nil
+	return gqlBundle, nil
 }
 
 func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle, error) {
@@ -206,7 +206,7 @@ func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkg, err := r.bundleSvc.Get(ctx, id)
+	bundle, err := r.bundleSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -221,12 +221,12 @@ func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle
 		return nil, err
 	}
 
-	deletedPkg, err := r.bundleConverter.ToGraphQL(pkg)
+	deletedBundle, err := r.bundleConverter.ToGraphQL(bundle)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle to GraphQL with ID: [%s]", id)
 	}
 
-	return deletedPkg, nil
+	return deletedBundle, nil
 }
 
 func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.BundleInstanceAuth, error) {
@@ -242,7 +242,7 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Bundle, id str
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkg, err := r.bundleInstanceAuthSvc.GetForBundle(ctx, id, obj.ID)
+	bundle, err := r.bundleInstanceAuthSvc.GetForBundle(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -255,7 +255,7 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Bundle, id str
 		return nil, err
 	}
 
-	return r.bundleInstanceAuthConverter.ToGraphQL(pkg)
+	return r.bundleInstanceAuthConverter.ToGraphQL(bundle)
 
 }
 
@@ -271,7 +271,7 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Bundle) ([]*g
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkgInstanceAuths, err := r.bundleInstanceAuthSvc.List(ctx, obj.ID)
+	bundleInstanceAuths, err := r.bundleInstanceAuthSvc.List(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +281,7 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Bundle) ([]*g
 		return nil, err
 	}
 
-	return r.bundleInstanceAuthConverter.MultipleToGraphQL(pkgInstanceAuths)
+	return r.bundleInstanceAuthConverter.MultipleToGraphQL(bundleInstanceAuths)
 }
 
 func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.APIDefinition, error) {

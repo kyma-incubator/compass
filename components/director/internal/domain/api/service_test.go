@@ -294,7 +294,7 @@ func TestService_CreateToBundle(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	bundleID := "pkgid"
+	bundleID := "bundleid"
 	name := "Foo"
 	targetUrl := "https://test-url.com"
 

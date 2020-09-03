@@ -693,21 +693,21 @@ func fixDocumentsInBundleRequest(appID, bundleID string) *gcli.Request {
 			}`, appID, bundleID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForDocument())))
 }
 
-func fixAddBundleRequest(appID, pkgCreateInput string) *gcli.Request {
+func fixAddBundleRequest(appID, bundleCreateInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: addBundle(applicationID: "%s", in: %s) {
 				%s
-			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForBundle()))
+			}}`, appID, bundleCreateInput, tc.gqlFieldsProvider.ForBundle()))
 }
 
-func fixUpdateBundleRequest(bundleID, pkgUpdateInput string) *gcli.Request {
+func fixUpdateBundleRequest(bundleID, bundleUpdateInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: updateBundle(id: "%s", in: %s) {
 				%s
 			}
-		}`, bundleID, pkgUpdateInput, tc.gqlFieldsProvider.ForBundle()))
+		}`, bundleID, bundleUpdateInput, tc.gqlFieldsProvider.ForBundle()))
 }
 
 func fixDeleteBundleRequest(bundleID string) *gcli.Request {
@@ -737,13 +737,13 @@ func fixDeleteBundleInstanceAuthRequest(authID string) *gcli.Request {
 		}`, authID, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
-func fixRequestBundleInstanceAuthCreationRequest(bundleID, pkgInstanceAuthRequestInput string) *gcli.Request {
+func fixRequestBundleInstanceAuthCreationRequest(bundleID, bundleInstanceAuthRequestInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: requestBundleInstanceAuthCreation(bundleID: "%s", in: %s) {
 				%s
 			}
-		}`, bundleID, pkgInstanceAuthRequestInput, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
+		}`, bundleID, bundleInstanceAuthRequestInput, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
 func fixRequestBundleInstanceAuthDeletionRequest(authID string) *gcli.Request {

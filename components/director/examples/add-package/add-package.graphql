@@ -3,7 +3,7 @@ mutation {
   result: addBundle(
     applicationID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
-      name: "pkg-app-1"
+      name: "bundle-app-1"
       description: "Foo bar"
       apiDefinitions: [
         {

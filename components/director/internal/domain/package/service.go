@@ -55,7 +55,7 @@ type FetchRequestService interface {
 }
 
 type service struct {
-	pkgRepo          BundleRepository
+	bundleRepo       BundleRepository
 	apiRepo          APIRepository
 	eventAPIRepo     EventAPIRepository
 	documentRepo     DocumentRepository
@@ -66,9 +66,9 @@ type service struct {
 	timestampGen        timestamp.Generator
 }
 
-func NewService(pkgRepo BundleRepository, apiRepo APIRepository, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
+func NewService(bundleRepo BundleRepository, apiRepo APIRepository, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
 	return &service{
-		pkgRepo:             pkgRepo,
+		bundleRepo:          bundleRepo,
 		apiRepo:             apiRepo,
 		eventAPIRepo:        eventAPIRepo,
 		documentRepo:        documentRepo,
@@ -86,9 +86,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Bun
 	}
 
 	id := s.uidService.Generate()
-	pkg := in.ToBundle(id, applicationID, tnt)
+	bundle := in.ToBundle(id, applicationID, tnt)
 
-	err = s.pkgRepo.Create(ctx, pkg)
+	err = s.bundleRepo.Create(ctx, bundle)
 	if err != nil {
 		return "", err
 	}
@@ -106,12 +106,12 @@ func (s *service) CreateMultiple(ctx context.Context, applicationID string, in [
 		return nil
 	}
 
-	for _, pkg := range in {
-		if pkg == nil {
+	for _, bundle := range in {
+		if bundle == nil {
 			continue
 		}
 
-		_, err := s.Create(ctx, applicationID, *pkg)
+		_, err := s.Create(ctx, applicationID, *bundle)
 		if err != nil {
 			return errors.Wrap(err, "while creating Bundle for Application")
 		}
@@ -126,14 +126,14 @@ func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateIn
 		return err
 	}
 
-	pkg, err := s.pkgRepo.GetByID(ctx, tnt, id)
+	bundle, err := s.bundleRepo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting Bundle with ID: [%s]", id)
 	}
 
-	pkg.SetFromUpdateInput(in)
+	bundle.SetFromUpdateInput(in)
 
-	err = s.pkgRepo.Update(ctx, pkg)
+	err = s.bundleRepo.Update(ctx, bundle)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Bundle with ID: [%s]", id)
 	}
@@ -146,7 +146,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrap(err, "while loading tenant from context")
 	}
 
-	err = s.pkgRepo.Delete(ctx, tnt, id)
+	err = s.bundleRepo.Delete(ctx, tnt, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Bundle with ID: [%s]", id)
 	}
@@ -160,7 +160,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 		return false, errors.Wrap(err, "while loading tenant from context")
 	}
 
-	exist, err := s.pkgRepo.Exists(ctx, tnt, id)
+	exist, err := s.bundleRepo.Exists(ctx, tnt, id)
 	if err != nil {
 		return false, errors.Wrapf(err, "while getting Bundle with ID: [%s]", id)
 	}
@@ -174,12 +174,12 @@ func (s *service) Get(ctx context.Context, id string) (*model.Bundle, error) {
 		return nil, errors.Wrap(err, "while loading tenant from context")
 	}
 
-	pkg, err := s.pkgRepo.GetByID(ctx, tnt, id)
+	bundle, err := s.bundleRepo.GetByID(ctx, tnt, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Bundle with ID: [%s]", id)
 	}
 
-	return pkg, nil
+	return bundle, nil
 }
 
 func (s *service) GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Bundle, error) {
@@ -188,12 +188,12 @@ func (s *service) GetByInstanceAuthID(ctx context.Context, instanceAuthID string
 		return nil, err
 	}
 
-	pkg, err := s.pkgRepo.GetByInstanceAuthID(ctx, tnt, instanceAuthID)
+	bundle, err := s.bundleRepo.GetByInstanceAuthID(ctx, tnt, instanceAuthID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Bundle by Instance Auth ID: [%s]", instanceAuthID)
 	}
 
-	return pkg, nil
+	return bundle, nil
 }
 
 func (s *service) GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error) {
@@ -202,12 +202,12 @@ func (s *service) GetForApplication(ctx context.Context, id string, applicationI
 		return nil, err
 	}
 
-	pkg, err := s.pkgRepo.GetForApplication(ctx, tnt, id, applicationID)
+	bundle, err := s.bundleRepo.GetForApplication(ctx, tnt, id, applicationID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Bundle with ID: [%s]", id)
 	}
 
-	return pkg, nil
+	return bundle, nil
 }
 
 func (s *service) ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.BundlePage, error) {
@@ -220,7 +220,7 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
-	return s.pkgRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
+	return s.bundleRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
 func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, tenant string, bundleID string) error {

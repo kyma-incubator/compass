@@ -107,11 +107,11 @@ func (c *converter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, er
 		if r == nil {
 			continue
 		}
-		pkg, err := c.ToGraphQL(r)
+		bundle, err := c.ToGraphQL(r)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting Bundle to GraphQL")
 		}
-		bundles = append(bundles, pkg)
+		bundles = append(bundles, bundle)
 	}
 
 	return bundles, nil
@@ -155,11 +155,11 @@ func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInp
 		if item == nil {
 			continue
 		}
-		pkg, err := c.CreateInputFromGraphQL(*item)
+		bundle, err := c.CreateInputFromGraphQL(*item)
 		if err != nil {
 			return nil, err
 		}
-		bundles = append(bundles, &pkg)
+		bundles = append(bundles, &bundle)
 	}
 
 	return bundles, nil

@@ -62,10 +62,10 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	}
 }
 
-func fixGQLAPIDefinition(id string, pkgId string, name, targetURL string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, bundleId string, name, targetURL string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:        id,
-		BundleID:  pkgId,
+		BundleID:  bundleId,
 		Name:      name,
 		TargetURL: targetURL,
 	}

@@ -52,17 +52,17 @@ type Resolver struct {
 	transact    persistence.Transactioner
 	svc         EventDefService
 	appSvc      ApplicationService
-	pkgSvc      BundleService
+	bundleSvc   BundleService
 	converter   EventDefConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc ApplicationService, pkgSvc BundleService, converter EventDefConverter, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc ApplicationService, bundleSvc BundleService, converter EventDefConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
 		appSvc:      appSvc,
-		pkgSvc:      pkgSvc,
+		bundleSvc:   bundleSvc,
 		converter:   converter,
 		frConverter: frConverter,
 	}
@@ -82,7 +82,7 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 		return nil, errors.Wrap(err, "while converting EventDefinition input")
 	}
 
-	found, err := r.pkgSvc.Exist(ctx, bundleID)
+	found, err := r.bundleSvc.Exist(ctx, bundleID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking existence of Bundle")
 	}

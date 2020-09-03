@@ -77,7 +77,7 @@ func deleteBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, ten
 
 func getBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, appID, bundleID string) graphql.BundleExt {
 	req := fixBundleRequest(appID, bundleID)
-	pkg := graphql.ApplicationExt{}
-	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &pkg))
-	return pkg.Bundle
+	bundle := graphql.ApplicationExt{}
+	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &bundle))
+	return bundle.Bundle
 }

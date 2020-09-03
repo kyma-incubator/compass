@@ -14,48 +14,48 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
-	defer deleteBundle(t, ctx, pkg.ID)
+	bundle := createBundle(t, ctx, application.ID, "bundle-app-1")
+	defer deleteBundle(t, ctx, bundle.ID)
 
 	authCtx, inputParams := fixBundleInstanceAuthContextAndInputParams(t)
-	pkgInstanceAuthRequestInput := fixBundleInstanceAuthRequestInput(authCtx, inputParams)
-	pkgInstanceAuthRequestInputStr, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(pkgInstanceAuthRequestInput)
+	bundleInstanceAuthRequestInput := fixBundleInstanceAuthRequestInput(authCtx, inputParams)
+	bundleInstanceAuthRequestInputStr, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(bundleInstanceAuthRequestInput)
 	require.NoError(t, err)
 
-	pkgInstanceAuthCreationRequestReq := fixRequestBundleInstanceAuthCreationRequest(pkg.ID, pkgInstanceAuthRequestInputStr)
+	bundleInstanceAuthCreationRequestReq := fixRequestBundleInstanceAuthCreationRequest(bundle.ID, bundleInstanceAuthRequestInputStr)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Request bundle instance auth creation")
-	err = tc.RunOperation(ctx, pkgInstanceAuthCreationRequestReq, &output)
+	err = tc.RunOperation(ctx, bundleInstanceAuthCreationRequestReq, &output)
 
 	// THEN
 	require.NoError(t, err)
-	assertBundleInstanceAuth(t, pkgInstanceAuthRequestInput, output)
+	assertBundleInstanceAuth(t, bundleInstanceAuthRequestInput, output)
 
-	saveExample(t, pkgInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
+	saveExample(t, bundleInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
 
 	// Fetch Application with bundles
 	bundlesForApplicationReq := fixBundlesRequest(application.ID)
-	pkgFromAPI := graphql.ApplicationExt{}
+	bundleFromAPI := graphql.ApplicationExt{}
 
-	err = tc.RunOperation(ctx, bundlesForApplicationReq, &pkgFromAPI)
+	err = tc.RunOperation(ctx, bundlesForApplicationReq, &bundleFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auths exists
-	require.Equal(t, 1, len(pkgFromAPI.Bundles.Data))
-	require.Equal(t, 1, len(pkgFromAPI.Bundles.Data[0].InstanceAuths))
+	require.Equal(t, 1, len(bundleFromAPI.Bundles.Data))
+	require.Equal(t, 1, len(bundleFromAPI.Bundles.Data[0].InstanceAuths))
 
 	// Fetch Application with bundle
-	instanceAuthID := pkgFromAPI.Bundles.Data[0].InstanceAuths[0].ID
-	bundlesForApplicationWithInstanceAuthReq := fixBundleWithInstanceAuthRequest(application.ID, pkg.ID, instanceAuthID)
+	instanceAuthID := bundleFromAPI.Bundles.Data[0].InstanceAuths[0].ID
+	bundlesForApplicationWithInstanceAuthReq := fixBundleWithInstanceAuthRequest(application.ID, bundle.ID, instanceAuthID)
 
-	err = tc.RunOperation(ctx, bundlesForApplicationWithInstanceAuthReq, &pkgFromAPI)
+	err = tc.RunOperation(ctx, bundlesForApplicationWithInstanceAuthReq, &bundleFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auth exist
-	require.Equal(t, instanceAuthID, pkgFromAPI.Bundle.InstanceAuth.ID)
-	require.Equal(t, graphql.BundleInstanceAuthStatusConditionPending, pkgFromAPI.Bundle.InstanceAuth.Status.Condition)
+	require.Equal(t, instanceAuthID, bundleFromAPI.Bundle.InstanceAuth.ID)
+	require.Equal(t, graphql.BundleInstanceAuthStatusConditionPending, bundleFromAPI.Bundle.InstanceAuth.Status.Condition)
 }
 
 func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
@@ -66,54 +66,54 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 
 	authInput := fixBasicAuth(t)
 
-	pkgInput := fixBundleCreateInputWithDefaultAuth("pkg-app-1", authInput)
-	pkg, err := tc.graphqlizer.BundleCreateInputToGQL(pkgInput)
+	bundleInput := fixBundleCreateInputWithDefaultAuth("bundle-app-1", authInput)
+	bundle, err := tc.graphqlizer.BundleCreateInputToGQL(bundleInput)
 	require.NoError(t, err)
 
-	addPkgRequest := fixAddBundleRequest(application.ID, pkg)
-	pkgAddOutput := graphql.Bundle{}
+	addBundleRequest := fixAddBundleRequest(application.ID, bundle)
+	bundleAddOutput := graphql.Bundle{}
 
-	err = tc.RunOperation(ctx, addPkgRequest, &pkgAddOutput)
-	defer deleteBundle(t, ctx, pkgAddOutput.ID)
+	err = tc.RunOperation(ctx, addBundleRequest, &bundleAddOutput)
+	defer deleteBundle(t, ctx, bundleAddOutput.ID)
 	require.NoError(t, err)
 
-	pkgInstanceAuthRequestInput := fixBundleInstanceAuthRequestInput(nil, nil)
-	pkgInstanceAuthRequestInputStr, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(pkgInstanceAuthRequestInput)
+	bundleInstanceAuthRequestInput := fixBundleInstanceAuthRequestInput(nil, nil)
+	bundleInstanceAuthRequestInputStr, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(bundleInstanceAuthRequestInput)
 	require.NoError(t, err)
 
-	pkgInstanceAuthCreationRequestReq := fixRequestBundleInstanceAuthCreationRequest(pkgAddOutput.ID, pkgInstanceAuthRequestInputStr)
+	bundleInstanceAuthCreationRequestReq := fixRequestBundleInstanceAuthCreationRequest(bundleAddOutput.ID, bundleInstanceAuthRequestInputStr)
 	authOutput := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Request bundle instance auth creation")
-	err = tc.RunOperation(ctx, pkgInstanceAuthCreationRequestReq, &authOutput)
+	err = tc.RunOperation(ctx, bundleInstanceAuthCreationRequestReq, &authOutput)
 
 	// THEN
 	require.NoError(t, err)
 
 	// Fetch Application with bundles
 	bundlesForApplicationReq := fixBundlesRequest(application.ID)
-	pkgFromAPI := graphql.ApplicationExt{}
+	bundleFromAPI := graphql.ApplicationExt{}
 
-	err = tc.RunOperation(ctx, bundlesForApplicationReq, &pkgFromAPI)
+	err = tc.RunOperation(ctx, bundlesForApplicationReq, &bundleFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auths exists
-	require.Equal(t, 1, len(pkgFromAPI.Bundles.Data))
-	require.Equal(t, 1, len(pkgFromAPI.Bundles.Data[0].InstanceAuths))
+	require.Equal(t, 1, len(bundleFromAPI.Bundles.Data))
+	require.Equal(t, 1, len(bundleFromAPI.Bundles.Data[0].InstanceAuths))
 
 	// Fetch Application with bundle
-	instanceAuthID := pkgFromAPI.Bundles.Data[0].InstanceAuths[0].ID
-	bundlesForApplicationWithInstanceAuthReq := fixBundleWithInstanceAuthRequest(application.ID, pkgAddOutput.ID, instanceAuthID)
+	instanceAuthID := bundleFromAPI.Bundles.Data[0].InstanceAuths[0].ID
+	bundlesForApplicationWithInstanceAuthReq := fixBundleWithInstanceAuthRequest(application.ID, bundleAddOutput.ID, instanceAuthID)
 
-	err = tc.RunOperation(ctx, bundlesForApplicationWithInstanceAuthReq, &pkgFromAPI)
+	err = tc.RunOperation(ctx, bundlesForApplicationWithInstanceAuthReq, &bundleFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auth exist
-	require.Equal(t, instanceAuthID, pkgFromAPI.Bundle.InstanceAuth.ID)
+	require.Equal(t, instanceAuthID, bundleFromAPI.Bundle.InstanceAuth.ID)
 
-	require.Equal(t, graphql.BundleInstanceAuthStatusConditionSucceeded, pkgFromAPI.Bundle.InstanceAuth.Status.Condition)
-	assertAuth(t, authInput, pkgFromAPI.Bundle.InstanceAuth.Auth)
+	require.Equal(t, graphql.BundleInstanceAuthStatusConditionSucceeded, bundleFromAPI.Bundle.InstanceAuth.Status.Condition)
+	assertAuth(t, authInput, bundleFromAPI.Bundle.InstanceAuth.Auth)
 }
 
 func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
@@ -122,22 +122,22 @@ func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
-	defer deleteBundle(t, ctx, pkg.ID)
+	bundle := createBundle(t, ctx, application.ID, "bundle-app-1")
+	defer deleteBundle(t, ctx, bundle.ID)
 
-	pkgInstanceAuth := createBundleInstanceAuth(t, ctx, pkg.ID)
+	bundleInstanceAuth := createBundleInstanceAuth(t, ctx, bundle.ID)
 
-	pkgInstanceAuthDeletionRequestReq := fixRequestBundleInstanceAuthDeletionRequest(pkgInstanceAuth.ID)
+	bundleInstanceAuthDeletionRequestReq := fixRequestBundleInstanceAuthDeletionRequest(bundleInstanceAuth.ID)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Request bundle instance auth deletion")
-	err := tc.RunOperation(ctx, pkgInstanceAuthDeletionRequestReq, &output)
+	err := tc.RunOperation(ctx, bundleInstanceAuthDeletionRequestReq, &output)
 
 	// THEN
 	require.NoError(t, err)
 
-	saveExample(t, pkgInstanceAuthDeletionRequestReq.Query(), "request bundle instance auth deletion")
+	saveExample(t, bundleInstanceAuthDeletionRequestReq.Query(), "request bundle instance auth deletion")
 }
 
 func TestSetBundleInstanceAuth(t *testing.T) {
@@ -146,17 +146,17 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
-	defer deleteBundle(t, ctx, pkg.ID)
+	bundle := createBundle(t, ctx, application.ID, "bundle-app-1")
+	defer deleteBundle(t, ctx, bundle.ID)
 
-	pkgInstanceAuth := createBundleInstanceAuth(t, ctx, pkg.ID)
+	bundleInstanceAuth := createBundleInstanceAuth(t, ctx, bundle.ID)
 
 	authInput := fixBasicAuth(t)
-	pkgInstanceAuthSetInput := fixBundleInstanceAuthSetInputSucceeded(authInput)
-	pkgInstanceAuthSetInputStr, err := tc.graphqlizer.BundleInstanceAuthSetInputToGQL(pkgInstanceAuthSetInput)
+	bundleInstanceAuthSetInput := fixBundleInstanceAuthSetInputSucceeded(authInput)
+	bundleInstanceAuthSetInputStr, err := tc.graphqlizer.BundleInstanceAuthSetInputToGQL(bundleInstanceAuthSetInput)
 	require.NoError(t, err)
 
-	setBundleInstanceAuthReq := fixSetBundleInstanceAuthRequest(pkgInstanceAuth.ID, pkgInstanceAuthSetInputStr)
+	setBundleInstanceAuthReq := fixSetBundleInstanceAuthRequest(bundleInstanceAuth.ID, bundleInstanceAuthSetInputStr)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
@@ -177,12 +177,12 @@ func TestDeleteBundleInstanceAuth(t *testing.T) {
 	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
-	defer deleteBundle(t, ctx, pkg.ID)
+	bundle := createBundle(t, ctx, application.ID, "bundle-app-1")
+	defer deleteBundle(t, ctx, bundle.ID)
 
-	pkgInstanceAuth := createBundleInstanceAuth(t, ctx, pkg.ID)
+	bundleInstanceAuth := createBundleInstanceAuth(t, ctx, bundle.ID)
 
-	deleteBundleInstanceAuthReq := fixDeleteBundleInstanceAuthRequest(pkgInstanceAuth.ID)
+	deleteBundleInstanceAuthReq := fixDeleteBundleInstanceAuthRequest(bundleInstanceAuth.ID)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN

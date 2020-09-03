@@ -328,8 +328,8 @@ func TestDirectorClient_GetBundle(t *testing.T) {
 			gqlCli := tC.GQLClientFn()
 
 			gqlFieldsProvider := &automock.GqlFieldsProvider{}
-			gqlFieldsProvider.On("ForApplication", graphqlizer.FieldCtx{"Application.bundle": "bundle(id: \"foo\") {pkg-fields}"}).Return("fields").Maybe()
-			gqlFieldsProvider.On("ForBundle").Return("pkg-fields").Maybe()
+			gqlFieldsProvider.On("ForApplication", graphqlizer.FieldCtx{"Application.bundle": "bundle(id: \"foo\") {bundle-fields}"}).Return("fields").Maybe()
+			gqlFieldsProvider.On("ForBundle").Return("bundle-fields").Maybe()
 
 			dirCli := director.NewClient(gqlCli, nil, gqlFieldsProvider)
 

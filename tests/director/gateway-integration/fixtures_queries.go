@@ -114,8 +114,8 @@ func addAPIToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.
 	return actualApi
 }
 
-func createBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appID, tenant, pkgName string) graphql.BundleExt {
-	in, err := tc.Graphqlizer.BundleCreateInputToGQL(fixBundleCreateInput(pkgName))
+func createBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appID, tenant, bundleName string) graphql.BundleExt {
+	in, err := tc.Graphqlizer.BundleCreateInputToGQL(fixBundleCreateInput(bundleName))
 	require.NoError(t, err)
 
 	req := fixAddBundleRequest(appID, in)

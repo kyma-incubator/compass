@@ -85,12 +85,12 @@ func searchForAuditlogByString(t *testing.T, client *http.Client, baseURL string
 }
 
 //Bundle
-func fixAddBundleRequest(appID, pkgCreateInput string) *gcli.Request {
+func fixAddBundleRequest(appID, bundleCreateInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: addBundle(applicationID: "%s", in: %s) {
 				%s
-			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForBundle()))
+			}}`, appID, bundleCreateInput, tc.gqlFieldsProvider.ForBundle()))
 }
 
 func fixDeleteBundleRequest(bundleID string) *gcli.Request {

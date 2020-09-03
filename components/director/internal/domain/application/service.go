@@ -92,11 +92,11 @@ type service struct {
 	labelUpsertService LabelUpsertService
 	scenariosService   ScenariosService
 	uidService         UIDService
-	pkgService         BundleService
+	bundleService      BundleService
 	timestampGen       timestamp.Generator
 }
 
-func NewService(appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService BundleService, uidService UIDService) *service {
+func NewService(appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bundleService BundleService, uidService UIDService) *service {
 	return &service{
 		appHideCfgProvider: appHideCfgProvider,
 		appRepo:            app,
@@ -106,7 +106,7 @@ func NewService(appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRe
 		intSystemRepo:      intSystemRepo,
 		labelUpsertService: labelUpsertService,
 		scenariosService:   scenariosService,
-		pkgService:         pkgService,
+		bundleService:      bundleService,
 		uidService:         uidService,
 		timestampGen:       timestamp.DefaultGenerator(),
 	}
@@ -259,7 +259,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	}
 
 	if in.Bundles != nil {
-		err = s.pkgService.CreateMultiple(ctx, id, in.Bundles)
+		err = s.bundleService.CreateMultiple(ctx, id, in.Bundles)
 		if err != nil {
 			return "", errors.Wrap(err, "while creating Bundles for Application")
 		}

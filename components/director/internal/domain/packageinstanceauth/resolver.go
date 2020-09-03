@@ -32,18 +32,18 @@ type BundleService interface {
 }
 
 type Resolver struct {
-	transact persistence.Transactioner
-	svc      Service
-	pkgSvc   BundleService
-	conv     Converter
+	transact  persistence.Transactioner
+	svc       Service
+	bundleSvc BundleService
+	conv      Converter
 }
 
-func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc BundleService, conv Converter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc Service, bundleSvc BundleService, conv Converter) *Resolver {
 	return &Resolver{
-		transact: transact,
-		svc:      svc,
-		pkgSvc:   pkgSvc,
-		conv:     conv,
+		transact:  transact,
+		svc:       svc,
+		bundleSvc: bundleSvc,
+		conv:      conv,
 	}
 }
 
@@ -118,14 +118,14 @@ func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundle
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkg, err := r.pkgSvc.Get(ctx, bundleID)
+	bundle, err := r.bundleSvc.Get(ctx, bundleID)
 	if err != nil {
 		return nil, err
 	}
 
 	convertedIn := r.conv.RequestInputFromGraphQL(in)
 
-	instanceAuthID, err := r.svc.Create(ctx, bundleID, convertedIn, pkg.DefaultInstanceAuth, pkg.InstanceAuthRequestInputSchema)
+	instanceAuthID, err := r.svc.Create(ctx, bundleID, convertedIn, bundle.DefaultInstanceAuth, bundle.InstanceAuthRequestInputSchema)
 	if err != nil {
 		return nil, err
 	}
@@ -157,12 +157,12 @@ func (r *Resolver) RequestBundleInstanceAuthDeletion(ctx context.Context, authID
 		return nil, err
 	}
 
-	pkg, err := r.pkgSvc.GetByInstanceAuthID(ctx, authID)
+	bundle, err := r.bundleSvc.GetByInstanceAuthID(ctx, authID)
 	if err != nil {
 		return nil, err
 	}
 
-	deleted, err := r.svc.RequestDeletion(ctx, instanceAuth, pkg.DefaultInstanceAuth)
+	deleted, err := r.svc.RequestDeletion(ctx, instanceAuth, bundle.DefaultInstanceAuth)
 	if err != nil {
 		return nil, err
 	}

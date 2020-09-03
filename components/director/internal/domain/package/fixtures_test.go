@@ -367,8 +367,8 @@ func fixBundleRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth()}
 }
 
-func fixBundleCreateArgs(defAuth, schema string, pkg *model.Bundle) []driver.Value {
-	return []driver.Value{bundleID, tenantID, appID, pkg.Name, pkg.Description, schema, defAuth}
+func fixBundleCreateArgs(defAuth, schema string, bundle *model.Bundle) []driver.Value {
+	return []driver.Value{bundleID, tenantID, appID, bundle.Name, bundle.Description, schema, defAuth}
 }
 
 func fixDefaultAuth() string {

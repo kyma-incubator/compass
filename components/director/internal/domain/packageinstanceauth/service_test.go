@@ -672,7 +672,7 @@ func TestService_RequestDeletion(t *testing.T) {
 
 	id := "foo"
 	timestampNow := time.Now()
-	pkgInstanceAuth := fixSimpleModelBundleInstanceAuth(id)
+	bundleInstanceAuth := fixSimpleModelBundleInstanceAuth(id)
 	//testErr := errors.New("test error")
 
 	testCases := []struct {
@@ -739,7 +739,7 @@ func TestService_RequestDeletion(t *testing.T) {
 			})
 
 			// WHEN
-			res, err := svc.RequestDeletion(ctx, pkgInstanceAuth, testCase.BundleDefaultInstanceAuth)
+			res, err := svc.RequestDeletion(ctx, bundleInstanceAuth, testCase.BundleDefaultInstanceAuth)
 
 			// THEN
 			if testCase.ExpectedError != nil {

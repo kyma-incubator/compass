@@ -111,12 +111,12 @@ type Resolver struct {
 	webhookSvc WebhookService
 	oAuth20Svc OAuth20Service
 	sysAuthSvc SystemAuthService
-	pkgSvc     BundleService
+	bundleSvc  BundleService
 
 	webhookConverter WebhookConverter
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
-	pkgConv          BundleConverter
+	bundleConv       BundleConverter
 }
 
 func NewResolver(transact persistence.Transactioner,
@@ -128,8 +128,8 @@ func NewResolver(transact persistence.Transactioner,
 	webhookConverter WebhookConverter,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
-	pkgSvc BundleService,
-	pkgConverter BundleConverter) *Resolver {
+	bundleSvc BundleService,
+	bundleConverter BundleConverter) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		appSvc:           svc,
@@ -140,8 +140,8 @@ func NewResolver(transact persistence.Transactioner,
 		webhookConverter: webhookConverter,
 		sysAuthConv:      sysAuthConv,
 		eventingSvc:      eventingSvc,
-		pkgSvc:           pkgSvc,
-		pkgConv:          pkgConverter,
+		bundleSvc:        bundleSvc,
+		bundleConv:       bundleConverter,
 	}
 }
 
@@ -582,7 +582,7 @@ func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first 
 		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
-	pkgsPage, err := r.pkgSvc.ListByApplicationID(ctx, obj.ID, *first, cursor)
+	bundlesPage, err := r.bundleSvc.ListByApplicationID(ctx, obj.ID, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -592,18 +592,18 @@ func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first 
 		return nil, err
 	}
 
-	gqlPkgs, err := r.pkgConv.MultipleToGraphQL(pkgsPage.Data)
+	gqlBundles, err := r.bundleConv.MultipleToGraphQL(bundlesPage.Data)
 	if err != nil {
 		return nil, err
 	}
 
 	return &graphql.BundlePage{
-		Data:       gqlPkgs,
-		TotalCount: pkgsPage.TotalCount,
+		Data:       gqlBundles,
+		TotalCount: bundlesPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(pkgsPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(pkgsPage.PageInfo.EndCursor),
-			HasNextPage: pkgsPage.PageInfo.HasNextPage,
+			StartCursor: graphql.PageCursor(bundlesPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(bundlesPage.PageInfo.EndCursor),
+			HasNextPage: bundlesPage.PageInfo.HasNextPage,
 		},
 	}, nil
 }
@@ -621,7 +621,7 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkg, err := r.pkgSvc.GetForApplication(ctx, id, obj.ID)
+	bundle, err := r.bundleSvc.GetForApplication(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -634,5 +634,5 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 		return nil, err
 	}
 
-	return r.pkgConv.ToGraphQL(pkg)
+	return r.bundleConv.ToGraphQL(bundle)
 }

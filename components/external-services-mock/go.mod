@@ -13,5 +13,5 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
+	gobundle.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )

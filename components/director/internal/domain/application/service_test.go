@@ -57,7 +57,7 @@ func TestService_Create(t *testing.T) {
 	}
 	modelInput.Bundles = []*model.BundleCreateInput{
 		{
-			Name:             "pkg1",
+			Name:             "bundle1",
 			APIDefinitions:   APIDefinitions,
 			EventDefinitions: EventDefinitions,
 			Documents:        Documents,
@@ -529,8 +529,8 @@ func TestService_Create(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			pkgSvc := testCase.BundleServiceFn()
-			svc := application.NewService(nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, pkgSvc, uidSvc)
+			bundleSvc := testCase.BundleServiceFn()
+			svc := application.NewService(nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -550,7 +550,7 @@ func TestService_Create(t *testing.T) {
 			fetchRequestRepo.AssertExpectations(t)
 			scenariosSvc.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
-			pkgSvc.AssertExpectations(t)
+			bundleSvc.AssertExpectations(t)
 		})
 	}
 

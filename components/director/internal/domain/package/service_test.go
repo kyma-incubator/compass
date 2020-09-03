@@ -468,8 +468,8 @@ func TestService_Update(t *testing.T) {
 		DefaultInstanceAuth:            &model.AuthInput{},
 	}
 
-	inputBundleModel := mock.MatchedBy(func(pkg *model.Bundle) bool {
-		return pkg.Name == modelInput.Name
+	inputBundleModel := mock.MatchedBy(func(bundle *model.Bundle) bool {
+		return bundle.Name == modelInput.Name
 	})
 
 	bundleModel := &model.Bundle{
@@ -644,18 +644,18 @@ func TestService_Exist(t *testing.T) {
 		{
 			Name: "Success",
 			RepoFn: func() *automock.BundleRepository {
-				pkgRepo := &automock.BundleRepository{}
-				pkgRepo.On("Exists", ctx, tenantID, id).Return(true, nil).Once()
-				return pkgRepo
+				bundleRepo := &automock.BundleRepository{}
+				bundleRepo.On("Exists", ctx, tenantID, id).Return(true, nil).Once()
+				return bundleRepo
 			},
 			ExpectedOutput: true,
 		},
 		{
 			Name: "Error when getting Bundle",
 			RepoFn: func() *automock.BundleRepository {
-				pkgRepo := &automock.BundleRepository{}
-				pkgRepo.On("Exists", ctx, tenantID, id).Return(false, testErr).Once()
-				return pkgRepo
+				bundleRepo := &automock.BundleRepository{}
+				bundleRepo.On("Exists", ctx, tenantID, id).Return(false, testErr).Once()
+				return bundleRepo
 			},
 			ExpectedError:  testErr,
 			ExpectedOutput: false,
@@ -664,8 +664,8 @@ func TestService_Exist(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			pkgRepo := testCase.RepoFn()
-			svc := mp_bundle.NewService(pkgRepo, nil, nil, nil, nil, nil, nil)
+			bundleRepo := testCase.RepoFn()
+			svc := mp_bundle.NewService(bundleRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Exist(ctx, id)
@@ -679,7 +679,7 @@ func TestService_Exist(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			pkgRepo.AssertExpectations(t)
+			bundleRepo.AssertExpectations(t)
 		})
 	}
 
@@ -701,7 +701,7 @@ func TestService_Get(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	pkg := fixBundleModel(t, name, desc)
+	bundle := fixBundleModel(t, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -718,11 +718,11 @@ func TestService_Get(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("GetByID", ctx, tenantID, id).Return(pkg, nil).Once()
+				repo.On("GetByID", ctx, tenantID, id).Return(bundle, nil).Once()
 				return repo
 			},
 			InputID:            id,
-			ExpectedBundle:     pkg,
+			ExpectedBundle:     bundle,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -733,7 +733,7 @@ func TestService_Get(t *testing.T) {
 				return repo
 			},
 			InputID:            id,
-			ExpectedBundle:     pkg,
+			ExpectedBundle:     bundle,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -744,12 +744,12 @@ func TestService_Get(t *testing.T) {
 			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
 
 			// when
-			pkg, err := svc.Get(ctx, testCase.InputID)
+			bundle, err := svc.Get(ctx, testCase.InputID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedBundle, pkg)
+				assert.Equal(t, testCase.ExpectedBundle, bundle)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
@@ -777,7 +777,7 @@ func TestService_GetForApplication(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	pkg := fixBundleModel(t, name, desc)
+	bundle := fixBundleModel(t, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -795,12 +795,12 @@ func TestService_GetForApplication(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(pkg, nil).Once()
+				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(bundle, nil).Once()
 				return repo
 			},
 			InputID:            id,
 			ApplicationID:      appID,
-			ExpectedBundle:     pkg,
+			ExpectedBundle:     bundle,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -855,7 +855,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	pkg := fixBundleModel(t, name, desc)
+	bundle := fixBundleModel(t, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -872,11 +872,11 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
-				repo.On("GetByInstanceAuthID", ctx, tenantID, appID).Return(pkg, nil).Once()
+				repo.On("GetByInstanceAuthID", ctx, tenantID, appID).Return(bundle, nil).Once()
 				return repo
 			},
 			InstanceAuthID:     appID,
-			ExpectedBundle:     pkg,
+			ExpectedBundle:     bundle,
 			ExpectedErrMessage: "",
 		},
 		{

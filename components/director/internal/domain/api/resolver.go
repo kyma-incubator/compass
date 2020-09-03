@@ -56,19 +56,19 @@ type Resolver struct {
 	transact    persistence.Transactioner
 	svc         APIService
 	appSvc      ApplicationService
-	pkgSvc      BundleService
+	bundleSvc   BundleService
 	rtmSvc      RuntimeService
 	converter   APIConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, pkgSvc BundleService, converter APIConverter, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, bundleSvc BundleService, converter APIConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
 		appSvc:      appSvc,
 		rtmSvc:      rtmSvc,
-		pkgSvc:      pkgSvc,
+		bundleSvc:   bundleSvc,
 		converter:   converter,
 		frConverter: frConverter,
 	}
@@ -88,7 +88,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, errors.Wrap(err, "while converting APIDefinition input from GraphQL")
 	}
 
-	found, err := r.pkgSvc.Exist(ctx, bundleID)
+	found, err := r.bundleSvc.Exist(ctx, bundleID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking existence of bundle")
 	}

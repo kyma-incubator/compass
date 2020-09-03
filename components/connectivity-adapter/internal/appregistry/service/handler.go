@@ -184,20 +184,20 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	services := make([]model.Service, 0)
-	for _, pkg := range bundles {
-		if pkg == nil {
+	for _, bundle := range bundles {
+		if bundle == nil {
 			continue
 		}
 
-		legacyServiceReference, err := h.appLabeler.ReadServiceReference(reqContext.AppLabels, pkg.ID)
+		legacyServiceReference, err := h.appLabeler.ReadServiceReference(reqContext.AppLabels, bundle.ID)
 		if err != nil {
-			wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Bundle with ID '%s'", pkg.ID)
+			wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Bundle with ID '%s'", bundle.ID)
 			h.logger.Error(wrappedErr)
 			res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 			return
 		}
 
-		detailedService, err := h.converter.GraphQLToServiceDetails(*pkg, legacyServiceReference)
+		detailedService, err := h.converter.GraphQLToServiceDetails(*bundle, legacyServiceReference)
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while converting graphql to detailed service")
 			h.logger.Error(wrappedErr)
@@ -205,7 +205,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 
-		service, err := h.converter.ServiceDetailsToService(detailedService, pkg.ID)
+		service, err := h.converter.ServiceDetailsToService(detailedService, bundle.ID)
 		if err != nil {
 			wrappedErr := errors.Wrap(err, "while converting detailed service to service")
 			h.logger.Error(wrappedErr)
@@ -394,8 +394,8 @@ func (h *Handler) getServiceID(request *http.Request) string {
 	return id
 }
 
-func (h *Handler) createRelatedObjectsForBundle(dirCli DirectorClient, bundleID string, pkg graphql.BundleCreateInput) error {
-	for _, apiDef := range pkg.APIDefinitions {
+func (h *Handler) createRelatedObjectsForBundle(dirCli DirectorClient, bundleID string, bundle graphql.BundleCreateInput) error {
+	for _, apiDef := range bundle.APIDefinitions {
 		if apiDef == nil {
 			continue
 		}
@@ -406,7 +406,7 @@ func (h *Handler) createRelatedObjectsForBundle(dirCli DirectorClient, bundleID 
 		}
 	}
 
-	for _, eventDef := range pkg.EventDefinitions {
+	for _, eventDef := range bundle.EventDefinitions {
 		if eventDef == nil {
 			continue
 		}
@@ -417,7 +417,7 @@ func (h *Handler) createRelatedObjectsForBundle(dirCli DirectorClient, bundleID 
 		}
 	}
 
-	for _, doc := range pkg.Documents {
+	for _, doc := range bundle.Documents {
 		if doc == nil {
 			continue
 		}
@@ -431,8 +431,8 @@ func (h *Handler) createRelatedObjectsForBundle(dirCli DirectorClient, bundleID 
 	return nil
 }
 
-func (h *Handler) deleteRelatedObjectsForBundle(dirCli DirectorClient, pkg graphql.BundleExt) error {
-	for _, apiDef := range pkg.APIDefinitions.Data {
+func (h *Handler) deleteRelatedObjectsForBundle(dirCli DirectorClient, bundle graphql.BundleExt) error {
+	for _, apiDef := range bundle.APIDefinitions.Data {
 		if apiDef == nil {
 			continue
 		}
@@ -443,7 +443,7 @@ func (h *Handler) deleteRelatedObjectsForBundle(dirCli DirectorClient, pkg graph
 		}
 	}
 
-	for _, eventDef := range pkg.EventDefinitions.Data {
+	for _, eventDef := range bundle.EventDefinitions.Data {
 		if eventDef == nil {
 			continue
 		}
@@ -454,7 +454,7 @@ func (h *Handler) deleteRelatedObjectsForBundle(dirCli DirectorClient, pkg graph
 		}
 	}
 
-	for _, doc := range pkg.Documents.Data {
+	for _, doc := range bundle.Documents.Data {
 		if doc == nil {
 			continue
 		}

@@ -2,7 +2,7 @@
 mutation {
   result: updateBundle(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    in: { name: "pkg-app-1-up" }
+    in: { name: "bundle-app-1-up" }
   ) {
     id
     name

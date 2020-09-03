@@ -90,12 +90,12 @@ func (r *repository) GetForBundle(ctx context.Context, tenant string, id string,
 		return nil, err
 	}
 
-	pkgModel, err := r.conv.FromEntity(ent)
+	bundleModel, err := r.conv.FromEntity(ent)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating Bundle model from entity")
 	}
 
-	return &pkgModel, nil
+	return &bundleModel, nil
 }
 
 func (r *repository) ListByBundleID(ctx context.Context, tenantID string, bundleID string) ([]*model.BundleInstanceAuth, error) {

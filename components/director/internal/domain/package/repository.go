@@ -66,12 +66,12 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Bundle) error {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
-	pkgEnt, err := r.conv.ToEntity(model)
+	bundleEnt, err := r.conv.ToEntity(model)
 	if err != nil {
 		return errors.Wrap(err, "while converting to Bundle entity")
 	}
 
-	return r.creator.Create(ctx, pkgEnt)
+	return r.creator.Create(ctx, bundleEnt)
 }
 
 func (r *pgRepository) Update(ctx context.Context, model *model.Bundle) error {
@@ -79,13 +79,13 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Bundle) error {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
-	pkgEnt, err := r.conv.ToEntity(model)
+	bundleEnt, err := r.conv.ToEntity(model)
 
 	if err != nil {
 		return errors.Wrap(err, "while converting to Bundle entity")
 	}
 
-	return r.updater.UpdateSingle(ctx, pkgEnt)
+	return r.updater.UpdateSingle(ctx, bundleEnt)
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
@@ -97,17 +97,17 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error) {
-	var pkgEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &pkgEnt); err != nil {
+	var bundleEnt Entity
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bundleEnt); err != nil {
 		return nil, err
 	}
 
-	pkgModel, err := r.conv.FromEntity(&pkgEnt)
+	bundleModel, err := r.conv.FromEntity(&bundleEnt)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Bundle from Entity")
 	}
 
-	return pkgModel, nil
+	return bundleModel, nil
 }
 
 func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error) {
@@ -121,16 +121,16 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 		return nil, err
 	}
 
-	pkgModel, err := r.conv.FromEntity(&ent)
+	bundleModel, err := r.conv.FromEntity(&ent)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating Bundle model from entity")
 	}
 
-	return pkgModel, nil
+	return bundleModel, nil
 }
 
 func (r *pgRepository) GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error) {
-	var pkgEnt Entity
+	var bundleEnt Entity
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -144,18 +144,18 @@ func (r *pgRepository) GetByInstanceAuthID(ctx context.Context, tenant string, i
 		bundleInstanceAuthTable,
 		bundleInstanceAuthBundleRefField)
 
-	err = persist.Get(&pkgEnt, stmt, tenant, instanceAuthID)
+	err = persist.Get(&bundleEnt, stmt, tenant, instanceAuthID)
 	switch {
 	case err != nil:
 		return nil, errors.Wrap(err, "while getting Bundle by Instance Auth ID")
 	}
 
-	pkgModel, err := r.conv.FromEntity(&pkgEnt)
+	bundleModel, err := r.conv.FromEntity(&bundleEnt)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating Bundle model from entity")
 	}
 
-	return pkgModel, nil
+	return bundleModel, nil
 }
 
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.BundlePage, error) {
@@ -171,8 +171,8 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 
 	var items []*model.Bundle
 
-	for _, pkgEnt := range bundleCollection {
-		m, err := r.conv.FromEntity(&pkgEnt)
+	for _, bundleEnt := range bundleCollection {
+		m, err := r.conv.FromEntity(&bundleEnt)
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating Bundle model from entity")
 		}

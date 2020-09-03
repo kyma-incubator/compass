@@ -279,7 +279,7 @@ func TestResolver_EventAPI(t *testing.T) {
 
 	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
 	gqlAPI := fixGQLEventDefinition(id, "placeholder", "placeholder", "placeholder", "placeholder")
-	pkg := fixGQLBundle("foo", "foo", "foo")
+	bundle := fixGQLBundle("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -308,7 +308,7 @@ func TestResolver_EventAPI(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedAPI: gqlAPI,
 			ExpectedErr: nil,
 		},
@@ -326,7 +326,7 @@ func TestResolver_EventAPI(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
@@ -344,7 +344,7 @@ func TestResolver_EventAPI(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedAPI: nil,
 			ExpectedErr: nil,
 		},
@@ -361,7 +361,7 @@ func TestResolver_EventAPI(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
@@ -378,7 +378,7 @@ func TestResolver_EventAPI(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedAPI: nil,
 			ExpectedErr: testErr,
 		},
@@ -413,7 +413,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 
 	bundleID := "1"
 	group := "group"
-	pkg := fixGQLBundle(bundleID, "foo", "foo")
+	bundle := fixGQLBundle(bundleID, "foo", "foo")
 	modelEventAPIDefinitions := []*model.EventDefinition{
 
 		fixModelEventAPIDefinition("foo", bundleID, "Foo", "Lorem Ipsum", group),
@@ -487,7 +487,7 @@ func TestResolver_EventAPIs(t *testing.T) {
 
 			resolver := mp_bundle.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil)
 			// when
-			result, err := resolver.EventDefinitions(context.TODO(), pkg, &group, testCase.InputFirst, testCase.InputAfter)
+			result, err := resolver.EventDefinitions(context.TODO(), bundle, &group, testCase.InputFirst, testCase.InputAfter)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -507,7 +507,7 @@ func TestResolver_Document(t *testing.T) {
 
 	modelDoc := fixModelDocument("foo", id)
 	gqlDoc := fixGQLDocument(id)
-	pkg := fixGQLBundle("foo", "foo", "foo")
+	bundle := fixGQLBundle("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -536,7 +536,7 @@ func TestResolver_Document(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedDoc: gqlDoc,
 			ExpectedErr: nil,
 		},
@@ -554,7 +554,7 @@ func TestResolver_Document(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedDoc: nil,
 			ExpectedErr: testErr,
 		},
@@ -572,7 +572,7 @@ func TestResolver_Document(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedDoc: nil,
 			ExpectedErr: nil,
 		},
@@ -589,7 +589,7 @@ func TestResolver_Document(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedDoc: nil,
 			ExpectedErr: testErr,
 		},
@@ -606,7 +606,7 @@ func TestResolver_Document(t *testing.T) {
 				return conv
 			},
 			InputID:     "foo",
-			Bundle:      pkg,
+			Bundle:      bundle,
 			ExpectedDoc: nil,
 			ExpectedErr: testErr,
 		},
@@ -648,7 +648,7 @@ func TestResolver_Documents(t *testing.T) {
 		fixGQLDocument("foo"),
 		fixGQLDocument("bar"),
 	}
-	pkg := fixGQLBundle(bundleID, "foo", "foo")
+	bundle := fixGQLBundle(bundleID, "foo", "foo")
 
 	first := 2
 	gqlAfter := graphql.PageCursor("test")
@@ -709,7 +709,7 @@ func TestResolver_Documents(t *testing.T) {
 			resolver := mp_bundle.NewResolver(transact, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter)
 
 			// when
-			result, err := resolver.Documents(context.TODO(), pkg, &first, &gqlAfter)
+			result, err := resolver.Documents(context.TODO(), bundle, &first, &gqlAfter)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1203,7 +1203,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 	id := "foo"
 	modelBundleInstanceAuth := fixModelBundleInstanceAuth(id)
 	gqlBundleInstanceAuth := fixGQLBundleInstanceAuth(id)
-	pkg := fixGQLBundle("foo", "foo", "foo")
+	bundle := fixGQLBundle("foo", "foo", "foo")
 	testErr := errors.New("Test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -1232,7 +1232,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 				return conv
 			},
 			InputID:                    "foo",
-			Bundle:                     pkg,
+			Bundle:                     bundle,
 			ExpectedBundleInstanceAuth: gqlBundleInstanceAuth,
 			ExpectedErr:                nil,
 		},
@@ -1250,7 +1250,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 				return conv
 			},
 			InputID:                    "foo",
-			Bundle:                     pkg,
+			Bundle:                     bundle,
 			ExpectedBundleInstanceAuth: nil,
 			ExpectedErr:                testErr,
 		},
@@ -1268,7 +1268,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 				return conv
 			},
 			InputID:                    "foo",
-			Bundle:                     pkg,
+			Bundle:                     bundle,
 			ExpectedBundleInstanceAuth: nil,
 			ExpectedErr:                nil,
 		},
@@ -1285,7 +1285,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 				return conv
 			},
 			InputID:                    "foo",
-			Bundle:                     pkg,
+			Bundle:                     bundle,
 			ExpectedBundleInstanceAuth: nil,
 			ExpectedErr:                testErr,
 		},
@@ -1302,7 +1302,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 				return conv
 			},
 			InputID:                    "foo",
-			Bundle:                     pkg,
+			Bundle:                     bundle,
 			ExpectedBundleInstanceAuth: nil,
 			ExpectedErr:                testErr,
 		},
@@ -1344,7 +1344,7 @@ func TestResolver_InstanceAuths(t *testing.T) {
 	// given
 	testErr := errors.New("test error")
 
-	pkg := fixGQLBundle(bundleID, "foo", "bar")
+	bundle := fixGQLBundle(bundleID, "foo", "bar")
 	modelBundleInstanceAuths := []*model.BundleInstanceAuth{
 		fixModelBundleInstanceAuth("foo"),
 		fixModelBundleInstanceAuth("bar"),
@@ -1436,7 +1436,7 @@ func TestResolver_InstanceAuths(t *testing.T) {
 
 			resolver := mp_bundle.NewResolver(transact, nil, svc, nil, nil, nil, nil, converter, nil, nil, nil)
 			// when
-			result, err := resolver.InstanceAuths(context.TODO(), pkg)
+			result, err := resolver.InstanceAuths(context.TODO(), bundle)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)

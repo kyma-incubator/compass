@@ -281,13 +281,13 @@ func fixBundleInstanceAuthSetInputSucceeded(auth *graphql.AuthInput) graphql.Bun
 }
 
 func fixApplicationRegisterInputWithBundles(t *testing.T) graphql.ApplicationRegisterInput {
-	pkg1 := fixBundleCreateInputWithRelatedObjects(t, "foo")
-	pkg2 := fixBundleCreateInputWithRelatedObjects(t, "bar")
+	bundle1 := fixBundleCreateInputWithRelatedObjects(t, "foo")
+	bundle2 := fixBundleCreateInputWithRelatedObjects(t, "bar")
 	return graphql.ApplicationRegisterInput{
 		Name:         "create-application-with-documents",
 		ProviderName: ptr.String("compass"),
 		Bundles: []*graphql.BundleCreateInput{
-			&pkg1, &pkg2,
+			&bundle1, &bundle2,
 		},
 		Labels: &graphql.Labels{
 			"scenarios": []interface{}{"DEFAULT"},

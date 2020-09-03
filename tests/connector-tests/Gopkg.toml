@@ -7,7 +7,7 @@ required = [
   revision = "64f737ad7e1db26e2c3e9b71335bd67e69199092"
 
 [[override]]
-  name = "gopkg.in/yaml.v2"
+  name = "gobundle.in/yaml.v2"
   version = "v2.2.8"
 
 [prune]

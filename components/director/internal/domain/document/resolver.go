@@ -48,17 +48,17 @@ type Resolver struct {
 	transact    persistence.Transactioner
 	svc         DocumentService
 	appSvc      ApplicationService
-	pkgSvc      BundleService
+	bundleSvc   BundleService
 	converter   DocumentConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc DocumentService, appSvc ApplicationService, pkgSvc BundleService, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc DocumentService, appSvc ApplicationService, bundleSvc BundleService, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
 		appSvc:      appSvc,
-		pkgSvc:      pkgSvc,
+		bundleSvc:   bundleSvc,
 		frConverter: frConverter,
 		converter:   &converter{frConverter: frConverter},
 	}
@@ -78,7 +78,7 @@ func (r *Resolver) AddDocumentToBundle(ctx context.Context, bundleID string, in 
 		return nil, errors.Wrap(err, "while converting DocumentInput from GraphQL")
 	}
 
-	found, err := r.pkgSvc.Exist(ctx, bundleID)
+	found, err := r.bundleSvc.Exist(ctx, bundleID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking existence of Bundle")
 	}

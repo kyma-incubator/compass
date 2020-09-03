@@ -14,11 +14,11 @@ type Bundle struct {
 	DefaultInstanceAuth            *Auth
 }
 
-func (pkg *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
-	pkg.Name = update.Name
-	pkg.Description = update.Description
-	pkg.InstanceAuthRequestInputSchema = update.InstanceAuthRequestInputSchema
-	pkg.DefaultInstanceAuth = update.DefaultInstanceAuth.ToAuth()
+func (bundle *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
+	bundle.Name = update.Name
+	bundle.Description = update.Description
+	bundle.InstanceAuthRequestInputSchema = update.InstanceAuthRequestInputSchema
+	bundle.DefaultInstanceAuth = update.DefaultInstanceAuth.ToAuth()
 }
 
 type BundleCreateInput struct {

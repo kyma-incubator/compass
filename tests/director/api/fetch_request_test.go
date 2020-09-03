@@ -50,9 +50,9 @@ func Test_FetchRequestAddAPIToBundle(t *testing.T) {
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-bundle"
-	pkg := createBundle(t, ctx, application.ID, pkgName)
-	defer deleteBundle(t, ctx, pkg.ID)
+	bundleName := "test-bundle"
+	bundle := createBundle(t, ctx, application.ID, bundleName)
+	defer deleteBundle(t, ctx, bundle.ID)
 
 	apiInput := graphql.APIDefinitionInput{
 		Name:      "test",
@@ -65,7 +65,7 @@ func Test_FetchRequestAddAPIToBundle(t *testing.T) {
 			},
 		},
 	}
-	api := addAPIToBundleWithInput(t, ctx, pkg.ID, apiInput)
+	api := addAPIToBundleWithInput(t, ctx, bundle.ID, apiInput)
 	assert.NotNil(t, api.Spec.Data)
 	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, api.Spec.FetchRequest.Status.Condition)
 }
@@ -77,9 +77,9 @@ func TestFetchRequestAddBundleWithAPI(t *testing.T) {
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-bundle"
-	pkgInput := graphql.BundleCreateInput{
-		Name: pkgName,
+	bundleName := "test-bundle"
+	bundleInput := graphql.BundleCreateInput{
+		Name: bundleName,
 		APIDefinitions: []*graphql.APIDefinitionInput{{
 			Name:      "test",
 			TargetURL: "https://target.url",
@@ -94,11 +94,11 @@ func TestFetchRequestAddBundleWithAPI(t *testing.T) {
 		},
 	}
 
-	pkg := createBundleWithInput(t, ctx, application.ID, pkgInput)
-	defer deleteBundle(t, ctx, pkg.ID)
+	bundle := createBundleWithInput(t, ctx, application.ID, bundleInput)
+	defer deleteBundle(t, ctx, bundle.ID)
 
-	assert.NotNil(t, pkg.APIDefinitions.Data[0].Spec.Data)
-	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, pkg.APIDefinitions.Data[0].Spec.FetchRequest.Status.Condition)
+	assert.NotNil(t, bundle.APIDefinitions.Data[0].Spec.Data)
+	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, bundle.APIDefinitions.Data[0].Spec.FetchRequest.Status.Condition)
 }
 
 func TestRefetchAPISpec(t *testing.T) {
@@ -108,9 +108,9 @@ func TestRefetchAPISpec(t *testing.T) {
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-bundle"
-	pkgInput := graphql.BundleCreateInput{
-		Name: pkgName,
+	bundleName := "test-bundle"
+	bundleInput := graphql.BundleCreateInput{
+		Name: bundleName,
 		APIDefinitions: []*graphql.APIDefinitionInput{{
 			Name:      "test",
 			TargetURL: "https://target.url",
@@ -125,13 +125,13 @@ func TestRefetchAPISpec(t *testing.T) {
 		},
 	}
 
-	pkg := createBundleWithInput(t, ctx, application.ID, pkgInput)
-	defer deleteBundle(t, ctx, pkg.ID)
+	bundle := createBundleWithInput(t, ctx, application.ID, bundleInput)
+	defer deleteBundle(t, ctx, bundle.ID)
 
-	spec := pkg.APIDefinitions.Data[0].Spec.Data
+	spec := bundle.APIDefinitions.Data[0].Spec.Data
 
 	var refetchedSpec graphql.APISpecExt
-	req := fixRefetchAPISpecRequest(pkg.APIDefinitions.Data[0].ID)
+	req := fixRefetchAPISpecRequest(bundle.APIDefinitions.Data[0].ID)
 
 	err := tc.RunOperation(ctx, req, &refetchedSpec)
 	require.NoError(t, err)
