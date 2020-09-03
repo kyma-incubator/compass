@@ -91,12 +91,12 @@ func TestService_GetForBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 	id := "foo"
-	bundleID := bundleID()
+	bdlID := bundleID()
 	tenantID := "bar"
 	externalTenantID := "external-tenant"
 
 	bundleID := "test"
-	doc := fixModelDocument(id, bundleID)
+	doc := fixModelDocument(id, bdlID)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)

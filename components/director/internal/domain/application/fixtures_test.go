@@ -204,14 +204,14 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 		},
 		Bundles: []*graphql.BundleCreateInput{
 			{
-				Name: "foo",
+				Title: "foo",
 				APIDefinitions: []*graphql.APIDefinitionInput{
-					{Name: "api1", TargetURL: "foo.bar"},
-					{Name: "api2", TargetURL: "foo.bar2"},
+					{Title: "api1", EntryPoint: "foo.bar"},
+					{Title: "api2", EntryPoint: "foo.bar2"},
 				},
 				EventDefinitions: []*graphql.EventDefinitionInput{
-					{Name: "event1", Description: &desc},
-					{Name: "event2", Description: &desc},
+					{Title: "event1", Description: &desc},
+					{Title: "event2", Description: &desc},
 				},
 				Documents: []*graphql.DocumentInput{
 					{DisplayName: "doc1", Kind: &kind},

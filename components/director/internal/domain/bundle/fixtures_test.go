@@ -199,17 +199,17 @@ func fixGQLBundleCreateInput(name, description string) graphql.BundleCreateInput
 	}
 
 	return graphql.BundleCreateInput{
-		Name:                           name,
+		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicInputSchema(),
 		DefaultInstanceAuth:            &defaultAuth,
 		APIDefinitions: []*graphql.APIDefinitionInput{
-			{Name: "api1", TargetURL: "foo.bar"},
-			{Name: "api2", TargetURL: "foo.bar2"},
+			{Title: "api1", EntryPoint: "foo.bar"},
+			{Title: "api2", EntryPoint: "foo.bar2"},
 		},
 		EventDefinitions: []*graphql.EventDefinitionInput{
-			{Name: "event1", Description: &desc},
-			{Name: "event2", Description: &desc},
+			{Title: "event1", Description: &desc},
+			{Title: "event2", Description: &desc},
 		},
 		Documents: []*graphql.DocumentInput{
 			{DisplayName: "doc1", Kind: &docKind},
@@ -259,7 +259,7 @@ func fixGQLBundleUpdateInput(name, description string) graphql.BundleUpdateInput
 	}
 
 	return graphql.BundleUpdateInput{
-		Name:                           name,
+		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicInputSchema(),
 		DefaultInstanceAuth:            &defaultAuth,

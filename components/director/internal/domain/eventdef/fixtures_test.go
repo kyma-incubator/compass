@@ -136,7 +136,7 @@ func fixGQLEventDefinitionInput() *graphql.EventDefinitionInput {
 	}
 
 	return &graphql.EventDefinitionInput{
-		Name:        "name",
+		Title:       "name",
 		Description: str.Ptr("description"),
 		Group:       str.Ptr("group"),
 		Spec:        spec,

@@ -46,7 +46,7 @@ func TestEventAPIDefinitionInput_Validate_Name(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			obj := fixValidEventAPIDefinitionInput()
-			obj.Name = testCase.Value
+			obj.Title = testCase.Value
 			//WHEN
 			err := obj.Validate()
 			//THEN
@@ -372,5 +372,5 @@ func fixValidEventAPISpecInput() graphql.EventSpecInput {
 
 func fixValidEventAPIDefinitionInput() graphql.EventDefinitionInput {
 	eventSpec := fixValidEventAPISpecInput()
-	return graphql.EventDefinitionInput{Name: "valid-name", Spec: &eventSpec}
+	return graphql.EventDefinitionInput{Title: "valid-name", Spec: &eventSpec}
 }

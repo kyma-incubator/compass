@@ -46,7 +46,7 @@ func TestBundleCreateInput_Validate_Name(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			obj := fixValidBundleCreateInput()
-			obj.Name = testCase.Value
+			obj.Title = testCase.Value
 			//WHEN
 			err := obj.Validate()
 			//THEN
@@ -351,7 +351,7 @@ func TestBundleUpdateInput_Validate_Name(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			obj := fixValidBundleUpdateInput()
-			obj.Name = testCase.Value
+			obj.Title = testCase.Value
 			//WHEN
 			err := obj.Validate()
 			//THEN
@@ -676,12 +676,12 @@ func TestBundleInstanceAuthStatusInput_Validate(t *testing.T) {
 
 func fixValidBundleCreateInput() graphql.BundleCreateInput {
 	return graphql.BundleCreateInput{
-		Name: inputvalidationtest.ValidName,
+		Title: inputvalidationtest.ValidName,
 	}
 }
 
 func fixValidBundleUpdateInput() graphql.BundleUpdateInput {
 	return graphql.BundleUpdateInput{
-		Name: inputvalidationtest.ValidName,
+		Title: inputvalidationtest.ValidName,
 	}
 }

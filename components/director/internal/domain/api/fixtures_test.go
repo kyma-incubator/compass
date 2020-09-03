@@ -157,9 +157,9 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	}
 
 	return &graphql.APIDefinitionInput{
-		Name:        name,
+		Title:       name,
 		Description: &description,
-		TargetURL:   "https://test-url.com",
+		EntryPoint:  "https://test-url.com",
 		Group:       &group,
 		Spec:        spec,
 		Version:     v,

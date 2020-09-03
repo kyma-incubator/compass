@@ -12,7 +12,7 @@ import (
 
 func (i BundleCreateInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
+		validation.Field(&i.Title, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		validation.Field(&i.DefaultInstanceAuth, validation.NilOrNotEmpty),
 		validation.Field(&i.InstanceAuthRequestInputSchema, validation.NilOrNotEmpty),
@@ -24,7 +24,7 @@ func (i BundleCreateInput) Validate() error {
 
 func (i BundleUpdateInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
+		validation.Field(&i.Title, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		validation.Field(&i.DefaultInstanceAuth, validation.NilOrNotEmpty),
 		validation.Field(&i.InstanceAuthRequestInputSchema, validation.NilOrNotEmpty),

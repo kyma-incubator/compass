@@ -47,7 +47,7 @@ func TestAPIDefinitionInput_Validate_Name(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			obj := fixValidAPIDefinitionInput()
-			obj.Name = testCase.Value
+			obj.Title = testCase.Value
 			//WHEN
 			err := obj.Validate()
 			//THEN
@@ -137,7 +137,7 @@ func TestAPIDefinitionInput_Validate_TargetURL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			app := fixValidAPIDefinitionInput()
-			app.TargetURL = testCase.Value
+			app.EntryPoint = testCase.Value
 			//WHEN
 			err := app.Validate()
 			//THEN
@@ -505,7 +505,7 @@ func fixValidAPISpecInput() graphql.APISpecInput {
 
 func fixValidAPIDefinitionInput() graphql.APIDefinitionInput {
 	return graphql.APIDefinitionInput{
-		Name:      inputvalidationtest.ValidName,
-		TargetURL: inputvalidationtest.ValidURL,
+		Title:      inputvalidationtest.ValidName,
+		EntryPoint: inputvalidationtest.ValidURL,
 	}
 }
