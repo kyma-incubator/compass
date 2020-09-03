@@ -36,20 +36,20 @@ func (_m *DocumentService) Create(ctx context.Context, applicationID string, in 
 	return r0, r1
 }
 
-// CreateInPackage provides a mock function with given fields: ctx, packageID, in
-func (_m *DocumentService) CreateInPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error) {
-	ret := _m.Called(ctx, packageID, in)
+// CreateInBundle provides a mock function with given fields: ctx, bundleID, in
+func (_m *DocumentService) CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error) {
+	ret := _m.Called(ctx, bundleID, in)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.DocumentInput) string); ok {
-		r0 = rf(ctx, packageID, in)
+		r0 = rf(ctx, bundleID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.DocumentInput) error); ok {
-		r1 = rf(ctx, packageID, in)
+		r1 = rf(ctx, bundleID, in)
 	} else {
 		r1 = ret.Error(1)
 	}

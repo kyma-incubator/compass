@@ -1,12 +1,12 @@
-package packageinstanceauth_test
+package bundleinstanceauth_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/mock"
@@ -18,14 +18,14 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	authModel := fixModelAuth()
 	authGQL := fixGQLAuth()
 
-	piaModel := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, authModel, fixModelStatusSucceeded())
-	piaGQL := fixGQLPackageInstanceAuth(testID, authGQL, fixGQLStatusSucceeded())
+	piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, authModel, fixModelStatusSucceeded())
+	piaGQL := fixGQLBundleInstanceAuth(testID, authGQL, fixGQLStatusSucceeded())
 
 	testCases := []struct {
 		Name            string
 		AuthConverterFn func() *automock.AuthConverter
-		Input           *model.PackageInstanceAuth
-		Expected        *graphql.PackageInstanceAuth
+		Input           *model.BundleInstanceAuth
+		Expected        *graphql.BundleInstanceAuth
 	}{
 		{
 			Name: "Success when nil",
@@ -53,8 +53,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				conv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil).Once()
 				return conv
 			},
-			Input:    fixModelPackageInstanceAuthWithoutContextAndInputParams(testID, testPackageID, testTenant, nil, fixModelStatusPending()),
-			Expected: fixGQLPackageInstanceAuthWithoutContextAndInputParams(testID, nil, fixGQLStatusPending()),
+			Input:    fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, fixModelStatusPending()),
+			Expected: fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, fixGQLStatusPending()),
 		},
 		{
 			Name: "Success when context and input params empty",
@@ -63,8 +63,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				conv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil).Once()
 				return conv
 			},
-			Input:    fixModelPackageInstanceAuthWithoutContextAndInputParams(testID, testPackageID, testTenant, nil, nil),
-			Expected: fixGQLPackageInstanceAuthWithoutContextAndInputParams(testID, nil, nil),
+			Input:    fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil),
+			Expected: fixGQLBundleInstanceAuthWithoutContextAndInputParams(testID, nil, nil),
 		},
 	}
 
@@ -72,7 +72,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := testCase.AuthConverterFn()
 
-			conv := packageinstanceauth.NewConverter(authConv)
+			conv := bundleinstanceauth.NewConverter(authConv)
 			// WHEN
 			result, err := conv.ToGraphQL(testCase.Input)
 
@@ -87,22 +87,22 @@ func TestConverter_ToGraphQL(t *testing.T) {
 
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
-	piaModels := []*model.PackageInstanceAuth{
-		fixModelPackageInstanceAuth("foo", testPackageID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
-		fixModelPackageInstanceAuth("bar", testPackageID, testTenant, nil, fixModelStatusPending()),
+	piaModels := []*model.BundleInstanceAuth{
+		fixModelBundleInstanceAuth("foo", testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded()),
+		fixModelBundleInstanceAuth("bar", testBundleID, testTenant, nil, fixModelStatusPending()),
 		nil,
 	}
 
-	piaGQLs := []*graphql.PackageInstanceAuth{
-		fixGQLPackageInstanceAuth("foo", fixGQLAuth(), fixGQLStatusSucceeded()),
-		fixGQLPackageInstanceAuth("bar", nil, fixGQLStatusPending()),
+	piaGQLs := []*graphql.BundleInstanceAuth{
+		fixGQLBundleInstanceAuth("foo", fixGQLAuth(), fixGQLStatusSucceeded()),
+		fixGQLBundleInstanceAuth("bar", nil, fixGQLStatusPending()),
 	}
 
 	testCases := []struct {
 		Name            string
 		AuthConverterFn func() *automock.AuthConverter
-		Input           []*model.PackageInstanceAuth
-		Expected        []*graphql.PackageInstanceAuth
+		Input           []*model.BundleInstanceAuth
+		Expected        []*graphql.BundleInstanceAuth
 	}{
 		{
 			Name: "Success when nil",
@@ -130,7 +130,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := testCase.AuthConverterFn()
 
-			conv := packageinstanceauth.NewConverter(authConv)
+			conv := bundleinstanceauth.NewConverter(authConv)
 			// WHEN
 			result, err := conv.MultipleToGraphQL(testCase.Input)
 
@@ -150,27 +150,27 @@ func TestConverter_RequestInputFromGraphQL(t *testing.T) {
 
 	testCases := []struct {
 		Name     string
-		Input    graphql.PackageInstanceAuthRequestInput
-		Expected model.PackageInstanceAuthRequestInput
+		Input    graphql.BundleInstanceAuthRequestInput
+		Expected model.BundleInstanceAuthRequestInput
 	}{
 		{
 			Name: "Success when nil",
-			Input: graphql.PackageInstanceAuthRequestInput{
+			Input: graphql.BundleInstanceAuthRequestInput{
 				Context:     nil,
 				InputParams: nil,
 			},
-			Expected: model.PackageInstanceAuthRequestInput{
+			Expected: model.BundleInstanceAuthRequestInput{
 				Context:     nil,
 				InputParams: nil,
 			},
 		},
 		{
 			Name: "Success when not nil",
-			Input: graphql.PackageInstanceAuthRequestInput{
+			Input: graphql.BundleInstanceAuthRequestInput{
 				Context:     &testJSON,
 				InputParams: &testJSON,
 			},
-			Expected: model.PackageInstanceAuthRequestInput{
+			Expected: model.BundleInstanceAuthRequestInput{
 				Context:     &testStr,
 				InputParams: &testStr,
 			},
@@ -179,7 +179,7 @@ func TestConverter_RequestInputFromGraphQL(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			conv := packageinstanceauth.NewConverter(nil)
+			conv := bundleinstanceauth.NewConverter(nil)
 
 			// WHEN
 			result := conv.RequestInputFromGraphQL(testCase.Input)
@@ -198,8 +198,8 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 	testCases := []struct {
 		Name            string
 		AuthConverterFn func() *automock.AuthConverter
-		Input           graphql.PackageInstanceAuthSetInput
-		Expected        model.PackageInstanceAuthSetInput
+		Input           graphql.BundleInstanceAuthSetInput
+		Expected        model.BundleInstanceAuthSetInput
 	}{
 		{
 			Name: "Success",
@@ -208,13 +208,13 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 				conv.On("InputFromGraphQL", authInputGQL).Return(authInputModel, nil).Once()
 				return conv
 			},
-			Input: graphql.PackageInstanceAuthSetInput{
+			Input: graphql.BundleInstanceAuthSetInput{
 				Auth:   authInputGQL,
-				Status: fixGQLStatusInput(graphql.PackageInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
+				Status: fixGQLStatusInput(graphql.BundleInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
 			},
-			Expected: model.PackageInstanceAuthSetInput{
+			Expected: model.BundleInstanceAuthSetInput{
 				Auth:   authInputModel,
-				Status: fixModelStatusInput(model.PackageInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
+				Status: fixModelStatusInput(model.BundleInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
 			},
 		},
 		{
@@ -224,11 +224,11 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 				conv.On("InputFromGraphQL", authInputGQL).Return(authInputModel, nil).Once()
 				return conv
 			},
-			Input: graphql.PackageInstanceAuthSetInput{
+			Input: graphql.BundleInstanceAuthSetInput{
 				Auth:   authInputGQL,
 				Status: nil,
 			},
-			Expected: model.PackageInstanceAuthSetInput{
+			Expected: model.BundleInstanceAuthSetInput{
 				Auth:   authInputModel,
 				Status: nil,
 			},
@@ -240,13 +240,13 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 				conv.On("InputFromGraphQL", (*graphql.AuthInput)(nil)).Return(nil, nil).Once()
 				return conv
 			},
-			Input: graphql.PackageInstanceAuthSetInput{
+			Input: graphql.BundleInstanceAuthSetInput{
 				Auth:   nil,
-				Status: fixGQLStatusInput(graphql.PackageInstanceAuthSetStatusConditionInputFailed, "foo", "bar"),
+				Status: fixGQLStatusInput(graphql.BundleInstanceAuthSetStatusConditionInputFailed, "foo", "bar"),
 			},
-			Expected: model.PackageInstanceAuthSetInput{
+			Expected: model.BundleInstanceAuthSetInput{
 				Auth:   nil,
-				Status: fixModelStatusInput(model.PackageInstanceAuthSetStatusConditionInputFailed, "foo", "bar"),
+				Status: fixModelStatusInput(model.BundleInstanceAuthSetStatusConditionInputFailed, "foo", "bar"),
 			},
 		},
 	}
@@ -255,7 +255,7 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := testCase.AuthConverterFn()
 
-			conv := packageinstanceauth.NewConverter(authConv)
+			conv := bundleinstanceauth.NewConverter(authConv)
 			// WHEN
 			result, err := conv.SetInputFromGraphQL(testCase.Input)
 
@@ -271,10 +271,10 @@ func TestConverter_SetInputFromGraphQL(t *testing.T) {
 func TestConverter_ToEntity(t *testing.T) {
 	t.Run("Success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		piaModel := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
-		piaEntity := fixEntityPackageInstanceAuth(t, testID, testPackageID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
 
-		conv := packageinstanceauth.NewConverter(nil)
+		conv := bundleinstanceauth.NewConverter(nil)
 
 		//WHEN
 		entity, err := conv.ToEntity(*piaModel)
@@ -286,10 +286,10 @@ func TestConverter_ToEntity(t *testing.T) {
 
 	t.Run("Success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		piaModel := fixModelPackageInstanceAuthWithoutContextAndInputParams(testID, testPackageID, testTenant, nil, nil)
-		piaEntity := fixEntityPackageInstanceAuthWithoutContextAndInputParams(t, testID, testPackageID, testTenant, nil, nil)
+		piaModel := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil)
+		piaEntity := fixEntityBundleInstanceAuthWithoutContextAndInputParams(t, testID, testBundleID, testTenant, nil, nil)
 
-		conv := packageinstanceauth.NewConverter(nil)
+		conv := bundleinstanceauth.NewConverter(nil)
 
 		//WHEN
 		entity, err := conv.ToEntity(*piaModel)
@@ -303,10 +303,10 @@ func TestConverter_ToEntity(t *testing.T) {
 func TestConverter_FromEntity(t *testing.T) {
 	t.Run("Success all nullable properties filled", func(t *testing.T) {
 		//GIVEN
-		piaModel := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
-		piaEntity := fixEntityPackageInstanceAuth(t, testID, testPackageID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaModel := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
+		piaEntity := fixEntityBundleInstanceAuth(t, testID, testBundleID, testTenant, fixModelAuth(), fixModelStatusSucceeded())
 
-		conv := packageinstanceauth.NewConverter(nil)
+		conv := bundleinstanceauth.NewConverter(nil)
 
 		//WHEN
 		result, err := conv.FromEntity(*piaEntity)
@@ -318,10 +318,10 @@ func TestConverter_FromEntity(t *testing.T) {
 
 	t.Run("Success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		piaModel := fixModelPackageInstanceAuthWithoutContextAndInputParams(testID, testPackageID, testTenant, nil, fixModelStatusPending())
-		piaEntity := fixEntityPackageInstanceAuthWithoutContextAndInputParams(t, testID, testPackageID, testTenant, nil, fixModelStatusPending())
+		piaModel := fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, fixModelStatusPending())
+		piaEntity := fixEntityBundleInstanceAuthWithoutContextAndInputParams(t, testID, testBundleID, testTenant, nil, fixModelStatusPending())
 
-		conv := packageinstanceauth.NewConverter(nil)
+		conv := bundleinstanceauth.NewConverter(nil)
 
 		//WHEN
 		result, err := conv.FromEntity(*piaEntity)

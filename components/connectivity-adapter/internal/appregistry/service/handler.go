@@ -17,15 +17,15 @@ import (
 
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
 type DirectorClient interface {
-	CreatePackage(appID string, in graphql.PackageCreateInput) (string, error)
-	GetPackage(appID string, packageID string) (graphql.PackageExt, error)
-	ListPackages(appID string) ([]*graphql.PackageExt, error)
-	DeletePackage(packageID string) error
-	UpdatePackage(packageID string, in graphql.PackageUpdateInput) error
+	CreateBundle(appID string, in graphql.BundleCreateInput) (string, error)
+	GetBundle(appID string, bundleID string) (graphql.BundleExt, error)
+	ListBundles(appID string) ([]*graphql.BundleExt, error)
+	DeleteBundle(bundleID string) error
+	UpdateBundle(bundleID string, in graphql.BundleUpdateInput) error
 
-	CreateAPIDefinition(packageID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error)
-	CreateEventDefinition(packageID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error)
-	CreateDocument(packageID string, documentInput graphql.DocumentInput) (string, error)
+	CreateAPIDefinition(bundleID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error)
+	CreateEventDefinition(bundleID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error)
+	CreateDocument(bundleID string, documentInput graphql.DocumentInput) (string, error)
 	DeleteAPIDefinition(apiID string) error
 	DeleteEventDefinition(eventID string) error
 	DeleteDocument(documentID string) error
@@ -35,9 +35,9 @@ type DirectorClient interface {
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	DetailsToGraphQLCreateInput(deprecated model.ServiceDetails) (graphql.PackageCreateInput, error)
-	GraphQLCreateInputToUpdateInput(in graphql.PackageCreateInput) graphql.PackageUpdateInput
-	GraphQLToServiceDetails(converted graphql.PackageExt, legacyServiceReference LegacyServiceReference) (model.ServiceDetails, error)
+	DetailsToGraphQLCreateInput(deprecated model.ServiceDetails) (graphql.BundleCreateInput, error)
+	GraphQLCreateInputToUpdateInput(in graphql.BundleCreateInput) graphql.BundleUpdateInput
+	GraphQLToServiceDetails(converted graphql.BundleExt, legacyServiceReference LegacyServiceReference) (model.ServiceDetails, error)
 	ServiceDetailsToService(in model.ServiceDetails, serviceID string) (model.Service, error)
 }
 
@@ -112,7 +112,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	h.logger.Infoln("doing GraphQL request...")
 
 	appID := reqContext.AppID
-	serviceID, err := reqContext.DirectorClient.CreatePackage(appID, converted)
+	serviceID, err := reqContext.DirectorClient.CreateBundle(appID, converted)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating Service")
 		h.logger.Error(wrappedErr)
@@ -175,7 +175,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	appID := reqContext.AppID
-	packages, err := reqContext.DirectorClient.ListPackages(appID)
+	bundles, err := reqContext.DirectorClient.ListBundles(appID)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while fetching Services")
 		h.logger.Error(wrappedErr)
@@ -184,14 +184,14 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	services := make([]model.Service, 0)
-	for _, pkg := range packages {
+	for _, pkg := range bundles {
 		if pkg == nil {
 			continue
 		}
 
 		legacyServiceReference, err := h.appLabeler.ReadServiceReference(reqContext.AppLabels, pkg.ID)
 		if err != nil {
-			wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Package with ID '%s'", pkg.ID)
+			wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Bundle with ID '%s'", pkg.ID)
 			h.logger.Error(wrappedErr)
 			res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 			return
@@ -252,7 +252,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	}
 	dirCli := reqContext.DirectorClient
 
-	previousPackage, err := dirCli.GetPackage(reqContext.AppID, id)
+	previousBundle, err := dirCli.GetBundle(reqContext.AppID, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, id)
@@ -264,9 +264,9 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	pkgID := previousPackage.ID
+	bundleID := previousBundle.ID
 
-	err = dirCli.UpdatePackage(id, h.converter.GraphQLCreateInputToUpdateInput(createInput))
+	err = dirCli.UpdateBundle(id, h.converter.GraphQLCreateInputToUpdateInput(createInput))
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while updating Service")
 		h.logger.WithField("ID", id).Error(wrappedErr)
@@ -274,7 +274,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = h.deleteRelatedObjectsForPackage(dirCli, previousPackage)
+	err = h.deleteRelatedObjectsForBundle(dirCli, previousBundle)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while deleting related objects for Service")
 		h.logger.WithField("ID", id).Error(wrappedErr)
@@ -282,7 +282,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = h.createRelatedObjectsForPackage(dirCli, pkgID, createInput)
+	err = h.createRelatedObjectsForBundle(dirCli, bundleID, createInput)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating related objects for Service")
 		h.logger.WithField("ID", id).Error(wrappedErr)
@@ -293,7 +293,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	// Legacy service reference should be updated, but right now it contains only identifier field
 	// which has to preserved during update (to match old metadata service behaviour), so there's nothing to update.
 
-	h.getAndWriteServiceByID(writer, pkgID, reqContext)
+	h.getAndWriteServiceByID(writer, bundleID, reqContext)
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
@@ -307,7 +307,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = reqContext.DirectorClient.DeletePackage(id)
+	err = reqContext.DirectorClient.DeleteBundle(id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, id)
@@ -394,13 +394,13 @@ func (h *Handler) getServiceID(request *http.Request) string {
 	return id
 }
 
-func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID string, pkg graphql.PackageCreateInput) error {
+func (h *Handler) createRelatedObjectsForBundle(dirCli DirectorClient, bundleID string, pkg graphql.BundleCreateInput) error {
 	for _, apiDef := range pkg.APIDefinitions {
 		if apiDef == nil {
 			continue
 		}
 
-		_, err := dirCli.CreateAPIDefinition(pkgID, *apiDef)
+		_, err := dirCli.CreateAPIDefinition(bundleID, *apiDef)
 		if err != nil {
 			return errors.Wrap(err, "while creating API Definition")
 		}
@@ -411,7 +411,7 @@ func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID st
 			continue
 		}
 
-		_, err := dirCli.CreateEventDefinition(pkgID, *eventDef)
+		_, err := dirCli.CreateEventDefinition(bundleID, *eventDef)
 		if err != nil {
 			return errors.Wrap(err, "while creating Event Definition")
 		}
@@ -422,7 +422,7 @@ func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID st
 			continue
 		}
 
-		_, err := dirCli.CreateDocument(pkgID, *doc)
+		_, err := dirCli.CreateDocument(bundleID, *doc)
 		if err != nil {
 			return errors.Wrap(err, "while creating Document")
 		}
@@ -431,7 +431,7 @@ func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID st
 	return nil
 }
 
-func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg graphql.PackageExt) error {
+func (h *Handler) deleteRelatedObjectsForBundle(dirCli DirectorClient, pkg graphql.BundleExt) error {
 	for _, apiDef := range pkg.APIDefinitions.Data {
 		if apiDef == nil {
 			continue
@@ -469,7 +469,7 @@ func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg grap
 }
 
 func (h *Handler) getAndWriteServiceByID(writer http.ResponseWriter, serviceID string, reqContext RequestContext) {
-	output, err := reqContext.DirectorClient.GetPackage(reqContext.AppID, serviceID)
+	output, err := reqContext.DirectorClient.GetBundle(reqContext.AppID, serviceID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, serviceID)
@@ -483,7 +483,7 @@ func (h *Handler) getAndWriteServiceByID(writer http.ResponseWriter, serviceID s
 
 	legacyServiceReference, err := h.appLabeler.ReadServiceReference(reqContext.AppLabels, serviceID)
 	if err != nil {
-		wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Package with ID '%s'", serviceID)
+		wrappedErr := errors.Wrapf(err, "while reading legacy service reference for Bundle with ID '%s'", serviceID)
 		h.logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return

@@ -1,4 +1,4 @@
-package packageinstanceauth
+package bundleinstanceauth
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 
 type Entity struct {
 	ID              string         `db:"id"`
-	PackageID       string         `db:"package_id"`
+	BundleID        string         `db:"bundle_id"`
 	TenantID        string         `db:"tenant_id"`
 	Context         sql.NullString `db:"context"`
 	InputParams     sql.NullString `db:"input_params"`

@@ -128,11 +128,11 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 			AddRow(fixAPIDefinitionRow(secondApiDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, bundleID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, bundleID).
 			WillReturnRows(testdb.RowCount(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -141,7 +141,7 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 		convMock.On("FromEntity", secondApiDefEntity).Return(model.APIDefinition{ID: secondApiDefID}, nil)
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
-		modelAPIDef, err := pgRepository.ListForBundle(ctx, tenantID, packageID, inputPageSize, inputCursor)
+		modelAPIDef, err := pgRepository.ListForBundle(ctx, tenantID, bundleID, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelAPIDef.Data, 2)

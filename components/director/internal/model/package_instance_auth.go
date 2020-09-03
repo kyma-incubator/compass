@@ -6,17 +6,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-type PackageInstanceAuth struct {
+type BundleInstanceAuth struct {
 	ID          string
-	PackageID   string
+	BundleID    string
 	Tenant      string
 	Context     *string
 	InputParams *string
 	Auth        *Auth
-	Status      *PackageInstanceAuthStatus
+	Status      *BundleInstanceAuthStatus
 }
 
-func (a *PackageInstanceAuth) SetDefaultStatus(condition PackageInstanceAuthStatusCondition, timestamp time.Time) error {
+func (a *BundleInstanceAuth) SetDefaultStatus(condition BundleInstanceAuthStatusCondition, timestamp time.Time) error {
 	if a == nil {
 		return nil
 	}
@@ -24,23 +24,23 @@ func (a *PackageInstanceAuth) SetDefaultStatus(condition PackageInstanceAuthStat
 	var reason, message string
 
 	switch condition {
-	case PackageInstanceAuthStatusConditionSucceeded:
+	case BundleInstanceAuthStatusConditionSucceeded:
 		reason = "CredentialsProvided"
 		message = "Credentials were provided."
 		break
-	case PackageInstanceAuthStatusConditionPending:
+	case BundleInstanceAuthStatusConditionPending:
 		reason = "CredentialsNotProvided"
 		message = "Credentials were not yet provided."
 		break
-	case PackageInstanceAuthStatusConditionUnused:
+	case BundleInstanceAuthStatusConditionUnused:
 		reason = "PendingDeletion"
-		message = "Credentials for given Package Instance Auth are ready for being deleted by Application or Integration System."
+		message = "Credentials for given Bundle Instance Auth are ready for being deleted by Application or Integration System."
 		break
 	default:
 		return errors.Errorf("invalid status condition: %s", condition)
 	}
 
-	a.Status = &PackageInstanceAuthStatus{
+	a.Status = &BundleInstanceAuthStatus{
 		Condition: condition,
 		Timestamp: timestamp,
 		Message:   message,
@@ -50,32 +50,32 @@ func (a *PackageInstanceAuth) SetDefaultStatus(condition PackageInstanceAuthStat
 	return nil
 }
 
-type PackageInstanceAuthStatus struct {
-	Condition PackageInstanceAuthStatusCondition
+type BundleInstanceAuthStatus struct {
+	Condition BundleInstanceAuthStatusCondition
 	Timestamp time.Time
 	Message   string
 	Reason    string
 }
 
-type PackageInstanceAuthStatusCondition string
+type BundleInstanceAuthStatusCondition string
 
 const (
-	PackageInstanceAuthStatusConditionPending   PackageInstanceAuthStatusCondition = "PENDING"
-	PackageInstanceAuthStatusConditionSucceeded PackageInstanceAuthStatusCondition = "SUCCEEDED"
-	PackageInstanceAuthStatusConditionFailed    PackageInstanceAuthStatusCondition = "FAILED"
-	PackageInstanceAuthStatusConditionUnused    PackageInstanceAuthStatusCondition = "UNUSED"
+	BundleInstanceAuthStatusConditionPending   BundleInstanceAuthStatusCondition = "PENDING"
+	BundleInstanceAuthStatusConditionSucceeded BundleInstanceAuthStatusCondition = "SUCCEEDED"
+	BundleInstanceAuthStatusConditionFailed    BundleInstanceAuthStatusCondition = "FAILED"
+	BundleInstanceAuthStatusConditionUnused    BundleInstanceAuthStatusCondition = "UNUSED"
 )
 
-// Input type for requestPackageInstanceAuthCreation
-type PackageInstanceAuthRequestInput struct {
+// Input type for requestBundleInstanceAuthCreation
+type BundleInstanceAuthRequestInput struct {
 	Context     *string
 	InputParams *string
 }
 
-func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(id, packageID, tenant string, auth *Auth, status *PackageInstanceAuthStatus) PackageInstanceAuth {
-	return PackageInstanceAuth{
+func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *Auth, status *BundleInstanceAuthStatus) BundleInstanceAuth {
+	return BundleInstanceAuth{
 		ID:          id,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Tenant:      tenant,
 		Context:     ri.Context,
 		InputParams: ri.InputParams,
@@ -84,34 +84,34 @@ func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(id, packageID, t
 	}
 }
 
-// Input type for setPackageInstanceAuth
-type PackageInstanceAuthSetInput struct {
+// Input type for setBundleInstanceAuth
+type BundleInstanceAuthSetInput struct {
 	Auth   *AuthInput
-	Status *PackageInstanceAuthStatusInput
+	Status *BundleInstanceAuthStatusInput
 }
 
-type PackageInstanceAuthStatusInput struct {
-	Condition PackageInstanceAuthSetStatusConditionInput
+type BundleInstanceAuthStatusInput struct {
+	Condition BundleInstanceAuthSetStatusConditionInput
 	Message   string
 	Reason    string
 }
 
-func (si *PackageInstanceAuthStatusInput) ToPackageInstanceAuthStatus(timestamp time.Time) *PackageInstanceAuthStatus {
+func (si *BundleInstanceAuthStatusInput) ToBundleInstanceAuthStatus(timestamp time.Time) *BundleInstanceAuthStatus {
 	if si == nil {
 		return nil
 	}
 
-	return &PackageInstanceAuthStatus{
-		Condition: PackageInstanceAuthStatusCondition(si.Condition),
+	return &BundleInstanceAuthStatus{
+		Condition: BundleInstanceAuthStatusCondition(si.Condition),
 		Timestamp: timestamp,
 		Message:   si.Message,
 		Reason:    si.Reason,
 	}
 }
 
-type PackageInstanceAuthSetStatusConditionInput string
+type BundleInstanceAuthSetStatusConditionInput string
 
 const (
-	PackageInstanceAuthSetStatusConditionInputSucceeded PackageInstanceAuthSetStatusConditionInput = "SUCCEEDED"
-	PackageInstanceAuthSetStatusConditionInputFailed    PackageInstanceAuthSetStatusConditionInput = "FAILED"
+	BundleInstanceAuthSetStatusConditionInputSucceeded BundleInstanceAuthSetStatusConditionInput = "SUCCEEDED"
+	BundleInstanceAuthSetStatusConditionInputFailed    BundleInstanceAuthSetStatusConditionInput = "FAILED"
 )

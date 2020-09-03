@@ -1,4 +1,4 @@
-package mp_package
+package mp_bundle
 
 import (
 	"context"
@@ -14,37 +14,37 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
-type PackageService interface {
-	Create(ctx context.Context, applicationID string, in model.PackageCreateInput) (string, error)
-	Update(ctx context.Context, id string, in model.PackageUpdateInput) error
+//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+type BundleService interface {
+	Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error)
+	Update(ctx context.Context, id string, in model.BundleUpdateInput) error
 	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, id string) (*model.Package, error)
+	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
-//go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
-type PackageConverter interface {
-	ToGraphQL(in *model.Package) (*graphql.Package, error)
-	CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error)
-	UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error)
+//go:generate mockery -name=BundleConverter -output=automock -outpkg=automock -case=underscore
+type BundleConverter interface {
+	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
+	CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.BundleCreateInput, error)
+	UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model.BundleUpdateInput, error)
 }
 
-//go:generate mockery -name=PackageInstanceAuthService -output=automock -outpkg=automock -case=underscore
-type PackageInstanceAuthService interface {
-	GetForPackage(ctx context.Context, id string, packageID string) (*model.PackageInstanceAuth, error)
-	List(ctx context.Context, id string) ([]*model.PackageInstanceAuth, error)
+//go:generate mockery -name=BundleInstanceAuthService -output=automock -outpkg=automock -case=underscore
+type BundleInstanceAuthService interface {
+	GetForBundle(ctx context.Context, id string, bundleID string) (*model.BundleInstanceAuth, error)
+	List(ctx context.Context, id string) ([]*model.BundleInstanceAuth, error)
 }
 
-//go:generate mockery -name=PackageInstanceAuthConverter -output=automock -outpkg=automock -case=underscore
-type PackageInstanceAuthConverter interface {
-	ToGraphQL(in *model.PackageInstanceAuth) (*graphql.PackageInstanceAuth, error)
-	MultipleToGraphQL(in []*model.PackageInstanceAuth) ([]*graphql.PackageInstanceAuth, error)
+//go:generate mockery -name=BundleInstanceAuthConverter -output=automock -outpkg=automock -case=underscore
+type BundleInstanceAuthConverter interface {
+	ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)
+	MultipleToGraphQL(in []*model.BundleInstanceAuth) ([]*graphql.BundleInstanceAuth, error)
 }
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
-	GetForPackage(ctx context.Context, id string, packageID string) (*model.APIDefinition, error)
+	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
@@ -56,8 +56,8 @@ type APIConverter interface {
 
 //go:generate mockery -name=EventService -output=automock -outpkg=automock -case=underscore
 type EventService interface {
-	ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
-	GetForPackage(ctx context.Context, id string, packageID string) (*model.EventDefinition, error)
+	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
 }
 
 //go:generate mockery -name=EventConverter -output=automock -outpkg=automock -case=underscore
@@ -69,8 +69,8 @@ type EventConverter interface {
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
 type DocumentService interface {
-	ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.DocumentPage, error)
-	GetForPackage(ctx context.Context, id string, packageID string) (*model.Document, error)
+	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error)
+	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
 }
 
 //go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
@@ -83,47 +83,47 @@ type DocumentConverter interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	packageSvc             PackageService
-	packageInstanceAuthSvc PackageInstanceAuthService
-	apiSvc                 APIService
-	eventSvc               EventService
-	documentSvc            DocumentService
+	bundleSvc             BundleService
+	bundleInstanceAuthSvc BundleInstanceAuthService
+	apiSvc                APIService
+	eventSvc              EventService
+	documentSvc           DocumentService
 
-	packageConverter             PackageConverter
-	packageInstanceAuthConverter PackageInstanceAuthConverter
-	apiConverter                 APIConverter
-	eventConverter               EventConverter
-	documentConverter            DocumentConverter
+	bundleConverter             BundleConverter
+	bundleInstanceAuthConverter BundleInstanceAuthConverter
+	apiConverter                APIConverter
+	eventConverter              EventConverter
+	documentConverter           DocumentConverter
 }
 
 func NewResolver(
 	transact persistence.Transactioner,
-	packageSvc PackageService,
-	packageInstanceAuthSvc PackageInstanceAuthService,
+	bundleSvc BundleService,
+	bundleInstanceAuthSvc BundleInstanceAuthService,
 	apiSvc APIService,
 	eventSvc EventService,
 	documentSvc DocumentService,
-	packageConverter PackageConverter,
-	packageInstanceAuthConverter PackageInstanceAuthConverter,
+	bundleConverter BundleConverter,
+	bundleInstanceAuthConverter BundleInstanceAuthConverter,
 	apiConv APIConverter,
 	eventConv EventConverter,
 	documentConv DocumentConverter) *Resolver {
 	return &Resolver{
-		transact:                     transact,
-		packageConverter:             packageConverter,
-		packageSvc:                   packageSvc,
-		packageInstanceAuthSvc:       packageInstanceAuthSvc,
-		apiSvc:                       apiSvc,
-		eventSvc:                     eventSvc,
-		documentSvc:                  documentSvc,
-		packageInstanceAuthConverter: packageInstanceAuthConverter,
-		apiConverter:                 apiConv,
-		eventConverter:               eventConv,
-		documentConverter:            documentConv,
+		transact:                    transact,
+		bundleConverter:             bundleConverter,
+		bundleSvc:                   bundleSvc,
+		bundleInstanceAuthSvc:       bundleInstanceAuthSvc,
+		apiSvc:                      apiSvc,
+		eventSvc:                    eventSvc,
+		documentSvc:                 documentSvc,
+		bundleInstanceAuthConverter: bundleInstanceAuthConverter,
+		apiConverter:                apiConv,
+		eventConverter:              eventConv,
+		documentConverter:           documentConv,
 	}
 }
 
-func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageCreateInput) (*graphql.Package, error) {
+func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graphql.BundleCreateInput) (*graphql.Bundle, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -132,17 +132,17 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.packageConverter.CreateInputFromGraphQL(in)
+	convertedIn, err := r.bundleConverter.CreateInputFromGraphQL(in)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting input from GraphQL")
 	}
 
-	id, err := r.packageSvc.Create(ctx, applicationID, convertedIn)
+	id, err := r.bundleSvc.Create(ctx, applicationID, convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
-	pkg, err := r.packageSvc.Get(ctx, id)
+	pkg, err := r.bundleSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -152,15 +152,15 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 		return nil, err
 	}
 
-	gqlPackage, err := r.packageConverter.ToGraphQL(pkg)
+	gqlBundle, err := r.bundleConverter.ToGraphQL(pkg)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Bundle to GraphQL with ID: [%s]", id)
 	}
 
-	return gqlPackage, nil
+	return gqlBundle, nil
 }
 
-func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.PackageUpdateInput) (*graphql.Package, error) {
+func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.BundleUpdateInput) (*graphql.Bundle, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -169,17 +169,17 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.packageConverter.UpdateInputFromGraphQL(in)
+	convertedIn, err := r.bundleConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Package update input from GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Bundle update input from GraphQL with ID: [%s]", id)
 	}
 
-	err = r.packageSvc.Update(ctx, id, *convertedIn)
+	err = r.bundleSvc.Update(ctx, id, *convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
-	pkg, err := r.packageSvc.Get(ctx, id)
+	pkg, err := r.bundleSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -189,15 +189,15 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 		return nil, err
 	}
 
-	gqlPkg, err := r.packageConverter.ToGraphQL(pkg)
+	gqlPkg, err := r.bundleConverter.ToGraphQL(pkg)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Bundle to GraphQL with ID: [%s]", id)
 	}
 
 	return gqlPkg, nil
 }
 
-func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Package, error) {
+func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -206,12 +206,12 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkg, err := r.packageSvc.Get(ctx, id)
+	pkg, err := r.bundleSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.packageSvc.Delete(ctx, id)
+	err = r.bundleSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -221,17 +221,17 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 		return nil, err
 	}
 
-	deletedPkg, err := r.packageConverter.ToGraphQL(pkg)
+	deletedPkg, err := r.bundleConverter.ToGraphQL(pkg)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Bundle to GraphQL with ID: [%s]", id)
 	}
 
 	return deletedPkg, nil
 }
 
-func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id string) (*graphql.PackageInstanceAuth, error) {
+func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.BundleInstanceAuth, error) {
 	if obj == nil {
-		return nil, apperrors.NewInternalError("Package cannot be empty")
+		return nil, apperrors.NewInternalError("Bundle cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -242,7 +242,7 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkg, err := r.packageInstanceAuthSvc.GetForPackage(ctx, id, obj.ID)
+	pkg, err := r.bundleInstanceAuthSvc.GetForBundle(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -255,13 +255,13 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 		return nil, err
 	}
 
-	return r.packageInstanceAuthConverter.ToGraphQL(pkg)
+	return r.bundleInstanceAuthConverter.ToGraphQL(pkg)
 
 }
 
-func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*graphql.PackageInstanceAuth, error) {
+func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Bundle) ([]*graphql.BundleInstanceAuth, error) {
 	if obj == nil {
-		return nil, apperrors.NewInternalError("Package cannot be empty")
+		return nil, apperrors.NewInternalError("Bundle cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -271,7 +271,7 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkgInstanceAuths, err := r.packageInstanceAuthSvc.List(ctx, obj.ID)
+	pkgInstanceAuths, err := r.bundleInstanceAuthSvc.List(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -281,10 +281,10 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*
 		return nil, err
 	}
 
-	return r.packageInstanceAuthConverter.MultipleToGraphQL(pkgInstanceAuths)
+	return r.bundleInstanceAuthConverter.MultipleToGraphQL(pkgInstanceAuths)
 }
 
-func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.APIDefinition, error) {
+func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -293,7 +293,7 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id s
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	api, err := r.apiSvc.GetForPackage(ctx, id, obj.ID)
+	api, err := r.apiSvc.GetForBundle(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -309,7 +309,7 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id s
 	return r.apiConverter.ToGraphQL(api), nil
 }
 
-func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
+func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -327,7 +327,7 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, gro
 		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
-	apisPage, err := r.apiSvc.ListForPackage(ctx, obj.ID, *first, cursor)
+	apisPage, err := r.apiSvc.ListForBundle(ctx, obj.ID, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +350,7 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, gro
 	}, nil
 }
 
-func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Package, id string) (*graphql.EventDefinition, error) {
+func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -359,7 +359,7 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Package, id
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventAPI, err := r.eventSvc.GetForPackage(ctx, id, obj.ID)
+	eventAPI, err := r.eventSvc.GetForBundle(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -375,7 +375,7 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Package, id
 	return r.eventConverter.ToGraphQL(eventAPI), nil
 }
 
-func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
+func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -392,7 +392,7 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, g
 		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
-	eventAPIPage, err := r.eventSvc.ListForPackage(ctx, obj.ID, *first, cursor)
+	eventAPIPage, err := r.eventSvc.ListForBundle(ctx, obj.ID, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +415,7 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, g
 	}, nil
 }
 
-func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string) (*graphql.Document, error) {
+func (r *Resolver) Document(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.Document, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -424,7 +424,7 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	eventAPI, err := r.documentSvc.GetForPackage(ctx, id, obj.ID)
+	eventAPI, err := r.documentSvc.GetForBundle(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -440,7 +440,7 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string
 	return r.documentConverter.ToGraphQL(eventAPI), nil
 }
 
-func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
+func (r *Resolver) Documents(ctx context.Context, obj *graphql.Bundle, first *int, after *graphql.PageCursor) (*graphql.DocumentPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -458,7 +458,7 @@ func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *i
 		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
-	documentsPage, err := r.documentSvc.ListForPackage(ctx, obj.ID, *first, cursor)
+	documentsPage, err := r.documentSvc.ListForBundle(ctx, obj.ID, *first, cursor)
 	if err != nil {
 		return nil, err
 	}

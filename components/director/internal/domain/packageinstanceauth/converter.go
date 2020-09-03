@@ -1,4 +1,4 @@
-package packageinstanceauth
+package bundleinstanceauth
 
 import (
 	"database/sql"
@@ -27,7 +27,7 @@ func NewConverter(authConverter AuthConverter) *converter {
 	}
 }
 
-func (c *converter) ToGraphQL(in *model.PackageInstanceAuth) (*graphql.PackageInstanceAuth, error) {
+func (c *converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -37,7 +37,7 @@ func (c *converter) ToGraphQL(in *model.PackageInstanceAuth) (*graphql.PackageIn
 		return nil, errors.Wrap(err, "while converting Auth to GraphQL")
 	}
 
-	return &graphql.PackageInstanceAuth{
+	return &graphql.BundleInstanceAuth{
 		ID:          in.ID,
 		Context:     c.strPtrToJSONPtr(in.Context),
 		InputParams: c.strPtrToJSONPtr(in.InputParams),
@@ -46,8 +46,8 @@ func (c *converter) ToGraphQL(in *model.PackageInstanceAuth) (*graphql.PackageIn
 	}, nil
 }
 
-func (c *converter) MultipleToGraphQL(in []*model.PackageInstanceAuth) ([]*graphql.PackageInstanceAuth, error) {
-	var packageInstanceAuths []*graphql.PackageInstanceAuth
+func (c *converter) MultipleToGraphQL(in []*model.BundleInstanceAuth) ([]*graphql.BundleInstanceAuth, error) {
+	var bundleInstanceAuths []*graphql.BundleInstanceAuth
 	for _, r := range in {
 		if r == nil {
 			continue
@@ -56,32 +56,32 @@ func (c *converter) MultipleToGraphQL(in []*model.PackageInstanceAuth) ([]*graph
 		if err != nil {
 			return nil, err
 		}
-		packageInstanceAuths = append(packageInstanceAuths, pia)
+		bundleInstanceAuths = append(bundleInstanceAuths, pia)
 	}
 
-	return packageInstanceAuths, nil
+	return bundleInstanceAuths, nil
 }
 
-func (c *converter) RequestInputFromGraphQL(in graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput {
-	return model.PackageInstanceAuthRequestInput{
+func (c *converter) RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequestInput) model.BundleInstanceAuthRequestInput {
+	return model.BundleInstanceAuthRequestInput{
 		Context:     c.jsonPtrToStrPtr(in.Context),
 		InputParams: c.jsonPtrToStrPtr(in.InputParams),
 	}
 }
 
-func (c *converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) (model.PackageInstanceAuthSetInput, error) {
+func (c *converter) SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (model.BundleInstanceAuthSetInput, error) {
 	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
 	if err != nil {
-		return model.PackageInstanceAuthSetInput{}, errors.Wrap(err, "while converting Auth")
+		return model.BundleInstanceAuthSetInput{}, errors.Wrap(err, "while converting Auth")
 	}
 
-	out := model.PackageInstanceAuthSetInput{
+	out := model.BundleInstanceAuthSetInput{
 		Auth: auth,
 	}
 
 	if in.Status != nil {
-		out.Status = &model.PackageInstanceAuthStatusInput{
-			Condition: model.PackageInstanceAuthSetStatusConditionInput(in.Status.Condition),
+		out.Status = &model.BundleInstanceAuthStatusInput{
+			Condition: model.BundleInstanceAuthSetStatusConditionInput(in.Status.Condition),
 			Message:   in.Status.Message,
 			Reason:    in.Status.Reason,
 		}
@@ -90,10 +90,10 @@ func (c *converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) 
 	return out, nil
 }
 
-func (c *converter) ToEntity(in model.PackageInstanceAuth) (Entity, error) {
+func (c *converter) ToEntity(in model.BundleInstanceAuth) (Entity, error) {
 	out := Entity{
 		ID:          in.ID,
-		PackageID:   in.PackageID,
+		BundleID:    in.BundleID,
 		TenantID:    in.Tenant,
 		Context:     repo.NewNullableString(in.Context),
 		InputParams: repo.NewNullableString(in.InputParams),
@@ -114,21 +114,21 @@ func (c *converter) ToEntity(in model.PackageInstanceAuth) (Entity, error) {
 	return out, nil
 }
 
-func (c *converter) FromEntity(in Entity) (model.PackageInstanceAuth, error) {
+func (c *converter) FromEntity(in Entity) (model.BundleInstanceAuth, error) {
 	auth, err := c.authPtrFromNullString(in.AuthValue)
 	if err != nil {
-		return model.PackageInstanceAuth{}, err
+		return model.BundleInstanceAuth{}, err
 	}
 
-	return model.PackageInstanceAuth{
+	return model.BundleInstanceAuth{
 		ID:          in.ID,
-		PackageID:   in.PackageID,
+		BundleID:    in.BundleID,
 		Tenant:      in.TenantID,
 		Context:     repo.StringPtrFromNullableString(in.Context),
 		InputParams: repo.StringPtrFromNullableString(in.InputParams),
 		Auth:        auth,
-		Status: &model.PackageInstanceAuthStatus{
-			Condition: model.PackageInstanceAuthStatusCondition(in.StatusCondition),
+		Status: &model.BundleInstanceAuthStatus{
+			Condition: model.BundleInstanceAuthStatusCondition(in.StatusCondition),
 			Timestamp: in.StatusTimestamp,
 			Message:   in.StatusMessage,
 			Reason:    in.StatusReason,
@@ -136,13 +136,13 @@ func (c *converter) FromEntity(in Entity) (model.PackageInstanceAuth, error) {
 	}, nil
 }
 
-func (c *converter) statusToGraphQL(in *model.PackageInstanceAuthStatus) *graphql.PackageInstanceAuthStatus {
+func (c *converter) statusToGraphQL(in *model.BundleInstanceAuthStatus) *graphql.BundleInstanceAuthStatus {
 	if in == nil {
 		return nil
 	}
 
-	return &graphql.PackageInstanceAuthStatus{
-		Condition: graphql.PackageInstanceAuthStatusCondition(in.Condition),
+	return &graphql.BundleInstanceAuthStatus{
+		Condition: graphql.BundleInstanceAuthStatusCondition(in.Condition),
 		Timestamp: graphql.Timestamp(in.Timestamp),
 		Message:   in.Message,
 		Reason:    in.Reason,

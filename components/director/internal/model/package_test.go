@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPackageCreateInput_ToPackage(t *testing.T) {
+func TestBundleCreateInput_ToBundle(t *testing.T) {
 	// given
 	id := "foo"
 	appID := "bar"
@@ -18,17 +18,17 @@ func TestPackageCreateInput_ToPackage(t *testing.T) {
 
 	testCases := []struct {
 		Name     string
-		Input    *model.PackageCreateInput
-		Expected *model.Package
+		Input    *model.BundleCreateInput
+		Expected *model.Bundle
 	}{
 		{
 
 			Name: "All properties given",
-			Input: &model.PackageCreateInput{
+			Input: &model.BundleCreateInput{
 				Name:        name,
 				Description: &desc,
 			},
-			Expected: &model.Package{
+			Expected: &model.Bundle{
 				ID:            id,
 				TenantID:      tenant,
 				ApplicationID: appID,
@@ -47,7 +47,7 @@ func TestPackageCreateInput_ToPackage(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToPackage(id, appID, tenant)
+			result := testCase.Input.ToBundle(id, appID, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

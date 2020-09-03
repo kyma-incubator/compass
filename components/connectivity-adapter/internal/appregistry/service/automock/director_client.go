@@ -12,20 +12,20 @@ type DirectorClient struct {
 	mock.Mock
 }
 
-// CreateAPIDefinition provides a mock function with given fields: packageID, apiDefinitionInput
-func (_m *DirectorClient) CreateAPIDefinition(packageID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error) {
-	ret := _m.Called(packageID, apiDefinitionInput)
+// CreateAPIDefinition provides a mock function with given fields: bundleID, apiDefinitionInput
+func (_m *DirectorClient) CreateAPIDefinition(bundleID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error) {
+	ret := _m.Called(bundleID, apiDefinitionInput)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(string, graphql.APIDefinitionInput) string); ok {
-		r0 = rf(packageID, apiDefinitionInput)
+		r0 = rf(bundleID, apiDefinitionInput)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string, graphql.APIDefinitionInput) error); ok {
-		r1 = rf(packageID, apiDefinitionInput)
+		r1 = rf(bundleID, apiDefinitionInput)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -33,20 +33,20 @@ func (_m *DirectorClient) CreateAPIDefinition(packageID string, apiDefinitionInp
 	return r0, r1
 }
 
-// CreateDocument provides a mock function with given fields: packageID, documentInput
-func (_m *DirectorClient) CreateDocument(packageID string, documentInput graphql.DocumentInput) (string, error) {
-	ret := _m.Called(packageID, documentInput)
+// CreateDocument provides a mock function with given fields: bundleID, documentInput
+func (_m *DirectorClient) CreateDocument(bundleID string, documentInput graphql.DocumentInput) (string, error) {
+	ret := _m.Called(bundleID, documentInput)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(string, graphql.DocumentInput) string); ok {
-		r0 = rf(packageID, documentInput)
+		r0 = rf(bundleID, documentInput)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string, graphql.DocumentInput) error); ok {
-		r1 = rf(packageID, documentInput)
+		r1 = rf(bundleID, documentInput)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -54,20 +54,20 @@ func (_m *DirectorClient) CreateDocument(packageID string, documentInput graphql
 	return r0, r1
 }
 
-// CreateEventDefinition provides a mock function with given fields: packageID, eventDefinitionInput
-func (_m *DirectorClient) CreateEventDefinition(packageID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error) {
-	ret := _m.Called(packageID, eventDefinitionInput)
+// CreateEventDefinition provides a mock function with given fields: bundleID, eventDefinitionInput
+func (_m *DirectorClient) CreateEventDefinition(bundleID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error) {
+	ret := _m.Called(bundleID, eventDefinitionInput)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(string, graphql.EventDefinitionInput) string); ok {
-		r0 = rf(packageID, eventDefinitionInput)
+		r0 = rf(bundleID, eventDefinitionInput)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string, graphql.EventDefinitionInput) error); ok {
-		r1 = rf(packageID, eventDefinitionInput)
+		r1 = rf(bundleID, eventDefinitionInput)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -75,19 +75,19 @@ func (_m *DirectorClient) CreateEventDefinition(packageID string, eventDefinitio
 	return r0, r1
 }
 
-// CreatePackage provides a mock function with given fields: appID, in
-func (_m *DirectorClient) CreatePackage(appID string, in graphql.PackageCreateInput) (string, error) {
+// CreateBundle provides a mock function with given fields: appID, in
+func (_m *DirectorClient) CreateBundle(appID string, in graphql.BundleCreateInput) (string, error) {
 	ret := _m.Called(appID, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, graphql.PackageCreateInput) string); ok {
+	if rf, ok := ret.Get(0).(func(string, graphql.BundleCreateInput) string); ok {
 		r0 = rf(appID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, graphql.PackageCreateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(string, graphql.BundleCreateInput) error); ok {
 		r1 = rf(appID, in)
 	} else {
 		r1 = ret.Error(1)
@@ -138,13 +138,13 @@ func (_m *DirectorClient) DeleteEventDefinition(eventID string) error {
 	return r0
 }
 
-// DeletePackage provides a mock function with given fields: packageID
-func (_m *DirectorClient) DeletePackage(packageID string) error {
-	ret := _m.Called(packageID)
+// DeleteBundle provides a mock function with given fields: bundleID
+func (_m *DirectorClient) DeleteBundle(bundleID string) error {
+	ret := _m.Called(bundleID)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(packageID)
+		r0 = rf(bundleID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -152,20 +152,20 @@ func (_m *DirectorClient) DeletePackage(packageID string) error {
 	return r0
 }
 
-// GetPackage provides a mock function with given fields: appID, packageID
-func (_m *DirectorClient) GetPackage(appID string, packageID string) (graphql.PackageExt, error) {
-	ret := _m.Called(appID, packageID)
+// GetBundle provides a mock function with given fields: appID, bundleID
+func (_m *DirectorClient) GetBundle(appID string, bundleID string) (graphql.BundleExt, error) {
+	ret := _m.Called(appID, bundleID)
 
-	var r0 graphql.PackageExt
-	if rf, ok := ret.Get(0).(func(string, string) graphql.PackageExt); ok {
-		r0 = rf(appID, packageID)
+	var r0 graphql.BundleExt
+	if rf, ok := ret.Get(0).(func(string, string) graphql.BundleExt); ok {
+		r0 = rf(appID, bundleID)
 	} else {
-		r0 = ret.Get(0).(graphql.PackageExt)
+		r0 = ret.Get(0).(graphql.BundleExt)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(appID, packageID)
+		r1 = rf(appID, bundleID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -173,16 +173,16 @@ func (_m *DirectorClient) GetPackage(appID string, packageID string) (graphql.Pa
 	return r0, r1
 }
 
-// ListPackages provides a mock function with given fields: appID
-func (_m *DirectorClient) ListPackages(appID string) ([]*graphql.PackageExt, error) {
+// ListBundles provides a mock function with given fields: appID
+func (_m *DirectorClient) ListBundles(appID string) ([]*graphql.BundleExt, error) {
 	ret := _m.Called(appID)
 
-	var r0 []*graphql.PackageExt
-	if rf, ok := ret.Get(0).(func(string) []*graphql.PackageExt); ok {
+	var r0 []*graphql.BundleExt
+	if rf, ok := ret.Get(0).(func(string) []*graphql.BundleExt); ok {
 		r0 = rf(appID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*graphql.PackageExt)
+			r0 = ret.Get(0).([]*graphql.BundleExt)
 		}
 	}
 
@@ -210,13 +210,13 @@ func (_m *DirectorClient) SetApplicationLabel(appID string, label graphql.LabelI
 	return r0
 }
 
-// UpdatePackage provides a mock function with given fields: packageID, in
-func (_m *DirectorClient) UpdatePackage(packageID string, in graphql.PackageUpdateInput) error {
-	ret := _m.Called(packageID, in)
+// UpdateBundle provides a mock function with given fields: bundleID, in
+func (_m *DirectorClient) UpdateBundle(bundleID string, in graphql.BundleUpdateInput) error {
+	ret := _m.Called(bundleID, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, graphql.PackageUpdateInput) error); ok {
-		r0 = rf(packageID, in)
+	if rf, ok := ret.Get(0).(func(string, graphql.BundleUpdateInput) error); ok {
+		r0 = rf(bundleID, in)
 	} else {
 		r0 = ret.Error(0)
 	}

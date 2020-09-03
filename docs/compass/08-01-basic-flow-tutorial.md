@@ -34,11 +34,11 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 3. Select `test-app` in the **Applications** view and add the API spec of the Order Service:
 
-    a. Click the **Create Package** button in the **Packages** section and fill in all the required fields. For the purpose of this tutorial, name your Package `test-package`.
+    a. Click the **Create Bundle** button in the **Bundles** section and fill in all the required fields. For the purpose of this tutorial, name your Bundle `test-bundle`.
 
     b. In the **Credentials** tab, choose `Empty` from the drop-down list to select the credentials type. For the purpose of this tutorial, there is no need to secure the connection. Click **Create**.
 
-    c. Navigate to the `test-package` Package and click the **+** button in the **API Definitions** section. Fill in all the required fields. In the **Target URL** field, paste the URL to your Application.
+    c. Navigate to the `test-bundle` Bundle and click the **+** button in the **API Definitions** section. Fill in all the required fields. In the **Target URL** field, paste the URL to your Application.
 
     d. Click the **Add specification** button and upload the `order-service` [API spec file](./assets/order-service-api-spec.yaml). Click **Create**.
 
@@ -47,7 +47,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 
 1. Go back to the Kyma Console UI. You can see that the `test-app` Application is registered in the **Applications/Systems** view. Select `test-app` and bind it to your Namespace by selecting the **Create Binding** button.
 
-2. From the drop-down list in the top right corner, select your Namespace and go to the **Catalog** view. You will see your services available under the **Services** tab. Select the `test-app` service. Provision the service instance by choosing your Package as **Selected plan** from the dropdown list and clicking the **Add** button in the top right corner of the page.
+2. From the drop-down list in the top right corner, select your Namespace and go to the **Catalog** view. You will see your services available under the **Services** tab. Select the `test-app` service. Provision the service instance by choosing your Bundle as **Selected plan** from the dropdown list and clicking the **Add** button in the top right corner of the page.
 
 3. Create a Function. In the **Overview** tab, click the **Deploy new resource** button and upload the file with the [Function](./assets/function.yaml).
 

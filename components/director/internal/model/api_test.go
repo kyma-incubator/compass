@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAPIDefinitionInput_ToAPIDefinitionWithPackageID(t *testing.T) {
+func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 	// given
 	id := "foo"
-	pkgID := "bar"
+	bundleID := "bar"
 	desc := "Sample"
 	name := "sample"
 	targetUrl := "https://foo.bar"
@@ -33,7 +33,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithPackageID(t *testing.T) {
 			},
 			Expected: &model.APIDefinition{
 				ID:          id,
-				PackageID:   pkgID,
+				BundleID:    bundleID,
 				Name:        name,
 				Description: &desc,
 				TargetURL:   targetUrl,
@@ -52,7 +52,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithPackageID(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToAPIDefinitionWithinPackage(id, pkgID, tenant)
+			result := testCase.Input.ToAPIDefinitionWithinBundle(id, bundleID, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

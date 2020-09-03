@@ -92,11 +92,11 @@ type service struct {
 	labelUpsertService LabelUpsertService
 	scenariosService   ScenariosService
 	uidService         UIDService
-	pkgService         PackageService
+	pkgService         BundleService
 	timestampGen       timestamp.Generator
 }
 
-func NewService(appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
+func NewService(appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService BundleService, uidService UIDService) *service {
 	return &service{
 		appHideCfgProvider: appHideCfgProvider,
 		appRepo:            app,
@@ -258,10 +258,10 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 		return "", errors.Wrap(err, "while creating related Application resources")
 	}
 
-	if in.Packages != nil {
-		err = s.pkgService.CreateMultiple(ctx, id, in.Packages)
+	if in.Bundles != nil {
+		err = s.pkgService.CreateMultiple(ctx, id, in.Bundles)
 		if err != nil {
-			return "", errors.Wrap(err, "while creating Packages for Application")
+			return "", errors.Wrap(err, "while creating Bundles for Application")
 		}
 	}
 

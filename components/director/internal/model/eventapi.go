@@ -7,7 +7,7 @@ import (
 type EventDefinition struct {
 	ID          string
 	Tenant      string
-	PackageID   string
+	BundleID    string
 	Name        string
 	Description *string
 	Group       *string
@@ -50,14 +50,14 @@ type EventSpecInput struct {
 	FetchRequest  *FetchRequestInput
 }
 
-func (e *EventDefinitionInput) ToEventDefinitionWithinPackage(id string, pkgID string, tenant string) *EventDefinition {
+func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bundleID string, tenant string) *EventDefinition {
 	if e == nil {
 		return nil
 	}
 
 	return &EventDefinition{
 		ID:          id,
-		PackageID:   pkgID,
+		BundleID:    bundleID,
 		Tenant:      tenant,
 		Name:        e.Name,
 		Description: e.Description,

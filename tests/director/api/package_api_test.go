@@ -10,45 +10,45 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-func TestAddAPIToPackage(t *testing.T) {
+func TestAddAPIToBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	input := fixAPIDefinitionInput()
 	inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
 	actualApi := graphql.APIDefinitionExt{}
-	req := fixAddAPIToPackageRequest(pkg.ID, inStr)
+	req := fixAddAPIToBundleRequest(pkg.ID, inStr)
 	err = tc.RunOperation(ctx, req, &actualApi)
 	require.NoError(t, err)
 
-	pack := getPackage(t, ctx, application.ID, pkg.ID)
+	pack := getBundle(t, ctx, application.ID, pkg.ID)
 	require.Equal(t, pkg.ID, pack.ID)
 
 	assertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
-	saveExample(t, req.Query(), "add api definition to package")
+	saveExample(t, req.Query(), "add api definition to bundle")
 }
 
-func TestManageAPIInPackage(t *testing.T) {
+func TestManageAPIInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	api := addAPIToPackage(t, ctx, pkg.ID)
+	api := addAPIToBundle(t, ctx, pkg.ID)
 
 	apiUpdateInput := fixAPIDefinitionInputWithName("new-name")
 	apiUpdateGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(apiUpdateInput)
@@ -73,42 +73,42 @@ func TestManageAPIInPackage(t *testing.T) {
 	saveExample(t, req.Query(), "delete api definition")
 }
 
-func TestAddEventDefinitionToPackage(t *testing.T) {
+func TestAddEventDefinitionToBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	input := fixEventAPIDefinitionInput()
 	inStr, err := tc.graphqlizer.EventDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
 	actualEvent := graphql.EventAPIDefinitionExt{}
-	req := fixAddEventAPIToPackageRequest(pkg.ID, inStr)
+	req := fixAddEventAPIToBundleRequest(pkg.ID, inStr)
 	err = tc.RunOperation(ctx, req, &actualEvent)
 	require.NoError(t, err)
 
 	assertEventsAPI(t, []*graphql.EventDefinitionInput{&input}, []*graphql.EventAPIDefinitionExt{&actualEvent})
-	saveExample(t, req.Query(), "add event definition to package")
+	saveExample(t, req.Query(), "add event definition to bundle")
 }
 
-func TestManageEventDefinitionInPackage(t *testing.T) {
+func TestManageEventDefinitionInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	event := addEventToPackage(t, ctx, pkg.ID)
+	event := addEventToBundle(t, ctx, pkg.ID)
 
 	eventUpdateInput := fixEventAPIDefinitionInputWithName("new-name")
 	eventUpdateGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(eventUpdateInput)
@@ -133,42 +133,42 @@ func TestManageEventDefinitionInPackage(t *testing.T) {
 	saveExample(t, req.Query(), "delete event definition")
 }
 
-func TestAddDocumentToPackage(t *testing.T) {
+func TestAddDocumentToBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	input := fixDocumentInput(t)
 	inStr, err := tc.graphqlizer.DocumentInputToGQL(&input)
 	require.NoError(t, err)
 
 	actualDocument := graphql.DocumentExt{}
-	req := fixAddDocumentToPackageRequest(pkg.ID, inStr)
+	req := fixAddDocumentToBundleRequest(pkg.ID, inStr)
 	err = tc.RunOperation(ctx, req, &actualDocument)
 	require.NoError(t, err)
 
 	assertDocuments(t, []*graphql.DocumentInput{&input}, []*graphql.DocumentExt{&actualDocument})
-	saveExample(t, req.Query(), "add document to package")
+	saveExample(t, req.Query(), "add document to bundle")
 }
 
-func TestManageDocumentInPackage(t *testing.T) {
+func TestManageDocumentInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	document := addDocumentToPackage(t, ctx, pkg.ID)
+	document := addDocumentToBundle(t, ctx, pkg.ID)
 
 	var deletedDocument graphql.DocumentExt
 	req := fixDeleteDocumentRequest(document.ID)
@@ -179,238 +179,238 @@ func TestManageDocumentInPackage(t *testing.T) {
 	saveExample(t, req.Query(), "delete document")
 }
 
-func TestAPIDefinitionInPackage(t *testing.T) {
+func TestAPIDefinitionInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	api := addAPIToPackage(t, ctx, pkg.ID)
+	api := addAPIToBundle(t, ctx, pkg.ID)
 
-	queryApiForPkg := fixAPIDefinitionInPackageRequest(application.ID, pkg.ID, api.ID)
+	queryApiForPkg := fixAPIDefinitionInBundleRequest(application.ID, pkg.ID, api.ID)
 	app := graphql.ApplicationExt{}
 	err := tc.RunOperation(ctx, queryApiForPkg, &app)
 	require.NoError(t, err)
 
-	actualApi := app.Package.APIDefinition
+	actualApi := app.Bundle.APIDefinition
 	assert.Equal(t, api.ID, actualApi.ID)
 	saveExample(t, queryApiForPkg.Query(), "query api definition")
 
 }
 
-func TestEventDefinitionInPackage(t *testing.T) {
+func TestEventDefinitionInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	event := addEventToPackage(t, ctx, pkg.ID)
+	event := addEventToBundle(t, ctx, pkg.ID)
 
-	queryEventForPkg := fixEventDefinitionInPackageRequest(application.ID, pkg.ID, event.ID)
+	queryEventForPkg := fixEventDefinitionInBundleRequest(application.ID, pkg.ID, event.ID)
 	app := graphql.ApplicationExt{}
 	err := tc.RunOperation(ctx, queryEventForPkg, &app)
 	require.NoError(t, err)
 
-	actualEvent := app.Package.EventDefinition
+	actualEvent := app.Bundle.EventDefinition
 	assert.Equal(t, event.ID, actualEvent.ID)
 	saveExample(t, queryEventForPkg.Query(), "query event definition")
 
 }
 
-func TestDocumentInPackage(t *testing.T) {
+func TestDocumentInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	doc := addDocumentToPackage(t, ctx, pkg.ID)
+	doc := addDocumentToBundle(t, ctx, pkg.ID)
 
-	queryDocForPkg := fixDocumentInPackageRequest(application.ID, pkg.ID, doc.ID)
+	queryDocForPkg := fixDocumentInBundleRequest(application.ID, pkg.ID, doc.ID)
 	app := graphql.ApplicationExt{}
 	err := tc.RunOperation(ctx, queryDocForPkg, &app)
 	require.NoError(t, err)
 
-	actualDoc := app.Package.Document
+	actualDoc := app.Bundle.Document
 	assert.Equal(t, doc.ID, actualDoc.ID)
 	saveExample(t, queryDocForPkg.Query(), "query document")
 }
 
-func TestAPIDefinitionsInPackage(t *testing.T) {
+func TestAPIDefinitionsInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	inputA := fixAPIDefinitionInputWithName("foo")
-	addAPIToPackageWithInput(t, ctx, pkg.ID, inputA)
+	addAPIToBundleWithInput(t, ctx, pkg.ID, inputA)
 
 	inputB := fixAPIDefinitionInputWithName("bar")
-	addAPIToPackageWithInput(t, ctx, pkg.ID, inputB)
+	addAPIToBundleWithInput(t, ctx, pkg.ID, inputB)
 
-	queryApisForPkg := fixAPIDefinitionsInPackageRequest(application.ID, pkg.ID)
+	queryApisForPkg := fixAPIDefinitionsInBundleRequest(application.ID, pkg.ID)
 	app := graphql.ApplicationExt{}
 	err := tc.RunOperation(ctx, queryApisForPkg, &app)
 	require.NoError(t, err)
 
-	apis := app.Package.APIDefinitions
+	apis := app.Bundle.APIDefinitions
 	require.Equal(t, 2, apis.TotalCount)
 	assertAPI(t, []*graphql.APIDefinitionInput{&inputA, &inputB}, apis.Data)
 	saveExample(t, queryApisForPkg.Query(), "query api definitions")
 }
 
-func TestEventDefinitionsInPackage(t *testing.T) {
+func TestEventDefinitionsInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	inputA := fixEventAPIDefinitionInputWithName("foo")
-	addEventToPackageWithInput(t, ctx, pkg.ID, inputA)
+	addEventToBundleWithInput(t, ctx, pkg.ID, inputA)
 
 	inputB := fixEventAPIDefinitionInputWithName("bar")
-	addEventToPackageWithInput(t, ctx, pkg.ID, inputB)
+	addEventToBundleWithInput(t, ctx, pkg.ID, inputB)
 
-	queryEventsForPkg := fixEventDefinitionsInPackageRequest(application.ID, pkg.ID)
+	queryEventsForPkg := fixEventDefinitionsInBundleRequest(application.ID, pkg.ID)
 
 	app := graphql.ApplicationExt{}
 	err := tc.RunOperation(ctx, queryEventsForPkg, &app)
 	require.NoError(t, err)
 
-	events := app.Package.EventDefinitions
+	events := app.Bundle.EventDefinitions
 	require.Equal(t, 2, events.TotalCount)
 	assertEventsAPI(t, []*graphql.EventDefinitionInput{&inputA, &inputB}, events.Data)
 	saveExample(t, queryEventsForPkg.Query(), "query event definitions")
 }
 
-func TestDocumentsInPackage(t *testing.T) {
+func TestDocumentsInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	pkgName := "test-bundle"
+	pkg := createBundle(t, ctx, application.ID, pkgName)
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	inputA := fixDocumentInputWithName(t, "foo")
-	addDocumentToPackageWithInput(t, ctx, pkg.ID, inputA)
+	addDocumentToBundleWithInput(t, ctx, pkg.ID, inputA)
 
 	inputB := fixDocumentInputWithName(t, "bar")
-	addDocumentToPackageWithInput(t, ctx, pkg.ID, inputB)
+	addDocumentToBundleWithInput(t, ctx, pkg.ID, inputB)
 
-	queryDocsForPkg := fixDocumentsInPackageRequest(application.ID, pkg.ID)
+	queryDocsForPkg := fixDocumentsInBundleRequest(application.ID, pkg.ID)
 
 	app := graphql.ApplicationExt{}
 	err := tc.RunOperation(ctx, queryDocsForPkg, &app)
 	require.NoError(t, err)
 
-	docs := app.Package.Documents
+	docs := app.Bundle.Documents
 	require.Equal(t, 2, docs.TotalCount)
 	assertDocuments(t, []*graphql.DocumentInput{&inputA, &inputB}, docs.Data)
 	saveExample(t, queryDocsForPkg.Query(), "query documents")
 }
 
-func TestAddPackage(t *testing.T) {
+func TestAddBundle(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-package")
+	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkgInput := fixPackageCreateInputWithRelatedObjects(t, "pkg-app-1")
-	pkg, err := tc.graphqlizer.PackageCreateInputToGQL(pkgInput)
+	pkgInput := fixBundleCreateInputWithRelatedObjects(t, "pkg-app-1")
+	pkg, err := tc.graphqlizer.BundleCreateInputToGQL(pkgInput)
 	require.NoError(t, err)
 
-	addPkgRequest := fixAddPackageRequest(application.ID, pkg)
-	output := graphql.PackageExt{}
+	addPkgRequest := fixAddBundleRequest(application.ID, pkg)
+	output := graphql.BundleExt{}
 
 	// WHEN
-	t.Log("Create package")
+	t.Log("Create bundle")
 	err = tc.RunOperation(ctx, addPkgRequest, &output)
 
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	assertPackage(t, &pkgInput, &output)
-	defer deletePackage(t, ctx, output.ID)
+	assertBundle(t, &pkgInput, &output)
+	defer deleteBundle(t, ctx, output.ID)
 
-	saveExample(t, addPkgRequest.Query(), "add package")
+	saveExample(t, addPkgRequest.Query(), "add bundle")
 
-	packageRequest := fixPackageRequest(application.ID, output.ID)
+	bundleRequest := fixBundleRequest(application.ID, output.ID)
 	pkgFromAPI := graphql.ApplicationExt{}
 
-	err = tc.RunOperation(ctx, packageRequest, &pkgFromAPI)
+	err = tc.RunOperation(ctx, bundleRequest, &pkgFromAPI)
 	require.NoError(t, err)
 
-	assertPackage(t, &pkgInput, &output)
-	saveExample(t, packageRequest.Query(), "query package")
+	assertBundle(t, &pkgInput, &output)
+	saveExample(t, bundleRequest.Query(), "query bundle")
 }
 
-func TestQueryPackages(t *testing.T) {
+func TestQueryBundles(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-package")
+	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg1 := createPackage(t, ctx, application.ID, "pkg-app-1")
-	defer deletePackage(t, ctx, pkg1.ID)
+	pkg1 := createBundle(t, ctx, application.ID, "pkg-app-1")
+	defer deleteBundle(t, ctx, pkg1.ID)
 
-	pkg2 := createPackage(t, ctx, application.ID, "pkg-app-2")
-	defer deletePackage(t, ctx, pkg2.ID)
+	pkg2 := createBundle(t, ctx, application.ID, "pkg-app-2")
+	defer deleteBundle(t, ctx, pkg2.ID)
 
-	packagesRequest := fixPackagesRequest(application.ID)
+	bundlesRequest := fixBundlesRequest(application.ID)
 	pkgsFromAPI := graphql.ApplicationExt{}
 
-	err := tc.RunOperation(ctx, packagesRequest, &pkgsFromAPI)
+	err := tc.RunOperation(ctx, bundlesRequest, &pkgsFromAPI)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(pkgsFromAPI.Packages.Data))
+	require.Equal(t, 2, len(pkgsFromAPI.Bundles.Data))
 
-	saveExample(t, packagesRequest.Query(), "query packages")
+	saveExample(t, bundlesRequest.Query(), "query bundles")
 }
 
-func TestUpdatePackage(t *testing.T) {
+func TestUpdateBundle(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-package")
+	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createPackage(t, ctx, application.ID, "pkg-app-1")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	pkgUpdateInput := fixPackageUpdateInput("pkg-app-1-up")
-	pkgUpdate, err := tc.graphqlizer.PackageUpdateInputToGQL(pkgUpdateInput)
+	pkgUpdateInput := fixBundleUpdateInput("pkg-app-1-up")
+	pkgUpdate, err := tc.graphqlizer.BundleUpdateInputToGQL(pkgUpdateInput)
 	require.NoError(t, err)
 
-	updatePkgReq := fixUpdatePackageRequest(pkg.ID, pkgUpdate)
-	output := graphql.Package{}
+	updatePkgReq := fixUpdateBundleRequest(pkg.ID, pkgUpdate)
+	output := graphql.Bundle{}
 
 	// WHEN
-	t.Log("Update package")
+	t.Log("Update bundle")
 	err = tc.RunOperation(ctx, updatePkgReq, &output)
 
 	// THEN
@@ -418,22 +418,22 @@ func TestUpdatePackage(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 
 	require.NotEmpty(t, output.Name)
-	saveExample(t, updatePkgReq.Query(), "update package")
+	saveExample(t, updatePkgReq.Query(), "update bundle")
 }
 
-func TestDeletePackage(t *testing.T) {
+func TestDeleteBundle(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-package")
+	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createPackage(t, ctx, application.ID, "pkg-app-1")
+	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
 
-	pkdDeleteReq := fixDeletePackageRequest(pkg.ID)
-	output := graphql.Package{}
+	pkdDeleteReq := fixDeleteBundleRequest(pkg.ID)
+	output := graphql.Bundle{}
 
 	// WHEN
-	t.Log("Delete package")
+	t.Log("Delete bundle")
 	err := tc.RunOperation(ctx, pkdDeleteReq, &output)
 
 	// THEN
@@ -441,5 +441,5 @@ func TestDeletePackage(t *testing.T) {
 	require.NotEmpty(t, output.ID)
 
 	require.NotEmpty(t, output.Name)
-	saveExample(t, pkdDeleteReq.Query(), "delete package")
+	saveExample(t, pkdDeleteReq.Query(), "delete bundle")
 }

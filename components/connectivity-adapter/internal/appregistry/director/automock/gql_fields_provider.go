@@ -92,8 +92,8 @@ func (_m *GqlFieldsProvider) ForLabel() string {
 	return r0
 }
 
-// ForPackage provides a mock function with given fields: ctx
-func (_m *GqlFieldsProvider) ForPackage(ctx ...graphqlizer.FieldCtx) string {
+// ForBundle provides a mock function with given fields: ctx
+func (_m *GqlFieldsProvider) ForBundle(ctx ...graphqlizer.FieldCtx) string {
 	_va := make([]interface{}, len(ctx))
 	for _i := range ctx {
 		_va[_i] = ctx[_i]

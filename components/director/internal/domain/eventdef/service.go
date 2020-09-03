@@ -16,9 +16,9 @@ import (
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
-	GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.EventDefinition, error)
+	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
-	ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
+	ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
 	Update(ctx context.Context, item *model.EventDefinition) error
@@ -52,7 +52,7 @@ func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRe
 	}
 }
 
-func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+func (s *service) ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while loading tenant from context")
@@ -62,7 +62,7 @@ func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
 	}
 
-	return s.eventAPIRepo.ListForPackage(ctx, tnt, packageID, pageSize, cursor)
+	return s.eventAPIRepo.ListForBundle(ctx, tnt, bundleID, pageSize, cursor)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.EventDefinition, error) {
@@ -79,13 +79,13 @@ func (s *service) Get(ctx context.Context, id string) (*model.EventDefinition, e
 	return eventAPI, nil
 }
 
-func (s *service) GetForPackage(ctx context.Context, id string, packageID string) (*model.EventDefinition, error) {
+func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	eventAPI, err := s.eventAPIRepo.GetForPackage(ctx, tnt, id, packageID)
+	eventAPI, err := s.eventAPIRepo.GetForBundle(ctx, tnt, id, bundleID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting API definition")
 	}
@@ -93,7 +93,7 @@ func (s *service) GetForPackage(ctx context.Context, id string, packageID string
 	return eventAPI, nil
 }
 
-func (s *service) CreateInPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -101,7 +101,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 
 	id := s.uidService.Generate()
 
-	eventAPI := in.ToEventDefinitionWithinPackage(id, packageID, tnt)
+	eventAPI := in.ToEventDefinitionWithinBundle(id, bundleID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
@@ -141,7 +141,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		}
 	}
 
-	eventAPI = in.ToEventDefinitionWithinPackage(id, eventAPI.PackageID, tnt)
+	eventAPI = in.ToEventDefinitionWithinBundle(id, eventAPI.BundleID, tnt)
 
 	err = s.eventAPIRepo.Update(ctx, eventAPI)
 	if err != nil {

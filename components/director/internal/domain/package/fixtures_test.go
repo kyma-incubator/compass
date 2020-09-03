@@ -1,4 +1,4 @@
-package mp_package_test
+package mp_bundle_test
 
 import (
 	"database/sql"
@@ -6,27 +6,27 @@ import (
 	"testing"
 	"time"
 
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
-func fixModelAPIDefinition(id string, pkgID string, name, description string, group string) *model.APIDefinition {
+func fixModelAPIDefinition(id string, bundleID string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:          id,
-		PackageID:   pkgID,
+		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
 	}
 }
 
-func fixGQLAPIDefinition(id string, pkgID string, name, description string, group string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, bundleID string, name, description string, group string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:          id,
-		PackageID:   pkgID,
+		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -57,10 +57,10 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 	}
 }
 
-func fixModelEventAPIDefinition(id string, packageID string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
 		ID:          id,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -68,12 +68,12 @@ func fixModelEventAPIDefinition(id string, packageID string, name, description s
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		PackageID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
+		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
 }
-func fixGQLEventDefinition(id string, packageID string, name, description string, group string) *graphql.EventDefinition {
+func fixGQLEventDefinition(id string, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:          id,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -112,14 +112,14 @@ var (
 	desc     = "Lorem Ipsum"
 )
 
-func fixModelDocument(packageID, id string) *model.Document {
+func fixModelDocument(bundleID, id string) *model.Document {
 	return &model.Document{
-		PackageID: packageID,
-		ID:        id,
-		Title:     docTitle,
-		Format:    model.DocumentFormatMarkdown,
-		Kind:      &docKind,
-		Data:      &docData,
+		BundleID: bundleID,
+		ID:       id,
+		Title:    docTitle,
+		Format:   model.DocumentFormatMarkdown,
+		Kind:     &docKind,
+		Data:     &docData,
 	}
 }
 
@@ -158,15 +158,15 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 }
 
 const (
-	packageID        = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	bundleID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 )
 
-func fixPackageModel(t *testing.T, name, desc string) *model.Package {
-	return &model.Package{
-		ID:                             packageID,
+func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
+	return &model.Bundle{
+		ID:                             bundleID,
 		TenantID:                       tenantID,
 		ApplicationID:                  appID,
 		Name:                           name,
@@ -176,9 +176,9 @@ func fixPackageModel(t *testing.T, name, desc string) *model.Package {
 	}
 }
 
-func fixGQLPackage(id, name, desc string) *graphql.Package {
+func fixGQLBundle(id, name, desc string) *graphql.Bundle {
 	schema := graphql.JSONSchema(`{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`)
-	return &graphql.Package{
+	return &graphql.Bundle{
 		ID:                             id,
 		Name:                           name,
 		Description:                    &desc,
@@ -187,7 +187,7 @@ func fixGQLPackage(id, name, desc string) *graphql.Package {
 	}
 }
 
-func fixGQLPackageCreateInput(name, description string) graphql.PackageCreateInput {
+func fixGQLBundleCreateInput(name, description string) graphql.BundleCreateInput {
 	basicCredentialDataInput := graphql.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -198,7 +198,7 @@ func fixGQLPackageCreateInput(name, description string) graphql.PackageCreateInp
 		Credential: &credentialDataInput,
 	}
 
-	return graphql.PackageCreateInput{
+	return graphql.BundleCreateInput{
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicInputSchema(),
@@ -218,7 +218,7 @@ func fixGQLPackageCreateInput(name, description string) graphql.PackageCreateInp
 	}
 }
 
-func fixModelPackageCreateInput(name, description string) model.PackageCreateInput {
+func fixModelBundleCreateInput(name, description string) model.BundleCreateInput {
 	basicCredentialDataInput := model.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -227,7 +227,7 @@ func fixModelPackageCreateInput(name, description string) model.PackageCreateInp
 		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
 	}
 
-	return model.PackageCreateInput{
+	return model.BundleCreateInput{
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
@@ -247,7 +247,7 @@ func fixModelPackageCreateInput(name, description string) model.PackageCreateInp
 	}
 }
 
-func fixGQLPackageUpdateInput(name, description string) graphql.PackageUpdateInput {
+func fixGQLBundleUpdateInput(name, description string) graphql.BundleUpdateInput {
 	basicCredentialDataInput := graphql.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -258,7 +258,7 @@ func fixGQLPackageUpdateInput(name, description string) graphql.PackageUpdateInp
 		Credential: &credentialDataInput,
 	}
 
-	return graphql.PackageUpdateInput{
+	return graphql.BundleUpdateInput{
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicInputSchema(),
@@ -266,7 +266,7 @@ func fixGQLPackageUpdateInput(name, description string) graphql.PackageUpdateInp
 	}
 }
 
-func fixModelPackageUpdateInput(t *testing.T, name, description string) model.PackageUpdateInput {
+func fixModelBundleUpdateInput(t *testing.T, name, description string) model.BundleUpdateInput {
 	basicCredentialDataInput := model.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -275,7 +275,7 @@ func fixModelPackageUpdateInput(t *testing.T, name, description string) model.Pa
 		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
 	}
 
-	return model.PackageUpdateInput{
+	return model.BundleUpdateInput{
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
@@ -337,7 +337,7 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixEntityPackage(id, name, desc string) *mp_package.Entity {
+func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 	descSQL := sql.NullString{desc, true}
 	schemaSQL := sql.NullString{
 		String: inputSchemaString(),
@@ -348,7 +348,7 @@ func fixEntityPackage(id, name, desc string) *mp_package.Entity {
 		Valid:  true,
 	}
 
-	return &mp_package.Entity{
+	return &mp_bundle.Entity{
 		ID:                            id,
 		TenantID:                      tenantID,
 		ApplicationID:                 appID,
@@ -359,16 +359,16 @@ func fixEntityPackage(id, name, desc string) *mp_package.Entity {
 	}
 }
 
-func fixPackageColumns() []string {
+func fixBundleColumns() []string {
 	return []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth"}
 }
 
-func fixPackageRow(id, placeholder string) []driver.Value {
+func fixBundleRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth()}
 }
 
-func fixPackageCreateArgs(defAuth, schema string, pkg *model.Package) []driver.Value {
-	return []driver.Value{packageID, tenantID, appID, pkg.Name, pkg.Description, schema, defAuth}
+func fixBundleCreateArgs(defAuth, schema string, pkg *model.Bundle) []driver.Value {
+	return []driver.Value{bundleID, tenantID, appID, pkg.Name, pkg.Description, schema, defAuth}
 }
 
 func fixDefaultAuth() string {
@@ -394,9 +394,9 @@ func fixSchema() string {
 	return `{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`
 }
 
-func fixModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
-	status := model.PackageInstanceAuthStatus{
-		Condition: model.PackageInstanceAuthStatusConditionPending,
+func fixModelBundleInstanceAuth(id string) *model.BundleInstanceAuth {
+	status := model.BundleInstanceAuthStatus{
+		Condition: model.BundleInstanceAuthStatusConditionPending,
 		Timestamp: time.Time{},
 		Message:   "test-message",
 		Reason:    "test-reason",
@@ -404,9 +404,9 @@ func fixModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
 
 	context := "ctx"
 	params := "test-param"
-	return &model.PackageInstanceAuth{
+	return &model.BundleInstanceAuth{
 		ID:          id,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Tenant:      tenantID,
 		Context:     &context,
 		InputParams: &params,
@@ -415,11 +415,11 @@ func fixModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
 	}
 }
 
-func fixGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
+func fixGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 	msg := "test-message"
 	reason := "test-reason"
-	status := graphql.PackageInstanceAuthStatus{
-		Condition: graphql.PackageInstanceAuthStatusConditionPending,
+	status := graphql.BundleInstanceAuthStatus{
+		Condition: graphql.BundleInstanceAuthStatusConditionPending,
 		Timestamp: graphql.Timestamp{},
 		Message:   msg,
 		Reason:    reason,
@@ -427,7 +427,7 @@ func fixGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
 
 	params := graphql.JSON("test-param")
 	ctx := graphql.JSON("ctx")
-	return &graphql.PackageInstanceAuth{
+	return &graphql.BundleInstanceAuth{
 		ID:          id,
 		Context:     &ctx,
 		InputParams: &params,

@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
-func (i PackageCreateInput) Validate() error {
+func (i BundleCreateInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
@@ -22,7 +22,7 @@ func (i PackageCreateInput) Validate() error {
 	)
 }
 
-func (i PackageUpdateInput) Validate() error {
+func (i BundleUpdateInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
@@ -31,7 +31,7 @@ func (i PackageUpdateInput) Validate() error {
 	)
 }
 
-func (i PackageInstanceAuthRequestInput) Validate() error {
+func (i BundleInstanceAuthRequestInput) Validate() error {
 	// Validation of inputParams against JSON schema is done in Service
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Context, validation.NilOrNotEmpty),
@@ -39,18 +39,18 @@ func (i PackageInstanceAuthRequestInput) Validate() error {
 	)
 }
 
-func (i PackageInstanceAuthSetInput) Validate() error {
+func (i BundleInstanceAuthSetInput) Validate() error {
 	if i.Auth == nil && i.Status == nil {
 		return apperrors.NewInvalidDataError("at least one field (Auth or Status) has to be provided")
 	}
 
 	if i.Status != nil {
-		if i.Auth != nil && i.Status.Condition != PackageInstanceAuthSetStatusConditionInputSucceeded {
-			return fmt.Errorf("status condition has to be equal to %s when the auth is provided", PackageInstanceAuthSetStatusConditionInputSucceeded)
+		if i.Auth != nil && i.Status.Condition != BundleInstanceAuthSetStatusConditionInputSucceeded {
+			return fmt.Errorf("status condition has to be equal to %s when the auth is provided", BundleInstanceAuthSetStatusConditionInputSucceeded)
 		}
 
-		if i.Auth == nil && i.Status.Condition == PackageInstanceAuthSetStatusConditionInputSucceeded {
-			return fmt.Errorf("status cannot be equal to %s when auth is not provided", PackageInstanceAuthSetStatusConditionInputSucceeded)
+		if i.Auth == nil && i.Status.Condition == BundleInstanceAuthSetStatusConditionInputSucceeded {
+			return fmt.Errorf("status cannot be equal to %s when auth is not provided", BundleInstanceAuthSetStatusConditionInputSucceeded)
 		}
 	}
 
@@ -60,7 +60,7 @@ func (i PackageInstanceAuthSetInput) Validate() error {
 	)
 }
 
-func (i PackageInstanceAuthStatusInput) Validate() error {
+func (i BundleInstanceAuthStatusInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Reason, validation.Required),
 		validation.Field(&i.Message, validation.Required),

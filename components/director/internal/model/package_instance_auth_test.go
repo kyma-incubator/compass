@@ -11,19 +11,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPackageInstanceAuthRequestInput_ToPackageInstanceAuth(t *testing.T) {
+func TestBundleInstanceAuthRequestInput_ToBundleInstanceAuth(t *testing.T) {
 	// GIVEN
 	timestamp := time.Now()
 	testID := "foo"
-	testPackageID := "bar"
+	testBundleID := "bar"
 	testTenant := "baz"
 
-	input := PackageInstanceAuthRequestInput{
+	input := BundleInstanceAuthRequestInput{
 		Context:     str.Ptr(`"test"`),
 		InputParams: str.Ptr(`"test"`),
 	}
-	inputStatus := PackageInstanceAuthStatus{
-		Condition: PackageInstanceAuthStatusConditionPending,
+	inputStatus := BundleInstanceAuthStatus{
+		Condition: BundleInstanceAuthStatusConditionPending,
 		Timestamp: timestamp,
 		Message:   "Credentials were not yet provided.",
 		Reason:    "CredentialsNotProvided",
@@ -37,29 +37,29 @@ func TestPackageInstanceAuthRequestInput_ToPackageInstanceAuth(t *testing.T) {
 		},
 	}
 
-	expected := PackageInstanceAuth{
+	expected := BundleInstanceAuth{
 		ID:          testID,
-		PackageID:   testPackageID,
+		BundleID:    testBundleID,
 		Tenant:      testTenant,
 		Context:     str.Ptr(`"test"`),
 		InputParams: str.Ptr(`"test"`),
 		Auth:        &inputAuth,
 		Status:      &inputStatus,
 	}
-	result := input.ToPackageInstanceAuth(testID, testPackageID, testTenant, &inputAuth, &inputStatus)
+	result := input.ToBundleInstanceAuth(testID, testBundleID, testTenant, &inputAuth, &inputStatus)
 	// THEN
 	require.Equal(t, expected, result)
 
 }
 
-func TestPackageInstanceAuthStatusInput_ToPackageInstanceAuthStatus(t *testing.T) {
+func TestBundleInstanceAuthStatusInput_ToBundleInstanceAuthStatus(t *testing.T) {
 	// GIVEN
 	timestamp := time.Now()
 
 	testCases := []struct {
 		Name     string
-		Input    *PackageInstanceAuthStatusInput
-		Expected *PackageInstanceAuthStatus
+		Input    *BundleInstanceAuthStatusInput
+		Expected *BundleInstanceAuthStatus
 	}{
 		{
 			Name:     "Success when nil",
@@ -68,13 +68,13 @@ func TestPackageInstanceAuthStatusInput_ToPackageInstanceAuthStatus(t *testing.T
 		},
 		{
 			Name: "Success",
-			Input: &PackageInstanceAuthStatusInput{
-				Condition: PackageInstanceAuthSetStatusConditionInputSucceeded,
+			Input: &BundleInstanceAuthStatusInput{
+				Condition: BundleInstanceAuthSetStatusConditionInputSucceeded,
 				Message:   "foo",
 				Reason:    "bar",
 			},
-			Expected: &PackageInstanceAuthStatus{
-				Condition: PackageInstanceAuthStatusConditionSucceeded,
+			Expected: &BundleInstanceAuthStatus{
+				Condition: BundleInstanceAuthStatusConditionSucceeded,
 				Timestamp: timestamp,
 				Message:   "foo",
 				Reason:    "bar",
@@ -85,43 +85,43 @@ func TestPackageInstanceAuthStatusInput_ToPackageInstanceAuthStatus(t *testing.T
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
-			result := testCase.Input.ToPackageInstanceAuthStatus(timestamp)
+			result := testCase.Input.ToBundleInstanceAuthStatus(timestamp)
 			// THEN
 			require.Equal(t, testCase.Expected, result)
 		})
 	}
 }
 
-func TestPackageInstanceAuth_SetDefaultStatus(t *testing.T) {
+func TestBundleInstanceAuth_SetDefaultStatus(t *testing.T) {
 	// GIVEN
 	timestamp := time.Now()
 
 	testCases := []struct {
 		Name            string
-		InputCondition  PackageInstanceAuthStatusCondition
+		InputCondition  BundleInstanceAuthStatusCondition
 		ExpectedReason  string
 		ExpectedMessage string
 		ExpectedError   error
 	}{
 		{
 			Name:            "Success when succeeded",
-			InputCondition:  PackageInstanceAuthStatusConditionSucceeded,
+			InputCondition:  BundleInstanceAuthStatusConditionSucceeded,
 			ExpectedReason:  "CredentialsProvided",
 			ExpectedMessage: "Credentials were provided.",
 			ExpectedError:   nil,
 		},
 		{
 			Name:            "Success when pending",
-			InputCondition:  PackageInstanceAuthStatusConditionPending,
+			InputCondition:  BundleInstanceAuthStatusConditionPending,
 			ExpectedReason:  "CredentialsNotProvided",
 			ExpectedMessage: "Credentials were not yet provided.",
 			ExpectedError:   nil,
 		},
 		{
 			Name:            "Success when unused",
-			InputCondition:  PackageInstanceAuthStatusConditionUnused,
+			InputCondition:  BundleInstanceAuthStatusConditionUnused,
 			ExpectedReason:  "PendingDeletion",
-			ExpectedMessage: "Credentials for given Package Instance Auth are ready for being deleted by Application or Integration System.",
+			ExpectedMessage: "Credentials for given Bundle Instance Auth are ready for being deleted by Application or Integration System.",
 			ExpectedError:   nil,
 		},
 		{
@@ -133,7 +133,7 @@ func TestPackageInstanceAuth_SetDefaultStatus(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			instanceAuth := PackageInstanceAuth{}
+			instanceAuth := BundleInstanceAuth{}
 
 			// WHEN
 			err := instanceAuth.SetDefaultStatus(testCase.InputCondition, timestamp)
@@ -141,7 +141,7 @@ func TestPackageInstanceAuth_SetDefaultStatus(t *testing.T) {
 			// THEN
 			if testCase.ExpectedError == nil {
 				require.NoError(t, err)
-				assert.Equal(t, &PackageInstanceAuthStatus{
+				assert.Equal(t, &BundleInstanceAuthStatus{
 					Condition: testCase.InputCondition,
 					Timestamp: timestamp,
 					Message:   testCase.ExpectedMessage,
@@ -155,10 +155,10 @@ func TestPackageInstanceAuth_SetDefaultStatus(t *testing.T) {
 	}
 
 	t.Run("Success if nil", func(t *testing.T) {
-		var instanceAuth *PackageInstanceAuth
+		var instanceAuth *BundleInstanceAuth
 
 		// WHEN
-		err := instanceAuth.SetDefaultStatus(PackageInstanceAuthStatusConditionSucceeded, timestamp)
+		err := instanceAuth.SetDefaultStatus(BundleInstanceAuthStatusConditionSucceeded, timestamp)
 
 		// THEN
 		require.NoError(t, err)

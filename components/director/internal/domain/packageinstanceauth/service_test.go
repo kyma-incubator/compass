@@ -1,12 +1,12 @@
-package packageinstanceauth_test
+package bundleinstanceauth_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -26,14 +26,14 @@ func TestService_Get(t *testing.T) {
 
 	id := "foo"
 
-	modelInstanceAuth := fixSimpleModelPackageInstanceAuth(id)
+	modelInstanceAuth := fixSimpleModelBundleInstanceAuth(id)
 
 	testErr := errors.New("test error")
 
 	testCases := []struct {
 		Name               string
 		instanceAuthRepoFn func() *automock.Repository
-		ExpectedOutput     *model.PackageInstanceAuth
+		ExpectedOutput     *model.BundleInstanceAuth
 		ExpectedError      error
 	}{
 		{
@@ -62,7 +62,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.instanceAuthRepoFn()
 
-			svc := packageinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
 
 			// WHEN
 			result, err := svc.Get(ctx, id)
@@ -81,7 +81,7 @@ func TestService_Get(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := packageinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil)
 
 		// WHEN
 		_, err := svc.Get(context.TODO(), id)
@@ -92,7 +92,7 @@ func TestService_Get(t *testing.T) {
 	})
 }
 
-func TestService_GetForPackage(t *testing.T) {
+func TestService_GetForBundle(t *testing.T) {
 	// GIVEN
 	tnt := testTenant
 	externalTnt := testExternalTenant
@@ -101,23 +101,23 @@ func TestService_GetForPackage(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
 	id := "foo"
-	packageID := "bar"
+	bundleID := "bar"
 
-	modelInstanceAuth := fixSimpleModelPackageInstanceAuth(id)
+	modelInstanceAuth := fixSimpleModelBundleInstanceAuth(id)
 
 	testErr := errors.New("test error")
 
 	testCases := []struct {
 		Name               string
 		instanceAuthRepoFn func() *automock.Repository
-		ExpectedOutput     *model.PackageInstanceAuth
+		ExpectedOutput     *model.BundleInstanceAuth
 		ExpectedError      error
 	}{
 		{
 			Name: "Success",
 			instanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
-				instanceAuthRepo.On("GetForPackage", contextThatHasTenant(tnt), tnt, id, packageID).Return(modelInstanceAuth, nil).Once()
+				instanceAuthRepo.On("GetForBundle", contextThatHasTenant(tnt), tnt, id, bundleID).Return(modelInstanceAuth, nil).Once()
 				return instanceAuthRepo
 			},
 			ExpectedOutput: modelInstanceAuth,
@@ -127,7 +127,7 @@ func TestService_GetForPackage(t *testing.T) {
 			Name: "Error",
 			instanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
-				instanceAuthRepo.On("GetForPackage", contextThatHasTenant(tnt), tnt, id, packageID).Return(nil, testErr).Once()
+				instanceAuthRepo.On("GetForBundle", contextThatHasTenant(tnt), tnt, id, bundleID).Return(nil, testErr).Once()
 				return instanceAuthRepo
 			},
 			ExpectedOutput: nil,
@@ -139,10 +139,10 @@ func TestService_GetForPackage(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.instanceAuthRepoFn()
 
-			svc := packageinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
 
 			// WHEN
-			result, err := svc.GetForPackage(ctx, id, packageID)
+			result, err := svc.GetForBundle(ctx, id, bundleID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -158,10 +158,10 @@ func TestService_GetForPackage(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := packageinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.GetForPackage(context.TODO(), id, packageID)
+		_, err := svc.GetForBundle(context.TODO(), id, bundleID)
 
 		// THEN
 		require.Error(t, err)
@@ -210,7 +210,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.instanceAuthRepoFn()
 
-			svc := packageinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, id)
@@ -228,7 +228,7 @@ func TestService_Delete(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := packageinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil)
 
 		// WHEN
 		err := svc.Delete(context.TODO(), id)
@@ -243,33 +243,33 @@ func TestService_SetAuth(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.Background(), testTenant, testExternalTenant)
 
-	modelInstanceAuthFn := func() *model.PackageInstanceAuth {
-		return fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
+	modelInstanceAuthFn := func() *model.BundleInstanceAuth {
+		return fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending())
 	}
 
 	modelSetInput := fixModelSetInput()
-	modelUpdatedInstanceAuth := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
+	modelUpdatedInstanceAuth := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending())
 	modelUpdatedInstanceAuth.Auth = modelSetInput.Auth.ToAuth()
-	modelUpdatedInstanceAuth.Status = &model.PackageInstanceAuthStatus{
-		Condition: model.PackageInstanceAuthStatusConditionSucceeded,
+	modelUpdatedInstanceAuth.Status = &model.BundleInstanceAuthStatus{
+		Condition: model.BundleInstanceAuthStatusConditionSucceeded,
 		Timestamp: testTime,
 		Message:   modelSetInput.Status.Message,
 		Reason:    modelSetInput.Status.Reason,
 	}
 
-	modelSetInputWithoutStatus := model.PackageInstanceAuthSetInput{
+	modelSetInputWithoutStatus := model.BundleInstanceAuthSetInput{
 		Auth:   fixModelAuthInput(),
 		Status: nil,
 	}
-	modelUpdatedInstanceAuthWithDefaultStatus := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
+	modelUpdatedInstanceAuthWithDefaultStatus := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending())
 	modelUpdatedInstanceAuthWithDefaultStatus.Auth = modelSetInputWithoutStatus.Auth.ToAuth()
-	err := modelUpdatedInstanceAuthWithDefaultStatus.SetDefaultStatus(model.PackageInstanceAuthStatusConditionSucceeded, testTime)
+	err := modelUpdatedInstanceAuthWithDefaultStatus.SetDefaultStatus(model.BundleInstanceAuthStatusConditionSucceeded, testTime)
 	require.NoError(t, err)
 
 	testCases := []struct {
 		Name               string
 		InstanceAuthRepoFn func() *automock.Repository
-		Input              model.PackageInstanceAuthSetInput
+		Input              model.BundleInstanceAuthSetInput
 		ExpectedError      error
 	}{
 		{
@@ -295,7 +295,7 @@ func TestService_SetAuth(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name: "Error when Package Instance Auth retrieval failed",
+			Name: "Error when Bundle Instance Auth retrieval failed",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(modelInstanceAuthFn(), testError).Once()
@@ -305,7 +305,7 @@ func TestService_SetAuth(t *testing.T) {
 			ExpectedError: testError,
 		},
 		{
-			Name: "Error when Package Instance Auth update failed",
+			Name: "Error when Bundle Instance Auth update failed",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(modelInstanceAuthFn(), nil).Once()
@@ -316,35 +316,35 @@ func TestService_SetAuth(t *testing.T) {
 			ExpectedError: testError,
 		},
 		{
-			Name: "Error when Package Instance Auth status is nil",
+			Name: "Error when Bundle Instance Auth status is nil",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(
-					&model.PackageInstanceAuth{
+					&model.BundleInstanceAuth{
 						Status: nil,
 					}, nil).Once()
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
-			ExpectedError: errors.New("auth can be set only on Package Instance Auths in PENDING state"),
+			ExpectedError: errors.New("auth can be set only on Bundle Instance Auths in PENDING state"),
 		},
 		{
-			Name: "Error when Package Instance Auth status condition different from PENDING",
+			Name: "Error when Bundle Instance Auth status condition different from PENDING",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(
-					&model.PackageInstanceAuth{
-						Status: &model.PackageInstanceAuthStatus{
-							Condition: model.PackageInstanceAuthStatusConditionSucceeded,
+					&model.BundleInstanceAuth{
+						Status: &model.BundleInstanceAuthStatus{
+							Condition: model.BundleInstanceAuthStatusConditionSucceeded,
 						},
 					}, nil).Once()
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
-			ExpectedError: errors.New("auth can be set only on Package Instance Auths in PENDING state"),
+			ExpectedError: errors.New("auth can be set only on Bundle Instance Auths in PENDING state"),
 		},
 		{
-			Name: "Error when retrieved Package Instance Auth is nil",
+			Name: "Error when retrieved Bundle Instance Auth is nil",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("GetByID", contextThatHasTenant(testTenant), testTenant, testID).Return(nil, nil).Once()
@@ -352,7 +352,7 @@ func TestService_SetAuth(t *testing.T) {
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
-			ExpectedError: errors.Errorf("Package Instance Auth with ID %s not found", testID),
+			ExpectedError: errors.Errorf("Bundle Instance Auth with ID %s not found", testID),
 		},
 	}
 
@@ -360,7 +360,7 @@ func TestService_SetAuth(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.InstanceAuthRepoFn()
 
-			svc := packageinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
 			svc.SetTimestampGen(func() time.Time { return testTime })
 
 			// WHEN
@@ -379,10 +379,10 @@ func TestService_SetAuth(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := packageinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil)
 
 		// WHEN
-		err := svc.SetAuth(context.Background(), testID, model.PackageInstanceAuthSetInput{})
+		err := svc.SetAuth(context.Background(), testID, model.BundleInstanceAuthSetInput{})
 
 		// THEN
 		require.Error(t, err)
@@ -395,8 +395,8 @@ func TestService_Create(t *testing.T) {
 	ctx := tenant.SaveToContext(context.Background(), testTenant, testExternalTenant)
 
 	modelAuth := fixModelAuth()
-	modelExpectedInstanceAuth := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, modelAuth, fixModelStatusSucceeded())
-	modelExpectedInstanceAuthPending := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
+	modelExpectedInstanceAuth := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, modelAuth, fixModelStatusSucceeded())
+	modelExpectedInstanceAuthPending := fixModelBundleInstanceAuth(testID, testBundleID, testTenant, nil, fixModelStatusPending())
 
 	modelRequestInput := fixModelRequestInput()
 
@@ -404,7 +404,7 @@ func TestService_Create(t *testing.T) {
 		Name               string
 		InstanceAuthRepoFn func() *automock.Repository
 		UIDSvcFn           func() *automock.UIDService
-		Input              model.PackageInstanceAuthRequestInput
+		Input              model.BundleInstanceAuthRequestInput
 		InputAuth          *model.Auth
 		InputSchema        *string
 		ExpectedOutput     string
@@ -465,7 +465,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
-			Name: "Error when creating Package Instance Auth",
+			Name: "Error when creating Bundle Instance Auth",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("Create", contextThatHasTenant(testTenant), modelExpectedInstanceAuth).Return(testError).Once()
@@ -492,11 +492,11 @@ func TestService_Create(t *testing.T) {
 				svc := automock.UIDService{}
 				return &svc
 			},
-			Input:          model.PackageInstanceAuthRequestInput{},
+			Input:          model.BundleInstanceAuthRequestInput{},
 			InputAuth:      modelAuth,
 			InputSchema:    str.Ptr("{\"type\": \"string\"}"),
 			ExpectedOutput: "",
-			ExpectedError:  errors.New("json schema for input parameters was defined for the package but no input parameters were provided"),
+			ExpectedError:  errors.New("json schema for input parameters was defined for the bundle but no input parameters were provided"),
 		},
 		{
 			Name: "Error when invalid schema provided",
@@ -524,7 +524,7 @@ func TestService_Create(t *testing.T) {
 				svc := automock.UIDService{}
 				return &svc
 			},
-			Input: model.PackageInstanceAuthRequestInput{
+			Input: model.BundleInstanceAuthRequestInput{
 				InputParams: str.Ptr("{"),
 			},
 			InputAuth:      modelAuth,
@@ -555,11 +555,11 @@ func TestService_Create(t *testing.T) {
 			instanceAuthRepo := testCase.InstanceAuthRepoFn()
 			uidSvc := testCase.UIDSvcFn()
 
-			svc := packageinstanceauth.NewService(instanceAuthRepo, uidSvc)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return testTime })
 
 			// WHEN
-			result, err := svc.Create(ctx, testPackageID, testCase.Input, testCase.InputAuth, testCase.InputSchema)
+			result, err := svc.Create(ctx, testBundleID, testCase.Input, testCase.InputAuth, testCase.InputSchema)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -575,10 +575,10 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := packageinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.Create(context.Background(), testPackageID, model.PackageInstanceAuthRequestInput{}, nil, nil)
+		_, err := svc.Create(context.Background(), testBundleID, model.BundleInstanceAuthRequestInput{}, nil, nil)
 
 		// THEN
 		require.Error(t, err)
@@ -594,10 +594,10 @@ func TestService_ListByApplicationID(t *testing.T) {
 	tnt := testTenant
 	externalTnt := testExternalTenant
 
-	packageInstanceAuths := []*model.PackageInstanceAuth{
-		fixSimpleModelPackageInstanceAuth(id),
-		fixSimpleModelPackageInstanceAuth(id),
-		fixSimpleModelPackageInstanceAuth(id),
+	bundleInstanceAuths := []*model.BundleInstanceAuth{
+		fixSimpleModelBundleInstanceAuth(id),
+		fixSimpleModelBundleInstanceAuth(id),
+		fixSimpleModelBundleInstanceAuth(id),
 	}
 
 	ctx := context.TODO()
@@ -606,24 +606,24 @@ func TestService_ListByApplicationID(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.Repository
-		ExpectedResult     []*model.PackageInstanceAuth
+		ExpectedResult     []*model.BundleInstanceAuth
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("ListByPackageID", ctx, tnt, id).Return(packageInstanceAuths, nil).Once()
+				repo.On("ListByBundleID", ctx, tnt, id).Return(bundleInstanceAuths, nil).Once()
 				return repo
 			},
-			ExpectedResult:     packageInstanceAuths,
+			ExpectedResult:     bundleInstanceAuths,
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when Package Instance Auth listing failed",
+			Name: "Returns error when Bundle Instance Auth listing failed",
 			RepositoryFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("ListByPackageID", ctx, tnt, id).Return(nil, testErr).Once()
+				repo.On("ListByBundleID", ctx, tnt, id).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -635,7 +635,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := packageinstanceauth.NewService(repo, nil)
+			svc := bundleinstanceauth.NewService(repo, nil)
 
 			// when
 			pia, err := svc.List(ctx, id)
@@ -653,7 +653,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := packageinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil)
 		// WHEN
 		_, err := svc.List(context.TODO(), "")
 		// THEN
@@ -672,23 +672,23 @@ func TestService_RequestDeletion(t *testing.T) {
 
 	id := "foo"
 	timestampNow := time.Now()
-	pkgInstanceAuth := fixSimpleModelPackageInstanceAuth(id)
+	pkgInstanceAuth := fixSimpleModelBundleInstanceAuth(id)
 	//testErr := errors.New("test error")
 
 	testCases := []struct {
-		Name                       string
-		PackageDefaultInstanceAuth *model.Auth
-		InstanceAuthRepoFn         func() *automock.Repository
+		Name                      string
+		BundleDefaultInstanceAuth *model.Auth
+		InstanceAuthRepoFn        func() *automock.Repository
 
 		ExpectedResult bool
 		ExpectedError  error
 	}{
 		{
-			Name: "Success - No Package Default Instance Auth",
+			Name: "Success - No Bundle Default Instance Auth",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
-				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), mock.MatchedBy(func(in *model.PackageInstanceAuth) bool {
-					return in.ID == id && in.Status.Condition == model.PackageInstanceAuthStatusConditionUnused
+				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), mock.MatchedBy(func(in *model.BundleInstanceAuth) bool {
+					return in.ID == id && in.Status.Condition == model.BundleInstanceAuthStatusConditionUnused
 				})).Return(nil).Once()
 				return instanceAuthRepo
 			},
@@ -696,8 +696,8 @@ func TestService_RequestDeletion(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
-			Name:                       "Success - Package Default Instance Auth",
-			PackageDefaultInstanceAuth: fixModelAuth(),
+			Name:                      "Success - Bundle Default Instance Auth",
+			BundleDefaultInstanceAuth: fixModelAuth(),
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("Delete", contextThatHasTenant(tnt), tnt, id).Return(nil).Once()
@@ -710,16 +710,16 @@ func TestService_RequestDeletion(t *testing.T) {
 			Name: "Error - Update",
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
-				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), mock.MatchedBy(func(in *model.PackageInstanceAuth) bool {
-					return in.ID == id && in.Status.Condition == model.PackageInstanceAuthStatusConditionUnused
+				instanceAuthRepo.On("Update", contextThatHasTenant(tnt), mock.MatchedBy(func(in *model.BundleInstanceAuth) bool {
+					return in.ID == id && in.Status.Condition == model.BundleInstanceAuthStatusConditionUnused
 				})).Return(testError).Once()
 				return instanceAuthRepo
 			},
 			ExpectedError: testError,
 		},
 		{
-			Name:                       "Error - Delete",
-			PackageDefaultInstanceAuth: fixModelAuth(),
+			Name:                      "Error - Delete",
+			BundleDefaultInstanceAuth: fixModelAuth(),
 			InstanceAuthRepoFn: func() *automock.Repository {
 				instanceAuthRepo := &automock.Repository{}
 				instanceAuthRepo.On("Delete", contextThatHasTenant(tnt), tnt, id).Return(testError).Once()
@@ -733,13 +733,13 @@ func TestService_RequestDeletion(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			instanceAuthRepo := testCase.InstanceAuthRepoFn()
 
-			svc := packageinstanceauth.NewService(instanceAuthRepo, nil)
+			svc := bundleinstanceauth.NewService(instanceAuthRepo, nil)
 			svc.SetTimestampGen(func() time.Time {
 				return timestampNow
 			})
 
 			// WHEN
-			res, err := svc.RequestDeletion(ctx, pkgInstanceAuth, testCase.PackageDefaultInstanceAuth)
+			res, err := svc.RequestDeletion(ctx, pkgInstanceAuth, testCase.BundleDefaultInstanceAuth)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -759,7 +759,7 @@ func TestService_RequestDeletion(t *testing.T) {
 		expectedError := errors.New("instance auth is required to request its deletion")
 
 		// WHEN
-		svc := packageinstanceauth.NewService(nil, nil)
+		svc := bundleinstanceauth.NewService(nil, nil)
 		_, err := svc.RequestDeletion(ctx, nil, nil)
 
 		// THEN

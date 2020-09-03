@@ -1,27 +1,27 @@
-# API Packages
+# API Bundles
 
 
-Package is an entity that groups multiple API Definitions, Event Definitions, and Documents. It also stores shared credentials for all APIs defined under the particular Package.
+Bundle is an entity that groups multiple API Definitions, Event Definitions, and Documents. It also stores shared credentials for all APIs defined under the particular Bundle.
 
-![API Packages Diagram](./assets/packages-api.svg)
+![API Bundles Diagram](./assets/bundles-api.svg)
 
-In Kyma Runtime, every Application is represented as a single ServiceClass, and every Package of a given Application is represented as a single ServicePlan in the Service Catalog. It allows users to consume multiple APIs and Events with a single ServiceInstance.
+In Kyma Runtime, every Application is represented as a single ServiceClass, and every Bundle of a given Application is represented as a single ServicePlan in the Service Catalog. It allows users to consume multiple APIs and Events with a single ServiceInstance.
 
 
-A single Package can contain many different API Definitions/Event Definitions/Documents but the same API Definition/Event Definition/Document cannot belong to two different Packages. One Packages can belong only to one Application.
+A single Bundle can contain many different API Definitions/Event Definitions/Documents but the same API Definition/Event Definition/Document cannot belong to two different Bundles. One Bundles can belong only to one Application.
 
 
 ## GraphQL API
 
-In order to manage Packages, Director exposes the following GraphQL API:
+In order to manage Bundles, Director exposes the following GraphQL API:
 
 ```graphql
-type Package {
+type Bundle {
   id: ID!
   name: String!
   description: String
 
-  # (...) Auth-related fields described in the `Credentials Request for Packages` document
+  # (...) Auth-related fields described in the `Credentials Request for Bundles` document
 
   apiDefinitions(
     group: String
@@ -39,7 +39,7 @@ type Package {
   document(id: ID!): Document
 }
 
-type PackagePage implements Pageable {
+type BundlePage implements Pageable {
   data: [Bundle!]!
   pageInfo: PageInfo!
   totalCount: Int!
@@ -49,31 +49,31 @@ type Mutation {
   # (...)
 
   """
-  Temporary name before doing a breaking change. Eventually, the `addAPIDefinition` mutation will be changed and there will be just one mutation: `addAPIDefinitionToPackage`.
+  Temporary name before doing a breaking change. Eventually, the `addAPIDefinition` mutation will be changed and there will be just one mutation: `addAPIDefinitionToBundle`.
   """
-  addAPIDefinitionToPackage(
-    packageID: ID!
+  addAPIDefinitionToBundle(
+    bundleID: ID!
     in: APIDefinitionInput! @validate
   ): APIDefinition!
   """
-  Temporary name before doing a breaking change. Eventually, the `addEventDefinition` mutation will be changed and there will be just one mutation: `addEventDefinitionToPackage`.
+  Temporary name before doing a breaking change. Eventually, the `addEventDefinition` mutation will be changed and there will be just one mutation: `addEventDefinitionToBundle`.
   """
-  addEventDefinitionToPackage(
-    packageID: ID!
+  addEventDefinitionToBundle(
+    bundleID: ID!
     in: EventDefinitionInput! @validate
   ): EventDefinition!
   """
-  Temporary name before doing a breaking change. Eventually, the `addDocument` mutation will be changed and there will be just one mutation: `addDocumentToPackage`.
+  Temporary name before doing a breaking change. Eventually, the `addDocument` mutation will be changed and there will be just one mutation: `addDocumentToBundle`.
   """
-  addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document!
-    @hasScopes(path: "graphql.mutation.addDocumentToPackage")
+  addDocumentToBundle(bundleID: ID!, in: DocumentInput! @validate): Document!
+    @hasScopes(path: "graphql.mutation.addDocumentToBundle")
 
-  addPackage(applicationID: ID!, in: BundleCreateInput! @validate): Bundle!
-  updatePackage(id: ID!, in: BundleUpdateInput! @validate): Bundle!
-  deletePackage(id: ID!): Bundle!
+  addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle!
+  updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle!
+  deleteBundle(id: ID!): Bundle!
 }
 ```
 
-## Package credentials
+## Bundle credentials
 
-To learn about credentials flow for Packages and how to provide optional input parameters when provisioning a ServiceInstance, read [this](./03-packages-credential-requests.md) document.
+To learn about credentials flow for Bundles and how to provide optional input parameters when provisioning a ServiceInstance, read [this](./03-bundles-credential-requests.md) document.

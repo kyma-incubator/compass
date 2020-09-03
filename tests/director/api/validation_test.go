@@ -183,14 +183,14 @@ func TestAddDocument_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "app-name")
 	defer unregisterApplication(t, app.ID)
-	pkg := createPackage(t, ctx, app.ID, "pkg")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, app.ID, "pkg")
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	doc := fixDocumentInput(t)
 	doc.DisplayName = strings.Repeat("a", 129)
 	docInputGQL, err := tc.graphqlizer.DocumentInputToGQL(&doc)
 	require.NoError(t, err)
-	createRequest := fixAddDocumentToPackageRequest(pkg.ID, docInputGQL)
+	createRequest := fixAddDocumentToBundleRequest(pkg.ID, docInputGQL)
 
 	//WHEN
 	err = tc.RunOperation(ctx, createRequest, nil)
@@ -243,13 +243,13 @@ func TestAddAPI_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "name")
 	defer unregisterApplication(t, app.ID)
-	pkg := createPackage(t, ctx, app.ID, "pkg")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, app.ID, "pkg")
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma project.io"}
 	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(api)
 	require.NoError(t, err)
-	addAPIRequest := fixAddAPIToPackageRequest(pkg.ID, apiGQL)
+	addAPIRequest := fixAddAPIToBundleRequest(pkg.ID, apiGQL)
 
 	//WHEN
 	err = tc.RunOperation(ctx, addAPIRequest, nil)
@@ -264,11 +264,11 @@ func TestUpdateAPI_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "name")
 	defer unregisterApplication(t, app.ID)
-	pkg := createPackage(t, ctx, app.ID, "pkg")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, app.ID, "pkg")
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	api := graphql.APIDefinitionInput{Name: "name", TargetURL: "https://kyma-project.io"}
-	addAPIToPackageWithInput(t, ctx, pkg.ID, api)
+	addAPIToBundleWithInput(t, ctx, pkg.ID, api)
 
 	api.TargetURL = "invalid URL"
 	apiGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(api)
@@ -288,15 +288,15 @@ func TestAddEventAPI_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "name")
 	defer unregisterApplication(t, app.ID)
-	pkg := createPackage(t, ctx, app.ID, "pkg")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, app.ID, "pkg")
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	eventAPI := fixEventAPIDefinitionInput()
 	longDesc := strings.Repeat("a", 2001)
 	eventAPI.Description = &longDesc
 	evenApiGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(eventAPI)
 	require.NoError(t, err)
-	addEventAPIRequest := fixAddEventAPIToPackageRequest(pkg.ID, evenApiGQL)
+	addEventAPIRequest := fixAddEventAPIToBundleRequest(pkg.ID, evenApiGQL)
 
 	//WHEN
 	err = tc.RunOperation(ctx, addEventAPIRequest, nil)
@@ -310,11 +310,11 @@ func TestUpdateEventAPI_Validation(t *testing.T) {
 	ctx := context.TODO()
 	app := registerApplication(t, ctx, "name")
 	defer unregisterApplication(t, app.ID)
-	pkg := createPackage(t, ctx, app.ID, "pkg")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, app.ID, "pkg")
+	defer deleteBundle(t, ctx, pkg.ID)
 
 	eventAPIUpdate := fixEventAPIDefinitionInput()
-	eventAPI := addEventToPackageWithInput(t, ctx, pkg.ID, eventAPIUpdate)
+	eventAPI := addEventToBundleWithInput(t, ctx, pkg.ID, eventAPIUpdate)
 
 	longDesc := strings.Repeat("a", 2001)
 	eventAPIUpdate.Description = &longDesc
@@ -433,7 +433,7 @@ func fixDocumentInput(t *testing.T) graphql.DocumentInput {
 		DisplayName: "display-name",
 		FetchRequest: &graphql.FetchRequestInput{
 			URL:    "kyma-project.io",
-			Mode:   ptr.FetchMode(graphql.FetchModePackage),
+			Mode:   ptr.FetchMode(graphql.FetchModeBundle),
 			Filter: ptr.String("/docs/README.md"),
 			Auth:   fixBasicAuth(t),
 		},
@@ -442,14 +442,14 @@ func fixDocumentInput(t *testing.T) graphql.DocumentInput {
 
 // PACKAGE API
 
-func TestAddPackage_Validation(t *testing.T) {
+func TestAddBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	invalidInput := graphql.PackageCreateInput{}
-	inputString, err := tc.graphqlizer.PackageCreateInputToGQL(invalidInput)
+	invalidInput := graphql.BundleCreateInput{}
+	inputString, err := tc.graphqlizer.BundleCreateInputToGQL(invalidInput)
 	require.NoError(t, err)
-	var result graphql.PackageExt
-	request := fixAddPackageRequest("", inputString)
+	var result graphql.BundleExt
+	request := fixAddBundleRequest("", inputString)
 
 	// WHEN
 	err = tc.RunOperation(ctx, request, &result)
@@ -459,14 +459,14 @@ func TestAddPackage_Validation(t *testing.T) {
 	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
-func TestUpdatePackage_Validation(t *testing.T) {
+func TestUpdateBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	invalidInput := graphql.PackageUpdateInput{}
-	inputString, err := tc.graphqlizer.PackageUpdateInputToGQL(invalidInput)
+	invalidInput := graphql.BundleUpdateInput{}
+	inputString, err := tc.graphqlizer.BundleUpdateInputToGQL(invalidInput)
 	require.NoError(t, err)
-	var result graphql.PackageExt
-	request := fixUpdatePackageRequest("", inputString)
+	var result graphql.BundleExt
+	request := fixUpdateBundleRequest("", inputString)
 
 	// WHEN
 	err = tc.RunOperation(ctx, request, &result)
@@ -476,14 +476,14 @@ func TestUpdatePackage_Validation(t *testing.T) {
 	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
-func TestSetPackageInstanceAuth_Validation(t *testing.T) {
+func TestSetBundleInstanceAuth_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	invalidInput := graphql.PackageInstanceAuthSetInput{}
-	inputString, err := tc.graphqlizer.PackageInstanceAuthSetInputToGQL(invalidInput)
+	invalidInput := graphql.BundleInstanceAuthSetInput{}
+	inputString, err := tc.graphqlizer.BundleInstanceAuthSetInputToGQL(invalidInput)
 	require.NoError(t, err)
-	var result graphql.PackageInstanceAuth
-	request := fixSetPackageInstanceAuthRequest("", inputString)
+	var result graphql.BundleInstanceAuth
+	request := fixSetBundleInstanceAuthRequest("", inputString)
 
 	// WHEN
 	err = tc.RunOperation(ctx, request, &result)
@@ -493,14 +493,14 @@ func TestSetPackageInstanceAuth_Validation(t *testing.T) {
 	assert.Contains(t, err.Error(), "reason=at least one field (Auth or Status) has to be provided")
 }
 
-func TestAddAPIDefinitionToPackage_Validation(t *testing.T) {
+func TestAddAPIDefinitionToBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	invalidInput := graphql.APIDefinitionInput{}
 	inputString, err := tc.graphqlizer.APIDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.APIDefinitionExt
-	request := fixAddAPIToPackageRequest("", inputString)
+	request := fixAddAPIToBundleRequest("", inputString)
 
 	// WHEN
 	err = tc.RunOperation(ctx, request, &result)
@@ -510,14 +510,14 @@ func TestAddAPIDefinitionToPackage_Validation(t *testing.T) {
 	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
-func TestAddEventDefinitionToPackage_Validation(t *testing.T) {
+func TestAddEventDefinitionToBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	invalidInput := graphql.EventDefinitionInput{}
 	inputString, err := tc.graphqlizer.EventDefinitionInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.EventAPIDefinitionExt
-	request := fixAddEventAPIToPackageRequest("", inputString)
+	request := fixAddEventAPIToBundleRequest("", inputString)
 
 	// WHEN
 	err = tc.RunOperation(ctx, request, &result)
@@ -527,7 +527,7 @@ func TestAddEventDefinitionToPackage_Validation(t *testing.T) {
 	assert.Contains(t, err.Error(), "name=cannot be blank")
 }
 
-func TestAddDocumentToPackage_Validation(t *testing.T) {
+func TestAddDocumentToBundle_Validation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	invalidInput := graphql.DocumentInput{
@@ -536,7 +536,7 @@ func TestAddDocumentToPackage_Validation(t *testing.T) {
 	inputString, err := tc.graphqlizer.DocumentInputToGQL(&invalidInput)
 	require.NoError(t, err)
 	var result graphql.DocumentExt
-	request := fixAddDocumentToPackageRequest("", inputString)
+	request := fixAddDocumentToBundleRequest("", inputString)
 
 	// WHEN
 	err = tc.RunOperation(ctx, request, &result)

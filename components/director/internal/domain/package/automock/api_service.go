@@ -14,13 +14,13 @@ type APIService struct {
 	mock.Mock
 }
 
-// GetForPackage provides a mock function with given fields: ctx, id, packageID
-func (_m *APIService) GetForPackage(ctx context.Context, id string, packageID string) (*model.APIDefinition, error) {
-	ret := _m.Called(ctx, id, packageID)
+// GetForBundle provides a mock function with given fields: ctx, id, bundleID
+func (_m *APIService) GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error) {
+	ret := _m.Called(ctx, id, bundleID)
 
 	var r0 *model.APIDefinition
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.APIDefinition); ok {
-		r0 = rf(ctx, id, packageID)
+		r0 = rf(ctx, id, bundleID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.APIDefinition)
@@ -29,7 +29,7 @@ func (_m *APIService) GetForPackage(ctx context.Context, id string, packageID st
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, id, packageID)
+		r1 = rf(ctx, id, bundleID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -37,13 +37,13 @@ func (_m *APIService) GetForPackage(ctx context.Context, id string, packageID st
 	return r0, r1
 }
 
-// ListForPackage provides a mock function with given fields: ctx, packageID, pageSize, cursor
-func (_m *APIService) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
-	ret := _m.Called(ctx, packageID, pageSize, cursor)
+// ListForBundle provides a mock function with given fields: ctx, bundleID, pageSize, cursor
+func (_m *APIService) ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+	ret := _m.Called(ctx, bundleID, pageSize, cursor)
 
 	var r0 *model.APIDefinitionPage
 	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.APIDefinitionPage); ok {
-		r0 = rf(ctx, packageID, pageSize, cursor)
+		r0 = rf(ctx, bundleID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.APIDefinitionPage)
@@ -52,7 +52,7 @@ func (_m *APIService) ListForPackage(ctx context.Context, packageID string, page
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
-		r1 = rf(ctx, packageID, pageSize, cursor)
+		r1 = rf(ctx, bundleID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPackageCreateInput_Validate_Name(t *testing.T) {
+func TestBundleCreateInput_Validate_Name(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -45,7 +45,7 @@ func TestPackageCreateInput_Validate_Name(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			obj := fixValidPackageCreateInput()
+			obj := fixValidBundleCreateInput()
 			obj.Name = testCase.Value
 			//WHEN
 			err := obj.Validate()
@@ -59,7 +59,7 @@ func TestPackageCreateInput_Validate_Name(t *testing.T) {
 	}
 }
 
-func TestPackageCreateInput_Validate_Description(t *testing.T) {
+func TestBundleCreateInput_Validate_Description(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         *string
@@ -90,7 +90,7 @@ func TestPackageCreateInput_Validate_Description(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			obj := fixValidPackageCreateInput()
+			obj := fixValidBundleCreateInput()
 			obj.Description = testCase.Value
 			//WHEN
 			err := obj.Validate()
@@ -104,7 +104,7 @@ func TestPackageCreateInput_Validate_Description(t *testing.T) {
 	}
 }
 
-func TestPackageCreateInput_Validate_DefaultInstanceAuth(t *testing.T) {
+func TestBundleCreateInput_Validate_DefaultInstanceAuth(t *testing.T) {
 	validObj := fixValidAuthInput()
 
 	testCases := []struct {
@@ -132,7 +132,7 @@ func TestPackageCreateInput_Validate_DefaultInstanceAuth(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			obj := fixValidPackageCreateInput()
+			obj := fixValidBundleCreateInput()
 			obj.DefaultInstanceAuth = testCase.Value
 			//WHEN
 			err := obj.Validate()
@@ -146,7 +146,7 @@ func TestPackageCreateInput_Validate_DefaultInstanceAuth(t *testing.T) {
 	}
 }
 
-func TestPackageCreateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T) {
+func TestBundleCreateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T) {
 	schema := graphql.JSONSchema("Test")
 	emptySchema := graphql.JSONSchema("")
 	testCases := []struct {
@@ -174,7 +174,7 @@ func TestPackageCreateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			obj := fixValidPackageCreateInput()
+			obj := fixValidBundleCreateInput()
 			obj.InstanceAuthRequestInputSchema = testCase.Value
 			//WHEN
 			err := obj.Validate()
@@ -188,7 +188,7 @@ func TestPackageCreateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T
 	}
 }
 
-func TestPackageCreateInput_Validate_APIs(t *testing.T) {
+func TestBundleCreateInput_Validate_APIs(t *testing.T) {
 	validObj := fixValidAPIDefinitionInput()
 
 	testCases := []struct {
@@ -216,7 +216,7 @@ func TestPackageCreateInput_Validate_APIs(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidPackageCreateInput()
+			app := fixValidBundleCreateInput()
 			app.APIDefinitions = testCase.Value
 			//WHEN
 			err := app.Validate()
@@ -230,7 +230,7 @@ func TestPackageCreateInput_Validate_APIs(t *testing.T) {
 	}
 }
 
-func TestPackageCreateInput_Validate_EventAPIs(t *testing.T) {
+func TestBundleCreateInput_Validate_EventAPIs(t *testing.T) {
 	validObj := fixValidEventAPIDefinitionInput()
 
 	testCases := []struct {
@@ -258,7 +258,7 @@ func TestPackageCreateInput_Validate_EventAPIs(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidPackageCreateInput()
+			app := fixValidBundleCreateInput()
 			app.EventDefinitions = testCase.Value
 			//WHEN
 			err := app.Validate()
@@ -272,7 +272,7 @@ func TestPackageCreateInput_Validate_EventAPIs(t *testing.T) {
 	}
 }
 
-func TestPackageCreateInput_Validate_Documents(t *testing.T) {
+func TestBundleCreateInput_Validate_Documents(t *testing.T) {
 	validDoc := fixValidDocument()
 
 	testCases := []struct {
@@ -300,7 +300,7 @@ func TestPackageCreateInput_Validate_Documents(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			app := fixValidPackageCreateInput()
+			app := fixValidBundleCreateInput()
 			app.Documents = testCase.Value
 			//WHEN
 			err := app.Validate()
@@ -314,7 +314,7 @@ func TestPackageCreateInput_Validate_Documents(t *testing.T) {
 	}
 }
 
-func TestPackageUpdateInput_Validate_Name(t *testing.T) {
+func TestBundleUpdateInput_Validate_Name(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -350,7 +350,7 @@ func TestPackageUpdateInput_Validate_Name(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			obj := fixValidPackageUpdateInput()
+			obj := fixValidBundleUpdateInput()
 			obj.Name = testCase.Value
 			//WHEN
 			err := obj.Validate()
@@ -364,7 +364,7 @@ func TestPackageUpdateInput_Validate_Name(t *testing.T) {
 	}
 }
 
-func TestPackageUpdateInput_Validate_Description(t *testing.T) {
+func TestBundleUpdateInput_Validate_Description(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         *string
@@ -395,7 +395,7 @@ func TestPackageUpdateInput_Validate_Description(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			obj := fixValidPackageUpdateInput()
+			obj := fixValidBundleUpdateInput()
 			obj.Description = testCase.Value
 			//WHEN
 			err := obj.Validate()
@@ -409,7 +409,7 @@ func TestPackageUpdateInput_Validate_Description(t *testing.T) {
 	}
 }
 
-func TestPackageUpdateInput_Validate_DefaultInstanceAuth(t *testing.T) {
+func TestBundleUpdateInput_Validate_DefaultInstanceAuth(t *testing.T) {
 	validObj := fixValidAuthInput()
 
 	testCases := []struct {
@@ -437,7 +437,7 @@ func TestPackageUpdateInput_Validate_DefaultInstanceAuth(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			obj := fixValidPackageUpdateInput()
+			obj := fixValidBundleUpdateInput()
 			obj.DefaultInstanceAuth = testCase.Value
 			//WHEN
 			err := obj.Validate()
@@ -451,7 +451,7 @@ func TestPackageUpdateInput_Validate_DefaultInstanceAuth(t *testing.T) {
 	}
 }
 
-func TestPackageUpdateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T) {
+func TestBundleUpdateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T) {
 	schema := graphql.JSONSchema("Test")
 	emptySchema := graphql.JSONSchema("")
 	testCases := []struct {
@@ -479,7 +479,7 @@ func TestPackageUpdateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			obj := fixValidPackageUpdateInput()
+			obj := fixValidBundleUpdateInput()
 			obj.InstanceAuthRequestInputSchema = testCase.Value
 			//WHEN
 			err := obj.Validate()
@@ -493,22 +493,22 @@ func TestPackageUpdateInput_Validate_InstanceAuthRequestInputSchema(t *testing.T
 	}
 }
 
-func TestPackageInstanceAuthRequestInput_Validate(t *testing.T) {
+func TestBundleInstanceAuthRequestInput_Validate(t *testing.T) {
 	//GIVEN
 	val := graphql.JSON("{\"foo\": \"bar\"}")
 	testCases := []struct {
 		Name          string
-		Value         graphql.PackageInstanceAuthRequestInput
+		Value         graphql.BundleInstanceAuthRequestInput
 		ExpectedValid bool
 	}{
 		{
 			Name:          "Empty",
-			Value:         graphql.PackageInstanceAuthRequestInput{},
+			Value:         graphql.BundleInstanceAuthRequestInput{},
 			ExpectedValid: true,
 		},
 		{
 			Name: "InputParams and Context set",
-			Value: graphql.PackageInstanceAuthRequestInput{
+			Value: graphql.BundleInstanceAuthRequestInput{
 				Context:     &val,
 				InputParams: &val,
 			},
@@ -530,27 +530,27 @@ func TestPackageInstanceAuthRequestInput_Validate(t *testing.T) {
 	}
 }
 
-func TestPackageInstanceAuthSetInput_Validate(t *testing.T) {
+func TestBundleInstanceAuthSetInput_Validate(t *testing.T) {
 	//GIVEN
 	authInput := fixValidAuthInput()
 	str := "foo"
 	testCases := []struct {
 		Name          string
-		Value         graphql.PackageInstanceAuthSetInput
+		Value         graphql.BundleInstanceAuthSetInput
 		ExpectedValid bool
 	}{
 		{
 			Name: "Auth",
-			Value: graphql.PackageInstanceAuthSetInput{
+			Value: graphql.BundleInstanceAuthSetInput{
 				Auth: &authInput,
 			},
 			ExpectedValid: true,
 		},
 		{
 			Name: "Failed Status",
-			Value: graphql.PackageInstanceAuthSetInput{
-				Status: &graphql.PackageInstanceAuthStatusInput{
-					Condition: graphql.PackageInstanceAuthSetStatusConditionInputFailed,
+			Value: graphql.BundleInstanceAuthSetInput{
+				Status: &graphql.BundleInstanceAuthStatusInput{
+					Condition: graphql.BundleInstanceAuthSetStatusConditionInputFailed,
 					Reason:    str,
 					Message:   str,
 				},
@@ -559,19 +559,19 @@ func TestPackageInstanceAuthSetInput_Validate(t *testing.T) {
 		},
 		{
 			Name: "Success Status",
-			Value: graphql.PackageInstanceAuthSetInput{
-				Status: &graphql.PackageInstanceAuthStatusInput{
-					Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
+			Value: graphql.BundleInstanceAuthSetInput{
+				Status: &graphql.BundleInstanceAuthStatusInput{
+					Condition: graphql.BundleInstanceAuthSetStatusConditionInputSucceeded,
 				},
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Auth and Success Status",
-			Value: graphql.PackageInstanceAuthSetInput{
+			Value: graphql.BundleInstanceAuthSetInput{
 				Auth: &authInput,
-				Status: &graphql.PackageInstanceAuthStatusInput{
-					Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
+				Status: &graphql.BundleInstanceAuthStatusInput{
+					Condition: graphql.BundleInstanceAuthSetStatusConditionInputSucceeded,
 					Message:   str,
 					Reason:    str,
 				},
@@ -580,25 +580,25 @@ func TestPackageInstanceAuthSetInput_Validate(t *testing.T) {
 		},
 		{
 			Name: "Auth and Failure Status",
-			Value: graphql.PackageInstanceAuthSetInput{
+			Value: graphql.BundleInstanceAuthSetInput{
 				Auth: &authInput,
-				Status: &graphql.PackageInstanceAuthStatusInput{
-					Condition: graphql.PackageInstanceAuthSetStatusConditionInputFailed,
+				Status: &graphql.BundleInstanceAuthStatusInput{
+					Condition: graphql.BundleInstanceAuthSetStatusConditionInputFailed,
 				},
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "Empty objects",
-			Value: graphql.PackageInstanceAuthSetInput{
+			Value: graphql.BundleInstanceAuthSetInput{
 				Auth:   &graphql.AuthInput{},
-				Status: &graphql.PackageInstanceAuthStatusInput{},
+				Status: &graphql.BundleInstanceAuthStatusInput{},
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name:          "Empty",
-			Value:         graphql.PackageInstanceAuthSetInput{},
+			Value:         graphql.BundleInstanceAuthSetInput{},
 			ExpectedValid: false,
 		},
 	}
@@ -617,18 +617,18 @@ func TestPackageInstanceAuthSetInput_Validate(t *testing.T) {
 	}
 }
 
-func TestPackageInstanceAuthStatusInput_Validate(t *testing.T) {
+func TestBundleInstanceAuthStatusInput_Validate(t *testing.T) {
 	//GIVEN
 	str := "foo"
 	testCases := []struct {
 		Name          string
-		Value         graphql.PackageInstanceAuthStatusInput
+		Value         graphql.BundleInstanceAuthStatusInput
 		ExpectedValid bool
 	}{
 		{
 			Name: "Success",
-			Value: graphql.PackageInstanceAuthStatusInput{
-				Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
+			Value: graphql.BundleInstanceAuthStatusInput{
+				Condition: graphql.BundleInstanceAuthSetStatusConditionInputSucceeded,
 				Message:   str,
 				Reason:    str,
 			},
@@ -636,23 +636,23 @@ func TestPackageInstanceAuthStatusInput_Validate(t *testing.T) {
 		},
 		{
 			Name: "No reason provided",
-			Value: graphql.PackageInstanceAuthStatusInput{
-				Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
+			Value: graphql.BundleInstanceAuthStatusInput{
+				Condition: graphql.BundleInstanceAuthSetStatusConditionInputSucceeded,
 				Message:   str,
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "No message provided",
-			Value: graphql.PackageInstanceAuthStatusInput{
-				Condition: graphql.PackageInstanceAuthSetStatusConditionInputSucceeded,
+			Value: graphql.BundleInstanceAuthStatusInput{
+				Condition: graphql.BundleInstanceAuthSetStatusConditionInputSucceeded,
 				Reason:    str,
 			},
 			ExpectedValid: false,
 		},
 		{
 			Name: "No condition provided",
-			Value: graphql.PackageInstanceAuthStatusInput{
+			Value: graphql.BundleInstanceAuthStatusInput{
 				Message: str,
 				Reason:  str,
 			},
@@ -674,14 +674,14 @@ func TestPackageInstanceAuthStatusInput_Validate(t *testing.T) {
 	}
 }
 
-func fixValidPackageCreateInput() graphql.PackageCreateInput {
-	return graphql.PackageCreateInput{
+func fixValidBundleCreateInput() graphql.BundleCreateInput {
+	return graphql.BundleCreateInput{
 		Name: inputvalidationtest.ValidName,
 	}
 }
 
-func fixValidPackageUpdateInput() graphql.PackageUpdateInput {
-	return graphql.PackageUpdateInput{
+func fixValidBundleUpdateInput() graphql.BundleUpdateInput {
+	return graphql.BundleUpdateInput{
 		Name: inputvalidationtest.ValidName,
 	}
 }

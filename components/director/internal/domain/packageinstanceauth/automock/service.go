@@ -11,20 +11,20 @@ type Service struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, packageID, in, defaultAuth, requestInputSchema
-func (_m *Service) Create(ctx context.Context, packageID string, in model.PackageInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error) {
-	ret := _m.Called(ctx, packageID, in, defaultAuth, requestInputSchema)
+// Create provides a mock function with given fields: ctx, bundleID, in, defaultAuth, requestInputSchema
+func (_m *Service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error) {
+	ret := _m.Called(ctx, bundleID, in, defaultAuth, requestInputSchema)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageInstanceAuthRequestInput, *model.Auth, *string) string); ok {
-		r0 = rf(ctx, packageID, in, defaultAuth, requestInputSchema)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthRequestInput, *model.Auth, *string) string); ok {
+		r0 = rf(ctx, bundleID, in, defaultAuth, requestInputSchema)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.PackageInstanceAuthRequestInput, *model.Auth, *string) error); ok {
-		r1 = rf(ctx, packageID, in, defaultAuth, requestInputSchema)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleInstanceAuthRequestInput, *model.Auth, *string) error); ok {
+		r1 = rf(ctx, bundleID, in, defaultAuth, requestInputSchema)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -47,15 +47,15 @@ func (_m *Service) Delete(ctx context.Context, id string) error {
 }
 
 // Get provides a mock function with given fields: ctx, id
-func (_m *Service) Get(ctx context.Context, id string) (*model.PackageInstanceAuth, error) {
+func (_m *Service) Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *model.PackageInstanceAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.PackageInstanceAuth); ok {
+	var r0 *model.BundleInstanceAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BundleInstanceAuth); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.PackageInstanceAuth)
+			r0 = ret.Get(0).(*model.BundleInstanceAuth)
 		}
 	}
 
@@ -69,20 +69,20 @@ func (_m *Service) Get(ctx context.Context, id string) (*model.PackageInstanceAu
 	return r0, r1
 }
 
-// RequestDeletion provides a mock function with given fields: ctx, instanceAuth, defaultPackageInstanceAuth
-func (_m *Service) RequestDeletion(ctx context.Context, instanceAuth *model.PackageInstanceAuth, defaultPackageInstanceAuth *model.Auth) (bool, error) {
-	ret := _m.Called(ctx, instanceAuth, defaultPackageInstanceAuth)
+// RequestDeletion provides a mock function with given fields: ctx, instanceAuth, defaultBundleInstanceAuth
+func (_m *Service) RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error) {
+	ret := _m.Called(ctx, instanceAuth, defaultBundleInstanceAuth)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *model.PackageInstanceAuth, *model.Auth) bool); ok {
-		r0 = rf(ctx, instanceAuth, defaultPackageInstanceAuth)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.BundleInstanceAuth, *model.Auth) bool); ok {
+		r0 = rf(ctx, instanceAuth, defaultBundleInstanceAuth)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *model.PackageInstanceAuth, *model.Auth) error); ok {
-		r1 = rf(ctx, instanceAuth, defaultPackageInstanceAuth)
+	if rf, ok := ret.Get(1).(func(context.Context, *model.BundleInstanceAuth, *model.Auth) error); ok {
+		r1 = rf(ctx, instanceAuth, defaultBundleInstanceAuth)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -91,11 +91,11 @@ func (_m *Service) RequestDeletion(ctx context.Context, instanceAuth *model.Pack
 }
 
 // SetAuth provides a mock function with given fields: ctx, id, in
-func (_m *Service) SetAuth(ctx context.Context, id string, in model.PackageInstanceAuthSetInput) error {
+func (_m *Service) SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error {
 	ret := _m.Called(ctx, id, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageInstanceAuthSetInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthSetInput) error); ok {
 		r0 = rf(ctx, id, in)
 	} else {
 		r0 = ret.Error(0)

@@ -23,14 +23,14 @@ var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 	return err == nil && persistenceOp != nil
 })
 
-func TestResolver_AddDocumentToPackage(t *testing.T) {
+func TestResolver_AddDocumentToBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	packageID := "bar"
+	bundleID := "bar"
 	id := "bar"
-	modelDocument := fixModelDocument(id, packageID)
-	gqlDocument := fixGQLDocument(id, packageID)
+	modelDocument := fixModelDocument(id, bundleID)
+	gqlDocument := fixGQLDocument(id, bundleID)
 	gqlInput := fixGQLDocumentInput(id)
 	modelInput := fixModelDocumentInput(id)
 
@@ -39,7 +39,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 		PersistenceFn    func() *persistenceautomock.PersistenceTx
 		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn        func() *automock.DocumentService
-		PkgServiceFn     func() *automock.PackageService
+		PkgServiceFn     func() *automock.BundleService
 		ConverterFn      func() *automock.DocumentConverter
 		ExpectedDocument *graphql.Document
 		ExpectedErr      error
@@ -60,13 +60,13 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInPackage", contextParam, packageID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(modelDocument, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+			PkgServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -95,9 +95,9 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 				svc := &automock.DocumentService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(false, nil)
+			PkgServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(false, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -107,7 +107,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 
 			ExpectedDocument: nil,
-			ExpectedErr:      errors.New("cannot add Document to not existing Package"),
+			ExpectedErr:      errors.New("cannot add Document to not existing Bundle"),
 		},
 		{
 			Name: "Returns error when application existence check failed",
@@ -126,9 +126,9 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 				svc := &automock.DocumentService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(false, testErr)
+			PkgServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(false, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -155,12 +155,12 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInPackage", contextParam, packageID, *modelInput).Return("", testErr).Once()
+				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+			PkgServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -186,13 +186,13 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			},
 			ServiceFn: func() *automock.DocumentService {
 				svc := &automock.DocumentService{}
-				svc.On("CreateInPackage", contextParam, packageID, *modelInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+			PkgServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.DocumentConverter {
@@ -217,7 +217,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			resolver.SetConverter(converter)
 
 			// when
-			result, err := resolver.AddDocumentToPackage(context.TODO(), packageID, *gqlInput)
+			result, err := resolver.AddDocumentToBundle(context.TODO(), bundleID, *gqlInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedDocument, result)
@@ -242,9 +242,9 @@ func TestResolver_DeleteDocument(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	packageID := "bar"
-	modelDocument := fixModelDocument(id, packageID)
-	gqlDocument := fixGQLDocument(id, packageID)
+	bundleID := "bar"
+	modelDocument := fixModelDocument(id, bundleID)
+	gqlDocument := fixGQLDocument(id, bundleID)
 
 	testCases := []struct {
 		Name             string

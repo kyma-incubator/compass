@@ -5,7 +5,7 @@ mutation {
       name: "create-application-with-documents"
       providerName: "compass"
       labels: { scenarios: ["DEFAULT"] }
-      packages: [
+      bundles: [
         {
           name: "foo"
           description: "Foo bar"
@@ -289,7 +289,7 @@ mutation {
       }
     }
     healthCheckURL
-    packages {
+    bundles {
       data {
         id
         name

@@ -1,21 +1,21 @@
-# Request credentials for Packages
+# Request credentials for Bundles
 
-In Kyma Runtime, a single Application is represented as a ServiceClass, and a single Package of a given Application is represented as a ServicePlan in the Service Catalog. You can create many instances of a Package in a single Runtime. For example, in the Kyma Runtime, an instance of a Package is represented by a ServiceInstance that can be created for every Namespace.
+In Kyma Runtime, a single Application is represented as a ServiceClass, and a single Bundle of a given Application is represented as a ServicePlan in the Service Catalog. You can create many instances of a Bundle in a single Runtime. For example, in the Kyma Runtime, an instance of a Bundle is represented by a ServiceInstance that can be created for every Namespace.
 
-When provisioning a new ServiceInstance from a Package, a Runtime requests API credentials. API credentials for every ServiceInstance are defined on the Package level and stored in the Director component. Multiple APIs under the same Package share the same credentials.
+When provisioning a new ServiceInstance from a Bundle, a Runtime requests API credentials. API credentials for every ServiceInstance are defined on the Bundle level and stored in the Director component. Multiple APIs under the same Bundle share the same credentials.
 
 
 ## Requesting API credentials flow
 
-This diagram illustrates the detailed flow of requesting API credentials. The Application provides Webhook API where Compass requests new credentials for the given Package.
+This diagram illustrates the detailed flow of requesting API credentials. The Application provides Webhook API where Compass requests new credentials for the given Bundle.
 
 ![API Credentials Flow](./assets/api-credentials-flow.svg)
 
-> **NOTE:** There is an option that the Application does not support Webhook API. That means the Application must monitor registered Packages and set Package credentials when a new instance of a Package is created.
+> **NOTE:** There is an option that the Application does not support Webhook API. That means the Application must monitor registered Bundles and set Bundle credentials when a new instance of a Bundle is created.
 
-Assume we have Application which is already registered in Compass. Application has one Package which contains a single API Definition.
+Assume we have Application which is already registered in Compass. Application has one Bundle which contains a single API Definition.
 
-1. In the Kyma Runtime, the user creates a ServiceInstance from the Application's Package.
+1. In the Kyma Runtime, the user creates a ServiceInstance from the Application's Bundle.
 1. Runtime Agent calls the Director to request credentials for a given ServiceInstance.
 1. Director asynchronously notifies the Application about the credentials request using Webhook API.
 1. Application sets credentials for a given ServiceInstance.
@@ -25,24 +25,24 @@ When the user deletes a ServiceInstance, Runtime Agent requests the Director to 
 
 ### Example flow of requesting credentials
 
-1. User connects the `foo` Application with the single `bar` Package which contains few API and Event Definitions. The Package has `instanceAuthRequestInputSchema` defined.
+1. User connects the `foo` Application with the single `bar` Bundle which contains few API and Event Definitions. The Bundle has `instanceAuthRequestInputSchema` defined.
 1. User selects the `foo` ServiceClass and the `bar` ServicePlan.
 1. User provides the required input defined by `instanceAuthRequestInputSchema` and provisions the selected ServicePlan. The ServiceInstance is in the `PROVISIONING` state.
-1. Runtime Agent calls the Director with `requestPackageInstanceAuthCreation` and passes the user's input.
-1. Director validates the user's input against `instanceAuthRequestInputSchema`. If the user's input is valid, a new `PackageInstanceAuth` is created within the `foo` Package.
+1. Runtime Agent calls the Director with `requestBundleInstanceAuthCreation` and passes the user's input.
+1. Director validates the user's input against `instanceAuthRequestInputSchema`. If the user's input is valid, a new `BundleInstanceAuth` is created within the `foo` Bundle.
    
-   a. If `defaultInstanceAuth` for the `foo` Package is defined, the newly created `PackageInstanceAuth` is filled with credentials from the `defaultInstanceAuth` value. The status is set to `SUCCEEDED`.
+   a. If `defaultInstanceAuth` for the `foo` Bundle is defined, the newly created `BundleInstanceAuth` is filled with credentials from the `defaultInstanceAuth` value. The status is set to `SUCCEEDED`.
    
-   b. If `defaultInstanceAuth` for the `foo` Package is not defined, the `PackageInstanceAuth` waits in the `PENDING` state until the Application does `setPackageInstanceAuth`. Then, the status is set to `SUCCEEDED`.
+   b. If `defaultInstanceAuth` for the `foo` Bundle is not defined, the `BundleInstanceAuth` waits in the `PENDING` state until the Application does `setBundleInstanceAuth`. Then, the status is set to `SUCCEEDED`.
    
 1. After the Runtime fetches valid credentials for the ServiceInstance, the status of the ServiceInstance is set to `READY`.
 
 ### GraphQL schema
 
-The following snippet describes GraphQL API for Packages credential requests:
+The following snippet describes GraphQL API for Bundles credential requests:
 
 ```graphql
-type Package {
+type Bundle {
   id: ID!
   # (...)
 
@@ -53,15 +53,15 @@ type Package {
   instanceAuth(id: ID!): BundleInstanceAuth
   instanceAuths: [BundleInstanceAuth!]!
   """
-  When defined, all requests via `requestPackageInstanceAuthCreation` mutation fallback to defaultInstanceAuth.
+  When defined, all requests via `requestBundleInstanceAuthCreation` mutation fallback to defaultInstanceAuth.
   """
   defaultInstanceAuth: Auth
 }
 
-type PackageInstanceAuth {
+type BundleInstanceAuth {
   id: ID!
   """
-  Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+  Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
   """
   context: Any
 
@@ -72,13 +72,13 @@ type PackageInstanceAuth {
   
   """
   It may be empty if status is PENDING.
-  Populated with `package.defaultInstanceAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+  Populated with `bundle.defaultInstanceAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
   """
   auth: Auth
   status: BundleInstanceAuthStatus
 }
 
-type PackageInstanceAuthStatus {
+type BundleInstanceAuthStatus {
   condition: BundleInstanceAuthStatusCondition!
   timestamp: Timestamp!
   message: String!
@@ -93,7 +93,7 @@ type PackageInstanceAuthStatus {
   reason: String!
 }
 
-enum PackageInstanceAuthStatusCondition {
+enum BundleInstanceAuthStatusCondition {
   """
   When creating, before Application sets the credentials
   """
@@ -106,7 +106,7 @@ enum PackageInstanceAuthStatusCondition {
   UNUSED
 }
 
-input PackageInstanceAuthSetInput {
+input BundleInstanceAuthSetInput {
 	"""
 	If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
 	"""
@@ -118,7 +118,7 @@ input PackageInstanceAuthSetInput {
 	status: BundleInstanceAuthStatusInput
 }
 
-input PackageInstanceAuthStatusInput {
+input BundleInstanceAuthStatusInput {
 	condition: BundleInstanceAuthSetStatusConditionInput! = SUCCEEDED
 	"""
 	Required, if condition is "FAILED". If empty for SUCCEEDED status, default message is set.
@@ -137,34 +137,34 @@ input PackageInstanceAuthStatusInput {
 	reason: String
 }
 
-input PackageInstanceAuthRequestInput {
+input BundleInstanceAuthRequestInput {
 	"""
-	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+	Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
 	"""
 	context: Any
 	"""
-	JSON validated against package.instanceAuthRequestInputSchema
+	JSON validated against bundle.instanceAuthRequestInputSchema
 	"""
 	inputParams: Any
 }
 
 type Mutation {
   """
-  When PackageInstanceAuth is not in the pending state, the operation returns an error.
+  When BundleInstanceAuth is not in the pending state, the operation returns an error.
 
   When used without error, the status of pending auth is set to success.
   """
-  setPackageInstanceAuth(authID: ID!, in: BundleInstanceAuthSetInput!): BundleInstanceAuth!
-  deletePackageInstanceAuth(authID: ID!): BundleInstanceAuth!
-  requestPackageInstanceAuthCreation(packageID: ID!, in: BundleInstanceAuthRequestInput!): BundleInstanceAuth!
-  requestPackageInstanceAuthDeletion(authID: ID!): BundleInstanceAuth!
+  setBundleInstanceAuth(authID: ID!, in: BundleInstanceAuthSetInput!): BundleInstanceAuth!
+  deleteBundleInstanceAuth(authID: ID!): BundleInstanceAuth!
+  requestBundleInstanceAuthCreation(bundleID: ID!, in: BundleInstanceAuthRequestInput!): BundleInstanceAuth!
+  requestBundleInstanceAuthDeletion(authID: ID!): BundleInstanceAuth!
 }
 ```
 
 ## Passing additional input parameters
 
-You can pass additional input parameters when provisioning a new ServiceInstance from a Package. Input parameters are validated against input JSON schema provided in the **instanceAuthRequestInputSchema** field by the Application or Integration System. The parameters, as well as the input JSON schema, are completely optional. As there is no trusted connection between an Integration System and Runtime, additional input parameters have to be passed to the Application or Integration System through the Director.
+You can pass additional input parameters when provisioning a new ServiceInstance from a Bundle. Input parameters are validated against input JSON schema provided in the **instanceAuthRequestInputSchema** field by the Application or Integration System. The parameters, as well as the input JSON schema, are completely optional. As there is no trusted connection between an Integration System and Runtime, additional input parameters have to be passed to the Application or Integration System through the Director.
 
-## Registering Package API without credentials
+## Registering Bundle API without credentials
 
 In order to register API that does not require credentials, you must set the **defaultInstanceAuth.credential** property to `null`.

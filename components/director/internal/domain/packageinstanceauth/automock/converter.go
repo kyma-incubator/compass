@@ -12,32 +12,32 @@ type Converter struct {
 }
 
 // RequestInputFromGraphQL provides a mock function with given fields: in
-func (_m *Converter) RequestInputFromGraphQL(in graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput {
+func (_m *Converter) RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequestInput) model.BundleInstanceAuthRequestInput {
 	ret := _m.Called(in)
 
-	var r0 model.PackageInstanceAuthRequestInput
-	if rf, ok := ret.Get(0).(func(graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput); ok {
+	var r0 model.BundleInstanceAuthRequestInput
+	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthRequestInput) model.BundleInstanceAuthRequestInput); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.PackageInstanceAuthRequestInput)
+		r0 = ret.Get(0).(model.BundleInstanceAuthRequestInput)
 	}
 
 	return r0
 }
 
 // SetInputFromGraphQL provides a mock function with given fields: in
-func (_m *Converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) (model.PackageInstanceAuthSetInput, error) {
+func (_m *Converter) SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (model.BundleInstanceAuthSetInput, error) {
 	ret := _m.Called(in)
 
-	var r0 model.PackageInstanceAuthSetInput
-	if rf, ok := ret.Get(0).(func(graphql.PackageInstanceAuthSetInput) model.PackageInstanceAuthSetInput); ok {
+	var r0 model.BundleInstanceAuthSetInput
+	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthSetInput) model.BundleInstanceAuthSetInput); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.PackageInstanceAuthSetInput)
+		r0 = ret.Get(0).(model.BundleInstanceAuthSetInput)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(graphql.PackageInstanceAuthSetInput) error); ok {
+	if rf, ok := ret.Get(1).(func(graphql.BundleInstanceAuthSetInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
@@ -47,20 +47,20 @@ func (_m *Converter) SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput)
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *Converter) ToGraphQL(in *model.PackageInstanceAuth) (*graphql.PackageInstanceAuth, error) {
+func (_m *Converter) ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error) {
 	ret := _m.Called(in)
 
-	var r0 *graphql.PackageInstanceAuth
-	if rf, ok := ret.Get(0).(func(*model.PackageInstanceAuth) *graphql.PackageInstanceAuth); ok {
+	var r0 *graphql.BundleInstanceAuth
+	if rf, ok := ret.Get(0).(func(*model.BundleInstanceAuth) *graphql.BundleInstanceAuth); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*graphql.PackageInstanceAuth)
+			r0 = ret.Get(0).(*graphql.BundleInstanceAuth)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*model.PackageInstanceAuth) error); ok {
+	if rf, ok := ret.Get(1).(func(*model.BundleInstanceAuth) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

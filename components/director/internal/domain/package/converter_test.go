@@ -1,4 +1,4 @@
-package mp_package_test
+package mp_bundle_test
 
 import (
 	"database/sql"
@@ -10,13 +10,13 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
@@ -27,21 +27,21 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		desc := "bar"
-		pkgModel := fixPackageModel(t, name, desc)
+		pkgModel := fixBundleModel(t, name, desc)
 		require.NotNil(t, pkgModel)
 		authConv := auth.NewConverter()
-		conv := mp_package.NewConverter(authConv, nil, nil, nil)
+		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		entity, err := conv.ToEntity(pkgModel)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixEntityPackage(packageID, name, desc), entity)
+		assert.Equal(t, fixEntityBundle(bundleID, name, desc), entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
 		name := "foo"
-		pkgModel := &model.Package{
-			ID:                             packageID,
+		pkgModel := &model.Bundle{
+			ID:                             bundleID,
 			TenantID:                       tenantID,
 			ApplicationID:                  appID,
 			Name:                           name,
@@ -50,8 +50,8 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 			DefaultInstanceAuth:            nil,
 		}
 
-		expectedEntity := &mp_package.Entity{
-			ID:                            packageID,
+		expectedEntity := &mp_bundle.Entity{
+			ID:                            bundleID,
 			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
@@ -62,7 +62,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 		require.NotNil(t, pkgModel)
 		authConv := auth.NewConverter()
-		conv := mp_package.NewConverter(authConv, nil, nil, nil)
+		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		entity, err := conv.ToEntity(pkgModel)
 		//THEN
@@ -76,20 +76,20 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		desc := "bar"
-		entity := fixEntityPackage(packageID, name, desc)
+		entity := fixEntityBundle(bundleID, name, desc)
 		authConv := auth.NewConverter()
-		conv := mp_package.NewConverter(authConv, nil, nil, nil)
+		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		pkgModel, err := conv.FromEntity(entity)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixPackageModel(t, name, desc), pkgModel)
+		assert.Equal(t, fixBundleModel(t, name, desc), pkgModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
 		name := "foo"
-		entity := &mp_package.Entity{
-			ID:                            packageID,
+		entity := &mp_bundle.Entity{
+			ID:                            bundleID,
 			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
@@ -97,8 +97,8 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 			InstanceAuthRequestJSONSchema: sql.NullString{},
 			DefaultInstanceAuth:           sql.NullString{},
 		}
-		expectedModel := &model.Package{
-			ID:                             packageID,
+		expectedModel := &model.Bundle{
+			ID:                             bundleID,
 			TenantID:                       tenantID,
 			ApplicationID:                  appID,
 			Name:                           name,
@@ -107,7 +107,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 			DefaultInstanceAuth:            nil,
 		}
 		authConv := auth.NewConverter()
-		conv := mp_package.NewConverter(authConv, nil, nil, nil)
+		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		pkgModel, err := conv.FromEntity(entity)
 		//THEN
@@ -119,38 +119,38 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
-	id := packageID
+	id := bundleID
 	name := "foo"
 	desc := "bar"
-	modelPackage := fixPackageModel(t, name, desc)
-	gqlPackage := fixGQLPackage(id, name, desc)
-	emptyModelPackage := &model.Package{}
-	emptyGraphQLPackage := &graphql.Package{}
+	modelBundle := fixBundleModel(t, name, desc)
+	gqlBundle := fixGQLBundle(id, name, desc)
+	emptyModelBundle := &model.Bundle{}
+	emptyGraphQLBundle := &graphql.Bundle{}
 
 	testCases := []struct {
 		Name            string
-		Input           *model.Package
-		Expected        *graphql.Package
+		Input           *model.Bundle
+		Expected        *graphql.Bundle
 		AuthConverterFn func() *automock.AuthConverter
 		ExpectedErr     error
 	}{
 		{
 			Name:     "All properties given",
-			Input:    modelPackage,
-			Expected: gqlPackage,
+			Input:    modelBundle,
+			Expected: gqlBundle,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", modelPackage.DefaultInstanceAuth).Return(gqlPackage.DefaultInstanceAuth, nil).Once()
+				conv.On("ToGraphQL", modelBundle.DefaultInstanceAuth).Return(gqlBundle.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},
 		{
 			Name:     "Empty",
-			Input:    emptyModelPackage,
-			Expected: emptyGraphQLPackage,
+			Input:    emptyModelBundle,
+			Expected: emptyGraphQLBundle,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", emptyModelPackage.DefaultInstanceAuth).Return(nil, nil).Once()
+				conv.On("ToGraphQL", emptyModelBundle.DefaultInstanceAuth).Return(nil, nil).Once()
 				return conv
 			},
 		},
@@ -158,7 +158,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Name:        "Nil",
 			Input:       nil,
 			Expected:    nil,
-			ExpectedErr: errors.New("the model Package is nil"),
+			ExpectedErr: errors.New("the model Bundle is nil"),
 			AuthConverterFn: func() *automock.AuthConverter {
 				return &automock.AuthConverter{}
 			},
@@ -171,7 +171,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			authConverter := testCase.AuthConverterFn()
 
 			// when
-			converter := mp_package.NewConverter(authConverter, nil, nil, nil)
+			converter := mp_bundle.NewConverter(authConverter, nil, nil, nil)
 			res, err := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -193,16 +193,16 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	name1 := "foo"
 	name2 := "bar"
 	desc := "1"
-	input := []*model.Package{
-		fixPackageModel(t, name1, desc),
-		fixPackageModel(t, name2, desc),
+	input := []*model.Bundle{
+		fixBundleModel(t, name1, desc),
+		fixBundleModel(t, name2, desc),
 		{},
 		nil,
 	}
 
-	expected := []*graphql.Package{
-		fixGQLPackage(packageID, name1, desc),
-		fixGQLPackage(packageID, name2, desc),
+	expected := []*graphql.Bundle{
+		fixGQLBundle(bundleID, name1, desc),
+		fixGQLBundle(bundleID, name2, desc),
 		{},
 	}
 
@@ -216,7 +216,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	// when
-	converter := mp_package.NewConverter(authConverter, nil, nil, nil)
+	converter := mp_bundle.NewConverter(authConverter, nil, nil, nil)
 	res, err := converter.MultipleToGraphQL(input)
 
 	// then
@@ -230,14 +230,14 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 	// given
 	name := "foo"
 	desc := "Lorem ipsum"
-	gqlPackageCreateInput := fixGQLPackageCreateInput(name, desc)
-	modelPackageCreateInput := fixModelPackageCreateInput(name, desc)
-	emptyGQLPackageCreateInput := &graphql.PackageCreateInput{}
-	emptyModelPackageCreateInput := &model.PackageCreateInput{}
+	gqlBundleCreateInput := fixGQLBundleCreateInput(name, desc)
+	modelBundleCreateInput := fixModelBundleCreateInput(name, desc)
+	emptyGQLBundleCreateInput := &graphql.BundleCreateInput{}
+	emptyModelBundleCreateInput := &model.BundleCreateInput{}
 	testCases := []struct {
 		Name                string
-		Input               graphql.PackageCreateInput
-		Expected            model.PackageCreateInput
+		Input               graphql.BundleCreateInput
+		Expected            model.BundleCreateInput
 		APIConverterFn      func() *automock.APIConverter
 		EventAPIConverterFn func() *automock.EventConverter
 		DocumentConverterFn func() *automock.DocumentConverter
@@ -245,51 +245,51 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    gqlPackageCreateInput,
-			Expected: modelPackageCreateInput,
+			Input:    gqlBundleCreateInput,
+			Expected: modelBundleCreateInput,
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", gqlPackageCreateInput.APIDefinitions).Return(modelPackageCreateInput.APIDefinitions, nil)
+				conv.On("MultipleInputFromGraphQL", gqlBundleCreateInput.APIDefinitions).Return(modelBundleCreateInput.APIDefinitions, nil)
 				return conv
 			},
 			EventAPIConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleInputFromGraphQL", gqlPackageCreateInput.EventDefinitions).Return(modelPackageCreateInput.EventDefinitions, nil)
+				conv.On("MultipleInputFromGraphQL", gqlBundleCreateInput.EventDefinitions).Return(modelBundleCreateInput.EventDefinitions, nil)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("MultipleInputFromGraphQL", gqlPackageCreateInput.Documents).Return(modelPackageCreateInput.Documents, nil)
+				conv.On("MultipleInputFromGraphQL", gqlBundleCreateInput.Documents).Return(modelBundleCreateInput.Documents, nil)
 				return conv
 			},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlPackageCreateInput.DefaultInstanceAuth).Return(modelPackageCreateInput.DefaultInstanceAuth, nil).Once()
+				conv.On("InputFromGraphQL", gqlBundleCreateInput.DefaultInstanceAuth).Return(modelBundleCreateInput.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},
 		{
 			Name:     "Empty",
-			Input:    graphql.PackageCreateInput{},
-			Expected: model.PackageCreateInput{},
+			Input:    graphql.BundleCreateInput{},
+			Expected: model.BundleCreateInput{},
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", emptyGQLPackageCreateInput.APIDefinitions).Return(emptyModelPackageCreateInput.APIDefinitions, nil)
+				conv.On("MultipleInputFromGraphQL", emptyGQLBundleCreateInput.APIDefinitions).Return(emptyModelBundleCreateInput.APIDefinitions, nil)
 				return conv
 			},
 			EventAPIConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleInputFromGraphQL", emptyGQLPackageCreateInput.EventDefinitions).Return(emptyModelPackageCreateInput.EventDefinitions, nil)
+				conv.On("MultipleInputFromGraphQL", emptyGQLBundleCreateInput.EventDefinitions).Return(emptyModelBundleCreateInput.EventDefinitions, nil)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
 				conv := &automock.DocumentConverter{}
-				conv.On("MultipleInputFromGraphQL", emptyGQLPackageCreateInput.Documents).Return(emptyModelPackageCreateInput.Documents, nil)
+				conv.On("MultipleInputFromGraphQL", emptyGQLBundleCreateInput.Documents).Return(emptyModelBundleCreateInput.Documents, nil)
 				return conv
 			},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", emptyGQLPackageCreateInput.DefaultInstanceAuth).Return(emptyModelPackageCreateInput.DefaultInstanceAuth, nil).Once()
+				conv.On("InputFromGraphQL", emptyGQLBundleCreateInput.DefaultInstanceAuth).Return(emptyModelBundleCreateInput.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},
@@ -304,7 +304,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			authConverter := testCase.AuthConverterFn()
 
 			// when
-			converter := mp_package.NewConverter(authConverter, apiConverter, eventConverter, documentConverter)
+			converter := mp_bundle.NewConverter(authConverter, apiConverter, eventConverter, documentConverter)
 			res, err := converter.CreateInputFromGraphQL(testCase.Input)
 
 			// then
@@ -317,16 +317,16 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 
 func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 	// given
-	gqlPkg1 := fixGQLPackageCreateInput("foo", "bar")
-	gqlPkg2 := fixGQLPackageCreateInput("bar", "baz")
-	input := []*graphql.PackageCreateInput{
+	gqlPkg1 := fixGQLBundleCreateInput("foo", "bar")
+	gqlPkg2 := fixGQLBundleCreateInput("bar", "baz")
+	input := []*graphql.BundleCreateInput{
 		&gqlPkg1,
 		&gqlPkg2,
 	}
 
-	modPkg1 := fixModelPackageCreateInput("foo", "bar")
-	modPkg2 := fixModelPackageCreateInput("bar", "baz")
-	expected := []*model.PackageCreateInput{
+	modPkg1 := fixModelBundleCreateInput("foo", "bar")
+	modPkg2 := fixModelBundleCreateInput("bar", "baz")
+	expected := []*model.BundleCreateInput{
 		&modPkg1, &modPkg2,
 	}
 
@@ -346,7 +346,7 @@ func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 	authConv.On("InputFromGraphQL", gqlPkg1.DefaultInstanceAuth).Return(modPkg1.DefaultInstanceAuth, nil).Once()
 	authConv.On("InputFromGraphQL", gqlPkg2.DefaultInstanceAuth).Return(modPkg2.DefaultInstanceAuth, nil).Once()
 
-	converter := mp_package.NewConverter(authConv, apiConv, eventConv, docConv)
+	converter := mp_bundle.NewConverter(authConv, apiConv, eventConv, docConv)
 
 	// when
 	res, err := converter.MultipleCreateInputFromGraphQL(input)
@@ -361,33 +361,33 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	// given
 	name := "foo"
 	desc := "Lorem ipsum"
-	gqlPackageCreateInput := fixGQLPackageUpdateInput(name, desc)
-	modelPackageCreateInput := fixModelPackageUpdateInput(t, name, desc)
-	emptyGQLPackageCreateInput := &graphql.PackageCreateInput{}
-	emptyModelPackageCreateInput := &model.PackageCreateInput{}
+	gqlBundleCreateInput := fixGQLBundleUpdateInput(name, desc)
+	modelBundleCreateInput := fixModelBundleUpdateInput(t, name, desc)
+	emptyGQLBundleCreateInput := &graphql.BundleCreateInput{}
+	emptyModelBundleCreateInput := &model.BundleCreateInput{}
 	testCases := []struct {
 		Name            string
-		Input           *graphql.PackageUpdateInput
-		Expected        *model.PackageUpdateInput
+		Input           *graphql.BundleUpdateInput
+		Expected        *model.BundleUpdateInput
 		AuthConverterFn func() *automock.AuthConverter
 	}{
 		{
 			Name:     "All properties given",
-			Input:    &gqlPackageCreateInput,
-			Expected: &modelPackageCreateInput,
+			Input:    &gqlBundleCreateInput,
+			Expected: &modelBundleCreateInput,
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", gqlPackageCreateInput.DefaultInstanceAuth).Return(modelPackageCreateInput.DefaultInstanceAuth, nil).Once()
+				conv.On("InputFromGraphQL", gqlBundleCreateInput.DefaultInstanceAuth).Return(modelBundleCreateInput.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},
 		{
 			Name:     "Empty",
-			Input:    &graphql.PackageUpdateInput{},
-			Expected: &model.PackageUpdateInput{},
+			Input:    &graphql.BundleUpdateInput{},
+			Expected: &model.BundleUpdateInput{},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("InputFromGraphQL", emptyGQLPackageCreateInput.DefaultInstanceAuth).Return(emptyModelPackageCreateInput.DefaultInstanceAuth, nil).Once()
+				conv.On("InputFromGraphQL", emptyGQLBundleCreateInput.DefaultInstanceAuth).Return(emptyModelBundleCreateInput.DefaultInstanceAuth, nil).Once()
 				return conv
 			},
 		},
@@ -399,7 +399,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 			authConverter := testCase.AuthConverterFn()
 
 			// when
-			converter := mp_package.NewConverter(authConverter, nil, nil, nil)
+			converter := mp_bundle.NewConverter(authConverter, nil, nil, nil)
 			res, err := converter.UpdateInputFromGraphQL(*testCase.Input)
 
 			// then

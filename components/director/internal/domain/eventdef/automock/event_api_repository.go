@@ -138,13 +138,13 @@ func (_m *EventAPIRepository) GetForApplication(ctx context.Context, tenant stri
 	return r0, r1
 }
 
-// GetForPackage provides a mock function with given fields: ctx, tenant, id, packageID
-func (_m *EventAPIRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.EventDefinition, error) {
-	ret := _m.Called(ctx, tenant, id, packageID)
+// GetForBundle provides a mock function with given fields: ctx, tenant, id, bundleID
+func (_m *EventAPIRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error) {
+	ret := _m.Called(ctx, tenant, id, bundleID)
 
 	var r0 *model.EventDefinition
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.EventDefinition); ok {
-		r0 = rf(ctx, tenant, id, packageID)
+		r0 = rf(ctx, tenant, id, bundleID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.EventDefinition)
@@ -153,7 +153,7 @@ func (_m *EventAPIRepository) GetForPackage(ctx context.Context, tenant string, 
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, tenant, id, packageID)
+		r1 = rf(ctx, tenant, id, bundleID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -184,13 +184,13 @@ func (_m *EventAPIRepository) ListForApplication(ctx context.Context, tenantID s
 	return r0, r1
 }
 
-// ListForPackage provides a mock function with given fields: ctx, tenantID, packageID, pageSize, cursor
-func (_m *EventAPIRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	ret := _m.Called(ctx, tenantID, packageID, pageSize, cursor)
+// ListForBundle provides a mock function with given fields: ctx, tenantID, bundleID, pageSize, cursor
+func (_m *EventAPIRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	ret := _m.Called(ctx, tenantID, bundleID, pageSize, cursor)
 
 	var r0 *model.EventDefinitionPage
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.EventDefinitionPage); ok {
-		r0 = rf(ctx, tenantID, packageID, pageSize, cursor)
+		r0 = rf(ctx, tenantID, bundleID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.EventDefinitionPage)
@@ -199,7 +199,7 @@ func (_m *EventAPIRepository) ListForPackage(ctx context.Context, tenantID strin
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
-		r1 = rf(ctx, tenantID, packageID, pageSize, cursor)
+		r1 = rf(ctx, tenantID, bundleID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

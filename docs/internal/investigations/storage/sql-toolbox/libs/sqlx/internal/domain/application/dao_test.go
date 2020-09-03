@@ -10,5 +10,5 @@ import (
 func TestAbd(t *testing.T) {
 	appDTO := dto.ApplicationDTO{}
 	err := sq.Insert("applications").Scan(appDTO).Error()
-	fmt.Println("err",err)
+	fmt.Println("err", err)
 }

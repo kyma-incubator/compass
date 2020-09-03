@@ -1,4 +1,4 @@
-package mp_package
+package mp_bundle
 
 import "time"
 

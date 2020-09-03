@@ -50,11 +50,11 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
-		packages {%s}
+		bundles {%s}
 		auths {%s}
 		eventingConfiguration { defaultURL }
-	`, fp.ForWebhooks(), fp.Page(fp.ForPackage()), fp.ForSystemAuth()),
-		ctx, []string{"Application.package", "Application.apiDefinition", "Application.eventDefinition"})
+	`, fp.ForWebhooks(), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
+		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
 func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
@@ -274,7 +274,7 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 		initialized`
 }
 
-func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
+func (fp *GqlFieldsProvider) ForBundle(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`
 		id
 		name
@@ -284,20 +284,20 @@ func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
 		defaultInstanceAuth {%s}
 		apiDefinitions {%s}
 		eventDefinitions {%s}
-		documents {%s}`, fp.ForPackageInstanceAuth(), fp.ForAuth(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument())),
-		ctx, []string{"Package.instanceAuth"})
+		documents {%s}`, fp.ForBundleInstanceAuth(), fp.ForAuth(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument())),
+		ctx, []string{"Bundle.instanceAuth"})
 }
 
-func (fp *GqlFieldsProvider) ForPackageInstanceAuth() string {
+func (fp *GqlFieldsProvider) ForBundleInstanceAuth() string {
 	return fmt.Sprintf(`
 		id
 		context
 		inputParams
 		auth {%s}
-		status {%s}`, fp.ForAuth(), fp.ForPackageInstanceAuthStatus())
+		status {%s}`, fp.ForAuth(), fp.ForBundleInstanceAuthStatus())
 }
 
-func (fp *GqlFieldsProvider) ForPackageInstanceAuthStatus() string {
+func (fp *GqlFieldsProvider) ForBundleInstanceAuthStatus() string {
 	return `
 		condition
 		timestamp

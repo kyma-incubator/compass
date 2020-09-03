@@ -1,4 +1,4 @@
-package packageinstanceauth_test
+package bundleinstanceauth_test
 
 import (
 	"database/sql"
@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 
 	"github.com/stretchr/testify/require"
 
@@ -20,148 +20,148 @@ import (
 
 var (
 	testID             = "foo"
-	testPackageID      = "bar"
+	testBundleID       = "bar"
 	testTenant         = "baz"
 	testExternalTenant = "foobaz"
 	testContext        = `{"foo": "bar"}`
 	testInputParams    = `{"bar": "baz"}`
 	testError          = errors.New("test")
 	testTime           = time.Now()
-	testTableColumns   = []string{"id", "tenant_id", "package_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
+	testTableColumns   = []string{"id", "tenant_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason"}
 )
 
-func fixModelPackageInstanceAuth(id, packageID, tenant string, auth *model.Auth, status *model.PackageInstanceAuthStatus) *model.PackageInstanceAuth {
-	pia := fixModelPackageInstanceAuthWithoutContextAndInputParams(id, packageID, tenant, auth, status)
+func fixModelBundleInstanceAuth(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus) *model.BundleInstanceAuth {
+	pia := fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant, auth, status)
 	pia.Context = &testContext
 	pia.InputParams = &testInputParams
 
 	return pia
 }
-func fixModelPackageInstanceAuthWithoutContextAndInputParams(id, packageID, tenant string, auth *model.Auth, status *model.PackageInstanceAuthStatus) *model.PackageInstanceAuth {
-	return &model.PackageInstanceAuth{
-		ID:        id,
-		PackageID: packageID,
-		Tenant:    tenant,
-		Auth:      auth,
-		Status:    status,
+func fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus) *model.BundleInstanceAuth {
+	return &model.BundleInstanceAuth{
+		ID:       id,
+		BundleID: bundleID,
+		Tenant:   tenant,
+		Auth:     auth,
+		Status:   status,
 	}
 }
 
-func fixGQLPackageInstanceAuth(id string, auth *graphql.Auth, status *graphql.PackageInstanceAuthStatus) *graphql.PackageInstanceAuth {
+func fixGQLBundleInstanceAuth(id string, auth *graphql.Auth, status *graphql.BundleInstanceAuthStatus) *graphql.BundleInstanceAuth {
 	context := graphql.JSON(testContext)
 	inputParams := graphql.JSON(testInputParams)
 
-	out := fixGQLPackageInstanceAuthWithoutContextAndInputParams(id, auth, status)
+	out := fixGQLBundleInstanceAuthWithoutContextAndInputParams(id, auth, status)
 	out.Context = &context
 	out.InputParams = &inputParams
 
 	return out
 }
 
-func fixGQLPackageInstanceAuthWithoutContextAndInputParams(id string, auth *graphql.Auth, status *graphql.PackageInstanceAuthStatus) *graphql.PackageInstanceAuth {
-	return &graphql.PackageInstanceAuth{
+func fixGQLBundleInstanceAuthWithoutContextAndInputParams(id string, auth *graphql.Auth, status *graphql.BundleInstanceAuthStatus) *graphql.BundleInstanceAuth {
+	return &graphql.BundleInstanceAuth{
 		ID:     id,
 		Auth:   auth,
 		Status: status,
 	}
 }
 
-func fixModelStatusSucceeded() *model.PackageInstanceAuthStatus {
-	return &model.PackageInstanceAuthStatus{
-		Condition: model.PackageInstanceAuthStatusConditionSucceeded,
+func fixModelStatusSucceeded() *model.BundleInstanceAuthStatus {
+	return &model.BundleInstanceAuthStatus{
+		Condition: model.BundleInstanceAuthStatusConditionSucceeded,
 		Timestamp: testTime,
 		Message:   "Credentials were provided.",
 		Reason:    "CredentialsProvided",
 	}
 }
 
-func fixModelStatusPending() *model.PackageInstanceAuthStatus {
-	return &model.PackageInstanceAuthStatus{
-		Condition: model.PackageInstanceAuthStatusConditionPending,
+func fixModelStatusPending() *model.BundleInstanceAuthStatus {
+	return &model.BundleInstanceAuthStatus{
+		Condition: model.BundleInstanceAuthStatusConditionPending,
 		Timestamp: testTime,
 		Message:   "Credentials were not yet provided.",
 		Reason:    "CredentialsNotProvided",
 	}
 }
 
-func fixGQLStatusSucceeded() *graphql.PackageInstanceAuthStatus {
-	return &graphql.PackageInstanceAuthStatus{
-		Condition: graphql.PackageInstanceAuthStatusConditionSucceeded,
+func fixGQLStatusSucceeded() *graphql.BundleInstanceAuthStatus {
+	return &graphql.BundleInstanceAuthStatus{
+		Condition: graphql.BundleInstanceAuthStatusConditionSucceeded,
 		Timestamp: graphql.Timestamp(testTime),
 		Message:   "Credentials were provided.",
 		Reason:    "CredentialsProvided",
 	}
 }
 
-func fixGQLStatusPending() *graphql.PackageInstanceAuthStatus {
-	return &graphql.PackageInstanceAuthStatus{
-		Condition: graphql.PackageInstanceAuthStatusConditionPending,
+func fixGQLStatusPending() *graphql.BundleInstanceAuthStatus {
+	return &graphql.BundleInstanceAuthStatus{
+		Condition: graphql.BundleInstanceAuthStatusConditionPending,
 		Timestamp: graphql.Timestamp(testTime),
 		Message:   "Credentials were not yet provided.",
 		Reason:    "CredentialsNotProvided",
 	}
 }
 
-func fixModelStatusInput(condition model.PackageInstanceAuthSetStatusConditionInput, message, reason string) *model.PackageInstanceAuthStatusInput {
-	return &model.PackageInstanceAuthStatusInput{
+func fixModelStatusInput(condition model.BundleInstanceAuthSetStatusConditionInput, message, reason string) *model.BundleInstanceAuthStatusInput {
+	return &model.BundleInstanceAuthStatusInput{
 		Condition: condition,
 		Message:   message,
 		Reason:    reason,
 	}
 }
 
-func fixGQLStatusInput(condition graphql.PackageInstanceAuthSetStatusConditionInput, message, reason string) *graphql.PackageInstanceAuthStatusInput {
-	return &graphql.PackageInstanceAuthStatusInput{
+func fixGQLStatusInput(condition graphql.BundleInstanceAuthSetStatusConditionInput, message, reason string) *graphql.BundleInstanceAuthStatusInput {
+	return &graphql.BundleInstanceAuthStatusInput{
 		Condition: condition,
 		Message:   message,
 		Reason:    reason,
 	}
 }
 
-func fixModelRequestInput() *model.PackageInstanceAuthRequestInput {
-	return &model.PackageInstanceAuthRequestInput{
+func fixModelRequestInput() *model.BundleInstanceAuthRequestInput {
+	return &model.BundleInstanceAuthRequestInput{
 		Context:     &testContext,
 		InputParams: &testInputParams,
 	}
 }
 
-func fixGQLRequestInput() *graphql.PackageInstanceAuthRequestInput {
+func fixGQLRequestInput() *graphql.BundleInstanceAuthRequestInput {
 	context := graphql.JSON(testContext)
 	inputParams := graphql.JSON(testInputParams)
 
-	return &graphql.PackageInstanceAuthRequestInput{
+	return &graphql.BundleInstanceAuthRequestInput{
 		Context:     &context,
 		InputParams: &inputParams,
 	}
 }
 
-func fixModelSetInput() *model.PackageInstanceAuthSetInput {
-	return &model.PackageInstanceAuthSetInput{
+func fixModelSetInput() *model.BundleInstanceAuthSetInput {
+	return &model.BundleInstanceAuthSetInput{
 		Auth:   fixModelAuthInput(),
-		Status: fixModelStatusInput(model.PackageInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
+		Status: fixModelStatusInput(model.BundleInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
 	}
 }
 
-func fixGQLSetInput() *graphql.PackageInstanceAuthSetInput {
-	return &graphql.PackageInstanceAuthSetInput{
+func fixGQLSetInput() *graphql.BundleInstanceAuthSetInput {
+	return &graphql.BundleInstanceAuthSetInput{
 		Auth:   fixGQLAuthInput(),
-		Status: fixGQLStatusInput(graphql.PackageInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
+		Status: fixGQLStatusInput(graphql.BundleInstanceAuthSetStatusConditionInputSucceeded, "foo", "bar"),
 	}
 }
 
-func fixEntityPackageInstanceAuth(t *testing.T, id, packageID, tenant string, auth *model.Auth, status *model.PackageInstanceAuthStatus) *packageinstanceauth.Entity {
-	out := fixEntityPackageInstanceAuthWithoutContextAndInputParams(t, id, packageID, tenant, auth, status)
+func fixEntityBundleInstanceAuth(t *testing.T, id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus) *bundleinstanceauth.Entity {
+	out := fixEntityBundleInstanceAuthWithoutContextAndInputParams(t, id, bundleID, tenant, auth, status)
 	out.Context = sql.NullString{Valid: true, String: testContext}
 	out.InputParams = sql.NullString{Valid: true, String: testInputParams}
 
 	return out
 }
 
-func fixEntityPackageInstanceAuthWithoutContextAndInputParams(t *testing.T, id, packageID, tenant string, auth *model.Auth, status *model.PackageInstanceAuthStatus) *packageinstanceauth.Entity {
-	out := packageinstanceauth.Entity{
-		ID:        id,
-		PackageID: packageID,
-		TenantID:  tenant,
+func fixEntityBundleInstanceAuthWithoutContextAndInputParams(t *testing.T, id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus) *bundleinstanceauth.Entity {
+	out := bundleinstanceauth.Entity{
+		ID:       id,
+		BundleID: bundleID,
+		TenantID: tenant,
 	}
 
 	if auth != nil {
@@ -228,7 +228,7 @@ func fixGQLAuthInput() *graphql.AuthInput {
 type sqlRow struct {
 	id              string
 	tenantID        string
-	packageID       string
+	bundleID        string
 	context         sql.NullString
 	inputParams     sql.NullString
 	authValue       sql.NullString
@@ -241,16 +241,16 @@ type sqlRow struct {
 func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 	out := sqlmock.NewRows(testTableColumns)
 	for _, row := range rows {
-		out.AddRow(row.id, row.tenantID, row.packageID, row.context, row.inputParams, row.authValue, row.statusCondition, row.statusTimestamp, row.statusMessage, row.statusReason)
+		out.AddRow(row.id, row.tenantID, row.bundleID, row.context, row.inputParams, row.authValue, row.statusCondition, row.statusTimestamp, row.statusMessage, row.statusReason)
 	}
 	return out
 }
 
-func fixSQLRowFromEntity(entity packageinstanceauth.Entity) sqlRow {
+func fixSQLRowFromEntity(entity bundleinstanceauth.Entity) sqlRow {
 	return sqlRow{
 		id:              entity.ID,
 		tenantID:        entity.TenantID,
-		packageID:       entity.PackageID,
+		bundleID:        entity.BundleID,
 		context:         entity.Context,
 		inputParams:     entity.InputParams,
 		authValue:       entity.AuthValue,
@@ -261,28 +261,28 @@ func fixSQLRowFromEntity(entity packageinstanceauth.Entity) sqlRow {
 	}
 }
 
-func fixCreateArgs(ent packageinstanceauth.Entity) []driver.Value {
-	return []driver.Value{ent.ID, ent.TenantID, ent.PackageID, ent.Context, ent.InputParams, ent.AuthValue, ent.StatusCondition, ent.StatusTimestamp, ent.StatusMessage, ent.StatusReason}
+func fixCreateArgs(ent bundleinstanceauth.Entity) []driver.Value {
+	return []driver.Value{ent.ID, ent.TenantID, ent.BundleID, ent.Context, ent.InputParams, ent.AuthValue, ent.StatusCondition, ent.StatusTimestamp, ent.StatusMessage, ent.StatusReason}
 }
 
-func fixSimpleModelPackageInstanceAuth(id string) *model.PackageInstanceAuth {
-	return &model.PackageInstanceAuth{
+func fixSimpleModelBundleInstanceAuth(id string) *model.BundleInstanceAuth {
+	return &model.BundleInstanceAuth{
 		ID: id,
 	}
 }
 
-func fixSimpleGQLPackageInstanceAuth(id string) *graphql.PackageInstanceAuth {
-	return &graphql.PackageInstanceAuth{
+func fixSimpleGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
+	return &graphql.BundleInstanceAuth{
 		ID: id,
 	}
 }
 
-func fixModelPackage(id string, requestInputSchema *string, defaultAuth *model.Auth) *model.Package {
-	return &model.Package{
+func fixModelBundle(id string, requestInputSchema *string, defaultAuth *model.Auth) *model.Bundle {
+	return &model.Bundle{
 		ID:                             id,
 		TenantID:                       testTenant,
 		ApplicationID:                  "foo",
-		Name:                           "test-package",
+		Name:                           "test-bundle",
 		InstanceAuthRequestInputSchema: requestInputSchema,
 		DefaultInstanceAuth:            defaultAuth,
 	}

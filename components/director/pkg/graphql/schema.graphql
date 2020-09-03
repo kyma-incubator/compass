@@ -861,7 +861,7 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 }
 
 """
-TODO: mutation associateBundleWithPackage
+TODO: mutation associateBundleWithBundle
 """
 
 type Bundle {

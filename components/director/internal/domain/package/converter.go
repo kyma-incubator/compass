@@ -1,4 +1,4 @@
-package mp_package
+package mp_bundle
 
 import (
 	"database/sql"
@@ -36,7 +36,7 @@ func NewConverter(auth AuthConverter, api APIConverter, event EventConverter, do
 	}
 }
 
-func (c *converter) ToEntity(in *model.Package) (*Entity, error) {
+func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -59,9 +59,9 @@ func (c *converter) ToEntity(in *model.Package) (*Entity, error) {
 	return output, nil
 }
 
-func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
+func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 	if entity == nil {
-		return nil, apperrors.NewInternalError("the Package entity is nil")
+		return nil, apperrors.NewInternalError("the Bundle entity is nil")
 	}
 
 	defaultInstanceAuth, err := c.unmarshalDefaultInstanceAuth(entity.DefaultInstanceAuth)
@@ -69,7 +69,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 		return nil, err
 	}
 
-	output := &model.Package{
+	output := &model.Bundle{
 		ID:                             entity.ID,
 		TenantID:                       entity.TenantID,
 		ApplicationID:                  entity.ApplicationID,
@@ -82,9 +82,9 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 	return output, nil
 }
 
-func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
+func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 	if in == nil {
-		return nil, apperrors.NewInternalError("the model Package is nil")
+		return nil, apperrors.NewInternalError("the model Bundle is nil")
 	}
 
 	auth, err := c.auth.ToGraphQL(in.DefaultInstanceAuth)
@@ -92,7 +92,7 @@ func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
 		return nil, errors.Wrap(err, "while converting DefaultInstanceAuth to GraphQL")
 	}
 
-	return &graphql.Package{
+	return &graphql.Bundle{
 		ID:                             in.ID,
 		Name:                           in.Name,
 		Description:                    in.Description,
@@ -101,44 +101,44 @@ func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
 	}, nil
 }
 
-func (c *converter) MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, error) {
-	var packages []*graphql.Package
+func (c *converter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error) {
+	var bundles []*graphql.Bundle
 	for _, r := range in {
 		if r == nil {
 			continue
 		}
 		pkg, err := c.ToGraphQL(r)
 		if err != nil {
-			return nil, errors.Wrap(err, "while converting Package to GraphQL")
+			return nil, errors.Wrap(err, "while converting Bundle to GraphQL")
 		}
-		packages = append(packages, pkg)
+		bundles = append(bundles, pkg)
 	}
 
-	return packages, nil
+	return bundles, nil
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error) {
+func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.BundleCreateInput, error) {
 	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
 	if err != nil {
-		return model.PackageCreateInput{}, errors.Wrap(err, "while converting DefaultInstanceAuth input")
+		return model.BundleCreateInput{}, errors.Wrap(err, "while converting DefaultInstanceAuth input")
 	}
 
 	apiDefs, err := c.api.MultipleInputFromGraphQL(in.APIDefinitions)
 	if err != nil {
-		return model.PackageCreateInput{}, errors.Wrap(err, "while converting APIDefinitions input")
+		return model.BundleCreateInput{}, errors.Wrap(err, "while converting APIDefinitions input")
 	}
 
 	documents, err := c.document.MultipleInputFromGraphQL(in.Documents)
 	if err != nil {
-		return model.PackageCreateInput{}, errors.Wrap(err, "while converting Documents input")
+		return model.BundleCreateInput{}, errors.Wrap(err, "while converting Documents input")
 	}
 
 	eventDefs, err := c.event.MultipleInputFromGraphQL(in.EventDefinitions)
 	if err != nil {
-		return model.PackageCreateInput{}, errors.Wrap(err, "while converting EventDefinitions input")
+		return model.BundleCreateInput{}, errors.Wrap(err, "while converting EventDefinitions input")
 	}
 
-	return model.PackageCreateInput{
+	return model.BundleCreateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
@@ -149,8 +149,8 @@ func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model
 	}, nil
 }
 
-func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error) {
-	var packages []*model.PackageCreateInput
+func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error) {
+	var bundles []*model.BundleCreateInput
 	for _, item := range in {
 		if item == nil {
 			continue
@@ -159,19 +159,19 @@ func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateIn
 		if err != nil {
 			return nil, err
 		}
-		packages = append(packages, &pkg)
+		bundles = append(bundles, &pkg)
 	}
 
-	return packages, nil
+	return bundles, nil
 }
 
-func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error) {
+func (c *converter) UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model.BundleUpdateInput, error) {
 	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting DefaultInstanceAuth from GraphQL")
 	}
 
-	return &model.PackageUpdateInput{
+	return &model.BundleUpdateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),

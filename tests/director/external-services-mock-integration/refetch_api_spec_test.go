@@ -23,7 +23,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, dexGraphQLClient, appName, tenant)
 	defer unregisterApplication(t, dexGraphQLClient, application.ID, tenant)
 
@@ -31,8 +31,8 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 	require.NoError(t, err)
 	externalServicesURL.Path = "external-api/spec"
 
-	pkgName := "test-package"
-	pkgInput := graphql.PackageCreateInput{
+	pkgName := "test-bundle"
+	pkgInput := graphql.BundleCreateInput{
 		Name: pkgName,
 		APIDefinitions: []*graphql.APIDefinitionInput{{
 			Name:      "test",
@@ -48,10 +48,10 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 		},
 	}
 
-	pkg := createPackageWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, pkgInput)
-	defer deletePackage(t, ctx, dexGraphQLClient, tenant, pkg.ID)
-	pkgID := pkg.ID
-	assertSpecInPackageNotNil(t, pkg)
+	pkg := createBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, pkgInput)
+	defer deleteBundle(t, ctx, dexGraphQLClient, tenant, pkg.ID)
+	bundleID := pkg.ID
+	assertSpecInBundleNotNil(t, pkg)
 	spec := *pkg.APIDefinitions.Data[0].Spec.APISpec.Data
 
 	var refetchedSpec graphql.APISpecExt
@@ -64,9 +64,9 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 	require.NotNil(t, refetchedSpec.APISpec.Data)
 	assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
 
-	pkg = getPackage(t, ctx, dexGraphQLClient, tenant, application.ID, pkgID)
+	pkg = getBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bundleID)
 
-	assertSpecInPackageNotNil(t, pkg)
+	assertSpecInBundleNotNil(t, pkg)
 	assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
 
 }

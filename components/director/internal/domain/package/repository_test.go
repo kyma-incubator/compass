@@ -1,4 +1,4 @@
-package mp_package_test
+package mp_bundle_test
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
+	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
@@ -26,9 +26,9 @@ func TestPgRepository_Create(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	pkgModel := fixPackageModel(t, name, desc)
-	pkgEntity := fixEntityPackage(packageID, name, desc)
-	insertQuery := `^INSERT INTO public.packages \(.+\) VALUES \(.+\)$`
+	pkgModel := fixBundleModel(t, name, desc)
+	pkgEntity := fixEntityBundle(bundleID, name, desc)
+	insertQuery := `^INSERT INTO public.bundles \(.+\) VALUES \(.+\)$`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -36,13 +36,13 @@ func TestPgRepository_Create(t *testing.T) {
 		require.NoError(t, err)
 
 		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixPackageCreateArgs(string(defAuth), *pkgModel.InstanceAuthRequestInputSchema, pkgModel)...).
+			WithArgs(fixBundleCreateArgs(string(defAuth), *pkgModel.InstanceAuthRequestInputSchema, pkgModel)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := automock.EntityConverter{}
 		convMock.On("ToEntity", pkgModel).Return(pkgEntity, nil).Once()
-		pgRepository := mp_package.NewRepository(&convMock)
+		pgRepository := mp_bundle.NewRepository(&convMock)
 		//WHEN
 		err = pgRepository.Create(ctx, pkgModel)
 		//THEN
@@ -54,8 +54,8 @@ func TestPgRepository_Create(t *testing.T) {
 	t.Run("returns error when conversion from model to entity failed", func(t *testing.T) {
 		ctx := context.TODO()
 		convMock := automock.EntityConverter{}
-		convMock.On("ToEntity", pkgModel).Return(&mp_package.Entity{}, errors.New("test error"))
-		pgRepository := mp_package.NewRepository(&convMock)
+		convMock.On("ToEntity", pkgModel).Return(&mp_bundle.Entity{}, errors.New("test error"))
+		pgRepository := mp_bundle.NewRepository(&convMock)
 		// WHEN
 		err := pgRepository.Create(ctx, pkgModel)
 		// THEN
@@ -67,7 +67,7 @@ func TestPgRepository_Create(t *testing.T) {
 	t.Run("returns error when item is nil", func(t *testing.T) {
 		ctx := context.TODO()
 		convMock := automock.EntityConverter{}
-		pgRepository := mp_package.NewRepository(&convMock)
+		pgRepository := mp_bundle.NewRepository(&convMock)
 		// WHEN
 		err := pgRepository.Create(ctx, nil)
 		// THEN
@@ -78,14 +78,14 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.packages SET name = ?, description = ?, instance_auth_request_json_schema = ?,
+	updateQuery := regexp.QuoteMeta(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?,
 		default_instance_auth = ? WHERE tenant_id = ? AND id = ?`)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pkg := fixPackageModel(t, "foo", "update")
-		entity := fixEntityPackage(packageID, "foo", "update")
+		pkg := fixBundleModel(t, "foo", "update")
+		entity := fixEntityBundle(bundleID, "foo", "update")
 
 		convMock := &automock.EntityConverter{}
 		convMock.On("ToEntity", pkg).Return(entity, nil)
@@ -93,7 +93,7 @@ func TestPgRepository_Update(t *testing.T) {
 			WithArgs(entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		pgRepository := mp_package.NewRepository(convMock)
+		pgRepository := mp_bundle.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.Update(ctx, pkg)
 		//THEN
@@ -105,10 +105,10 @@ func TestPgRepository_Update(t *testing.T) {
 	t.Run("returns error when conversion from model to entity failed", func(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pkgModel := &model.Package{}
+		pkgModel := &model.Bundle{}
 		convMock := &automock.EntityConverter{}
-		convMock.On("ToEntity", pkgModel).Return(&mp_package.Entity{}, errors.New("test error")).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("ToEntity", pkgModel).Return(&mp_bundle.Entity{}, errors.New("test error")).Once()
+		pgRepository := mp_bundle.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.Update(ctx, pkgModel)
 		//THEN
@@ -121,7 +121,7 @@ func TestPgRepository_Update(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		pgRepository := mp_package.NewRepository(convMock)
+		pgRepository := mp_bundle.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.Update(ctx, nil)
 		//THEN
@@ -134,13 +134,13 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM public.packages WHERE tenant_id = \$1 AND id = \$2$`
+	deleteQuery := `^DELETE FROM public.bundles WHERE tenant_id = \$1 AND id = \$2$`
 
-	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, packageID).WillReturnResult(sqlmock.NewResult(-1, 1))
+	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EntityConverter{}
-	pgRepository := mp_package.NewRepository(convMock)
+	pgRepository := mp_bundle.NewRepository(convMock)
 	//WHEN
-	err := pgRepository.Delete(ctx, tenantID, packageID)
+	err := pgRepository.Delete(ctx, tenantID, bundleID)
 	//THEN
 	require.NoError(t, err)
 	sqlMock.AssertExpectations(t)
@@ -151,13 +151,13 @@ func TestPgRepository_Exists(t *testing.T) {
 	//GIVEN
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(`SELECT 1 FROM public.packages WHERE tenant_id = $1 AND id = $2`)
+	existQuery := regexp.QuoteMeta(`SELECT 1 FROM public.bundles WHERE tenant_id = $1 AND id = $2`)
 
-	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, packageID).WillReturnRows(testdb.RowWhenObjectExist())
+	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, bundleID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.EntityConverter{}
-	pgRepository := mp_package.NewRepository(convMock)
+	pgRepository := mp_bundle.NewRepository(convMock)
 	//WHEN
-	found, err := pgRepository.Exists(ctx, tenantID, packageID)
+	found, err := pgRepository.Exists(ctx, tenantID, bundleID)
 	//THEN
 	require.NoError(t, err)
 	assert.True(t, found)
@@ -167,28 +167,28 @@ func TestPgRepository_Exists(t *testing.T) {
 
 func TestPgRepository_GetByID(t *testing.T) {
 	// given
-	pkgEntity := fixEntityPackage(packageID, "foo", "bar")
+	pkgEntity := fixEntityBundle(bundleID, "foo", "bar")
 
-	selectQuery := `^SELECT (.+) FROM public.packages WHERE tenant_id = \$1 AND id = \$2$`
+	selectQuery := `^SELECT (.+) FROM public.bundles WHERE tenant_id = \$1 AND id = \$2$`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(packageID, "placeholder")...)
+		rows := sqlmock.NewRows(fixBundleColumns()).
+			AddRow(fixBundleRow(bundleID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, bundleID).
 			WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", pkgEntity).Return(&model.Package{ID: packageID, TenantID: tenantID}, nil).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", pkgEntity).Return(&model.Bundle{ID: bundleID, TenantID: tenantID}, nil).Once()
+		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
-		modelPkg, err := pgRepository.GetByID(ctx, tenantID, packageID)
+		modelPkg, err := pgRepository.GetByID(ctx, tenantID, bundleID)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, packageID, modelPkg.ID)
+		assert.Equal(t, bundleID, modelPkg.ID)
 		assert.Equal(t, tenantID, modelPkg.TenantID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
@@ -196,41 +196,41 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		repo := mp_package.NewRepository(nil)
+		repo := mp_bundle.NewRepository(nil)
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, bundleID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		// when
-		modelPkg, err := repo.GetByID(ctx, tenantID, packageID)
+		modelPkg, err := repo.GetByID(ctx, tenantID, bundleID)
 		// then
 
 		sqlMock.AssertExpectations(t)
 		assert.Nil(t, modelPkg)
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.packages: test error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.bundles: test error")
 	})
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(packageID, "placeholder")...)
+		rows := sqlmock.NewRows(fixBundleColumns()).
+			AddRow(fixBundleRow(bundleID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, bundleID).
 			WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", pkgEntity).Return(&model.Package{}, testError).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", pkgEntity).Return(&model.Bundle{}, testError).Once()
+		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
-		_, err := pgRepository.GetByID(ctx, tenantID, packageID)
+		_, err := pgRepository.GetByID(ctx, tenantID, bundleID)
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testError.Error())
@@ -242,14 +242,14 @@ func TestPgRepository_GetByID(t *testing.T) {
 func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 	// given
 	instanceAuthID := "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	pkgEntity := fixEntityPackage(packageID, "foo", "bar")
+	pkgEntity := fixEntityBundle(bundleID, "foo", "bar")
 
-	selectQuery := `^SELECT p.id, p.tenant_id, p.app_id, p.name, p.description, p.instance_auth_request_json_schema, p.default_instance_auth FROM public.packages AS p JOIN public.package_instance_auths AS a on a.package_id=p.id where a.tenant_id=\$1 AND a.id=\$2`
+	selectQuery := `^SELECT p.id, p.tenant_id, p.app_id, p.name, p.description, p.instance_auth_request_json_schema, p.default_instance_auth FROM public.bundles AS p JOIN public.bundle_instance_auths AS a on a.bundle_id=p.id where a.tenant_id=\$1 AND a.id=\$2`
 
 	t.Run("Success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(packageID, "placeholder")...)
+		rows := sqlmock.NewRows(fixBundleColumns()).
+			AddRow(fixBundleRow(bundleID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, instanceAuthID).
@@ -257,13 +257,13 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", pkgEntity).Return(&model.Package{ID: packageID, TenantID: tenantID, ApplicationID: appID}, nil).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", pkgEntity).Return(&model.Bundle{ID: bundleID, TenantID: tenantID, ApplicationID: appID}, nil).Once()
+		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
 		modelPkg, err := pgRepository.GetByInstanceAuthID(ctx, tenantID, instanceAuthID)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, packageID, modelPkg.ID)
+		assert.Equal(t, bundleID, modelPkg.ID)
 		assert.Equal(t, tenantID, modelPkg.TenantID)
 		assert.Equal(t, appID, modelPkg.ApplicationID)
 		convMock.AssertExpectations(t)
@@ -272,7 +272,7 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		repo := mp_package.NewRepository(nil)
+		repo := mp_bundle.NewRepository(nil)
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 
@@ -288,14 +288,14 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 
 		sqlMock.AssertExpectations(t)
 		assert.Nil(t, modelPkg)
-		require.EqualError(t, err, fmt.Sprintf("while getting Package by Instance Auth ID: %s", testError.Error()))
+		require.EqualError(t, err, fmt.Sprintf("while getting Bundle by Instance Auth ID: %s", testError.Error()))
 	})
 
 	t.Run("Returns error when conversion failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(packageID, "placeholder")...)
+		rows := sqlmock.NewRows(fixBundleColumns()).
+			AddRow(fixBundleRow(bundleID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, instanceAuthID).
@@ -303,8 +303,8 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", pkgEntity).Return(&model.Package{}, testError).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", pkgEntity).Return(&model.Bundle{}, testError).Once()
+		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
 		_, err := pgRepository.GetByInstanceAuthID(ctx, tenantID, instanceAuthID)
 		//THEN
@@ -317,28 +317,28 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 
 func TestPgRepository_GetForApplication(t *testing.T) {
 	// given
-	pkgEntity := fixEntityPackage(packageID, "foo", "bar")
+	pkgEntity := fixEntityBundle(bundleID, "foo", "bar")
 
-	selectQuery := `^SELECT (.+) FROM public.packages WHERE tenant_id = \$1 AND id = \$2 AND app_id = \$3`
+	selectQuery := `^SELECT (.+) FROM public.bundles WHERE tenant_id = \$1 AND id = \$2 AND app_id = \$3`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(packageID, "placeholder")...)
+		rows := sqlmock.NewRows(fixBundleColumns()).
+			AddRow(fixBundleRow(bundleID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID, appID).
+			WithArgs(tenantID, bundleID, appID).
 			WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", pkgEntity).Return(&model.Package{ID: packageID, TenantID: tenantID, ApplicationID: appID}, nil).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", pkgEntity).Return(&model.Bundle{ID: bundleID, TenantID: tenantID, ApplicationID: appID}, nil).Once()
+		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
-		modelPkg, err := pgRepository.GetForApplication(ctx, tenantID, packageID, appID)
+		modelPkg, err := pgRepository.GetForApplication(ctx, tenantID, bundleID, appID)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, packageID, modelPkg.ID)
+		assert.Equal(t, bundleID, modelPkg.ID)
 		assert.Equal(t, tenantID, modelPkg.TenantID)
 		assert.Equal(t, appID, modelPkg.ApplicationID)
 		convMock.AssertExpectations(t)
@@ -347,41 +347,41 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		repo := mp_package.NewRepository(nil)
+		repo := mp_bundle.NewRepository(nil)
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID, appID).
+			WithArgs(tenantID, bundleID, appID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		// when
-		modelPkg, err := repo.GetForApplication(ctx, tenantID, packageID, appID)
+		modelPkg, err := repo.GetForApplication(ctx, tenantID, bundleID, appID)
 		// then
 
 		sqlMock.AssertExpectations(t)
 		assert.Nil(t, modelPkg)
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.packages: test error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from table public.bundles: test error")
 	})
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(packageID, "placeholder")...)
+		rows := sqlmock.NewRows(fixBundleColumns()).
+			AddRow(fixBundleRow(bundleID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID, appID).
+			WithArgs(tenantID, bundleID, appID).
 			WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", pkgEntity).Return(&model.Package{}, testError).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", pkgEntity).Return(&model.Bundle{}, testError).Once()
+		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
-		_, err := pgRepository.GetForApplication(ctx, tenantID, packageID, appID)
+		_, err := pgRepository.GetForApplication(ctx, tenantID, bundleID, appID)
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testError.Error())
@@ -398,24 +398,24 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	inputPageSize := 3
 	inputCursor := ""
 	totalCount := 2
-	firstPkgID := "111111111-1111-1111-1111-111111111111"
-	firstPkgEntity := fixEntityPackage(firstPkgID, "foo", "bar")
-	secondPkgID := "222222222-2222-2222-2222-222222222222"
-	secondPkgEntity := fixEntityPackage(secondPkgID, "foo", "bar")
+	firstBundleID := "111111111-1111-1111-1111-111111111111"
+	firstPkgEntity := fixEntityBundle(firstBundleID, "foo", "bar")
+	secondBundleID := "222222222-2222-2222-2222-222222222222"
+	secondPkgEntity := fixEntityBundle(secondBundleID, "foo", "bar")
 
-	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.packages
+	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundles
 		WHERE tenant_id = \$1 AND app_id = \$2
 		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
-	rawCountQuery := `SELECT COUNT(*) FROM public.packages
+	rawCountQuery := `SELECT COUNT(*) FROM public.bundles
 		WHERE tenant_id = $1 AND app_id = $2`
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(firstPkgID, "placeholder")...).
-			AddRow(fixPackageRow(secondPkgID, "placeholder")...)
+		rows := sqlmock.NewRows(fixBundleColumns()).
+			AddRow(fixBundleRow(firstBundleID, "placeholder")...).
+			AddRow(fixBundleRow(secondBundleID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, appID).
@@ -427,16 +427,16 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstPkgEntity).Return(&model.Package{ID: firstPkgID}, nil)
-		convMock.On("FromEntity", secondPkgEntity).Return(&model.Package{ID: secondPkgID}, nil)
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", firstPkgEntity).Return(&model.Bundle{ID: firstBundleID}, nil)
+		convMock.On("FromEntity", secondPkgEntity).Return(&model.Bundle{ID: secondBundleID}, nil)
+		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
 		modelPkg, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelPkg.Data, 2)
-		assert.Equal(t, firstPkgID, modelPkg.Data[0].ID)
-		assert.Equal(t, secondPkgID, modelPkg.Data[1].ID)
+		assert.Equal(t, firstBundleID, modelPkg.Data[0].ID)
+		assert.Equal(t, secondBundleID, modelPkg.Data[1].ID)
 		assert.Equal(t, "", modelPkg.PageInfo.StartCursor)
 		assert.Equal(t, totalCount, modelPkg.TotalCount)
 		convMock.AssertExpectations(t)
@@ -445,7 +445,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		repo := mp_package.NewRepository(nil)
+		repo := mp_bundle.NewRepository(nil)
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 
@@ -466,8 +466,8 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	t.Run("returns error when conversion from entity to model failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testErr := errors.New("test error")
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow(firstPkgID, "foo")...)
+		rows := sqlmock.NewRows(fixBundleColumns()).
+			AddRow(fixBundleRow(firstBundleID, "foo")...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, appID).
@@ -479,8 +479,8 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstPkgEntity).Return(&model.Package{}, testErr).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", firstPkgEntity).Return(&model.Bundle{}, testErr).Once()
+		pgRepository := mp_bundle.NewRepository(convMock)
 		//WHEN
 		_, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
 		//THEN

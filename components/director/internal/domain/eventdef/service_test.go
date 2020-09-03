@@ -94,11 +94,11 @@ func TestService_Get(t *testing.T) {
 	})
 }
 
-func TestService_GetForPackage(t *testing.T) {
+func TestService_GetForBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 	id := "foo"
-	packageID := "test"
+	bundleID := "test"
 	eventAPIDefinition := fixMinModelEventAPIDefinition(id, "placeholder")
 
 	ctx := context.TODO()
@@ -109,7 +109,7 @@ func TestService_GetForPackage(t *testing.T) {
 		RepositoryFn       func() *automock.EventAPIRepository
 		Input              model.EventDefinitionInput
 		InputID            string
-		PackageID          string
+		BundleID           string
 		ExpectedEventDef   *model.EventDefinition
 		ExpectedErrMessage string
 	}{
@@ -117,11 +117,11 @@ func TestService_GetForPackage(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("GetForPackage", ctx, tenantID, id, packageID).Return(eventAPIDefinition, nil).Once()
+				repo.On("GetForBundle", ctx, tenantID, id, bundleID).Return(eventAPIDefinition, nil).Once()
 				return repo
 			},
 			InputID:            id,
-			PackageID:          packageID,
+			BundleID:           bundleID,
 			ExpectedEventDef:   eventAPIDefinition,
 			ExpectedErrMessage: "",
 		},
@@ -129,11 +129,11 @@ func TestService_GetForPackage(t *testing.T) {
 			Name: "Returns error when Event Definition retrieval failed",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("GetForPackage", ctx, tenantID, id, packageID).Return(nil, testErr).Once()
+				repo.On("GetForBundle", ctx, tenantID, id, bundleID).Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:            id,
-			PackageID:          packageID,
+			BundleID:           bundleID,
 			ExpectedEventDef:   eventAPIDefinition,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -146,7 +146,7 @@ func TestService_GetForPackage(t *testing.T) {
 			svc := eventdef.NewService(repo, nil, nil)
 
 			// when
-			eventAPIDefinition, err := svc.GetForPackage(ctx, testCase.InputID, testCase.PackageID)
+			eventAPIDefinition, err := svc.GetForBundle(ctx, testCase.InputID, testCase.BundleID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -162,19 +162,19 @@ func TestService_GetForPackage(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
-		_, err := svc.GetForPackage(context.TODO(), "", "")
+		_, err := svc.GetForBundle(context.TODO(), "", "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
-func TestService_ListForPackage(t *testing.T) {
+func TestService_ListForBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	packageID := "bar"
+	bundleID := "bar"
 
 	eventAPIDefinitions := []*model.EventDefinition{
 		fixMinModelEventAPIDefinition(id, "placeholder"),
@@ -209,7 +209,7 @@ func TestService_ListForPackage(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("ListForPackage", ctx, tenantID, packageID, first, after).Return(eventAPIDefinitionPage, nil).Once()
+				repo.On("ListForBundle", ctx, tenantID, bundleID, first, after).Return(eventAPIDefinitionPage, nil).Once()
 				return repo
 			},
 			InputPageSize:      first,
@@ -243,7 +243,7 @@ func TestService_ListForPackage(t *testing.T) {
 			Name: "Returns error when Event Definition listing failed",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("ListForPackage", ctx, tenantID, packageID, first, after).Return(nil, testErr).Once()
+				repo.On("ListForBundle", ctx, tenantID, bundleID, first, after).Return(nil, testErr).Once()
 				return repo
 			},
 			InputPageSize:      first,
@@ -260,7 +260,7 @@ func TestService_ListForPackage(t *testing.T) {
 			svc := eventdef.NewService(repo, nil, nil)
 
 			// when
-			docs, err := svc.ListForPackage(ctx, packageID, testCase.InputPageSize, testCase.InputCursor)
+			docs, err := svc.ListForBundle(ctx, bundleID, testCase.InputPageSize, testCase.InputCursor)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -276,19 +276,19 @@ func TestService_ListForPackage(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
-		_, err := svc.ListForPackage(context.TODO(), "", 5, "")
+		_, err := svc.ListForBundle(context.TODO(), "", 5, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
-func TestService_CreateToPackage(t *testing.T) {
+func TestService_CreateToBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	packageID := "pkgid"
+	bundleID := "pkgid"
 	name := "Foo"
 
 	timestamp := time.Now()
@@ -306,12 +306,12 @@ func TestService_CreateToPackage(t *testing.T) {
 	}
 
 	modelEventAPIDefinition := &model.EventDefinition{
-		ID:        id,
-		Tenant:    tenantID,
-		PackageID: packageID,
-		Name:      name,
-		Spec:      &model.EventSpec{},
-		Version:   &model.Version{},
+		ID:       id,
+		Tenant:   tenantID,
+		BundleID: bundleID,
+		Name:     name,
+		Spec:     &model.EventSpec{},
+		Version:  &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -399,7 +399,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.CreateInPackage(ctx, packageID, testCase.Input)
+			result, err := svc.CreateInBundle(ctx, bundleID, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -417,7 +417,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
-		_, err := svc.CreateInPackage(context.TODO(), "", model.EventDefinitionInput{})
+		_, err := svc.CreateInBundle(context.TODO(), "", model.EventDefinitionInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -448,11 +448,11 @@ func TestService_Update(t *testing.T) {
 	})
 
 	eventAPIDefinitionModel := &model.EventDefinition{
-		Name:      "Bar",
-		Tenant:    tenantID,
-		PackageID: "id",
-		Spec:      &model.EventSpec{},
-		Version:   &model.Version{},
+		Name:     "Bar",
+		Tenant:   tenantID,
+		BundleID: "id",
+		Spec:     &model.EventSpec{},
+		Version:  &model.Version{},
 	}
 
 	ctx := context.TODO()

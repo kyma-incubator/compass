@@ -106,7 +106,7 @@ func TestService_Create(t *testing.T) {
 		IntSysRepoFn       func() *automock.IntegrationSystemRepository
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
-		BundleServiceFn   func() *automock.BundleService
+		BundleServiceFn    func() *automock.BundleService
 		UIDServiceFn       func() *automock.UIDService
 		Input              model.ApplicationRegisterInput
 		ExpectedErr        error
@@ -196,8 +196,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -247,8 +247,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -292,8 +292,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -337,8 +337,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -378,8 +378,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -417,8 +417,8 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -455,8 +455,8 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -505,9 +505,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Packages).Return(testErr).Once()
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(testErr).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -529,7 +529,7 @@ func TestService_Create(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			pkgSvc := testCase.PackageServiceFn()
+			pkgSvc := testCase.BundleServiceFn()
 			svc := application.NewService(nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, pkgSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 

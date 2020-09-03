@@ -84,13 +84,13 @@ func (_m *DocumentRepository) GetByID(ctx context.Context, tenant string, id str
 	return r0, r1
 }
 
-// GetForPackage provides a mock function with given fields: ctx, tenant, id, packageID
-func (_m *DocumentRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.Document, error) {
-	ret := _m.Called(ctx, tenant, id, packageID)
+// GetForBundle provides a mock function with given fields: ctx, tenant, id, bundleID
+func (_m *DocumentRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error) {
+	ret := _m.Called(ctx, tenant, id, bundleID)
 
 	var r0 *model.Document
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.Document); ok {
-		r0 = rf(ctx, tenant, id, packageID)
+		r0 = rf(ctx, tenant, id, bundleID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Document)
@@ -99,7 +99,7 @@ func (_m *DocumentRepository) GetForPackage(ctx context.Context, tenant string, 
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, tenant, id, packageID)
+		r1 = rf(ctx, tenant, id, bundleID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -130,13 +130,13 @@ func (_m *DocumentRepository) ListForApplication(ctx context.Context, tenant str
 	return r0, r1
 }
 
-// ListForPackage provides a mock function with given fields: ctx, tenant, packageID, pageSize, cursor
-func (_m *DocumentRepository) ListForPackage(ctx context.Context, tenant string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {
-	ret := _m.Called(ctx, tenant, packageID, pageSize, cursor)
+// ListForBundle provides a mock function with given fields: ctx, tenant, bundleID, pageSize, cursor
+func (_m *DocumentRepository) ListForBundle(ctx context.Context, tenant string, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+	ret := _m.Called(ctx, tenant, bundleID, pageSize, cursor)
 
 	var r0 *model.DocumentPage
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.DocumentPage); ok {
-		r0 = rf(ctx, tenant, packageID, pageSize, cursor)
+		r0 = rf(ctx, tenant, bundleID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.DocumentPage)
@@ -145,7 +145,7 @@ func (_m *DocumentRepository) ListForPackage(ctx context.Context, tenant string,
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
-		r1 = rf(ctx, tenant, packageID, pageSize, cursor)
+		r1 = rf(ctx, tenant, bundleID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

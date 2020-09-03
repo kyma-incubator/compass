@@ -14,13 +14,13 @@ type EventService struct {
 	mock.Mock
 }
 
-// GetForPackage provides a mock function with given fields: ctx, id, packageID
-func (_m *EventService) GetForPackage(ctx context.Context, id string, packageID string) (*model.EventDefinition, error) {
-	ret := _m.Called(ctx, id, packageID)
+// GetForBundle provides a mock function with given fields: ctx, id, bundleID
+func (_m *EventService) GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error) {
+	ret := _m.Called(ctx, id, bundleID)
 
 	var r0 *model.EventDefinition
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.EventDefinition); ok {
-		r0 = rf(ctx, id, packageID)
+		r0 = rf(ctx, id, bundleID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.EventDefinition)
@@ -29,7 +29,7 @@ func (_m *EventService) GetForPackage(ctx context.Context, id string, packageID 
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, id, packageID)
+		r1 = rf(ctx, id, bundleID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -37,13 +37,13 @@ func (_m *EventService) GetForPackage(ctx context.Context, id string, packageID 
 	return r0, r1
 }
 
-// ListForPackage provides a mock function with given fields: ctx, packageID, pageSize, cursor
-func (_m *EventService) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	ret := _m.Called(ctx, packageID, pageSize, cursor)
+// ListForBundle provides a mock function with given fields: ctx, bundleID, pageSize, cursor
+func (_m *EventService) ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+	ret := _m.Called(ctx, bundleID, pageSize, cursor)
 
 	var r0 *model.EventDefinitionPage
 	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.EventDefinitionPage); ok {
-		r0 = rf(ctx, packageID, pageSize, cursor)
+		r0 = rf(ctx, bundleID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.EventDefinitionPage)
@@ -52,7 +52,7 @@ func (_m *EventService) ListForPackage(ctx context.Context, packageID string, pa
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
-		r1 = rf(ctx, packageID, pageSize, cursor)
+		r1 = rf(ctx, bundleID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

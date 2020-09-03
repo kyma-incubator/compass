@@ -8,189 +8,189 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRequestPackageInstanceAuthCreation(t *testing.T) {
+func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-package")
+	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createPackage(t, ctx, application.ID, "pkg-app-1")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	authCtx, inputParams := fixPackageInstanceAuthContextAndInputParams(t)
-	pkgInstanceAuthRequestInput := fixPackageInstanceAuthRequestInput(authCtx, inputParams)
-	pkgInstanceAuthRequestInputStr, err := tc.graphqlizer.PackageInstanceAuthRequestInputToGQL(pkgInstanceAuthRequestInput)
+	authCtx, inputParams := fixBundleInstanceAuthContextAndInputParams(t)
+	pkgInstanceAuthRequestInput := fixBundleInstanceAuthRequestInput(authCtx, inputParams)
+	pkgInstanceAuthRequestInputStr, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(pkgInstanceAuthRequestInput)
 	require.NoError(t, err)
 
-	pkgInstanceAuthCreationRequestReq := fixRequestPackageInstanceAuthCreationRequest(pkg.ID, pkgInstanceAuthRequestInputStr)
-	output := graphql.PackageInstanceAuth{}
+	pkgInstanceAuthCreationRequestReq := fixRequestBundleInstanceAuthCreationRequest(pkg.ID, pkgInstanceAuthRequestInputStr)
+	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
-	t.Log("Request package instance auth creation")
+	t.Log("Request bundle instance auth creation")
 	err = tc.RunOperation(ctx, pkgInstanceAuthCreationRequestReq, &output)
 
 	// THEN
 	require.NoError(t, err)
-	assertPackageInstanceAuth(t, pkgInstanceAuthRequestInput, output)
+	assertBundleInstanceAuth(t, pkgInstanceAuthRequestInput, output)
 
-	saveExample(t, pkgInstanceAuthCreationRequestReq.Query(), "request package instance auth creation")
+	saveExample(t, pkgInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
 
-	// Fetch Application with packages
-	packagesForApplicationReq := fixPackagesRequest(application.ID)
+	// Fetch Application with bundles
+	bundlesForApplicationReq := fixBundlesRequest(application.ID)
 	pkgFromAPI := graphql.ApplicationExt{}
 
-	err = tc.RunOperation(ctx, packagesForApplicationReq, &pkgFromAPI)
+	err = tc.RunOperation(ctx, bundlesForApplicationReq, &pkgFromAPI)
 	require.NoError(t, err)
 
-	// Assert the package instance auths exists
-	require.Equal(t, 1, len(pkgFromAPI.Packages.Data))
-	require.Equal(t, 1, len(pkgFromAPI.Packages.Data[0].InstanceAuths))
+	// Assert the bundle instance auths exists
+	require.Equal(t, 1, len(pkgFromAPI.Bundles.Data))
+	require.Equal(t, 1, len(pkgFromAPI.Bundles.Data[0].InstanceAuths))
 
-	// Fetch Application with package
-	instanceAuthID := pkgFromAPI.Packages.Data[0].InstanceAuths[0].ID
-	packagesForApplicationWithInstanceAuthReq := fixPackageWithInstanceAuthRequest(application.ID, pkg.ID, instanceAuthID)
+	// Fetch Application with bundle
+	instanceAuthID := pkgFromAPI.Bundles.Data[0].InstanceAuths[0].ID
+	bundlesForApplicationWithInstanceAuthReq := fixBundleWithInstanceAuthRequest(application.ID, pkg.ID, instanceAuthID)
 
-	err = tc.RunOperation(ctx, packagesForApplicationWithInstanceAuthReq, &pkgFromAPI)
+	err = tc.RunOperation(ctx, bundlesForApplicationWithInstanceAuthReq, &pkgFromAPI)
 	require.NoError(t, err)
 
-	// Assert the package instance auth exist
-	require.Equal(t, instanceAuthID, pkgFromAPI.Package.InstanceAuth.ID)
-	require.Equal(t, graphql.PackageInstanceAuthStatusConditionPending, pkgFromAPI.Package.InstanceAuth.Status.Condition)
+	// Assert the bundle instance auth exist
+	require.Equal(t, instanceAuthID, pkgFromAPI.Bundle.InstanceAuth.ID)
+	require.Equal(t, graphql.BundleInstanceAuthStatusConditionPending, pkgFromAPI.Bundle.InstanceAuth.Status.Condition)
 }
 
-func TestRequestPackageInstanceAuthCreationWithDefaultAuth(t *testing.T) {
+func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-package")
+	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
 	authInput := fixBasicAuth(t)
 
-	pkgInput := fixPackageCreateInputWithDefaultAuth("pkg-app-1", authInput)
-	pkg, err := tc.graphqlizer.PackageCreateInputToGQL(pkgInput)
+	pkgInput := fixBundleCreateInputWithDefaultAuth("pkg-app-1", authInput)
+	pkg, err := tc.graphqlizer.BundleCreateInputToGQL(pkgInput)
 	require.NoError(t, err)
 
-	addPkgRequest := fixAddPackageRequest(application.ID, pkg)
-	pkgAddOutput := graphql.Package{}
+	addPkgRequest := fixAddBundleRequest(application.ID, pkg)
+	pkgAddOutput := graphql.Bundle{}
 
 	err = tc.RunOperation(ctx, addPkgRequest, &pkgAddOutput)
-	defer deletePackage(t, ctx, pkgAddOutput.ID)
+	defer deleteBundle(t, ctx, pkgAddOutput.ID)
 	require.NoError(t, err)
 
-	pkgInstanceAuthRequestInput := fixPackageInstanceAuthRequestInput(nil, nil)
-	pkgInstanceAuthRequestInputStr, err := tc.graphqlizer.PackageInstanceAuthRequestInputToGQL(pkgInstanceAuthRequestInput)
+	pkgInstanceAuthRequestInput := fixBundleInstanceAuthRequestInput(nil, nil)
+	pkgInstanceAuthRequestInputStr, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(pkgInstanceAuthRequestInput)
 	require.NoError(t, err)
 
-	pkgInstanceAuthCreationRequestReq := fixRequestPackageInstanceAuthCreationRequest(pkgAddOutput.ID, pkgInstanceAuthRequestInputStr)
-	authOutput := graphql.PackageInstanceAuth{}
+	pkgInstanceAuthCreationRequestReq := fixRequestBundleInstanceAuthCreationRequest(pkgAddOutput.ID, pkgInstanceAuthRequestInputStr)
+	authOutput := graphql.BundleInstanceAuth{}
 
 	// WHEN
-	t.Log("Request package instance auth creation")
+	t.Log("Request bundle instance auth creation")
 	err = tc.RunOperation(ctx, pkgInstanceAuthCreationRequestReq, &authOutput)
 
 	// THEN
 	require.NoError(t, err)
 
-	// Fetch Application with packages
-	packagesForApplicationReq := fixPackagesRequest(application.ID)
+	// Fetch Application with bundles
+	bundlesForApplicationReq := fixBundlesRequest(application.ID)
 	pkgFromAPI := graphql.ApplicationExt{}
 
-	err = tc.RunOperation(ctx, packagesForApplicationReq, &pkgFromAPI)
+	err = tc.RunOperation(ctx, bundlesForApplicationReq, &pkgFromAPI)
 	require.NoError(t, err)
 
-	// Assert the package instance auths exists
-	require.Equal(t, 1, len(pkgFromAPI.Packages.Data))
-	require.Equal(t, 1, len(pkgFromAPI.Packages.Data[0].InstanceAuths))
+	// Assert the bundle instance auths exists
+	require.Equal(t, 1, len(pkgFromAPI.Bundles.Data))
+	require.Equal(t, 1, len(pkgFromAPI.Bundles.Data[0].InstanceAuths))
 
-	// Fetch Application with package
-	instanceAuthID := pkgFromAPI.Packages.Data[0].InstanceAuths[0].ID
-	packagesForApplicationWithInstanceAuthReq := fixPackageWithInstanceAuthRequest(application.ID, pkgAddOutput.ID, instanceAuthID)
+	// Fetch Application with bundle
+	instanceAuthID := pkgFromAPI.Bundles.Data[0].InstanceAuths[0].ID
+	bundlesForApplicationWithInstanceAuthReq := fixBundleWithInstanceAuthRequest(application.ID, pkgAddOutput.ID, instanceAuthID)
 
-	err = tc.RunOperation(ctx, packagesForApplicationWithInstanceAuthReq, &pkgFromAPI)
+	err = tc.RunOperation(ctx, bundlesForApplicationWithInstanceAuthReq, &pkgFromAPI)
 	require.NoError(t, err)
 
-	// Assert the package instance auth exist
-	require.Equal(t, instanceAuthID, pkgFromAPI.Package.InstanceAuth.ID)
+	// Assert the bundle instance auth exist
+	require.Equal(t, instanceAuthID, pkgFromAPI.Bundle.InstanceAuth.ID)
 
-	require.Equal(t, graphql.PackageInstanceAuthStatusConditionSucceeded, pkgFromAPI.Package.InstanceAuth.Status.Condition)
-	assertAuth(t, authInput, pkgFromAPI.Package.InstanceAuth.Auth)
+	require.Equal(t, graphql.BundleInstanceAuthStatusConditionSucceeded, pkgFromAPI.Bundle.InstanceAuth.Status.Condition)
+	assertAuth(t, authInput, pkgFromAPI.Bundle.InstanceAuth.Auth)
 }
 
-func TestRequestPackageInstanceAuthDeletion(t *testing.T) {
+func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-package")
+	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createPackage(t, ctx, application.ID, "pkg-app-1")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	pkgInstanceAuth := createPackageInstanceAuth(t, ctx, pkg.ID)
+	pkgInstanceAuth := createBundleInstanceAuth(t, ctx, pkg.ID)
 
-	pkgInstanceAuthDeletionRequestReq := fixRequestPackageInstanceAuthDeletionRequest(pkgInstanceAuth.ID)
-	output := graphql.PackageInstanceAuth{}
+	pkgInstanceAuthDeletionRequestReq := fixRequestBundleInstanceAuthDeletionRequest(pkgInstanceAuth.ID)
+	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
-	t.Log("Request package instance auth deletion")
+	t.Log("Request bundle instance auth deletion")
 	err := tc.RunOperation(ctx, pkgInstanceAuthDeletionRequestReq, &output)
 
 	// THEN
 	require.NoError(t, err)
 
-	saveExample(t, pkgInstanceAuthDeletionRequestReq.Query(), "request package instance auth deletion")
+	saveExample(t, pkgInstanceAuthDeletionRequestReq.Query(), "request bundle instance auth deletion")
 }
 
-func TestSetPackageInstanceAuth(t *testing.T) {
+func TestSetBundleInstanceAuth(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-package")
+	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createPackage(t, ctx, application.ID, "pkg-app-1")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	pkgInstanceAuth := createPackageInstanceAuth(t, ctx, pkg.ID)
+	pkgInstanceAuth := createBundleInstanceAuth(t, ctx, pkg.ID)
 
 	authInput := fixBasicAuth(t)
-	pkgInstanceAuthSetInput := fixPackageInstanceAuthSetInputSucceeded(authInput)
-	pkgInstanceAuthSetInputStr, err := tc.graphqlizer.PackageInstanceAuthSetInputToGQL(pkgInstanceAuthSetInput)
+	pkgInstanceAuthSetInput := fixBundleInstanceAuthSetInputSucceeded(authInput)
+	pkgInstanceAuthSetInputStr, err := tc.graphqlizer.BundleInstanceAuthSetInputToGQL(pkgInstanceAuthSetInput)
 	require.NoError(t, err)
 
-	setPackageInstanceAuthReq := fixSetPackageInstanceAuthRequest(pkgInstanceAuth.ID, pkgInstanceAuthSetInputStr)
-	output := graphql.PackageInstanceAuth{}
+	setBundleInstanceAuthReq := fixSetBundleInstanceAuthRequest(pkgInstanceAuth.ID, pkgInstanceAuthSetInputStr)
+	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
-	t.Log("Set package instance auth")
-	err = tc.RunOperation(ctx, setPackageInstanceAuthReq, &output)
+	t.Log("Set bundle instance auth")
+	err = tc.RunOperation(ctx, setBundleInstanceAuthReq, &output)
 
 	// THEN
 	require.NoError(t, err)
-	require.Equal(t, graphql.PackageInstanceAuthStatusConditionSucceeded, output.Status.Condition)
+	require.Equal(t, graphql.BundleInstanceAuthStatusConditionSucceeded, output.Status.Condition)
 	assertAuth(t, authInput, output.Auth)
 
-	saveExample(t, setPackageInstanceAuthReq.Query(), "set package instance auth")
+	saveExample(t, setBundleInstanceAuthReq.Query(), "set bundle instance auth")
 }
 
-func TestDeletePackageInstanceAuth(t *testing.T) {
+func TestDeleteBundleInstanceAuth(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-package")
+	application := registerApplication(t, ctx, "app-test-bundle")
 	defer unregisterApplication(t, application.ID)
 
-	pkg := createPackage(t, ctx, application.ID, "pkg-app-1")
-	defer deletePackage(t, ctx, pkg.ID)
+	pkg := createBundle(t, ctx, application.ID, "pkg-app-1")
+	defer deleteBundle(t, ctx, pkg.ID)
 
-	pkgInstanceAuth := createPackageInstanceAuth(t, ctx, pkg.ID)
+	pkgInstanceAuth := createBundleInstanceAuth(t, ctx, pkg.ID)
 
-	deletePackageInstanceAuthReq := fixDeletePackageInstanceAuthRequest(pkgInstanceAuth.ID)
-	output := graphql.PackageInstanceAuth{}
+	deleteBundleInstanceAuthReq := fixDeleteBundleInstanceAuthRequest(pkgInstanceAuth.ID)
+	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
-	t.Log("Delete package instance auth")
-	err := tc.RunOperation(ctx, deletePackageInstanceAuthReq, &output)
+	t.Log("Delete bundle instance auth")
+	err := tc.RunOperation(ctx, deleteBundleInstanceAuthReq, &output)
 
 	// THEN
 	require.NoError(t, err)
 
-	saveExample(t, deletePackageInstanceAuthReq.Query(), "delete package instance auth")
+	saveExample(t, deleteBundleInstanceAuthReq.Query(), "delete bundle instance auth")
 }

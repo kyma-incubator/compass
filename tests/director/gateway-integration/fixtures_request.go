@@ -80,28 +80,28 @@ func fixGetViewerRequest() *gcli.Request {
 }
 
 // ADD
-func fixAddAPIToPackageRequest(pkgID, APIInputGQL string) *gcli.Request {
+func fixAddAPIToBundleRequest(bundleID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addAPIDefinitionToPackage(packageID: "%s", in: %s) {
+		result: addAPIDefinitionToBundle(bundleID: "%s", in: %s) {
 				%s
 			}
 		}
-		`, pkgID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+		`, bundleID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
-func fixPackageCreateInput(name string) graphql.PackageCreateInput {
-	return graphql.PackageCreateInput{
+func fixBundleCreateInput(name string) graphql.BundleCreateInput {
+	return graphql.BundleCreateInput{
 		Name: name,
 	}
 }
 
-func fixAddPackageRequest(appID, pkgCreateInput string) *gcli.Request {
+func fixAddBundleRequest(appID, pkgCreateInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: addPackage(applicationID: "%s", in: %s) {
+			result: addBundle(applicationID: "%s", in: %s) {
 				%s
-			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForPackage()))
+			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForBundle()))
 }
 
 // UPDATE
@@ -177,13 +177,13 @@ func fixDeleteApplicationTemplateRequest(appTemplateID string) *gcli.Request {
 			}`, appTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
 }
 
-func fixDeletePackageRequest(packageID string) *gcli.Request {
+func fixDeleteBundleRequest(bundleID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: deletePackage(id: "%s") {
+			result: deleteBundle(id: "%s") {
 				%s
 			}
-		}`, packageID, tc.gqlFieldsProvider.ForPackage()))
+		}`, bundleID, tc.gqlFieldsProvider.ForBundle()))
 }
 
 //GET

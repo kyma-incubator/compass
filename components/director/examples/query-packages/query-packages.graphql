@@ -51,7 +51,7 @@ query {
       }
     }
     healthCheckURL
-    packages {
+    bundles {
       data {
         id
         name

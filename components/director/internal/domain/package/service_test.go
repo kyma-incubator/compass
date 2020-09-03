@@ -1,4 +1,4 @@
-package mp_package_test
+package mp_bundle_test
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 
 	"github.com/stretchr/testify/require"
 
@@ -33,7 +33,7 @@ func TestService_Create(t *testing.T) {
 	desc := "bar"
 	spec := "test"
 
-	modelInput := model.PackageCreateInput{
+	modelInput := model.BundleCreateInput{
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
@@ -56,7 +56,7 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 
-	modelPackage := &model.Package{
+	modelBundle := &model.Bundle{
 		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
@@ -72,21 +72,21 @@ func TestService_Create(t *testing.T) {
 
 	testCases := []struct {
 		Name                  string
-		RepositoryFn          func() *automock.PackageRepository
+		RepositoryFn          func() *automock.BundleRepository
 		APIRepoFn             func() *automock.APIRepository
 		EventAPIRepoFn        func() *automock.EventAPIRepository
 		DocumentRepoFn        func() *automock.DocumentRepository
 		FetchRequestRepoFn    func() *automock.FetchRequestRepository
 		UIDServiceFn          func() *automock.UIDService
 		FetchRequestServiceFn func() *automock.FetchRequestService
-		Input                 model.PackageCreateInput
+		Input                 model.BundleCreateInput
 		ExpectedErr           error
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(nil).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("Create", ctx, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -96,15 +96,15 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -128,10 +128,10 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - Package creation",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(testErr).Once()
+			Name: "Error - Bundle creation",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("Create", ctx, modelBundle).Return(testErr).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -164,9 +164,9 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			Name: "Error - API creation",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(nil).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("Create", ctx, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -176,7 +176,7 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(testErr).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(testErr).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -200,9 +200,9 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			Name: "Error - Event creation",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(nil).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("Create", ctx, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -212,14 +212,14 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(testErr).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(testErr).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -241,9 +241,9 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			Name: "Error - API Update",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(nil).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("Create", ctx, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -253,8 +253,8 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(testErr).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(testErr).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -280,9 +280,9 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			Name: "Error - Document creation",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(nil).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("Create", ctx, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -292,16 +292,16 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
 
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -325,9 +325,9 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			Name: "Success when fetching API Spec failed",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(nil).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("Create", ctx, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -337,15 +337,15 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -370,9 +370,9 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			Name: "Success - fetched api schema",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(nil).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("Create", ctx, modelBundle).Return(nil).Once()
 				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -382,15 +382,15 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{Data: &spec}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{Data: &spec}}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", PackageID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -426,7 +426,7 @@ func TestService_Create(t *testing.T) {
 			documentRepo := testCase.DocumentRepoFn()
 			frRepo := testCase.FetchRequestRepoFn()
 			frSvc := testCase.FetchRequestServiceFn()
-			svc := mp_package.NewService(repo, apiRepo, eventRepo, documentRepo, frRepo, uidService, frSvc)
+			svc := mp_bundle.NewService(repo, apiRepo, eventRepo, documentRepo, frRepo, uidService, frSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -444,9 +444,9 @@ func TestService_Create(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", model.PackageCreateInput{})
+		_, err := svc.Create(context.TODO(), "", model.BundleCreateInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -461,18 +461,18 @@ func TestService_Update(t *testing.T) {
 	name := "bar"
 	desc := "baz"
 
-	modelInput := model.PackageUpdateInput{
+	modelInput := model.BundleUpdateInput{
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.AuthInput{},
 	}
 
-	inputPackageModel := mock.MatchedBy(func(pkg *model.Package) bool {
+	inputBundleModel := mock.MatchedBy(func(pkg *model.Bundle) bool {
 		return pkg.Name == modelInput.Name
 	})
 
-	packageModel := &model.Package{
+	bundleModel := &model.Bundle{
 		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  "id",
@@ -487,17 +487,17 @@ func TestService_Update(t *testing.T) {
 
 	testCases := []struct {
 		Name         string
-		RepositoryFn func() *automock.PackageRepository
-		Input        model.PackageUpdateInput
+		RepositoryFn func() *automock.BundleRepository
+		Input        model.BundleUpdateInput
 		InputID      string
 		ExpectedErr  error
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("GetByID", ctx, tenantID, id).Return(packageModel, nil).Once()
-				repo.On("Update", ctx, inputPackageModel).Return(nil).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("GetByID", ctx, tenantID, id).Return(bundleModel, nil).Once()
+				repo.On("Update", ctx, inputBundleModel).Return(nil).Once()
 				return repo
 			},
 			InputID:     "foo",
@@ -506,10 +506,10 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Update Error",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("GetByID", ctx, tenantID, "foo").Return(packageModel, nil).Once()
-				repo.On("Update", ctx, inputPackageModel).Return(testErr).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("GetByID", ctx, tenantID, "foo").Return(bundleModel, nil).Once()
+				repo.On("Update", ctx, inputBundleModel).Return(testErr).Once()
 				return repo
 			},
 			InputID:     "foo",
@@ -518,8 +518,8 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name: "Get Error",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("GetByID", ctx, tenantID, "foo").Return(nil, testErr).Once()
 				return repo
 			},
@@ -534,7 +534,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_package.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -551,9 +551,9 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.PackageUpdateInput{})
+		err := svc.Update(context.TODO(), "", model.BundleUpdateInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -571,15 +571,15 @@ func TestService_Delete(t *testing.T) {
 
 	testCases := []struct {
 		Name         string
-		RepositoryFn func() *automock.PackageRepository
-		Input        model.PackageCreateInput
+		RepositoryFn func() *automock.BundleRepository
+		Input        model.BundleCreateInput
 		InputID      string
 		ExpectedErr  error
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("Delete", ctx, tenantID, id).Return(nil).Once()
 				return repo
 			},
@@ -588,8 +588,8 @@ func TestService_Delete(t *testing.T) {
 		},
 		{
 			Name: "Delete Error",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("Delete", ctx, tenantID, id).Return(testErr).Once()
 				return repo
 			},
@@ -603,7 +603,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_package.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -620,7 +620,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -637,23 +637,23 @@ func TestService_Exist(t *testing.T) {
 
 	testCases := []struct {
 		Name           string
-		RepoFn         func() *automock.PackageRepository
+		RepoFn         func() *automock.BundleRepository
 		ExpectedError  error
 		ExpectedOutput bool
 	}{
 		{
 			Name: "Success",
-			RepoFn: func() *automock.PackageRepository {
-				pkgRepo := &automock.PackageRepository{}
+			RepoFn: func() *automock.BundleRepository {
+				pkgRepo := &automock.BundleRepository{}
 				pkgRepo.On("Exists", ctx, tenantID, id).Return(true, nil).Once()
 				return pkgRepo
 			},
 			ExpectedOutput: true,
 		},
 		{
-			Name: "Error when getting Package",
-			RepoFn: func() *automock.PackageRepository {
-				pkgRepo := &automock.PackageRepository{}
+			Name: "Error when getting Bundle",
+			RepoFn: func() *automock.BundleRepository {
+				pkgRepo := &automock.BundleRepository{}
 				pkgRepo.On("Exists", ctx, tenantID, id).Return(false, testErr).Once()
 				return pkgRepo
 			},
@@ -665,7 +665,7 @@ func TestService_Exist(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			pkgRepo := testCase.RepoFn()
-			svc := mp_package.NewService(pkgRepo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(pkgRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Exist(ctx, id)
@@ -684,7 +684,7 @@ func TestService_Exist(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "")
 		// THEN
@@ -701,39 +701,39 @@ func TestService_Get(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	pkg := fixPackageModel(t, name, desc)
+	pkg := fixBundleModel(t, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
-		RepositoryFn       func() *automock.PackageRepository
-		Input              model.PackageCreateInput
+		RepositoryFn       func() *automock.BundleRepository
+		Input              model.BundleCreateInput
 		InputID            string
-		ExpectedPackage    *model.Package
+		ExpectedBundle     *model.Bundle
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(pkg, nil).Once()
 				return repo
 			},
 			InputID:            id,
-			ExpectedPackage:    pkg,
+			ExpectedBundle:     pkg,
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when Package retrieval failed",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			Name: "Returns error when Bundle retrieval failed",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("GetByID", ctx, tenantID, id).Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:            id,
-			ExpectedPackage:    pkg,
+			ExpectedBundle:     pkg,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -741,7 +741,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_package.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
 
 			// when
 			pkg, err := svc.Get(ctx, testCase.InputID)
@@ -749,7 +749,7 @@ func TestService_Get(t *testing.T) {
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedPackage, pkg)
+				assert.Equal(t, testCase.ExpectedBundle, pkg)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
@@ -759,7 +759,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -777,42 +777,42 @@ func TestService_GetForApplication(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	pkg := fixPackageModel(t, name, desc)
+	pkg := fixBundleModel(t, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
-		RepositoryFn       func() *automock.PackageRepository
-		Input              model.PackageCreateInput
+		RepositoryFn       func() *automock.BundleRepository
+		Input              model.BundleCreateInput
 		InputID            string
 		ApplicationID      string
-		ExpectedPackage    *model.Package
+		ExpectedBundle     *model.Bundle
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(pkg, nil).Once()
 				return repo
 			},
 			InputID:            id,
 			ApplicationID:      appID,
-			ExpectedPackage:    pkg,
+			ExpectedBundle:     pkg,
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when Package retrieval failed",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			Name: "Returns error when Bundle retrieval failed",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("GetForApplication", ctx, tenantID, id, appID).Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:            id,
 			ApplicationID:      appID,
-			ExpectedPackage:    nil,
+			ExpectedBundle:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -820,7 +820,7 @@ func TestService_GetForApplication(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_package.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
 
 			// when
 			document, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
@@ -828,7 +828,7 @@ func TestService_GetForApplication(t *testing.T) {
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedPackage, document)
+				assert.Equal(t, testCase.ExpectedBundle, document)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
@@ -838,7 +838,7 @@ func TestService_GetForApplication(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForApplication(context.TODO(), "", "")
 		// THEN
@@ -855,39 +855,39 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	pkg := fixPackageModel(t, name, desc)
+	pkg := fixBundleModel(t, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
-		RepositoryFn       func() *automock.PackageRepository
-		Input              model.PackageCreateInput
+		RepositoryFn       func() *automock.BundleRepository
+		Input              model.BundleCreateInput
 		InstanceAuthID     string
-		ExpectedPackage    *model.Package
+		ExpectedBundle     *model.Bundle
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("GetByInstanceAuthID", ctx, tenantID, appID).Return(pkg, nil).Once()
 				return repo
 			},
 			InstanceAuthID:     appID,
-			ExpectedPackage:    pkg,
+			ExpectedBundle:     pkg,
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when Package retrieval failed",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			Name: "Returns error when Bundle retrieval failed",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("GetByInstanceAuthID", ctx, tenantID, appID).Return(nil, testErr).Once()
 				return repo
 			},
 			InstanceAuthID:     appID,
-			ExpectedPackage:    nil,
+			ExpectedBundle:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -895,7 +895,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_package.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
 
 			// when
 			document, err := svc.GetByInstanceAuthID(ctx, testCase.InstanceAuthID)
@@ -903,7 +903,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedPackage, document)
+				assert.Equal(t, testCase.ExpectedBundle, document)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
@@ -913,7 +913,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForApplication(context.TODO(), "", "")
 		// THEN
@@ -930,14 +930,14 @@ func TestService_ListByApplicationID(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	packages := []*model.Package{
-		fixPackageModel(t, name, desc),
-		fixPackageModel(t, name, desc),
-		fixPackageModel(t, name, desc),
+	bundles := []*model.Bundle{
+		fixBundleModel(t, name, desc),
+		fixBundleModel(t, name, desc),
+		fixBundleModel(t, name, desc),
 	}
-	packagePage := &model.PackagePage{
-		Data:       packages,
-		TotalCount: len(packages),
+	bundlePage := &model.BundlePage{
+		Data:       bundles,
+		TotalCount: len(bundles),
 		PageInfo: &pagination.Page{
 			HasNextPage: false,
 			EndCursor:   "end",
@@ -953,45 +953,45 @@ func TestService_ListByApplicationID(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		PageSize           int
-		RepositoryFn       func() *automock.PackageRepository
-		ExpectedResult     *model.PackagePage
+		RepositoryFn       func() *automock.BundleRepository
+		ExpectedResult     *model.BundlePage
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("ListByApplicationID", ctx, tenantID, applicationID, 2, after).Return(packagePage, nil).Once()
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("ListByApplicationID", ctx, tenantID, applicationID, 2, after).Return(bundlePage, nil).Once()
 				return repo
 			},
 			PageSize:           2,
-			ExpectedResult:     packagePage,
+			ExpectedResult:     bundlePage,
 			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Return error when page size is less than 1",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				return repo
 			},
 			PageSize:           0,
-			ExpectedResult:     packagePage,
+			ExpectedResult:     bundlePage,
 			ExpectedErrMessage: "page size must be between 1 and 100",
 		},
 		{
 			Name: "Return error when page size is bigger than 100",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				return repo
 			},
 			PageSize:           101,
-			ExpectedResult:     packagePage,
+			ExpectedResult:     bundlePage,
 			ExpectedErrMessage: "page size must be between 1 and 100",
 		},
 		{
-			Name: "Returns error when Package listing failed",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
+			Name: "Returns error when Bundle listing failed",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
 				repo.On("ListByApplicationID", ctx, tenantID, applicationID, 2, after).Return(nil, testErr).Once()
 				return repo
 			},
@@ -1005,7 +1005,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := mp_package.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
 
 			// when
 			docs, err := svc.ListByApplicationID(ctx, applicationID, testCase.PageSize, after)
@@ -1023,7 +1023,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationID(context.TODO(), "", 5, "")
 		// THEN

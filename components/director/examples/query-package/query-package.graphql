@@ -51,7 +51,7 @@ query {
       }
     }
     healthCheckURL
-    packages {
+    bundles {
       data {
         id
         name
@@ -379,7 +379,7 @@ query {
       defaultURL
     }
 
-    package(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
+    bundle(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
       id
       name
       description

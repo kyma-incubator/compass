@@ -84,22 +84,22 @@ func searchForAuditlogByString(t *testing.T, client *http.Client, baseURL string
 	return auditlogs
 }
 
-//Package
-func fixAddPackageRequest(appID, pkgCreateInput string) *gcli.Request {
+//Bundle
+func fixAddBundleRequest(appID, pkgCreateInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: addPackage(applicationID: "%s", in: %s) {
+			result: addBundle(applicationID: "%s", in: %s) {
 				%s
-			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForPackage()))
+			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForBundle()))
 }
 
-func fixDeletePackageRequest(packageID string) *gcli.Request {
+func fixDeleteBundleRequest(bundleID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: deletePackage(id: "%s") {
+			result: deleteBundle(id: "%s") {
 				%s
 			}
-		}`, packageID, tc.gqlFieldsProvider.ForPackage()))
+		}`, bundleID, tc.gqlFieldsProvider.ForBundle()))
 }
 
 func fixRefetchAPISpecRequest(id string) *gcli.Request {
@@ -112,13 +112,13 @@ func fixRefetchAPISpecRequest(id string) *gcli.Request {
 			id, tc.gqlFieldsProvider.ForApiSpec()))
 }
 
-func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
+func fixBundleRequest(applicationID string, bundleID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 				%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
-			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
+			"Application.bundle": fmt.Sprintf(`bundle(id: "%s") {%s}`, bundleID, tc.gqlFieldsProvider.ForBundle()),
 		})))
 }

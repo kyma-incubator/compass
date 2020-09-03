@@ -1,4 +1,4 @@
-package packageinstanceauth
+package bundleinstanceauth
 
 import "time"
 

@@ -62,12 +62,12 @@ models:
         resolver: true
       eventingConfiguration:
         resolver: true
-      packages:
+      bundles:
         resolver: true
-      package:
+      bundle:
         resolver: true
-  Package:
-    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Package"
+  Bundle:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Bundle"
     fields:
       apiDefinitions:
         resolver: true

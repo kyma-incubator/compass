@@ -34,9 +34,9 @@ type FetchRequestStatus struct {
 type FetchMode string
 
 const (
-	FetchModeSingle  FetchMode = "SINGLE"
-	FetchModePackage FetchMode = "PACKAGE"
-	FetchModeIndex   FetchMode = "INDEX"
+	FetchModeSingle FetchMode = "SINGLE"
+	FetchModeBundle FetchMode = "PACKAGE"
+	FetchModeIndex  FetchMode = "INDEX"
 )
 
 type FetchRequestStatusCondition string

@@ -144,7 +144,7 @@ func TestDirectorClient_CreateBundle(t *testing.T) {
 }
 
 func TestDirectorClient_UpdateBundle(t *testing.T) {
-	packageID := "foo"
+	bundleID := "foo"
 	in := graphql.BundleUpdateInput{
 		Name: "bar",
 	}
@@ -236,7 +236,7 @@ func TestDirectorClient_UpdateBundle(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, nil)
 
-			err := dirCli.UpdateBundle(packageID, in)
+			err := dirCli.UpdateBundle(bundleID, in)
 
 			if tC.ExpectedErr != nil {
 				require.Error(t, err)
@@ -252,7 +252,7 @@ func TestDirectorClient_UpdateBundle(t *testing.T) {
 
 func TestDirectorClient_GetBundle(t *testing.T) {
 	appID := "foo"
-	packageID := "foo"
+	bundleID := "foo"
 	successResult := graphql.BundleExt{Bundle: graphql.Bundle{ID: "1"}}
 	gqlRequest := gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
@@ -328,12 +328,12 @@ func TestDirectorClient_GetBundle(t *testing.T) {
 			gqlCli := tC.GQLClientFn()
 
 			gqlFieldsProvider := &automock.GqlFieldsProvider{}
-			gqlFieldsProvider.On("ForApplication", graphqlizer.FieldCtx{"Application.package": "package(id: \"foo\") {pkg-fields}"}).Return("fields").Maybe()
+			gqlFieldsProvider.On("ForApplication", graphqlizer.FieldCtx{"Application.bundle": "bundle(id: \"foo\") {pkg-fields}"}).Return("fields").Maybe()
 			gqlFieldsProvider.On("ForBundle").Return("pkg-fields").Maybe()
 
 			dirCli := director.NewClient(gqlCli, nil, gqlFieldsProvider)
 
-			result, err := dirCli.GetBundle(appID, packageID)
+			result, err := dirCli.GetBundle(appID, bundleID)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -517,11 +517,11 @@ func TestDirectorClient_DeleteBundle(t *testing.T) {
 }
 
 func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
-	packageID := "foo"
+	bundleID := "foo"
 	in := graphql.APIDefinitionInput{
 		Name: "bar",
 	}
-	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addAPIDefinitionToBundle(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addAPIDefinitionToBundle(bundleID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -629,7 +629,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, gqlFieldsProvider)
 
-			result, err := dirCli.CreateAPIDefinition(packageID, in)
+			result, err := dirCli.CreateAPIDefinition(bundleID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -718,11 +718,11 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 }
 
 func TestDirectorClient_CreateEventDefinition(t *testing.T) {
-	packageID := "foo"
+	bundleID := "foo"
 	in := graphql.EventDefinitionInput{
 		Name: "bar",
 	}
-	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addEventDefinitionToBundle(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addEventDefinitionToBundle(bundleID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -830,7 +830,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, gqlFieldsProvider)
 
-			result, err := dirCli.CreateEventDefinition(packageID, in)
+			result, err := dirCli.CreateEventDefinition(bundleID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -919,11 +919,11 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 }
 
 func TestDirectorClient_CreateDocument(t *testing.T) {
-	packageID := "foo"
+	bundleID := "foo"
 	in := graphql.DocumentInput{
 		Title: "bar",
 	}
-	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addDocumentToBundle(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addDocumentToBundle(bundleID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -1031,7 +1031,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, gqlFieldsProvider)
 
-			result, err := dirCli.CreateDocument(packageID, in)
+			result, err := dirCli.CreateDocument(bundleID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)

@@ -4,7 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
-type Package struct {
+type Bundle struct {
 	ID                             string
 	TenantID                       string
 	ApplicationID                  string
@@ -14,14 +14,14 @@ type Package struct {
 	DefaultInstanceAuth            *Auth
 }
 
-func (pkg *Package) SetFromUpdateInput(update PackageUpdateInput) {
+func (pkg *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
 	pkg.Name = update.Name
 	pkg.Description = update.Description
 	pkg.InstanceAuthRequestInputSchema = update.InstanceAuthRequestInputSchema
 	pkg.DefaultInstanceAuth = update.DefaultInstanceAuth.ToAuth()
 }
 
-type PackageCreateInput struct {
+type BundleCreateInput struct {
 	Name                           string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
@@ -31,27 +31,27 @@ type PackageCreateInput struct {
 	Documents                      []*DocumentInput
 }
 
-type PackageUpdateInput struct {
+type BundleUpdateInput struct {
 	Name                           string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *AuthInput
 }
 
-type PackagePage struct {
-	Data       []*Package
+type BundlePage struct {
+	Data       []*Bundle
 	PageInfo   *pagination.Page
 	TotalCount int
 }
 
-func (PackagePage) IsPageable() {}
+func (BundlePage) IsPageable() {}
 
-func (i *PackageCreateInput) ToPackage(id, applicationID, tenantID string) *Package {
+func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle {
 	if i == nil {
 		return nil
 	}
 
-	return &Package{
+	return &Bundle{
 		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,

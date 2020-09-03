@@ -65,16 +65,16 @@ func TestService_HandleAPISpec(t *testing.T) {
 			Condition: model.FetchRequestStatusConditionFailed},
 	}
 
-	modelInputPackage := model.FetchRequest{
+	modelInputBundle := model.FetchRequest{
 		ID:   "test",
-		Mode: model.FetchModePackage,
+		Mode: model.FetchModeBundle,
 		Status: &model.FetchRequestStatus{
 			Timestamp: timestamp,
 			Condition: model.FetchRequestStatusConditionInitial},
 	}
-	modelInputPackageWithMessage := model.FetchRequest{
+	modelInputBundleWithMessage := model.FetchRequest{
 		ID:   "test",
-		Mode: model.FetchModePackage,
+		Mode: model.FetchModeBundle,
 		Status: &model.FetchRequestStatus{
 			Timestamp: timestamp,
 			Message:   str.Ptr("Invalid data [reason=Unsupported fetch mode: PACKAGE]"),
@@ -109,7 +109,7 @@ func TestService_HandleAPISpec(t *testing.T) {
 			ExpectedOutput: &mockSpec,
 		},
 		{
-			Name: "Nil when mode is Package",
+			Name: "Nil when mode is Bundle",
 			RoundTripFn: func() RoundTripFunc {
 				return func(req *http.Request) *http.Response {
 					return &http.Response{}
@@ -117,10 +117,10 @@ func TestService_HandleAPISpec(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
-				repo.On("Update", ctx, &modelInputPackageWithMessage).Return(nil).Once()
+				repo.On("Update", ctx, &modelInputBundleWithMessage).Return(nil).Once()
 				return repo
 			},
-			InputFr:        modelInputPackage,
+			InputFr:        modelInputBundle,
 			ExpectedOutput: nil,
 		},
 		{

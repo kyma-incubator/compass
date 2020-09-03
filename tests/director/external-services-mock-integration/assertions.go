@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func assertSpecInPackageNotNil(t *testing.T, pkg graphql.PackageExt) {
+func assertSpecInBundleNotNil(t *testing.T, pkg graphql.BundleExt) {
 	assert.True(t, len(pkg.APIDefinitions.Data) > 0)
 	assert.NotNil(t, pkg.APIDefinitions.Data[0])
 	assert.NotNil(t, pkg.APIDefinitions.Data[0].Spec)

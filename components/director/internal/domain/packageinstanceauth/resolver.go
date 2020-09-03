@@ -1,4 +1,4 @@
-package packageinstanceauth
+package bundleinstanceauth
 
 import (
 	"context"
@@ -11,34 +11,34 @@ import (
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
 type Service interface {
-	RequestDeletion(ctx context.Context, instanceAuth *model.PackageInstanceAuth, defaultPackageInstanceAuth *model.Auth) (bool, error)
-	Create(ctx context.Context, packageID string, in model.PackageInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error)
-	Get(ctx context.Context, id string) (*model.PackageInstanceAuth, error)
-	SetAuth(ctx context.Context, id string, in model.PackageInstanceAuthSetInput) error
+	RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error)
+	Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error)
+	Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error)
+	SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error
 	Delete(ctx context.Context, id string) error
 }
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	ToGraphQL(in *model.PackageInstanceAuth) (*graphql.PackageInstanceAuth, error)
-	RequestInputFromGraphQL(in graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput
-	SetInputFromGraphQL(in graphql.PackageInstanceAuthSetInput) (model.PackageInstanceAuthSetInput, error)
+	ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)
+	RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequestInput) model.BundleInstanceAuthRequestInput
+	SetInputFromGraphQL(in graphql.BundleInstanceAuthSetInput) (model.BundleInstanceAuthSetInput, error)
 }
 
-//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
-type PackageService interface {
-	Get(ctx context.Context, id string) (*model.Package, error)
-	GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Package, error)
+//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+type BundleService interface {
+	Get(ctx context.Context, id string) (*model.Bundle, error)
+	GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Bundle, error)
 }
 
 type Resolver struct {
 	transact persistence.Transactioner
 	svc      Service
-	pkgSvc   PackageService
+	pkgSvc   BundleService
 	conv     Converter
 }
 
-func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc PackageService, conv Converter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc BundleService, conv Converter) *Resolver {
 	return &Resolver{
 		transact: transact,
 		svc:      svc,
@@ -48,9 +48,9 @@ func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc Package
 }
 
 var mockRequestTypeKey = "type"
-var mockPackageID = "db5d3b2a-cf30-498b-9a66-29e60247c66b"
+var mockBundleID = "db5d3b2a-cf30-498b-9a66-29e60247c66b"
 
-func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
+func (r *Resolver) DeleteBundleInstanceAuth(ctx context.Context, authID string) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string)
 	return r.conv.ToGraphQL(instanceAuth)
 }
 
-func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in graphql.PackageInstanceAuthSetInput) (*graphql.PackageInstanceAuth, error) {
+func (r *Resolver) SetBundleInstanceAuth(ctx context.Context, authID string, in graphql.BundleInstanceAuthSetInput) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 
 	convertedIn, err := r.conv.SetInputFromGraphQL(in)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting PackageInstanceAuth from GraphQL")
+		return nil, errors.Wrap(err, "while converting BundleInstanceAuth from GraphQL")
 	}
 
 	err = r.svc.SetAuth(ctx, authID, convertedIn)
@@ -109,7 +109,7 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 	return r.conv.ToGraphQL(instanceAuth)
 }
 
-func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packageID string, in graphql.PackageInstanceAuthRequestInput) (*graphql.PackageInstanceAuth, error) {
+func (r *Resolver) RequestBundleInstanceAuthCreation(ctx context.Context, bundleID string, in graphql.BundleInstanceAuthRequestInput) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -118,14 +118,14 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkg, err := r.pkgSvc.Get(ctx, packageID)
+	pkg, err := r.pkgSvc.Get(ctx, bundleID)
 	if err != nil {
 		return nil, err
 	}
 
 	convertedIn := r.conv.RequestInputFromGraphQL(in)
 
-	instanceAuthID, err := r.svc.Create(ctx, packageID, convertedIn, pkg.DefaultInstanceAuth, pkg.InstanceAuthRequestInputSchema)
+	instanceAuthID, err := r.svc.Create(ctx, bundleID, convertedIn, pkg.DefaultInstanceAuth, pkg.InstanceAuthRequestInputSchema)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 	return r.conv.ToGraphQL(instanceAuth)
 }
 
-func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
+func (r *Resolver) RequestBundleInstanceAuthDeletion(ctx context.Context, authID string) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
