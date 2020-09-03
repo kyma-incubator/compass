@@ -1,22 +1,36 @@
 package model
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type APIDefinition struct {
-	ID          string
-	BundleID    string
-	Tenant      string
-	Name        string
-	Description *string
-	Spec        *APISpec
-	TargetURL   string
+	ID               string
+	BundleID         string
+	Tenant           string
+	Title            string
+	ShortDescription string
+	Description      *string
+	Spec             *APISpec
+	EntryPoint       string
 	//  group allows you to find the same API but in different version
-	Group   *string
-	Version *Version
+	Group            *string
+	Version          *Version
+	APIDefinitions   json.RawMessage
+	Tags             json.RawMessage
+	Documentation    *string
+	ChangelogEntries json.RawMessage
+	Logo             *string
+	Image            *string
+	URL              *string
+	ReleaseStatus    string
+	APIProtocol      string
+	Actions          json.RawMessage
+	LastUpdated      time.Time
+	Extensions       json.RawMessage
 }
 
 type APISpec struct {
@@ -36,12 +50,25 @@ const (
 type Timestamp time.Time
 
 type APIDefinitionInput struct {
-	Name        string
-	Description *string
-	TargetURL   string
-	Group       *string
-	Spec        *APISpecInput
-	Version     *VersionInput
+	Title            string
+	ShortDescription string
+	Description      *string
+	EntryPoint       string
+	Group            *string
+	Spec             *APISpecInput
+	Version          *VersionInput
+	APIDefinitions   json.RawMessage
+	Tags             json.RawMessage
+	Documentation    *string
+	ChangelogEntries json.RawMessage
+	Logo             *string
+	Image            *string
+	URL              *string
+	ReleaseStatus    string
+	APIProtocol      string
+	Actions          json.RawMessage
+	LastUpdated      time.Time
+	Extensions       json.RawMessage
 }
 
 type APISpecInput struct {
@@ -65,15 +92,27 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID str
 	}
 
 	return &APIDefinition{
-		ID:          id,
-		BundleID:    bundleID,
-		Tenant:      tenant,
-		Name:        a.Name,
-		Description: a.Description,
-		Spec:        a.Spec.ToAPISpec(),
-		TargetURL:   a.TargetURL,
-		Group:       a.Group,
-		Version:     a.Version.ToVersion(),
+		ID:               id,
+		BundleID:         bundleID,
+		Tenant:           tenant,
+		Title:            a.Title,
+		ShortDescription: a.ShortDescription,
+		Description:      a.Description,
+		Spec:             a.Spec.ToAPISpec(),
+		EntryPoint:       a.EntryPoint,
+		Group:            a.Group,
+		Version:          a.Version.ToVersion(),
+		APIDefinitions:   a.APIDefinitions,
+		Tags:             a.Tags,
+		Documentation:    a.Documentation,
+		ChangelogEntries: a.ChangelogEntries,
+		Logo:             a.Logo,
+		Image:            a.Image,
+		ReleaseStatus:    a.ReleaseStatus,
+		APIProtocol:      a.APIProtocol,
+		Actions:          a.Actions,
+		LastUpdated:      a.LastUpdated,
+		Extensions:       a.Extensions,
 	}
 }
 

@@ -296,7 +296,7 @@ func TestService_CreateToBundle(t *testing.T) {
 	frURL := "foo.bar"
 
 	modelInput := model.EventDefinitionInput{
-		Name: name,
+		Title: name,
 		Spec: &model.EventSpecInput{
 			FetchRequest: &model.FetchRequestInput{
 				URL: frURL,
@@ -309,7 +309,7 @@ func TestService_CreateToBundle(t *testing.T) {
 		ID:       id,
 		Tenant:   tenantID,
 		BundleID: bundleID,
-		Name:     name,
+		Title:    name,
 		Spec:     &model.EventSpec{},
 		Version:  &model.Version{},
 	}
@@ -434,7 +434,7 @@ func TestService_Update(t *testing.T) {
 	frURL := "foo.bar"
 
 	modelInput := model.EventDefinitionInput{
-		Name: "Foo",
+		Title: "Foo",
 		Spec: &model.EventSpecInput{
 			FetchRequest: &model.FetchRequestInput{
 				URL: frURL,
@@ -444,11 +444,11 @@ func TestService_Update(t *testing.T) {
 	}
 
 	inputEventAPIDefinitionModel := mock.MatchedBy(func(api *model.EventDefinition) bool {
-		return api.Name == modelInput.Name
+		return api.Title == modelInput.Title
 	})
 
 	eventAPIDefinitionModel := &model.EventDefinition{
-		Name:     "Bar",
+		Title:    "Bar",
 		Tenant:   tenantID,
 		BundleID: "id",
 		Spec:     &model.EventSpec{},

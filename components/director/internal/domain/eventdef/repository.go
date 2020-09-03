@@ -18,12 +18,13 @@ var (
 	idColumn      = "id"
 	tenantColumn  = "tenant_id"
 	bundleColumn  = "bundle_id"
-	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "name", "description", "group_name", "spec_data",
-		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal"}
+	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "title", "short_description", "description", "group_name",
+		"event_definitions", "tags", "documentation", "changelog_entries", "logo", "image", "url", "release_status", "last_updated", "extensions",
+		"spec_data", "spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 	idColumns        = []string{"id"}
-	updatableColumns = []string{"name", "description", "group_name", "spec_data", "spec_format", "spec_type",
-		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+	updatableColumns = []string{"title", "short_description", "description", "group_name",
+		"event_definitions", "tags", "documentation", "changelog_entries", "logo", "image", "url", "release_status", "last_updated", "extensions",
+		"spec_data", "spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 )
 
 //go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore

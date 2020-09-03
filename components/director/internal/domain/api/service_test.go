@@ -306,8 +306,8 @@ func TestService_CreateToBundle(t *testing.T) {
 	modelFr := fixModelFetchRequest(frID, frURL, timestamp)
 
 	modelInput := model.APIDefinitionInput{
-		Name:      name,
-		TargetURL: targetUrl,
+		Title:      name,
+		EntryPoint: targetUrl,
 		Spec: &model.APISpecInput{
 			FetchRequest: &model.FetchRequestInput{
 				URL: frURL,
@@ -317,23 +317,23 @@ func TestService_CreateToBundle(t *testing.T) {
 	}
 
 	modelAPIDefinition := &model.APIDefinition{
-		ID:        id,
-		BundleID:  bundleID,
-		Tenant:    tenantID,
-		Name:      name,
-		TargetURL: targetUrl,
-		Spec:      &model.APISpec{},
-		Version:   &model.Version{},
+		ID:         id,
+		BundleID:   bundleID,
+		Tenant:     tenantID,
+		Title:      name,
+		EntryPoint: targetUrl,
+		Spec:       &model.APISpec{},
+		Version:    &model.Version{},
 	}
 
 	modelAPIDefinitionWithSpec := &model.APIDefinition{
-		ID:        id,
-		BundleID:  bundleID,
-		Tenant:    tenantID,
-		Name:      name,
-		TargetURL: targetUrl,
-		Spec:      &model.APISpec{Data: &spec},
-		Version:   &model.Version{},
+		ID:         id,
+		BundleID:   bundleID,
+		Tenant:     tenantID,
+		Title:      name,
+		EntryPoint: targetUrl,
+		Spec:       &model.APISpec{Data: &spec},
+		Version:    &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -559,8 +559,8 @@ func TestService_Update(t *testing.T) {
 	frURL := "foo.bar"
 
 	modelInput := model.APIDefinitionInput{
-		Name:      "Foo",
-		TargetURL: "https://test-url.com",
+		Title:      "Foo",
+		EntryPoint: "https://test-url.com",
 		Spec: &model.APISpecInput{
 			FetchRequest: &model.FetchRequestInput{
 				URL: frURL,
@@ -570,14 +570,14 @@ func TestService_Update(t *testing.T) {
 	}
 
 	inputAPIDefinitionModel := mock.MatchedBy(func(api *model.APIDefinition) bool {
-		return api.Name == modelInput.Name
+		return api.Title == modelInput.Title
 	})
 
 	apiDefinitionModel := &model.APIDefinition{
-		Name:      "Bar",
-		TargetURL: "https://test-url-updated.com",
-		Spec:      &model.APISpec{},
-		Version:   &model.Version{},
+		Title:      "Bar",
+		EntryPoint: "https://test-url-updated.com",
+		Spec:       &model.APISpec{},
+		Version:    &model.Version{},
 	}
 
 	ctx := context.TODO()

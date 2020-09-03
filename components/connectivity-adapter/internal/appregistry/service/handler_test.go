@@ -639,8 +639,8 @@ func TestHandler_List(t *testing.T) {
 		expectedError := "while reading legacy service reference for Bundle with ID 'test': test"
 		bundles := []*graphql.BundleExt{{
 			Bundle: graphql.Bundle{
-				ID:   "test",
-				Name: "test",
+				ID:    "test",
+				Title: "test",
 			},
 		}}
 
@@ -675,8 +675,8 @@ func TestHandler_List(t *testing.T) {
 		expectedError := "while converting detailed service to service: test"
 		bundles := []*graphql.BundleExt{{
 			Bundle: graphql.Bundle{
-				ID:   "test",
-				Name: "test",
+				ID:    "test",
+				Title: "test",
 			},
 		}}
 
@@ -713,8 +713,8 @@ func TestHandler_List(t *testing.T) {
 		expectedError := "while converting graphql to detailed service: test"
 		bundles := []*graphql.BundleExt{{
 			Bundle: graphql.Bundle{
-				ID:   "test",
-				Name: "test",
+				ID:    "test",
+				Title: "test",
 			},
 		}}
 

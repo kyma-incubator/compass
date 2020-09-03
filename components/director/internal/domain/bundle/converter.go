@@ -3,6 +3,7 @@ package mp_bundle
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -50,10 +51,14 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 		ID:                            in.ID,
 		TenantID:                      in.TenantID,
 		ApplicationID:                 in.ApplicationID,
-		Name:                          in.Name,
+		Title:                         in.Title,
+		ShortDescription:              in.ShortDescription,
 		Description:                   repo.NewNullableString(in.Description),
 		DefaultInstanceAuth:           repo.NewNullableString(defaultInstanceAuth),
 		InstanceAuthRequestJSONSchema: repo.NewNullableString(in.InstanceAuthRequestInputSchema),
+		Tags:                          repo.NewNullableRawJSON(in.Tags),
+		LastUpdated:                   in.LastUpdated,
+		Extensions:                    repo.NewNullableRawJSON(in.Extensions),
 	}
 
 	return output, nil
@@ -73,10 +78,14 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 		ID:                             entity.ID,
 		TenantID:                       entity.TenantID,
 		ApplicationID:                  entity.ApplicationID,
-		Name:                           entity.Name,
+		Title:                          entity.Title,
+		ShortDescription:               entity.ShortDescription,
 		Description:                    repo.StringPtrFromNullableString(entity.Description),
 		DefaultInstanceAuth:            defaultInstanceAuth,
 		InstanceAuthRequestInputSchema: repo.StringPtrFromNullableString(entity.InstanceAuthRequestJSONSchema),
+		Tags:                           repo.RawJSONFromNullableString(entity.Tags),
+		LastUpdated:                    entity.LastUpdated,
+		Extensions:                     repo.RawJSONFromNullableString(entity.Extensions),
 	}
 
 	return output, nil
@@ -94,10 +103,14 @@ func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 
 	return &graphql.Bundle{
 		ID:                             in.ID,
-		Name:                           in.Name,
+		Title:                          in.Title,
+		ShortDescription:               in.ShortDescription,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.strPtrToJSONSchemaPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
+		Tags:                           c.rawJSONToJSON(in.Tags),
+		LastUpdated:                    graphql.Timestamp(in.LastUpdated),
+		Extensions:                     c.rawJSONToJSON(in.Extensions),
 	}, nil
 }
 
@@ -139,13 +152,17 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 	}
 
 	return model.BundleCreateInput{
-		Name:                           in.Name,
+		Title:                          in.Title,
+		ShortDescription:               in.ShortDescription,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
 		APIDefinitions:                 apiDefs,
 		EventDefinitions:               eventDefs,
 		Documents:                      documents,
+		Tags:                           c.JSONToRawJSON(in.Tags),
+		LastUpdated:                    time.Time(in.LastUpdated),
+		Extensions:                     c.JSONToRawJSON(in.Extensions),
 	}, nil
 }
 
@@ -172,10 +189,14 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model
 	}
 
 	return &model.BundleUpdateInput{
-		Name:                           in.Name,
+		Title:                          in.Title,
+		ShortDescription:               *in.ShortDescription,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
+		Tags:                           c.JSONToRawJSON(in.Tags),
+		LastUpdated:                    time.Time(*in.LastUpdated),
+		Extensions:                     c.JSONToRawJSON(in.Extensions),
 	}, nil
 }
 
@@ -212,10 +233,26 @@ func (c *converter) strPtrToJSONSchemaPtr(in *string) *graphql.JSONSchema {
 	return &out
 }
 
+func (c *converter) rawJSONToJSON(in json.RawMessage) *graphql.JSON {
+	if in == nil {
+		return nil
+	}
+	out := graphql.JSON(in)
+	return &out
+}
+
 func (c *converter) jsonSchemaPtrToStrPtr(in *graphql.JSONSchema) *string {
 	if in == nil {
 		return nil
 	}
 	out := string(*in)
 	return &out
+}
+
+func (c *converter) JSONToRawJSON(in *graphql.JSON) json.RawMessage {
+	if in == nil {
+		return nil
+	}
+	out := json.RawMessage(*in)
+	return out
 }

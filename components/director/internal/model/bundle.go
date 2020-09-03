@@ -1,30 +1,44 @@
 package model
 
 import (
+	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"time"
 )
 
 type Bundle struct {
 	ID                             string
 	TenantID                       string
 	ApplicationID                  string
-	Name                           string
+	Title                          string
+	ShortDescription               string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
+	Tags                           json.RawMessage
+	LastUpdated                    time.Time
+	Extensions                     json.RawMessage
 }
 
 func (bundle *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
-	bundle.Name = update.Name
+	bundle.Title = update.Title
+	bundle.ShortDescription = update.ShortDescription
 	bundle.Description = update.Description
 	bundle.InstanceAuthRequestInputSchema = update.InstanceAuthRequestInputSchema
 	bundle.DefaultInstanceAuth = update.DefaultInstanceAuth.ToAuth()
+	bundle.Tags = update.Tags
+	bundle.LastUpdated = update.LastUpdated
+	bundle.Extensions = update.Extensions
 }
 
 type BundleCreateInput struct {
-	Name                           string
+	Title                          string
+	ShortDescription               string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
+	Tags                           json.RawMessage
+	LastUpdated                    time.Time
+	Extensions                     json.RawMessage
 	DefaultInstanceAuth            *AuthInput
 	APIDefinitions                 []*APIDefinitionInput
 	EventDefinitions               []*EventDefinitionInput
@@ -32,10 +46,14 @@ type BundleCreateInput struct {
 }
 
 type BundleUpdateInput struct {
-	Name                           string
+	Title                          string
+	ShortDescription               string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *AuthInput
+	Tags                           json.RawMessage
+	LastUpdated                    time.Time
+	Extensions                     json.RawMessage
 }
 
 type BundlePage struct {
@@ -55,9 +73,13 @@ func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle
 		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
-		Name:                           i.Name,
+		Title:                          i.Title,
+		ShortDescription:               i.ShortDescription,
 		Description:                    i.Description,
 		InstanceAuthRequestInputSchema: i.InstanceAuthRequestInputSchema,
 		DefaultInstanceAuth:            i.DefaultInstanceAuth.ToAuth(),
+		Tags:                           i.Tags,
+		LastUpdated:                    i.LastUpdated,
+		Extensions:                     i.Extensions,
 	}
 }

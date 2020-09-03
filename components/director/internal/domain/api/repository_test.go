@@ -205,7 +205,7 @@ func TestPgRepository_CreateMany(t *testing.T) {
 
 		convMock := &automock.APIDefinitionConverter{}
 		for _, item := range items {
-			convMock.On("ToEntity", *item).Return(fixFullEntityAPIDefinition(item.ID, item.Name), nil).Once()
+			convMock.On("ToEntity", *item).Return(fixFullEntityAPIDefinition(item.ID, item.Title), nil).Once()
 			sqlMock.ExpectExec(insertQuery).
 				WithArgs(fixAPICreateArgs(item.ID, item)...).
 				WillReturnResult(sqlmock.NewResult(-1, 1))
@@ -234,7 +234,7 @@ func TestPgRepository_Update(t *testing.T) {
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", apiModel).Return(entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.Name, entity.Description, entity.Group, entity.TargetURL, entity.SpecData,
+			WithArgs(entity.Title, entity.Description, entity.Group, entity.EntryPoint, entity.SpecData,
 				entity.SpecFormat, entity.SpecType, entity.VersionValue, entity.VersionDepracated,
 				entity.VersionDepracatedSince, entity.VersionForRemoval, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))

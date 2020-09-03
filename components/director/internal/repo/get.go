@@ -29,9 +29,10 @@ type universalSingleGetter struct {
 
 func NewSingleGetter(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) SingleGetter {
 	return &universalSingleGetter{
-		resourceType:    resourceType,
-		tableName:       tableName,
-		tenantColumn:    &tenantColumn,
+		resourceType: resourceType,
+		tableName:    tableName,
+		tenantColumn: &tenantColumn,
+
 		selectedColumns: strings.Join(selectedColumns, ", "),
 	}
 }

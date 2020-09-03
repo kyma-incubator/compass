@@ -25,14 +25,14 @@ func TestBundleCreateInput_ToBundle(t *testing.T) {
 
 			Name: "All properties given",
 			Input: &model.BundleCreateInput{
-				Name:        name,
+				Title:       name,
 				Description: &desc,
 			},
 			Expected: &model.Bundle{
 				ID:            id,
 				TenantID:      tenant,
 				ApplicationID: appID,
-				Name:          name,
+				Title:         name,
 				Description:   &desc,
 			},
 		},

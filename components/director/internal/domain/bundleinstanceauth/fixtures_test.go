@@ -282,7 +282,7 @@ func fixModelBundle(id string, requestInputSchema *string, defaultAuth *model.Au
 		ID:                             id,
 		TenantID:                       testTenant,
 		ApplicationID:                  "foo",
-		Name:                           "test-bundle",
+		Title:                          "test-bundle",
 		InstanceAuthRequestInputSchema: requestInputSchema,
 		DefaultInstanceAuth:            defaultAuth,
 	}

@@ -357,7 +357,7 @@ func TestPgRepository_CreateMany(t *testing.T) {
 
 		convMock := &automock.EventAPIDefinitionConverter{}
 		for _, item := range items {
-			convMock.On("ToEntity", *item).Return(fixFullEventDef(item.ID, item.Name), nil).Once()
+			convMock.On("ToEntity", *item).Return(fixFullEventDef(item.ID, item.Title), nil).Once()
 			sqlMock.ExpectExec(insertQuery).
 				WithArgs(fixEventCreateArgs(item.ID, *item)...).
 				WillReturnResult(sqlmock.NewResult(-1, 1))
@@ -397,7 +397,7 @@ func TestPgRepository_CreateMany(t *testing.T) {
 		item := fixFullModelEventDefinition(eventAPIID, "first")
 
 		convMock := &automock.EventAPIDefinitionConverter{}
-		convMock.On("ToEntity", item).Return(fixFullEventDef(item.ID, item.Name), nil).Once()
+		convMock.On("ToEntity", item).Return(fixFullEventDef(item.ID, item.Title), nil).Once()
 		sqlMock.ExpectExec(insertQuery).
 			WithArgs(fixEventCreateArgs(item.ID, item)...).
 			WillReturnError(testErr)
@@ -426,7 +426,7 @@ func TestPgRepository_Update(t *testing.T) {
 		convMock := &automock.EventAPIDefinitionConverter{}
 		convMock.On("ToEntity", eventAPIModel).Return(entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.Name, entity.Description, entity.GroupName, entity.SpecData, entity.SpecFormat,
+			WithArgs(entity.Title, entity.Description, entity.GroupName, entity.SpecData, entity.SpecFormat,
 				entity.SpecType, entity.VersionValue, entity.VersionDepracated, entity.VersionDepracatedSince,
 				entity.VersionForRemoval, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))

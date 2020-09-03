@@ -53,6 +53,24 @@ enum ApplicationWebhookType {
 	CONFIGURATION_CHANGED
 }
 
+enum BundleInstanceAuthSetStatusConditionInput {
+	SUCCEEDED
+	FAILED
+}
+
+enum BundleInstanceAuthStatusCondition {
+	"""
+	When creating, before Application sets the credentials
+	"""
+	PENDING
+	SUCCEEDED
+	FAILED
+	"""
+	When Runtime requests deletion and Application has to revoke the credentials
+	"""
+	UNUSED
+}
+
 enum DocumentFormat {
 	MARKDOWN
 }
@@ -80,24 +98,6 @@ enum HealthCheckStatusCondition {
 
 enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
-}
-
-enum BundleInstanceAuthSetStatusConditionInput {
-	SUCCEEDED
-	FAILED
-}
-
-enum BundleInstanceAuthStatusCondition {
-	"""
-	When creating, before Application sets the credentials
-	"""
-	PENDING
-	SUCCEEDED
-	FAILED
-	"""
-	When Runtime requests deletion and Application has to revoke the credentials
-	"""
-	UNUSED
 }
 
 enum RuntimeStatusCondition {
@@ -145,7 +145,7 @@ input APIDefinitionInput {
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
-    shortDescription: String
+	shortDescription: String
 	"""
 	**Validation:** max=2000
 	"""
@@ -160,20 +160,24 @@ input APIDefinitionInput {
 	group: String
 	spec: APISpecInput
 	version: VersionInput
-    apiDefinitions: JSON
-    tags: JSON
-    documentation: String
-    changelogEntries: JSON
-    logo: String
-    image: String
-    url: String
-    """ should be ENUM """
-    releaseStatus: String
-    """ should be ENUM """
-    apiProtocol: String
-    actions: JSON
-    lastUpdated: Timestamp!
-    extensions: JSON
+	apiDefinitions: JSON
+	tags: JSON
+	documentation: String
+	changelogEntries: JSON
+	logo: String
+	image: String
+	url: String
+	"""
+	should be ENUM 
+	"""
+	releaseStatus: String
+	"""
+	should be ENUM 
+	"""
+	apiProtocol: String
+	actions: JSON
+	lastUpdated: Timestamp!
+	extensions: JSON
 }
 
 """
@@ -288,6 +292,88 @@ input BasicCredentialDataInput {
 	password: String!
 }
 
+input BundleCreateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	title: String!
+	"""
+	**Validation:** max=2000
+	"""
+	shortDescription: String!
+	description: String
+	tags: JSON
+	lastUpdated: Timestamp!
+	extensions: JSON
+	instanceAuthRequestInputSchema: JSONSchema
+	defaultInstanceAuth: AuthInput
+	apiDefinitions: [APIDefinitionInput!]
+	eventDefinitions: [EventDefinitionInput!]
+	documents: [DocumentInput!]
+}
+
+input BundleInstanceAuthRequestInput {
+	"""
+	Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
+	"""
+	context: JSON
+	"""
+	**Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
+	"""
+	inputParams: JSON
+}
+
+input BundleInstanceAuthSetInput {
+	"""
+	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	"""
+	auth: AuthInput
+	"""
+	**Validation:** Optional if the auth is provided.
+	If the status condition is "FAILED", auth must be empty.
+	"""
+	status: BundleInstanceAuthStatusInput
+}
+
+input BundleInstanceAuthStatusInput {
+	condition: BundleInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	**Validation:** required, if condition is FAILED
+	"""
+	message: String!
+	"""
+	Example reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	
+	   **Validation**: required, if condition is FAILED
+	"""
+	reason: String!
+}
+
+input BundleUpdateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	title: String!
+	shortDescription: String
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	tags: JSON
+	lastUpdated: Timestamp
+	extensions: JSON
+	instanceAuthRequestInputSchema: JSONSchema
+	"""
+	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
+	"""
+	defaultInstanceAuth: AuthInput
+}
+
 input CSRFTokenCredentialRequestAuthInput {
 	"""
 	**Validation:** valid URL
@@ -366,7 +452,9 @@ input EventDefinitionInput {
 	logo: String
 	image: String
 	url: String
-	""" should be ENUM """
+	"""
+	should be ENUM 
+	"""
 	releaseStatus: String
 	lastUpdated: Timestamp!
 	extensions: JSON
@@ -457,89 +545,6 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
-input BundleCreateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	title: String!
-	"""
-	**Validation:** max=2000
-	"""
-	shortDescription: String!
-	description: String
-	tags: JSON
-	lastUpdated: Timestamp!
-	extensions: JSON
-	instanceAuthRequestInputSchema: JSONSchema
-	defaultInstanceAuth: AuthInput
-	apiDefinitions: [APIDefinitionInput!]
-	eventDefinitions: [EventDefinitionInput!]
-	documents: [DocumentInput!]
-}
-
-input BundleInstanceAuthRequestInput {
-	"""
-	Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
-	"""
-	context: JSON
-	"""
-	**Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
-	"""
-	inputParams: JSON
-}
-
-input BundleInstanceAuthSetInput {
-	"""
-	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
-	"""
-	auth: AuthInput
-	"""
-	**Validation:** Optional if the auth is provided.
-	If the status condition is "FAILED", auth must be empty.
-	"""
-	status: BundleInstanceAuthStatusInput
-}
-
-input BundleInstanceAuthStatusInput {
-	condition: BundleInstanceAuthSetStatusConditionInput! = SUCCEEDED
-	"""
-	**Validation:** required, if condition is FAILED
-	"""
-	message: String!
-	"""
-	Example reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	
-	   **Validation**: required, if condition is FAILED
-	"""
-	reason: String!
-}
-
-input BundleUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	title: String!
-	shortDescription: String
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	tags: JSON
-	lastUpdated: Timestamp
-	extensions: JSON
-
-	instanceAuthRequestInputSchema: JSONSchema
-	"""
-	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
-	"""
-	defaultInstanceAuth: AuthInput
-}
-
 input PlaceholderDefinitionInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -616,9 +621,13 @@ type APIDefinition {
 	logo: String
 	image: String
 	url: String
-	""" should be ENUM """
+	"""
+	should be ENUM 
+	"""
 	releaseStatus: String
-	""" should be ENUM """
+	"""
+	should be ENUM 
+	"""
 	apiProtocol: String
 	actions: JSON!
 	lastUpdated: Timestamp!
@@ -712,6 +721,71 @@ type BasicCredentialData {
 	password: String!
 }
 
+"""
+TODO: mutation associateBundleWithBundle
+"""
+type Bundle {
+	id: ID!
+	title: String!
+	shortDescription: String!
+	description: String
+	tags: JSON
+	lastUpdated: Timestamp!
+	extensions: JSON
+	instanceAuthRequestInputSchema: JSONSchema
+	instanceAuth(id: ID!): BundleInstanceAuth
+	instanceAuths: [BundleInstanceAuth!]!
+	"""
+	When defined, all Auth requests fallback to defaultInstanceAuth.
+	"""
+	defaultInstanceAuth: Auth
+	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
+	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
+	documents(first: Int = 100, after: PageCursor): DocumentPage
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
+	document(id: ID!): Document
+}
+
+type BundleInstanceAuth {
+	id: ID!
+	"""
+	Context of BundleInstanceAuth - such as Runtime ID, namespace
+	"""
+	context: JSON
+	"""
+	User input while requesting Bundle Instance Auth
+	"""
+	inputParams: JSON
+	"""
+	It may be empty if status is PENDING.
+	Populated with `bundle.defaultAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	"""
+	auth: Auth
+	status: BundleInstanceAuthStatus!
+}
+
+type BundleInstanceAuthStatus {
+	condition: BundleInstanceAuthStatusCondition!
+	timestamp: Timestamp!
+	message: String!
+	"""
+	Possible reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String!
+}
+
+type BundlePage implements Pageable {
+	data: [Bundle!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type CSRFTokenCredentialRequestAuth {
 	tokenEndpointURL: String!
 	credential: CredentialData
@@ -763,7 +837,9 @@ type EventDefinition {
 	logo: String
 	image: String
 	url: String
-	""" should be ENUM """
+	"""
+	should be ENUM 
+	"""
 	releaseStatus: String
 	lastUpdated: Timestamp!
 	extensions: JSON
@@ -858,72 +934,6 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	connectorURL: String!
 	raw: String
 	rawEncoded: String
-}
-
-"""
-TODO: mutation associateBundleWithBundle
-"""
-
-type Bundle {
-	id: ID!
-	title: String!
-	shortDescription: String!
-	description: String
-	tags: JSON
-	lastUpdated: Timestamp!
-	extensions: JSON
-	instanceAuthRequestInputSchema: JSONSchema
-	instanceAuth(id: ID!): BundleInstanceAuth
-	instanceAuths: [BundleInstanceAuth!]!
-	"""
-	When defined, all Auth requests fallback to defaultInstanceAuth.
-	"""
-	defaultInstanceAuth: Auth
-	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
-	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
-	documents(first: Int = 100, after: PageCursor): DocumentPage
-	apiDefinition(id: ID!): APIDefinition
-	eventDefinition(id: ID!): EventDefinition
-	document(id: ID!): Document
-}
-
-type BundleInstanceAuth {
-	id: ID!
-	"""
-	Context of BundleInstanceAuth - such as Runtime ID, namespace
-	"""
-	context: JSON
-	"""
-	User input while requesting Bundle Instance Auth
-	"""
-	inputParams: JSON
-	"""
-	It may be empty if status is PENDING.
-	Populated with `bundle.defaultAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	"""
-	auth: Auth
-	status: BundleInstanceAuthStatus!
-}
-
-type BundleInstanceAuthStatus {
-	condition: BundleInstanceAuthStatusCondition!
-	timestamp: Timestamp!
-	message: String!
-	"""
-	Possible reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	"""
-	reason: String!
-}
-
-type BundlePage implements Pageable {
-	data: [Bundle!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
 }
 
 type PageInfo {
@@ -1103,7 +1113,7 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [register application with bundles](examples/register-application/register-application-with-bundles.graphql)
+	- [register application with packages](examples/register-application/register-application-with-packages.graphql)
 	- [register application with status](examples/register-application/register-application-with-status.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
@@ -1184,10 +1194,6 @@ type Mutation {
 	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
-	"""
-	**Examples**
-	- [add api definition to bundle](examples/add-api-definition-to-bundle/add-api-definition-to-bundle.graphql)
-	"""
 	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle")
 	"""
 	**Examples**
@@ -1212,10 +1218,6 @@ type Mutation {
 	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForRuntime")
 	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
-	"""
-	**Examples**
-	- [add event definition to bundle](examples/add-event-definition-to-bundle/add-event-definition-to-bundle.graphql)
-	"""
 	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle")
 	"""
 	**Examples**
@@ -1228,10 +1230,6 @@ type Mutation {
 	"""
 	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
-	"""
-	**Examples**
-	- [add document to bundle](examples/add-document-to-bundle/add-document-to-bundle.graphql)
-	"""
 	addDocumentToBundle(bundleID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToBundle")
 	"""
 	**Examples**
@@ -1281,44 +1279,19 @@ type Mutation {
 	When BundleInstanceAuth is not in pending state, the operation returns error.
 	
 	When used without error, the status of pending auth is set to success.
-	
-	**Examples**
-	- [set bundle instance auth](examples/set-bundle-instance-auth/set-bundle-instance-auth.graphql)
 	"""
 	setBundleInstanceAuth(authID: ID!, in: BundleInstanceAuthSetInput! @validate): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.setBundleInstanceAuth")
-	"""
-	**Examples**
-	- [delete bundle instance auth](examples/delete-bundle-instance-auth/delete-bundle-instance-auth.graphql)
-	"""
 	deleteBundleInstanceAuth(authID: ID!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.deleteBundleInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to PENDING.
-	
-	**Examples**
-	- [request bundle instance auth creation](examples/request-bundle-instance-auth-creation/request-bundle-instance-auth-creation.graphql)
 	"""
 	requestBundleInstanceAuthCreation(bundleID: ID!, in: BundleInstanceAuthRequestInput! @validate): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deleteBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to UNUSED.
-	
-	**Examples**
-	- [request bundle instance auth deletion](examples/request-bundle-instance-auth-deletion/request-bundle-instance-auth-deletion.graphql)
 	"""
 	requestBundleInstanceAuthDeletion(authID: ID!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthDeletion")
-	"""
-	**Examples**
-	- [add bundle](examples/add-bundle/add-bundle.graphql)
-	"""
 	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
-	"""
-	**Examples**
-	- [update bundle](examples/update-bundle/update-bundle.graphql)
-	"""
 	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
-	"""
-	**Examples**
-	- [delete bundle](examples/delete-bundle/delete-bundle.graphql)
-	"""
 	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle")
 	"""
 	**Examples**

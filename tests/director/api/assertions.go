@@ -130,7 +130,7 @@ func assertBundles(t *testing.T, in []*graphql.BundleCreateInput, actual []*grap
 	for _, inBundle := range in {
 		found := false
 		for _, actBundle := range actual {
-			if inBundle.Name != actBundle.Name {
+			if inBundle.Name != actBundle.Title {
 				continue
 			}
 			found = true
@@ -162,12 +162,12 @@ func assertAPI(t *testing.T, in []*graphql.APIDefinitionInput, actual []*graphql
 	for _, inApi := range in {
 		found := false
 		for _, actApi := range actual {
-			if inApi.Name != actApi.Name {
+			if inApi.Name != actApi.Title {
 				continue
 			}
 			found = true
 			assert.Equal(t, inApi.Description, actApi.Description)
-			assert.Equal(t, inApi.TargetURL, actApi.TargetURL)
+			assert.Equal(t, inApi.TargetURL, actApi.EntryPoint)
 			assert.Equal(t, inApi.Group, actApi.Group)
 			assertVersion(t, inApi.Version, actApi.Version)
 			if inApi.Spec != nil {
@@ -201,7 +201,7 @@ func assertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 	for _, inEv := range in {
 		found := false
 		for _, actEv := range actual {
-			if actEv.Name != inEv.Name {
+			if actEv.Title != inEv.Name {
 				continue
 			}
 			found = true
@@ -281,7 +281,7 @@ func assertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.Placeholde
 }
 
 func assertBundle(t *testing.T, in *graphql.BundleCreateInput, actual *graphql.BundleExt) {
-	assert.Equal(t, in.Name, actual.Name)
+	assert.Equal(t, in.Name, actual.Title)
 	assert.Equal(t, in.Description, actual.Description)
 	assert.Equal(t, in.InstanceAuthRequestInputSchema, actual.InstanceAuthRequestInputSchema)
 

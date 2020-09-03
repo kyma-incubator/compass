@@ -15,27 +15,6 @@ type EventDefService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, applicationID, in
-func (_m *EventDefService) Create(ctx context.Context, applicationID string, in model.EventDefinitionInput) (string, error) {
-	ret := _m.Called(ctx, applicationID, in)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput) string); ok {
-		r0 = rf(ctx, applicationID, in)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.EventDefinitionInput) error); ok {
-		r1 = rf(ctx, applicationID, in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // CreateInBundle provides a mock function with given fields: ctx, bundleID, in
 func (_m *EventDefService) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput) (string, error) {
 	ret := _m.Called(ctx, bundleID, in)

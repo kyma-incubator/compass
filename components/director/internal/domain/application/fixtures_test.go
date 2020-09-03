@@ -157,14 +157,14 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 		},
 		Bundles: []*model.BundleCreateInput{
 			{
-				Name: "foo",
+				Title: "foo",
 				APIDefinitions: []*model.APIDefinitionInput{
-					{Name: "api1", TargetURL: "foo.bar"},
-					{Name: "api2", TargetURL: "foo.bar2"},
+					{Title: "api1", EntryPoint: "foo.bar"},
+					{Title: "api2", EntryPoint: "foo.bar2"},
 				},
 				EventDefinitions: []*model.EventDefinitionInput{
-					{Name: "event1", Description: &desc},
-					{Name: "event2", Description: &desc},
+					{Title: "event1", Description: &desc},
+					{Title: "event2", Description: &desc},
 				},
 				Documents: []*model.DocumentInput{
 					{DisplayName: "doc1", Kind: &kind},
@@ -331,20 +331,20 @@ func fixModelEventAPIDefinition(id string, appId, bundleID string, name, descrip
 	return &model.EventDefinition{
 		ID:          id,
 		BundleID:    bundleID,
-		Name:        name,
+		Title:       name,
 		Description: &description,
 		Group:       &group,
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
+		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Title: placeholder}
 }
 func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:          id,
 		BundleID:    bundleID,
-		Name:        name,
+		Title:       name,
 		Description: &description,
 		Group:       &group,
 	}
@@ -398,7 +398,7 @@ func fixModelBundle(id, tenantID, appId, name, description string) *model.Bundle
 		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  appId,
-		Name:                           name,
+		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: nil,
 		DefaultInstanceAuth:            nil,
@@ -408,7 +408,7 @@ func fixModelBundle(id, tenantID, appId, name, description string) *model.Bundle
 func fixGQLBundle(id, appId, name, description string) *graphql.Bundle {
 	return &graphql.Bundle{
 		ID:                             id,
-		Name:                           name,
+		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: nil,
 		DefaultInstanceAuth:            nil,

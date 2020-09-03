@@ -25,10 +25,10 @@ const (
 
 func fixAPIDefinitionModel(id string, bundleID string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
-		ID:        id,
-		BundleID:  bundleID,
-		Name:      name,
-		TargetURL: targetURL,
+		ID:         id,
+		BundleID:   bundleID,
+		Title:      name,
+		EntryPoint: targetURL,
 	}
 }
 
@@ -53,10 +53,10 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 		ID:          apiDefID,
 		Tenant:      tenantID,
 		BundleID:    bundleID,
-		Name:        placeholder,
+		Title:       placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
-		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
+		EntryPoint:  fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
 	}
@@ -64,10 +64,10 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 
 func fixGQLAPIDefinition(id string, bundleId string, name, targetURL string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
-		ID:        id,
-		BundleID:  bundleId,
-		Name:      name,
-		TargetURL: targetURL,
+		ID:         id,
+		BundleID:   bundleId,
+		Title:      name,
+		EntryPoint: targetURL,
 	}
 }
 
@@ -95,10 +95,10 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:          apiDefID,
 		BundleID:    bundleID,
-		Name:        placeholder,
+		Title:       placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
-		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
+		EntryPoint:  fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
 	}
@@ -126,9 +126,9 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 	}
 
 	return &model.APIDefinitionInput{
-		Name:        name,
+		Title:       name,
 		Description: &description,
-		TargetURL:   "https://test-url.com",
+		EntryPoint:  "https://test-url.com",
 		Group:       &group,
 		Spec:        spec,
 		Version:     v,
@@ -240,10 +240,10 @@ func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 
 func fixEntityAPIDefinition(id string, bundleID string, name, targetUrl string) api.Entity {
 	return api.Entity{
-		ID:        id,
-		BundleID:  bundleID,
-		Name:      name,
-		TargetURL: targetUrl,
+		ID:         id,
+		BundleID:   bundleID,
+		Title:      name,
+		EntryPoint: targetUrl,
 	}
 }
 
@@ -254,10 +254,10 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		ID:          apiDefID,
 		TenantID:    tenantID,
 		BundleID:    bundleID,
-		Name:        placeholder,
+		Title:       placeholder,
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		Group:       repo.NewValidNullableString("group_" + placeholder),
-		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
+		EntryPoint:  fmt.Sprintf("https://%s.com", placeholder),
 		EntitySpec: api.EntitySpec{
 			SpecData:   repo.NewValidNullableString("spec_data_" + placeholder),
 			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatYaml)),
@@ -285,8 +285,8 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 }
 
 func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
-		api.TargetURL, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
+	return []driver.Value{id, tenantID, bundleID, api.Title, api.Description, api.Group,
+		api.EntryPoint, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
 		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
 		api.Version.ForRemoval}
 }

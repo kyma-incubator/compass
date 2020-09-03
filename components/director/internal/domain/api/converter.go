@@ -1,8 +1,10 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
@@ -34,14 +36,27 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 	}
 
 	return &graphql.APIDefinition{
-		ID:          in.ID,
-		BundleID:    in.BundleID,
-		Name:        in.Name,
-		Description: in.Description,
-		Spec:        c.SpecToGraphQL(in.ID, in.Spec),
-		TargetURL:   in.TargetURL,
-		Group:       in.Group,
-		Version:     c.version.ToGraphQL(in.Version),
+		ID:               in.ID,
+		BundleID:         in.BundleID,
+		Title:            in.Title,
+		ShortDescription: in.ShortDescription,
+		Description:      in.Description,
+		Spec:             c.SpecToGraphQL(in.ID, in.Spec),
+		EntryPoint:       in.EntryPoint,
+		Group:            in.Group,
+		Version:          c.version.ToGraphQL(in.Version),
+		APIDefinitions:   *c.rawJSONToJSON(in.APIDefinitions),
+		Documentation:    in.Documentation,
+		ChangelogEntries: c.rawJSONToJSON(in.ChangelogEntries),
+		Logo:             in.Logo,
+		Image:            in.Image,
+		URL:              in.URL,
+		ReleaseStatus:    in.ReleaseStatus,
+		APIProtocol:      in.APIProtocol,
+		Actions:          *c.rawJSONToJSON(in.Actions),
+		Tags:             c.rawJSONToJSON(in.Tags),
+		LastUpdated:      graphql.Timestamp(in.LastUpdated),
+		Extensions:       c.rawJSONToJSON(in.Extensions),
 	}
 }
 
@@ -82,12 +97,25 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	}
 
 	return &model.APIDefinitionInput{
-		Name:        in.Name,
-		Description: in.Description,
-		TargetURL:   in.TargetURL,
-		Group:       in.Group,
-		Spec:        spec,
-		Version:     c.version.InputFromGraphQL(in.Version),
+		Title:            in.Title,
+		ShortDescription: *in.ShortDescription,
+		Description:      in.Description,
+		EntryPoint:       in.EntryPoint,
+		Group:            in.Group,
+		Spec:             spec,
+		Version:          c.version.InputFromGraphQL(in.Version),
+		APIDefinitions:   c.JSONToRawJSON(in.APIDefinitions),
+		Documentation:    in.Documentation,
+		ChangelogEntries: c.JSONToRawJSON(in.ChangelogEntries),
+		Logo:             in.Logo,
+		Image:            in.Image,
+		URL:              in.URL,
+		ReleaseStatus:    *in.ReleaseStatus,
+		APIProtocol:      *in.APIProtocol,
+		Actions:          c.JSONToRawJSON(in.Actions),
+		Tags:             c.JSONToRawJSON(in.Tags),
+		LastUpdated:      time.Time(in.LastUpdated),
+		Extensions:       c.JSONToRawJSON(in.Extensions),
 	}, nil
 }
 
@@ -131,28 +159,55 @@ func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) (*model.AP
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
-		ID:          entity.ID,
-		BundleID:    entity.BundleID,
-		Name:        entity.Name,
-		TargetURL:   entity.TargetURL,
-		Tenant:      entity.TenantID,
-		Description: repo.StringPtrFromNullableString(entity.Description),
-		Group:       repo.StringPtrFromNullableString(entity.Group),
-		Spec:        c.apiSpecFromEntity(entity.EntitySpec),
-		Version:     c.version.FromEntity(entity.Version),
+		ID:               entity.ID,
+		BundleID:         entity.BundleID,
+		Title:            entity.Title,
+		EntryPoint:       entity.EntryPoint,
+		Tenant:           entity.TenantID,
+		ShortDescription: entity.ShortDescription,
+		Description:      repo.StringPtrFromNullableString(entity.Description),
+		Group:            repo.StringPtrFromNullableString(entity.Group),
+		Spec:             c.apiSpecFromEntity(entity.EntitySpec),
+		Version:          c.version.FromEntity(entity.Version),
+		APIDefinitions:   json.RawMessage(entity.APIDefinitions),
+		Documentation:    repo.StringPtrFromNullableString(entity.Documentation),
+		ChangelogEntries: repo.RawJSONFromNullableString(entity.ChangelogEntries),
+		Logo:             repo.StringPtrFromNullableString(entity.Logo),
+		Image:            repo.StringPtrFromNullableString(entity.Image),
+		URL:              repo.StringPtrFromNullableString(entity.URL),
+		ReleaseStatus:    entity.ReleaseStatus,
+		APIProtocol:      entity.APIProtocol,
+		Actions:          json.RawMessage(entity.Actions),
+		Tags:             repo.RawJSONFromNullableString(entity.Tags),
+		LastUpdated:      entity.LastUpdated,
+		Extensions:       repo.RawJSONFromNullableString(entity.Extensions),
 	}
 }
 
 func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 
 	return Entity{
-		ID:          apiModel.ID,
-		TenantID:    apiModel.Tenant,
-		BundleID:    apiModel.BundleID,
-		Name:        apiModel.Name,
-		Description: repo.NewNullableString(apiModel.Description),
-		Group:       repo.NewNullableString(apiModel.Group),
-		TargetURL:   apiModel.TargetURL,
+		ID:               apiModel.ID,
+		TenantID:         apiModel.Tenant,
+		BundleID:         apiModel.BundleID,
+		Title:            apiModel.Title,
+		ShortDescription: apiModel.ShortDescription,
+		Description:      repo.NewNullableString(apiModel.Description),
+		Group:            repo.NewNullableString(apiModel.Group),
+		EntryPoint:       apiModel.EntryPoint,
+
+		APIDefinitions:   string(apiModel.APIDefinitions),
+		Documentation:    repo.NewNullableString(apiModel.Documentation),
+		ChangelogEntries: repo.NewNullableRawJSON(apiModel.ChangelogEntries),
+		Logo:             repo.NewNullableString(apiModel.Logo),
+		Image:            repo.NewNullableString(apiModel.Image),
+		URL:              repo.NewNullableString(apiModel.URL),
+		ReleaseStatus:    apiModel.ReleaseStatus,
+		APIProtocol:      apiModel.APIProtocol,
+		Actions:          string(apiModel.Actions),
+		Tags:             repo.NewNullableRawJSON(apiModel.Tags),
+		LastUpdated:      apiModel.LastUpdated,
+		Extensions:       repo.NewNullableRawJSON(apiModel.Extensions),
 
 		EntitySpec: c.apiSpecToEntity(apiModel.Spec),
 		Version:    c.convertVersionToEntity(apiModel.Version),
@@ -197,4 +252,20 @@ func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.APISpec {
 	}
 	apiSpec.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
 	return &apiSpec
+}
+
+func (c *converter) rawJSONToJSON(in json.RawMessage) *graphql.JSON {
+	if in == nil {
+		return nil
+	}
+	out := graphql.JSON(in)
+	return &out
+}
+
+func (c *converter) JSONToRawJSON(in *graphql.JSON) json.RawMessage {
+	if in == nil {
+		return nil
+	}
+	out := json.RawMessage(*in)
+	return out
 }

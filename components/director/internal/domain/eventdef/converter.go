@@ -1,12 +1,14 @@
 package eventdef
 
 import (
+	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
+	"time"
 )
 
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
@@ -32,13 +34,24 @@ func (c *converter) ToGraphQL(in *model.EventDefinition) *graphql.EventDefinitio
 	}
 
 	return &graphql.EventDefinition{
-		ID:          in.ID,
-		BundleID:    in.BundleID,
-		Name:        in.Name,
-		Description: in.Description,
-		Group:       in.Group,
-		Spec:        c.eventAPISpecToGraphQL(in.ID, in.Spec),
-		Version:     c.vc.ToGraphQL(in.Version),
+		ID:               in.ID,
+		BundleID:         in.BundleID,
+		Title:            in.Title,
+		ShortDescription: in.ShortDescription,
+		Description:      in.Description,
+		Group:            in.Group,
+		Spec:             c.eventAPISpecToGraphQL(in.ID, in.Spec),
+		Version:          c.vc.ToGraphQL(in.Version),
+		EventDefinitions: *c.rawJSONToJSON(in.EventDefinitions),
+		Documentation:    in.Documentation,
+		ChangelogEntries: c.rawJSONToJSON(in.ChangelogEntries),
+		Logo:             in.Logo,
+		Image:            in.Image,
+		URL:              in.URL,
+		ReleaseStatus:    in.ReleaseStatus,
+		Tags:             c.rawJSONToJSON(in.Tags),
+		LastUpdated:      graphql.Timestamp(in.LastUpdated),
+		Extensions:       c.rawJSONToJSON(in.Extensions),
 	}
 }
 
@@ -79,11 +92,22 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 	}
 
 	return &model.EventDefinitionInput{
-		Name:        in.Name,
-		Description: in.Description,
-		Spec:        spec,
-		Group:       in.Group,
-		Version:     c.vc.InputFromGraphQL(in.Version),
+		Title:            in.Title,
+		ShortDescription: *in.ShortDescription,
+		Description:      in.Description,
+		Spec:             spec,
+		Group:            in.Group,
+		Version:          c.vc.InputFromGraphQL(in.Version),
+		EventDefinitions: c.JSONToRawJSON(in.EventDefinitions),
+		Documentation:    in.Documentation,
+		ChangelogEntries: c.JSONToRawJSON(in.ChangelogEntries),
+		Logo:             in.Logo,
+		Image:            in.Image,
+		URL:              in.URL,
+		ReleaseStatus:    *in.ReleaseStatus,
+		Tags:             c.JSONToRawJSON(in.Tags),
+		LastUpdated:      time.Time(in.LastUpdated),
+		Extensions:       c.JSONToRawJSON(in.Extensions),
 	}, nil
 }
 
@@ -126,27 +150,51 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) (*m
 
 func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 	return model.EventDefinition{
-		ID:          entity.ID,
-		Tenant:      entity.TenantID,
-		BundleID:    entity.BundleID,
-		Name:        entity.Name,
-		Description: repo.StringPtrFromNullableString(entity.Description),
-		Group:       repo.StringPtrFromNullableString(entity.GroupName),
-		Version:     c.vc.FromEntity(entity.Version),
-		Spec:        c.apiSpecFromEntity(entity.EntitySpec),
+		ID:               entity.ID,
+		Tenant:           entity.TenantID,
+		BundleID:         entity.BundleID,
+		Title:            entity.Title,
+		ShortDescription: entity.ShortDescription,
+		Description:      repo.StringPtrFromNullableString(entity.Description),
+		Group:            repo.StringPtrFromNullableString(entity.GroupName),
+		Version:          c.vc.FromEntity(entity.Version),
+		Spec:             c.apiSpecFromEntity(entity.EntitySpec),
+		EventDefinitions: json.RawMessage(entity.EventDefinitions),
+		Documentation:    repo.StringPtrFromNullableString(entity.Documentation),
+		ChangelogEntries: repo.RawJSONFromNullableString(entity.ChangelogEntries),
+		Logo:             repo.StringPtrFromNullableString(entity.Logo),
+		Image:            repo.StringPtrFromNullableString(entity.Image),
+		URL:              repo.StringPtrFromNullableString(entity.URL),
+		ReleaseStatus:    entity.ReleaseStatus,
+		Tags:             repo.RawJSONFromNullableString(entity.Tags),
+		LastUpdated:      entity.LastUpdated,
+		Extensions:       repo.RawJSONFromNullableString(entity.Extensions),
 	}, nil
 }
 
 func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
 	return Entity{
-		ID:          eventModel.ID,
-		TenantID:    eventModel.Tenant,
-		BundleID:    eventModel.BundleID,
-		Name:        eventModel.Name,
-		Description: repo.NewNullableString(eventModel.Description),
-		GroupName:   repo.NewNullableString(eventModel.Group),
-		Version:     c.convertVersionToEntity(eventModel.Version),
-		EntitySpec:  c.apiSpecToEntity(eventModel.Spec),
+		ID:               eventModel.ID,
+		TenantID:         eventModel.Tenant,
+		BundleID:         eventModel.BundleID,
+		Title:            eventModel.Title,
+		ShortDescription: eventModel.ShortDescription,
+		Description:      repo.NewNullableString(eventModel.Description),
+		GroupName:        repo.NewNullableString(eventModel.Group),
+
+		EventDefinitions: string(eventModel.EventDefinitions),
+		Documentation:    repo.NewNullableString(eventModel.Documentation),
+		ChangelogEntries: repo.NewNullableRawJSON(eventModel.ChangelogEntries),
+		Logo:             repo.NewNullableString(eventModel.Logo),
+		Image:            repo.NewNullableString(eventModel.Image),
+		URL:              repo.NewNullableString(eventModel.URL),
+		ReleaseStatus:    eventModel.ReleaseStatus,
+		Tags:             repo.NewNullableRawJSON(eventModel.Tags),
+		LastUpdated:      eventModel.LastUpdated,
+		Extensions:       repo.NewNullableRawJSON(eventModel.Extensions),
+
+		Version:    c.convertVersionToEntity(eventModel.Version),
+		EntitySpec: c.apiSpecToEntity(eventModel.Spec),
 	}, nil
 }
 
@@ -189,4 +237,20 @@ func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.EventSpec {
 	apiSpec.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
 
 	return &apiSpec
+}
+
+func (c *converter) rawJSONToJSON(in json.RawMessage) *graphql.JSON {
+	if in == nil {
+		return nil
+	}
+	out := graphql.JSON(in)
+	return &out
+}
+
+func (c *converter) JSONToRawJSON(in *graphql.JSON) json.RawMessage {
+	if in == nil {
+		return nil
+	}
+	out := json.RawMessage(*in)
+	return out
 }

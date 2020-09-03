@@ -236,11 +236,11 @@ func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error
 
 func (g *Graphqlizer) APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (string, error) {
 	return g.genericToGQL(in, `{
-		name: "{{ .Name}}",
+		title: "{{ .Title}}",
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end}}
-		targetURL: "{{.TargetURL}}",
+		entryPoint: "{{.EntryPoint}}",
 		{{- if .Group }}
 		group: "{{.Group}}",
 		{{- end }}

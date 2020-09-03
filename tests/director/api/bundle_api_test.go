@@ -61,7 +61,7 @@ func TestManageAPIInBundle(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, updatedAPI.ID, api.ID)
-	assert.Equal(t, updatedAPI.Name, "new-name")
+	assert.Equal(t, updatedAPI.Title, "new-name")
 	saveExample(t, req.Query(), "update api definition")
 
 	var deletedAPI graphql.APIDefinitionExt
@@ -121,7 +121,7 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, updatedEvent.ID, event.ID)
-	assert.Equal(t, updatedEvent.Name, "new-name")
+	assert.Equal(t, updatedEvent.Title, "new-name")
 	saveExample(t, req.Query(), "update event definition")
 
 	var deletedEvent graphql.EventAPIDefinitionExt
@@ -417,7 +417,7 @@ func TestUpdateBundle(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 
-	require.NotEmpty(t, output.Name)
+	require.NotEmpty(t, output.Title)
 	saveExample(t, updateBundleReq.Query(), "update bundle")
 }
 
@@ -440,6 +440,6 @@ func TestDeleteBundle(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 
-	require.NotEmpty(t, output.Name)
+	require.NotEmpty(t, output.Title)
 	saveExample(t, pkdDeleteReq.Query(), "delete bundle")
 }

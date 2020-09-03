@@ -17,7 +17,7 @@ func fixModelAPIDefinition(id string, bundleID string, name, description string,
 	return &model.APIDefinition{
 		ID:          id,
 		BundleID:    bundleID,
-		Name:        name,
+		Title:       name,
 		Description: &description,
 		Group:       &group,
 	}
@@ -27,7 +27,7 @@ func fixGQLAPIDefinition(id string, bundleID string, name, description string, g
 	return &graphql.APIDefinition{
 		ID:          id,
 		BundleID:    bundleID,
-		Name:        name,
+		Title:       name,
 		Description: &description,
 		Group:       &group,
 	}
@@ -61,20 +61,20 @@ func fixModelEventAPIDefinition(id string, bundleID string, name, description st
 	return &model.EventDefinition{
 		ID:          id,
 		BundleID:    bundleID,
-		Name:        name,
+		Title:       name,
 		Description: &description,
 		Group:       &group,
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
+		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Title: placeholder}
 }
 func fixGQLEventDefinition(id string, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:          id,
 		BundleID:    bundleID,
-		Name:        name,
+		Title:       name,
 		Description: &description,
 		Group:       &group,
 	}
@@ -169,7 +169,7 @@ func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
 		ID:                             bundleID,
 		TenantID:                       tenantID,
 		ApplicationID:                  appID,
-		Name:                           name,
+		Title:                          name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            fixModelAuth(),
@@ -180,7 +180,7 @@ func fixGQLBundle(id, name, desc string) *graphql.Bundle {
 	schema := graphql.JSONSchema(`{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`)
 	return &graphql.Bundle{
 		ID:                             id,
-		Name:                           name,
+		Title:                          name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: &schema,
 		DefaultInstanceAuth:            fixGQLAuth(),
@@ -228,17 +228,17 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 	}
 
 	return model.BundleCreateInput{
-		Name:                           name,
+		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
 		APIDefinitions: []*model.APIDefinitionInput{
-			{Name: "api1", TargetURL: "foo.bar"},
-			{Name: "api2", TargetURL: "foo.bar2"},
+			{Title: "api1", EntryPoint: "foo.bar"},
+			{Title: "api2", EntryPoint: "foo.bar2"},
 		},
 		EventDefinitions: []*model.EventDefinitionInput{
-			{Name: "event1", Description: &desc},
-			{Name: "event2", Description: &desc},
+			{Title: "event1", Description: &desc},
+			{Title: "event2", Description: &desc},
 		},
 		Documents: []*model.DocumentInput{
 			{DisplayName: "doc1", Kind: &docKind},
@@ -276,7 +276,7 @@ func fixModelBundleUpdateInput(t *testing.T, name, description string) model.Bun
 	}
 
 	return model.BundleUpdateInput{
-		Name:                           name,
+		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
@@ -352,7 +352,7 @@ func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 		ID:                            id,
 		TenantID:                      tenantID,
 		ApplicationID:                 appID,
-		Name:                          name,
+		Title:                         name,
 		Description:                   descSQL,
 		InstanceAuthRequestJSONSchema: schemaSQL,
 		DefaultInstanceAuth:           authSQL,
@@ -368,7 +368,7 @@ func fixBundleRow(id, placeholder string) []driver.Value {
 }
 
 func fixBundleCreateArgs(defAuth, schema string, bundle *model.Bundle) []driver.Value {
-	return []driver.Value{bundleID, tenantID, appID, bundle.Name, bundle.Description, schema, defAuth}
+	return []driver.Value{bundleID, tenantID, appID, bundle.Title, bundle.Description, schema, defAuth}
 }
 
 func fixDefaultAuth() string {

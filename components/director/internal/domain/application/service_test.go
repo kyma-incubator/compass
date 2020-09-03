@@ -33,15 +33,15 @@ func TestService_Create(t *testing.T) {
 	}
 	APIDefinitions := []*model.APIDefinitionInput{
 		{
-			Name: "foo",
-			Spec: &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
-		}, {Name: "bar"},
+			Title: "foo",
+			Spec:  &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
+		}, {Title: "bar"},
 	}
 	EventDefinitions := []*model.EventDefinitionInput{
 		{
-			Name: "foo",
-			Spec: &model.EventSpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
-		}, {Name: "bar"},
+			Title: "foo",
+			Spec:  &model.EventSpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
+		}, {Title: "bar"},
 	}
 	modelInput := model.ApplicationRegisterInput{
 		Name: "foo.bar-not",
@@ -57,7 +57,7 @@ func TestService_Create(t *testing.T) {
 	}
 	modelInput.Bundles = []*model.BundleCreateInput{
 		{
-			Name:             "bundle1",
+			Title:            "bundle1",
 			APIDefinitions:   APIDefinitions,
 			EventDefinitions: EventDefinitions,
 			Documents:        Documents,

@@ -23,7 +23,7 @@ const bundleInstanceAuthTable string = `public.bundle_instance_auths`
 const bundleInstanceAuthBundleRefField string = `bundle_id`
 
 var (
-	bundleColumns = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth"}
+	bundleColumns = []string{"id", "tenant_id", "app_id", "title", "short_description", "description", "instance_auth_request_json_schema", "default_instance_auth", "tags", "last_updated", "extensions"}
 	tenantColumn  = "tenant_id"
 )
 

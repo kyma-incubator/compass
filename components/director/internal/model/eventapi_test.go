@@ -25,7 +25,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: &model.EventDefinitionInput{
-				Name:        name,
+				Title:       name,
 				Description: &desc,
 				Group:       &group,
 			},
@@ -33,7 +33,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 				ID:          id,
 				Tenant:      tenant,
 				BundleID:    bundleID,
-				Name:        name,
+				Title:       name,
 				Description: &desc,
 				Group:       &group,
 			},

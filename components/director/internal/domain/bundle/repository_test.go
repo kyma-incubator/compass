@@ -90,7 +90,7 @@ func TestPgRepository_Update(t *testing.T) {
 		convMock := &automock.EntityConverter{}
 		convMock.On("ToEntity", bundle).Return(entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, tenantID, entity.ID).
+			WithArgs(entity.Title, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		pgRepository := mp_bundle.NewRepository(convMock)

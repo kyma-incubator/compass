@@ -2,13 +2,16 @@ package graphql
 
 type Bundle struct {
 	ID                             string      `json:"id"`
-	Name                           string      `json:"name"`
-	ShortDescription               *string     `json:"shortDescription"`
+	Title                          string      `json:"title"`
+	ShortDescription               string      `json:"shortDescription"`
 	Description                    *string     `json:"description"`
 	Version                        *string     `json:"version"`
 	InstanceAuthRequestInputSchema *JSONSchema `json:"InstanceAuthRequestInputSchema"`
 	// When defined, all Auth requests fallback to defaultAuth.
-	DefaultInstanceAuth *Auth `json:"defaultInstanceAuth"`
+	DefaultInstanceAuth *Auth     `json:"defaultInstanceAuth"`
+	Tags                *JSON     `json:"tags"`
+	LastUpdated         Timestamp `json:"lastUpdated"`
+	Extensions          *JSON     `json:"extensions"`
 }
 
 type BundleExt struct {

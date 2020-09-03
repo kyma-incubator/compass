@@ -1,6 +1,9 @@
 package repo
 
-import "database/sql"
+import (
+	"database/sql"
+	"encoding/json"
+)
 
 func NewNullableString(text *string) sql.NullString {
 	nullString := sql.NullString{}
@@ -17,6 +20,16 @@ func NewValidNullableString(text string) sql.NullString {
 		String: text,
 		Valid:  true,
 	}
+}
+
+func NewNullableRawJSON(json json.RawMessage) sql.NullString {
+	nullString := sql.NullString{}
+	if json != nil {
+		nullString.String = string([]byte(json))
+		nullString.Valid = true
+	}
+
+	return nullString
 }
 
 func NewNullableBool(boolean *bool) sql.NullBool {
@@ -38,6 +51,14 @@ func NewValidNullableBool(boolean bool) sql.NullBool {
 func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	if sqlString.Valid {
 		return &sqlString.String
+	}
+
+	return nil
+}
+
+func RawJSONFromNullableString(sqlString sql.NullString) json.RawMessage {
+	if sqlString.Valid {
+		return []byte(sqlString.String)
 	}
 
 	return nil

@@ -22,14 +22,14 @@ const (
 )
 
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{ID: id, Tenant: tenantID, BundleID: bundleID, Name: placeholder}
+	return &model.EventDefinition{ID: id, Tenant: tenantID, BundleID: bundleID, Title: placeholder}
 }
 
 func fixGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:       id,
 		BundleID: bundleID,
-		Name:     placeholder,
+		Title:    placeholder,
 	}
 }
 
@@ -45,7 +45,7 @@ func fixFullModelEventDefinition(id, placeholder string) model.EventDefinition {
 		ID:          id,
 		Tenant:      tenantID,
 		BundleID:    bundleID,
-		Name:        placeholder,
+		Title:       placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Spec:        spec,
@@ -77,7 +77,7 @@ func fixDetailedGQLEventDefinition(id, placeholder string) *graphql.EventDefinit
 	return &graphql.EventDefinition{
 		ID:          id,
 		BundleID:    bundleID,
-		Name:        placeholder,
+		Title:       placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
 		Group:       str.Ptr("group_" + placeholder),
@@ -107,7 +107,7 @@ func fixModelEventDefinitionInput() *model.EventDefinitionInput {
 	}
 
 	return &model.EventDefinitionInput{
-		Name:        "name",
+		Title:       "name",
 		Description: str.Ptr("description"),
 		Group:       str.Ptr("group"),
 		Spec:        spec,
@@ -150,7 +150,7 @@ func fixFullEventDef(id, placeholder string) eventdef.Entity {
 		ID:          id,
 		BundleID:    bundleID,
 		TenantID:    tenantID,
-		Name:        placeholder,
+		Title:       placeholder,
 		GroupName:   repo.NewValidNullableString("group_" + placeholder),
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		EntitySpec: eventdef.EntitySpec{
@@ -164,7 +164,7 @@ func fixFullEventDef(id, placeholder string) eventdef.Entity {
 
 func fixMinEntityEventDef(id, placeholder string) eventdef.Entity {
 	return eventdef.Entity{ID: id, TenantID: tenantID,
-		BundleID: bundleID, Name: placeholder}
+		BundleID: bundleID, Title: placeholder}
 }
 
 func fixVersionModel() model.Version {
@@ -199,7 +199,7 @@ func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 }
 
 func fixEventCreateArgs(id string, api model.EventDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
+	return []driver.Value{id, tenantID, bundleID, api.Title, api.Description, api.Group,
 		api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type), api.Version.Value, api.Version.Deprecated,
 		api.Version.DeprecatedSince, api.Version.ForRemoval}
 }

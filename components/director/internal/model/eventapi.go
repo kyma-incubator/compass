@@ -1,18 +1,31 @@
 package model
 
 import (
+	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"time"
 )
 
 type EventDefinition struct {
-	ID          string
-	Tenant      string
-	BundleID    string
-	Name        string
-	Description *string
-	Group       *string
-	Spec        *EventSpec
-	Version     *Version
+	ID               string
+	Tenant           string
+	BundleID         string
+	Title            string
+	ShortDescription string
+	Description      *string
+	Group            *string
+	Spec             *EventSpec
+	Version          *Version
+	EventDefinitions json.RawMessage
+	Tags             json.RawMessage
+	Documentation    *string
+	ChangelogEntries json.RawMessage
+	Logo             *string
+	Image            *string
+	URL              *string
+	ReleaseStatus    string
+	LastUpdated      time.Time
+	Extensions       json.RawMessage
 }
 
 type EventSpecType string
@@ -36,11 +49,22 @@ type EventDefinitionPage struct {
 func (EventDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
-	Name        string
-	Description *string
-	Spec        *EventSpecInput
-	Group       *string
-	Version     *VersionInput
+	Title            string
+	ShortDescription string
+	Description      *string
+	Spec             *EventSpecInput
+	Group            *string
+	Version          *VersionInput
+	EventDefinitions json.RawMessage
+	Tags             json.RawMessage
+	Documentation    *string
+	ChangelogEntries json.RawMessage
+	Logo             *string
+	Image            *string
+	URL              *string
+	ReleaseStatus    string
+	LastUpdated      time.Time
+	Extensions       json.RawMessage
 }
 
 type EventSpecInput struct {
@@ -56,14 +80,24 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bundleID
 	}
 
 	return &EventDefinition{
-		ID:          id,
-		BundleID:    bundleID,
-		Tenant:      tenant,
-		Name:        e.Name,
-		Description: e.Description,
-		Group:       e.Group,
-		Spec:        e.Spec.ToEventSpec(),
-		Version:     e.Version.ToVersion(),
+		ID:               id,
+		BundleID:         bundleID,
+		Tenant:           tenant,
+		Title:            e.Title,
+		ShortDescription: e.ShortDescription,
+		Description:      e.Description,
+		Group:            e.Group,
+		Spec:             e.Spec.ToEventSpec(),
+		Version:          e.Version.ToVersion(),
+		EventDefinitions: e.EventDefinitions,
+		Tags:             e.Tags,
+		Documentation:    e.Documentation,
+		ChangelogEntries: e.ChangelogEntries,
+		Logo:             e.Logo,
+		Image:            e.Image,
+		ReleaseStatus:    e.ReleaseStatus,
+		LastUpdated:      e.LastUpdated,
+		Extensions:       e.Extensions,
 	}
 }
 

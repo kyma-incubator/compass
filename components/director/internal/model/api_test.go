@@ -26,17 +26,17 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: &model.APIDefinitionInput{
-				Name:        name,
+				Title:       name,
 				Description: &desc,
-				TargetURL:   targetUrl,
+				EntryPoint:  targetUrl,
 				Group:       &group,
 			},
 			Expected: &model.APIDefinition{
 				ID:          id,
 				BundleID:    bundleID,
-				Name:        name,
+				Title:       name,
 				Description: &desc,
-				TargetURL:   targetUrl,
+				EntryPoint:  targetUrl,
 				Group:       &group,
 				Tenant:      tenant,
 			},

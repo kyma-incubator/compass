@@ -328,7 +328,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 		desc = *in.Description
 	}
 	outDeprecated := model.ServiceDetails{
-		Name:        in.Name,
+		Name:        in.Title,
 		Description: desc,
 		Identifier:  legacyServiceReference.Identifier,
 		Labels:      &map[string]string{},
@@ -340,7 +340,7 @@ func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceR
 		var apiDef = in.APIDefinitions.Data[0]
 
 		outDeprecated.Api = &model.API{
-			TargetUrl: apiDef.TargetURL,
+			TargetUrl: apiDef.EntryPoint,
 		}
 
 		if apiDef.Description != nil {

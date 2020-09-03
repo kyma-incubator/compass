@@ -503,7 +503,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 	for name, tc := range map[string]testCase{
 		"name and description is loaded from Bundle": {
 			given: graphql.BundleExt{
-				Bundle: graphql.Bundle{Name: "foo", Description: ptrString("description")},
+				Bundle: graphql.Bundle{Title: "foo", Description: ptrString("description")},
 				APIDefinitions: graphql.APIDefinitionPageExt{
 					Data: []*graphql.APIDefinitionExt{
 						{
@@ -525,7 +525,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 					Data: []*graphql.APIDefinitionExt{
 						{
 							APIDefinition: graphql.APIDefinition{
-								TargetURL: "http://target.url",
+								EntryPoint: "http://target.url",
 							},
 						},
 					},
@@ -556,7 +556,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 					Data: []*graphql.APIDefinitionExt{
 						{
 							APIDefinition: graphql.APIDefinition{
-								TargetURL: "http://target.url",
+								EntryPoint: "http://target.url",
 							},
 						},
 					},
@@ -599,7 +599,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 					Data: []*graphql.APIDefinitionExt{
 						{
 							APIDefinition: graphql.APIDefinition{
-								TargetURL: "http://target.url",
+								EntryPoint: "http://target.url",
 							},
 						},
 					},
@@ -635,7 +635,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 					Data: []*graphql.APIDefinitionExt{
 						{
 							APIDefinition: graphql.APIDefinition{
-								TargetURL: "http://target.url",
+								EntryPoint: "http://target.url",
 							},
 						},
 					},
@@ -791,7 +791,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 				Data: []*graphql.APIDefinitionExt{
 					{
 						APIDefinition: graphql.APIDefinition{
-							TargetURL: "http://target.url",
+							EntryPoint: "http://target.url",
 						},
 					},
 				},
