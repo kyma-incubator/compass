@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
-	"gobundle.in/asaskevich/govalidator.v9"
+	"gopkg.in/asaskevich/govalidator.v9"
 )
 
 type ServiceDetailsValidator interface {

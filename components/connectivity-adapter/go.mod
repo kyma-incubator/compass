@@ -20,7 +20,7 @@ require (
 	github.com/vektah/gqlparser v1.3.1 // indirect
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
-	gobundle.in/asaskevich/govalidator.v9 v9.0.0-20180315120708-ccb8e960c48f
+	gopkg.in/asaskevich/govalidator.v9 v9.0.0-20180315120708-ccb8e960c48f
 	k8s.io/api v0.17.2 // indirect
 	k8s.io/apimachinery v0.17.3 // indirect
 	k8s.io/client-go v11.0.0+incompatible // indirect
@@ -28,5 +28,5 @@ require (
 
 replace (
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
-	gobundle.in/yaml.v2 => gobundle.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
 )
