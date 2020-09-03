@@ -18,7 +18,7 @@ type converter struct {
 	pkg PackageConverter
 }
 
-func NewConverter(webhook WebhookConverter, pkgConverter PackageConverter) *converter {
+func NewConverter(webhook WebhookConverter, pkgConverter BundleConverter) *converter {
 	return &converter{webhook: webhook, pkg: pkgConverter}
 }
 
@@ -104,9 +104,9 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Webhooks")
 	}
 
-	packages, err := c.pkg.MultipleCreateInputFromGraphQL(in.Packages)
+	packages, err := c.pkg.MultipleCreateInputFromGraphQL(in.Bundles)
 	if err != nil {
-		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Packages")
+		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Bundles")
 	}
 
 	return model.ApplicationRegisterInput{
@@ -118,7 +118,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
 		ProviderName:        in.ProviderName,
 		Webhooks:            webhooks,
-		Packages:            packages,
+		Bundles:            packages,
 	}, nil
 }
 

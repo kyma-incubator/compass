@@ -86,7 +86,7 @@ type ApplicationRegisterInput struct {
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
 	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	Packages            []*PackageCreateInput       `json:"packages"`
+	Bundles            []*BundleCreateInput       `json:"packages"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 }
@@ -382,7 +382,7 @@ type OAuthCredentialDataInput struct {
 	URL string `json:"url"`
 }
 
-type PackageCreateInput struct {
+type BundleCreateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
@@ -394,35 +394,35 @@ type PackageCreateInput struct {
 	Documents                      []*DocumentInput        `json:"documents"`
 }
 
-type PackageInstanceAuth struct {
+type BundleInstanceAuth struct {
 	ID string `json:"id"`
-	// Context of PackageInstanceAuth - such as Runtime ID, namespace
+	// Context of BundleInstanceAuth - such as Runtime ID, namespace
 	Context *JSON `json:"context"`
-	// User input while requesting Package Instance Auth
+	// User input while requesting Bundle Instance Auth
 	InputParams *JSON `json:"inputParams"`
 	// It may be empty if status is PENDING.
 	// Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
 	Auth   *Auth                      `json:"auth"`
-	Status *PackageInstanceAuthStatus `json:"status"`
+	Status *BundleInstanceAuthStatus `json:"status"`
 }
 
-type PackageInstanceAuthRequestInput struct {
-	// Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+type BundleInstanceAuthRequestInput struct {
+	// Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
 	Context *JSON `json:"context"`
 	// **Validation:** JSON validated against package.instanceAuthRequestInputSchema
 	InputParams *JSON `json:"inputParams"`
 }
 
-type PackageInstanceAuthSetInput struct {
+type BundleInstanceAuthSetInput struct {
 	// **Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
 	Auth *AuthInput `json:"auth"`
 	// **Validation:** Optional if the auth is provided.
 	// If the status condition is "FAILED", auth must be empty.
-	Status *PackageInstanceAuthStatusInput `json:"status"`
+	Status *BundleInstanceAuthStatusInput `json:"status"`
 }
 
-type PackageInstanceAuthStatus struct {
-	Condition PackageInstanceAuthStatusCondition `json:"condition"`
+type BundleInstanceAuthStatus struct {
+	Condition BundleInstanceAuthStatusCondition `json:"condition"`
 	Timestamp Timestamp                          `json:"timestamp"`
 	Message   string                             `json:"message"`
 	// Possible reasons:
@@ -434,8 +434,8 @@ type PackageInstanceAuthStatus struct {
 	Reason string `json:"reason"`
 }
 
-type PackageInstanceAuthStatusInput struct {
-	Condition PackageInstanceAuthSetStatusConditionInput `json:"condition"`
+type BundleInstanceAuthStatusInput struct {
+	Condition BundleInstanceAuthSetStatusConditionInput `json:"condition"`
 	// **Validation:** required, if condition is FAILED
 	Message string `json:"message"`
 	// Example reasons:
@@ -449,13 +449,13 @@ type PackageInstanceAuthStatusInput struct {
 	Reason string `json:"reason"`
 }
 
-type PackagePage struct {
-	Data       []*Package `json:"data"`
+type BundlePage struct {
+	Data       []*Bundle `json:"data"`
 	PageInfo   *PageInfo  `json:"pageInfo"`
 	TotalCount int        `json:"totalCount"`
 }
 
-func (PackagePage) IsPageable() {}
+func (BundlePage) IsPageable() {}
 
 type PackageUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
@@ -979,7 +979,7 @@ func (e HealthCheckType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type PackageInstanceAuthSetStatusConditionInput string
+type BundleInstanceAuthSetStatusConditionInput string
 
 const (
 	PackageInstanceAuthSetStatusConditionInputSucceeded PackageInstanceAuthSetStatusConditionInput = "SUCCEEDED"

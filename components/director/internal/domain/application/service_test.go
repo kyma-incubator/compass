@@ -55,7 +55,7 @@ func TestService_Create(t *testing.T) {
 		},
 		IntegrationSystemID: &intSysID,
 	}
-	modelInput.Packages = []*model.PackageCreateInput{
+	modelInput.Bundles = []*model.BundleCreateInput{
 		{
 			Name:             "pkg1",
 			APIDefinitions:   APIDefinitions,
@@ -106,7 +106,7 @@ func TestService_Create(t *testing.T) {
 		IntSysRepoFn       func() *automock.IntegrationSystemRepository
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
-		PackageServiceFn   func() *automock.PackageService
+		BundleServiceFn   func() *automock.BundleService
 		UIDServiceFn       func() *automock.UIDService
 		Input              model.ApplicationRegisterInput
 		ExpectedErr        error
@@ -150,9 +150,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Packages).Return(nil).Once()
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -467,7 +467,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Returns error when creating packages",
+			Name: "Returns error when creating bundles",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Create", ctx, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()

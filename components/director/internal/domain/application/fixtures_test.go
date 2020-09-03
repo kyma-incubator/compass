@@ -239,9 +239,9 @@ var (
 	docCLOB  = graphql.CLOB(docData)
 )
 
-func fixModelDocument(packageID, id string) *model.Document {
+func fixModelDocument(bundleID, id string) *model.Document {
 	return &model.Document{
-		PackageID: packageID,
+		PackageID: bundleID,
 		ID:        id,
 		Title:     docTitle,
 		Format:    model.DocumentFormatMarkdown,
@@ -327,10 +327,10 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 	}
 }
 
-func fixModelEventAPIDefinition(id string, appId, packageID string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, appId, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
 		ID:          id,
-		PackageID:   packageID,
+		PackageID:   bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -340,10 +340,10 @@ func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinitio
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
 		PackageID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
 }
-func fixGQLEventDefinition(id string, appId, packageID string, name, description string, group string) *graphql.EventDefinition {
+func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:          id,
-		PackageID:   packageID,
+		PackageID:   bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -415,26 +415,26 @@ func fixGQLPackage(id, appId, name, description string) *graphql.Package {
 	}
 }
 
-func fixGQLPackagePage(packages []*graphql.Package) *graphql.PackagePage {
+func fixGQLPackagePage(bundles []*graphql.Package) *graphql.PackagePage {
 	return &graphql.PackagePage{
-		Data: packages,
+		Data: bundles,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: "start",
 			EndCursor:   "end",
 			HasNextPage: false,
 		},
-		TotalCount: len(packages),
+		TotalCount: len(bundles),
 	}
 }
 
-func fixPackagePage(packages []*model.Package) *model.PackagePage {
+func fixPackagePage(bundles []*model.Package) *model.PackagePage {
 	return &model.PackagePage{
-		Data: packages,
+		Data: bundles,
 		PageInfo: &pagination.Page{
 			StartCursor: "start",
 			EndCursor:   "end",
 			HasNextPage: false,
 		},
-		TotalCount: len(packages),
+		TotalCount: len(bundles),
 	}
 }

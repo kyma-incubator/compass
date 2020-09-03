@@ -15,7 +15,7 @@ const apiDefTable string = `"public"."api_definitions"`
 
 var (
 	tenantColumn  = "tenant_id"
-	apiDefColumns = []string{"id", "tenant_id", "package_id", "name", "description", "group_name", "target_url", "spec_data",
+	apiDefColumns = []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"name", "description", "group_name", "target_url", "spec_data", "spec_format", "spec_type",
@@ -56,9 +56,9 @@ func (r APIDefCollection) Len() int {
 	return len(r)
 }
 
-func (r *pgRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
+func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	conditions := repo.Conditions{
-		repo.NewEqualCondition("package_id", packageID),
+		repo.NewEqualCondition("bundle_id", bundleID),
 	}
 	return r.list(ctx, tenantID, pageSize, cursor, conditions)
 }
@@ -97,12 +97,12 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &apiDefModel, nil
 }
 
-func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.APIDefinition, error) {
+func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error) {
 	var ent Entity
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("id", id),
-		repo.NewEqualCondition("package_id", packageID),
+		repo.NewEqualCondition("bundle_id", bundleID),
 	}
 	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
