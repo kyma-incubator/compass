@@ -190,7 +190,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model
 
 	return &model.BundleUpdateInput{
 		Title:                          in.Title,
-		ShortDescription:               *in.ShortDescription,
+		ShortDescription:               in.ShortDescription,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
