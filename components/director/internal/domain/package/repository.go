@@ -40,21 +40,6 @@ type pgRepository struct {
 	conv                EntityConverter
 }
 
-func (r *pgRepository) AssociateBundle(ctx context.Context, id, bundleID string) error {
-	if len(id) == 0 || len(bundleID) == 0 {
-		return apperrors.NewInternalError("id or bundleID can not be empty")
-	}
-	entity := struct {
-		PackageID string `db:"package_id"`
-		BundleID  string `db:"bundle_id"`
-	}{
-		PackageID: id,
-		BundleID:  bundleID,
-	}
-
-	return r.creator.Create(ctx, entity)
-}
-
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:        repo.NewExistQuerier(resource.Package, packageTable, tenantColumn),
@@ -168,4 +153,19 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+func (r *pgRepository) AssociateBundle(ctx context.Context, id, bundleID string) error {
+	if len(id) == 0 || len(bundleID) == 0 {
+		return apperrors.NewInternalError("id or bundleID can not be empty")
+	}
+	entity := struct {
+		PackageID string `db:"package_id"`
+		BundleID  string `db:"bundle_id"`
+	}{
+		PackageID: id,
+		BundleID:  bundleID,
+	}
+
+	return r.relationshipCreator.Create(ctx, entity)
 }
