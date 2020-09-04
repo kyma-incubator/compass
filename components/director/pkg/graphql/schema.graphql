@@ -230,6 +230,11 @@ input ApplicationRegisterInput {
 	statusCondition: ApplicationStatusCondition
 }
 
+input BundlePackageRelationInput {
+	packageID: ID!
+	bundleID: ID!
+}
+
 """
 **Validation:** provided placeholders' names are unique and used in applicationInput
 """
@@ -290,6 +295,53 @@ input AutomaticScenarioAssignmentSetInput {
 input BasicCredentialDataInput {
 	username: String!
 	password: String!
+}
+
+input PackageCreateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	title: String!
+	"""
+	**Validation:** max=2000
+	"""
+	shortDescription: String!
+	description: String!
+	version: String!
+	licence: String
+	licenceType: String
+	termsOfService: String
+	logo: String
+	image: String
+	provider: JSON,
+	actions: JSON,
+	tags: JSON
+	lastUpdated: Timestamp!
+	extensions: JSON
+	bundles: [BundleCreateInput!]
+}
+
+input PackageUpdateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	title: String!
+	shortDescription: String
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	version: String
+	licence: String
+	licenceType: String
+	termsOfService: String
+	logo: String
+	image: String
+	provider: JSON,
+	actions: JSON,
+	tags: JSON
+	lastUpdated: Timestamp!
+	extensions: JSON
 }
 
 input BundleCreateInput {
@@ -721,9 +773,34 @@ type BasicCredentialData {
 	password: String!
 }
 
-"""
-TODO: mutation associateBundleWithBundle
-"""
+type Package {
+	id: ID!
+	applicationID: ID!
+	title: String!
+	shortDescription: String!
+	description: String!
+	version: String!
+	licence: String
+	licenceType: String
+	termsOfService: String
+	logo: String
+	image: String
+    provider: JSON,
+	actions: JSON,
+	tags: JSON
+	lastUpdated: Timestamp!
+	extensions: JSON
+
+	bundles(first: Int = 100, after: PageCursor): BundlePage
+	bundle(id: ID!): Bundle
+}
+
+type PackagePage implements Pageable {
+	data: [Package!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type Bundle {
 	id: ID!
 	title: String!
@@ -1275,7 +1352,16 @@ type Mutation {
 	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
 	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
+
+	""" TODO: Add validation & scopes """
+	addPackage(applicationID: ID!, in: PackageCreateInput!): Package!
+	updatePackage(id: ID!, in: PackageUpdateInput!): Package!
+	deletePackage(id: ID!): Package!
+
+	""" add scopes eventually """
+	associateBundleWithhPackage(in: BundlePackageRelationInput!): Package
 	"""
+
 	When BundleInstanceAuth is not in pending state, the operation returns error.
 	
 	When used without error, the status of pending auth is set to success.
