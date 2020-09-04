@@ -6,11 +6,11 @@ ALTER TABLE packages
 CREATE TABLE packages (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     app_id uuid NOT NULL, /* if a package is returned by a system, only that system is expected iis expected to return this package, otherwise -> validation error */
-    FOREIGN KEY (owner_app_id) REFERENCES applications (id) ON DELETE CASCADE,
+    FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
     title VARCHAR(256) NOT NULL,
     short_description VARCHAR(256) NOT NULL,
     description TEXT NOT NULL,
-    version: VARCHAR(64) NOT NULL,
+    version VARCHAR(64) NOT NULL,
     licence VARCHAR(512),
     licence_type VARCHAR(256),
     terms_of_service VARCHAR(512),
@@ -20,7 +20,7 @@ CREATE TABLE packages (
     tags JSONB, /* consider how to store tags to be queriable */
     actions JSONB,
     last_updated TIMESTAMP NOT NULL,
-    extensions JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
+    extensions JSONB /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
 );
 
 ALTER TABLE bundles
@@ -32,11 +32,13 @@ ALTER TABLE bundles
     ADD COLUMN last_updated TIMESTAMP NOT NULL,
     ADD COLUMN extensions JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
 
-CREATE TABLE package_bundles
+CREATE TABLE package_bundles (
     package_id UUID NOT NULL,
     bundle_id UUID NOT NULL,
+    PRIMARY KEY (package_id, bundle_id),
     FOREIGN KEY (package_id) REFERENCES packages (id) ON DELETE CASCADE,
-    FOREIGN KEY (bundle_id) REFERENCES bundles (id) ON DELETE CASCADE;
+    FOREIGN KEY (bundle_id) REFERENCES bundles (id) ON DELETE CASCADE
+);
 
 ALTER TABLE package_instance_auths
   RENAME TO bundle_instance_auths;
@@ -52,9 +54,12 @@ ADD CONSTRAINT package_instance_auths_bundle_id_fkey
     ON DELETE CASCADE;
 
 ALTER TABLE api_definitions
-    RENAME COLUMN name TO title,
-    RENAME COLUMN package_id TO bundle_id,
-    RENAME COLUMN version_value TO version
+    RENAME COLUMN name TO title;
+ALTER TABLE api_definitions
+    RENAME COLUMN package_id TO bundle_id;
+ALTER TABLE api_definitions
+    RENAME COLUMN version_value TO version;
+ALTER TABLE api_definitions
     RENAME COLUMN target_url TO entry_point;
 
 ALTER TABLE api_definitions ALTER entry_point TYPE VARCHAR(512);
@@ -82,8 +87,10 @@ ALTER TABLE api_definitions
     ADD COLUMN extensions JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
 
 ALTER TABLE event_api_definitions
-    RENAME COLUMN name TO title,
-    RENAME COLUMN package_id TO bundle_id,
+    RENAME COLUMN name TO title;
+ALTER TABLE event_api_definitions
+    RENAME COLUMN package_id TO bundle_id;
+ALTER TABLE event_api_definitions
     RENAME COLUMN version_value TO version;
 
 ALTER TABLE event_api_definitions

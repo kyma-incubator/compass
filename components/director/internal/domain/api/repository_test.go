@@ -222,7 +222,7 @@ func TestPgRepository_CreateMany(t *testing.T) {
 
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(`UPDATE "public"."api_definitions" SET name = ?, description = ?, group_name = ?, 
-		target_url = ?, spec_data = ?, spec_format = ?, spec_type = ?, version_value = ?, 
+		entry_point = ?, spec_data = ?, spec_format = ?, spec_type = ?, version = ?, 
 		version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE tenant_id = ? AND id = ?`)
 
 	t.Run("success", func(t *testing.T) {

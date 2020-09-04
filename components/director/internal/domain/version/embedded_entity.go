@@ -5,7 +5,7 @@ import (
 )
 
 type Version struct {
-	VersionValue           sql.NullString `db:"version_value"`
+	VersionValue           sql.NullString `db:"version"`
 	VersionDepracated      sql.NullBool   `db:"version_deprecated"`
 	VersionDepracatedSince sql.NullString `db:"version_deprecated_since"`
 	VersionForRemoval      sql.NullBool   `db:"version_for_removal"`
