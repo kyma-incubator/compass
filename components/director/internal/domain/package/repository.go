@@ -11,72 +11,94 @@ import (
 	"github.com/pkg/errors"
 )
 
-const bundleTable string = `public.bundles`
+const packageTable string = `public.packages`
+const packageBundleTable string = `public.package_bundles`
 
 var (
-	bundleColumns = []string{"id", "tenant_id", "app_id", "title", "short_description", "description", "instance_auth_request_json_schema", "default_instance_auth", "tags", "last_updated", "extensions"}
-	tenantColumn  = "tenant_id"
+	packageColumns = []string{"id", "tenant_id", "app_id", "title", "short_description", "description", "version",
+		"licence", "licence_type", "terms_of_service", "logo", "image", "provider", "tags", "last_updated", "extensions"}
+	updatableColumns = []string{"title", "short_description", "description", "version",
+		"licence", "licence_type", "terms_of_service", "logo", "image", "provider", "tags", "last_updated", "extensions"}
+	packageBundleColumns = []string{"package_id", "bundle_id"}
+	tenantColumn         = "tenant_id"
 )
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
 type EntityConverter interface {
-	ToEntity(in *model.Bundle) (*Entity, error)
-	FromEntity(entity *Entity) (*model.Bundle, error)
+	ToEntity(in *model.Package) (*Entity, error)
+	FromEntity(entity *Entity) (*model.Package, error)
 }
 
 type pgRepository struct {
-	existQuerier    repo.ExistQuerier
-	singleGetter    repo.SingleGetter
-	deleter         repo.Deleter
-	pageableQuerier repo.PageableQuerier
-	creator         repo.Creator
-	updater         repo.Updater
-	conv            EntityConverter
+	existQuerier        repo.ExistQuerier
+	singleGetter        repo.SingleGetter
+	deleter             repo.Deleter
+	pageableQuerier     repo.PageableQuerier
+	creator             repo.Creator
+	relationshipCreator repo.Creator
+	updater             repo.Updater
+	conv                EntityConverter
+}
+
+func (r *pgRepository) AssociateBundle(ctx context.Context, id, bundleID string) error {
+	if len(id) == 0 || len(bundleID) == 0 {
+		return apperrors.NewInternalError("id or bundleID can not be empty")
+	}
+	entity := struct {
+		PackageID string `db:"package_id"`
+		BundleID  string `db:"bundle_id"`
+	}{
+		PackageID: id,
+		BundleID:  bundleID,
+	}
+
+	return r.creator.Create(ctx, entity)
 }
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		deleter:         repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
-		pageableQuerier: repo.NewPageableQuerier(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
-		creator:         repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
-		updater:         repo.NewUpdater(resource.Bundle, bundleTable, []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth"}, tenantColumn, []string{"id"}),
-		conv:            conv,
+		existQuerier:        repo.NewExistQuerier(resource.Package, packageTable, tenantColumn),
+		singleGetter:        repo.NewSingleGetter(resource.Package, packageTable, tenantColumn, packageColumns),
+		deleter:             repo.NewDeleter(resource.Package, packageTable, tenantColumn),
+		pageableQuerier:     repo.NewPageableQuerier(resource.Package, packageTable, tenantColumn, packageColumns),
+		creator:             repo.NewCreator(resource.Package, packageTable, packageColumns),
+		relationshipCreator: repo.NewCreator(resource.PackageBundle, packageBundleTable, packageBundleColumns),
+		updater:             repo.NewUpdater(resource.Package, packageTable, updatableColumns, tenantColumn, []string{"id"}),
+		conv:                conv,
 	}
 }
 
-type BundleCollection []Entity
+type PackageCollection []Entity
 
-func (r BundleCollection) Len() int {
+func (r PackageCollection) Len() int {
 	return len(r)
 }
 
-func (r *pgRepository) Create(ctx context.Context, model *model.Bundle) error {
+func (r *pgRepository) Create(ctx context.Context, model *model.Package) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
-	bundleEnt, err := r.conv.ToEntity(model)
+	packageEnt, err := r.conv.ToEntity(model)
 	if err != nil {
-		return errors.Wrap(err, "while converting to Bundle entity")
+		return errors.Wrap(err, "while converting to Package entity")
 	}
 
-	return r.creator.Create(ctx, bundleEnt)
+	return r.creator.Create(ctx, packageEnt)
 }
 
-func (r *pgRepository) Update(ctx context.Context, model *model.Bundle) error {
+func (r *pgRepository) Update(ctx context.Context, model *model.Package) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be nil")
 	}
 
-	bundleEnt, err := r.conv.ToEntity(model)
+	packageEnt, err := r.conv.ToEntity(model)
 
 	if err != nil {
-		return errors.Wrap(err, "while converting to Bundle entity")
+		return errors.Wrap(err, "while converting to Package entity")
 	}
 
-	return r.updater.UpdateSingle(ctx, bundleEnt)
+	return r.updater.UpdateSingle(ctx, packageEnt)
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
@@ -87,21 +109,21 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error) {
-	var bundleEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bundleEnt); err != nil {
+func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Package, error) {
+	var packageEnt Entity
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &packageEnt); err != nil {
 		return nil, err
 	}
 
-	bundleModel, err := r.conv.FromEntity(&bundleEnt)
+	packageModel, err := r.conv.FromEntity(&packageEnt)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting Bundle from Entity")
+		return nil, errors.Wrap(err, "while converting Package from Entity")
 	}
 
-	return bundleModel, nil
+	return packageModel, nil
 }
 
-func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error) {
+func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Package, error) {
 	var ent Entity
 
 	conditions := repo.Conditions{
@@ -112,36 +134,36 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 		return nil, err
 	}
 
-	bundleModel, err := r.conv.FromEntity(&ent)
+	packageModel, err := r.conv.FromEntity(&ent)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating Bundle model from entity")
+		return nil, errors.Wrap(err, "while creating Package model from entity")
 	}
 
-	return bundleModel, nil
+	return packageModel, nil
 }
 
-func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.BundlePage, error) {
+func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.PackagePage, error) {
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("app_id", applicationID),
 	}
 
-	var bundleCollection BundleCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &bundleCollection, conditions...)
+	var packageCollection PackageCollection
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &packageCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}
 
-	var items []*model.Bundle
+	var items []*model.Package
 
-	for _, bundleEnt := range bundleCollection {
-		m, err := r.conv.FromEntity(&bundleEnt)
+	for _, packageEnt := range packageCollection {
+		m, err := r.conv.FromEntity(&packageEnt)
 		if err != nil {
-			return nil, errors.Wrap(err, "while creating Bundle model from entity")
+			return nil, errors.Wrap(err, "while creating Package model from entity")
 		}
 		items = append(items, m)
 	}
 
-	return &model.BundlePage{
+	return &model.PackagePage{
 		Data:       items,
 		TotalCount: totalCount,
 		PageInfo:   page,

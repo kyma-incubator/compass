@@ -20,6 +20,7 @@ type PackageService interface {
 	Update(ctx context.Context, id string, in model.PackageUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Package, error)
+	AssociateBundle(ctx context.Context, id, bundleID string) error
 }
 
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
@@ -225,4 +226,36 @@ func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Package) ([]*graphq
 	}
 
 	return r.bundleConverter.MultipleToGraphQL(bundlesPage)
+}
+
+func (r *Resolver) AssociateBundleWithPackage(ctx context.Context, in graphql.BundlePackageRelationInput) (*graphql.Package, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	err = r.packageSvc.AssociateBundle(ctx, in.PackageID, in.BundleID)
+	if err != nil {
+		return nil, err
+	}
+
+	pkg, err := r.packageSvc.Get(ctx, in.PackageID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlPackage, err := r.packageConverter.ToGraphQL(pkg)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", in.PackageID)
+	}
+
+	return gqlPackage, nil
 }

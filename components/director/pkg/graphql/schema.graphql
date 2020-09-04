@@ -1371,7 +1371,7 @@ type Mutation {
 	"""
 	add scopes eventually 
 	"""
-	associateBundleWithhPackage(in: BundlePackageRelationInput!): Package @hasScopes(path: "graphql.mutation.associateBundleWithhPackage")
+	associateBundleWithPackage(in: BundlePackageRelationInput!): Package @hasScopes(path: "graphql.mutation.associateBundleWithPackage")
 	"""
 	When BundleInstanceAuth is not in pending state, the operation returns error.
 	

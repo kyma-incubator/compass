@@ -324,7 +324,7 @@ type ComplexityRoot struct {
 		AddEventDefinitionToBundle                    func(childComplexity int, bundleID string, in EventDefinitionInput) int
 		AddPackage                                    func(childComplexity int, applicationID string, in PackageCreateInput) int
 		AddWebhook                                    func(childComplexity int, applicationID string, in WebhookInput) int
-		AssociateBundleWithhPackage                   func(childComplexity int, in BundlePackageRelationInput) int
+		AssociateBundleWithPackage                    func(childComplexity int, in BundlePackageRelationInput) int
 		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
 		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
 		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
@@ -599,7 +599,7 @@ type MutationResolver interface {
 	AddPackage(ctx context.Context, applicationID string, in PackageCreateInput) (*Package, error)
 	UpdatePackage(ctx context.Context, id string, in PackageUpdateInput) (*Package, error)
 	DeletePackage(ctx context.Context, id string) (*Package, error)
-	AssociateBundleWithhPackage(ctx context.Context, in BundlePackageRelationInput) (*Package, error)
+	AssociateBundleWithPackage(ctx context.Context, in BundlePackageRelationInput) (*Package, error)
 	SetBundleInstanceAuth(ctx context.Context, authID string, in BundleInstanceAuthSetInput) (*BundleInstanceAuth, error)
 	DeleteBundleInstanceAuth(ctx context.Context, authID string) (*BundleInstanceAuth, error)
 	RequestBundleInstanceAuthCreation(ctx context.Context, bundleID string, in BundleInstanceAuthRequestInput) (*BundleInstanceAuth, error)
@@ -1944,17 +1944,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(string), args["in"].(WebhookInput)), true
 
-	case "Mutation.associateBundleWithhPackage":
-		if e.complexity.Mutation.AssociateBundleWithhPackage == nil {
+	case "Mutation.associateBundleWithPackage":
+		if e.complexity.Mutation.AssociateBundleWithPackage == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_associateBundleWithhPackage_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_associateBundleWithPackage_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AssociateBundleWithhPackage(childComplexity, args["in"].(BundlePackageRelationInput)), true
+		return e.complexity.Mutation.AssociateBundleWithPackage(childComplexity, args["in"].(BundlePackageRelationInput)), true
 
 	case "Mutation.createApplicationTemplate":
 		if e.complexity.Mutation.CreateApplicationTemplate == nil {
@@ -4685,7 +4685,7 @@ type Mutation {
 	"""
 	add scopes eventually 
 	"""
-	associateBundleWithhPackage(in: BundlePackageRelationInput!): Package @hasScopes(path: "graphql.mutation.associateBundleWithhPackage")
+	associateBundleWithPackage(in: BundlePackageRelationInput!): Package @hasScopes(path: "graphql.mutation.associateBundleWithPackage")
 	"""
 	When BundleInstanceAuth is not in pending state, the operation returns error.
 	
@@ -5122,7 +5122,7 @@ func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_associateBundleWithhPackage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_associateBundleWithPackage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 BundlePackageRelationInput
@@ -15515,7 +15515,7 @@ func (ec *executionContext) _Mutation_deletePackage(ctx context.Context, field g
 	return ec.marshalNPackage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_associateBundleWithhPackage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_associateBundleWithPackage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -15532,7 +15532,7 @@ func (ec *executionContext) _Mutation_associateBundleWithhPackage(ctx context.Co
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_associateBundleWithhPackage_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_associateBundleWithPackage_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -15542,10 +15542,10 @@ func (ec *executionContext) _Mutation_associateBundleWithhPackage(ctx context.Co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AssociateBundleWithhPackage(rctx, args["in"].(BundlePackageRelationInput))
+			return ec.resolvers.Mutation().AssociateBundleWithPackage(rctx, args["in"].(BundlePackageRelationInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.associateBundleWithhPackage")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.associateBundleWithPackage")
 			if err != nil {
 				return nil, err
 			}
@@ -24313,8 +24313,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "associateBundleWithhPackage":
-			out.Values[i] = ec._Mutation_associateBundleWithhPackage(ctx, field)
+		case "associateBundleWithPackage":
+			out.Values[i] = ec._Mutation_associateBundleWithPackage(ctx, field)
 		case "setBundleInstanceAuth":
 			out.Values[i] = ec._Mutation_setBundleInstanceAuth(ctx, field)
 			if out.Values[i] == graphql.Null {

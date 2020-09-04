@@ -94,13 +94,14 @@ type PackagePage struct {
 
 func (PackagePage) IsPageable() {}
 
-func (i *PackageCreateInput) Package(id, applicationID string) *Package {
+func (i *PackageCreateInput) Package(id, applicationID, tenantID string) *Package {
 	if i == nil {
 		return nil
 	}
 
 	return &Package{
 		ID:               id,
+		TenantID:         tenantID,
 		ApplicationID:    applicationID,
 		Title:            i.Title,
 		ShortDescription: i.ShortDescription,

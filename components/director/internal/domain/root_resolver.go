@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"net/http"
 	"time"
 
@@ -60,6 +61,7 @@ type RootResolver struct {
 	intSys             *integrationsystem.Resolver
 	viewer             *viewer.Resolver
 	tenant             *tenant.Resolver
+	mpPackage          *mp_package.Resolver
 	mpBundle           *mp_bundle.Resolver
 	bundleInstanceAuth *bundleinstanceauth.Resolver
 	scenarioAssignment *scenarioassignment.Resolver
@@ -92,6 +94,7 @@ func NewRootResolver(
 	intSysConverter := integrationsystem.NewConverter()
 	tenantConverter := tenant.NewConverter()
 	bundleConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	packageConverter := mp_package.NewConverter(bundleConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	bundleInstanceAuthConv := bundleinstanceauth.NewConverter(authConverter)
@@ -111,6 +114,7 @@ func NewRootResolver(
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
+	packageRepo := mp_package.NewRepository(packageConverter)
 	bundleRepo := mp_bundle.NewRepository(bundleConverter)
 	bundleInstanceAuthRepo := bundleinstanceauth.NewRepository(bundleInstanceAuthConv)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
@@ -137,6 +141,7 @@ func NewRootResolver(
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, oAuth20HTTPClient)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
+	packageSvc := mp_package.NewService(packageRepo, bundleRepo, uidSvc)
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
@@ -159,6 +164,7 @@ func NewRootResolver(
 		intSys:             integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:             viewer.NewViewerResolver(),
 		tenant:             tenant.NewResolver(transact, tenantSvc, tenantConverter),
+		mpPackage:          mp_package.NewResolver(transact, packageSvc, bundleSvc, packageConverter, bundleConverter),
 		mpBundle:           mp_bundle.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv),
@@ -275,6 +281,22 @@ func (r *queryResolver) AutomaticScenarioAssignments(ctx context.Context, first 
 
 type mutationResolver struct {
 	*RootResolver
+}
+
+func (r *mutationResolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageCreateInput) (*graphql.Package, error) {
+	return r.mpPackage.AddPackage(ctx, applicationID, in)
+}
+
+func (r *mutationResolver) UpdatePackage(ctx context.Context, id string, in graphql.PackageUpdateInput) (*graphql.Package, error) {
+	return r.mpPackage.UpdatePackage(ctx, id, in)
+}
+
+func (r *mutationResolver) DeletePackage(ctx context.Context, id string) (*graphql.Package, error) {
+	return r.mpPackage.DeletePackage(ctx, id)
+}
+
+func (r *mutationResolver) AssociateBundleWithPackage(ctx context.Context, in graphql.BundlePackageRelationInput) (*graphql.Package, error) {
+	return r.mpPackage.AssociateBundleWithPackage(ctx, in)
 }
 
 func (r *mutationResolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput) (*graphql.Application, error) {
@@ -557,4 +579,14 @@ func (r *BundleResolver) EventDefinition(ctx context.Context, obj *graphql.Bundl
 }
 func (r *BundleResolver) Document(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.Document, error) {
 	return r.mpBundle.Document(ctx, obj, id)
+}
+
+type PackageResolver struct{ *RootResolver }
+
+func (r *PackageResolver) Bundles(ctx context.Context, obj *graphql.Package) ([]*graphql.Bundle, error) {
+	return r.mpPackage.Bundles(ctx, obj)
+}
+
+func (r *PackageResolver) Bundle(ctx context.Context, obj *graphql.Package, id string) (*graphql.Bundle, error) {
+	return r.mpPackage.Bundle(ctx, obj, id)
 }
