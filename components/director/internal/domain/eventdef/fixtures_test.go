@@ -107,7 +107,7 @@ func fixModelEventDefinitionInput() *model.EventDefinitionInput {
 	}
 
 	return &model.EventDefinitionInput{
-		Title:       "name",
+		Title:       "title",
 		Description: str.Ptr("description"),
 		Group:       str.Ptr("group"),
 		Spec:        spec,
@@ -136,7 +136,7 @@ func fixGQLEventDefinitionInput() *graphql.EventDefinitionInput {
 	}
 
 	return &graphql.EventDefinitionInput{
-		Title:       "name",
+		Title:       "title",
 		Description: str.Ptr("description"),
 		Group:       str.Ptr("group"),
 		Spec:        spec,
@@ -188,9 +188,9 @@ func fixVersionEntity() version.Version {
 }
 
 func fixEventDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "spec_data",
-		"spec_format", "spec_type", "version_value", "version_deprecated",
-		"version_deprecated_since", "version_for_removal"}
+	return []string{"id", "tenant_id", "bundle_id", "title", "description", "group_name",
+		//"event_definitions", "tags", "documentation", "changelog_entries", "logo", "image", "url", "release_status", "last_updated", "extensions",
+		"spec_data", "spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {

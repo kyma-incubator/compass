@@ -360,7 +360,7 @@ func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 }
 
 func fixBundleColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth"}
+	return []string{"id", "tenant_id", "app_id", "title", "description", "instance_auth_request_json_schema", "default_instance_auth"}
 }
 
 func fixBundleRow(id, placeholder string) []driver.Value {

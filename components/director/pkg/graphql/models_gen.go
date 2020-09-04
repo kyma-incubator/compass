@@ -26,8 +26,8 @@ type Pageable interface {
 
 type APIDefinitionInput struct {
 	// **Validation:** ASCII printable characters, max=100
-	Title            string  `json:"title"`
-	ShortDescription *string `json:"shortDescription"`
+	Title            string `json:"title"`
+	ShortDescription string `json:"shortDescription"`
 	// **Validation:** max=2000
 	Description *string `json:"description"`
 	// **Validation:** valid URL, max=512
@@ -36,7 +36,7 @@ type APIDefinitionInput struct {
 	Group            *string       `json:"group"`
 	Spec             *APISpecInput `json:"spec"`
 	Version          *VersionInput `json:"version"`
-	APIDefinitions   *JSON         `json:"apiDefinitions"`
+	APIDefinitions   JSON          `json:"apiDefinitions"`
 	Tags             *JSON         `json:"tags"`
 	Documentation    *string       `json:"documentation"`
 	ChangelogEntries *JSON         `json:"changelogEntries"`
@@ -44,10 +44,10 @@ type APIDefinitionInput struct {
 	Image            *string       `json:"image"`
 	URL              *string       `json:"url"`
 	// should be ENUM
-	ReleaseStatus *string `json:"releaseStatus"`
+	ReleaseStatus string `json:"releaseStatus"`
 	// should be ENUM
-	APIProtocol *string   `json:"apiProtocol"`
-	Actions     *JSON     `json:"actions"`
+	APIProtocol string    `json:"apiProtocol"`
+	Actions     JSON      `json:"actions"`
 	LastUpdated Timestamp `json:"lastUpdated"`
 	Extensions  *JSON     `json:"extensions"`
 }
@@ -287,7 +287,7 @@ type BundleUpdateInput struct {
 	// **Validation:** max=2000
 	Description                    *string     `json:"description"`
 	Tags                           *JSON       `json:"tags"`
-	LastUpdated                    *Timestamp  `json:"lastUpdated"`
+	LastUpdated                    Timestamp   `json:"lastUpdated"`
 	Extensions                     *JSON       `json:"extensions"`
 	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema"`
 	// While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
@@ -354,15 +354,15 @@ func (DocumentPage) IsPageable() {}
 
 type EventDefinitionInput struct {
 	// **Validation:** ASCII printable characters, max=100
-	Title            string  `json:"title"`
-	ShortDescription *string `json:"shortDescription"`
+	Title            string `json:"title"`
+	ShortDescription string `json:"shortDescription"`
 	// **Validation:** max=2000
 	Description *string         `json:"description"`
 	Spec        *EventSpecInput `json:"spec"`
 	// **Validation:** max=36
 	Group            *string       `json:"group"`
 	Version          *VersionInput `json:"version"`
-	EventDefinitions *JSON         `json:"eventDefinitions"`
+	EventDefinitions JSON          `json:"eventDefinitions"`
 	Tags             *JSON         `json:"tags"`
 	Documentation    *string       `json:"documentation"`
 	ChangelogEntries *JSON         `json:"changelogEntries"`
@@ -370,7 +370,7 @@ type EventDefinitionInput struct {
 	Image            *string       `json:"image"`
 	URL              *string       `json:"url"`
 	// should be ENUM
-	ReleaseStatus *string   `json:"releaseStatus"`
+	ReleaseStatus string    `json:"releaseStatus"`
 	LastUpdated   Timestamp `json:"lastUpdated"`
 	Extensions    *JSON     `json:"extensions"`
 }

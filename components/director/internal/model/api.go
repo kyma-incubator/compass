@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -19,18 +18,18 @@ type APIDefinition struct {
 	//  group allows you to find the same API but in different version
 	Group            *string
 	Version          *Version
-	APIDefinitions   json.RawMessage
-	Tags             json.RawMessage
+	APIDefinitions   string
+	Tags             *string
 	Documentation    *string
-	ChangelogEntries json.RawMessage
+	ChangelogEntries *string
 	Logo             *string
 	Image            *string
 	URL              *string
 	ReleaseStatus    string
 	APIProtocol      string
-	Actions          json.RawMessage
+	Actions          string
 	LastUpdated      time.Time
-	Extensions       json.RawMessage
+	Extensions       *string
 }
 
 type APISpec struct {
@@ -57,18 +56,18 @@ type APIDefinitionInput struct {
 	Group            *string
 	Spec             *APISpecInput
 	Version          *VersionInput
-	APIDefinitions   json.RawMessage
-	Tags             json.RawMessage
+	APIDefinitions   string
+	Tags             *string
 	Documentation    *string
-	ChangelogEntries json.RawMessage
+	ChangelogEntries *string
 	Logo             *string
 	Image            *string
 	URL              *string
 	ReleaseStatus    string
 	APIProtocol      string
-	Actions          json.RawMessage
+	Actions          string
 	LastUpdated      time.Time
-	Extensions       json.RawMessage
+	Extensions       *string
 }
 
 type APISpecInput struct {

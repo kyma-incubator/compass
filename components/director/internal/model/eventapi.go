@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"time"
 )
@@ -16,16 +15,16 @@ type EventDefinition struct {
 	Group            *string
 	Spec             *EventSpec
 	Version          *Version
-	EventDefinitions json.RawMessage
-	Tags             json.RawMessage
+	EventDefinitions string
+	Tags             *string
 	Documentation    *string
-	ChangelogEntries json.RawMessage
+	ChangelogEntries *string
 	Logo             *string
 	Image            *string
 	URL              *string
 	ReleaseStatus    string
 	LastUpdated      time.Time
-	Extensions       json.RawMessage
+	Extensions       *string
 }
 
 type EventSpecType string
@@ -55,16 +54,16 @@ type EventDefinitionInput struct {
 	Spec             *EventSpecInput
 	Group            *string
 	Version          *VersionInput
-	EventDefinitions json.RawMessage
-	Tags             json.RawMessage
+	EventDefinitions string
+	Tags             *string
 	Documentation    *string
-	ChangelogEntries json.RawMessage
+	ChangelogEntries *string
 	Logo             *string
 	Image            *string
 	URL              *string
 	ReleaseStatus    string
 	LastUpdated      time.Time
-	Extensions       json.RawMessage
+	Extensions       *string
 }
 
 type EventSpecInput struct {

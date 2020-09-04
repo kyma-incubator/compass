@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"time"
 )
@@ -15,9 +14,9 @@ type Bundle struct {
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
-	Tags                           json.RawMessage
+	Tags                           *string
 	LastUpdated                    time.Time
-	Extensions                     json.RawMessage
+	Extensions                     *string
 }
 
 func (bundle *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
@@ -36,9 +35,9 @@ type BundleCreateInput struct {
 	ShortDescription               string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
-	Tags                           json.RawMessage
+	Tags                           *string
 	LastUpdated                    time.Time
-	Extensions                     json.RawMessage
+	Extensions                     *string
 	DefaultInstanceAuth            *AuthInput
 	APIDefinitions                 []*APIDefinitionInput
 	EventDefinitions               []*EventDefinitionInput
@@ -51,9 +50,9 @@ type BundleUpdateInput struct {
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *AuthInput
-	Tags                           json.RawMessage
+	Tags                           *string
 	LastUpdated                    time.Time
-	Extensions                     json.RawMessage
+	Extensions                     *string
 }
 
 type BundlePage struct {

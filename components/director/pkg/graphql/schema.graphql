@@ -145,7 +145,7 @@ input APIDefinitionInput {
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
-	shortDescription: String
+	shortDescription: String!
 	"""
 	**Validation:** max=2000
 	"""
@@ -160,7 +160,7 @@ input APIDefinitionInput {
 	group: String
 	spec: APISpecInput
 	version: VersionInput
-	apiDefinitions: JSON
+	apiDefinitions: JSON!
 	tags: JSON
 	documentation: String
 	changelogEntries: JSON
@@ -170,12 +170,12 @@ input APIDefinitionInput {
 	"""
 	should be ENUM 
 	"""
-	releaseStatus: String
+	releaseStatus: String!
 	"""
 	should be ENUM 
 	"""
-	apiProtocol: String
-	actions: JSON
+	apiProtocol: String!
+	actions: JSON!
 	lastUpdated: Timestamp!
 	extensions: JSON
 }
@@ -365,7 +365,7 @@ input BundleUpdateInput {
 	"""
 	description: String
 	tags: JSON
-	lastUpdated: Timestamp
+	lastUpdated: Timestamp!
 	extensions: JSON
 	instanceAuthRequestInputSchema: JSONSchema
 	"""
@@ -434,7 +434,7 @@ input EventDefinitionInput {
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
-	shortDescription: String
+	shortDescription: String!
 	"""
 	**Validation:** max=2000
 	"""
@@ -445,7 +445,7 @@ input EventDefinitionInput {
 	"""
 	group: String
 	version: VersionInput
-	eventDefinitions: JSON
+	eventDefinitions: JSON!
 	tags: JSON
 	documentation: String
 	changelogEntries: JSON
@@ -455,7 +455,7 @@ input EventDefinitionInput {
 	"""
 	should be ENUM 
 	"""
-	releaseStatus: String
+	releaseStatus: String!
 	lastUpdated: Timestamp!
 	extensions: JSON
 }
@@ -624,11 +624,11 @@ type APIDefinition {
 	"""
 	should be ENUM 
 	"""
-	releaseStatus: String
+	releaseStatus: String!
 	"""
 	should be ENUM 
 	"""
-	apiProtocol: String
+	apiProtocol: String!
 	actions: JSON!
 	lastUpdated: Timestamp!
 	extensions: JSON
@@ -840,7 +840,7 @@ type EventDefinition {
 	"""
 	should be ENUM 
 	"""
-	releaseStatus: String
+	releaseStatus: String!
 	lastUpdated: Timestamp!
 	extensions: JSON
 }
@@ -1113,7 +1113,7 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [register application with bundles](examples/register-application/register-application-with-bundles.graphql)
+	- [register application with packages](examples/register-application/register-application-with-packages.graphql)
 	- [register application with status](examples/register-application/register-application-with-status.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)

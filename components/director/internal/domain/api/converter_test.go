@@ -319,14 +319,14 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixAPIDefinitionModel("id", "bundle_id", "name", "target_url")
+		apiModel := fixAPIDefinitionModel("id", "bundle_id", "title", "entry_point")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, versionConv)
 		//WHEN
 		entity := conv.ToEntity(*apiModel)
 		//THEN
-		assert.Equal(t, fixEntityAPIDefinition("id", "bundle_id", "name", "target_url"), entity)
+		assert.Equal(t, fixEntityAPIDefinition("id", "bundle_id", "title", "entry_point"), entity)
 	})
 }
 
@@ -343,13 +343,13 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		entity := fixEntityAPIDefinition("id", "bundle_id", "name", "target_url")
+		entity := fixEntityAPIDefinition("id", "bundle_id", "title", "entry_point")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, versionConv)
 		//WHEN
 		apiModel := conv.FromEntity(entity)
 		//THEN
-		expectedModel := fixAPIDefinitionModel("id", "bundle_id", "name", "target_url")
+		expectedModel := fixAPIDefinitionModel("id", "bundle_id", "title", "entry_point")
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, *expectedModel, apiModel)
 	})

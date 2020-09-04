@@ -3219,7 +3219,7 @@ input APIDefinitionInput {
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
-	shortDescription: String
+	shortDescription: String!
 	"""
 	**Validation:** max=2000
 	"""
@@ -3234,7 +3234,7 @@ input APIDefinitionInput {
 	group: String
 	spec: APISpecInput
 	version: VersionInput
-	apiDefinitions: JSON
+	apiDefinitions: JSON!
 	tags: JSON
 	documentation: String
 	changelogEntries: JSON
@@ -3244,12 +3244,12 @@ input APIDefinitionInput {
 	"""
 	should be ENUM 
 	"""
-	releaseStatus: String
+	releaseStatus: String!
 	"""
 	should be ENUM 
 	"""
-	apiProtocol: String
-	actions: JSON
+	apiProtocol: String!
+	actions: JSON!
 	lastUpdated: Timestamp!
 	extensions: JSON
 }
@@ -3439,7 +3439,7 @@ input BundleUpdateInput {
 	"""
 	description: String
 	tags: JSON
-	lastUpdated: Timestamp
+	lastUpdated: Timestamp!
 	extensions: JSON
 	instanceAuthRequestInputSchema: JSONSchema
 	"""
@@ -3508,7 +3508,7 @@ input EventDefinitionInput {
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
-	shortDescription: String
+	shortDescription: String!
 	"""
 	**Validation:** max=2000
 	"""
@@ -3519,7 +3519,7 @@ input EventDefinitionInput {
 	"""
 	group: String
 	version: VersionInput
-	eventDefinitions: JSON
+	eventDefinitions: JSON!
 	tags: JSON
 	documentation: String
 	changelogEntries: JSON
@@ -3529,7 +3529,7 @@ input EventDefinitionInput {
 	"""
 	should be ENUM 
 	"""
-	releaseStatus: String
+	releaseStatus: String!
 	lastUpdated: Timestamp!
 	extensions: JSON
 }
@@ -3698,11 +3698,11 @@ type APIDefinition {
 	"""
 	should be ENUM 
 	"""
-	releaseStatus: String
+	releaseStatus: String!
 	"""
 	should be ENUM 
 	"""
-	apiProtocol: String
+	apiProtocol: String!
 	actions: JSON!
 	lastUpdated: Timestamp!
 	extensions: JSON
@@ -3914,7 +3914,7 @@ type EventDefinition {
 	"""
 	should be ENUM 
 	"""
-	releaseStatus: String
+	releaseStatus: String!
 	lastUpdated: Timestamp!
 	extensions: JSON
 }
@@ -6690,12 +6690,15 @@ func (ec *executionContext) _APIDefinition_releaseStatus(ctx context.Context, fi
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_apiProtocol(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -6724,12 +6727,15 @@ func (ec *executionContext) _APIDefinition_apiProtocol(ctx context.Context, fiel
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_actions(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -10810,12 +10816,15 @@ func (ec *executionContext) _EventDefinition_releaseStatus(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_lastUpdated(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -19553,7 +19562,7 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 			}
 		case "shortDescription":
 			var err error
-			it.ShortDescription, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.ShortDescription, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19589,7 +19598,7 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 			}
 		case "apiDefinitions":
 			var err error
-			it.APIDefinitions, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			it.APIDefinitions, err = ec.unmarshalNJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19631,19 +19640,19 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 			}
 		case "releaseStatus":
 			var err error
-			it.ReleaseStatus, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.ReleaseStatus, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "apiProtocol":
 			var err error
-			it.APIProtocol, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.APIProtocol, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "actions":
 			var err error
-			it.Actions, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			it.Actions, err = ec.unmarshalNJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20163,7 +20172,7 @@ func (ec *executionContext) unmarshalInputBundleUpdateInput(ctx context.Context,
 			}
 		case "lastUpdated":
 			var err error
-			it.LastUpdated, err = ec.unmarshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
+			it.LastUpdated, err = ec.unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20349,7 +20358,7 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 			}
 		case "shortDescription":
 			var err error
-			it.ShortDescription, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.ShortDescription, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20379,7 +20388,7 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 			}
 		case "eventDefinitions":
 			var err error
-			it.EventDefinitions, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			it.EventDefinitions, err = ec.unmarshalNJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20421,7 +20430,7 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 			}
 		case "releaseStatus":
 			var err error
-			it.ReleaseStatus, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.ReleaseStatus, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20964,8 +20973,14 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._APIDefinition_url(ctx, field, obj)
 		case "releaseStatus":
 			out.Values[i] = ec._APIDefinition_releaseStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "apiProtocol":
 			out.Values[i] = ec._APIDefinition_apiProtocol(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "actions":
 			out.Values[i] = ec._APIDefinition_actions(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -21972,6 +21987,9 @@ func (ec *executionContext) _EventDefinition(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EventDefinition_url(ctx, field, obj)
 		case "releaseStatus":
 			out.Values[i] = ec._EventDefinition_releaseStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "lastUpdated":
 			out.Values[i] = ec._EventDefinition_lastUpdated(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -26362,30 +26380,6 @@ func (ec *executionContext) unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋky
 		}
 	}
 	return res, nil
-}
-
-func (ec *executionContext) unmarshalOTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {
-	var res Timestamp
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v Timestamp) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (*Timestamp, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v *Timestamp) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) marshalOVersion2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersion(ctx context.Context, sel ast.SelectionSet, v Version) graphql.Marshaler {

@@ -273,9 +273,9 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 }
 
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "spec_data",
-		"spec_format", "spec_type", "version_value", "version_deprecated",
-		"version_deprecated_since", "version_for_removal"}
+	return []string{"id", "tenant_id", "bundle_id", "title", "description", "group_name", "entry_point",
+		//"api_definitions", "tags", "documentation", "changelog_entries", "logo", "image", "url", "release_status", "api_protocol", "actions", "last_updated", "extensions",
+		"spec_data", "spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
