@@ -5,8 +5,10 @@ ALTER TABLE packages
 
 CREATE TABLE packages (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    tenant_id uuid NOT NULL,
     app_id uuid NOT NULL, /* if a package is returned by a system, only that system is expected iis expected to return this package, otherwise -> validation error */
     FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
+    FOREIGN KEY (tenant_id) REFERENCES bussiness_tenant_mappings (id) ON DELETE CASCADE,
     title VARCHAR(256) NOT NULL,
     short_description VARCHAR(256) NOT NULL,
     description TEXT NOT NULL,

@@ -21,7 +21,9 @@ type Bundle struct {
 
 func (bundle *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
 	bundle.Title = update.Title
-	bundle.ShortDescription = update.ShortDescription
+	if update.ShortDescription != nil {
+		bundle.ShortDescription = *update.ShortDescription
+	}
 	bundle.Description = update.Description
 	bundle.InstanceAuthRequestInputSchema = update.InstanceAuthRequestInputSchema
 	bundle.DefaultInstanceAuth = update.DefaultInstanceAuth.ToAuth()
@@ -46,7 +48,7 @@ type BundleCreateInput struct {
 
 type BundleUpdateInput struct {
 	Title                          string
-	ShortDescription               string
+	ShortDescription               *string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *AuthInput

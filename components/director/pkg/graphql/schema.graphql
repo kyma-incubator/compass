@@ -230,11 +230,6 @@ input ApplicationRegisterInput {
 	statusCondition: ApplicationStatusCondition
 }
 
-input BundlePackageRelationInput {
-	packageID: ID!
-	bundleID: ID!
-}
-
 """
 **Validation:** provided placeholders' names are unique and used in applicationInput
 """
@@ -297,53 +292,6 @@ input BasicCredentialDataInput {
 	password: String!
 }
 
-input PackageCreateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	title: String!
-	"""
-	**Validation:** max=2000
-	"""
-	shortDescription: String!
-	description: String!
-	version: String!
-	licence: String
-	licenceType: String
-	termsOfService: String
-	logo: String
-	image: String
-	provider: JSON,
-	actions: JSON,
-	tags: JSON
-	lastUpdated: Timestamp!
-	extensions: JSON
-	bundles: [BundleCreateInput!]
-}
-
-input PackageUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	title: String!
-	shortDescription: String
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	version: String
-	licence: String
-	licenceType: String
-	termsOfService: String
-	logo: String
-	image: String
-	provider: JSON,
-	actions: JSON,
-	tags: JSON
-	lastUpdated: Timestamp!
-	extensions: JSON
-}
-
 input BundleCreateInput {
 	"""
 	**Validation:** ASCII printable characters, max=100
@@ -404,6 +352,11 @@ input BundleInstanceAuthStatusInput {
 	   **Validation**: required, if condition is FAILED
 	"""
 	reason: String!
+}
+
+input BundlePackageRelationInput {
+	packageID: ID!
+	bundleID: ID!
 }
 
 input BundleUpdateInput {
@@ -597,6 +550,53 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
+input PackageCreateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	title: String!
+	"""
+	**Validation:** max=2000
+	"""
+	shortDescription: String!
+	description: String!
+	version: String!
+	licence: String
+	licenceType: String
+	termsOfService: String
+	logo: String
+	image: String
+	provider: JSON
+	actions: JSON
+	tags: JSON
+	lastUpdated: Timestamp!
+	extensions: JSON
+	bundles: [BundleCreateInput!]
+}
+
+input PackageUpdateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	title: String!
+	shortDescription: String
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	version: String
+	licence: String
+	licenceType: String
+	termsOfService: String
+	logo: String
+	image: String
+	provider: JSON
+	actions: JSON
+	tags: JSON
+	lastUpdated: Timestamp!
+	extensions: JSON
+}
+
 input PlaceholderDefinitionInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -771,34 +771,6 @@ type AutomaticScenarioAssignmentPage implements Pageable {
 type BasicCredentialData {
 	username: String!
 	password: String!
-}
-
-type Package {
-	id: ID!
-	applicationID: ID!
-	title: String!
-	shortDescription: String!
-	description: String!
-	version: String!
-	licence: String
-	licenceType: String
-	termsOfService: String
-	logo: String
-	image: String
-    provider: JSON,
-	actions: JSON,
-	tags: JSON
-	lastUpdated: Timestamp!
-	extensions: JSON
-
-	bundles(first: Int = 100, after: PageCursor): BundlePage
-	bundle(id: ID!): Bundle
-}
-
-type PackagePage implements Pageable {
-	data: [Package!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
 }
 
 type Bundle {
@@ -1011,6 +983,33 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	connectorURL: String!
 	raw: String
 	rawEncoded: String
+}
+
+type Package {
+	id: ID!
+	applicationID: ID!
+	title: String!
+	shortDescription: String!
+	description: String!
+	version: String!
+	licence: String
+	licenceType: String
+	termsOfService: String
+	logo: String
+	image: String
+	provider: JSON
+	actions: JSON
+	tags: JSON
+	lastUpdated: Timestamp!
+	extensions: JSON
+	bundles(first: Int = 100, after: PageCursor): BundlePage
+	bundle(id: ID!): Bundle
+}
+
+type PackagePage implements Pageable {
+	data: [Package!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type PageInfo {
@@ -1352,16 +1351,28 @@ type Mutation {
 	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
 	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
-
-	""" TODO: Add validation & scopes """
-	addPackage(applicationID: ID!, in: PackageCreateInput!): Package!
-	updatePackage(id: ID!, in: PackageUpdateInput!): Package!
-	deletePackage(id: ID!): Package!
-
-	""" add scopes eventually """
-	associateBundleWithhPackage(in: BundlePackageRelationInput!): Package
 	"""
-
+	TODO: Add validation & scopes 
+	
+	**Examples**
+	- [add package](examples/add-package/add-package.graphql)
+	"""
+	addPackage(applicationID: ID!, in: PackageCreateInput!): Package! @hasScopes(path: "graphql.mutation.addPackage")
+	"""
+	**Examples**
+	- [update package](examples/update-package/update-package.graphql)
+	"""
+	updatePackage(id: ID!, in: PackageUpdateInput!): Package! @hasScopes(path: "graphql.mutation.updatePackage")
+	"""
+	**Examples**
+	- [delete package](examples/delete-package/delete-package.graphql)
+	"""
+	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
+	"""
+	add scopes eventually 
+	"""
+	associateBundleWithhPackage(in: BundlePackageRelationInput!): Package @hasScopes(path: "graphql.mutation.associateBundleWithhPackage")
+	"""
 	When BundleInstanceAuth is not in pending state, the operation returns error.
 	
 	When used without error, the status of pending auth is set to success.

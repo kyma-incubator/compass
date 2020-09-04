@@ -1,17 +1,10 @@
-package mp_bundle
+package mp_package
 
 import (
 	"context"
-	"fmt"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -19,14 +12,10 @@ import (
 )
 
 const bundleTable string = `public.bundles`
-const bundleInstanceAuthTable string = `public.bundle_instance_auths`
-const bundleInstanceAuthBundleRefField string = `bundle_id`
-const packageBundleTable string = `public.package_bundles`
 
 var (
-	bundleColumns        = []string{"id", "tenant_id", "app_id", "title", "short_description", "description", "instance_auth_request_json_schema", "default_instance_auth", "tags", "last_updated", "extensions"}
-	packageBundleColumns = []string{"package_id", "bundle_id"}
-	tenantColumn         = "tenant_id"
+	bundleColumns = []string{"id", "tenant_id", "app_id", "title", "short_description", "description", "instance_auth_request_json_schema", "default_instance_auth", "tags", "last_updated", "extensions"}
+	tenantColumn  = "tenant_id"
 )
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
@@ -39,7 +28,6 @@ type pgRepository struct {
 	existQuerier    repo.ExistQuerier
 	singleGetter    repo.SingleGetter
 	deleter         repo.Deleter
-	listerGlobal    repo.ListerGlobal
 	pageableQuerier repo.PageableQuerier
 	creator         repo.Creator
 	updater         repo.Updater
@@ -51,7 +39,6 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		existQuerier:    repo.NewExistQuerier(resource.Bundle, bundleTable, tenantColumn),
 		singleGetter:    repo.NewSingleGetter(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		deleter:         repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
-		listerGlobal:    repo.NewListerGlobal(resource.PackageBundle, packageBundleTable, packageBundleColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		creator:         repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
 		updater:         repo.NewUpdater(resource.Bundle, bundleTable, []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth"}, tenantColumn, []string{"id"}),
@@ -133,35 +120,6 @@ func (r *pgRepository) GetForApplication(ctx context.Context, tenant string, id 
 	return bundleModel, nil
 }
 
-func (r *pgRepository) GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error) {
-	var bundleEnt Entity
-
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	prefixedFieldNames := str.PrefixStrings(bundleColumns, "p.")
-	stmt := fmt.Sprintf(`SELECT %s FROM %s AS p JOIN %s AS a on a.%s=p.id where a.tenant_id=$1 AND a.id=$2`,
-		strings.Join(prefixedFieldNames, ", "),
-		bundleTable,
-		bundleInstanceAuthTable,
-		bundleInstanceAuthBundleRefField)
-
-	err = persist.Get(&bundleEnt, stmt, tenant, instanceAuthID)
-	switch {
-	case err != nil:
-		return nil, errors.Wrap(err, "while getting Bundle by Instance Auth ID")
-	}
-
-	bundleModel, err := r.conv.FromEntity(&bundleEnt)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating Bundle model from entity")
-	}
-
-	return bundleModel, nil
-}
-
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.BundlePage, error) {
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("app_id", applicationID),
@@ -188,57 +146,4 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID string,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
-}
-
-func (r *pgRepository) GetForPackage(ctx context.Context, tenantID, id string, _ string) (*model.Bundle, error) {
-	return r.GetByID(ctx, tenantID, id)
-}
-
-func (r *pgRepository) ListByPackageID(ctx context.Context, tenantID, packageID string) ([]*model.Bundle, error) {
-	bundleIDs, err := r.getBundleIDsByPackageID(ctx, packageID)
-	if err != nil {
-		return nil, err
-	}
-
-	var bundles []*model.Bundle
-	for _, bundleID := range bundleIDs {
-		bundle, err := r.GetByID(ctx, tenantID, bundleID)
-		if err != nil {
-			return nil, err
-		}
-		bundles = append(bundles, bundle)
-	}
-
-	return bundles, nil
-}
-
-func (r *pgRepository) getBundleIDsByPackageID(ctx context.Context, packageID string) ([]string, error) {
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("package_id", packageID),
-	}
-
-	var packageBundleCollection PackageBundleCollection
-
-	err := r.listerGlobal.ListGlobal(ctx, packageBundleCollection, conditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	var bundleIDs []string
-	for _, entity := range packageBundleCollection {
-		bundleIDs = append(bundleIDs, entity.BundleID)
-	}
-
-	return bundleIDs, nil
-}
-
-type PackageBundle struct {
-	PackageID string `db:"package_id"`
-	BundleID  string `db:"bundle_id"`
-}
-
-type PackageBundleCollection []PackageBundle
-
-func (rpc PackageBundleCollection) Len() int {
-	return len(rpc)
 }

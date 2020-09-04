@@ -272,6 +272,11 @@ type BundleInstanceAuthStatusInput struct {
 	Reason string `json:"reason"`
 }
 
+type BundlePackageRelationInput struct {
+	PackageID string `json:"packageID"`
+	BundleID  string `json:"bundleID"`
+}
+
 type BundlePage struct {
 	Data       []*Bundle `json:"data"`
 	PageInfo   *PageInfo `json:"pageInfo"`
@@ -500,6 +505,74 @@ type OAuthCredentialDataInput struct {
 	ClientSecret string `json:"clientSecret"`
 	// **Validation:** valid URL
 	URL string `json:"url"`
+}
+
+type Package struct {
+	ID               string      `json:"id"`
+	ApplicationID    string      `json:"applicationID"`
+	Title            string      `json:"title"`
+	ShortDescription string      `json:"shortDescription"`
+	Description      string      `json:"description"`
+	Version          string      `json:"version"`
+	Licence          *string     `json:"licence"`
+	LicenceType      *string     `json:"licenceType"`
+	TermsOfService   *string     `json:"termsOfService"`
+	Logo             *string     `json:"logo"`
+	Image            *string     `json:"image"`
+	Provider         *JSON       `json:"provider"`
+	Actions          *JSON       `json:"actions"`
+	Tags             *JSON       `json:"tags"`
+	LastUpdated      Timestamp   `json:"lastUpdated"`
+	Extensions       *JSON       `json:"extensions"`
+	Bundles          *BundlePage `json:"bundles"`
+	Bundle           *Bundle     `json:"bundle"`
+}
+
+type PackageCreateInput struct {
+	// **Validation:** ASCII printable characters, max=100
+	Title string `json:"title"`
+	// **Validation:** max=2000
+	ShortDescription string               `json:"shortDescription"`
+	Description      string               `json:"description"`
+	Version          string               `json:"version"`
+	Licence          *string              `json:"licence"`
+	LicenceType      *string              `json:"licenceType"`
+	TermsOfService   *string              `json:"termsOfService"`
+	Logo             *string              `json:"logo"`
+	Image            *string              `json:"image"`
+	Provider         *JSON                `json:"provider"`
+	Actions          *JSON                `json:"actions"`
+	Tags             *JSON                `json:"tags"`
+	LastUpdated      Timestamp            `json:"lastUpdated"`
+	Extensions       *JSON                `json:"extensions"`
+	Bundles          []*BundleCreateInput `json:"bundles"`
+}
+
+type PackagePage struct {
+	Data       []*Package `json:"data"`
+	PageInfo   *PageInfo  `json:"pageInfo"`
+	TotalCount int        `json:"totalCount"`
+}
+
+func (PackagePage) IsPageable() {}
+
+type PackageUpdateInput struct {
+	// **Validation:** ASCII printable characters, max=100
+	Title            string  `json:"title"`
+	ShortDescription *string `json:"shortDescription"`
+	// **Validation:** max=2000
+	Description    *string   `json:"description"`
+	Version        *string   `json:"version"`
+	Licence        *string   `json:"licence"`
+	LicenceType    *string   `json:"licenceType"`
+	TermsOfService *string   `json:"termsOfService"`
+	Logo           *string   `json:"logo"`
+	Image          *string   `json:"image"`
+	Provider       *JSON     `json:"provider"`
+	Actions        *JSON     `json:"actions"`
+	Tags           *JSON     `json:"tags"`
+	LastUpdated    Timestamp `json:"lastUpdated"`
+	Extensions     *JSON     `json:"extensions"`
 }
 
 type PageInfo struct {
