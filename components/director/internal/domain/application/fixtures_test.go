@@ -155,7 +155,7 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
-		Bundles: []*model.BundleCreateInput{
+		Bundles: []*model.BundleInput{
 			{
 				Title: "foo",
 				APIDefinitions: []*model.APIDefinitionInput{
@@ -202,7 +202,7 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
-		Bundles: []*graphql.BundleCreateInput{
+		Bundles: []*graphql.BundleInput{
 			{
 				Title: "foo",
 				APIDefinitions: []*graphql.APIDefinitionInput{

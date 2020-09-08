@@ -92,14 +92,14 @@ type RuntimeService interface {
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
-	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
+	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleInput) error
 }
 
 //go:generate mockery -name=BundleConverter -output=automock -outpkg=automock -case=underscore
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
 	MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error)
-	MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)
+	MultipleCreateInputFromGraphQL(in []*graphql.BundleInput) ([]*model.BundleInput, error)
 }
 
 //go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore

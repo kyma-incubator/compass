@@ -230,7 +230,7 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
-	bundles: [BundleCreateInput!]
+	bundles: [BundleInput!]
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 }
@@ -297,7 +297,7 @@ input BasicCredentialDataInput {
 	password: String!
 }
 
-input BundleCreateInput {
+input BundleInput {
 	"""
 	TODO: Validation if it is guid
 	"""
@@ -368,26 +368,6 @@ input BundlePackageRelationInput {
 	bundleID: ID!
 }
 
-input BundleUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	title: String!
-	shortDescription: String
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	tags: JSON
-	lastUpdated: Timestamp!
-	extensions: JSON
-	instanceAuthRequestInputSchema: JSONSchema
-	"""
-	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
-	"""
-	defaultInstanceAuth: AuthInput
-}
-
 input CSRFTokenCredentialRequestAuthInput {
 	"""
 	**Validation:** valid URL
@@ -422,6 +402,10 @@ input CredentialRequestAuthInput {
 }
 
 input DocumentInput {
+	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
 	"""
 	**Validation:** max=128
 	"""
@@ -588,7 +572,7 @@ input PackageCreateInput {
 	tags: JSON
 	lastUpdated: Timestamp!
 	extensions: JSON
-	bundles: [BundleCreateInput!]
+	bundles: [BundleInput!]
 }
 
 input PackageUpdateInput {
@@ -1406,8 +1390,8 @@ type Mutation {
 	When defaultInstanceAuth is set, it fires "deleteBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to UNUSED.
 	"""
 	requestBundleInstanceAuthDeletion(authID: ID!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthDeletion")
-	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
-	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
+	addBundle(applicationID: ID!, in: BundleInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
+	updateBundle(id: ID!, in: BundleInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
 	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle")
 	"""
 	**Examples**

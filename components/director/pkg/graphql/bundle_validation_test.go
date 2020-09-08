@@ -674,14 +674,14 @@ func TestBundleInstanceAuthStatusInput_Validate(t *testing.T) {
 	}
 }
 
-func fixValidBundleCreateInput() graphql.BundleCreateInput {
-	return graphql.BundleCreateInput{
+func fixValidBundleCreateInput() graphql.BundleInput {
+	return graphql.BundleInput{
 		Title: inputvalidationtest.ValidName,
 	}
 }
 
-func fixValidBundleUpdateInput() graphql.BundleUpdateInput {
-	return graphql.BundleUpdateInput{
+func fixValidBundleUpdateInput() graphql.BundleInput {
+	return graphql.BundleInput{
 		Title: inputvalidationtest.ValidName,
 	}
 }

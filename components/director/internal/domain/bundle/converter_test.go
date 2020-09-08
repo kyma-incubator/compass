@@ -232,12 +232,12 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 	desc := "Lorem ipsum"
 	gqlBundleCreateInput := fixGQLBundleCreateInput(name, desc)
 	modelBundleCreateInput := fixModelBundleCreateInput(name, desc)
-	emptyGQLBundleCreateInput := &graphql.BundleCreateInput{}
-	emptyModelBundleCreateInput := &model.BundleCreateInput{}
+	emptyGQLBundleCreateInput := &graphql.BundleInput{}
+	emptyModelBundleCreateInput := &model.BundleInput{}
 	testCases := []struct {
 		Name                string
-		Input               graphql.BundleCreateInput
-		Expected            model.BundleCreateInput
+		Input               graphql.BundleInput
+		Expected            model.BundleInput
 		APIConverterFn      func() *automock.APIConverter
 		EventAPIConverterFn func() *automock.EventConverter
 		DocumentConverterFn func() *automock.DocumentConverter
@@ -270,8 +270,8 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    graphql.BundleCreateInput{},
-			Expected: model.BundleCreateInput{},
+			Input:    graphql.BundleInput{},
+			Expected: model.BundleInput{},
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
 				conv.On("MultipleInputFromGraphQL", emptyGQLBundleCreateInput.APIDefinitions).Return(emptyModelBundleCreateInput.APIDefinitions, nil)
@@ -305,7 +305,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 
 			// when
 			converter := mp_bundle.NewConverter(authConverter, apiConverter, eventConverter, documentConverter)
-			res, err := converter.CreateInputFromGraphQL(testCase.Input)
+			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
 			assert.NoError(t, err)
@@ -319,14 +319,14 @@ func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 	// given
 	gqlBundle1 := fixGQLBundleCreateInput("foo", "bar")
 	gqlBundle2 := fixGQLBundleCreateInput("bar", "baz")
-	input := []*graphql.BundleCreateInput{
+	input := []*graphql.BundleInput{
 		&gqlBundle1,
 		&gqlBundle2,
 	}
 
 	modBundle1 := fixModelBundleCreateInput("foo", "bar")
 	modBundle2 := fixModelBundleCreateInput("bar", "baz")
-	expected := []*model.BundleCreateInput{
+	expected := []*model.BundleInput{
 		&modBundle1, &modBundle2,
 	}
 
@@ -363,12 +363,12 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	desc := "Lorem ipsum"
 	gqlBundleCreateInput := fixGQLBundleUpdateInput(name, desc)
 	modelBundleCreateInput := fixModelBundleUpdateInput(t, name, desc)
-	emptyGQLBundleCreateInput := &graphql.BundleCreateInput{}
-	emptyModelBundleCreateInput := &model.BundleCreateInput{}
+	emptyGQLBundleCreateInput := &graphql.BundleInput{}
+	emptyModelBundleCreateInput := &model.BundleInput{}
 	testCases := []struct {
 		Name            string
-		Input           *graphql.BundleUpdateInput
-		Expected        *model.BundleUpdateInput
+		Input           *graphql.BundleInput
+		Expected        *model.BundleInput
 		AuthConverterFn func() *automock.AuthConverter
 	}{
 		{
@@ -383,8 +383,8 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    &graphql.BundleUpdateInput{},
-			Expected: &model.BundleUpdateInput{},
+			Input:    &graphql.BundleInput{},
+			Expected: &model.BundleInput{},
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
 				conv.On("InputFromGraphQL", emptyGQLBundleCreateInput.DefaultInstanceAuth).Return(emptyModelBundleCreateInput.DefaultInstanceAuth, nil).Once()
@@ -400,7 +400,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 
 			// when
 			converter := mp_bundle.NewConverter(authConverter, nil, nil, nil)
-			res, err := converter.UpdateInputFromGraphQL(*testCase.Input)
+			res, err := converter.InputFromGraphQL(*testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.Expected, res)

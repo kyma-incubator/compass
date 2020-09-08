@@ -39,9 +39,9 @@ ALTER TABLE bundles
 CREATE TABLE package_bundles (
     package_id UUID NOT NULL,
     bundle_id UUID NOT NULL,
-    PRIMARY KEY (package_id, bundle_id),
-    FOREIGN KEY (package_id) REFERENCES packages (id) ON DELETE CASCADE,
-    FOREIGN KEY (bundle_id) REFERENCES bundles (id) ON DELETE CASCADE
+    PRIMARY KEY (package_id, bundle_id)
+    -- FOREIGN KEY (package_id) REFERENCES packages (id) ON DELETE CASCADE,
+    -- FOREIGN KEY (bundle_id) REFERENCES bundles (id) ON DELETE CASCADE
 );
 
 ALTER TABLE package_instance_auths

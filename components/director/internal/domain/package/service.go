@@ -197,7 +197,7 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	return s.pkgRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
-func (s *service) createBundles(ctx context.Context, appID, pkgID string, bundles []*model.BundleCreateInput) error {
+func (s *service) createBundles(ctx context.Context, appID, pkgID string, bundles []*model.BundleInput) error {
 	for _, item := range bundles {
 		id, err := s.bundleSvc.Create(ctx,appID, *item)
 		if err != nil {

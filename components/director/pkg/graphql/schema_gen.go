@@ -322,7 +322,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddAPIDefinitionToBundle                      func(childComplexity int, bundleID string, in APIDefinitionInput) int
-		AddBundle                                     func(childComplexity int, applicationID string, in BundleCreateInput) int
+		AddBundle                                     func(childComplexity int, applicationID string, in BundleInput) int
 		AddDocumentToBundle                           func(childComplexity int, bundleID string, in DocumentInput) int
 		AddEventDefinitionToBundle                    func(childComplexity int, bundleID string, in EventDefinitionInput) int
 		AddPackage                                    func(childComplexity int, applicationID string, in PackageCreateInput) int
@@ -371,7 +371,7 @@ type ComplexityRoot struct {
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
 		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateInput) int
-		UpdateBundle                                  func(childComplexity int, id string, in BundleUpdateInput) int
+		UpdateBundle                                  func(childComplexity int, id string, in BundleInput) int
 		UpdateEventDefinition                         func(childComplexity int, id string, in EventDefinitionInput) int
 		UpdateIntegrationSystem                       func(childComplexity int, id string, in IntegrationSystemInput) int
 		UpdateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
@@ -609,8 +609,8 @@ type MutationResolver interface {
 	DeleteBundleInstanceAuth(ctx context.Context, authID string) (*BundleInstanceAuth, error)
 	RequestBundleInstanceAuthCreation(ctx context.Context, bundleID string, in BundleInstanceAuthRequestInput) (*BundleInstanceAuth, error)
 	RequestBundleInstanceAuthDeletion(ctx context.Context, authID string) (*BundleInstanceAuth, error)
-	AddBundle(ctx context.Context, applicationID string, in BundleCreateInput) (*Bundle, error)
-	UpdateBundle(ctx context.Context, id string, in BundleUpdateInput) (*Bundle, error)
+	AddBundle(ctx context.Context, applicationID string, in BundleInput) (*Bundle, error)
+	UpdateBundle(ctx context.Context, id string, in BundleInput) (*Bundle, error)
 	DeleteBundle(ctx context.Context, id string) (*Bundle, error)
 	CreateAutomaticScenarioAssignment(ctx context.Context, in AutomaticScenarioAssignmentSetInput) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
@@ -1927,7 +1927,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddBundle(childComplexity, args["applicationID"].(string), args["in"].(BundleCreateInput)), true
+		return e.complexity.Mutation.AddBundle(childComplexity, args["applicationID"].(string), args["in"].(BundleInput)), true
 
 	case "Mutation.addDocumentToBundle":
 		if e.complexity.Mutation.AddDocumentToBundle == nil {
@@ -2515,7 +2515,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateBundle(childComplexity, args["id"].(string), args["in"].(BundleUpdateInput)), true
+		return e.complexity.Mutation.UpdateBundle(childComplexity, args["id"].(string), args["in"].(BundleInput)), true
 
 	case "Mutation.updateEventDefinition":
 		if e.complexity.Mutation.UpdateEventDefinition == nil {
@@ -3577,7 +3577,7 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
-	bundles: [BundleCreateInput!]
+	bundles: [BundleInput!]
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 }
@@ -3644,7 +3644,7 @@ input BasicCredentialDataInput {
 	password: String!
 }
 
-input BundleCreateInput {
+input BundleInput {
 	"""
 	TODO: Validation if it is guid
 	"""
@@ -3715,26 +3715,6 @@ input BundlePackageRelationInput {
 	bundleID: ID!
 }
 
-input BundleUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	title: String!
-	shortDescription: String
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	tags: JSON
-	lastUpdated: Timestamp!
-	extensions: JSON
-	instanceAuthRequestInputSchema: JSONSchema
-	"""
-	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
-	"""
-	defaultInstanceAuth: AuthInput
-}
-
 input CSRFTokenCredentialRequestAuthInput {
 	"""
 	**Validation:** valid URL
@@ -3769,6 +3749,10 @@ input CredentialRequestAuthInput {
 }
 
 input DocumentInput {
+	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
 	"""
 	**Validation:** max=128
 	"""
@@ -3935,7 +3919,7 @@ input PackageCreateInput {
 	tags: JSON
 	lastUpdated: Timestamp!
 	extensions: JSON
-	bundles: [BundleCreateInput!]
+	bundles: [BundleInput!]
 }
 
 input PackageUpdateInput {
@@ -4753,8 +4737,8 @@ type Mutation {
 	When defaultInstanceAuth is set, it fires "deleteBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to UNUSED.
 	"""
 	requestBundleInstanceAuthDeletion(authID: ID!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthDeletion")
-	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
-	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
+	addBundle(applicationID: ID!, in: BundleInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
+	updateBundle(id: ID!, in: BundleInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
 	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle")
 	"""
 	**Examples**
@@ -5063,10 +5047,10 @@ func (ec *executionContext) field_Mutation_addBundle_args(ctx context.Context, r
 		}
 	}
 	args["applicationID"] = arg0
-	var arg1 BundleCreateInput
+	var arg1 BundleInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNBundleCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx, tmp)
+			return ec.unmarshalNBundleInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5076,10 +5060,10 @@ func (ec *executionContext) field_Mutation_addBundle_args(ctx context.Context, r
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(BundleCreateInput); ok {
+		if data, ok := tmp.(BundleInput); ok {
 			arg1 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleCreateInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -6073,10 +6057,10 @@ func (ec *executionContext) field_Mutation_updateBundle_args(ctx context.Context
 		}
 	}
 	args["id"] = arg0
-	var arg1 BundleUpdateInput
+	var arg1 BundleInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNBundleUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleUpdateInput(ctx, tmp)
+			return ec.unmarshalNBundleInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -6086,10 +6070,10 @@ func (ec *executionContext) field_Mutation_updateBundle_args(ctx context.Context
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(BundleUpdateInput); ok {
+		if data, ok := tmp.(BundleInput); ok {
 			arg1 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleUpdateInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -16029,7 +16013,7 @@ func (ec *executionContext) _Mutation_addBundle(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddBundle(rctx, args["applicationID"].(string), args["in"].(BundleCreateInput))
+			return ec.resolvers.Mutation().AddBundle(rctx, args["applicationID"].(string), args["in"].(BundleInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addBundle")
@@ -16093,7 +16077,7 @@ func (ec *executionContext) _Mutation_updateBundle(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateBundle(rctx, args["id"].(string), args["in"].(BundleUpdateInput))
+			return ec.resolvers.Mutation().UpdateBundle(rctx, args["id"].(string), args["in"].(BundleInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateBundle")
@@ -21410,7 +21394,7 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			}
 		case "bundles":
 			var err error
-			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx, v)
+			it.Bundles, err = ec.unmarshalOBundleInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -21612,8 +21596,8 @@ func (ec *executionContext) unmarshalInputBasicCredentialDataInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputBundleCreateInput(ctx context.Context, obj interface{}) (BundleCreateInput, error) {
-	var it BundleCreateInput
+func (ec *executionContext) unmarshalInputBundleInput(ctx context.Context, obj interface{}) (BundleInput, error) {
+	var it BundleInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -21802,66 +21786,6 @@ func (ec *executionContext) unmarshalInputBundlePackageRelationInput(ctx context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputBundleUpdateInput(ctx context.Context, obj interface{}) (BundleUpdateInput, error) {
-	var it BundleUpdateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "title":
-			var err error
-			it.Title, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "shortDescription":
-			var err error
-			it.ShortDescription, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "description":
-			var err error
-			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "tags":
-			var err error
-			it.Tags, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "lastUpdated":
-			var err error
-			it.LastUpdated, err = ec.unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "extensions":
-			var err error
-			it.Extensions, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "instanceAuthRequestInputSchema":
-			var err error
-			it.InstanceAuthRequestInputSchema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "defaultInstanceAuth":
-			var err error
-			it.DefaultInstanceAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputCSRFTokenCredentialRequestAuthInput(ctx context.Context, obj interface{}) (CSRFTokenCredentialRequestAuthInput, error) {
 	var it CSRFTokenCredentialRequestAuthInput
 	var asMap = obj.(map[string]interface{})
@@ -21958,6 +21882,12 @@ func (ec *executionContext) unmarshalInputDocumentInput(ctx context.Context, obj
 
 	for k, v := range asMap {
 		switch k {
+		case "ID":
+			var err error
+			it.ID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalNString2string(ctx, v)
@@ -22444,7 +22374,7 @@ func (ec *executionContext) unmarshalInputPackageCreateInput(ctx context.Context
 			}
 		case "bundles":
 			var err error
-			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx, v)
+			it.Bundles, err = ec.unmarshalOBundleInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -26240,15 +26170,15 @@ func (ec *executionContext) marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋ
 	return ec._Bundle(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNBundleCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx context.Context, v interface{}) (BundleCreateInput, error) {
-	return ec.unmarshalInputBundleCreateInput(ctx, v)
+func (ec *executionContext) unmarshalNBundleInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx context.Context, v interface{}) (BundleInput, error) {
+	return ec.unmarshalInputBundleInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNBundleCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx context.Context, v interface{}) (*BundleCreateInput, error) {
+func (ec *executionContext) unmarshalNBundleInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx context.Context, v interface{}) (*BundleInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNBundleCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx, v)
+	res, err := ec.unmarshalNBundleInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx, v)
 	return &res, err
 }
 
@@ -26345,10 +26275,6 @@ func (ec *executionContext) marshalNBundleInstanceAuthStatusCondition2githubᚗc
 
 func (ec *executionContext) unmarshalNBundlePackageRelationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundlePackageRelationInput(ctx context.Context, v interface{}) (BundlePackageRelationInput, error) {
 	return ec.unmarshalInputBundlePackageRelationInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNBundleUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleUpdateInput(ctx context.Context, v interface{}) (BundleUpdateInput, error) {
-	return ec.unmarshalInputBundleUpdateInput(ctx, v)
 }
 
 func (ec *executionContext) marshalNDocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
@@ -27699,7 +27625,7 @@ func (ec *executionContext) marshalOBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋ
 	return ec._Bundle(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx context.Context, v interface{}) ([]*BundleCreateInput, error) {
+func (ec *executionContext) unmarshalOBundleInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx context.Context, v interface{}) ([]*BundleInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -27709,9 +27635,9 @@ func (ec *executionContext) unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkym
 		}
 	}
 	var err error
-	res := make([]*BundleCreateInput, len(vSlice))
+	res := make([]*BundleInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNBundleCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNBundleInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}

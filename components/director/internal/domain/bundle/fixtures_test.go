@@ -187,7 +187,7 @@ func fixGQLBundle(id, name, desc string) *graphql.Bundle {
 	}
 }
 
-func fixGQLBundleCreateInput(name, description string) graphql.BundleCreateInput {
+func fixGQLBundleCreateInput(name, description string) graphql.BundleInput {
 	basicCredentialDataInput := graphql.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -198,7 +198,7 @@ func fixGQLBundleCreateInput(name, description string) graphql.BundleCreateInput
 		Credential: &credentialDataInput,
 	}
 
-	return graphql.BundleCreateInput{
+	return graphql.BundleInput{
 		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicInputSchema(),
@@ -218,7 +218,7 @@ func fixGQLBundleCreateInput(name, description string) graphql.BundleCreateInput
 	}
 }
 
-func fixModelBundleCreateInput(name, description string) model.BundleCreateInput {
+func fixModelBundleCreateInput(name, description string) model.BundleInput {
 	basicCredentialDataInput := model.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -227,7 +227,7 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
 	}
 
-	return model.BundleCreateInput{
+	return model.BundleInput{
 		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
@@ -247,7 +247,7 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 	}
 }
 
-func fixGQLBundleUpdateInput(name, description string) graphql.BundleUpdateInput {
+func fixGQLBundleUpdateInput(name, description string) graphql.BundleInput {
 	basicCredentialDataInput := graphql.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -258,7 +258,7 @@ func fixGQLBundleUpdateInput(name, description string) graphql.BundleUpdateInput
 		Credential: &credentialDataInput,
 	}
 
-	return graphql.BundleUpdateInput{
+	return graphql.BundleInput{
 		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicInputSchema(),
@@ -266,7 +266,7 @@ func fixGQLBundleUpdateInput(name, description string) graphql.BundleUpdateInput
 	}
 }
 
-func fixModelBundleUpdateInput(t *testing.T, name, description string) model.BundleUpdateInput {
+func fixModelBundleUpdateInput(t *testing.T, name, description string) model.BundleInput {
 	basicCredentialDataInput := model.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -275,7 +275,7 @@ func fixModelBundleUpdateInput(t *testing.T, name, description string) model.Bun
 		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
 	}
 
-	return model.BundleUpdateInput{
+	return model.BundleInput{
 		Title:                          name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),

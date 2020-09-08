@@ -67,7 +67,7 @@ type PackageCreateInput struct {
 	Tags             *string
 	LastUpdated      time.Time
 	Extensions       *string
-	Bundles          []*BundleCreateInput
+	Bundles          []*BundleInput
 }
 
 type PackageUpdateInput struct {

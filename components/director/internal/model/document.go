@@ -18,6 +18,7 @@ type Document struct {
 }
 
 type DocumentInput struct {
+	ID           string
 	Title        string
 	DisplayName  string
 	Description  string
@@ -39,14 +40,14 @@ type DocumentPage struct {
 	TotalCount int
 }
 
-func (d *DocumentInput) ToDocumentWithinBundle(id, tenant string, bundleID string) *Document {
+func (d *DocumentInput) ToDocumentWithinBundle(tenant string, bundleID string) *Document {
 	if d == nil {
 		return nil
 	}
 
 	return &Document{
 		BundleID:    bundleID,
-		ID:          id,
+		ID:          d.ID,
 		Tenant:      tenant,
 		Title:       d.Title,
 		DisplayName: d.DisplayName,

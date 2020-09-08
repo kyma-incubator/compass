@@ -55,7 +55,7 @@ func TestService_Create(t *testing.T) {
 		},
 		IntegrationSystemID: &intSysID,
 	}
-	modelInput.Bundles = []*model.BundleCreateInput{
+	modelInput.Bundles = []*model.BundleInput{
 		{
 			Title:            "bundle1",
 			APIDefinitions:   APIDefinitions,

@@ -178,22 +178,22 @@ func (_m *BundleRepository) ListByApplicationID(ctx context.Context, tenantID st
 	return r0, r1
 }
 
-// ListByPackageID provides a mock function with given fields: ctx, tenantID, packageID
-func (_m *BundleRepository) ListByPackageID(ctx context.Context, tenantID string, packageID string) ([]*model.Bundle, error) {
-	ret := _m.Called(ctx, tenantID, packageID)
+// ListByPackageID provides a mock function with given fields: ctx, tenantID, packageID, pageSize, cursor
+func (_m *BundleRepository) ListByPackageID(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.BundlePage, error) {
+	ret := _m.Called(ctx, tenantID, packageID, pageSize, cursor)
 
-	var r0 []*model.Bundle
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Bundle); ok {
-		r0 = rf(ctx, tenantID, packageID)
+	var r0 *model.BundlePage
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.BundlePage); ok {
+		r0 = rf(ctx, tenantID, packageID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Bundle)
+			r0 = ret.Get(0).(*model.BundlePage)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenantID, packageID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
+		r1 = rf(ctx, tenantID, packageID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

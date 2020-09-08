@@ -72,8 +72,9 @@ func fixModelDocumentInput(id string) *model.DocumentInput {
 	}
 }
 
-func fixModelDocumentInputWithFetchRequest(fetchRequestURL string) *model.DocumentInput {
+func fixModelDocumentInputWithFetchRequest(id, fetchRequestURL string) *model.DocumentInput {
 	return &model.DocumentInput{
+		ID:          id,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
 		Description: docDescription,

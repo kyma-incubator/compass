@@ -384,7 +384,7 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 	}`)
 }
 
-func (g *Graphqlizer) BundleCreateInputToGQL(in graphql.BundleCreateInput) (string, error) {
+func (g *Graphqlizer) BundleCreateInputToGQL(in graphql.BundleInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{ .Name }}"
 		{{- if .Description }}
@@ -417,7 +417,7 @@ func (g *Graphqlizer) BundleCreateInputToGQL(in graphql.BundleCreateInput) (stri
 	}`)
 }
 
-func (g *Graphqlizer) BundleUpdateInputToGQL(in graphql.BundleUpdateInput) (string, error) {
+func (g *Graphqlizer) BundleUpdateInputToGQL(in graphql.BundleInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{ .Name }}"
 		{{- if .Description }}

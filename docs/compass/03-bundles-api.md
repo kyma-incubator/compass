@@ -68,7 +68,7 @@ type Mutation {
   addDocumentToBundle(bundleID: ID!, in: DocumentInput! @validate): Document!
     @hasScopes(path: "graphql.mutation.addDocumentToBundle")
 
-  addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle!
+  addBundle(applicationID: ID!, in: BundleInput! @validate): Bundle!
   updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle!
   deleteBundle(id: ID!): Bundle!
 }

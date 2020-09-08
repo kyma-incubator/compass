@@ -54,7 +54,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		listerGlobal:    repo.NewListerGlobal(resource.PackageBundle, packageBundleTable, packageBundleColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		creator:         repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
-		updater:         repo.NewUpdater(resource.Bundle, bundleTable, []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth"}, tenantColumn, []string{"id"}),
+		updater:         repo.NewUpdater(resource.Bundle, bundleTable, []string{"title", "short_description", "description", "instance_auth_request_json_schema", "default_instance_auth", "tags", "last_updated", "extensions"}, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}
 }

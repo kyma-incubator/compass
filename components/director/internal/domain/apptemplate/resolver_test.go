@@ -489,7 +489,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
-				appConv.On("CreateInputFromGraphQL", gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
+				appConv.On("InputFromGraphQL", gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
 				return appConv
 			},
@@ -641,7 +641,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputFromGraphQL", gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
+				appConv.On("InputFromGraphQL", gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
 			},
@@ -670,7 +670,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputFromGraphQL", gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
+				appConv.On("InputFromGraphQL", gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
 			},
@@ -699,7 +699,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputFromGraphQL", gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
+				appConv.On("InputFromGraphQL", gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
 			},

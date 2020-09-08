@@ -32,8 +32,8 @@ type PackageConverter interface {
 
 //go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
 type BundleService interface {
-	Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error)
-	Update(ctx context.Context, id string, in model.BundleUpdateInput) error
+	Create(ctx context.Context, applicationID string, in model.BundleInput) (string, error)
+	Update(ctx context.Context, id string, in model.BundleInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 	ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.BundlePage, error)
@@ -43,9 +43,8 @@ type BundleService interface {
 //go:generate mockery -name=BundleConverter -output=automock -outpkg=automock -case=underscore
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
-	CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.BundleCreateInput, error)
-	UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model.BundleUpdateInput, error)
-	MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)
+	InputFromGraphQL(in graphql.BundleInput) (model.BundleInput, error)
+	MultipleCreateInputFromGraphQL(in []*graphql.BundleInput) ([]*model.BundleInput, error)
 	MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error)
 }
 

@@ -15,20 +15,20 @@ type BundleConverter struct {
 }
 
 // MultipleCreateInputFromGraphQL provides a mock function with given fields: in
-func (_m *BundleConverter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error) {
+func (_m *BundleConverter) MultipleCreateInputFromGraphQL(in []*graphql.BundleInput) ([]*model.BundleInput, error) {
 	ret := _m.Called(in)
 
-	var r0 []*model.BundleCreateInput
-	if rf, ok := ret.Get(0).(func([]*graphql.BundleCreateInput) []*model.BundleCreateInput); ok {
+	var r0 []*model.BundleInput
+	if rf, ok := ret.Get(0).(func([]*graphql.BundleInput) []*model.BundleInput); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.BundleCreateInput)
+			r0 = ret.Get(0).([]*model.BundleInput)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func([]*graphql.BundleCreateInput) error); ok {
+	if rf, ok := ret.Get(1).(func([]*graphql.BundleInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

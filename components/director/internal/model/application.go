@@ -56,7 +56,7 @@ type ApplicationRegisterInput struct {
 	Labels              map[string]interface{}
 	HealthCheckURL      *string
 	Webhooks            []*WebhookInput
-	Bundles             []*BundleCreateInput
+	Bundles             []*BundleInput
 	IntegrationSystemID *string
 	StatusCondition     *ApplicationStatusCondition
 }

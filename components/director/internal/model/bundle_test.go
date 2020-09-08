@@ -18,13 +18,13 @@ func TestBundleCreateInput_ToBundle(t *testing.T) {
 
 	testCases := []struct {
 		Name     string
-		Input    *model.BundleCreateInput
+		Input    *model.BundleInput
 		Expected *model.Bundle
 	}{
 		{
 
 			Name: "All properties given",
-			Input: &model.BundleCreateInput{
+			Input: &model.BundleInput{
 				Title:       name,
 				Description: &desc,
 			},

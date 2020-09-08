@@ -19,20 +19,7 @@ type Bundle struct {
 	Extensions                     *string
 }
 
-func (bundle *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
-	bundle.Title = update.Title
-	if update.ShortDescription != nil {
-		bundle.ShortDescription = *update.ShortDescription
-	}
-	bundle.Description = update.Description
-	bundle.InstanceAuthRequestInputSchema = update.InstanceAuthRequestInputSchema
-	bundle.DefaultInstanceAuth = update.DefaultInstanceAuth.ToAuth()
-	bundle.Tags = update.Tags
-	bundle.LastUpdated = update.LastUpdated
-	bundle.Extensions = update.Extensions
-}
-
-type BundleCreateInput struct {
+type BundleInput struct {
 	ID                             string
 	Title                          string
 	ShortDescription               string
@@ -47,15 +34,15 @@ type BundleCreateInput struct {
 	Documents                      []*DocumentInput
 }
 
-type BundleUpdateInput struct {
-	Title                          string
-	ShortDescription               *string
-	Description                    *string
-	InstanceAuthRequestInputSchema *string
-	DefaultInstanceAuth            *AuthInput
-	Tags                           *string
-	LastUpdated                    time.Time
-	Extensions                     *string
+func (bundle *Bundle) SetFromUpdateInput(update BundleInput) {
+	bundle.Title = update.Title
+	bundle.ShortDescription = update.ShortDescription
+	bundle.Description = update.Description
+	bundle.InstanceAuthRequestInputSchema = update.InstanceAuthRequestInputSchema
+	bundle.DefaultInstanceAuth = update.DefaultInstanceAuth.ToAuth()
+	bundle.Tags = update.Tags
+	bundle.LastUpdated = update.LastUpdated
+	bundle.Extensions = update.Extensions
 }
 
 type BundlePage struct {
@@ -66,7 +53,7 @@ type BundlePage struct {
 
 func (BundlePage) IsPageable() {}
 
-func (i *BundleCreateInput) ToBundle(applicationID, tenantID string) *Bundle {
+func (i *BundleInput) ToBundle(applicationID, tenantID string) *Bundle {
 	if i == nil {
 		return nil
 	}

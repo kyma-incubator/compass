@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
-func (i BundleCreateInput) Validate() error {
+func (i BundleInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Title, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
@@ -19,15 +19,6 @@ func (i BundleCreateInput) Validate() error {
 		validation.Field(&i.APIDefinitions, inputvalidation.Each(validation.Required)),
 		validation.Field(&i.EventDefinitions, inputvalidation.Each(validation.Required)),
 		validation.Field(&i.Documents, inputvalidation.Each(validation.Required)),
-	)
-}
-
-func (i BundleUpdateInput) Validate() error {
-	return validation.ValidateStruct(&i,
-		validation.Field(&i.Title, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
-		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
-		validation.Field(&i.DefaultInstanceAuth, validation.NilOrNotEmpty),
-		validation.Field(&i.InstanceAuthRequestInputSchema, validation.NilOrNotEmpty),
 	)
 }
 

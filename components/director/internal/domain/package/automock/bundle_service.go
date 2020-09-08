@@ -15,18 +15,18 @@ type BundleService struct {
 }
 
 // Create provides a mock function with given fields: ctx, applicationID, in
-func (_m *BundleService) Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error) {
+func (_m *BundleService) Create(ctx context.Context, applicationID string, in model.BundleInput) (string, error) {
 	ret := _m.Called(ctx, applicationID, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleCreateInput) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInput) string); ok {
 		r0 = rf(ctx, applicationID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleCreateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleInput) error); ok {
 		r1 = rf(ctx, applicationID, in)
 	} else {
 		r1 = ret.Error(1)
@@ -95,22 +95,22 @@ func (_m *BundleService) GetForPackage(ctx context.Context, id string, packageID
 	return r0, r1
 }
 
-// ListForPackage provides a mock function with given fields: ctx, packageID
-func (_m *BundleService) ListForPackage(ctx context.Context, packageID string) ([]*model.Bundle, error) {
-	ret := _m.Called(ctx, packageID)
+// ListForPackage provides a mock function with given fields: ctx, packageID, pageSize, cursor
+func (_m *BundleService) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.BundlePage, error) {
+	ret := _m.Called(ctx, packageID, pageSize, cursor)
 
-	var r0 []*model.Bundle
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Bundle); ok {
-		r0 = rf(ctx, packageID)
+	var r0 *model.BundlePage
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.BundlePage); ok {
+		r0 = rf(ctx, packageID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Bundle)
+			r0 = ret.Get(0).(*model.BundlePage)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, packageID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
+		r1 = rf(ctx, packageID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -119,11 +119,11 @@ func (_m *BundleService) ListForPackage(ctx context.Context, packageID string) (
 }
 
 // Update provides a mock function with given fields: ctx, id, in
-func (_m *BundleService) Update(ctx context.Context, id string, in model.BundleUpdateInput) error {
+func (_m *BundleService) Update(ctx context.Context, id string, in model.BundleInput) error {
 	ret := _m.Called(ctx, id, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleUpdateInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInput) error); ok {
 		r0 = rf(ctx, id, in)
 	} else {
 		r0 = ret.Error(0)

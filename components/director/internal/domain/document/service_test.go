@@ -260,8 +260,8 @@ func TestService_CreateToBundle(t *testing.T) {
 	frURL := "foo.bar"
 	frID := "fr-id"
 	timestamp := time.Now()
-	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
-	modelDoc := modelInput.ToDocumentWithinBundle(id, tnt, bundleID)
+	modelInput := fixModelDocumentInputWithFetchRequest(id, frURL)
+	modelDoc := modelInput.ToDocumentWithinBundle(tnt, bundleID)
 
 	testCases := []struct {
 		Name               string

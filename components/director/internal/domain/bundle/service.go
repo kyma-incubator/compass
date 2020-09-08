@@ -2,7 +2,6 @@ package mp_bundle
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -34,6 +33,7 @@ type APIRepository interface {
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
 	Create(ctx context.Context, items *model.EventDefinition) error
+	Update(ctx context.Context, items *model.EventDefinition) error
 }
 
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
@@ -81,7 +81,7 @@ func NewService(bundleRepo BundleRepository, apiRepo APIRepository, eventAPIRepo
 	}
 }
 
-func (s *service) Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.BundleInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -99,13 +99,13 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Bun
 
 	err = s.createRelatedResources(ctx, in, tnt, in.ID)
 	if err != nil {
-		return "", errors.Wrap(err, "while creating related Application resources")
+		return "", errors.Wrap(err, "while creating related Bundle resources")
 	}
 
 	return in.ID, nil
 }
 
-func (s *service) CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error {
+func (s *service) CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleInput) error {
 	if in == nil {
 		return nil
 	}
@@ -124,7 +124,7 @@ func (s *service) CreateMultiple(ctx context.Context, applicationID string, in [
 	return nil
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.BundleInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
@@ -141,6 +141,11 @@ func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateIn
 	if err != nil {
 		return errors.Wrapf(err, "while updating Bundle with ID: [%s]", id)
 	}
+	err = s.updateRelatedResources(ctx, in, tnt, in.ID)
+	if err != nil {
+		return errors.Wrap(err, "while updating related Bundle resources")
+	}
+
 	return nil
 }
 
@@ -227,7 +232,7 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	return s.bundleRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
-func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, tenant string, bundleID string) error {
+func (s *service) createRelatedResources(ctx context.Context, in model.BundleInput, tenant string, bundleID string) error {
 	err := s.createAPIs(ctx, bundleID, tenant, in.APIDefinitions)
 	if err != nil {
 		return errors.Wrapf(err, "while creating APIs for application")
@@ -242,6 +247,25 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleCre
 	if err != nil {
 		return errors.Wrapf(err, "while creating Documents for application")
 	}
+
+	return nil
+}
+
+func (s *service) updateRelatedResources(ctx context.Context, in model.BundleInput, tenant string, bundleID string) error {
+	err := s.updateAPIs(ctx, bundleID, tenant, in.APIDefinitions)
+	if err != nil {
+		return errors.Wrapf(err, "while creating APIs for application")
+	}
+
+	err = s.updateEvents(ctx, bundleID, tenant, in.EventDefinitions)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Events for application")
+	}
+
+	/*err = s.updateDocuments(ctx, bundleID, tenant, in.Documents)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Documents for application")
+	}*/ // TODO: Documents does not support update right now
 
 	return nil
 }
@@ -277,6 +301,23 @@ func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis 
 	return nil
 }
 
+func (s *service) updateAPIs(ctx context.Context, bundleID, tenant string, apis []*model.APIDefinitionInput) error {
+	var err error
+	for _, item := range apis {
+		if len(item.ID) == 0 {
+			return errors.Wrap(err, "id is mandatory when updating APIs")
+		}
+		api := item.ToAPIDefinitionWithinBundle(bundleID, tenant)
+
+		err = s.apiRepo.Update(ctx, api)
+		if err != nil {
+			return errors.Wrap(err, "while creating API for application")
+		}
+	}
+
+	return nil
+}
+
 func (s *service) createEvents(ctx context.Context, bundleID, tenant string, events []*model.EventDefinitionInput) error {
 	var err error
 	for _, item := range events {
@@ -298,17 +339,33 @@ func (s *service) createEvents(ctx context.Context, bundleID, tenant string, eve
 	return nil
 }
 
+func (s *service) updateEvents(ctx context.Context, bundleID, tenant string, events []*model.EventDefinitionInput) error {
+	var err error
+	for _, item := range events {
+		if len(item.ID) == 0 {
+			return errors.Wrap(err, "id is mandatory when updating Events")
+		}
+		err = s.eventAPIRepo.Update(ctx, item.ToEventDefinitionWithinBundle(bundleID, tenant))
+		if err != nil {
+			return errors.Wrap(err, "while creating EventDefinitions for application")
+		}
+	}
+	return nil
+}
+
 func (s *service) createDocuments(ctx context.Context, bundleID, tenant string, events []*model.DocumentInput) error {
 	var err error
 	for _, item := range events {
-		documentID := s.uidService.Generate()
-		err = s.documentRepo.Create(ctx, item.ToDocumentWithinBundle(documentID, tenant, bundleID))
+		if len(item.ID) == 0 {
+			item.ID = s.uidService.Generate()
+		}
+		err = s.documentRepo.Create(ctx, item.ToDocumentWithinBundle(tenant, bundleID))
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document for application")
 		}
 
 		if item.FetchRequest != nil {
-			_, err = s.createFetchRequest(ctx, tenant, item.FetchRequest, model.DocumentFetchRequestReference, documentID)
+			_, err = s.createFetchRequest(ctx, tenant, item.FetchRequest, model.DocumentFetchRequestReference, item.ID)
 			if err != nil {
 				return err
 			}

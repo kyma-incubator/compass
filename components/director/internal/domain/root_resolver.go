@@ -453,10 +453,10 @@ func (r *mutationResolver) RequestBundleInstanceAuthDeletion(ctx context.Context
 	return r.bundleInstanceAuth.RequestBundleInstanceAuthDeletion(ctx, authID)
 }
 
-func (r *mutationResolver) AddBundle(ctx context.Context, applicationID string, in graphql.BundleCreateInput) (*graphql.Bundle, error) {
+func (r *mutationResolver) AddBundle(ctx context.Context, applicationID string, in graphql.BundleInput) (*graphql.Bundle, error) {
 	return r.mpBundle.AddBundle(ctx, applicationID, in)
 }
-func (r *mutationResolver) UpdateBundle(ctx context.Context, id string, in graphql.BundleUpdateInput) (*graphql.Bundle, error) {
+func (r *mutationResolver) UpdateBundle(ctx context.Context, id string, in graphql.BundleInput) (*graphql.Bundle, error) {
 	return r.mpBundle.UpdateBundle(ctx, id, in)
 }
 func (r *mutationResolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle, error) {

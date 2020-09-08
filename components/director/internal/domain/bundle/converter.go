@@ -130,28 +130,28 @@ func (c *converter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, er
 	return bundles, nil
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.BundleCreateInput, error) {
+func (c *converter) InputFromGraphQL(in graphql.BundleInput) (model.BundleInput, error) {
 	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
 	if err != nil {
-		return model.BundleCreateInput{}, errors.Wrap(err, "while converting DefaultInstanceAuth input")
+		return model.BundleInput{}, errors.Wrap(err, "while converting DefaultInstanceAuth input")
 	}
 
 	apiDefs, err := c.api.MultipleInputFromGraphQL(in.APIDefinitions)
 	if err != nil {
-		return model.BundleCreateInput{}, errors.Wrap(err, "while converting APIDefinitions input")
+		return model.BundleInput{}, errors.Wrap(err, "while converting APIDefinitions input")
 	}
 
 	documents, err := c.document.MultipleInputFromGraphQL(in.Documents)
 	if err != nil {
-		return model.BundleCreateInput{}, errors.Wrap(err, "while converting Documents input")
+		return model.BundleInput{}, errors.Wrap(err, "while converting Documents input")
 	}
 
 	eventDefs, err := c.event.MultipleInputFromGraphQL(in.EventDefinitions)
 	if err != nil {
-		return model.BundleCreateInput{}, errors.Wrap(err, "while converting EventDefinitions input")
+		return model.BundleInput{}, errors.Wrap(err, "while converting EventDefinitions input")
 	}
 
-	return model.BundleCreateInput{
+	return model.BundleInput{
 		ID:                             c.strPrtToStr(in.ID),
 		Title:                          in.Title,
 		ShortDescription:               in.ShortDescription,
@@ -167,13 +167,13 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 	}, nil
 }
 
-func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error) {
-	var bundles []*model.BundleCreateInput
+func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.BundleInput) ([]*model.BundleInput, error) {
+	var bundles []*model.BundleInput
 	for _, item := range in {
 		if item == nil {
 			continue
 		}
-		bundle, err := c.CreateInputFromGraphQL(*item)
+		bundle, err := c.InputFromGraphQL(*item)
 		if err != nil {
 			return nil, err
 		}
@@ -181,24 +181,6 @@ func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInp
 	}
 
 	return bundles, nil
-}
-
-func (c *converter) UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model.BundleUpdateInput, error) {
-	auth, err := c.auth.InputFromGraphQL(in.DefaultInstanceAuth)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting DefaultInstanceAuth from GraphQL")
-	}
-
-	return &model.BundleUpdateInput{
-		Title:                          in.Title,
-		ShortDescription:               in.ShortDescription,
-		Description:                    in.Description,
-		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
-		DefaultInstanceAuth:            auth,
-		Tags:                           c.jsonPtrToStrPtr(in.Tags),
-		LastUpdated:                    time.Time(in.LastUpdated),
-		Extensions:                     c.jsonPtrToStrPtr(in.Extensions),
-	}, nil
 }
 
 func (c *converter) marshalDefaultInstanceAuth(defaultInstanceAuth *model.Auth) (*string, error) {

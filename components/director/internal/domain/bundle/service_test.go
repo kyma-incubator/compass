@@ -33,7 +33,7 @@ func TestService_Create(t *testing.T) {
 	desc := "bar"
 	spec := "test"
 
-	modelInput := model.BundleCreateInput{
+	modelInput := model.BundleInput{
 		Title:                          name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
@@ -79,7 +79,7 @@ func TestService_Create(t *testing.T) {
 		FetchRequestRepoFn    func() *automock.FetchRequestRepository
 		UIDServiceFn          func() *automock.UIDService
 		FetchRequestServiceFn func() *automock.FetchRequestService
-		Input                 model.BundleCreateInput
+		Input                 model.BundleInput
 		ExpectedErr           error
 	}{
 		{
@@ -446,7 +446,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", model.BundleCreateInput{})
+		_, err := svc.Create(context.TODO(), "", model.BundleInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -461,7 +461,7 @@ func TestService_Update(t *testing.T) {
 	name := "bar"
 	desc := "baz"
 
-	modelInput := model.BundleUpdateInput{
+	modelInput := model.BundleInput{
 		Title:                          name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
@@ -488,7 +488,7 @@ func TestService_Update(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.BundleRepository
-		Input        model.BundleUpdateInput
+		Input        model.BundleInput
 		InputID      string
 		ExpectedErr  error
 	}{
@@ -553,7 +553,7 @@ func TestService_Update(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.BundleUpdateInput{})
+		err := svc.Update(context.TODO(), "", model.BundleInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -572,7 +572,7 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.BundleRepository
-		Input        model.BundleCreateInput
+		Input        model.BundleInput
 		InputID      string
 		ExpectedErr  error
 	}{
@@ -709,7 +709,7 @@ func TestService_Get(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.BundleRepository
-		Input              model.BundleCreateInput
+		Input              model.BundleInput
 		InputID            string
 		ExpectedBundle     *model.Bundle
 		ExpectedErrMessage string
@@ -785,7 +785,7 @@ func TestService_GetForApplication(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.BundleRepository
-		Input              model.BundleCreateInput
+		Input              model.BundleInput
 		InputID            string
 		ApplicationID      string
 		ExpectedBundle     *model.Bundle
@@ -863,7 +863,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.BundleRepository
-		Input              model.BundleCreateInput
+		Input              model.BundleInput
 		InstanceAuthID     string
 		ExpectedBundle     *model.Bundle
 		ExpectedErrMessage string

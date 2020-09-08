@@ -27,3 +27,17 @@ func (_m *EventAPIRepository) Create(ctx context.Context, items *model.EventDefi
 
 	return r0
 }
+
+// Update provides a mock function with given fields: ctx, items
+func (_m *EventAPIRepository) Update(ctx context.Context, items *model.EventDefinition) error {
+	ret := _m.Called(ctx, items)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.EventDefinition) error); ok {
+		r0 = rf(ctx, items)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

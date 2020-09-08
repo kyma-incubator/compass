@@ -69,6 +69,7 @@ func (c *converter) InputFromGraphQL(in *graphql.DocumentInput) (*model.Document
 	}
 
 	return &model.DocumentInput{
+		ID:           c.strPtrToJSONPtr(in.ID),
 		Title:        in.Title,
 		DisplayName:  in.DisplayName,
 		Description:  in.Description,
@@ -132,4 +133,11 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		Data:        data,
 	}
 	return out, nil
+}
+
+func (c *converter) strPtrToJSONPtr(in *string) string {
+	if in == nil {
+		return ""
+	}
+	return *in
 }

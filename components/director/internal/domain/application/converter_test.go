@@ -120,7 +120,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			},
 			BundleConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
-				conv.On("MultipleCreateInputFromGraphQL", []*graphql.BundleCreateInput(nil)).Return(nil, nil)
+				conv.On("MultipleCreateInputFromGraphQL", []*graphql.BundleInput(nil)).Return(nil, nil)
 				return conv
 			},
 		},

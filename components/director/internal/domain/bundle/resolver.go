@@ -16,8 +16,8 @@ import (
 
 //go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
 type BundleService interface {
-	Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error)
-	Update(ctx context.Context, id string, in model.BundleUpdateInput) error
+	Create(ctx context.Context, applicationID string, in model.BundleInput) (string, error)
+	Update(ctx context.Context, id string, in model.BundleInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 	ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.BundlePage, error)
@@ -27,8 +27,7 @@ type BundleService interface {
 //go:generate mockery -name=BundleConverter -output=automock -outpkg=automock -case=underscore
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
-	CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.BundleCreateInput, error)
-	UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model.BundleUpdateInput, error)
+	InputFromGraphQL(in graphql.BundleInput) (model.BundleInput, error)
 }
 
 //go:generate mockery -name=BundleInstanceAuthService -output=automock -outpkg=automock -case=underscore
@@ -125,7 +124,7 @@ func NewResolver(
 	}
 }
 
-func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graphql.BundleCreateInput) (*graphql.Bundle, error) {
+func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graphql.BundleInput) (*graphql.Bundle, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -134,7 +133,7 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.bundleConverter.CreateInputFromGraphQL(in)
+	convertedIn, err := r.bundleConverter.InputFromGraphQL(in)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting input from GraphQL")
 	}
@@ -162,7 +161,7 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 	return gqlBundle, nil
 }
 
-func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.BundleUpdateInput) (*graphql.Bundle, error) {
+func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.BundleInput) (*graphql.Bundle, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -171,12 +170,12 @@ func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.Bundl
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.bundleConverter.UpdateInputFromGraphQL(in)
+	convertedIn, err := r.bundleConverter.InputFromGraphQL(in)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle update input from GraphQL with ID: [%s]", id)
 	}
 
-	err = r.bundleSvc.Update(ctx, id, *convertedIn)
+	err = r.bundleSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
 	}

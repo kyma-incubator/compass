@@ -103,7 +103,7 @@ type ApplicationRegisterInput struct {
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
 	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	Bundles             []*BundleCreateInput        `json:"bundles"`
+	Bundles             []*BundleInput              `json:"bundles"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 }
@@ -203,7 +203,7 @@ type BasicCredentialDataInput struct {
 	Password string `json:"password"`
 }
 
-type BundleCreateInput struct {
+type BundleInput struct {
 	// TODO: Validation if it is guid
 	ID *string `json:"ID"`
 	// **Validation:** ASCII printable characters, max=100
@@ -289,20 +289,6 @@ type BundlePage struct {
 
 func (BundlePage) IsPageable() {}
 
-type BundleUpdateInput struct {
-	// **Validation:** ASCII printable characters, max=100
-	Title            string  `json:"title"`
-	ShortDescription *string `json:"shortDescription"`
-	// **Validation:** max=2000
-	Description                    *string     `json:"description"`
-	Tags                           *JSON       `json:"tags"`
-	LastUpdated                    Timestamp   `json:"lastUpdated"`
-	Extensions                     *JSON       `json:"extensions"`
-	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema"`
-	// While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
-	DefaultInstanceAuth *AuthInput `json:"defaultInstanceAuth"`
-}
-
 type CSRFTokenCredentialRequestAuth struct {
 	TokenEndpointURL                string                 `json:"tokenEndpointURL"`
 	Credential                      CredentialData         `json:"credential"`
@@ -340,6 +326,8 @@ type CredentialRequestAuthInput struct {
 }
 
 type DocumentInput struct {
+	// TODO: Validation if it is guid
+	ID *string `json:"ID"`
 	// **Validation:** max=128
 	Title string `json:"title"`
 	// **Validation:** max=128
@@ -540,20 +528,20 @@ type PackageCreateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Title string `json:"title"`
 	// **Validation:** max=2000
-	ShortDescription string               `json:"shortDescription"`
-	Description      string               `json:"description"`
-	Version          string               `json:"version"`
-	Licence          *string              `json:"licence"`
-	LicenceType      *string              `json:"licenceType"`
-	TermsOfService   *string              `json:"termsOfService"`
-	Logo             *string              `json:"logo"`
-	Image            *string              `json:"image"`
-	Provider         *JSON                `json:"provider"`
-	Actions          *JSON                `json:"actions"`
-	Tags             *JSON                `json:"tags"`
-	LastUpdated      Timestamp            `json:"lastUpdated"`
-	Extensions       *JSON                `json:"extensions"`
-	Bundles          []*BundleCreateInput `json:"bundles"`
+	ShortDescription string         `json:"shortDescription"`
+	Description      string         `json:"description"`
+	Version          string         `json:"version"`
+	Licence          *string        `json:"licence"`
+	LicenceType      *string        `json:"licenceType"`
+	TermsOfService   *string        `json:"termsOfService"`
+	Logo             *string        `json:"logo"`
+	Image            *string        `json:"image"`
+	Provider         *JSON          `json:"provider"`
+	Actions          *JSON          `json:"actions"`
+	Tags             *JSON          `json:"tags"`
+	LastUpdated      Timestamp      `json:"lastUpdated"`
+	Extensions       *JSON          `json:"extensions"`
+	Bundles          []*BundleInput `json:"bundles"`
 }
 
 type PackagePage struct {
