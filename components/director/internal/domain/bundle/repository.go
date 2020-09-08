@@ -194,22 +194,37 @@ func (r *pgRepository) GetForPackage(ctx context.Context, tenantID, id string, _
 	return r.GetByID(ctx, tenantID, id)
 }
 
-func (r *pgRepository) ListByPackageID(ctx context.Context, tenantID, packageID string) ([]*model.Bundle, error) {
+func (r *pgRepository) ListByPackageID(ctx context.Context, tenantID, packageID string, pageSize int, cursor string) (*model.BundlePage, error) {
 	bundleIDs, err := r.getBundleIDsByPackageID(ctx, packageID)
 	if err != nil {
 		return nil, err
 	}
 
-	var bundles []*model.Bundle
-	for _, bundleID := range bundleIDs {
-		bundle, err := r.GetByID(ctx, tenantID, bundleID)
-		if err != nil {
-			return nil, err
-		}
-		bundles = append(bundles, bundle)
+	conditions := repo.Conditions{
+		repo.NewInConditionForStringValues("id", bundleIDs),
 	}
 
-	return bundles, nil
+	var bundleCollection BundleCollection
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenantID, pageSize, cursor, "id", &bundleCollection, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*model.Bundle
+
+	for _, bundleEnt := range bundleCollection {
+		m, err := r.conv.FromEntity(&bundleEnt)
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating Bundle model from entity")
+		}
+		items = append(items, m)
+	}
+
+	return &model.BundlePage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page,
+	}, nil
 }
 
 func (r *pgRepository) getBundleIDsByPackageID(ctx context.Context, packageID string) ([]string, error) {

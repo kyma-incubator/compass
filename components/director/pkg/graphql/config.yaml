@@ -66,6 +66,13 @@ models:
         resolver: true
       bundle:
         resolver: true
+  Package:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Bundle"
+    fields:
+      bundle:
+        resolver: true
+      bundles:
+        resolver: true
   Bundle:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Bundle"
     fields:

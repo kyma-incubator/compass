@@ -1,5 +1,5 @@
 - username: "admin"
-  tenants: 
+  tenants:
   - "dcfc43da-9215-46ab-b377-7177b9c94a48"
   - "776639af-839e-4f95-b969-1cab91789188"
   scopes:
@@ -17,7 +17,7 @@
   - "automatic_scenario_assignment:read"
   - "automatic_scenario_assignment:write"
 - username: "reader"
-  tenants: 
+  tenants:
   - "dcfc43da-9215-46ab-b377-7177b9c94a48"
   - "776639af-839e-4f95-b969-1cab91789188"
   scopes:

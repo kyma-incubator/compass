@@ -22,7 +22,7 @@ type BundleRepository interface {
 	GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
 	GetForPackage(ctx context.Context, tenantID, id string, packageID string) (*model.Bundle, error)
-	ListByPackageID(ctx context.Context, tenantID, packageID string) ([]*model.Bundle, error)
+	ListByPackageID(ctx context.Context, tenantID, packageID string, pageSize int, cursor string) (*model.BundlePage, error)
 }
 
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
@@ -327,13 +327,13 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in *mod
 	return fr, nil
 }
 
-func (s *service) ListForPackage(ctx context.Context, packageID string) ([]*model.Bundle, error) {
+func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.BundlePage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.bundleRepo.ListByPackageID(ctx, tnt, packageID)
+	return s.bundleRepo.ListByPackageID(ctx, tnt, packageID, pageSize, cursor)
 }
 
 func (s *service) GetForPackage(ctx context.Context, id string, packageID string) (*model.Bundle, error) {

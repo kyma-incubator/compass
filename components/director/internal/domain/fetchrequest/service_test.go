@@ -67,14 +67,14 @@ func TestService_HandleAPISpec(t *testing.T) {
 
 	modelInputBundle := model.FetchRequest{
 		ID:   "test",
-		Mode: model.FetchModeBundle,
+		Mode: model.FetchModePackage,
 		Status: &model.FetchRequestStatus{
 			Timestamp: timestamp,
 			Condition: model.FetchRequestStatusConditionInitial},
 	}
 	modelInputBundleWithMessage := model.FetchRequest{
 		ID:   "test",
-		Mode: model.FetchModeBundle,
+		Mode: model.FetchModePackage,
 		Status: &model.FetchRequestStatus{
 			Timestamp: timestamp,
 			Message:   str.Ptr("Invalid data [reason=Unsupported fetch mode: PACKAGE]"),

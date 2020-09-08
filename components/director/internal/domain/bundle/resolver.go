@@ -20,7 +20,7 @@ type BundleService interface {
 	Update(ctx context.Context, id string, in model.BundleUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Bundle, error)
-	ListForPackage(ctx context.Context, packageID string) ([]*model.Bundle, error)
+	ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.BundlePage, error)
 	GetForPackage(ctx context.Context, id string, packageID string) (*model.Bundle, error)
 }
 

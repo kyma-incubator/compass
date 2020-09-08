@@ -3482,11 +3482,11 @@ input APIDefinitionInput {
 	image: String
 	url: String
 	"""
-	should be ENUM 
+	should be ENUM
 	"""
 	releaseStatus: String!
 	"""
-	should be ENUM 
+	should be ENUM
 	"""
 	apiProtocol: String!
 	actions: JSON!
@@ -3772,7 +3772,7 @@ input EventDefinitionInput {
 	image: String
 	url: String
 	"""
-	should be ENUM 
+	should be ENUM
 	"""
 	releaseStatus: String!
 	lastUpdated: Timestamp!
@@ -3988,11 +3988,11 @@ type APIDefinition {
 	image: String
 	url: String
 	"""
-	should be ENUM 
+	should be ENUM
 	"""
 	releaseStatus: String!
 	"""
-	should be ENUM 
+	should be ENUM
 	"""
 	apiProtocol: String!
 	actions: JSON!
@@ -4201,7 +4201,7 @@ type EventDefinition {
 	image: String
 	url: String
 	"""
-	should be ENUM 
+	should be ENUM
 	"""
 	releaseStatus: String!
 	lastUpdated: Timestamp!
@@ -4666,7 +4666,7 @@ type Mutation {
 	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 	"""
-	TODO: Add validation & scopes 
+	TODO: Add validation & scopes
 	
 	**Examples**
 	- [add package](examples/add-package/add-package.graphql)
@@ -4683,7 +4683,7 @@ type Mutation {
 	"""
 	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
 	"""
-	add scopes eventually 
+	add scopes eventually
 	"""
 	associateBundleWithPackage(in: BundlePackageRelationInput!): Package @hasScopes(path: "graphql.mutation.associateBundleWithPackage")
 	"""

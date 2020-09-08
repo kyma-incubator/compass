@@ -34,7 +34,7 @@ type BundleRepository interface {
 	GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
 	GetForPackage(ctx context.Context, tenantID, id string, packageID string) (*model.Bundle, error)
-	ListByPackageID(ctx context.Context, tenantID, packageID string) ([]*model.Bundle, error)
+	ListByPackageID(ctx context.Context, tenantID, packageID string, pageSize int, cursor string) (*model.BundlePage, error)
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -77,7 +77,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 		return "", err
 	}
 
-	err = s.createBundles(ctx, id, tnt, in.Bundles)
+	err = s.createBundles(ctx, applicationID, id, tnt, in.Bundles)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
 	}
@@ -193,16 +193,21 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	return s.pkgRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
-func (s *service) createBundles(ctx context.Context, pkgID, tenantID string, bundles []*model.BundleCreateInput) error {
+func (s *service) createBundles(ctx context.Context, appID, pkgID, tenantID string, bundles []*model.BundleCreateInput) error {
 	var err error
 	for _, item := range bundles {
 		bundleID := s.uidService.Generate()
 
-		bundle := item.ToBundle(bundleID, pkgID, tenantID)
+		bundle := item.ToBundle(bundleID, appID, tenantID)
 
 		err = s.bundleRepo.Create(ctx, bundle)
 		if err != nil {
 			return errors.Wrap(err, "while creating Bundle for Package")
+		}
+
+		err = s.AssociateBundle(ctx, pkgID, bundleID)
+		if err != nil {
+			return errors.Wrap(err, "while associating Bundle with Package")
 		}
 	}
 

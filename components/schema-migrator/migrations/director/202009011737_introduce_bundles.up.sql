@@ -55,6 +55,9 @@ ADD CONSTRAINT package_instance_auths_bundle_id_fkey
     REFERENCES bundles(id)
     ON DELETE CASCADE;
 
+ALTER TABLE documents
+    RENAME COLUMN package_id TO bundle_id;
+
 ALTER TABLE api_definitions
     RENAME COLUMN name TO title;
 ALTER TABLE api_definitions

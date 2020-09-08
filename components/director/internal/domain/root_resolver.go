@@ -583,8 +583,8 @@ func (r *BundleResolver) Document(ctx context.Context, obj *graphql.Bundle, id s
 
 type PackageResolver struct{ *RootResolver }
 
-func (r *PackageResolver) Bundles(ctx context.Context, obj *graphql.Package) ([]*graphql.Bundle, error) {
-	return r.mpPackage.Bundles(ctx, obj)
+func (r *PackageResolver) Bundles(ctx context.Context, obj *graphql.Package, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
+	return r.mpPackage.Bundles(ctx, obj, first, after)
 }
 
 func (r *PackageResolver) Bundle(ctx context.Context, obj *graphql.Package, id string) (*graphql.Bundle, error) {

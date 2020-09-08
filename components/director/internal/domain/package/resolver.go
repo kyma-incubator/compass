@@ -36,7 +36,7 @@ type BundleService interface {
 	Update(ctx context.Context, id string, in model.BundleUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Bundle, error)
-	ListForPackage(ctx context.Context, packageID string) ([]*model.Bundle, error)
+	ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.BundlePage, error)
 	GetForPackage(ctx context.Context, id string, packageID string) (*model.Bundle, error)
 }
 
@@ -206,7 +206,7 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Package, id string) 
 	return r.bundleConverter.ToGraphQL(bundle)
 }
 
-func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Package) ([]*graphql.Bundle, error) {
+func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Package, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -215,7 +215,16 @@ func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Package) ([]*graphq
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	bundlesPage, err := r.bundleSvc.ListForPackage(ctx, obj.ID)
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
+
+	bundlesPage, err := r.bundleSvc.ListForPackage(ctx, obj.ID, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +234,20 @@ func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Package) ([]*graphq
 		return nil, err
 	}
 
-	return r.bundleConverter.MultipleToGraphQL(bundlesPage)
+	gqlBundles, err := r.bundleConverter.MultipleToGraphQL(bundlesPage.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphql.BundlePage{
+		Data:       gqlBundles,
+		TotalCount: bundlesPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(bundlesPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(bundlesPage.PageInfo.EndCursor),
+			HasNextPage: bundlesPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 
 func (r *Resolver) AssociateBundleWithPackage(ctx context.Context, in graphql.BundlePackageRelationInput) (*graphql.Package, error) {
