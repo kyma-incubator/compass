@@ -39,6 +39,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/tidwall/gjson v1.6.0
 	github.com/tidwall/pretty v1.0.1 // indirect
+	github.com/tidwall/sjson v1.1.1
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/vrischmann/envconfig v1.2.0
@@ -47,7 +48,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sys v0.0.0-20200905004654-be1d3432aa8f // indirect
 	golang.org/x/tools v0.0.0-20200323144430-8dcfad9e016e // indirect
-	google.golang.org/appengine v1.6.5 // indirect
+	google.golang.org/appengine v1.6.5
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d

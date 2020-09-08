@@ -34,7 +34,7 @@ type Package struct {
 	Actions          *string   `json:"actions"`
 	Tags             *string   `json:"tags"`
 	LastUpdated      time.Time `json:"lastUpdated"`
-	Extensions       *string   `json:"extensions"` // TODO: Parse
+	Extensions       *string   `json:"extensions"`
 }
 
 func (p *Package) ToPackageInput() *graphql.PackageInput {
@@ -64,7 +64,7 @@ type Bundle struct {
 	Description        *string   `json:"description"`
 	Tags               *string   `json:"tags"`
 	LastUpdated        time.Time `json:"lastUpdated"`
-	Extensions         *string   `json:"extensions"` // TODO: Parse
+	Extensions         *string   `json:"extensions"`
 	AssociatedPackages []string  `json:"associatedPackages"`
 }
 
@@ -98,7 +98,7 @@ type APIResource struct {
 	APIProtocol      string    `json:"apiProtocol"`
 	Actions          string    `json:"actions"`
 	LastUpdated      time.Time `json:"lastUpdated"`
-	Extensions       *string   `json:"extensions"` // TODO: Parse
+	Extensions       *string   `json:"extensions"`
 	AssociatedBundle string    `json:"associatedBundle"`
 }
 
@@ -142,7 +142,7 @@ type EventResource struct {
 	URL              *string   `json:"url"`
 	ReleaseStatus    string    `json:"releaseStatus"`
 	LastUpdated      time.Time `json:"lastUpdated"`
-	Extensions       *string   `json:"extensions"` // TODO: Parse
+	Extensions       *string   `json:"extensions"`
 	AssociatedBundle string    `json:"associatedBundle"`
 }
 
