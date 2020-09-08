@@ -141,8 +141,8 @@ func NewRootResolver(
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, oAuth20HTTPClient)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
-	packageSvc := mp_package.NewService(packageRepo, bundleRepo, uidSvc)
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+	packageSvc := mp_package.NewService(packageRepo, bundleRepo, uidSvc, bundleSvc)
 	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
@@ -203,6 +203,10 @@ func (r *RootResolver) EventSpec() graphql.EventSpecResolver {
 
 func (r *RootResolver) Bundle() graphql.BundleResolver {
 	return &BundleResolver{r}
+}
+
+func (r *RootResolver) Package() graphql.PackageResolver {
+	return &PackageResolver{r}
 }
 
 func (r *RootResolver) IntegrationSystem() graphql.IntegrationSystemResolver {

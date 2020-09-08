@@ -234,7 +234,7 @@ func (r *pgRepository) getBundleIDsByPackageID(ctx context.Context, packageID st
 
 	var packageBundleCollection PackageBundleCollection
 
-	err := r.listerGlobal.ListGlobal(ctx, packageBundleCollection, conditions...)
+	err := r.listerGlobal.ListGlobal(ctx, &packageBundleCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}

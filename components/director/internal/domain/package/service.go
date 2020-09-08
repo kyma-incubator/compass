@@ -45,6 +45,7 @@ type UIDService interface {
 type service struct {
 	pkgRepo    PackageRepository
 	bundleRepo BundleRepository
+	bundleSvc  BundleService
 
 	uidService   UIDService
 	timestampGen timestamp.Generator
@@ -54,11 +55,12 @@ func (s *service) AssociateBundle(ctx context.Context, id, bundleID string) erro
 	return s.pkgRepo.AssociateBundle(ctx, id, bundleID)
 }
 
-func NewService(pkgRepo PackageRepository, bundleRepo BundleRepository, uidService UIDService) *service {
+func NewService(pkgRepo PackageRepository, bundleRepo BundleRepository, uidService UIDService, bundleSvc BundleService) *service {
 	return &service{
 		pkgRepo:      pkgRepo,
 		bundleRepo:   bundleRepo,
 		uidService:   uidService,
+		bundleSvc:    bundleSvc,
 		timestampGen: timestamp.DefaultGenerator(),
 	}
 }
@@ -77,7 +79,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 		return "", err
 	}
 
-	err = s.createBundles(ctx, applicationID, id, tnt, in.Bundles)
+	err = s.createBundles(ctx, applicationID, id, in.Bundles)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
 	}
@@ -193,19 +195,14 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	return s.pkgRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
-func (s *service) createBundles(ctx context.Context, appID, pkgID, tenantID string, bundles []*model.BundleCreateInput) error {
-	var err error
+func (s *service) createBundles(ctx context.Context, appID, pkgID string, bundles []*model.BundleCreateInput) error {
 	for _, item := range bundles {
-		bundleID := s.uidService.Generate()
-
-		bundle := item.ToBundle(bundleID, appID, tenantID)
-
-		err = s.bundleRepo.Create(ctx, bundle)
+		id, err := s.bundleSvc.Create(ctx,appID, *item)
 		if err != nil {
 			return errors.Wrap(err, "while creating Bundle for Package")
 		}
 
-		err = s.AssociateBundle(ctx, pkgID, bundleID)
+		err = s.AssociateBundle(ctx, pkgID, id)
 		if err != nil {
 			return errors.Wrap(err, "while associating Bundle with Package")
 		}

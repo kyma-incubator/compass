@@ -44,6 +44,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	OneTimeTokenForApplication() OneTimeTokenForApplicationResolver
 	OneTimeTokenForRuntime() OneTimeTokenForRuntimeResolver
+	Package() PackageResolver
 	Query() QueryResolver
 	Runtime() RuntimeResolver
 }
@@ -618,6 +619,10 @@ type OneTimeTokenForApplicationResolver interface {
 type OneTimeTokenForRuntimeResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForRuntime) (*string, error)
 	RawEncoded(ctx context.Context, obj *OneTimeTokenForRuntime) (*string, error)
+}
+type PackageResolver interface {
+	Bundles(ctx context.Context, obj *Package, first *int, after *PageCursor) (*BundlePage, error)
+	Bundle(ctx context.Context, obj *Package, id string) (*Bundle, error)
 }
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
@@ -17218,7 +17223,7 @@ func (ec *executionContext) _Package_bundles(ctx context.Context, field graphql.
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -17231,7 +17236,7 @@ func (ec *executionContext) _Package_bundles(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Bundles, nil
+		return ec.resolvers.Package().Bundles(rctx, obj, args["first"].(*int), args["after"].(*PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17259,7 +17264,7 @@ func (ec *executionContext) _Package_bundle(ctx context.Context, field graphql.C
 		Object:   "Package",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -17272,7 +17277,7 @@ func (ec *executionContext) _Package_bundle(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Bundle, nil
+		return ec.resolvers.Package().Bundle(rctx, obj, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24534,32 +24539,32 @@ func (ec *executionContext) _Package(ctx context.Context, sel ast.SelectionSet, 
 		case "id":
 			out.Values[i] = ec._Package_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "applicationID":
 			out.Values[i] = ec._Package_applicationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "title":
 			out.Values[i] = ec._Package_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "shortDescription":
 			out.Values[i] = ec._Package_shortDescription(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Package_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "version":
 			out.Values[i] = ec._Package_version(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "licence":
 			out.Values[i] = ec._Package_licence(ctx, field, obj)
@@ -24580,14 +24585,32 @@ func (ec *executionContext) _Package(ctx context.Context, sel ast.SelectionSet, 
 		case "lastUpdated":
 			out.Values[i] = ec._Package_lastUpdated(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "extensions":
 			out.Values[i] = ec._Package_extensions(ctx, field, obj)
 		case "bundles":
-			out.Values[i] = ec._Package_bundles(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_bundles(ctx, field, obj)
+				return res
+			})
 		case "bundle":
-			out.Values[i] = ec._Package_bundle(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Package_bundle(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
