@@ -148,7 +148,7 @@ func NewRootResolver(
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
-		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter),
+		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, packageSvc, packageConverter),
 		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:                api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, bundleSvc, apiConverter, frConverter),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, appSvc, bundleSvc, eventAPIConverter, frConverter),
@@ -496,6 +496,12 @@ func (r *applicationResolver) Bundles(ctx context.Context, obj *graphql.Applicat
 }
 func (r *applicationResolver) Bundle(ctx context.Context, obj *graphql.Application, id string) (*graphql.Bundle, error) {
 	return r.app.Bundle(ctx, obj, id)
+}
+func (r *applicationResolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackagePage, error) {
+	return r.app.Packages(ctx, obj, first, after)
+}
+func (r *applicationResolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.Package, error) {
+	return r.app.Package(ctx, obj, id)
 }
 
 type runtimeResolver struct {

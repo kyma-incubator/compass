@@ -62,6 +62,10 @@ models:
         resolver: true
       eventingConfiguration:
         resolver: true
+      packages:
+        resolver: true
+      package:
+        resolver: true
       bundles:
         resolver: true
       bundle:

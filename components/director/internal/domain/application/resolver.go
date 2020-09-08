@@ -102,6 +102,20 @@ type BundleConverter interface {
 	MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)
 }
 
+//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
+type PackageService interface {
+	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Package, error)
+	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
+	CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageCreateInput) error
+}
+
+//go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
+type PackageConverter interface {
+	ToGraphQL(in *model.Package) (*graphql.Package, error)
+	MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, error)
+	MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error)
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -112,11 +126,13 @@ type Resolver struct {
 	oAuth20Svc OAuth20Service
 	sysAuthSvc SystemAuthService
 	bundleSvc  BundleService
+	pkgSvc     PackageService
 
 	webhookConverter WebhookConverter
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
 	bundleConv       BundleConverter
+	pkgConv          PackageConverter
 }
 
 func NewResolver(transact persistence.Transactioner,
@@ -129,7 +145,9 @@ func NewResolver(transact persistence.Transactioner,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
 	bundleSvc BundleService,
-	bundleConverter BundleConverter) *Resolver {
+	bundleConverter BundleConverter,
+	pkgSvc PackageService,
+	pkgConv PackageConverter) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		appSvc:           svc,
@@ -142,6 +160,8 @@ func NewResolver(transact persistence.Transactioner,
 		eventingSvc:      eventingSvc,
 		bundleSvc:        bundleSvc,
 		bundleConv:       bundleConverter,
+		pkgSvc:           pkgSvc,
+		pkgConv:          pkgConv,
 	}
 }
 
@@ -635,4 +655,81 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 	}
 
 	return r.bundleConv.ToGraphQL(bundle)
+}
+
+func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackagePage, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
+
+	packagesPage, err := r.pkgSvc.ListByApplicationID(ctx, obj.ID, *first, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlPackages, err := r.pkgConv.MultipleToGraphQL(packagesPage.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphql.PackagePage{
+		Data:       gqlPackages,
+		TotalCount: packagesPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(packagesPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(packagesPage.PageInfo.EndCursor),
+			HasNextPage: packagesPage.PageInfo.HasNextPage,
+		},
+	}, nil
+}
+
+func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.Package, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	pkg, err := r.pkgSvc.GetForApplication(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.pkgConv.ToGraphQL(pkg)
 }

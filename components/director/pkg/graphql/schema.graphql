@@ -714,6 +714,8 @@ type Application {
 	healthCheckURL: String
 	bundles(first: Int = 100, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
+	packages(first: Int = 100, after: PageCursor): PackagePage
+	package(id: ID!): Package
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 }
