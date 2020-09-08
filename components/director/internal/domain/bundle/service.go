@@ -141,7 +141,7 @@ func (s *service) Update(ctx context.Context, id string, in model.BundleInput) e
 	if err != nil {
 		return errors.Wrapf(err, "while updating Bundle with ID: [%s]", id)
 	}
-	err = s.updateRelatedResources(ctx, in, tnt, in.ID)
+	err = s.updateRelatedResources(ctx, in, tnt, id)
 	if err != nil {
 		return errors.Wrap(err, "while updating related Bundle resources")
 	}

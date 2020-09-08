@@ -29,18 +29,18 @@ func (_m *PackageService) AssociateBundle(ctx context.Context, id string, bundle
 }
 
 // Create provides a mock function with given fields: ctx, applicationID, in
-func (_m *PackageService) Create(ctx context.Context, applicationID string, in model.PackageCreateInput) (string, error) {
+func (_m *PackageService) Create(ctx context.Context, applicationID string, in model.PackageInput) (string, error) {
 	ret := _m.Called(ctx, applicationID, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageCreateInput) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageInput) string); ok {
 		r0 = rf(ctx, applicationID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.PackageCreateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.PackageInput) error); ok {
 		r1 = rf(ctx, applicationID, in)
 	} else {
 		r1 = ret.Error(1)
@@ -87,11 +87,11 @@ func (_m *PackageService) Get(ctx context.Context, id string) (*model.Package, e
 }
 
 // Update provides a mock function with given fields: ctx, id, in
-func (_m *PackageService) Update(ctx context.Context, id string, in model.PackageUpdateInput) error {
+func (_m *PackageService) Update(ctx context.Context, id string, in model.PackageInput) error {
 	ret := _m.Called(ctx, id, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageUpdateInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.PackageInput) error); ok {
 		r0 = rf(ctx, id, in)
 	} else {
 		r0 = ret.Error(0)

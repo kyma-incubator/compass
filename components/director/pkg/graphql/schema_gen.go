@@ -325,7 +325,7 @@ type ComplexityRoot struct {
 		AddBundle                                     func(childComplexity int, applicationID string, in BundleInput) int
 		AddDocumentToBundle                           func(childComplexity int, bundleID string, in DocumentInput) int
 		AddEventDefinitionToBundle                    func(childComplexity int, bundleID string, in EventDefinitionInput) int
-		AddPackage                                    func(childComplexity int, applicationID string, in PackageCreateInput) int
+		AddPackage                                    func(childComplexity int, applicationID string, in PackageInput) int
 		AddWebhook                                    func(childComplexity int, applicationID string, in WebhookInput) int
 		AssociateBundleWithPackage                    func(childComplexity int, in BundlePackageRelationInput) int
 		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
@@ -375,7 +375,7 @@ type ComplexityRoot struct {
 		UpdateEventDefinition                         func(childComplexity int, id string, in EventDefinitionInput) int
 		UpdateIntegrationSystem                       func(childComplexity int, id string, in IntegrationSystemInput) int
 		UpdateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
-		UpdatePackage                                 func(childComplexity int, id string, in PackageUpdateInput) int
+		UpdatePackage                                 func(childComplexity int, id string, in PackageInput) int
 		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeInput) int
 		UpdateWebhook                                 func(childComplexity int, webhookID string, in WebhookInput) int
 	}
@@ -601,8 +601,8 @@ type MutationResolver interface {
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
 	SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*ApplicationEventingConfiguration, error)
 	DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*ApplicationEventingConfiguration, error)
-	AddPackage(ctx context.Context, applicationID string, in PackageCreateInput) (*Package, error)
-	UpdatePackage(ctx context.Context, id string, in PackageUpdateInput) (*Package, error)
+	AddPackage(ctx context.Context, applicationID string, in PackageInput) (*Package, error)
+	UpdatePackage(ctx context.Context, id string, in PackageInput) (*Package, error)
 	DeletePackage(ctx context.Context, id string) (*Package, error)
 	AssociateBundleWithPackage(ctx context.Context, in BundlePackageRelationInput) (*Package, error)
 	SetBundleInstanceAuth(ctx context.Context, authID string, in BundleInstanceAuthSetInput) (*BundleInstanceAuth, error)
@@ -1963,7 +1963,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddPackage(childComplexity, args["applicationID"].(string), args["in"].(PackageCreateInput)), true
+		return e.complexity.Mutation.AddPackage(childComplexity, args["applicationID"].(string), args["in"].(PackageInput)), true
 
 	case "Mutation.addWebhook":
 		if e.complexity.Mutation.AddWebhook == nil {
@@ -2563,7 +2563,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdatePackage(childComplexity, args["id"].(string), args["in"].(PackageUpdateInput)), true
+		return e.complexity.Mutation.UpdatePackage(childComplexity, args["id"].(string), args["in"].(PackageInput)), true
 
 	case "Mutation.updateRuntime":
 		if e.complexity.Mutation.UpdateRuntime == nil {
@@ -3894,7 +3894,7 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
-input PackageCreateInput {
+input PackageInput {
 	"""
 	TODO: Validation if it is guid
 	"""
@@ -3920,29 +3920,6 @@ input PackageCreateInput {
 	lastUpdated: Timestamp!
 	extensions: JSON
 	bundles: [BundleInput!]
-}
-
-input PackageUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	title: String!
-	shortDescription: String
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	version: String
-	licence: String
-	licenceType: String
-	termsOfService: String
-	logo: String
-	image: String
-	provider: JSON
-	actions: JSON
-	tags: JSON
-	lastUpdated: Timestamp!
-	extensions: JSON
 }
 
 input PlaceholderDefinitionInput {
@@ -4707,12 +4684,12 @@ type Mutation {
 	**Examples**
 	- [add package](examples/add-package/add-package.graphql)
 	"""
-	addPackage(applicationID: ID!, in: PackageCreateInput!): Package! @hasScopes(path: "graphql.mutation.addPackage")
+	addPackage(applicationID: ID!, in: PackageInput!): Package! @hasScopes(path: "graphql.mutation.addPackage")
 	"""
 	**Examples**
 	- [update package](examples/update-package/update-package.graphql)
 	"""
-	updatePackage(id: ID!, in: PackageUpdateInput!): Package! @hasScopes(path: "graphql.mutation.updatePackage")
+	updatePackage(id: ID!, in: PackageInput!): Package! @hasScopes(path: "graphql.mutation.updatePackage")
 	"""
 	**Examples**
 	- [delete package](examples/delete-package/delete-package.graphql)
@@ -5149,9 +5126,9 @@ func (ec *executionContext) field_Mutation_addPackage_args(ctx context.Context, 
 		}
 	}
 	args["applicationID"] = arg0
-	var arg1 PackageCreateInput
+	var arg1 PackageInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNPackageCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageCreateInput(ctx, tmp)
+		arg1, err = ec.unmarshalNPackageInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6185,9 +6162,9 @@ func (ec *executionContext) field_Mutation_updatePackage_args(ctx context.Contex
 		}
 	}
 	args["id"] = arg0
-	var arg1 PackageUpdateInput
+	var arg1 PackageInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg1, err = ec.unmarshalNPackageUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageUpdateInput(ctx, tmp)
+		arg1, err = ec.unmarshalNPackageInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -15504,7 +15481,7 @@ func (ec *executionContext) _Mutation_addPackage(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddPackage(rctx, args["applicationID"].(string), args["in"].(PackageCreateInput))
+			return ec.resolvers.Mutation().AddPackage(rctx, args["applicationID"].(string), args["in"].(PackageInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addPackage")
@@ -15568,7 +15545,7 @@ func (ec *executionContext) _Mutation_updatePackage(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdatePackage(rctx, args["id"].(string), args["in"].(PackageUpdateInput))
+			return ec.resolvers.Mutation().UpdatePackage(rctx, args["id"].(string), args["in"].(PackageInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updatePackage")
@@ -22276,8 +22253,8 @@ func (ec *executionContext) unmarshalInputOAuthCredentialDataInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputPackageCreateInput(ctx context.Context, obj interface{}) (PackageCreateInput, error) {
-	var it PackageCreateInput
+func (ec *executionContext) unmarshalInputPackageInput(ctx context.Context, obj interface{}) (PackageInput, error) {
+	var it PackageInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -22375,102 +22352,6 @@ func (ec *executionContext) unmarshalInputPackageCreateInput(ctx context.Context
 		case "bundles":
 			var err error
 			it.Bundles, err = ec.unmarshalOBundleInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputPackageUpdateInput(ctx context.Context, obj interface{}) (PackageUpdateInput, error) {
-	var it PackageUpdateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "title":
-			var err error
-			it.Title, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "shortDescription":
-			var err error
-			it.ShortDescription, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "description":
-			var err error
-			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "version":
-			var err error
-			it.Version, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "licence":
-			var err error
-			it.Licence, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "licenceType":
-			var err error
-			it.LicenceType, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "termsOfService":
-			var err error
-			it.TermsOfService, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "logo":
-			var err error
-			it.Logo, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "image":
-			var err error
-			it.Image, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "provider":
-			var err error
-			it.Provider, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "actions":
-			var err error
-			it.Actions, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "tags":
-			var err error
-			it.Tags, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "lastUpdated":
-			var err error
-			it.LastUpdated, err = ec.unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "extensions":
-			var err error
-			it.Extensions, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -26828,12 +26709,8 @@ func (ec *executionContext) marshalNPackage2ᚖgithubᚗcomᚋkymaᚑincubator�
 	return ec._Package(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPackageCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageCreateInput(ctx context.Context, v interface{}) (PackageCreateInput, error) {
-	return ec.unmarshalInputPackageCreateInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNPackageUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageUpdateInput(ctx context.Context, v interface{}) (PackageUpdateInput, error) {
-	return ec.unmarshalInputPackageUpdateInput(ctx, v)
+func (ec *executionContext) unmarshalNPackageInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInput(ctx context.Context, v interface{}) (PackageInput, error) {
+	return ec.unmarshalInputPackageInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {

@@ -14,19 +14,19 @@ type PackageConverter struct {
 	mock.Mock
 }
 
-// CreateInputFromGraphQL provides a mock function with given fields: in
-func (_m *PackageConverter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error) {
+// InputFromGraphQL provides a mock function with given fields: in
+func (_m *PackageConverter) InputFromGraphQL(in graphql.PackageInput) (model.PackageInput, error) {
 	ret := _m.Called(in)
 
-	var r0 model.PackageCreateInput
-	if rf, ok := ret.Get(0).(func(graphql.PackageCreateInput) model.PackageCreateInput); ok {
+	var r0 model.PackageInput
+	if rf, ok := ret.Get(0).(func(graphql.PackageInput) model.PackageInput); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.PackageCreateInput)
+		r0 = ret.Get(0).(model.PackageInput)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(graphql.PackageCreateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(graphql.PackageInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
@@ -50,29 +50,6 @@ func (_m *PackageConverter) ToGraphQL(in *model.Package) (*graphql.Package, erro
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Package) error); ok {
-		r1 = rf(in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// UpdateInputFromGraphQL provides a mock function with given fields: in
-func (_m *PackageConverter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error) {
-	ret := _m.Called(in)
-
-	var r0 *model.PackageUpdateInput
-	if rf, ok := ret.Get(0).(func(graphql.PackageUpdateInput) *model.PackageUpdateInput); ok {
-		r0 = rf(in)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.PackageUpdateInput)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(graphql.PackageUpdateInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

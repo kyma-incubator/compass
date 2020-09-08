@@ -15,11 +15,11 @@ type PackageService struct {
 }
 
 // CreateMultiple provides a mock function with given fields: ctx, applicationID, in
-func (_m *PackageService) CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageCreateInput) error {
+func (_m *PackageService) CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageInput) error {
 	ret := _m.Called(ctx, applicationID, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.PackageCreateInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.PackageInput) error); ok {
 		r0 = rf(ctx, applicationID, in)
 	} else {
 		r0 = ret.Error(0)

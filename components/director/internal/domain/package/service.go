@@ -2,6 +2,7 @@ package mp_package
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -65,7 +66,7 @@ func NewService(pkgRepo PackageRepository, bundleRepo BundleRepository, uidServi
 	}
 }
 
-func (s *service) Create(ctx context.Context, applicationID string, in model.PackageCreateInput) (string, error) {
+func (s *service) Create(ctx context.Context, applicationID string, in model.PackageInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -89,7 +90,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 	return in.ID, nil
 }
 
-func (s *service) CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageCreateInput) error {
+func (s *service) CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageInput) error {
 	if in == nil {
 		return nil
 	}
@@ -108,7 +109,7 @@ func (s *service) CreateMultiple(ctx context.Context, applicationID string, in [
 	return nil
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.PackageUpdateInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.PackageInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
@@ -125,6 +126,11 @@ func (s *service) Update(ctx context.Context, id string, in model.PackageUpdateI
 	if err != nil {
 		return errors.Wrapf(err, "while updating Package with ID: [%s]", id)
 	}
+	err = s.updateBundles(ctx, id, in.Bundles)
+	if err != nil {
+		return errors.Wrap(err, "while creating related Application resources")
+	}
+
 	return nil
 }
 
@@ -199,6 +205,9 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 
 func (s *service) createBundles(ctx context.Context, appID, pkgID string, bundles []*model.BundleInput) error {
 	for _, item := range bundles {
+		if len(item.ID) == 0 {
+			item.ID = s.uidService.Generate()
+		}
 		id, err := s.bundleSvc.Create(ctx,appID, *item)
 		if err != nil {
 			return errors.Wrap(err, "while creating Bundle for Package")
@@ -207,6 +216,20 @@ func (s *service) createBundles(ctx context.Context, appID, pkgID string, bundle
 		err = s.AssociateBundle(ctx, pkgID, id)
 		if err != nil {
 			return errors.Wrap(err, "while associating Bundle with Package")
+		}
+	}
+
+	return nil
+}
+
+func (s *service) updateBundles(ctx context.Context, pkgID string, bundles []*model.BundleInput) error {
+	for _, item := range bundles {
+		if len(item.ID) == 0 {
+			return fmt.Errorf( "error while updating bundle for package %s: bundle id must be specified", pkgID)
+		}
+		err := s.bundleSvc.Update(ctx,item.ID, *item)
+		if err != nil {
+			return errors.Wrap(err, "while creating Bundle for Package")
 		}
 	}
 

@@ -912,7 +912,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
-				conv.On("UpdateInputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
+				conv.On("InputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
 				conv.On("ToGraphQL", modelBundle).Return(gqlBundle, nil).Once()
 				return conv
 			},
@@ -944,7 +944,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
-				conv.On("UpdateInputFromGraphQL", gqlBundleUpdateInput).Return(&model.BundleInput{}, testErr).Once()
+				conv.On("InputFromGraphQL", gqlBundleUpdateInput).Return(&model.BundleInput{}, testErr).Once()
 				return conv
 			},
 			ExpectedBundle: nil,
@@ -960,7 +960,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
-				conv.On("UpdateInputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
+				conv.On("InputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
 				return conv
 			},
 			InputBundle:    gqlBundleUpdateInput,
@@ -978,7 +978,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
-				conv.On("UpdateInputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
+				conv.On("InputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
 				return conv
 			},
 			InputBundle:    gqlBundleUpdateInput,
@@ -996,7 +996,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
-				conv.On("UpdateInputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
+				conv.On("InputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
 				return conv
 			},
 			InputBundle:    gqlBundleUpdateInput,
@@ -1014,7 +1014,7 @@ func TestResolver_UpdateAPI(t *testing.T) {
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
-				conv.On("UpdateInputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
+				conv.On("InputFromGraphQL", gqlBundleUpdateInput).Return(&modelBundleUpdateInput, nil).Once()
 				conv.On("ToGraphQL", modelBundle).Return(nil, testErr).Once()
 				return conv
 			},

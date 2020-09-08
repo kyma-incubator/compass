@@ -287,11 +287,11 @@ type mutationResolver struct {
 	*RootResolver
 }
 
-func (r *mutationResolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageCreateInput) (*graphql.Package, error) {
+func (r *mutationResolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageInput) (*graphql.Package, error) {
 	return r.mpPackage.AddPackage(ctx, applicationID, in)
 }
 
-func (r *mutationResolver) UpdatePackage(ctx context.Context, id string, in graphql.PackageUpdateInput) (*graphql.Package, error) {
+func (r *mutationResolver) UpdatePackage(ctx context.Context, id string, in graphql.PackageInput) (*graphql.Package, error) {
 	return r.mpPackage.UpdatePackage(ctx, id, in)
 }
 

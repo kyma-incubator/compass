@@ -522,7 +522,7 @@ type Package struct {
 	Bundle           *Bundle     `json:"bundle"`
 }
 
-type PackageCreateInput struct {
+type PackageInput struct {
 	// TODO: Validation if it is guid
 	ID *string `json:"ID"`
 	// **Validation:** ASCII printable characters, max=100
@@ -551,25 +551,6 @@ type PackagePage struct {
 }
 
 func (PackagePage) IsPageable() {}
-
-type PackageUpdateInput struct {
-	// **Validation:** ASCII printable characters, max=100
-	Title            string  `json:"title"`
-	ShortDescription *string `json:"shortDescription"`
-	// **Validation:** max=2000
-	Description    *string   `json:"description"`
-	Version        *string   `json:"version"`
-	Licence        *string   `json:"licence"`
-	LicenceType    *string   `json:"licenceType"`
-	TermsOfService *string   `json:"termsOfService"`
-	Logo           *string   `json:"logo"`
-	Image          *string   `json:"image"`
-	Provider       *JSON     `json:"provider"`
-	Actions        *JSON     `json:"actions"`
-	Tags           *JSON     `json:"tags"`
-	LastUpdated    Timestamp `json:"lastUpdated"`
-	Extensions     *JSON     `json:"extensions"`
-}
 
 type PageInfo struct {
 	StartCursor PageCursor `json:"startCursor"`

@@ -25,20 +25,12 @@ type Package struct {
 	Extensions       *string
 }
 
-func (pkg *Package) SetFromUpdateInput(update PackageUpdateInput) {
+func (pkg *Package) SetFromUpdateInput(update PackageInput) {
 	pkg.Title = update.Title
-	if update.ShortDescription != nil {
-		pkg.ShortDescription = *update.ShortDescription
-	}
-	if update.Description != nil {
-		pkg.Description = *update.Description
-	}
-	if update.Version != nil {
-		pkg.Version = *update.Version
-	}
-	if update.Version != nil {
-		pkg.Version = *update.Version
-	}
+	pkg.ShortDescription = update.ShortDescription
+	pkg.Description = update.Description
+	pkg.Version = update.Version
+	pkg.Version = update.Version
 	pkg.Licence = update.Licence
 	pkg.LicenceType = update.LicenceType
 	pkg.TermsOfService = update.TermsOfService
@@ -51,7 +43,7 @@ func (pkg *Package) SetFromUpdateInput(update PackageUpdateInput) {
 	pkg.Extensions = update.Extensions
 }
 
-type PackageCreateInput struct {
+type PackageInput struct {
 	ID               string
 	Title            string
 	ShortDescription string
@@ -70,23 +62,6 @@ type PackageCreateInput struct {
 	Bundles          []*BundleInput
 }
 
-type PackageUpdateInput struct {
-	Title            string
-	ShortDescription *string
-	Description      *string
-	Version          *string
-	Licence          *string
-	LicenceType      *string
-	TermsOfService   *string
-	Logo             *string
-	Image            *string
-	Provider         *string
-	Actions          *string
-	Tags             *string
-	LastUpdated      time.Time
-	Extensions       *string
-}
-
 type PackagePage struct {
 	Data       []*Package
 	PageInfo   *pagination.Page
@@ -95,7 +70,7 @@ type PackagePage struct {
 
 func (PackagePage) IsPageable() {}
 
-func (i *PackageCreateInput) Package(applicationID, tenantID string) *Package {
+func (i *PackageInput) Package(applicationID, tenantID string) *Package {
 	if i == nil {
 		return nil
 	}

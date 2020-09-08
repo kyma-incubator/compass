@@ -120,13 +120,13 @@ func (c *converter) MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, 
 	return packages, nil
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error) {
+func (c *converter) InputFromGraphQL(in graphql.PackageInput) (model.PackageInput, error) {
 	bundles, err := c.bundle.MultipleCreateInputFromGraphQL(in.Bundles)
 	if err != nil {
-		return model.PackageCreateInput{}, errors.Wrap(err, "while converting Bundles input")
+		return model.PackageInput{}, errors.Wrap(err, "while converting Bundles input")
 	}
 
-	return model.PackageCreateInput{
+	return model.PackageInput{
 		ID:               c.strPrtToStr(in.ID),
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
@@ -146,13 +146,13 @@ func (c *converter) CreateInputFromGraphQL(in graphql.PackageCreateInput) (model
 	}, nil
 }
 
-func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error) {
-	var packages []*model.PackageCreateInput
+func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageInput) ([]*model.PackageInput, error) {
+	var packages []*model.PackageInput
 	for _, item := range in {
 		if item == nil {
 			continue
 		}
-		pkg, err := c.CreateInputFromGraphQL(*item)
+		pkg, err := c.InputFromGraphQL(*item)
 		if err != nil {
 			return nil, err
 		}
@@ -160,25 +160,6 @@ func (c *converter) MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateIn
 	}
 
 	return packages, nil
-}
-
-func (c *converter) UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error) {
-	return &model.PackageUpdateInput{
-		Title:            in.Title,
-		ShortDescription: in.ShortDescription,
-		Description:      in.Description,
-		Version:          in.Version,
-		Licence:          in.Licence,
-		LicenceType:      in.LicenceType,
-		TermsOfService:   in.TermsOfService,
-		Logo:             in.Logo,
-		Image:            in.Image,
-		Provider:         c.jsonPtrToStrPtr(in.Provider),
-		Actions:          c.jsonPtrToStrPtr(in.Actions),
-		Tags:             c.jsonPtrToStrPtr(in.Tags),
-		LastUpdated:      time.Time(in.LastUpdated),
-		Extensions:       c.jsonPtrToStrPtr(in.Extensions),
-	}, nil
 }
 
 func (c *converter) strPtrToJSONSchemaPtr(in *string) *graphql.JSONSchema {

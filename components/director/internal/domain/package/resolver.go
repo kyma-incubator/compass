@@ -16,8 +16,8 @@ import (
 
 //go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
 type PackageService interface {
-	Create(ctx context.Context, applicationID string, in model.PackageCreateInput) (string, error)
-	Update(ctx context.Context, id string, in model.PackageUpdateInput) error
+	Create(ctx context.Context, applicationID string, in model.PackageInput) (string, error)
+	Update(ctx context.Context, id string, in model.PackageInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Package, error)
 	AssociateBundle(ctx context.Context, id, bundleID string) error
@@ -26,8 +26,7 @@ type PackageService interface {
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
-	CreateInputFromGraphQL(in graphql.PackageCreateInput) (model.PackageCreateInput, error)
-	UpdateInputFromGraphQL(in graphql.PackageUpdateInput) (*model.PackageUpdateInput, error)
+	InputFromGraphQL(in graphql.PackageInput) (model.PackageInput, error)
 }
 
 //go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
@@ -74,7 +73,7 @@ func NewResolver(
 	}
 }
 
-func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageCreateInput) (*graphql.Package, error) {
+func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in graphql.PackageInput) (*graphql.Package, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -83,7 +82,7 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.packageConverter.CreateInputFromGraphQL(in)
+	convertedIn, err := r.packageConverter.InputFromGraphQL(in)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting input from GraphQL")
 	}
@@ -111,7 +110,7 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 	return gqlPackage, nil
 }
 
-func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.PackageUpdateInput) (*graphql.Package, error) {
+func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.PackageInput) (*graphql.Package, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -120,12 +119,12 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.packageConverter.UpdateInputFromGraphQL(in)
+	convertedIn, err := r.packageConverter.InputFromGraphQL(in)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Package update input from GraphQL with ID: [%s]", id)
 	}
 
-	err = r.packageSvc.Update(ctx, id, *convertedIn)
+	err = r.packageSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
 	}

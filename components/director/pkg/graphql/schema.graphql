@@ -547,7 +547,7 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
-input PackageCreateInput {
+input PackageInput {
 	"""
 	TODO: Validation if it is guid
 	"""
@@ -573,29 +573,6 @@ input PackageCreateInput {
 	lastUpdated: Timestamp!
 	extensions: JSON
 	bundles: [BundleInput!]
-}
-
-input PackageUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	title: String!
-	shortDescription: String
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	version: String
-	licence: String
-	licenceType: String
-	termsOfService: String
-	logo: String
-	image: String
-	provider: JSON
-	actions: JSON
-	tags: JSON
-	lastUpdated: Timestamp!
-	extensions: JSON
 }
 
 input PlaceholderDefinitionInput {
@@ -1360,12 +1337,12 @@ type Mutation {
 	**Examples**
 	- [add package](examples/add-package/add-package.graphql)
 	"""
-	addPackage(applicationID: ID!, in: PackageCreateInput!): Package! @hasScopes(path: "graphql.mutation.addPackage")
+	addPackage(applicationID: ID!, in: PackageInput!): Package! @hasScopes(path: "graphql.mutation.addPackage")
 	"""
 	**Examples**
 	- [update package](examples/update-package/update-package.graphql)
 	"""
-	updatePackage(id: ID!, in: PackageUpdateInput!): Package! @hasScopes(path: "graphql.mutation.updatePackage")
+	updatePackage(id: ID!, in: PackageInput!): Package! @hasScopes(path: "graphql.mutation.updatePackage")
 	"""
 	**Examples**
 	- [delete package](examples/delete-package/delete-package.graphql)

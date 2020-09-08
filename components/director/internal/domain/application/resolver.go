@@ -106,14 +106,14 @@ type BundleConverter interface {
 type PackageService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Package, error)
 	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
-	CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageCreateInput) error
+	CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageInput) error
 }
 
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
 type PackageConverter interface {
 	ToGraphQL(in *model.Package) (*graphql.Package, error)
 	MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, error)
-	MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error)
+	MultipleCreateInputFromGraphQL(in []*graphql.PackageInput) ([]*model.PackageInput, error)
 }
 
 type Resolver struct {
