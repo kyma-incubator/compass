@@ -52,6 +52,7 @@ func (pkg *Package) SetFromUpdateInput(update PackageUpdateInput) {
 }
 
 type PackageCreateInput struct {
+	ID               string
 	Title            string
 	ShortDescription string
 	Description      string
@@ -94,13 +95,13 @@ type PackagePage struct {
 
 func (PackagePage) IsPageable() {}
 
-func (i *PackageCreateInput) Package(id, applicationID, tenantID string) *Package {
+func (i *PackageCreateInput) Package(applicationID, tenantID string) *Package {
 	if i == nil {
 		return nil
 	}
 
 	return &Package{
-		ID:               id,
+		ID:               i.ID,
 		TenantID:         tenantID,
 		ApplicationID:    applicationID,
 		Title:            i.Title,

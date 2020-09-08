@@ -143,6 +143,10 @@ union CredentialData = BasicCredentialData | OAuthCredentialData
 
 input APIDefinitionInput {
 	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
+	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
@@ -295,6 +299,10 @@ input BasicCredentialDataInput {
 
 input BundleCreateInput {
 	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
+	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
@@ -437,6 +445,10 @@ input DocumentInput {
 
 input EventDefinitionInput {
 	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
+	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
@@ -552,6 +564,10 @@ input OAuthCredentialDataInput {
 }
 
 input PackageCreateInput {
+	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""

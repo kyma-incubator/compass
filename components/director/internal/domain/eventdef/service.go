@@ -99,9 +99,11 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	id := s.uidService.Generate()
+	if len(in.ID) == 0 {
+		in.ID = s.uidService.Generate()
+	}
 
-	eventAPI := in.ToEventDefinitionWithinBundle(id, bundleID, tnt)
+	eventAPI := in.ToEventDefinitionWithinBundle(bundleID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
@@ -109,13 +111,13 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 	}
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, in.ID)
 		if err != nil {
-			return "", errors.Wrapf(err, "while creating FetchRequest for EventDefinition %s", id)
+			return "", errors.Wrapf(err, "while creating FetchRequest for EventDefinition %s", in.ID)
 		}
 	}
 
-	return id, nil
+	return in.ID, nil
 }
 
 func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput) error {
@@ -141,7 +143,8 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		}
 	}
 
-	eventAPI = in.ToEventDefinitionWithinBundle(id, eventAPI.BundleID, tnt)
+	in.ID = id
+	eventAPI = in.ToEventDefinitionWithinBundle(eventAPI.BundleID, tnt)
 
 	err = s.eventAPIRepo.Update(ctx, eventAPI)
 	if err != nil {

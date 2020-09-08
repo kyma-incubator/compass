@@ -3490,6 +3490,10 @@ union CredentialData = BasicCredentialData | OAuthCredentialData
 
 input APIDefinitionInput {
 	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
+	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
@@ -3642,6 +3646,10 @@ input BasicCredentialDataInput {
 
 input BundleCreateInput {
 	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
+	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
@@ -3784,6 +3792,10 @@ input DocumentInput {
 
 input EventDefinitionInput {
 	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
+	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
 	title: String!
@@ -3899,6 +3911,10 @@ input OAuthCredentialDataInput {
 }
 
 input PackageCreateInput {
+	"""
+	TODO: Validation if it is guid
+	"""
+	ID: String
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -21164,6 +21180,12 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
+		case "ID":
+			var err error
+			it.ID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalNString2string(ctx, v)
@@ -21596,6 +21618,12 @@ func (ec *executionContext) unmarshalInputBundleCreateInput(ctx context.Context,
 
 	for k, v := range asMap {
 		switch k {
+		case "ID":
+			var err error
+			it.ID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalNString2string(ctx, v)
@@ -21984,6 +22012,12 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 
 	for k, v := range asMap {
 		switch k {
+		case "ID":
+			var err error
+			it.ID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalNString2string(ctx, v)
@@ -22318,6 +22352,12 @@ func (ec *executionContext) unmarshalInputPackageCreateInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
+		case "ID":
+			var err error
+			it.ID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalNString2string(ctx, v)

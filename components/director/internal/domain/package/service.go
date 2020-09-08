@@ -71,20 +71,22 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 		return "", err
 	}
 
-	id := s.uidService.Generate()
-	pkg := in.Package(id, applicationID, tnt)
+	if len(in.ID) == 0 {
+		in.ID = s.uidService.Generate()
+	}
+	pkg := in.Package(applicationID, tnt)
 
 	err = s.pkgRepo.Create(ctx, pkg)
 	if err != nil {
 		return "", err
 	}
 
-	err = s.createBundles(ctx, applicationID, id, in.Bundles)
+	err = s.createBundles(ctx, applicationID, in.ID, in.Bundles)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
 	}
 
-	return id, nil
+	return in.ID, nil
 }
 
 func (s *service) CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageCreateInput) error {

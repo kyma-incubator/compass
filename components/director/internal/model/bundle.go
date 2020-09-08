@@ -33,6 +33,7 @@ func (bundle *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
 }
 
 type BundleCreateInput struct {
+	ID                             string
 	Title                          string
 	ShortDescription               string
 	Description                    *string
@@ -65,13 +66,13 @@ type BundlePage struct {
 
 func (BundlePage) IsPageable() {}
 
-func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle {
+func (i *BundleCreateInput) ToBundle(applicationID, tenantID string) *Bundle {
 	if i == nil {
 		return nil
 	}
 
 	return &Bundle{
-		ID:                             id,
+		ID:                             i.ID,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Title:                          i.Title,

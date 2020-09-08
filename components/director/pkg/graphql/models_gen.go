@@ -25,6 +25,8 @@ type Pageable interface {
 }
 
 type APIDefinitionInput struct {
+	// TODO: Validation if it is guid
+	ID *string `json:"ID"`
 	// **Validation:** ASCII printable characters, max=100
 	Title            string `json:"title"`
 	ShortDescription string `json:"shortDescription"`
@@ -202,6 +204,8 @@ type BasicCredentialDataInput struct {
 }
 
 type BundleCreateInput struct {
+	// TODO: Validation if it is guid
+	ID *string `json:"ID"`
 	// **Validation:** ASCII printable characters, max=100
 	Title string `json:"title"`
 	// **Validation:** max=2000
@@ -358,6 +362,8 @@ type DocumentPage struct {
 func (DocumentPage) IsPageable() {}
 
 type EventDefinitionInput struct {
+	// TODO: Validation if it is guid
+	ID *string `json:"ID"`
 	// **Validation:** ASCII printable characters, max=100
 	Title            string `json:"title"`
 	ShortDescription string `json:"shortDescription"`
@@ -529,6 +535,8 @@ type Package struct {
 }
 
 type PackageCreateInput struct {
+	// TODO: Validation if it is guid
+	ID *string `json:"ID"`
 	// **Validation:** ASCII printable characters, max=100
 	Title string `json:"title"`
 	// **Validation:** max=2000

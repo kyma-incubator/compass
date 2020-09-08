@@ -96,6 +96,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	}
 
 	return &model.APIDefinitionInput{
+		ID:               c.strPrtToStr(in.ID),
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
 		Description:      in.Description,
@@ -267,4 +268,11 @@ func (c *converter) jsonPtrToStrPtr(in *graphql.JSON) *string {
 	}
 	out := string(*in)
 	return &out
+}
+
+func (c *converter) strPrtToStr(in *string) string {
+	if in == nil {
+		return ""
+	}
+	return *in
 }

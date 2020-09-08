@@ -87,20 +87,22 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Bun
 		return "", err
 	}
 
-	id := s.uidService.Generate()
-	bundle := in.ToBundle(id, applicationID, tnt)
+	if len(in.ID) == 0 {
+		in.ID = s.uidService.Generate()
+	}
+	bundle := in.ToBundle(applicationID, tnt)
 
 	err = s.bundleRepo.Create(ctx, bundle)
 	if err != nil {
 		return "", err
 	}
 
-	err = s.createRelatedResources(ctx, in, tnt, id)
+	err = s.createRelatedResources(ctx, in, tnt, in.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating related Application resources")
 	}
 
-	return id, nil
+	return in.ID, nil
 }
 
 func (s *service) CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error {
@@ -247,9 +249,10 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleCre
 func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis []*model.APIDefinitionInput) error {
 	var err error
 	for _, item := range apis {
-		apiDefID := s.uidService.Generate()
-
-		api := item.ToAPIDefinitionWithinBundle(apiDefID, bundleID, tenant)
+		if len(item.ID) == 0 {
+			item.ID = s.uidService.Generate()
+		}
+		api := item.ToAPIDefinitionWithinBundle(bundleID, tenant)
 
 		err = s.apiRepo.Create(ctx, api)
 		if err != nil {
@@ -257,7 +260,7 @@ func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis 
 		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
+			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, item.ID)
 			if err != nil {
 				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
@@ -277,14 +280,16 @@ func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis 
 func (s *service) createEvents(ctx context.Context, bundleID, tenant string, events []*model.EventDefinitionInput) error {
 	var err error
 	for _, item := range events {
-		eventID := s.uidService.Generate()
-		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinBundle(eventID, bundleID, tenant))
+		if len(item.ID) == 0 {
+			item.ID = s.uidService.Generate()
+		}
+		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinBundle(bundleID, tenant))
 		if err != nil {
 			return errors.Wrap(err, "while creating EventDefinitions for application")
 		}
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventID)
+			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, item.ID)
 			if err != nil {
 				return errors.Wrap(err, "while creating FetchRequest for application")
 			}

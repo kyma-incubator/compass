@@ -48,6 +48,7 @@ type EventDefinitionPage struct {
 func (EventDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
+	ID               string
 	Title            string
 	ShortDescription string
 	Description      *string
@@ -73,13 +74,13 @@ type EventSpecInput struct {
 	FetchRequest  *FetchRequestInput
 }
 
-func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bundleID string, tenant string) *EventDefinition {
+func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(bundleID string, tenant string) *EventDefinition {
 	if e == nil {
 		return nil
 	}
 
 	return &EventDefinition{
-		ID:               id,
+		ID:               e.ID,
 		BundleID:         bundleID,
 		Tenant:           tenant,
 		Title:            e.Title,

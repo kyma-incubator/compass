@@ -105,8 +105,10 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 		return "", err
 	}
 
-	id := s.uidService.Generate()
-	api := in.ToAPIDefinitionWithinBundle(id, bundleID, tnt)
+	if len(in.ID) == 0 {
+		in.ID = s.uidService.Generate()
+	}
+	api := in.ToAPIDefinitionWithinBundle(bundleID, tnt)
 
 	err = s.repo.Create(ctx, api)
 	if err != nil {
@@ -114,9 +116,9 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 	}
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		fr, err := s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, in.ID)
 		if err != nil {
-			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
+			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", in.ID)
 		}
 
 		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
@@ -127,7 +129,7 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 		}
 	}
 
-	return id, nil
+	return in.ID, nil
 }
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -145,7 +147,8 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
 	}
 
-	api = in.ToAPIDefinitionWithinBundle(id, api.BundleID, tnt)
+	in.ID = id
+	api = in.ToAPIDefinitionWithinBundle(api.BundleID, tnt)
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
 		fr, err := s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)

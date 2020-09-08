@@ -49,6 +49,7 @@ const (
 type Timestamp time.Time
 
 type APIDefinitionInput struct {
+	ID               string
 	Title            string
 	ShortDescription string
 	Description      *string
@@ -85,13 +86,13 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID string, tenant string) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(bundleID string, tenant string) *APIDefinition {
 	if a == nil {
 		return nil
 	}
 
 	return &APIDefinition{
-		ID:               id,
+		ID:               a.ID,
 		BundleID:         bundleID,
 		Tenant:           tenant,
 		Title:            a.Title,
