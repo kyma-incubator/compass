@@ -1,3 +1,5 @@
+ALTER TYPE webhook_type ADD VALUE 'OPEN_DISCOVERY';
+
 BEGIN;
 
 ALTER TABLE packages

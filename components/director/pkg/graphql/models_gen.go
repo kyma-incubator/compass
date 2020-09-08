@@ -808,15 +808,17 @@ type ApplicationWebhookType string
 
 const (
 	ApplicationWebhookTypeConfigurationChanged ApplicationWebhookType = "CONFIGURATION_CHANGED"
+	ApplicationWebhookTypeOpenDiscovery        ApplicationWebhookType = "OPEN_DISCOVERY"
 )
 
 var AllApplicationWebhookType = []ApplicationWebhookType{
 	ApplicationWebhookTypeConfigurationChanged,
+	ApplicationWebhookTypeOpenDiscovery,
 }
 
 func (e ApplicationWebhookType) IsValid() bool {
 	switch e {
-	case ApplicationWebhookTypeConfigurationChanged:
+	case ApplicationWebhookTypeConfigurationChanged, ApplicationWebhookTypeOpenDiscovery:
 		return true
 	}
 	return false
