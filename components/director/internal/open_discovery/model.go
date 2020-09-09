@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -38,7 +42,47 @@ type Package struct {
 	Extensions       json.RawMessage `json:"extensions"`
 }
 
-func (p *Package) ToPackageInput() *model.PackageInput {
+func (p *Package) ToPackageInput(baseURL string) (*model.PackageInput, error) {
+	baseURL, err := normalizeURL(baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if p.TermsOfService != nil && !IsUrl(*p.TermsOfService) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("termsOfService for package with ID %s should be absolute URL if baseURL not provided in the document", p.ID)
+		} else {
+			*p.TermsOfService = baseURL + *p.TermsOfService
+		}
+	}
+	if p.Licence != nil && !IsUrl(*p.Licence) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("license for package with ID %s should be absolute URL if baseURL not provided in the document", p.ID)
+		} else {
+			*p.Licence = baseURL + *p.Licence
+		}
+	}
+	if p.Logo != nil && !IsUrl(*p.Logo) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("logo for package with ID %s should be absolute URL if baseURL not provided in the document", p.ID)
+		} else {
+			*p.Logo = baseURL + *p.Logo
+		}
+	}
+	if p.Image != nil && !IsUrl(*p.Image) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("image for package with ID %s should be absolute URL if baseURL not provided in the document", p.ID)
+		} else {
+			*p.Image = baseURL + *p.Image
+		}
+	}
+	if p.Provider, err = rewriteRelativeURLsInJson(p.Provider, baseURL, "logo"); err != nil {
+		return nil, fmt.Errorf("error rewriting urls in provider for package with ID %s", p.ID)
+	}
+	if p.Actions, err = rewriteRelativeURLsInJson(p.Actions, baseURL, "target"); err != nil {
+		return nil, fmt.Errorf("error rewriting urls in actions for package with ID %s", p.ID)
+	}
+
 	return &model.PackageInput{
 		ID:               p.ID,
 		Title:            p.Title,
@@ -55,7 +99,7 @@ func (p *Package) ToPackageInput() *model.PackageInput {
 		Tags:             rawJsonToStrPtr(p.Tags),
 		LastUpdated:      p.LastUpdated,
 		Extensions:       rawJsonToStrPtr(p.Extensions),
-	}
+	}, nil
 }
 
 type Bundle struct {
@@ -103,7 +147,49 @@ type APIResource struct {
 	AssociatedBundle string          `json:"associatedBundle"`
 }
 
-func (a *APIResource) ToAPIDefinitionInput() *model.APIDefinitionInput {
+func (a *APIResource) ToAPIDefinitionInput(baseURL string) (*model.APIDefinitionInput, error) {
+	baseURL, err := normalizeURL(baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if a.Documentation != nil && !IsUrl(*a.Documentation) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("documentation for apiResource with ID %s should be absolute URL if baseURL not provided in the document", a.ID)
+		} else {
+			*a.Documentation = baseURL + *a.Documentation
+		}
+	}
+	if a.URL != nil && !IsUrl(*a.URL) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("url for apiResource with ID %s should be absolute URL if baseURL not provided in the document", a.ID)
+		} else {
+			*a.URL = baseURL + *a.URL
+		}
+	}
+	if a.Logo != nil && !IsUrl(*a.Logo) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("logo for apiResource with ID %s should be absolute URL if baseURL not provided in the document", a.ID)
+		} else {
+			*a.Logo = baseURL + *a.Logo
+		}
+	}
+	if a.Image != nil && !IsUrl(*a.Image) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("image for apiResource with ID %s should be absolute URL if baseURL not provided in the document", a.ID)
+		} else {
+			*a.Image = baseURL + *a.Image
+		}
+	}
+	if a.Actions, err = rewriteRelativeURLsInJson(a.Actions, baseURL, "target"); err != nil {
+		return nil, fmt.Errorf("error rewriting urls in actions for apiResource with ID %s", a.ID)
+	}
+	if a.APIDefinitions, err = rewriteRelativeURLsInJson(a.APIDefinitions, baseURL, "url"); err != nil {
+		return nil, fmt.Errorf("error rewriting urls in eventDefinitions for apiResource with ID %s", a.ID)
+	}
+	if a.ChangelogEntries, err = rewriteRelativeURLsInJson(a.ChangelogEntries, baseURL, "url"); err != nil {
+		return nil, fmt.Errorf("error rewriting urls in changelogEntrie for apiResource with ID %s", a.ID)
+	}
 	return &model.APIDefinitionInput{
 		ID:               a.ID,
 		Title:            a.Title,
@@ -125,7 +211,7 @@ func (a *APIResource) ToAPIDefinitionInput() *model.APIDefinitionInput {
 		Actions:          rawJsonToStr(a.Actions),
 		LastUpdated:      a.LastUpdated,
 		Extensions:       rawJsonToStrPtr(a.Extensions),
-	}
+	}, nil
 }
 
 type EventResource struct {
@@ -134,7 +220,7 @@ type EventResource struct {
 	ShortDescription string          `json:"shortDescription"`
 	Description      *string         `json:"description"`
 	Version          string          `json:"version"`
-	EventDefinitions json.RawMessage `json:"eventDefinitions"` // TODO: Parse
+	EventDefinitions json.RawMessage `json:"eventDefinitions"` // TODO: Parse for spec
 	Tags             json.RawMessage `json:"tags"`
 	Documentation    *string         `json:"documentation"`
 	ChangelogEntries json.RawMessage `json:"changelogEntries"`
@@ -147,7 +233,47 @@ type EventResource struct {
 	AssociatedBundle string          `json:"associatedBundle"`
 }
 
-func (e *EventResource) ToEventDefinitionInput() *model.EventDefinitionInput {
+func (e *EventResource) ToEventDefinitionInput(baseURL string) (*model.EventDefinitionInput, error) {
+	baseURL, err := normalizeURL(baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if e.Documentation != nil && !IsUrl(*e.Documentation) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("documentation for eventResource with ID %s should be absolute URL if baseURL not provided in the document", e.ID)
+		} else {
+			*e.Documentation = baseURL + *e.Documentation
+		}
+	}
+	if e.URL != nil && !IsUrl(*e.URL) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("url for eventResource with ID %s should be absolute URL if baseURL not provided in the document", e.ID)
+		} else {
+			*e.URL = baseURL + *e.URL
+		}
+	}
+	if e.Logo != nil && !IsUrl(*e.Logo) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("logo for eventResource with ID %s should be absolute URL if baseURL not provided in the document", e.ID)
+		} else {
+			*e.Logo = baseURL + *e.Logo
+		}
+	}
+	if e.Image != nil && !IsUrl(*e.Image) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("image for eventResource with ID %s should be absolute URL if baseURL not provided in the document", e.ID)
+		} else {
+			*e.Image = baseURL + *e.Image
+		}
+	}
+	if e.EventDefinitions, err = rewriteRelativeURLsInJson(e.EventDefinitions, baseURL, "url"); err != nil {
+		return nil, fmt.Errorf("error rewriting urls in eventDefinitions for eventResource with ID %s", e.ID)
+	}
+	if e.ChangelogEntries, err = rewriteRelativeURLsInJson(e.ChangelogEntries, baseURL, "url"); err != nil {
+		return nil, fmt.Errorf("error rewriting urls in changelogEntries for eventResource with ID %s", e.ID)
+	}
+
 	return &model.EventDefinitionInput{
 		ID:               e.ID,
 		Title:            e.Title,
@@ -166,7 +292,7 @@ func (e *EventResource) ToEventDefinitionInput() *model.EventDefinitionInput {
 		ReleaseStatus:    e.ReleaseStatus,
 		LastUpdated:      e.LastUpdated,
 		Extensions:       rawJsonToStrPtr(e.Extensions),
-	}
+	}, nil
 }
 
 type Document struct {
@@ -192,7 +318,11 @@ func (d *Document) ToModelInputs() ([]*model.PackageInput, []*BundleInputWithAss
 	}
 	pkgs := make([]*model.PackageInput, 0, len(d.Packages))
 	for _, pkg := range d.Packages {
-		pkgs = append(pkgs, pkg.ToPackageInput())
+		pkgInput, err := pkg.ToPackageInput(d.BaseURL)
+		if err != nil {
+			return nil, nil, err
+		}
+		pkgs = append(pkgs, pkgInput)
 	}
 	bundles := make(map[string]*model.BundleInput, len(d.Bundles))
 	for _, bundle := range d.Bundles {
@@ -204,7 +334,11 @@ func (d *Document) ToModelInputs() ([]*model.PackageInput, []*BundleInputWithAss
 		if !ok {
 			return nil, nil, fmt.Errorf("api resource with id: %s has unknown associated bundle with id: %s", api.ID, api.AssociatedBundle)
 		}
-		bundle.APIDefinitions = append(bundle.APIDefinitions, api.ToAPIDefinitionInput())
+		apiInput, err := api.ToAPIDefinitionInput(d.BaseURL)
+		if err != nil {
+			return nil, nil, err
+		}
+		bundle.APIDefinitions = append(bundle.APIDefinitions, apiInput)
 	}
 
 	for _, event := range d.EventResources {
@@ -212,7 +346,11 @@ func (d *Document) ToModelInputs() ([]*model.PackageInput, []*BundleInputWithAss
 		if !ok {
 			return nil, nil, fmt.Errorf("event resource with id: %s has unknown associated bundle with id: %s", event.ID, event.AssociatedBundle)
 		}
-		bundle.EventDefinitions = append(bundle.EventDefinitions, event.ToEventDefinitionInput())
+		eventInput, err := event.ToEventDefinitionInput(d.BaseURL)
+		if err != nil {
+			return nil, nil, err
+		}
+		bundle.EventDefinitions = append(bundle.EventDefinitions, eventInput)
 	}
 
 	resultBundles := make([]*BundleInputWithAssociatedPackages, 0)
@@ -224,6 +362,35 @@ func (d *Document) ToModelInputs() ([]*model.PackageInput, []*BundleInputWithAss
 	}
 
 	return pkgs, resultBundles, nil
+}
+
+func rewriteRelativeURLsInJson(j json.RawMessage, baseURL, jsonPath string) (json.RawMessage, error) {
+	parsedJson := gjson.ParseBytes(j)
+	if parsedJson.IsArray() {
+		items := make([]interface{}, 0, 0)
+		for _, jsonElement := range parsedJson.Array() {
+			rewrittenElement, err := rewriteRelativeURLsInJson(json.RawMessage(jsonElement.Raw), baseURL, jsonPath)
+			if err != nil {
+				return nil, err
+			}
+			m := make(map[string]interface{})
+			if err := json.Unmarshal(rewrittenElement, &m); err != nil {
+				return nil, err
+			}
+			items = append(items, m)
+		}
+		return json.Marshal(items)
+	} else if parsedJson.IsObject() {
+		urlProperty := gjson.GetBytes(j, jsonPath)
+		if urlProperty.Exists() && !IsUrl(urlProperty.String()) {
+			if len(baseURL) == 0 {
+				return nil, fmt.Errorf("%s should be absolute URL if baseURL not provided in the document", jsonPath)
+			} else {
+				return sjson.SetBytes(j, jsonPath, baseURL+urlProperty.String())
+			}
+		}
+	}
+	return j, nil
 }
 
 func rawJsonToStrPtr(j json.RawMessage) *string {
@@ -239,4 +406,16 @@ func rawJsonToStr(j json.RawMessage) string {
 		return ""
 	}
 	return string(j)
+}
+
+func normalizeURL(url string) (string, error) {
+	if len(url) > 0 && !IsUrl(url) {
+		return "", fmt.Errorf("url %s is not a valid url", url)
+	}
+	return strings.TrimSuffix(url, "/"), nil
+}
+
+func IsUrl(str string) bool {
+	u, err := url.Parse(str)
+	return err == nil && u.Scheme != "" && u.Host != ""
 }
