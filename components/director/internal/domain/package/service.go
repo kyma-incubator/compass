@@ -135,23 +135,43 @@ func (s *service) Update(ctx context.Context, id string, in model.PackageInput) 
 }
 
 func (s *service) CreateOrUpdate(ctx context.Context, appID, id string, in model.PackageInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	exists, err := s.Exist(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	if !exists {
-		_, err := s.Create(ctx, appID, in)
-		return err
+		if len(in.ID) == 0 {
+			in.ID = id
+		}
+		pkg := in.Package(appID, tnt)
+
+		err = s.pkgRepo.Create(ctx, pkg)
+		if err != nil {
+			return err
+		}
+	} else {
+		pkg, err := s.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		if pkg.ApplicationID != appID {
+			return fmt.Errorf("error create/update package with id %s: already defined in app with id %s and found duplicate in app with id %s", id, pkg.ApplicationID, appID)
+		}
+		pkg.SetFromUpdateInput(in)
+
+		err = s.pkgRepo.Update(ctx, pkg)
+		if err != nil {
+			return errors.Wrapf(err, "while updating Package with ID: [%s]", id)
+		}
 	}
-	pkg, err := s.Get(ctx, id)
-	if err != nil {
-		return err
-	}
-	if pkg.ApplicationID != appID {
-		return fmt.Errorf("error create/update package with id %s: already defined in app with id %s and found duplicate in app with id %s", id, pkg.ApplicationID, appID)
-	}
-	return s.Update(ctx, id, in)
+
+	return s.createOrUpdateBundles(ctx, appID, in.ID, in.Bundles)
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
@@ -253,5 +273,19 @@ func (s *service) updateBundles(ctx context.Context, pkgID string, bundles []*mo
 		}
 	}
 
+	return nil
+}
+
+func (s *service) createOrUpdateBundles(ctx context.Context, appID, pkgID string, bundles []*model.BundleInput) error {
+	for _, item := range bundles {
+		err := s.bundleSvc.CreateOrUpdate(ctx, appID, item.ID, *item)
+		if err != nil {
+			return errors.Wrap(err, "while creating Bundle for Package")
+		}
+		err = s.AssociateBundle(ctx, pkgID, item.ID)
+		if err != nil {
+			return errors.Wrap(err, "while associating Bundle with Package")
+		}
+	}
 	return nil
 }

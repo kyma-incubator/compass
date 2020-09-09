@@ -29,17 +29,20 @@ type BundleRepository interface {
 type APIRepository interface {
 	Create(ctx context.Context, item *model.APIDefinition) error
 	Update(ctx context.Context, item *model.APIDefinition) error
+	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
 type EventAPIRepository interface {
 	Create(ctx context.Context, items *model.EventDefinition) error
 	Update(ctx context.Context, items *model.EventDefinition) error
+	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
 type DocumentRepository interface {
 	Create(ctx context.Context, item *model.Document) error
+	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
@@ -179,23 +182,44 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 }
 
 func (s *service) CreateOrUpdate(ctx context.Context, appID, id string, in model.BundleInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading tenant from context")
+	}
 	exists, err := s.Exist(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	if !exists {
-		_, err := s.Create(ctx, appID, in)
+		if len(in.ID) == 0 {
+			in.ID = id
+		}
+		bundle := in.ToBundle(appID, tnt)
+
+		err = s.bundleRepo.Create(ctx, bundle)
+		if err != nil {
+			return err
+		}
+	} else {
+		bundle, err := s.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		if bundle.ApplicationID != appID {
+			return fmt.Errorf("error create/update bundle with id %s: already defined in app with id %s and found duplicate in app with id %s", id, bundle.ApplicationID, appID)
+		}
+		bundle.SetFromUpdateInput(in)
+
+		err = s.bundleRepo.Update(ctx, bundle)
+		if err != nil {
+			return errors.Wrapf(err, "while updating Bundle with ID: [%s]", id)
+		}
+	}
+	if err := s.createOrUpdateRelatedResources(ctx, in, tnt, id); err != nil {
 		return err
 	}
-	bundle, err := s.Get(ctx, id)
-	if err != nil {
-		return err
-	}
-	if bundle.ApplicationID != appID {
-		return fmt.Errorf("error create/update bundle with id %s: already defined in app with id %s and found duplicate in app with id %s", id, bundle.ApplicationID, appID)
-	}
-	return s.Update(ctx, id, in)
+	return nil
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Bundle, error) {
@@ -272,6 +296,25 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleInp
 	return nil
 }
 
+func (s *service) createOrUpdateRelatedResources(ctx context.Context, in model.BundleInput, tenant string, bundleID string) error {
+	err := s.createOrUpdateAPIs(ctx, bundleID, tenant, in.APIDefinitions)
+	if err != nil {
+		return errors.Wrapf(err, "while creating APIs for application")
+	}
+
+	err = s.createOrUpdateEvents(ctx, bundleID, tenant, in.EventDefinitions)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Events for application")
+	}
+
+	err = s.createOrUpdateDocuments(ctx, bundleID, tenant, in.Documents)
+	if err != nil {
+		return errors.Wrapf(err, "while creating Documents for application")
+	}
+
+	return nil
+}
+
 func (s *service) updateRelatedResources(ctx context.Context, in model.BundleInput, tenant string, bundleID string) error {
 	err := s.updateAPIs(ctx, bundleID, tenant, in.APIDefinitions)
 	if err != nil {
@@ -323,19 +366,40 @@ func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis 
 }
 
 func (s *service) updateAPIs(ctx context.Context, bundleID, tenant string, apis []*model.APIDefinitionInput) error {
-	var err error
 	for _, item := range apis {
 		if len(item.ID) == 0 {
-			return errors.Wrap(err, "id is mandatory when updating APIs")
+			return fmt.Errorf("id is mandatory when updating APIs")
 		}
 		api := item.ToAPIDefinitionWithinBundle(bundleID, tenant)
 
-		err = s.apiRepo.Update(ctx, api)
+		err := s.apiRepo.Update(ctx, api)
 		if err != nil {
 			return errors.Wrap(err, "while creating API for application")
 		}
 	}
+	return nil
+}
 
+func (s *service) createOrUpdateAPIs(ctx context.Context, bundleID, tenant string, apis []*model.APIDefinitionInput) error {
+	toUpdate := make([]*model.APIDefinitionInput, 0, 0)
+	toCreate := make([]*model.APIDefinitionInput, 0, 0)
+	for i := range apis {
+		exists, err := s.apiRepo.Exists(ctx, tenant, apis[i].ID)
+		if err != nil {
+			return err
+		}
+		if exists {
+			toUpdate = append(toUpdate, apis[i])
+		} else {
+			toCreate = append(toCreate, apis[i])
+		}
+	}
+	if err := s.createAPIs(ctx, bundleID, tenant, toCreate); err != nil {
+		return err
+	}
+	if err := s.updateAPIs(ctx, bundleID, tenant, toUpdate); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -361,12 +425,11 @@ func (s *service) createEvents(ctx context.Context, bundleID, tenant string, eve
 }
 
 func (s *service) updateEvents(ctx context.Context, bundleID, tenant string, events []*model.EventDefinitionInput) error {
-	var err error
 	for _, item := range events {
 		if len(item.ID) == 0 {
-			return errors.Wrap(err, "id is mandatory when updating Events")
+			return fmt.Errorf("id is mandatory when updating Events")
 		}
-		err = s.eventAPIRepo.Update(ctx, item.ToEventDefinitionWithinBundle(bundleID, tenant))
+		err := s.eventAPIRepo.Update(ctx, item.ToEventDefinitionWithinBundle(bundleID, tenant))
 		if err != nil {
 			return errors.Wrap(err, "while creating EventDefinitions for application")
 		}
@@ -374,9 +437,32 @@ func (s *service) updateEvents(ctx context.Context, bundleID, tenant string, eve
 	return nil
 }
 
-func (s *service) createDocuments(ctx context.Context, bundleID, tenant string, events []*model.DocumentInput) error {
+func (s *service) createOrUpdateEvents(ctx context.Context, bundleID, tenant string, events []*model.EventDefinitionInput) error {
+	toUpdate := make([]*model.EventDefinitionInput, 0, 0)
+	toCreate := make([]*model.EventDefinitionInput, 0, 0)
+	for i := range events {
+		exists, err := s.apiRepo.Exists(ctx, tenant, events[i].ID)
+		if err != nil {
+			return err
+		}
+		if exists {
+			toUpdate = append(toUpdate, events[i])
+		} else {
+			toCreate = append(toCreate, events[i])
+		}
+	}
+	if err := s.createEvents(ctx, bundleID, tenant, toCreate); err != nil {
+		return err
+	}
+	if err := s.updateEvents(ctx, bundleID, tenant, toUpdate); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *service) createDocuments(ctx context.Context, bundleID, tenant string, documents []*model.DocumentInput) error {
 	var err error
-	for _, item := range events {
+	for _, item := range documents {
 		if len(item.ID) == 0 {
 			item.ID = s.uidService.Generate()
 		}
@@ -392,6 +478,29 @@ func (s *service) createDocuments(ctx context.Context, bundleID, tenant string, 
 			}
 		}
 	}
+	return nil
+}
+
+func (s *service) createOrUpdateDocuments(ctx context.Context, bundleID, tenant string, documens []*model.DocumentInput) error {
+	toUpdate := make([]*model.DocumentInput, 0, 0)
+	toCreate := make([]*model.DocumentInput, 0, 0)
+	for i := range documens {
+		exists, err := s.apiRepo.Exists(ctx, tenant, documens[i].ID)
+		if err != nil {
+			return err
+		}
+		if exists {
+			toUpdate = append(toUpdate, documens[i])
+		} else {
+			toCreate = append(toCreate, documens[i])
+		}
+	}
+	if err := s.createDocuments(ctx, bundleID, tenant, toCreate); err != nil {
+		return err
+	}
+	/*if err := s.updateDocuments(ctx, bundleID, tenant, toUpdate); err != nil {
+		return err
+	}*/ // TODO: Documents does not support update
 	return nil
 }
 
