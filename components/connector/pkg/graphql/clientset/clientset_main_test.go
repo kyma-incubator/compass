@@ -117,7 +117,7 @@ func TestMain(m *testing.M) {
 		})
 	}
 
-	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextTestMiddleware)
+	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextTestMiddleware, k8sClientSet.Discovery())
 	externalGqlServer.TLSConfig = &tls.Config{ClientAuth: tls.RequestClientCert}
 
 	go func() {

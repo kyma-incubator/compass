@@ -46,7 +46,7 @@ func main() {
 
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
-	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication)
+	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication, k8sClientSet.Discovery())
 	internalGqlServer := config.PrepareInternalGraphQLServer(cfg, tokenResolver)
 	hydratorServer := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.SubjectConsts, internalComponents.RevocationsRepository)
 

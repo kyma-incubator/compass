@@ -107,7 +107,7 @@ spec:
           readinessProbe:
             httpGet:
               port: {{ .Values.global.connector.graphql.external.port }}
-              path: "/healthz"
+              path: "/readiness"
             initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
