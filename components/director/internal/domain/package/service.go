@@ -144,6 +144,13 @@ func (s *service) CreateOrUpdate(ctx context.Context, appID, id string, in model
 		_, err := s.Create(ctx, appID, in)
 		return err
 	}
+	pkg, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if pkg.ApplicationID != appID {
+		return fmt.Errorf("error create/update package with id %s: already defined in app with id %s and found duplicate in app with id %s", id, pkg.ApplicationID, appID)
+	}
 	return s.Update(ctx, id, in)
 }
 

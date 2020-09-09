@@ -2,6 +2,7 @@ package mp_bundle
 
 import (
 	"context"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -186,6 +187,13 @@ func (s *service) CreateOrUpdate(ctx context.Context, appID, id string, in model
 	if !exists {
 		_, err := s.Create(ctx, appID, in)
 		return err
+	}
+	bundle, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if bundle.ApplicationID != appID {
+		return fmt.Errorf("error create/update bundle with id %s: already defined in app with id %s and found duplicate in app with id %s", id, bundle.ApplicationID, appID)
 	}
 	return s.Update(ctx, id, in)
 }

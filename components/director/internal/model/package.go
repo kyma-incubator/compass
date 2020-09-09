@@ -30,7 +30,6 @@ func (pkg *Package) SetFromUpdateInput(update PackageInput) {
 	pkg.ShortDescription = update.ShortDescription
 	pkg.Description = update.Description
 	pkg.Version = update.Version
-	pkg.Version = update.Version
 	pkg.Licence = update.Licence
 	pkg.LicenceType = update.LicenceType
 	pkg.TermsOfService = update.TermsOfService
