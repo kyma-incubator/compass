@@ -18,6 +18,7 @@ import (
 type PackageService interface {
 	Create(ctx context.Context, applicationID string, in model.PackageInput) (string, error)
 	Update(ctx context.Context, id string, in model.PackageInput) error
+	CreateOrUpdate(ctx context.Context, appID, id string, in model.PackageInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Package, error)
 	AssociateBundle(ctx context.Context, id, bundleID string) error

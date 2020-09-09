@@ -177,6 +177,19 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
+func (s *service) CreateOrUpdate(ctx context.Context, appID, id string, in model.BundleInput) error {
+	exists, err := s.Exist(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		_, err := s.Create(ctx, appID, in)
+		return err
+	}
+	return s.Update(ctx, id, in)
+}
+
 func (s *service) Get(ctx context.Context, id string) (*model.Bundle, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

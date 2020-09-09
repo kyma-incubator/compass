@@ -134,6 +134,19 @@ func (s *service) Update(ctx context.Context, id string, in model.PackageInput) 
 	return nil
 }
 
+func (s *service) CreateOrUpdate(ctx context.Context, appID, id string, in model.PackageInput) error {
+	exists, err := s.Exist(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		_, err := s.Create(ctx, appID, in)
+		return err
+	}
+	return s.Update(ctx, id, in)
+}
+
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -208,7 +221,7 @@ func (s *service) createBundles(ctx context.Context, appID, pkgID string, bundle
 		if len(item.ID) == 0 {
 			item.ID = s.uidService.Generate()
 		}
-		id, err := s.bundleSvc.Create(ctx,appID, *item)
+		id, err := s.bundleSvc.Create(ctx, appID, *item)
 		if err != nil {
 			return errors.Wrap(err, "while creating Bundle for Package")
 		}
@@ -225,9 +238,9 @@ func (s *service) createBundles(ctx context.Context, appID, pkgID string, bundle
 func (s *service) updateBundles(ctx context.Context, pkgID string, bundles []*model.BundleInput) error {
 	for _, item := range bundles {
 		if len(item.ID) == 0 {
-			return fmt.Errorf( "error while updating bundle for package %s: bundle id must be specified", pkgID)
+			return fmt.Errorf("error while updating bundle for package %s: bundle id must be specified", pkgID)
 		}
-		err := s.bundleSvc.Update(ctx,item.ID, *item)
+		err := s.bundleSvc.Update(ctx, item.ID, *item)
 		if err != nil {
 			return errors.Wrap(err, "while creating Bundle for Package")
 		}

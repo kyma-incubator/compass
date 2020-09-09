@@ -2,7 +2,7 @@ package open_discovery
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"time"
 )
 
@@ -37,9 +37,9 @@ type Package struct {
 	Extensions       *string   `json:"extensions"`
 }
 
-func (p *Package) ToPackageInput() *graphql.PackageInput {
-	return &graphql.PackageInput{
-		ID:               &p.ID,
+func (p *Package) ToPackageInput() *model.PackageInput {
+	return &model.PackageInput{
+		ID:               p.ID,
 		Title:            p.Title,
 		ShortDescription: p.ShortDescription,
 		Description:      p.Description,
@@ -49,11 +49,11 @@ func (p *Package) ToPackageInput() *graphql.PackageInput {
 		TermsOfService:   p.TermsOfService,
 		Logo:             p.Logo,
 		Image:            p.Image,
-		Provider:         strPtrToJSONPtr(p.Provider),
-		Actions:          strPtrToJSONPtr(p.Actions),
-		Tags:             strPtrToJSONPtr(p.Tags),
-		LastUpdated:      graphql.Timestamp(p.LastUpdated),
-		Extensions:       strPtrToJSONPtr(p.Extensions),
+		Provider:         p.Provider,
+		Actions:          p.Actions,
+		Tags:             p.Tags,
+		LastUpdated:      p.LastUpdated,
+		Extensions:       p.Extensions,
 	}
 }
 
@@ -68,15 +68,15 @@ type Bundle struct {
 	AssociatedPackages []string  `json:"associatedPackages"`
 }
 
-func (b *Bundle) ToBundleInput() *graphql.BundleInput {
-	return &graphql.BundleInput{
-		ID:               &b.ID,
+func (b *Bundle) ToBundleInput() *model.BundleInput {
+	return &model.BundleInput{
+		ID:               b.ID,
 		Title:            b.Title,
 		ShortDescription: b.ShortDescription,
 		Description:      b.Description,
-		Tags:             strPtrToJSONPtr(b.Tags),
-		LastUpdated:      graphql.Timestamp(b.LastUpdated),
-		Extensions:       strPtrToJSONPtr(b.Tags),
+		Tags:             b.Tags,
+		LastUpdated:      b.LastUpdated,
+		Extensions:       b.Tags,
 	}
 }
 
@@ -102,28 +102,28 @@ type APIResource struct {
 	AssociatedBundle string    `json:"associatedBundle"`
 }
 
-func (a *APIResource) ToAPIDefinitionInput() *graphql.APIDefinitionInput {
-	return &graphql.APIDefinitionInput{
-		ID:               &a.ID,
+func (a *APIResource) ToAPIDefinitionInput() *model.APIDefinitionInput {
+	return &model.APIDefinitionInput{
+		ID:               a.ID,
 		Title:            a.Title,
 		ShortDescription: a.ShortDescription,
 		Description:      a.Description,
-		Version: &graphql.VersionInput{
+		Version: &model.VersionInput{
 			Value: a.Version,
 		},
 		EntryPoint:       a.EntryPoint,
-		APIDefinitions:   graphql.JSON(a.APIDefinitions),
-		Tags:             strPtrToJSONPtr(a.Tags),
+		APIDefinitions:   a.APIDefinitions,
+		Tags:             a.Tags,
 		Documentation:    a.Documentation,
-		ChangelogEntries: strPtrToJSONPtr(a.ChangelogEntries),
+		ChangelogEntries: a.ChangelogEntries,
 		Logo:             a.Logo,
 		Image:            a.Image,
 		URL:              a.URL,
 		ReleaseStatus:    a.ReleaseStatus,
 		APIProtocol:      a.APIProtocol,
-		Actions:          graphql.JSON(a.Actions),
-		LastUpdated:      graphql.Timestamp(a.LastUpdated),
-		Extensions:       strPtrToJSONPtr(a.Extensions),
+		Actions:          a.Actions,
+		LastUpdated:      a.LastUpdated,
+		Extensions:       a.Extensions,
 	}
 }
 
@@ -146,25 +146,25 @@ type EventResource struct {
 	AssociatedBundle string    `json:"associatedBundle"`
 }
 
-func (e *EventResource) ToEventDefinitionInput() *graphql.EventDefinitionInput {
-	return &graphql.EventDefinitionInput{
-		ID:               &e.ID,
+func (e *EventResource) ToEventDefinitionInput() *model.EventDefinitionInput {
+	return &model.EventDefinitionInput{
+		ID:               e.ID,
 		Title:            e.Title,
 		ShortDescription: e.ShortDescription,
 		Description:      e.Description,
-		Version: &graphql.VersionInput{
+		Version: &model.VersionInput{
 			Value: e.Version,
 		},
-		EventDefinitions: graphql.JSON(e.EventDefinitions),
-		Tags:             strPtrToJSONPtr(e.Tags),
+		EventDefinitions: e.EventDefinitions,
+		Tags:             e.Tags,
 		Documentation:    e.Documentation,
-		ChangelogEntries: strPtrToJSONPtr(e.ChangelogEntries),
+		ChangelogEntries: e.ChangelogEntries,
 		Logo:             e.Logo,
 		Image:            e.Image,
 		URL:              e.URL,
 		ReleaseStatus:    e.ReleaseStatus,
-		LastUpdated:      graphql.Timestamp(e.LastUpdated),
-		Extensions:       strPtrToJSONPtr(e.Extensions),
+		LastUpdated:      e.LastUpdated,
+		Extensions:       e.Extensions,
 	}
 }
 
@@ -180,15 +180,15 @@ type Document struct {
 	EventResources       []*EventResource `json:"eventResources"`
 }
 
-func (d *Document) ToGraphQLInputs() ([]*graphql.PackageInput, map[string]*graphql.BundleInput, error) {
+func (d *Document) ToModelInputs() ([]*model.PackageInput, map[string]*model.BundleInput, error) {
 	if d == nil {
 		return nil, nil, nil
 	}
-	pkgs := make([]*graphql.PackageInput, 0, len(d.Packages))
+	pkgs := make([]*model.PackageInput, 0, len(d.Packages))
 	for _, pkg := range d.Packages {
 		pkgs = append(pkgs, pkg.ToPackageInput())
 	}
-	bundles := make(map[string]*graphql.BundleInput, len(d.Bundles))
+	bundles := make(map[string]*model.BundleInput, len(d.Bundles))
 	for _, bundle := range d.Bundles {
 		bundles[bundle.ID] = bundle.ToBundleInput()
 	}
@@ -209,7 +209,7 @@ func (d *Document) ToGraphQLInputs() ([]*graphql.PackageInput, map[string]*graph
 		bundle.EventDefinitions = append(bundle.EventDefinitions, event.ToEventDefinitionInput())
 	}
 
-	resultBundles := make(map[string]*graphql.BundleInput, 0)
+	resultBundles := make(map[string]*model.BundleInput, 0)
 	for _, bundle := range d.Bundles {
 		for _, pkgID := range bundle.AssociatedPackages {
 			resultBundles[pkgID] = bundles[bundle.ID]
@@ -217,12 +217,4 @@ func (d *Document) ToGraphQLInputs() ([]*graphql.PackageInput, map[string]*graph
 	}
 
 	return pkgs, resultBundles, nil
-}
-
-func strPtrToJSONPtr(in *string) *graphql.JSON {
-	if in == nil {
-		return nil
-	}
-	out := graphql.JSON(*in)
-	return &out
 }
