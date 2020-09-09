@@ -10,6 +10,15 @@ paths:
         '200':
           description: 'The service is up.'
 
+  /readiness:
+    get:
+      summary: 'Returns readiness status.'
+      responses:
+        '200':
+          description: 'The service is available.'
+        '503':
+          description: 'The service is unavailable.'
+
   /v1/tokens/resolve:
     post:
       parameters:
