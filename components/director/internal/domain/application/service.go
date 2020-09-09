@@ -29,6 +29,7 @@ type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
@@ -123,6 +124,14 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	}
 
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
+}
+
+func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	if pageSize < 1 || pageSize > 100 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
+	}
+
+	return s.appRepo.ListGlobal(ctx, pageSize, cursor)
 }
 
 func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error) {

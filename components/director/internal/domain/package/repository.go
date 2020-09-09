@@ -3,7 +3,6 @@ package mp_package
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -30,26 +29,28 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	existQuerier        repo.ExistQuerier
-	singleGetter        repo.SingleGetter
-	deleter             repo.Deleter
-	pageableQuerier     repo.PageableQuerier
-	creator             repo.Creator
-	relationshipCreator repo.Creator
-	updater             repo.Updater
-	conv                EntityConverter
+	existQuerier             repo.ExistQuerier
+	relationshipExistQuerier repo.ExistQuerierGlobal
+	singleGetter             repo.SingleGetter
+	deleter                  repo.Deleter
+	pageableQuerier          repo.PageableQuerier
+	creator                  repo.Creator
+	relationshipCreator      repo.Creator
+	updater                  repo.Updater
+	conv                     EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:        repo.NewExistQuerier(resource.Package, packageTable, tenantColumn),
-		singleGetter:        repo.NewSingleGetter(resource.Package, packageTable, tenantColumn, packageColumns),
-		deleter:             repo.NewDeleter(resource.Package, packageTable, tenantColumn),
-		pageableQuerier:     repo.NewPageableQuerier(resource.Package, packageTable, tenantColumn, packageColumns),
-		creator:             repo.NewCreator(resource.Package, packageTable, packageColumns),
-		relationshipCreator: repo.NewCreator(resource.PackageBundle, packageBundleTable, packageBundleColumns),
-		updater:             repo.NewUpdater(resource.Package, packageTable, updatableColumns, tenantColumn, []string{"id"}),
-		conv:                conv,
+		existQuerier:             repo.NewExistQuerier(resource.Package, packageTable, tenantColumn),
+		relationshipExistQuerier: repo.NewExistQuerierGlobal(resource.PackageBundle, packageBundleTable),
+		singleGetter:             repo.NewSingleGetter(resource.Package, packageTable, tenantColumn, packageColumns),
+		deleter:                  repo.NewDeleter(resource.Package, packageTable, tenantColumn),
+		pageableQuerier:          repo.NewPageableQuerier(resource.Package, packageTable, tenantColumn, packageColumns),
+		creator:                  repo.NewCreator(resource.Package, packageTable, packageColumns),
+		relationshipCreator:      repo.NewCreator(resource.PackageBundle, packageBundleTable, packageBundleColumns),
+		updater:                  repo.NewUpdater(resource.Package, packageTable, updatableColumns, tenantColumn, []string{"id"}),
+		conv:                     conv,
 	}
 }
 
@@ -167,5 +168,15 @@ func (r *pgRepository) AssociateBundle(ctx context.Context, id, bundleID string)
 		BundleID:  bundleID,
 	}
 
-	return r.relationshipCreator.Create(ctx, entity)
+	exists, err := r.relationshipExistQuerier.ExistsGlobal(ctx, []repo.Condition{
+		repo.NewEqualCondition("package_id", id),
+		repo.NewEqualCondition("bundle_id", bundleID),
+	})
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return r.relationshipCreator.Create(ctx, entity)
+	}
+	return nil
 }

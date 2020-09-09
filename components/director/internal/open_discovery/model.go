@@ -1,6 +1,7 @@
 package open_discovery
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"time"
@@ -20,21 +21,21 @@ type DocumentConfig struct {
 }
 
 type Package struct {
-	ID               string    `json:"id"`
-	Title            string    `json:"title"`
-	ShortDescription string    `json:"shortDescription"`
-	Description      string    `json:"description"`
-	Version          string    `json:"version"`
-	Licence          *string   `json:"licence"`
-	LicenceType      *string   `json:"licenceType"`
-	TermsOfService   *string   `json:"termsOfService"`
-	Logo             *string   `json:"logo"`
-	Image            *string   `json:"image"`
-	Provider         *string   `json:"provider"`
-	Actions          *string   `json:"actions"`
-	Tags             *string   `json:"tags"`
-	LastUpdated      time.Time `json:"lastUpdated"`
-	Extensions       *string   `json:"extensions"`
+	ID               string          `json:"id"`
+	Title            string          `json:"title"`
+	ShortDescription string          `json:"shortDescription"`
+	Description      string          `json:"description"`
+	Version          string          `json:"version"`
+	Licence          *string         `json:"licence"`
+	LicenceType      *string         `json:"licenceType"`
+	TermsOfService   *string         `json:"termsOfService"`
+	Logo             *string         `json:"logo"`
+	Image            *string         `json:"image"`
+	Provider         json.RawMessage `json:"provider"`
+	Actions          json.RawMessage `json:"actions"`
+	Tags             json.RawMessage `json:"tags"`
+	LastUpdated      time.Time       `json:"lastUpdated"`
+	Extensions       json.RawMessage `json:"extensions"`
 }
 
 func (p *Package) ToPackageInput() *model.PackageInput {
@@ -49,23 +50,23 @@ func (p *Package) ToPackageInput() *model.PackageInput {
 		TermsOfService:   p.TermsOfService,
 		Logo:             p.Logo,
 		Image:            p.Image,
-		Provider:         p.Provider,
-		Actions:          p.Actions,
-		Tags:             p.Tags,
+		Provider:         rawJsonToStrPtr(p.Provider),
+		Actions:          rawJsonToStrPtr(p.Actions),
+		Tags:             rawJsonToStrPtr(p.Tags),
 		LastUpdated:      p.LastUpdated,
-		Extensions:       p.Extensions,
+		Extensions:       rawJsonToStrPtr(p.Extensions),
 	}
 }
 
 type Bundle struct {
-	ID                 string    `json:"id"`
-	Title              string    `json:"title"`
-	ShortDescription   string    `json:"shortDescription"`
-	Description        *string   `json:"description"`
-	Tags               *string   `json:"tags"`
-	LastUpdated        time.Time `json:"lastUpdated"`
-	Extensions         *string   `json:"extensions"`
-	AssociatedPackages []string  `json:"associatedPackages"`
+	ID                 string          `json:"id"`
+	Title              string          `json:"title"`
+	ShortDescription   string          `json:"shortDescription"`
+	Description        *string         `json:"description"`
+	Tags               json.RawMessage `json:"tags"`
+	LastUpdated        time.Time       `json:"lastUpdated"`
+	Extensions         json.RawMessage `json:"extensions"`
+	AssociatedPackages []string        `json:"associatedPackages"`
 }
 
 func (b *Bundle) ToBundleInput() *model.BundleInput {
@@ -74,32 +75,32 @@ func (b *Bundle) ToBundleInput() *model.BundleInput {
 		Title:            b.Title,
 		ShortDescription: b.ShortDescription,
 		Description:      b.Description,
-		Tags:             b.Tags,
+		Tags:             rawJsonToStrPtr(b.Tags),
 		LastUpdated:      b.LastUpdated,
-		Extensions:       b.Tags,
+		Extensions:       rawJsonToStrPtr(b.Extensions),
 	}
 }
 
 type APIResource struct {
-	ID               string    `json:"id"`
-	Title            string    `json:"title"`
-	ShortDescription string    `json:"shortDescription"`
-	Description      *string   `json:"description"`
-	EntryPoint       string    `json:"entryPoint"`
-	Version          string    `json:"version"`
-	APIDefinitions   string    `json:"apiDefinitions"` // TODO: Parse for spec
-	Tags             *string   `json:"tags"`
-	Documentation    *string   `json:"documentation"`
-	ChangelogEntries *string   `json:"changelogEntries"`
-	Logo             *string   `json:"logo"`
-	Image            *string   `json:"image"`
-	URL              *string   `json:"url"`
-	ReleaseStatus    string    `json:"releaseStatus"`
-	APIProtocol      string    `json:"apiProtocol"`
-	Actions          string    `json:"actions"`
-	LastUpdated      time.Time `json:"lastUpdated"`
-	Extensions       *string   `json:"extensions"`
-	AssociatedBundle string    `json:"associatedBundle"`
+	ID               string          `json:"id"`
+	Title            string          `json:"title"`
+	ShortDescription string          `json:"shortDescription"`
+	Description      *string         `json:"description"`
+	EntryPoint       string          `json:"entryPoint"`
+	Version          string          `json:"version"`
+	APIDefinitions   json.RawMessage `json:"apiDefinitions"` // TODO: Parse for spec
+	Tags             json.RawMessage `json:"tags"`
+	Documentation    *string         `json:"documentation"`
+	ChangelogEntries json.RawMessage `json:"changelogEntries"`
+	Logo             *string         `json:"logo"`
+	Image            *string         `json:"image"`
+	URL              *string         `json:"url"`
+	ReleaseStatus    string          `json:"releaseStatus"`
+	APIProtocol      string          `json:"apiProtocol"`
+	Actions          json.RawMessage `json:"actions"`
+	LastUpdated      time.Time       `json:"lastUpdated"`
+	Extensions       json.RawMessage `json:"extensions"`
+	AssociatedBundle string          `json:"associatedBundle"`
 }
 
 func (a *APIResource) ToAPIDefinitionInput() *model.APIDefinitionInput {
@@ -112,38 +113,38 @@ func (a *APIResource) ToAPIDefinitionInput() *model.APIDefinitionInput {
 			Value: a.Version,
 		},
 		EntryPoint:       a.EntryPoint,
-		APIDefinitions:   a.APIDefinitions,
-		Tags:             a.Tags,
+		APIDefinitions:   rawJsonToStr(a.APIDefinitions),
+		Tags:             rawJsonToStrPtr(a.Tags),
 		Documentation:    a.Documentation,
-		ChangelogEntries: a.ChangelogEntries,
+		ChangelogEntries: rawJsonToStrPtr(a.ChangelogEntries),
 		Logo:             a.Logo,
 		Image:            a.Image,
 		URL:              a.URL,
 		ReleaseStatus:    a.ReleaseStatus,
 		APIProtocol:      a.APIProtocol,
-		Actions:          a.Actions,
+		Actions:          rawJsonToStr(a.Actions),
 		LastUpdated:      a.LastUpdated,
-		Extensions:       a.Extensions,
+		Extensions:       rawJsonToStrPtr(a.Extensions),
 	}
 }
 
 type EventResource struct {
-	ID               string    `json:"id"`
-	Title            string    `json:"title"`
-	ShortDescription string    `json:"shortDescription"`
-	Description      *string   `json:"description"`
-	Version          string    `json:"version"`
-	EventDefinitions string    `json:"eventDefinitions"` // TODO: Parse
-	Tags             *string   `json:"tags"`
-	Documentation    *string   `json:"documentation"`
-	ChangelogEntries *string   `json:"changelogEntries"`
-	Logo             *string   `json:"logo"`
-	Image            *string   `json:"image"`
-	URL              *string   `json:"url"`
-	ReleaseStatus    string    `json:"releaseStatus"`
-	LastUpdated      time.Time `json:"lastUpdated"`
-	Extensions       *string   `json:"extensions"`
-	AssociatedBundle string    `json:"associatedBundle"`
+	ID               string          `json:"id"`
+	Title            string          `json:"title"`
+	ShortDescription string          `json:"shortDescription"`
+	Description      *string         `json:"description"`
+	Version          string          `json:"version"`
+	EventDefinitions json.RawMessage `json:"eventDefinitions"` // TODO: Parse
+	Tags             json.RawMessage `json:"tags"`
+	Documentation    *string         `json:"documentation"`
+	ChangelogEntries json.RawMessage `json:"changelogEntries"`
+	Logo             *string         `json:"logo"`
+	Image            *string         `json:"image"`
+	URL              *string         `json:"url"`
+	ReleaseStatus    string          `json:"releaseStatus"`
+	LastUpdated      time.Time       `json:"lastUpdated"`
+	Extensions       json.RawMessage `json:"extensions"`
+	AssociatedBundle string          `json:"associatedBundle"`
 }
 
 func (e *EventResource) ToEventDefinitionInput() *model.EventDefinitionInput {
@@ -155,16 +156,16 @@ func (e *EventResource) ToEventDefinitionInput() *model.EventDefinitionInput {
 		Version: &model.VersionInput{
 			Value: e.Version,
 		},
-		EventDefinitions: e.EventDefinitions,
-		Tags:             e.Tags,
+		EventDefinitions: rawJsonToStr(e.EventDefinitions),
+		Tags:             rawJsonToStrPtr(e.Tags),
 		Documentation:    e.Documentation,
-		ChangelogEntries: e.ChangelogEntries,
+		ChangelogEntries: rawJsonToStrPtr(e.ChangelogEntries),
 		Logo:             e.Logo,
 		Image:            e.Image,
 		URL:              e.URL,
 		ReleaseStatus:    e.ReleaseStatus,
 		LastUpdated:      e.LastUpdated,
-		Extensions:       e.Extensions,
+		Extensions:       rawJsonToStrPtr(e.Extensions),
 	}
 }
 
@@ -173,14 +174,19 @@ type Document struct {
 	OpenDiscoveryVersion string           `json:"openDiscovery"`
 	BaseURL              string           `json:"baseUrl"`
 	LastUpdated          time.Time        `json:"lastUpdated"`
-	Extensions           *string          `json:"extensions"`
+	Extensions           json.RawMessage  `json:"extensions"`
 	Packages             []*Package       `json:"packages"`
 	Bundles              []*Bundle        `json:"bundles"`
 	APIResources         []*APIResource   `json:"apiResources"`
 	EventResources       []*EventResource `json:"eventResources"`
 }
 
-func (d *Document) ToModelInputs() ([]*model.PackageInput, map[string]*model.BundleInput, error) {
+type BundleInputWithAssociatedPackages struct {
+	In                 *model.BundleInput
+	AssociatedPackages []string
+}
+
+func (d *Document) ToModelInputs() ([]*model.PackageInput, []*BundleInputWithAssociatedPackages, error) {
 	if d == nil {
 		return nil, nil, nil
 	}
@@ -209,12 +215,28 @@ func (d *Document) ToModelInputs() ([]*model.PackageInput, map[string]*model.Bun
 		bundle.EventDefinitions = append(bundle.EventDefinitions, event.ToEventDefinitionInput())
 	}
 
-	resultBundles := make(map[string]*model.BundleInput, 0)
+	resultBundles := make([]*BundleInputWithAssociatedPackages, 0)
 	for _, bundle := range d.Bundles {
-		for _, pkgID := range bundle.AssociatedPackages {
-			resultBundles[pkgID] = bundles[bundle.ID]
-		}
+		resultBundles = append(resultBundles, &BundleInputWithAssociatedPackages{
+			In:                 bundles[bundle.ID],
+			AssociatedPackages: bundle.AssociatedPackages,
+		})
 	}
 
 	return pkgs, resultBundles, nil
+}
+
+func rawJsonToStrPtr(j json.RawMessage) *string {
+	if j == nil {
+		return nil
+	}
+	jstr := string(j)
+	return &jstr
+}
+
+func rawJsonToStr(j json.RawMessage) string {
+	if j == nil {
+		return ""
+	}
+	return string(j)
 }

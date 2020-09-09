@@ -1,4 +1,4 @@
-package od_client
+package puller
 
 import (
 	"encoding/json"

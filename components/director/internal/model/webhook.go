@@ -19,6 +19,7 @@ type WebhookType string
 
 const (
 	WebhookTypeConfigurationChanged WebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeOpenDiscovery        WebhookType = "OPEN_DISCOVERY"
 )
 
 func (i *WebhookInput) ToWebhook(id, tenant, applicationID string) *Webhook {

@@ -28,6 +28,7 @@ type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
