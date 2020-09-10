@@ -110,15 +110,9 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		bundleInput.In.ID = id
 	}
 	for _, bundleInput := range bundlesWithAssociatedPackages {
-		for _, pkgID := range bundleInput.AssociatedPackages {
-			id := ""
-			for _, pkg := range packages { // TODO
-				if pkg.OpenDiscoveryID == pkgID {
-					id = pkg.ID
-				}
-			}
-			if err := s.packageSvc.AssociateBundle(ctx, id, bundleInput.In.ID); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("error associating bundle with id %s with package with id %s", bundleInput.In.ID, pkgID))
+		for _, pkgOpenDiscoveryID := range bundleInput.AssociatedPackages {
+			if err := s.packageSvc.AssociateBundle(ctx, packages[pkgOpenDiscoveryID].ID, bundleInput.In.ID); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("error associating bundle with id %s with package with id %s", bundleInput.In.ID, packages[pkgOpenDiscoveryID].ID))
 			}
 		}
 	}

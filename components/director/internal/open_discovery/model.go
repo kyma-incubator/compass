@@ -314,7 +314,7 @@ type BundleInputWithAssociatedPackages struct {
 	AssociatedPackages []string
 }
 
-func (docs Documents) ToModelInputs() ([]*model.PackageInput, []*BundleInputWithAssociatedPackages, error) {
+func (docs Documents) ToModelInputs() (map[string]*model.PackageInput, []*BundleInputWithAssociatedPackages, error) {
 	if docs == nil {
 		return nil, nil, nil
 	}
@@ -373,12 +373,7 @@ func (docs Documents) ToModelInputs() ([]*model.PackageInput, []*BundleInputWith
 		resultBundles = append(resultBundles, bundle)
 	}
 
-	resultPackages := make([]*model.PackageInput, 0)
-	for _, pkg := range pkgs {
-		resultPackages = append(resultPackages, pkg)
-	}
-
-	return resultPackages, resultBundles, nil
+	return pkgs, resultBundles, nil
 }
 
 func rewriteRelativeURLsInJson(j json.RawMessage, baseURL, jsonPath string) (json.RawMessage, error) {
