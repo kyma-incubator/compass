@@ -31,7 +31,7 @@ Out-of-scope: Limit access to the `auths` field of each type to admin users only
 
 The following section analyzes the problem in all current queries and mutations, and groups them in sections providing a conceptual solution.
 
-The problem with securing resolvers is three dimensional. It features all three: mutations/queries; consumer, and owner. In total, there are about 40 mutations/queries that have to be secured, 4 consumer types, and 4 owner types. For specific queries/mutations there is always a single owner but obtaining the ID of that owner is not always straight forward. For example, in `getApplication(applicationID)` the owner ID is passed as input to the query, however, in `updatePackage(packageID)` some special code must be executed to find the application ID from the package ID.
+The problem with securing resolvers is three dimensional. It features all three: mutations/queries; consumer, and owner. In total, there are about 40 mutations/queries that have to be secured, 4 consumer types, and 4 owner types. For specific queries/mutations there is always a single owner but obtaining the ID of that owner is not always straight forward. For example, in `getApplication(applicationID)` the owner ID is passed as input to the query, however, in `updatePackage(packageID)` some special code must be carried out to find the application ID from the package ID.
 
 Why it is important who is the owner and what is the owner ID? Currently, with the help of the ORY integration, the Director API always receives an ID token, regardless of the actual authentication mechanism. Then, the details about the actual caller/consumer can be extracted from the ID token, and then, stored in the Go context. On a high level, it is necessary to ensure that the consumer from the Go context matches the owner of the requested resource. More broadly put (and required especially for integration systems), it is important to verify that the consumer can access the owner's resources. For example, if the owner is an application, the resources that must be accessible are the application details, packages, and so on.
 
@@ -39,11 +39,11 @@ Why it is important who is the owner and what is the owner ID? Currently, with t
 
 Calculating the owner ID is useful for the cases in which the consumer and owner types match. For example, if a consumer of type application updates an api definition, calculating the owner ID of the api definition and comparing it to the consumer application ID would determine whether this request should be allowed to proceed or not. However, more complicated use cases, where the consumer and the owner types differ, require different approach and solution.
 
-Determining the owner ID during queries and mutations was researched by analysing each query and mutation. Only the results of this research are provided in this document, and are grouped in sub-sections by the type of the owner:
+Determining the owner ID during queries and mutations was researched by analyzing each query and mutation. Only the results of this research are provided in this document, and are grouped in sub-sections by the type of the owner:
 
 #### Owner Type: Application
 
-Queries and mutations which owner is an application are grouped in 8 categories, depending on the input provided to the query or mutation. In each category a different piece of code must be executed to determine the owner ID.
+Queries and mutations which owner is an application are grouped in 8 categories, depending on the input provided to the query or mutation. In each category a different piece of code must be carried out to determine the owner ID.
 
 1. Queries and mutations that provide the owner ID as part of the client input (for example: `getApplication`, `updateApplication`, `addPackage`, etc). For these, the owner ID can be determined from the GraphQL arguments list.
 2. Queries and mutations that provide a `packageID` as part of the client input (for example: `updatePackage`, `deletePackage`, `addDocumentToPackage`, etc). For these, the owner ID can be determined by fetching the actual package with ID equal to the `packageID` from the GraphQL arguments list and getting its `applicationID`.
@@ -81,7 +81,7 @@ If the storage layer is extended with custom queries, it would be possible to ca
 
 Another approach to determine the owner ID is to store it in each table. That is, each table, which is directly or transitively related to applications must store application_id. However, this adds complexity to the database schema. Additionally, the logic for calculating the owner ID would still be required but it will be implemented during the creation of the resources. Thus, duplicating the owner ID column everywhere does not simplify the overall implementation.
 
-This section analysed the APIs from the owner perspective. Basically, when the consumer and the owner types match, it is possible to calculate the `ownerID` and compare it to the `consumerID`. If they match, the request is allowed to proceed. The use cases that feature different consumer types are more complex and are outlined in the following sections.
+This section analyzed the APIs from the owner perspective. Basically, when the consumer and the owner types match, it is possible to calculate the `ownerID` and compare it to the `consumerID`. If they match, the request is allowed to proceed. The use cases that feature different consumer types are more complex and are outlined in the following sections.
 
 ### Analyzing Different Consumer Types
 
@@ -120,7 +120,7 @@ Tenant Mapping Handler grants `UNRESRICTED` consumer level access to Users and t
 
 ### System Auth Access
 
-System auth access (or system auth restrictions) represents the permissons, granted to a specific set of system credentials. For example, if an integration system uses client credentials, represented by system_auth_id=123; a record in `system_auth_acccess` with system_auth_id=123 and app_id=456 means that the consumer (integration system) can access and modify metadata and sub-entities of an application with id=456.
+System auth access (or system auth restrictions) represents the permissions, granted to a specific set of system credentials. For example, if an integration system uses client credentials, represented by system_auth_id=123; a record in `system_auth_acccess` with system_auth_id=123 and app_id=456 means that the consumer (integration system) can access and modify metadata and sub-entities of an application with id=456.
 
 ![System Auths Access Table](./assets/system-auth-access.png)
 
@@ -150,7 +150,7 @@ The proposed directive does the following:
 
 #### Extending the Database Layer
 
-Steps 5 and 6 in the process flow above can be merged if the `system_auth_access` check is implemented within the provider function by joining the `system_auth_access` table to the underlying database query, executed by the provider function. To do this, some custom database queries will be needed.
+Steps 5 and 6 in the process flow above can be merged if the `system_auth_access` check is implemented within the provider function by joining the `system_auth_access` table to the underlying database query, carried out by the provider function. To do this, some custom database queries will be needed.
 
 #### Examples
 
@@ -388,7 +388,7 @@ WHERE consumer_id='consumer-id-from-ctx'
 
 ### Modeling Consumer to Owner Access
 
-Having access data stored for every single resource seems execessive. In this approach, the stored access information is limited to the owner resources only.
+Having access data stored for every single resource seems excessive. In this approach, the stored access information is limited to the owner resources only.
 Here, both models from the previous sections meet in the middle and the result is a table `consumer_access` with columns `consumer_id`, `consumer_type`, `owner_id`, and `owner_type`.
 
 #### Benefits
@@ -400,16 +400,16 @@ Here, both models from the previous sections meet in the middle and the result i
 #### Drawbacks
 
 1. Similarly to the first approach, this approach still has a more complex directive with provider functions. 
-2. Similarly to the second approach, usage of foreign keys is not possible. Therefore, custom validation for exists in grant access API and custom delete logic during the deletion of an owner resource is still needed. In this case, it is not needed to modifiy the deletion of all resources but only for the 4 owner types.
+2. Similarly to the second approach, usage of foreign keys is not possible. Therefore, custom validation for exists in grant access API and custom delete logic during the deletion of an owner resource is still needed. In this case, it is not needed to modify the deletion of all resources but only for the 4 owner types.
 3. It is an open question how to model UNRESTRICTED access for global integration systems such as UI, KEB, and provisioner. Perhaps an empty owner is a solution, however, this is typically not a good practice.
 
 ## Additional Research Approaches
 
-This section outlines several additional approaches that were taken into account during the proof of concept (PoC) phase. If they are considered in the future, additional, more thorough proof of concept can be planned and the designs can de discussed in a broader round.
+This section outlines several additional approaches that were taken into account during the proof of concept (PoC) phase. If they are considered in the future, additional, more thorough proof of concept can be planned and the designs can be discussed in a broader round.
 
-* Usage of helper functions and custom implementaion in each resolver.
+* Usage of helper functions and custom implementation in each resolver.
 * `owner_id` and `integration_system_id` are copied to each table. This way, the owner ID does not need to be calculated in each mutation. Field criteria approach can now be used because the `owner_id` is present in each table. The actual business logic query will have a specific where clause based on the field criteria, so that it can decide whether access is granted or not. Basically, a field filter/criteria will be appended by some middleware, and this field criteria will specify values for `owner_id` and `integration_system_id`. This filter/criteria is eventually included as part of the where clause of the DB query.
-* Introducing a generic middleware that swithces over all mutations and queries, and executes the relevant custom logic.
+* Introducing a generic middleware that switches over all mutations and queries, and executes the relevant custom logic.
 * Require an owner ID in each mutation on top of the already required input, so that the owner ID does not need to be calculated separately on each mutation.
 * Add an ownerReference resolver on each input that returns details about the owning entity. Via a special GraphQL field interceptor/middleware add an additional field to the input so that the resolver is called. In the same or in a different middleware, add logic to compare the owner and the consumer.
 * Add support for labels to all entities, and then, label each one with the system auth IDs that are allowed to access it. Add system auth ID in the ID token. Add label criteria filters to all operations (CRUD). Based on the system auth from the token, append a label filter criteria that finds the system auth ID from the token in the system auth IDs label values of the target entity. All DB calls, in the scope of the request, will have this label filter appended in the where clause.
@@ -454,7 +454,7 @@ It is yet unclear if removing the pairing adapter is the best choice. It might m
 17. The application calls the integration system with the token. If it is a Connector token, it should contain a URL pointing to the integration system as well, and not only to the connector.
 18. If needed, the integration system verifies the token with its Token Issuer Service. If it is a Connector token, the next step can also serve as a verification and nothing needs to be done in this step.
 19. The integration system establishes trust with the LoB application.
-20. The integration system calls the Director with token and integration system credendtials for credentials stacking.
+20. The integration system calls the Director with token and integration system credentials for credentials stacking.
 21. The Director verifies that it is a known token. Then, it grants system auth access to the integration system credentials for the application for which this token was issued. As a result, the system auths record that was created as part of the token issuing is now merged to the integration system credentials and can be deleted. Additionally, the Director may also return the application details (for example ID, etc) so that the integration system would know what it has been granted access for. Alternatively, this can be skipped if the application_id was encoded in the OTT.
 22. The integration system can now register packages, APIs and events for the application, and can set a webhook for credentials requests (package instance auth requests).
 
