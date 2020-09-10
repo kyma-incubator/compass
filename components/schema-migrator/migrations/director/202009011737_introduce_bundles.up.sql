@@ -138,4 +138,41 @@ ALTER TABLE event_api_definitions
     DROP COLUMN version_for_removal;
  */
 
+CREATE TYPE spec_format AS ENUM (
+    'YAML',
+    'XML',
+    'JSON' -- TODO: Enrich with possible values from spec
+);
+
+CREATE TYPE spec_type AS ENUM (
+    'ODATA',
+    'OPEN_API',
+    'ASYNC_API',
+    --'openApi2',
+    --'openApi3',
+    --'raml',
+    --'edmx',
+    --'wsdl1',
+    --'wsdl2',
+    --'graphql',
+    'CUSTOM'
+);
+
+CREATE TABLE specifications (
+    id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    tenant_id UUID,
+    api_def_id UUID,
+    event_def_id UUID,
+    FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id) ON DELETE CASCADE,
+    FOREIGN KEY (api_def_id) REFERENCES api_definitions(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_def_id) REFERENCES event_api_definitions(id) ON DELETE CASCADE,
+    spec_data text,
+    spec_format spec_format,
+    spec_type spec_type,
+    custom_type varchar(64)
+);
+
+ALTER TABLE fetch_requests
+    ADD COLUMN spec_id UUID;
+
 COMMIT;
