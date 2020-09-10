@@ -96,9 +96,11 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		return err
 	}
 	for _, pkgInput := range packages {
-		if err := s.packageSvc.CreateOrUpdate(ctx, appID, pkgInput.OpenDiscoveryID, *pkgInput); err != nil {
+		id, err := s.packageSvc.CreateOrUpdate(ctx, appID, pkgInput.OpenDiscoveryID, *pkgInput)
+		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error create/update package with id %s", pkgInput.ID))
 		}
+		pkgInput.ID = id
 	}
 	for _, bundleInput := range bundlesWithAssociatedPackages {
 		id, err := s.bundleSvc.CreateOrUpdate(ctx, appID, bundleInput.In.OpenDiscoveryID, *bundleInput.In)
@@ -109,7 +111,13 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 	}
 	for _, bundleInput := range bundlesWithAssociatedPackages {
 		for _, pkgID := range bundleInput.AssociatedPackages {
-			if err := s.packageSvc.AssociateBundle(ctx, pkgID, bundleInput.In.ID); err != nil {
+			id := ""
+			for _, pkg := range packages { // TODO
+				if pkg.OpenDiscoveryID == pkgID {
+					id = pkg.ID
+				}
+			}
+			if err := s.packageSvc.AssociateBundle(ctx, id, bundleInput.In.ID); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("error associating bundle with id %s with package with id %s", bundleInput.In.ID, pkgID))
 			}
 		}
