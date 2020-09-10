@@ -74,10 +74,14 @@ func TestMain(m *testing.M) {
 		},
 	)
 	cacheNotificationCh := make(chan struct{}, 1)
+	certificateLoaderExitCh := make(chan struct{}, 1)
 
-	internalComponents, certLoader := config.InitInternalComponents(cfg, k8sClientSet, cacheNotificationCh)
+	internalComponents, certLoader := config.InitInternalComponents(cfg, k8sClientSet, cacheNotificationCh, certificateLoaderExitCh)
 
 	go certLoader.Run()
+	defer func() {
+		certificateLoaderExitCh <- struct{}{}
+	}()
 
 	tokenService = internalComponents.TokenService
 	externalAPIUrl = fmt.Sprintf("https://%s%s", cfg.ExternalAddress, cfg.APIEndpoint)

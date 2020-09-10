@@ -23,13 +23,15 @@ type certLoader struct {
 	repository                  secrets.Repository
 	caSecretName                types.NamespacedName
 	rootCACertificateSecretName types.NamespacedName
+	exitCh                      <-chan struct{}
 }
 
 func NewCertificateLoader(certificatesCache Cache,
 	repository secrets.Repository,
 	caSecretName types.NamespacedName,
 	rootCACertificateSecretName types.NamespacedName,
-	readinessCh chan<- struct{}, apiServerClient discovery.ServerVersionInterface) Loader {
+	readinessCh chan<- struct{}, apiServerClient discovery.ServerVersionInterface,
+	exitCh <-chan struct{}) Loader {
 	return &certLoader{
 		certificatesCache:           certificatesCache,
 		readinessCh:                 readinessCh,
@@ -37,6 +39,7 @@ func NewCertificateLoader(certificatesCache Cache,
 		repository:                  repository,
 		caSecretName:                caSecretName,
 		rootCACertificateSecretName: rootCACertificateSecretName,
+		exitCh:                      exitCh,
 	}
 }
 
@@ -56,6 +59,9 @@ func (cl *certLoader) Run() {
 		select {
 		case <-notificationCh:
 			log.Info("Received notification")
+		case <-cl.exitCh:
+			log.Info("Received exit signal, loader exiting..")
+			return
 		case <-time.After(interval):
 		}
 	}

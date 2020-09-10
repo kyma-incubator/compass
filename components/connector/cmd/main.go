@@ -31,9 +31,14 @@ func main() {
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
 	cacheNotificationCh := make(chan struct{}, 1)
-	internalComponents, certificateLoader := config.InitInternalComponents(cfg, k8sClientSet, cacheNotificationCh)
+	certificateLoaderExitCh := make(chan struct{}, 1)
+
+	internalComponents, certificateLoader := config.InitInternalComponents(cfg, k8sClientSet, cacheNotificationCh, certificateLoaderExitCh)
 
 	go certificateLoader.Run()
+	defer func() {
+		certificateLoaderExitCh <- struct{}{}
+	}()
 
 	tokenResolver := api.NewTokenResolver(internalComponents.TokenService)
 	certificateResolver := api.NewCertificateResolver(
