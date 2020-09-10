@@ -3,22 +3,22 @@ package readiness
 import (
 	"net/http"
 
-	"k8s.io/client-go/discovery"
-
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-func NewHTTPHandler(log *logrus.Logger, apiServerClient discovery.ServerVersionInterface) func(writer http.ResponseWriter, request *http.Request) {
+func NewHTTPHandler(log *logrus.Logger, isCacheLoaded *atomicBool, cacheNotificationCh <-chan struct{}) func(writer http.ResponseWriter, request *http.Request) {
 	writeResponseFunc := handleResponseFunc(log)
+	go handleNotification(log, cacheNotificationCh, isCacheLoaded)
+
 	return func(writer http.ResponseWriter, request *http.Request) {
-		_, err := apiServerClient.ServerVersion()
-		if err != nil {
-			logrus.Errorf("Failed to access API Server: %s.", err.Error())
+		if !isCacheLoaded.getValue() {
+			log.Debug("Needed certificates are still not loaded")
 			writeResponseFunc(writer, http.StatusServiceUnavailable, "Service Unavailable")
 			return
 		}
-		logrus.Debug("Readiness probe passed.")
+
+		logrus.Debug("Readiness probe passed. All needed certificates are loaded")
 		writeResponseFunc(writer, http.StatusOK, "ok")
 	}
 }
@@ -31,4 +31,10 @@ func handleResponseFunc(log *logrus.Logger) func(http.ResponseWriter, int, strin
 			log.Errorf(errors.Wrapf(err, "while writing to response body").Error())
 		}
 	}
+}
+
+func handleNotification(log *logrus.Logger, cacheNotificationCh <-chan struct{}, isCacheLoaded *atomicBool) {
+	<-cacheNotificationCh
+	log.Info("Received notification, cache is ready")
+	isCacheLoaded.setValue(true)
 }

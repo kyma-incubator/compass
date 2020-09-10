@@ -73,8 +73,9 @@ func TestMain(m *testing.M) {
 			BinaryData: nil,
 		},
 	)
+	cacheNotificationCh := make(chan struct{}, 1)
 
-	internalComponents, certLoader := config.InitInternalComponents(cfg, k8sClientSet)
+	internalComponents, certLoader := config.InitInternalComponents(cfg, k8sClientSet, cacheNotificationCh)
 
 	go certLoader.Run()
 
@@ -117,7 +118,7 @@ func TestMain(m *testing.M) {
 		})
 	}
 
-	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextTestMiddleware, k8sClientSet.Discovery())
+	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextTestMiddleware, cacheNotificationCh)
 	externalGqlServer.TLSConfig = &tls.Config{ClientAuth: tls.RequestClientCert}
 
 	go func() {

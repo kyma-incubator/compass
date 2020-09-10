@@ -1,51 +1,44 @@
 package readiness
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"k8s.io/apimachinery/pkg/version"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
-type fakeApiServerClient struct {
-	err error
-}
-
-func (f *fakeApiServerClient) ServerVersion() (*version.Info, error) {
-	return nil, f.err
-}
-
 func TestHTTPHandler(t *testing.T) {
-	t.Run("should return 200 with ok inside response body when api server responds", func(t *testing.T) {
+	testFunc := func(statusCode int, body string, notificationCh chan struct{}, shouldNotify bool) {
+		var isCacheLoaded = NewAtomicBool(false)
 		req, err := http.NewRequest("GET", "/readiness", nil)
 		require.NoError(t, err)
 
-		rr := httptest.NewRecorder()
-		apiServerClient := &fakeApiServerClient{nil}
-		handler := http.HandlerFunc(NewHTTPHandler(logrus.StandardLogger(), apiServerClient))
+		handler := http.HandlerFunc(NewHTTPHandler(logrus.StandardLogger(), isCacheLoaded, notificationCh))
 
+		if shouldNotify {
+			notificationCh <- struct{}{}
+			// wait to process notification
+			for !isCacheLoaded.getValue() {
+
+			}
+		}
+
+		rr := httptest.NewRecorder()
 		handler.ServeHTTP(rr, req)
 
-		require.Equal(t, http.StatusOK, rr.Code)
-		require.Equal(t, "ok", rr.Body.String())
+		require.Equal(t, statusCode, rr.Code)
+		require.Equal(t, body, rr.Body.String())
+	}
+
+	t.Run("should return 200 with ok inside response body when cache is ready", func(t *testing.T) {
+		notificationCh := make(chan struct{}, 1)
+		testFunc(http.StatusOK, "ok", notificationCh, true)
 	})
 
-	t.Run("should return 503 with Service Unavailable inside response body when api server does not respond", func(t *testing.T) {
-		req, err := http.NewRequest("GET", "/readiness", nil)
-		require.NoError(t, err)
-
-		rr := httptest.NewRecorder()
-		apiServerClient := &fakeApiServerClient{errors.New("error")}
-		handler := http.HandlerFunc(NewHTTPHandler(logrus.StandardLogger(), apiServerClient))
-
-		handler.ServeHTTP(rr, req)
-
-		require.Equal(t, http.StatusServiceUnavailable, rr.Code)
-		require.Equal(t, "Service Unavailable", rr.Body.String())
+	t.Run("should return 503 with Service Unavailable inside response body when cache is not ready", func(t *testing.T) {
+		notificationCh := make(chan struct{}, 1)
+		testFunc(http.StatusServiceUnavailable, "Service Unavailable", notificationCh, false)
 	})
 }

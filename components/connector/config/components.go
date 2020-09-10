@@ -25,7 +25,7 @@ type Components struct {
 	SubjectConsts certificates.CSRSubjectConsts
 }
 
-func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface) (Components, certificates.Loader) {
+func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface, cacheNotificationCh chan<- struct{}) (Components, certificates.Loader) {
 	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration)
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
 	revokedCertsRepository := newRevokedCertsRepository(k8sClientset, namespacedname.Parse(cfg.RevocationConfigMapName))
@@ -49,7 +49,7 @@ func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface) (Comp
 		cfg.RootCASecret.CertificateKey,
 	)
 
-	certLoader := certificates.NewCertificateLoader(certCache, secretsRepository, caSecretName, rootCASecretName)
+	certLoader := certificates.NewCertificateLoader(certCache, secretsRepository, caSecretName, rootCASecretName, cacheNotificationCh, k8sClientset.Discovery())
 
 	csrSubjectConsts := certificates.CSRSubjectConsts{
 		Country:            cfg.CSRSubject.Country,

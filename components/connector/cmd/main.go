@@ -30,7 +30,8 @@ func main() {
 	k8sClientSet, appErr := newCoreClientSet()
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
-	internalComponents, certificateLoader := config.InitInternalComponents(cfg, k8sClientSet)
+	cacheNotificationCh := make(chan struct{}, 1)
+	internalComponents, certificateLoader := config.InitInternalComponents(cfg, k8sClientSet, cacheNotificationCh)
 
 	go certificateLoader.Run()
 
@@ -46,7 +47,7 @@ func main() {
 
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
-	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication, k8sClientSet.Discovery())
+	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication, cacheNotificationCh)
 	internalGqlServer := config.PrepareInternalGraphQLServer(cfg, tokenResolver)
 	hydratorServer := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.SubjectConsts, internalComponents.RevocationsRepository)
 

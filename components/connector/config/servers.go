@@ -3,8 +3,6 @@ package config
 import (
 	"net/http"
 
-	"k8s.io/client-go/discovery"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
 	"github.com/kyma-incubator/compass/components/connector/internal/readiness"
 	log "github.com/sirupsen/logrus"
@@ -20,7 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
-func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolver, authContextMiddleware mux.MiddlewareFunc, apiServerClient discovery.ServerVersionInterface) *http.Server {
+func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolver, authContextMiddleware mux.MiddlewareFunc, cacheNotificationCh <-chan struct{}) *http.Server {
 	externalResolver := api.ExternalResolver{CertificateResolver: certResolver}
 
 	gqlInternalCfg := externalschema.Config{
@@ -33,7 +31,7 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
 	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
-	externalRouter.HandleFunc("/readiness", readiness.NewHTTPHandler(log.StandardLogger(), apiServerClient))
+	externalRouter.HandleFunc("/readiness", readiness.NewHTTPHandler(log.StandardLogger(), readiness.NewAtomicBool(false), cacheNotificationCh))
 
 	externalRouter.Use(authContextMiddleware)
 
