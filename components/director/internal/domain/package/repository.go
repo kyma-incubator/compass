@@ -14,7 +14,7 @@ const packageTable string = `public.packages`
 const packageBundleTable string = `public.package_bundles`
 
 var (
-	packageColumns = []string{"id", "tenant_id", "app_id", "title", "short_description", "description", "version",
+	packageColumns = []string{"id", "od_id", "tenant_id", "app_id", "title", "short_description", "description", "version",
 		"licence", "licence_type", "terms_of_service", "logo", "image", "provider", "tags", "last_updated", "extensions"}
 	updatableColumns = []string{"title", "short_description", "description", "version",
 		"licence", "licence_type", "terms_of_service", "logo", "image", "provider", "tags", "last_updated", "extensions"}
@@ -95,9 +95,17 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+func (r *pgRepository) ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error) {
+	return r.existQuerier.Exists(ctx, tenant, conds)
+}
+
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Package, error) {
+	return r.GetByField(ctx, tenant, "id", id)
+}
+
+func (r *pgRepository) GetByField(ctx context.Context, tenant,fieldName, fieldValue string) (*model.Package, error) {
 	var packageEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &packageEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, fieldValue)}, repo.NoOrderBy, &packageEnt); err != nil {
 		return nil, err
 	}
 

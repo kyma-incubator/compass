@@ -36,6 +36,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 
 	return &graphql.APIDefinition{
 		ID:               in.ID,
+		OpenDiscoveryID:  &in.OpenDiscoveryID,
 		BundleID:         in.BundleID,
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
@@ -97,6 +98,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 
 	return &model.APIDefinitionInput{
 		ID:               c.strPrtToStr(in.ID),
+		OpenDiscoveryID:  c.strPrtToStr(in.OpenDiscoveryID),
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
 		Description:      in.Description,
@@ -160,6 +162,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
 		ID:               entity.ID,
+		OpenDiscoveryID:  entity.OpenDiscoveryID,
 		BundleID:         entity.BundleID,
 		Title:            entity.Title,
 		EntryPoint:       entity.EntryPoint,
@@ -188,6 +191,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 
 	return Entity{
 		ID:               apiModel.ID,
+		OpenDiscoveryID:  apiModel.OpenDiscoveryID,
 		TenantID:         apiModel.Tenant,
 		BundleID:         apiModel.BundleID,
 		Title:            apiModel.Title,

@@ -24,7 +24,7 @@ const bundleInstanceAuthBundleRefField string = `bundle_id`
 const packageBundleTable string = `public.package_bundles`
 
 var (
-	bundleColumns        = []string{"id", "tenant_id", "app_id", "title", "short_description", "description", "instance_auth_request_json_schema", "default_instance_auth", "tags", "last_updated", "extensions"}
+	bundleColumns        = []string{"id", "od_id", "tenant_id", "app_id", "title", "short_description", "description", "instance_auth_request_json_schema", "default_instance_auth", "tags", "last_updated", "extensions"}
 	packageBundleColumns = []string{"package_id", "bundle_id"}
 	tenantColumn         = "tenant_id"
 )
@@ -100,9 +100,17 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 	return r.existQuerier.Exists(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+func (r *pgRepository) ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error) {
+	return r.existQuerier.Exists(ctx, tenant, conds)
+}
+
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error) {
+	return r.GetByField(ctx, tenant, "id", id)
+}
+
+func (r *pgRepository) GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.Bundle, error) {
 	var bundleEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &bundleEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, fieldValue)}, repo.NoOrderBy, &bundleEnt); err != nil {
 		return nil, err
 	}
 

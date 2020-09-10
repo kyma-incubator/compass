@@ -146,6 +146,7 @@ input APIDefinitionInput {
 	TODO: Validation if it is guid
 	"""
 	ID: String
+	openDiscoveryID: String
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -302,6 +303,7 @@ input BundleInput {
 	TODO: Validation if it is guid
 	"""
 	ID: String
+	openDiscoveryID: String
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -432,6 +434,7 @@ input EventDefinitionInput {
 	TODO: Validation if it is guid
 	"""
 	ID: String
+	openDiscoveryID: String
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -552,6 +555,7 @@ input PackageInput {
 	TODO: Validation if it is guid
 	"""
 	ID: String
+	openDiscoveryID: String!
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -634,6 +638,7 @@ input WebhookInput {
 
 type APIDefinition {
 	id: ID!
+	openDiscoveryID: String
 	title: String!
 	shortDescription: String!
 	description: String
@@ -755,6 +760,7 @@ type BasicCredentialData {
 
 type Bundle {
 	id: ID!
+	openDiscoveryID: String
 	title: String!
 	shortDescription: String!
 	description: String
@@ -850,6 +856,7 @@ type DocumentPage implements Pageable {
 
 type EventDefinition {
 	id: ID!
+	openDiscoveryID: String
 	title: String!
 	shortDescription: String!
 	description: String
@@ -967,6 +974,7 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 
 type Package {
 	id: ID!
+	openDiscoveryID: String!
 	applicationID: ID!
 	title: String!
 	shortDescription: String!

@@ -7,6 +7,7 @@ import (
 
 type Bundle struct {
 	ID                             string
+	OpenDiscoveryID                string
 	TenantID                       string
 	ApplicationID                  string
 	Title                          string
@@ -21,6 +22,7 @@ type Bundle struct {
 
 type BundleInput struct {
 	ID                             string
+	OpenDiscoveryID                string
 	Title                          string
 	ShortDescription               string
 	Description                    *string
@@ -60,6 +62,7 @@ func (i *BundleInput) ToBundle(applicationID, tenantID string) *Bundle {
 
 	return &Bundle{
 		ID:                             i.ID,
+		OpenDiscoveryID:                i.OpenDiscoveryID,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Title:                          i.Title,

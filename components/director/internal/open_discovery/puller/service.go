@@ -96,14 +96,16 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		return err
 	}
 	for _, pkgInput := range packages {
-		if err := s.packageSvc.CreateOrUpdate(ctx, appID, pkgInput.ID, *pkgInput); err != nil {
+		if err := s.packageSvc.CreateOrUpdate(ctx, appID, pkgInput.OpenDiscoveryID, *pkgInput); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error create/update package with id %s", pkgInput.ID))
 		}
 	}
 	for _, bundleInput := range bundlesWithAssociatedPackages {
-		if err := s.bundleSvc.CreateOrUpdate(ctx, appID, bundleInput.In.ID, *bundleInput.In); err != nil {
+		id, err := s.bundleSvc.CreateOrUpdate(ctx, appID, bundleInput.In.OpenDiscoveryID, *bundleInput.In)
+		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error create/update bundle with id %s", bundleInput.In.ID))
 		}
+		bundleInput.In.ID = id
 	}
 	for _, bundleInput := range bundlesWithAssociatedPackages {
 		for _, pkgID := range bundleInput.AssociatedPackages {

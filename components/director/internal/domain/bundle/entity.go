@@ -7,6 +7,7 @@ import (
 
 type Entity struct {
 	ID                            string         `db:"id"`
+	OpenDiscoveryID               string         `db:"od_id"`
 	TenantID                      string         `db:"tenant_id"`
 	ApplicationID                 string         `db:"app_id"`
 	Title                         string         `db:"title"`

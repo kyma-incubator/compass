@@ -15,7 +15,7 @@ const apiDefTable string = `"public"."api_definitions"`
 
 var (
 	tenantColumn  = "tenant_id"
-	apiDefColumns = []string{"id", "tenant_id", "bundle_id", "title", "short_description", "description", "group_name", "entry_point",
+	apiDefColumns = []string{"id", "od_id", "tenant_id", "bundle_id", "title", "short_description", "description", "group_name", "entry_point",
 		"api_definitions", "tags", "documentation", "changelog_entries", "logo", "image", "url", "release_status", "api_protocol", "actions", "last_updated", "extensions",
 		"spec_data", "spec_format", "spec_type", "version", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 	idColumns        = []string{"id"}
@@ -88,8 +88,16 @@ func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cu
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
+	return r.GetByField(ctx, tenantID, "id", id)
+}
+
+func (r *pgRepository) ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error) {
+	return r.existQuerier.Exists(ctx, tenant, conds)
+}
+
+func (r *pgRepository) GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
-	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
+	err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, fieldValue)}, repo.NoOrderBy, &apiDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting APIDefinition")
 	}

@@ -3,6 +3,7 @@ package mp_bundle
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -18,6 +19,8 @@ type BundleRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error)
+	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
+	GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.Bundle, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error)
 	GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
@@ -30,6 +33,8 @@ type APIRepository interface {
 	Create(ctx context.Context, item *model.APIDefinition) error
 	Update(ctx context.Context, item *model.APIDefinition) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
+	GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.APIDefinition, error)
 }
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
@@ -37,6 +42,8 @@ type EventAPIRepository interface {
 	Create(ctx context.Context, items *model.EventDefinition) error
 	Update(ctx context.Context, items *model.EventDefinition) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
+	GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.EventDefinition, error)
 }
 
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
@@ -181,45 +188,46 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-func (s *service) CreateOrUpdate(ctx context.Context, appID, id string, in model.BundleInput) error {
+func (s *service) CreateOrUpdate(ctx context.Context, appID, openDiscoveryID string, in model.BundleInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return errors.Wrap(err, "while loading tenant from context")
+		return "", errors.Wrap(err, "while loading tenant from context")
 	}
-	exists, err := s.Exist(ctx, id)
+	exists, err := s.bundleRepo.ExistsByCondition(ctx, tnt, repo.Conditions{repo.NewEqualCondition("od_id", openDiscoveryID)})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if !exists {
 		if len(in.ID) == 0 {
-			in.ID = id
+			in.ID = s.uidService.Generate()
 		}
 		bundle := in.ToBundle(appID, tnt)
 
 		err = s.bundleRepo.Create(ctx, bundle)
 		if err != nil {
-			return err
+			return "", err
 		}
 	} else {
-		bundle, err := s.Get(ctx, id)
+		bundle, err := s.bundleRepo.GetByField(ctx, tnt, "od_id", openDiscoveryID)
 		if err != nil {
-			return err
+			return "", err
 		}
+		in.ID = bundle.ID
 		if bundle.ApplicationID != appID {
-			return fmt.Errorf("error create/update bundle with id %s: already defined in app with id %s and found duplicate in app with id %s", id, bundle.ApplicationID, appID)
+			return "", fmt.Errorf("error create/update bundle with id %s: already defined in app with id %s and found duplicate in app with id %s", bundle.ID, bundle.ApplicationID, appID)
 		}
 		bundle.SetFromUpdateInput(in)
 
 		err = s.bundleRepo.Update(ctx, bundle)
 		if err != nil {
-			return errors.Wrapf(err, "while updating Bundle with ID: [%s]", id)
+			return "", errors.Wrapf(err, "while updating Bundle with ID: [%s]", bundle.ID)
 		}
 	}
-	if err := s.createOrUpdateRelatedResources(ctx, in, tnt, id); err != nil {
-		return err
+	if err := s.createOrUpdateRelatedResources(ctx, in, tnt, in.ID); err != nil {
+		return "", err
 	}
-	return nil
+	return in.ID, nil
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.Bundle, error) {
@@ -384,11 +392,16 @@ func (s *service) createOrUpdateAPIs(ctx context.Context, bundleID, tenant strin
 	toUpdate := make([]*model.APIDefinitionInput, 0, 0)
 	toCreate := make([]*model.APIDefinitionInput, 0, 0)
 	for i := range apis {
-		exists, err := s.apiRepo.Exists(ctx, tenant, apis[i].ID)
+		exists, err := s.apiRepo.ExistsByCondition(ctx, tenant, repo.Conditions{repo.NewEqualCondition("od_id", apis[i].OpenDiscoveryID)})
 		if err != nil {
 			return err
 		}
 		if exists {
+			api, err := s.apiRepo.GetByField(ctx, tenant, "od_id", apis[i].OpenDiscoveryID)
+			if err != nil {
+				return err
+			}
+			apis[i].ID = api.ID
 			toUpdate = append(toUpdate, apis[i])
 		} else {
 			toCreate = append(toCreate, apis[i])
@@ -441,11 +454,16 @@ func (s *service) createOrUpdateEvents(ctx context.Context, bundleID, tenant str
 	toUpdate := make([]*model.EventDefinitionInput, 0, 0)
 	toCreate := make([]*model.EventDefinitionInput, 0, 0)
 	for i := range events {
-		exists, err := s.apiRepo.Exists(ctx, tenant, events[i].ID)
+		exists, err := s.eventAPIRepo.ExistsByCondition(ctx, tenant, repo.Conditions{repo.NewEqualCondition("od_id", events[i].OpenDiscoveryID)})
 		if err != nil {
 			return err
 		}
 		if exists {
+			event, err := s.eventAPIRepo.GetByField(ctx, tenant, "od_id", events[i].OpenDiscoveryID)
+			if err != nil {
+				return err
+			}
+			events[i].ID = event.ID
 			toUpdate = append(toUpdate, events[i])
 		} else {
 			toCreate = append(toCreate, events[i])

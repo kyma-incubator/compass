@@ -70,6 +70,7 @@ type ComplexityRoot struct {
 		Image            func(childComplexity int) int
 		LastUpdated      func(childComplexity int) int
 		Logo             func(childComplexity int) int
+		OpenDiscoveryID  func(childComplexity int) int
 		ReleaseStatus    func(childComplexity int) int
 		ShortDescription func(childComplexity int) int
 		Spec             func(childComplexity int) int
@@ -180,6 +181,7 @@ type ComplexityRoot struct {
 		InstanceAuthRequestInputSchema func(childComplexity int) int
 		InstanceAuths                  func(childComplexity int) int
 		LastUpdated                    func(childComplexity int) int
+		OpenDiscoveryID                func(childComplexity int) int
 		ShortDescription               func(childComplexity int) int
 		Tags                           func(childComplexity int) int
 		Title                          func(childComplexity int) int
@@ -247,6 +249,7 @@ type ComplexityRoot struct {
 		Image            func(childComplexity int) int
 		LastUpdated      func(childComplexity int) int
 		Logo             func(childComplexity int) int
+		OpenDiscoveryID  func(childComplexity int) int
 		ReleaseStatus    func(childComplexity int) int
 		ShortDescription func(childComplexity int) int
 		Spec             func(childComplexity int) int
@@ -414,6 +417,7 @@ type ComplexityRoot struct {
 		Licence          func(childComplexity int) int
 		LicenceType      func(childComplexity int) int
 		Logo             func(childComplexity int) int
+		OpenDiscoveryID  func(childComplexity int) int
 		Provider         func(childComplexity int) int
 		ShortDescription func(childComplexity int) int
 		Tags             func(childComplexity int) int
@@ -759,6 +763,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APIDefinition.Logo(childComplexity), true
+
+	case "APIDefinition.openDiscoveryID":
+		if e.complexity.APIDefinition.OpenDiscoveryID == nil {
+			break
+		}
+
+		return e.complexity.APIDefinition.OpenDiscoveryID(childComplexity), true
 
 	case "APIDefinition.releaseStatus":
 		if e.complexity.APIDefinition.ReleaseStatus == nil {
@@ -1317,6 +1328,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Bundle.LastUpdated(childComplexity), true
 
+	case "Bundle.openDiscoveryID":
+		if e.complexity.Bundle.OpenDiscoveryID == nil {
+			break
+		}
+
+		return e.complexity.Bundle.OpenDiscoveryID(childComplexity), true
+
 	case "Bundle.shortDescription":
 		if e.complexity.Bundle.ShortDescription == nil {
 			break
@@ -1617,6 +1635,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EventDefinition.Logo(childComplexity), true
+
+	case "EventDefinition.openDiscoveryID":
+		if e.complexity.EventDefinition.OpenDiscoveryID == nil {
+			break
+		}
+
+		return e.complexity.EventDefinition.OpenDiscoveryID(childComplexity), true
 
 	case "EventDefinition.releaseStatus":
 		if e.complexity.EventDefinition.ReleaseStatus == nil {
@@ -2767,6 +2792,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Package.Logo(childComplexity), true
 
+	case "Package.openDiscoveryID":
+		if e.complexity.Package.OpenDiscoveryID == nil {
+			break
+		}
+
+		return e.complexity.Package.OpenDiscoveryID(childComplexity), true
+
 	case "Package.provider":
 		if e.complexity.Package.Provider == nil {
 			break
@@ -3493,6 +3525,7 @@ input APIDefinitionInput {
 	TODO: Validation if it is guid
 	"""
 	ID: String
+	openDiscoveryID: String
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -3649,6 +3682,7 @@ input BundleInput {
 	TODO: Validation if it is guid
 	"""
 	ID: String
+	openDiscoveryID: String
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -3779,6 +3813,7 @@ input EventDefinitionInput {
 	TODO: Validation if it is guid
 	"""
 	ID: String
+	openDiscoveryID: String
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -3899,6 +3934,7 @@ input PackageInput {
 	TODO: Validation if it is guid
 	"""
 	ID: String
+	openDiscoveryID: String!
 	"""
 	**Validation:** ASCII printable characters, max=100
 	"""
@@ -3981,6 +4017,7 @@ input WebhookInput {
 
 type APIDefinition {
 	id: ID!
+	openDiscoveryID: String
 	title: String!
 	shortDescription: String!
 	description: String
@@ -4102,6 +4139,7 @@ type BasicCredentialData {
 
 type Bundle {
 	id: ID!
+	openDiscoveryID: String
 	title: String!
 	shortDescription: String!
 	description: String
@@ -4197,6 +4235,7 @@ type DocumentPage implements Pageable {
 
 type EventDefinition {
 	id: ID!
+	openDiscoveryID: String
 	title: String!
 	shortDescription: String!
 	description: String
@@ -4314,6 +4353,7 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 
 type Package {
 	id: ID!
+	openDiscoveryID: String!
 	applicationID: ID!
 	title: String!
 	shortDescription: String!
@@ -6668,6 +6708,40 @@ func (ec *executionContext) _APIDefinition_id(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APIDefinition_openDiscoveryID(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "APIDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OpenDiscoveryID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_title(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -9199,6 +9273,40 @@ func (ec *executionContext) _Bundle_id(ctx context.Context, field graphql.Collec
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Bundle_openDiscoveryID(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OpenDiscoveryID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Bundle_title(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -10913,6 +11021,40 @@ func (ec *executionContext) _EventDefinition_id(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventDefinition_openDiscoveryID(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OpenDiscoveryID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_title(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -16808,6 +16950,43 @@ func (ec *executionContext) _Package_id(ctx context.Context, field graphql.Colle
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Package_openDiscoveryID(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Package",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OpenDiscoveryID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Package_applicationID(ctx context.Context, field graphql.CollectedField, obj *Package) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -21147,6 +21326,12 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
+		case "openDiscoveryID":
+			var err error
+			it.OpenDiscoveryID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalNString2string(ctx, v)
@@ -21585,6 +21770,12 @@ func (ec *executionContext) unmarshalInputBundleInput(ctx context.Context, obj i
 			if err != nil {
 				return it, err
 			}
+		case "openDiscoveryID":
+			var err error
+			it.OpenDiscoveryID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalNString2string(ctx, v)
@@ -21925,6 +22116,12 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
+		case "openDiscoveryID":
+			var err error
+			it.OpenDiscoveryID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalNString2string(ctx, v)
@@ -22262,6 +22459,12 @@ func (ec *executionContext) unmarshalInputPackageInput(ctx context.Context, obj 
 		case "ID":
 			var err error
 			it.ID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "openDiscoveryID":
+			var err error
+			it.OpenDiscoveryID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -22618,6 +22821,8 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "openDiscoveryID":
+			out.Values[i] = ec._APIDefinition_openDiscoveryID(ctx, field, obj)
 		case "title":
 			out.Values[i] = ec._APIDefinition_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -23239,6 +23444,8 @@ func (ec *executionContext) _Bundle(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "openDiscoveryID":
+			out.Values[i] = ec._Bundle_openDiscoveryID(ctx, field, obj)
 		case "title":
 			out.Values[i] = ec._Bundle_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -23659,6 +23866,8 @@ func (ec *executionContext) _EventDefinition(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "openDiscoveryID":
+			out.Values[i] = ec._EventDefinition_openDiscoveryID(ctx, field, obj)
 		case "title":
 			out.Values[i] = ec._EventDefinition_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -24560,6 +24769,11 @@ func (ec *executionContext) _Package(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = graphql.MarshalString("Package")
 		case "id":
 			out.Values[i] = ec._Package_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "openDiscoveryID":
+			out.Values[i] = ec._Package_openDiscoveryID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

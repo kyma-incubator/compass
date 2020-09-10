@@ -2,6 +2,7 @@ package graphql
 
 type Bundle struct {
 	ID                             string      `json:"id"`
+	OpenDiscoveryID                *string      `json:"openDiscoveryID"`
 	Title                          string      `json:"title"`
 	ShortDescription               string      `json:"shortDescription"`
 	Description                    *string     `json:"description"`

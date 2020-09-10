@@ -3,6 +3,7 @@ package mp_package
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -19,6 +20,8 @@ type PackageRepository interface {
 	Delete(ctx context.Context, tenant, id string) error
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Package, error)
+	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
+	GetByField(ctx context.Context, tenant,fieldName, fieldValue string) (*model.Package, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Package, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
 	AssociateBundle(ctx context.Context, id, bundleID string) error
@@ -134,20 +137,20 @@ func (s *service) Update(ctx context.Context, id string, in model.PackageInput) 
 	return nil
 }
 
-func (s *service) CreateOrUpdate(ctx context.Context, appID, id string, in model.PackageInput) error {
+func (s *service) CreateOrUpdate(ctx context.Context, appID, openDiscoveryID string, in model.PackageInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	exists, err := s.Exist(ctx, id)
+	exists, err := s.pkgRepo.ExistsByCondition(ctx, tnt, repo.Conditions{repo.NewEqualCondition("od_id", openDiscoveryID)})
 	if err != nil {
 		return err
 	}
 
 	if !exists {
 		if len(in.ID) == 0 {
-			in.ID = id
+			in.ID = s.uidService.Generate()
 		}
 		pkg := in.Package(appID, tnt)
 
@@ -156,18 +159,19 @@ func (s *service) CreateOrUpdate(ctx context.Context, appID, id string, in model
 			return err
 		}
 	} else {
-		pkg, err := s.Get(ctx, id)
+		pkg, err := s.pkgRepo.GetByField(ctx, tnt, "od_id", openDiscoveryID)
 		if err != nil {
 			return err
 		}
+		in.ID = pkg.ID
 		if pkg.ApplicationID != appID {
-			return fmt.Errorf("error create/update package with id %s: already defined in app with id %s and found duplicate in app with id %s", id, pkg.ApplicationID, appID)
+			return fmt.Errorf("error create/update package with id %s: already defined in app with id %s and found duplicate in app with id %s", pkg.ID, pkg.ApplicationID, appID)
 		}
 		pkg.SetFromUpdateInput(in)
 
 		err = s.pkgRepo.Update(ctx, pkg)
 		if err != nil {
-			return errors.Wrapf(err, "while updating Package with ID: [%s]", id)
+			return errors.Wrapf(err, "while updating Package with ID: [%s]", pkg.ID)
 		}
 	}
 
@@ -278,11 +282,11 @@ func (s *service) updateBundles(ctx context.Context, pkgID string, bundles []*mo
 
 func (s *service) createOrUpdateBundles(ctx context.Context, appID, pkgID string, bundles []*model.BundleInput) error {
 	for _, item := range bundles {
-		err := s.bundleSvc.CreateOrUpdate(ctx, appID, item.ID, *item)
+		id, err := s.bundleSvc.CreateOrUpdate(ctx, appID, item.OpenDiscoveryID, *item)
 		if err != nil {
 			return errors.Wrap(err, "while creating Bundle for Package")
 		}
-		err = s.AssociateBundle(ctx, pkgID, item.ID)
+		err = s.AssociateBundle(ctx, pkgID, id)
 		if err != nil {
 			return errors.Wrap(err, "while associating Bundle with Package")
 		}

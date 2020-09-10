@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -17,6 +18,8 @@ type APIRepository interface {
 	GetByID(ctx context.Context, tenantID, id string) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
+	GetByField(ctx context.Context, tenant,fieldName, fieldValue string) (*model.APIDefinition, error)
 	ListForBundle(ctx context.Context, tenantID, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	CreateMany(ctx context.Context, item []*model.APIDefinition) error
 	Create(ctx context.Context, item *model.APIDefinition) error

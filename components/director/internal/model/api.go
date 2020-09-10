@@ -8,6 +8,7 @@ import (
 
 type APIDefinition struct {
 	ID               string
+	OpenDiscoveryID  string
 	BundleID         string
 	Tenant           string
 	Title            string
@@ -50,6 +51,7 @@ type Timestamp time.Time
 
 type APIDefinitionInput struct {
 	ID               string
+	OpenDiscoveryID  string
 	Title            string
 	ShortDescription string
 	Description      *string
@@ -93,6 +95,7 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(bundleID string, tenant
 
 	return &APIDefinition{
 		ID:               a.ID,
+		OpenDiscoveryID:  a.OpenDiscoveryID,
 		BundleID:         bundleID,
 		Tenant:           tenant,
 		Title:            a.Title,

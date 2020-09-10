@@ -7,6 +7,7 @@ import (
 
 type Package struct {
 	ID               string
+	OpenDiscoveryID  string
 	TenantID         string
 	ApplicationID    string
 	Title            string
@@ -44,6 +45,7 @@ func (pkg *Package) SetFromUpdateInput(update PackageInput) {
 
 type PackageInput struct {
 	ID               string
+	OpenDiscoveryID  string
 	Title            string
 	ShortDescription string
 	Description      string
@@ -76,6 +78,7 @@ func (i *PackageInput) Package(applicationID, tenantID string) *Package {
 
 	return &Package{
 		ID:               i.ID,
+		OpenDiscoveryID:  i.OpenDiscoveryID,
 		TenantID:         tenantID,
 		ApplicationID:    applicationID,
 		Title:            i.Title,

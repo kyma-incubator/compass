@@ -18,7 +18,7 @@ import (
 type PackageService interface {
 	Create(ctx context.Context, applicationID string, in model.PackageInput) (string, error)
 	Update(ctx context.Context, id string, in model.PackageInput) error
-	CreateOrUpdate(ctx context.Context, appID, id string, in model.PackageInput) error
+	CreateOrUpdate(ctx context.Context, appID, openDiscoveryID string, in model.PackageInput) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Package, error)
 	AssociateBundle(ctx context.Context, id, bundleID string) error
@@ -34,7 +34,7 @@ type PackageConverter interface {
 type BundleService interface {
 	Create(ctx context.Context, applicationID string, in model.BundleInput) (string, error)
 	Update(ctx context.Context, id string, in model.BundleInput) error
-	CreateOrUpdate(ctx context.Context, appID, id string, in model.BundleInput) error
+	CreateOrUpdate(ctx context.Context, appID, openDiscoveryID string, in model.BundleInput) (string, error)
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 	ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.BundlePage, error)

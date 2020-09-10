@@ -7,6 +7,7 @@ ALTER TABLE packages
 
 CREATE TABLE packages (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    od_id VARCHAR(256) NOT NULL,
     tenant_id uuid NOT NULL,
     app_id uuid NOT NULL, /* if a package is returned by a system, only that system is expected iis expected to return this package, otherwise -> validation error */
     FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
@@ -31,6 +32,7 @@ ALTER TABLE bundles
     RENAME COLUMN name TO title;
 
 ALTER TABLE bundles
+    ADD COLUMN od_id VARCHAR(256),
     ADD COLUMN short_description VARCHAR(256) NOT NULL, /* the original description column should be NOT NULL per OD spec  */
     ADD COLUMN tags JSONB, /* consider how to store tags to be queriable */
     ADD COLUMN last_updated TIMESTAMP NOT NULL,
@@ -79,6 +81,7 @@ ADD CONSTRAINT api_definitions_package_id_fk
     ON DELETE CASCADE;
 
 ALTER TABLE api_definitions
+    ADD COLUMN od_id VARCHAR(256),
     ADD COLUMN short_description VARCHAR(256) NOT NULL,
     ADD COLUMN api_definitions JSONB NOT NULL, /* spec_data, spec_format and spec_type wiil be populated programatically baased on the first element here */
     ADD COLUMN tags JSONB,
@@ -108,6 +111,7 @@ ADD CONSTRAINT event_api_definitions_package_id_fk
     ON DELETE CASCADE;
 
 ALTER TABLE event_api_definitions
+    ADD COLUMN od_id VARCHAR(256),
     ADD COLUMN short_description VARCHAR(256) NOT NULL,
     ADD COLUMN event_definitions JSONB NOT NULL, /* spec_data, spec_format and spec_type wiil be populated programatically baased on the first element here */
     ADD COLUMN tags JSONB,

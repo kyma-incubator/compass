@@ -49,6 +49,7 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 
 	output := &Entity{
 		ID:                            in.ID,
+		OpenDiscoveryID:               in.OpenDiscoveryID,
 		TenantID:                      in.TenantID,
 		ApplicationID:                 in.ApplicationID,
 		Title:                         in.Title,
@@ -76,6 +77,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 
 	output := &model.Bundle{
 		ID:                             entity.ID,
+		OpenDiscoveryID:                entity.OpenDiscoveryID,
 		TenantID:                       entity.TenantID,
 		ApplicationID:                  entity.ApplicationID,
 		Title:                          entity.Title,
@@ -103,6 +105,7 @@ func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 
 	return &graphql.Bundle{
 		ID:                             in.ID,
+		OpenDiscoveryID:                &in.OpenDiscoveryID,
 		Title:                          in.Title,
 		ShortDescription:               in.ShortDescription,
 		Description:                    in.Description,
@@ -153,6 +156,7 @@ func (c *converter) InputFromGraphQL(in graphql.BundleInput) (model.BundleInput,
 
 	return model.BundleInput{
 		ID:                             c.strPrtToStr(in.ID),
+		OpenDiscoveryID:                c.strPrtToStr(in.OpenDiscoveryID),
 		Title:                          in.Title,
 		ShortDescription:               in.ShortDescription,
 		Description:                    in.Description,

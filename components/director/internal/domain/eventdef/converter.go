@@ -34,6 +34,7 @@ func (c *converter) ToGraphQL(in *model.EventDefinition) *graphql.EventDefinitio
 
 	return &graphql.EventDefinition{
 		ID:               in.ID,
+		OpenDiscoveryID:  &in.OpenDiscoveryID,
 		BundleID:         in.BundleID,
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
@@ -92,6 +93,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 
 	return &model.EventDefinitionInput{
 		ID:               c.strPrtToStr(in.ID),
+		OpenDiscoveryID:  c.strPrtToStr(in.OpenDiscoveryID),
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
 		Description:      in.Description,
@@ -151,6 +153,7 @@ func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) (*m
 func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 	return model.EventDefinition{
 		ID:               entity.ID,
+		OpenDiscoveryID:  entity.OpenDiscoveryID,
 		Tenant:           entity.TenantID,
 		BundleID:         entity.BundleID,
 		Title:            entity.Title,
@@ -175,6 +178,7 @@ func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
 	return Entity{
 		ID:               eventModel.ID,
+		OpenDiscoveryID:  eventModel.OpenDiscoveryID,
 		TenantID:         eventModel.Tenant,
 		BundleID:         eventModel.BundleID,
 		Title:            eventModel.Title,

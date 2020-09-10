@@ -26,7 +26,8 @@ type Pageable interface {
 
 type APIDefinitionInput struct {
 	// TODO: Validation if it is guid
-	ID *string `json:"ID"`
+	ID              *string `json:"ID"`
+	OpenDiscoveryID *string `json:"openDiscoveryID"`
 	// **Validation:** ASCII printable characters, max=100
 	Title            string `json:"title"`
 	ShortDescription string `json:"shortDescription"`
@@ -205,7 +206,8 @@ type BasicCredentialDataInput struct {
 
 type BundleInput struct {
 	// TODO: Validation if it is guid
-	ID *string `json:"ID"`
+	ID              *string `json:"ID"`
+	OpenDiscoveryID *string `json:"openDiscoveryID"`
 	// **Validation:** ASCII printable characters, max=100
 	Title string `json:"title"`
 	// **Validation:** max=2000
@@ -351,7 +353,8 @@ func (DocumentPage) IsPageable() {}
 
 type EventDefinitionInput struct {
 	// TODO: Validation if it is guid
-	ID *string `json:"ID"`
+	ID              *string `json:"ID"`
+	OpenDiscoveryID *string `json:"openDiscoveryID"`
 	// **Validation:** ASCII printable characters, max=100
 	Title            string `json:"title"`
 	ShortDescription string `json:"shortDescription"`
@@ -503,6 +506,7 @@ type OAuthCredentialDataInput struct {
 
 type Package struct {
 	ID               string      `json:"id"`
+	OpenDiscoveryID  string      `json:"openDiscoveryID"`
 	ApplicationID    string      `json:"applicationID"`
 	Title            string      `json:"title"`
 	ShortDescription string      `json:"shortDescription"`
@@ -524,7 +528,8 @@ type Package struct {
 
 type PackageInput struct {
 	// TODO: Validation if it is guid
-	ID *string `json:"ID"`
+	ID              *string `json:"ID"`
+	OpenDiscoveryID string  `json:"openDiscoveryID"`
 	// **Validation:** ASCII printable characters, max=100
 	Title string `json:"title"`
 	// **Validation:** max=2000

@@ -28,6 +28,7 @@ func (c *converter) ToEntity(in *model.Package) (*Entity, error) {
 
 	output := &Entity{
 		ID:               in.ID,
+		OpenDiscoveryID:  in.OpenDiscoveryID,
 		TenantID:         in.TenantID,
 		ApplicationID:    in.ApplicationID,
 		Title:            in.Title,
@@ -56,6 +57,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Package, error) {
 
 	output := &model.Package{
 		ID:               entity.ID,
+		OpenDiscoveryID:  entity.OpenDiscoveryID,
 		TenantID:         entity.TenantID,
 		ApplicationID:    entity.ApplicationID,
 		Title:            entity.Title,
@@ -84,6 +86,7 @@ func (c *converter) ToGraphQL(in *model.Package) (*graphql.Package, error) {
 
 	return &graphql.Package{
 		ID:               in.ID,
+		OpenDiscoveryID:  in.OpenDiscoveryID,
 		ApplicationID:    in.ApplicationID,
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
@@ -128,6 +131,7 @@ func (c *converter) InputFromGraphQL(in graphql.PackageInput) (model.PackageInpu
 
 	return model.PackageInput{
 		ID:               c.strPrtToStr(in.ID),
+		OpenDiscoveryID:  in.OpenDiscoveryID,
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
 		Description:      in.Description,

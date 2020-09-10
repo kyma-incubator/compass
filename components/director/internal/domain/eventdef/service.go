@@ -3,6 +3,7 @@ package eventdef
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -18,6 +19,8 @@ type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
+	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
+	GetByField(ctx context.Context, tenant,fieldName, fieldValue string) (*model.EventDefinition, error)
 	ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error

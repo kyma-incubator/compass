@@ -7,6 +7,7 @@ import (
 
 type EventDefinition struct {
 	ID               string
+	OpenDiscoveryID  string
 	Tenant           string
 	BundleID         string
 	Title            string
@@ -49,6 +50,7 @@ func (EventDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
 	ID               string
+	OpenDiscoveryID  string
 	Title            string
 	ShortDescription string
 	Description      *string
@@ -81,6 +83,7 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(bundleID string, te
 
 	return &EventDefinition{
 		ID:               e.ID,
+		OpenDiscoveryID:  e.OpenDiscoveryID,
 		BundleID:         bundleID,
 		Tenant:           tenant,
 		Title:            e.Title,

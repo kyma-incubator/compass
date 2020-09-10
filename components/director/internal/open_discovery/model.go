@@ -84,7 +84,7 @@ func (p *Package) ToPackageInput(baseURL string) (*model.PackageInput, error) {
 	}
 
 	return &model.PackageInput{
-		ID:               p.ID,
+		OpenDiscoveryID:  p.ID,
 		Title:            p.Title,
 		ShortDescription: p.ShortDescription,
 		Description:      p.Description,
@@ -115,7 +115,7 @@ type Bundle struct {
 
 func (b *Bundle) ToBundleInput() *model.BundleInput {
 	return &model.BundleInput{
-		ID:               b.ID,
+		OpenDiscoveryID:  b.ID,
 		Title:            b.Title,
 		ShortDescription: b.ShortDescription,
 		Description:      b.Description,
@@ -191,7 +191,7 @@ func (a *APIResource) ToAPIDefinitionInput(baseURL string) (*model.APIDefinition
 		return nil, fmt.Errorf("error rewriting urls in changelogEntrie for apiResource with ID %s", a.ID)
 	}
 	return &model.APIDefinitionInput{
-		ID:               a.ID,
+		OpenDiscoveryID:  a.ID,
 		Title:            a.Title,
 		ShortDescription: a.ShortDescription,
 		Description:      a.Description,
@@ -275,7 +275,7 @@ func (e *EventResource) ToEventDefinitionInput(baseURL string) (*model.EventDefi
 	}
 
 	return &model.EventDefinitionInput{
-		ID:               e.ID,
+		OpenDiscoveryID:  e.ID,
 		Title:            e.Title,
 		ShortDescription: e.ShortDescription,
 		Description:      e.Description,
@@ -338,7 +338,7 @@ func (docs Documents) ToModelInputs() ([]*model.PackageInput, []*BundleInputWith
 				return nil, nil, fmt.Errorf("bundle with id %s found in multiple documents", bundle.ID)
 			}
 			bundles[bundle.ID] = &BundleInputWithAssociatedPackages{
-				In: bundle.ToBundleInput(),
+				In:                 bundle.ToBundleInput(),
 				AssociatedPackages: bundle.AssociatedPackages,
 			}
 		}

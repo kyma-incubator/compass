@@ -18,7 +18,7 @@ var (
 	idColumn      = "id"
 	tenantColumn  = "tenant_id"
 	bundleColumn  = "bundle_id"
-	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "title", "short_description", "description", "group_name",
+	apiDefColumns = []string{idColumn, "od_id", tenantColumn, bundleColumn, "title", "short_description", "description", "group_name",
 		"event_definitions", "tags", "documentation", "changelog_entries", "logo", "image", "url", "release_status", "last_updated", "extensions",
 		"spec_data", "spec_format", "spec_type", "version", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 	idColumns        = []string{"id"}
@@ -62,8 +62,16 @@ func (r EventAPIDefCollection) Len() int {
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
+	return r.GetByField(ctx, tenantID, "id", id)
+}
+
+func (r *pgRepository) ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error) {
+	return r.existQuerier.Exists(ctx, tenant, conds)
+}
+
+func (r *pgRepository) GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
-	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
+	err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, fieldValue)}, repo.NoOrderBy, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting EventDefinition")
 	}
