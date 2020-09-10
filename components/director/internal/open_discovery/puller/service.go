@@ -73,23 +73,25 @@ func (s *Service) processAppPage(ctx context.Context, page []*model.Application)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error fetching webhooks for app with id: %s", app.ID))
 		}
+		documents := make(open_discovery.Documents, 0, 0)
 		for _, wh := range webhooks {
 			if wh.Type == model.WebhookTypeOpenDiscovery {
-				document, err := NewClient().FetchOpenDiscoveryDocument(wh.URL)
+				docs, err := NewClient().FetchOpenDiscoveryDocuments(wh.URL)
 				if err != nil {
 					return errors.Wrap(err, fmt.Sprintf("error fetching OD document for webhook with id %s for app with id %s", wh.ID, app.ID))
 				}
-				if err := s.processDocument(ctx, app.ID, document); err != nil {
-					return errors.Wrap(err, fmt.Sprintf("error processing OD document for webhook with id %s for app with id %s", wh.ID, app.ID))
-				}
+				documents = append(documents, docs...)
 			}
+		}
+		if err := s.processDocuments(ctx, app.ID, documents); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("error processing OD documents for app with id %s", app.ID))
 		}
 	}
 	return nil
 }
 
-func (s *Service) processDocument(ctx context.Context, appID string, document *open_discovery.Document) error {
-	packages, bundlesWithAssociatedPackages, err := document.ToModelInputs()
+func (s *Service) processDocuments(ctx context.Context, appID string, documents open_discovery.Documents) error {
+	packages, bundlesWithAssociatedPackages, err := documents.ToModelInputs()
 	if err != nil {
 		return err
 	}

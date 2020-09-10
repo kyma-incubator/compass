@@ -17,7 +17,7 @@ type WellKnownConfig struct {
 }
 
 type OpenDiscoveryV1Config struct {
-	DocumentConfig DocumentConfig `json:"document"`
+	DocumentConfigs []DocumentConfig `json:"documents"`
 }
 
 type DocumentConfig struct {
@@ -307,61 +307,78 @@ type Document struct {
 	EventResources       []*EventResource `json:"eventResources"`
 }
 
+type Documents []Document
+
 type BundleInputWithAssociatedPackages struct {
 	In                 *model.BundleInput
 	AssociatedPackages []string
 }
 
-func (d *Document) ToModelInputs() ([]*model.PackageInput, []*BundleInputWithAssociatedPackages, error) {
-	if d == nil {
+func (docs Documents) ToModelInputs() ([]*model.PackageInput, []*BundleInputWithAssociatedPackages, error) {
+	if docs == nil {
 		return nil, nil, nil
 	}
-	pkgs := make([]*model.PackageInput, 0, len(d.Packages))
-	for _, pkg := range d.Packages {
-		pkgInput, err := pkg.ToPackageInput(d.BaseURL)
-		if err != nil {
-			return nil, nil, err
-		}
-		pkgs = append(pkgs, pkgInput)
-	}
-	bundles := make(map[string]*model.BundleInput, len(d.Bundles))
-	for _, bundle := range d.Bundles {
-		bundles[bundle.ID] = bundle.ToBundleInput()
-	}
+	pkgs := make(map[string]*model.PackageInput, 0)
+	bundles := make(map[string]*BundleInputWithAssociatedPackages, 0)
 
-	for _, api := range d.APIResources {
-		bundle, ok := bundles[api.AssociatedBundle]
-		if !ok {
-			return nil, nil, fmt.Errorf("api resource with id: %s has unknown associated bundle with id: %s", api.ID, api.AssociatedBundle)
+	for _, d := range docs {
+		for _, pkg := range d.Packages {
+			if _, ok := pkgs[pkg.ID]; ok {
+				return nil, nil, fmt.Errorf("package with id %s found in multiple documents", pkg.ID)
+			}
+			pkgInput, err := pkg.ToPackageInput(d.BaseURL)
+			if err != nil {
+				return nil, nil, err
+			}
+			pkgs[pkg.ID] = pkgInput
 		}
-		apiInput, err := api.ToAPIDefinitionInput(d.BaseURL)
-		if err != nil {
-			return nil, nil, err
-		}
-		bundle.APIDefinitions = append(bundle.APIDefinitions, apiInput)
-	}
 
-	for _, event := range d.EventResources {
-		bundle, ok := bundles[event.AssociatedBundle]
-		if !ok {
-			return nil, nil, fmt.Errorf("event resource with id: %s has unknown associated bundle with id: %s", event.ID, event.AssociatedBundle)
+		for _, bundle := range d.Bundles {
+			if _, ok := bundles[bundle.ID]; ok {
+				return nil, nil, fmt.Errorf("bundle with id %s found in multiple documents", bundle.ID)
+			}
+			bundles[bundle.ID] = &BundleInputWithAssociatedPackages{
+				In: bundle.ToBundleInput(),
+				AssociatedPackages: bundle.AssociatedPackages,
+			}
 		}
-		eventInput, err := event.ToEventDefinitionInput(d.BaseURL)
-		if err != nil {
-			return nil, nil, err
+
+		for _, api := range d.APIResources {
+			bundle, ok := bundles[api.AssociatedBundle]
+			if !ok {
+				return nil, nil, fmt.Errorf("api resource with id: %s has unknown associated bundle with id: %s", api.ID, api.AssociatedBundle)
+			}
+			apiInput, err := api.ToAPIDefinitionInput(d.BaseURL)
+			if err != nil {
+				return nil, nil, err
+			}
+			bundle.In.APIDefinitions = append(bundle.In.APIDefinitions, apiInput)
 		}
-		bundle.EventDefinitions = append(bundle.EventDefinitions, eventInput)
+
+		for _, event := range d.EventResources {
+			bundle, ok := bundles[event.AssociatedBundle]
+			if !ok {
+				return nil, nil, fmt.Errorf("event resource with id: %s has unknown associated bundle with id: %s", event.ID, event.AssociatedBundle)
+			}
+			eventInput, err := event.ToEventDefinitionInput(d.BaseURL)
+			if err != nil {
+				return nil, nil, err
+			}
+			bundle.In.EventDefinitions = append(bundle.In.EventDefinitions, eventInput)
+		}
 	}
 
 	resultBundles := make([]*BundleInputWithAssociatedPackages, 0)
-	for _, bundle := range d.Bundles {
-		resultBundles = append(resultBundles, &BundleInputWithAssociatedPackages{
-			In:                 bundles[bundle.ID],
-			AssociatedPackages: bundle.AssociatedPackages,
-		})
+	for _, bundle := range bundles {
+		resultBundles = append(resultBundles, bundle)
 	}
 
-	return pkgs, resultBundles, nil
+	resultPackages := make([]*model.PackageInput, 0)
+	for _, pkg := range pkgs {
+		resultPackages = append(resultPackages, pkg)
+	}
+
+	return resultPackages, resultBundles, nil
 }
 
 func rewriteRelativeURLsInJson(j json.RawMessage, baseURL, jsonPath string) (json.RawMessage, error) {
