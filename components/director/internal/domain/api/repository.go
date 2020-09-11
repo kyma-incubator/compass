@@ -28,6 +28,7 @@ var (
 type APIDefinitionConverter interface {
 	FromEntity(entity Entity) model.APIDefinition
 	ToEntity(apiModel model.APIDefinition) Entity
+	ApiSpecFromEntity(specEnt EntitySpec) *model.APISpec
 }
 
 //go:generate mockery -name=SpecRepository -output=automock -outpkg=automock -case=underscore
@@ -97,13 +98,11 @@ func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cu
 			}
 			apiSpecs := make([]*model.APISpec, 0, 0)
 			for _, spec := range specs {
-				apiSpecs = append(apiSpecs, &model.APISpec{
-					Data:   spec.Data,
-					Format: spec.Format,
-					Type:   model.APISpecType(spec.Type),
-				})
+				apiSpecs = append(apiSpecs, spec.ToAPISpec())
 			}
 			m.Specs = append(m.Specs, apiSpecs...)
+		} else {
+			m.Specs = append(m.Specs, r.conv.ApiSpecFromEntity(apiDefEnt.EntitySpec))
 		}
 		items = append(items, &m)
 	}
@@ -130,13 +129,11 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 		}
 		apiSpecs := make([]*model.APISpec, 0, 0)
 		for _, spec := range specs {
-			apiSpecs = append(apiSpecs, &model.APISpec{
-				Data:   spec.Data,
-				Format: spec.Format,
-				Type:   model.APISpecType(spec.Type),
-			})
+			apiSpecs = append(apiSpecs, spec.ToAPISpec())
 		}
 		apiDefModel.Specs = append(apiDefModel.Specs, apiSpecs...)
+	} else {
+		apiDefModel.Specs = append(apiDefModel.Specs, r.conv.ApiSpecFromEntity(apiDefEntity.EntitySpec))
 	}
 
 	return &apiDefModel, nil

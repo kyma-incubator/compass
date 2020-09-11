@@ -218,7 +218,7 @@ func (s *service) RefetchSpec(ctx context.Context, id string) (*model.Spec, erro
 		return nil, err
 	}
 
-	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, id) // TODO:
+	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, id)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", id)
 	}

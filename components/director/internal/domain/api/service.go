@@ -161,7 +161,6 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 	return in.ID, nil
 }
 
-// TODO: Multiple Specs
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -182,6 +181,9 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
+		}
+		if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
+			return err
 		}
 	}
 

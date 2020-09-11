@@ -231,7 +231,7 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 	return c.version.ToEntity(*inVer)
 }
 
-func (c *converter) apiSpecToEntity(spec *model.APISpec) EntitySpec {
+func (c *converter) ApiSpecToEntity(spec *model.APISpec) EntitySpec {
 	var apiSpecEnt EntitySpec
 	if spec != nil {
 		apiSpecEnt = EntitySpec{
@@ -244,7 +244,7 @@ func (c *converter) apiSpecToEntity(spec *model.APISpec) EntitySpec {
 	return apiSpecEnt
 }
 
-func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.APISpec {
+func (c *converter) ApiSpecFromEntity(specEnt EntitySpec) *model.APISpec {
 	if !specEnt.SpecData.Valid && !specEnt.SpecFormat.Valid && !specEnt.SpecType.Valid {
 		return nil
 	}
