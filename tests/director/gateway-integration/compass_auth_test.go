@@ -47,7 +47,7 @@ func TestCompassAuth(t *testing.T) {
 	appByIntSys := registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NotEmpty(t, appByIntSys.ID)
 
-	t.Log("Add Bundle with API Spec to Application")
+	t.Log("Add Bundle with API Specs to Application")
 	apiInput := graphql.APIDefinitionInput{
 		Name:      "new-api-name",
 		TargetURL: "https://kyma-project.io",

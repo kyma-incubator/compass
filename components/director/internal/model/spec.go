@@ -14,12 +14,20 @@ type Spec struct {
 	Type              SpecType
 }
 
+func (s *Spec) ToAPISpec() *APISpec {
+	return &APISpec{
+		Data:   s.Data,
+		Format: s.Format,
+		Type:   APISpecType(s.Type), // TODO: Check
+	}
+}
+
 type SpecType string
 
 const (
-	SpecTypeOdata    APISpecType = "ODATA"
-	SpecTypeOpenAPI  APISpecType = "OPEN_API"
-	SpecTypeAsyncAPI APISpecType = "ASYNC_API"
+	SpecTypeOdata    SpecType = "ODATA"
+	SpecTypeOpenAPI  SpecType = "OPEN_API"
+	SpecTypeAsyncAPI SpecType = "ASYNC_API"
 )
 
 type SpecInput struct {

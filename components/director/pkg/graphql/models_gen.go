@@ -36,16 +36,16 @@ type APIDefinitionInput struct {
 	// **Validation:** valid URL, max=512
 	EntryPoint string `json:"entryPoint"`
 	// **Validation:** max=36
-	Group            *string       `json:"group"`
-	Spec             *APISpecInput `json:"spec"`
-	Version          *VersionInput `json:"version"`
-	APIDefinitions   JSON          `json:"apiDefinitions"`
-	Tags             *JSON         `json:"tags"`
-	Documentation    *string       `json:"documentation"`
-	ChangelogEntries *JSON         `json:"changelogEntries"`
-	Logo             *string       `json:"logo"`
-	Image            *string       `json:"image"`
-	URL              *string       `json:"url"`
+	Group            *string         `json:"group"`
+	Specs            []*APISpecInput `json:"specs"`
+	Version          *VersionInput   `json:"version"`
+	APIDefinitions   JSON            `json:"apiDefinitions"`
+	Tags             *JSON           `json:"tags"`
+	Documentation    *string         `json:"documentation"`
+	ChangelogEntries *JSON           `json:"changelogEntries"`
+	Logo             *string         `json:"logo"`
+	Image            *string         `json:"image"`
+	URL              *string         `json:"url"`
 	// should be ENUM
 	ReleaseStatus string `json:"releaseStatus"`
 	// should be ENUM

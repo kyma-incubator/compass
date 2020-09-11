@@ -15,8 +15,8 @@ import (
 type SpecService interface {
 	CreateForAPI(ctx context.Context, bundleID string, in model.SpecInput) (string, error)
 	CreateForEvent(ctx context.Context, bundleID string, in model.SpecInput) (string, error)
-	ListForAPI(ctx context.Context, apiID string, pageSize int, cursor string) (*model.SpecPage, error)
-	ListForEvent(ctx context.Context, eventID string, pageSize int, cursor string) (*model.SpecPage, error)
+	ListForAPI(ctx context.Context, apiID string) ([]*model.Spec, error)
+	ListForEvent(ctx context.Context, eventID string) ([]*model.Spec, error)
 	Update(ctx context.Context, id string, in model.SpecInput) error
 	Delete(ctx context.Context, id string) error
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
@@ -25,8 +25,8 @@ type SpecService interface {
 
 //go:generate mockery -name=SpecRepository -output=automock -outpkg=automock -case=underscore
 type SpecRepository interface {
-	ListForAPI(ctx context.Context, tenantID, apiID string, pageSize int, cursor string) (*model.SpecPage, error)
-	ListForEvent(ctx context.Context, tenantID, eventID string, pageSize int, cursor string) (*model.SpecPage, error)
+	ListForAPI(ctx context.Context, tenantID, apiID string) ([]*model.Spec, error)
+	ListForEvent(ctx context.Context, tenantID, eventID string) ([]*model.Spec, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenantID, id string) (*model.Spec, error)
 	CreateMany(ctx context.Context, item []*model.Spec) error
@@ -69,30 +69,22 @@ func NewService(repo SpecRepository, fetchRequestRepo FetchRequestRepository, ui
 	}
 }
 
-func (s *service) ListForAPI(ctx context.Context, apiID string, pageSize int, cursor string) (*model.SpecPage, error) {
+func (s *service) ListForAPI(ctx context.Context, apiID string) ([]*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if pageSize < 1 || pageSize > 100 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
-	}
-
-	return s.repo.ListForAPI(ctx, tnt, apiID, pageSize, cursor)
+	return s.repo.ListForAPI(ctx, tnt, apiID)
 }
 
-func (s *service) ListForEvent(ctx context.Context, eventID string, pageSize int, cursor string) (*model.SpecPage, error) {
+func (s *service) ListForEvent(ctx context.Context, eventID string) ([]*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if pageSize < 1 || pageSize > 100 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
-	}
-
-	return s.repo.ListForEvent(ctx, tnt, eventID, pageSize, cursor)
+	return s.repo.ListForEvent(ctx, tnt, eventID)
 }
 
 func (s *service) CreateForAPI(ctx context.Context, apiID string, in model.SpecInput) (string, error) {

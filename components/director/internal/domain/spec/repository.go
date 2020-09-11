@@ -27,24 +27,24 @@ type SpecConverter interface {
 }
 
 type pgRepository struct {
-	singleGetter    repo.SingleGetter
-	creator         repo.Creator
-	pageableQuerier repo.PageableQuerier
-	updater         repo.Updater
-	deleter         repo.Deleter
-	existQuerier    repo.ExistQuerier
-	conv            SpecConverter
+	singleGetter repo.SingleGetter
+	creator      repo.Creator
+	lister       repo.Lister
+	updater      repo.Updater
+	deleter      repo.Deleter
+	existQuerier repo.ExistQuerier
+	conv         SpecConverter
 }
 
 func NewRepository(conv SpecConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:    repo.NewSingleGetter(resource.Spec, specDefTable, tenantColumn, specColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.Spec, specDefTable, tenantColumn, specColumns),
-		creator:         repo.NewCreator(resource.Spec, specDefTable, specColumns),
-		updater:         repo.NewUpdater(resource.Spec, specDefTable, updatableColumns, tenantColumn, idColumns),
-		deleter:         repo.NewDeleter(resource.Spec, specDefTable, tenantColumn),
-		existQuerier:    repo.NewExistQuerier(resource.Spec, specDefTable, tenantColumn),
-		conv:            conv,
+		singleGetter: repo.NewSingleGetter(resource.Spec, specDefTable, tenantColumn, specColumns),
+		lister:       repo.NewLister(resource.Spec, specDefTable, tenantColumn, specColumns),
+		creator:      repo.NewCreator(resource.Spec, specDefTable, specColumns),
+		updater:      repo.NewUpdater(resource.Spec, specDefTable, updatableColumns, tenantColumn, idColumns),
+		deleter:      repo.NewDeleter(resource.Spec, specDefTable, tenantColumn),
+		existQuerier: repo.NewExistQuerier(resource.Spec, specDefTable, tenantColumn),
+		conv:         conv,
 	}
 }
 
@@ -54,23 +54,23 @@ func (r SpecCollection) Len() int {
 	return len(r)
 }
 
-func (r *pgRepository) ListForAPI(ctx context.Context, tenantID string, apiID string, pageSize int, cursor string) (*model.SpecPage, error) {
+func (r *pgRepository) ListForAPI(ctx context.Context, tenantID string, apiID string) ([]*model.Spec, error) {
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("api_def_id", apiID),
 	}
-	return r.list(ctx, tenantID, pageSize, cursor, conditions)
+	return r.list(ctx, tenantID, conditions)
 }
 
-func (r *pgRepository) ListForEvent(ctx context.Context, tenantID string, eventID string, pageSize int, cursor string) (*model.SpecPage, error) {
+func (r *pgRepository) ListForEvent(ctx context.Context, tenantID string, eventID string) ([]*model.Spec, error) {
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("event_def_id", eventID),
 	}
-	return r.list(ctx, tenantID, pageSize, cursor, conditions)
+	return r.list(ctx, tenantID, conditions)
 }
 
-func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.SpecPage, error) {
+func (r *pgRepository) list(ctx context.Context, tenant string, conditions repo.Conditions) ([]*model.Spec, error) {
 	var specCollection SpecCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &specCollection, conditions...)
+	err := r.lister.List(ctx, tenant, &specCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +83,7 @@ func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cu
 		items = append(items, &m)
 	}
 
-	return &model.SpecPage{
-		Data:       items,
-		TotalCount: totalCount,
-		PageInfo:   page,
-	}, nil
+	return items, nil
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.Spec, error) {

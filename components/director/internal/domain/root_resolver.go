@@ -109,9 +109,9 @@ func NewRootResolver(
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
-	apiRepo := api.NewRepository(apiConverter)
-	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	specRepo := spec.NewRepository(specConverter)
+	apiRepo := api.NewRepository(apiConverter, specRepo)
+	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
@@ -344,8 +344,8 @@ func (r *mutationResolver) UpdateAPIDefinition(ctx context.Context, id string, i
 func (r *mutationResolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
 	return r.api.DeleteAPIDefinition(ctx, id)
 }
-func (r *mutationResolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
-	return r.api.RefetchAPISpec(ctx, apiID)
+func (r *mutationResolver) RefetchAPISpecs(ctx context.Context, apiID string) ([]*graphql.APISpec, error) {
+	return r.api.RefetchAPISpecs(ctx, apiID)
 }
 
 func (r *mutationResolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
@@ -527,7 +527,14 @@ func (r *runtimeResolver) EventingConfiguration(ctx context.Context, obj *graphq
 type apiSpecResolver struct{ *RootResolver }
 
 func (r *apiSpecResolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
-	return r.api.FetchRequest(ctx, obj)
+	frs, err := r.api.FetchRequests(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+	if len(frs) == 0 {
+		return nil, nil
+	}
+	return frs[0], nil
 }
 
 type documentResolver struct{ *RootResolver }

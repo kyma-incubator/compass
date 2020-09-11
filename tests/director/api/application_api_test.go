@@ -368,7 +368,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// TODO later
 	})
 
-	t.Run("refetch Event Spec", func(t *testing.T) {
+	t.Run("refetch Event Specs", func(t *testing.T) {
 		// TODO later
 	})
 }

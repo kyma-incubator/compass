@@ -61,7 +61,7 @@ func TestService_HandleAPISpec(t *testing.T) {
 		Mode: model.FetchModeSingle,
 		Status: &model.FetchRequestStatus{
 			Timestamp: timestamp,
-			Message:   str.Ptr("While fetching API Spec status code: 500"),
+			Message:   str.Ptr("While fetching API Specs status code: 500"),
 			Condition: model.FetchRequestStatusConditionFailed},
 	}
 
@@ -138,7 +138,7 @@ func TestService_HandleAPISpec(t *testing.T) {
 				return repo
 			},
 			InputFr:        modelInput,
-			ExpectedLog:    str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", http.StatusInternalServerError)),
+			ExpectedLog:    str.Ptr(fmt.Sprintf("While fetching API Specs status code: %d", http.StatusInternalServerError)),
 			ExpectedOutput: nil,
 		}, {
 			Name: "Nil when failed to update status",

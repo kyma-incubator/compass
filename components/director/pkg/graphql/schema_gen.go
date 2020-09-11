@@ -73,7 +73,7 @@ type ComplexityRoot struct {
 		OpenDiscoveryID  func(childComplexity int) int
 		ReleaseStatus    func(childComplexity int) int
 		ShortDescription func(childComplexity int) int
-		Spec             func(childComplexity int) int
+		Specs            func(childComplexity int) int
 		Tags             func(childComplexity int) int
 		Title            func(childComplexity int) int
 		URL              func(childComplexity int) int
@@ -351,7 +351,7 @@ type ComplexityRoot struct {
 		DeleteSystemAuthForIntegrationSystem          func(childComplexity int, authID string) int
 		DeleteSystemAuthForRuntime                    func(childComplexity int, authID string) int
 		DeleteWebhook                                 func(childComplexity int, webhookID string) int
-		RefetchAPISpec                                func(childComplexity int, apiID string) int
+		RefetchAPISpecs                               func(childComplexity int, apiID string) int
 		RefetchEventDefinitionSpec                    func(childComplexity int, eventID string) int
 		RegisterApplication                           func(childComplexity int, in ApplicationRegisterInput) int
 		RegisterApplicationFromTemplate               func(childComplexity int, in ApplicationFromTemplateInput) int
@@ -581,7 +581,7 @@ type MutationResolver interface {
 	AddAPIDefinitionToBundle(ctx context.Context, bundleID string, in APIDefinitionInput) (*APIDefinition, error)
 	UpdateAPIDefinition(ctx context.Context, id string, in APIDefinitionInput) (*APIDefinition, error)
 	DeleteAPIDefinition(ctx context.Context, id string) (*APIDefinition, error)
-	RefetchAPISpec(ctx context.Context, apiID string) (*APISpec, error)
+	RefetchAPISpecs(ctx context.Context, apiID string) ([]*APISpec, error)
 	RequestOneTimeTokenForRuntime(ctx context.Context, id string) (*OneTimeTokenForRuntime, error)
 	RequestOneTimeTokenForApplication(ctx context.Context, id string) (*OneTimeTokenForApplication, error)
 	RequestClientCredentialsForRuntime(ctx context.Context, id string) (*SystemAuth, error)
@@ -785,12 +785,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.APIDefinition.ShortDescription(childComplexity), true
 
-	case "APIDefinition.spec":
-		if e.complexity.APIDefinition.Spec == nil {
+	case "APIDefinition.specs":
+		if e.complexity.APIDefinition.Specs == nil {
 			break
 		}
 
-		return e.complexity.APIDefinition.Spec(childComplexity), true
+		return e.complexity.APIDefinition.Specs(childComplexity), true
 
 	case "APIDefinition.tags":
 		if e.complexity.APIDefinition.Tags == nil {
@@ -2254,17 +2254,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteWebhook(childComplexity, args["webhookID"].(string)), true
 
-	case "Mutation.refetchAPISpec":
-		if e.complexity.Mutation.RefetchAPISpec == nil {
+	case "Mutation.refetchAPISpecs":
+		if e.complexity.Mutation.RefetchAPISpecs == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_refetchAPISpec_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_refetchAPISpecs_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RefetchAPISpec(childComplexity, args["apiID"].(string)), true
+		return e.complexity.Mutation.RefetchAPISpecs(childComplexity, args["apiID"].(string)), true
 
 	case "Mutation.refetchEventDefinitionSpec":
 		if e.complexity.Mutation.RefetchEventDefinitionSpec == nil {
@@ -3543,7 +3543,7 @@ input APIDefinitionInput {
 	**Validation:** max=36
 	"""
 	group: String
-	spec: APISpecInput
+	specs: [APISpecInput!]
 	version: VersionInput
 	apiDefinitions: JSON!
 	tags: JSON
@@ -4021,7 +4021,7 @@ type APIDefinition {
 	title: String!
 	shortDescription: String!
 	description: String
-	spec: APISpec
+	specs: [APISpec!]
 	entryPoint: String!
 	"""
 	group allows you to find the same API but in different version
@@ -4648,11 +4648,7 @@ type Mutation {
 	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
 	"""
 	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
-	"""
-	**Examples**
-	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
-	"""
-	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
+	refetchAPISpecs(apiID: ID!): [APISpec!] @hasScopes(path: "graphql.mutation.refetchAPISpecs")
 	requestOneTimeTokenForRuntime(id: ID!): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
 	requestOneTimeTokenForApplication(id: ID!): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
 	requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")
@@ -5553,7 +5549,7 @@ func (ec *executionContext) field_Mutation_deleteWebhook_args(ctx context.Contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_refetchAPISpec_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_refetchAPISpecs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -6738,10 +6734,10 @@ func (ec *executionContext) _APIDefinition_openDiscoveryID(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_title(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -6852,7 +6848,7 @@ func (ec *executionContext) _APIDefinition_description(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _APIDefinition_spec(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _APIDefinition_specs(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -6871,7 +6867,7 @@ func (ec *executionContext) _APIDefinition_spec(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Spec, nil
+		return obj.Specs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6880,10 +6876,10 @@ func (ec *executionContext) _APIDefinition_spec(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*APISpec)
+	res := resTmp.([]*APISpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
+	return ec.marshalOAPISpec2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_entryPoint(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -9301,10 +9297,10 @@ func (ec *executionContext) _Bundle_openDiscoveryID(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Bundle_title(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
@@ -11051,10 +11047,10 @@ func (ec *executionContext) _EventDefinition_openDiscoveryID(ctx context.Context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_title(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -14060,7 +14056,7 @@ func (ec *executionContext) _Mutation_deleteAPIDefinition(ctx context.Context, f
 	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_refetchAPISpecs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14077,7 +14073,7 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_refetchAPISpec_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_refetchAPISpecs_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -14087,10 +14083,10 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().RefetchAPISpec(rctx, args["apiID"].(string))
+			return ec.resolvers.Mutation().RefetchAPISpecs(rctx, args["apiID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.refetchAPISpec")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.refetchAPISpecs")
 			if err != nil {
 				return nil, err
 			}
@@ -14101,27 +14097,22 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*APISpec); ok {
+		if data, ok := tmp.([]*APISpec); ok {
 			return data, nil
-		} else if tmp == nil {
-			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.APISpec`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.APISpec`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(*APISpec)
+	res := resTmp.([]*APISpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
+	return ec.marshalOAPISpec2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestOneTimeTokenForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -21362,9 +21353,9 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "spec":
+		case "specs":
 			var err error
-			it.Spec, err = ec.unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx, v)
+			it.Specs, err = ec.unmarshalOAPISpecInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -22835,8 +22826,8 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 			}
 		case "description":
 			out.Values[i] = ec._APIDefinition_description(ctx, field, obj)
-		case "spec":
-			out.Values[i] = ec._APIDefinition_spec(ctx, field, obj)
+		case "specs":
+			out.Values[i] = ec._APIDefinition_specs(ctx, field, obj)
 		case "entryPoint":
 			out.Values[i] = ec._APIDefinition_entryPoint(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -24414,11 +24405,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "refetchAPISpec":
-			out.Values[i] = ec._Mutation_refetchAPISpec(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "refetchAPISpecs":
+			out.Values[i] = ec._Mutation_refetchAPISpecs(ctx, field)
 		case "requestOneTimeTokenForRuntime":
 			out.Values[i] = ec._Mutation_requestOneTimeTokenForRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -25902,6 +25890,18 @@ func (ec *executionContext) marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubator�
 		return graphql.Null
 	}
 	return ec._APISpec(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx context.Context, v interface{}) (APISpecInput, error) {
+	return ec.unmarshalInputAPISpecInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx context.Context, v interface{}) (*APISpecInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecType(ctx context.Context, v interface{}) (APISpecType, error) {
@@ -27545,27 +27545,64 @@ func (ec *executionContext) marshalOAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑi
 	return ec._APIDefinitionPage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v APISpec) graphql.Marshaler {
-	return ec._APISpec(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v *APISpec) graphql.Marshaler {
+func (ec *executionContext) marshalOAPISpec2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v []*APISpec) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._APISpec(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx context.Context, v interface{}) (APISpecInput, error) {
-	return ec.unmarshalInputAPISpecInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx context.Context, v interface{}) (*APISpecInput, error) {
-	if v == nil {
-		return nil, nil
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
 	}
-	res, err := ec.unmarshalOAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx, v)
-	return &res, err
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOAPISpecInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx context.Context, v interface{}) ([]*APISpecInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*APISpecInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) marshalOApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v Application) graphql.Marshaler {

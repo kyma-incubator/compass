@@ -1,14 +1,14 @@
 package graphql
 
 type APIDefinition struct {
-	ID               string   `json:"id"`
-	OpenDiscoveryID  *string  `json:"openDiscoveryID"`
-	BundleID         string   `json:"bundleID"`
-	Title            string   `json:"title"`
-	ShortDescription string   `json:"shortDescription"`
-	Description      *string  `json:"description"`
-	Spec             *APISpec `json:"spec"`
-	EntryPoint       string   `json:"entryPoint"`
+	ID               string     `json:"id"`
+	OpenDiscoveryID  *string    `json:"openDiscoveryID"`
+	BundleID         string     `json:"bundleID"`
+	Title            string     `json:"title"`
+	ShortDescription string     `json:"shortDescription"`
+	Description      *string    `json:"description"`
+	Specs            []*APISpec `json:"specs"`
+	EntryPoint       string     `json:"entryPoint"`
 	//  group allows you to find the same API but in different version
 	Group            *string   `json:"group"`
 	Version          *Version  `json:"version"`

@@ -61,8 +61,8 @@ func (s *service) fetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchReq
 
 	resp, err := s.client.Get(fr.URL)
 	if err != nil {
-		s.logger.Errorf("While fetching API Spec: %s", err.Error())
-		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec: %s", err.Error())))
+		s.logger.Errorf("While fetching API Specs: %s", err.Error())
+		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Specs: %s", err.Error())))
 	}
 
 	defer func() {
@@ -75,14 +75,14 @@ func (s *service) fetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchReq
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		s.logger.Errorf("While fetching API Spec status code: %d", resp.StatusCode)
-		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)))
+		s.logger.Errorf("While fetching API Specs status code: %d", resp.StatusCode)
+		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Specs status code: %d", resp.StatusCode)))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		s.logger.Errorf("While reading API Spec: %s", err.Error())
-		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading API Spec: %s", err.Error())))
+		s.logger.Errorf("While reading API Specs: %s", err.Error())
+		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading API Specs: %s", err.Error())))
 	}
 
 	spec := string(body)

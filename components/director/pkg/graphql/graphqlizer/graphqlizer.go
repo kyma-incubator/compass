@@ -244,8 +244,8 @@ func (g *Graphqlizer) APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (st
 		{{- if .Group }}
 		group: "{{.Group}}",
 		{{- end }}
-		{{- if .Spec }}
-		spec: {{- ApiSpecInputToGQL .Spec }},
+		{{- if .Specs }}
+		spec: {{- ApiSpecInputToGQL .Specs }},
 		{{- end }}
 		{{- if .Version }}
 		version: {{- VersionInputToGQL .Version }},
@@ -259,8 +259,8 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
-		{{- if .Spec }}
-		spec: {{ EventAPISpecInputToGQL .Spec }},
+		{{- if .Specs }}
+		spec: {{ EventAPISpecInputToGQL .Specs }},
 		{{- end }}
 		{{- if .Group }}
 		group: "{{.Group}}", 

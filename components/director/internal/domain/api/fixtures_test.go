@@ -55,7 +55,7 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 		BundleID:    bundleID,
 		Title:       placeholder,
 		Description: str.Ptr("desc_" + placeholder),
-		Spec:        spec,
+		Specs:       spec,
 		EntryPoint:  fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
@@ -97,7 +97,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 		BundleID:    bundleID,
 		Title:       placeholder,
 		Description: str.Ptr("desc_" + placeholder),
-		Spec:        spec,
+		Specs:       spec,
 		EntryPoint:  fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
@@ -130,7 +130,7 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 		Description: &description,
 		EntryPoint:  "https://test-url.com",
 		Group:       &group,
-		Spec:        spec,
+		Specs:       spec,
 		Version:     v,
 	}
 }
@@ -286,7 +286,7 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 
 func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, api.Title, api.Description, api.Group,
-		api.EntryPoint, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
+		api.EntryPoint, api.Specs.Data, string(api.Specs.Format), string(api.Specs.Type),
 		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
 		api.Version.ForRemoval}
 }

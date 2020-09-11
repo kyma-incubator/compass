@@ -164,7 +164,7 @@ input APIDefinitionInput {
 	**Validation:** max=36
 	"""
 	group: String
-	spec: APISpecInput
+	specs: [APISpecInput!]
 	version: VersionInput
 	apiDefinitions: JSON!
 	tags: JSON
@@ -642,7 +642,7 @@ type APIDefinition {
 	title: String!
 	shortDescription: String!
 	description: String
-	spec: APISpec
+	specs: [APISpec!]
 	entryPoint: String!
 	"""
 	group allows you to find the same API but in different version
@@ -1269,11 +1269,7 @@ type Mutation {
 	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
 	"""
 	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
-	"""
-	**Examples**
-	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
-	"""
-	refetchAPISpec(apiID: ID!): APISpec! @hasScopes(path: "graphql.mutation.refetchAPISpec")
+	refetchAPISpecs(apiID: ID!): [APISpec!] @hasScopes(path: "graphql.mutation.refetchAPISpecs")
 	requestOneTimeTokenForRuntime(id: ID!): OneTimeTokenForRuntime! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForRuntime")
 	requestOneTimeTokenForApplication(id: ID!): OneTimeTokenForApplication! @hasScopes(path: "graphql.mutation.requestOneTimeTokenForApplication")
 	requestClientCredentialsForRuntime(id: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.requestClientCredentialsForRuntime")

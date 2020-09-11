@@ -717,7 +717,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			},
 			EventApiSpec:   nil,
 			ExpectedResult: nil,
-			ExpectedErr:    errors.New("Event Spec cannot be empty"),
+			ExpectedErr:    errors.New("Event Specs cannot be empty"),
 		},
 	}
 

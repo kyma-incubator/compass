@@ -77,7 +77,7 @@ func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition) []*graphql.
 }
 
 // SpecToGraphQL provides a mock function with given fields: definitionID, in
-func (_m *APIConverter) SpecToGraphQL(definitionID string, in *model.APISpec) *graphql.APISpec {
+func (_m *APIConverter) SpecsToGraphQL(definitionID string, in []*model.APISpec) []*graphql.APISpec {
 	ret := _m.Called(definitionID, in)
 
 	var r0 *graphql.APISpec

@@ -200,7 +200,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
-		return nil, apperrors.NewInternalError("Event Spec cannot be empty")
+		return nil, apperrors.NewInternalError("Event Specs cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()

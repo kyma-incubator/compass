@@ -580,7 +580,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			resolver := api.NewResolver(transact, svc, nil, nil, nil, conv, nil)
 
 			// when
-			result, err := resolver.RefetchAPISpec(context.TODO(), apiID)
+			result, err := resolver.RefetchAPISpecs(context.TODO(), apiID)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPISpec, result)
@@ -716,7 +716,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter)
 
 			// when
-			result, err := resolver.FetchRequest(context.TODO(), &graphql.APISpec{DefinitionID: id})
+			result, err := resolver.FetchRequests(context.TODO(), &graphql.APISpec{DefinitionID: id})
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)

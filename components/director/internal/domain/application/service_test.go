@@ -34,7 +34,7 @@ func TestService_Create(t *testing.T) {
 	APIDefinitions := []*model.APIDefinitionInput{
 		{
 			Title: "foo",
-			Spec:  &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
+			Specs: &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
 		}, {Title: "bar"},
 	}
 	EventDefinitions := []*model.EventDefinitionInput{

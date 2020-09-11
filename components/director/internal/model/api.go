@@ -14,7 +14,7 @@ type APIDefinition struct {
 	Title            string
 	ShortDescription string
 	Description      *string
-	Spec             *APISpec
+	Specs            []*APISpec
 	EntryPoint       string
 	//  group allows you to find the same API but in different version
 	Group            *string
@@ -57,7 +57,7 @@ type APIDefinitionInput struct {
 	Description      *string
 	EntryPoint       string
 	Group            *string
-	Spec             *APISpecInput
+	Specs            []*APISpecInput
 	Version          *VersionInput
 	APIDefinitions   string
 	Tags             *string
@@ -93,6 +93,11 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(bundleID string, tenant
 		return nil
 	}
 
+	specs := make([]*APISpec, 0, 0)
+	for _, spec := range a.Specs {
+		specs = append(specs, spec.ToAPISpec())
+	}
+
 	return &APIDefinition{
 		ID:               a.ID,
 		OpenDiscoveryID:  a.OpenDiscoveryID,
@@ -101,7 +106,7 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(bundleID string, tenant
 		Title:            a.Title,
 		ShortDescription: a.ShortDescription,
 		Description:      a.Description,
-		Spec:             a.Spec.ToAPISpec(),
+		Specs:            specs,
 		EntryPoint:       a.EntryPoint,
 		Group:            a.Group,
 		Version:          a.Version.ToVersion(),
@@ -137,9 +142,9 @@ func (a *APISpecInput) ToSpec() *SpecInput {
 	}
 
 	return &SpecInput{
-		Data:   a.Data,
-		Format: a.Format,
-		Type:   SpecType(a.Type),
+		Data:         a.Data,
+		Format:       a.Format,
+		Type:         SpecType(a.Type),
 		FetchRequest: a.FetchRequest,
 	}
 }

@@ -145,7 +145,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Expected: modelAPIDefinitionInput,
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
-				conv.On("InputFromGraphQL", gqlAPIDefinitionInput.Spec.FetchRequest).Return(modelAPIDefinitionInput.Spec.FetchRequest, nil).Once()
+				conv.On("InputFromGraphQL", gqlAPIDefinitionInput.Spec.FetchRequest).Return(modelAPIDefinitionInput.Specs.FetchRequest, nil).Once()
 				return conv
 			},
 			VersionConverter: func() *automock.VersionConverter {
@@ -223,7 +223,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			FetchRequestConverter: func() *automock.FetchRequestConverter {
 				conv := &automock.FetchRequestConverter{}
 				for i, apiDef := range gqlAPIDefinitionInputs {
-					conv.On("InputFromGraphQL", apiDef.Spec.FetchRequest).Return(modelAPIDefinitionInputs[i].Spec.FetchRequest, nil).Once()
+					conv.On("InputFromGraphQL", apiDef.Spec.FetchRequest).Return(modelAPIDefinitionInputs[i].Specs.FetchRequest, nil).Once()
 				}
 
 				return conv
@@ -296,13 +296,13 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	convertedInputModel, err := converter.InputFromGraphQL(&graphql.APIDefinitionInput{Spec: &graphql.APISpecInput{}})
 	require.NoError(t, err)
 	require.NotNil(t, convertedInputModel)
-	require.NotNil(t, convertedInputModel.Spec)
-	require.Nil(t, convertedInputModel.Spec.Data)
+	require.NotNil(t, convertedInputModel.Specs)
+	require.Nil(t, convertedInputModel.Specs.Data)
 	convertedAPIDef := convertedInputModel.ToAPIDefinitionWithinBundle("id", "app_id", tenantID)
 	require.NotNil(t, convertedAPIDef)
 	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
 	require.NotNil(t, convertedGraphqlAPIDef)
-	assert.Nil(t, convertedGraphqlAPIDef.Spec.Data)
+	assert.Nil(t, convertedGraphqlAPIDef.Specs.Data)
 }
 
 func TestEntityConverter_ToEntity(t *testing.T) {

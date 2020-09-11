@@ -13,7 +13,6 @@ func (i APIDefinitionInput) Validate() error {
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		validation.Field(&i.EntryPoint, validation.Required, inputvalidation.IsURL, validation.RuneLength(1, longStringLengthLimit)),
 		validation.Field(&i.Group, validation.RuneLength(0, groupLengthLimit)),
-		validation.Field(&i.Spec, validation.NilOrNotEmpty),
 		validation.Field(&i.Version, validation.NilOrNotEmpty),
 	)
 }

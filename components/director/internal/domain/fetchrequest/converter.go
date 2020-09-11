@@ -27,6 +27,23 @@ func NewConverter(authConverter AuthConverter) *converter {
 	return &converter{authConverter: authConverter}
 }
 
+func (c *converter) MultipleToGraphQL(ins []*model.FetchRequest) ([]*graphql.FetchRequest, error) {
+	if ins == nil {
+		return nil, nil
+	}
+
+	frs := make([]*graphql.FetchRequest, 0, 0)
+
+	for _, in := range ins {
+		fr, err := c.ToGraphQL(in)
+		if err != nil {
+			return nil, err
+		}
+		frs = append(frs, fr)
+	}
+	return frs, nil
+}
+
 func (c *converter) ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error) {
 	if in == nil {
 		return nil, nil

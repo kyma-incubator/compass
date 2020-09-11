@@ -41,7 +41,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
 		Description:      in.Description,
-		Spec:             c.SpecToGraphQL(in.ID, in.Spec),
+		Specs:            c.SpecsToGraphQL(in.ID, in.Specs),
 		EntryPoint:       in.EntryPoint,
 		Group:            in.Group,
 		Version:          c.version.ToGraphQL(in.Version),
@@ -91,7 +91,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 		return nil, nil
 	}
 
-	spec, err := c.apiSpecInputFromGraphQL(in.Spec)
+	specs, err := c.apiSpecsInputFromGraphQL(in.Specs)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 		Description:      in.Description,
 		EntryPoint:       in.EntryPoint,
 		Group:            in.Group,
-		Spec:             spec,
+		Specs:            specs,
 		Version:          c.version.InputFromGraphQL(in.Version),
 		APIDefinitions:   string(in.APIDefinitions),
 		Documentation:    in.Documentation,
@@ -121,41 +121,48 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	}, nil
 }
 
-func (c *converter) SpecToGraphQL(definitionID string, in *model.APISpec) *graphql.APISpec {
-	if in == nil {
+func (c *converter) SpecsToGraphQL(definitionID string, ins []*model.APISpec) []*graphql.APISpec {
+	if ins == nil {
 		return nil
 	}
+	result := make([]*graphql.APISpec, 0, 0)
 
-	var data *graphql.CLOB
-	if in.Data != nil {
-		tmp := graphql.CLOB(*in.Data)
-		data = &tmp
-	}
+	for _, in := range ins {
+		var data *graphql.CLOB
+		if in.Data != nil {
+			tmp := graphql.CLOB(*in.Data)
+			data = &tmp
+		}
 
-	return &graphql.APISpec{
-		Data:         data,
-		Type:         graphql.APISpecType(in.Type),
-		Format:       graphql.SpecFormat(in.Format),
-		DefinitionID: definitionID,
+		result = append(result, &graphql.APISpec{
+			Data:         data,
+			Type:         graphql.APISpecType(in.Type),
+			Format:       graphql.SpecFormat(in.Format),
+			DefinitionID: definitionID,
+		})
 	}
+	return result
 }
 
-func (c *converter) apiSpecInputFromGraphQL(in *graphql.APISpecInput) (*model.APISpecInput, error) {
-	if in == nil {
+func (c *converter) apiSpecsInputFromGraphQL(ins []*graphql.APISpecInput) ([]*model.APISpecInput, error) {
+	if ins == nil {
 		return nil, nil
 	}
+	result := make([]*model.APISpecInput, 0, 0)
 
-	fetchReq, err := c.fr.InputFromGraphQL(in.FetchRequest)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting FetchRequest from GraphQL input")
+	for _, in := range ins {
+		fetchReq, err := c.fr.InputFromGraphQL(in.FetchRequest)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting FetchRequest from GraphQL input")
+		}
+		result = append(result, &model.APISpecInput{
+			Data:         (*string)(in.Data),
+			Type:         model.APISpecType(in.Type),
+			Format:       model.SpecFormat(in.Format),
+			FetchRequest: fetchReq,
+		})
 	}
-
-	return &model.APISpecInput{
-		Data:         (*string)(in.Data),
-		Type:         model.APISpecType(in.Type),
-		Format:       model.SpecFormat(in.Format),
-		FetchRequest: fetchReq,
-	}, nil
+	return result, nil
 }
 
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
@@ -170,7 +177,6 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		ShortDescription: entity.ShortDescription,
 		Description:      repo.StringPtrFromNullableString(entity.Description),
 		Group:            repo.StringPtrFromNullableString(entity.Group),
-		Spec:             c.apiSpecFromEntity(entity.EntitySpec),
 		Version:          c.version.FromEntity(entity.Version),
 		APIDefinitions:   entity.APIDefinitions,
 		Documentation:    repo.StringPtrFromNullableString(entity.Documentation),
@@ -213,8 +219,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 		LastUpdated:      apiModel.LastUpdated,
 		Extensions:       repo.NewNullableString(apiModel.Extensions),
 
-		EntitySpec: c.apiSpecToEntity(apiModel.Spec),
-		Version:    c.convertVersionToEntity(apiModel.Version),
+		Version: c.convertVersionToEntity(apiModel.Version),
 	}
 }
 

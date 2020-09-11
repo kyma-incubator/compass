@@ -38,8 +38,7 @@ type FetchRequestRepository interface {
 type SpecService interface {
 	CreateForAPI(ctx context.Context, bundleID string, in model.SpecInput) (string, error)
 	CreateForEvent(ctx context.Context, bundleID string, in model.SpecInput) (string, error)
-	ListForAPI(ctx context.Context, apiID string, pageSize int, cursor string) (*model.SpecPage, error)
-	ListForEvent(ctx context.Context, eventID string, pageSize int, cursor string) (*model.SpecPage, error)
+	ListForAPI(ctx context.Context, apiID string) ([]*model.Spec, error)
 	Update(ctx context.Context, id string, in model.SpecInput) error
 	Delete(ctx context.Context, id string) error
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
@@ -130,7 +129,6 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return apiDefinition, nil
 }
 
-// TODO: Multiple specs
 func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -142,16 +140,19 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 	}
 	api := in.ToAPIDefinitionWithinBundle(bundleID, tnt)
 
-	spec := in.Spec.ToSpec()
-	api.Spec = nil
+	specs := make([]*model.SpecInput, 0, 0)
+	for _, spec := range in.Specs {
+		specs = append(specs, spec.ToSpec())
+	}
+	api.Specs = nil
 
 	err = s.repo.Create(ctx, api)
 	if err != nil {
 		return "", err
 	}
 
-	if spec != nil {
-		_, err = s.specSvc.CreateForAPI(ctx, in.ID, *in.Spec.ToSpec())
+	for _, spec := range specs {
+		_, err = s.specSvc.CreateForAPI(ctx, in.ID, *spec)
 		if err != nil {
 			return "", errors.Wrapf(err, "error creating spec for api in bundle with id %s", bundleID)
 		}
@@ -160,7 +161,7 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 	return in.ID, nil
 }
 
-// TODO: Adapt
+// TODO: Multiple Specs
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -172,21 +173,32 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return err
 	}
 
-	err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.APIFetchRequestReference, id)
+	specs, err := s.specSvc.ListForAPI(ctx, api.ID)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
+		return err
+	}
+
+	for _, spec := range specs {
+		err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+		if err != nil {
+			return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
+		}
 	}
 
 	in.ID = id
 	api = in.ToAPIDefinitionWithinBundle(api.BundleID, tnt)
 
-	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		fr, err := s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, id)
-		if err != nil {
-			return errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
-		}
+	newSpecs := make([]*model.SpecInput, 0, 0)
+	for _, spec := range in.Specs {
+		newSpecs = append(newSpecs, spec.ToSpec())
+	}
+	api.Specs = nil
 
-		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
+	for _, spec := range newSpecs {
+		_, err = s.specSvc.CreateForAPI(ctx, in.ID, *spec)
+		if err != nil {
+			return errors.Wrapf(err, "error creating spec for api with id %s", id)
+		}
 	}
 
 	err = s.repo.Update(ctx, api)
@@ -211,8 +223,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// TODO:
-func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error) {
+func (s *service) RefetchAPISpecs(ctx context.Context, id string) ([]*model.APISpec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -223,24 +234,42 @@ func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec
 		return nil, err
 	}
 
-	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.APIFetchRequestReference, id)
-	if err != nil && !apperrors.IsNotFoundError(err) {
-		return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", id)
-	}
-
-	if fetchRequest != nil {
-		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fetchRequest)
-	}
-
-	err = s.repo.Update(ctx, api)
+	specs, err := s.specSvc.ListForAPI(ctx, api.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while updating api with api spec")
+		return nil, err
 	}
 
-	return api.Spec, nil
+	for _, spec := range specs {
+		fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", id)
+		}
+
+		if fetchRequest != nil {
+			spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fetchRequest)
+		}
+		err = s.specSvc.Update(ctx, spec.ID, model.SpecInput{
+			ID:     spec.ID,
+			Tenant: spec.Tenant,
+			Data:   spec.Data,
+			Format: spec.Format,
+			Type:   spec.Type,
+		})
+
+		if err != nil {
+			return nil, errors.Wrap(err, "while updating api spec")
+		}
+	}
+
+	apiSpecs := make([]*model.APISpec, 0, 0)
+	for _, spec := range specs {
+		apiSpecs = append(apiSpecs, spec.ToAPISpec())
+	}
+
+	return apiSpecs, nil
 }
 
-func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error) {
+func (s *service) GetFetchRequests(ctx context.Context, apiDefID string) ([]*model.FetchRequest, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -254,15 +283,25 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 		return nil, fmt.Errorf("API Definition with ID %s doesn't exist", apiDefID)
 	}
 
-	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.APIFetchRequestReference, apiDefID)
+	specs, err := s.specSvc.ListForAPI(ctx, apiDefID)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
-		return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", apiDefID)
+		return nil, err
 	}
 
-	return fetchRequest, nil
+	fetchRequests := make([]*model.FetchRequest, 0, 0)
+
+	for _, spec := range specs {
+		fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return nil, nil
+			}
+			return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", apiDefID)
+		}
+		fetchRequests = append(fetchRequests, fetchRequest)
+	}
+
+	return fetchRequests, nil
 }
 
 func (s *service) Exists(ctx context.Context, id string) (bool, error) {

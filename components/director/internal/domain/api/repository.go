@@ -30,6 +30,18 @@ type APIDefinitionConverter interface {
 	ToEntity(apiModel model.APIDefinition) Entity
 }
 
+//go:generate mockery -name=SpecRepository -output=automock -outpkg=automock -case=underscore
+type SpecRepository interface {
+	ListForAPI(ctx context.Context, tenantID, apiID string) ([]*model.Spec, error)
+	ListForEvent(ctx context.Context, tenantID, eventID string) ([]*model.Spec, error)
+	Exists(ctx context.Context, tenant, id string) (bool, error)
+	GetByID(ctx context.Context, tenantID, id string) (*model.Spec, error)
+	CreateMany(ctx context.Context, item []*model.Spec) error
+	Create(ctx context.Context, item *model.Spec) error
+	Update(ctx context.Context, item *model.Spec) error
+	Delete(ctx context.Context, tenantID string, id string) error
+}
+
 type pgRepository struct {
 	creator         repo.Creator
 	singleGetter    repo.SingleGetter
@@ -38,9 +50,10 @@ type pgRepository struct {
 	deleter         repo.Deleter
 	existQuerier    repo.ExistQuerier
 	conv            APIDefinitionConverter
+	specRepo        SpecRepository
 }
 
-func NewRepository(conv APIDefinitionConverter) *pgRepository {
+func NewRepository(conv APIDefinitionConverter, specRepo SpecRepository) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.API, apiDefTable, tenantColumn, apiDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.API, apiDefTable, tenantColumn, apiDefColumns),
@@ -49,6 +62,7 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 		deleter:         repo.NewDeleter(resource.API, apiDefTable, tenantColumn),
 		existQuerier:    repo.NewExistQuerier(resource.API, apiDefTable, tenantColumn),
 		conv:            conv,
+		specRepo:        specRepo,
 	}
 }
 
@@ -76,7 +90,21 @@ func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cu
 
 	for _, apiDefEnt := range apiDefCollection {
 		m := r.conv.FromEntity(apiDefEnt)
-
+		if !apiDefEnt.SpecData.Valid {
+			specs, err := r.specRepo.ListForAPI(ctx, tenant, m.ID)
+			if err != nil {
+				return nil, err
+			}
+			apiSpecs := make([]*model.APISpec, 0, 0)
+			for _, spec := range specs {
+				apiSpecs = append(apiSpecs, &model.APISpec{
+					Data:   spec.Data,
+					Format: spec.Format,
+					Type:   model.APISpecType(spec.Type),
+				})
+			}
+			m.Specs = append(m.Specs, apiSpecs...)
+		}
 		items = append(items, &m)
 	}
 
@@ -88,7 +116,30 @@ func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cu
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.APIDefinition, error) {
-	return r.GetByField(ctx, tenantID, "id", id)
+	var apiDefEntity Entity
+	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &apiDefEntity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting APIDefinition")
+	}
+
+	apiDefModel := r.conv.FromEntity(apiDefEntity)
+	if !apiDefEntity.SpecData.Valid {
+		specs, err := r.specRepo.ListForAPI(ctx, tenantID, id)
+		if err != nil {
+			return nil, err
+		}
+		apiSpecs := make([]*model.APISpec, 0, 0)
+		for _, spec := range specs {
+			apiSpecs = append(apiSpecs, &model.APISpec{
+				Data:   spec.Data,
+				Format: spec.Format,
+				Type:   model.APISpecType(spec.Type),
+			})
+		}
+		apiDefModel.Specs = append(apiDefModel.Specs, apiSpecs...)
+	}
+
+	return &apiDefModel, nil
 }
 
 func (r *pgRepository) ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error) {

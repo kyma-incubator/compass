@@ -308,7 +308,7 @@ func TestService_CreateToBundle(t *testing.T) {
 	modelInput := model.APIDefinitionInput{
 		Title:      name,
 		EntryPoint: targetUrl,
-		Spec: &model.APISpecInput{
+		Specs: &model.APISpecInput{
 			FetchRequest: &model.FetchRequestInput{
 				URL: frURL,
 			},
@@ -322,7 +322,7 @@ func TestService_CreateToBundle(t *testing.T) {
 		Tenant:     tenantID,
 		Title:      name,
 		EntryPoint: targetUrl,
-		Spec:       &model.APISpec{},
+		Specs:      &model.APISpec{},
 		Version:    &model.Version{},
 	}
 
@@ -332,7 +332,7 @@ func TestService_CreateToBundle(t *testing.T) {
 		Tenant:     tenantID,
 		Title:      name,
 		EntryPoint: targetUrl,
-		Spec:       &model.APISpec{Data: &spec},
+		Specs:      &model.APISpec{Data: &spec},
 		Version:    &model.Version{},
 	}
 
@@ -378,7 +378,7 @@ func TestService_CreateToBundle(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Success fetched API Spec",
+			Name: "Success fetched API Specs",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
@@ -483,7 +483,7 @@ func TestService_CreateToBundle(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name: "Success when fetching API Spec failed",
+			Name: "Success when fetching API Specs failed",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("Create", ctx, modelAPIDefinition).Return(nil).Once()
@@ -561,7 +561,7 @@ func TestService_Update(t *testing.T) {
 	modelInput := model.APIDefinitionInput{
 		Title:      "Foo",
 		EntryPoint: "https://test-url.com",
-		Spec: &model.APISpecInput{
+		Specs: &model.APISpecInput{
 			FetchRequest: &model.FetchRequestInput{
 				URL: frURL,
 			},
@@ -576,7 +576,7 @@ func TestService_Update(t *testing.T) {
 	apiDefinitionModel := &model.APIDefinition{
 		Title:      "Bar",
 		EntryPoint: "https://test-url-updated.com",
-		Spec:       &model.APISpec{},
+		Specs:      &model.APISpec{},
 		Version:    &model.Version{},
 	}
 
@@ -878,7 +878,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 	}
 
 	modelAPIDefinition := &model.APIDefinition{
-		Spec: modelAPISpec,
+		Specs: modelAPISpec,
 	}
 
 	timestamp := time.Now()
@@ -918,7 +918,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			ExpectedErr:     nil,
 		},
 		{
-			Name: "Success - fetched API Spec",
+			Name: "Success - fetched API Specs",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				repo.On("GetByID", ctx, tenantID, apiID).Return(modelAPIDefinition, nil).Once()
@@ -1007,7 +1007,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			svc := api.NewService(repo, frRepo, nil, frSvc)
 
 			// when
-			result, err := svc.RefetchAPISpec(ctx, apiID)
+			result, err := svc.RefetchAPISpecs(ctx, apiID)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPISpec, result)
@@ -1023,7 +1023,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.RefetchAPISpec(context.TODO(), "")
+		_, err := svc.RefetchAPISpecs(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -1138,7 +1138,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			svc := api.NewService(repo, fetchRequestRepo, nil, nil)
 
 			// when
-			l, err := svc.GetFetchRequest(ctx, testCase.InputAPIDefID)
+			l, err := svc.GetFetchRequests(ctx, testCase.InputAPIDefID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -1157,7 +1157,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// when
-		_, err := svc.GetFetchRequest(context.TODO(), "dd")
+		_, err := svc.GetFetchRequests(context.TODO(), "dd")
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
