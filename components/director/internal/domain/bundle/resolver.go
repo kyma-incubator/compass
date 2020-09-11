@@ -42,12 +42,6 @@ type BundleInstanceAuthConverter interface {
 	MultipleToGraphQL(in []*model.BundleInstanceAuth) ([]*graphql.BundleInstanceAuth, error)
 }
 
-//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
-type APIService interface {
-	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
-	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
-}
-
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition

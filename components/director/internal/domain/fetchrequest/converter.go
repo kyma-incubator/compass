@@ -86,6 +86,7 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 	var apiDefID sql.NullString
 	var eventAPIDefID sql.NullString
 	var documentID sql.NullString
+	var specID sql.NullString
 	switch in.ObjectType {
 	case model.EventAPIFetchRequestReference:
 		eventAPIDefID = refID
@@ -93,6 +94,8 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 		apiDefID = refID
 	case model.DocumentFetchRequestReference:
 		documentID = refID
+	case model.SpecFetchRequestReference:
+		specID = refID
 	}
 
 	return Entity{
@@ -103,6 +106,7 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 		APIDefID:        apiDefID,
 		EventAPIDefID:   eventAPIDefID,
 		DocumentID:      documentID,
+		SpecID:          specID,
 		Mode:            string(in.Mode),
 		Filter:          filter,
 		StatusCondition: string(in.Status.Condition),
@@ -205,6 +209,10 @@ func (c *converter) objectReferenceFromEntity(in Entity) (string, model.FetchReq
 
 	if in.DocumentID.Valid {
 		return in.DocumentID.String, model.DocumentFetchRequestReference, nil
+	}
+
+	if in.SpecID.Valid {
+		return in.SpecID.String, model.SpecFetchRequestReference, nil
 	}
 
 	return "", "", fmt.Errorf("Incorrect Object Reference ID and its type for Entity with ID '%s'", in.ID)

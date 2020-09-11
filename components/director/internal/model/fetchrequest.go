@@ -23,6 +23,7 @@ const (
 	APIFetchRequestReference      FetchRequestReferenceObjectType = "API"
 	EventAPIFetchRequestReference FetchRequestReferenceObjectType = "EventAPI"
 	DocumentFetchRequestReference FetchRequestReferenceObjectType = "Document"
+	SpecFetchRequestReference FetchRequestReferenceObjectType = "Spec"
 )
 
 type FetchRequestStatus struct {

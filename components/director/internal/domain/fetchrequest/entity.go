@@ -12,6 +12,7 @@ type Entity struct {
 	APIDefID        sql.NullString `db:"api_def_id"`
 	EventAPIDefID   sql.NullString `db:"event_api_def_id"`
 	DocumentID      sql.NullString `db:"document_id"`
+	SpecID          sql.NullString `db:"spec_id"`
 	Mode            string         `db:"mode"`
 	Auth            sql.NullString `db:"auth"`
 	Filter          sql.NullString `db:"filter"`

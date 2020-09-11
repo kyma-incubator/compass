@@ -28,6 +28,18 @@ type BundleRepository interface {
 	ListByPackageID(ctx context.Context, tenantID, packageID string, pageSize int, cursor string) (*model.BundlePage, error)
 }
 
+//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
+type APIService interface {
+	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput) (string, error)
+	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
+	Get(ctx context.Context, id string) (*model.APIDefinition, error)
+	Delete(ctx context.Context, id string) error
+	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error)
+	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
+	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
+}
+
 //go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
 type APIRepository interface {
 	Create(ctx context.Context, item *model.APIDefinition) error
@@ -69,6 +81,7 @@ type FetchRequestService interface {
 
 type service struct {
 	bundleRepo       BundleRepository
+	apiSvc           APIService
 	apiRepo          APIRepository
 	eventAPIRepo     EventAPIRepository
 	documentRepo     DocumentRepository
@@ -79,9 +92,10 @@ type service struct {
 	timestampGen        timestamp.Generator
 }
 
-func NewService(bundleRepo BundleRepository, apiRepo APIRepository, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
+func NewService(bundleRepo BundleRepository, apiSvc APIService, apiRepo APIRepository, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
 	return &service{
 		bundleRepo:          bundleRepo,
+		apiSvc:              apiSvc,
 		apiRepo:             apiRepo,
 		eventAPIRepo:        eventAPIRepo,
 		documentRepo:        documentRepo,
@@ -345,29 +359,10 @@ func (s *service) updateRelatedResources(ctx context.Context, in model.BundleInp
 func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis []*model.APIDefinitionInput) error {
 	var err error
 	for _, item := range apis {
-		if len(item.ID) == 0 {
-			item.ID = s.uidService.Generate()
-		}
-		api := item.ToAPIDefinitionWithinBundle(bundleID, tenant)
-
-		err = s.apiRepo.Create(ctx, api)
+		_, err = s.apiSvc.CreateInBundle(ctx, bundleID, *item)
 		if err != nil {
 			return errors.Wrap(err, "while creating API for application")
 		}
-
-		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, item.ID)
-			if err != nil {
-				return errors.Wrap(err, "while creating FetchRequest for application")
-			}
-
-			api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
-			err = s.apiRepo.Update(ctx, api)
-			if err != nil {
-				return errors.Wrap(err, "while updating api with api spec")
-			}
-		}
-
 	}
 
 	return nil
@@ -378,9 +373,7 @@ func (s *service) updateAPIs(ctx context.Context, bundleID, tenant string, apis 
 		if len(item.ID) == 0 {
 			return fmt.Errorf("id is mandatory when updating APIs")
 		}
-		api := item.ToAPIDefinitionWithinBundle(bundleID, tenant)
-
-		err := s.apiRepo.Update(ctx, api)
+		err := s.apiSvc.Update(ctx, item.ID, *item)
 		if err != nil {
 			return errors.Wrap(err, "while creating API for application")
 		}

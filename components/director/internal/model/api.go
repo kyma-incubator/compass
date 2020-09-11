@@ -130,3 +130,16 @@ func (a *APISpecInput) ToAPISpec() *APISpec {
 		Type:   a.Type,
 	}
 }
+
+func (a *APISpecInput) ToSpec() *SpecInput {
+	if a == nil {
+		return nil
+	}
+
+	return &SpecInput{
+		Data:   a.Data,
+		Format: a.Format,
+		Type:   SpecType(a.Type),
+		FetchRequest: a.FetchRequest,
+	}
+}

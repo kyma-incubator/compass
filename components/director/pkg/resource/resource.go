@@ -18,6 +18,7 @@ const (
 	Document                   Type = "Document"
 	BundleInstanceAuth         Type = "BundleInstanceAuth"
 	API                        Type = "Api"
+	Spec                       Type = "Spec"
 	EventDefinition            Type = "EventDefinition"
 	AutomaticScenarioAssigment Type = "AutomaticScenarioAssigment"
 	Webhook                    Type = "Webhook"

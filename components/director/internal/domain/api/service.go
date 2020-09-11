@@ -19,7 +19,7 @@ type APIRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
-	GetByField(ctx context.Context, tenant,fieldName, fieldValue string) (*model.APIDefinition, error)
+	GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.APIDefinition, error)
 	ListForBundle(ctx context.Context, tenantID, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	CreateMany(ctx context.Context, item []*model.APIDefinition) error
 	Create(ctx context.Context, item *model.APIDefinition) error
@@ -32,6 +32,18 @@ type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
+}
+
+//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
+type SpecService interface {
+	CreateForAPI(ctx context.Context, bundleID string, in model.SpecInput) (string, error)
+	CreateForEvent(ctx context.Context, bundleID string, in model.SpecInput) (string, error)
+	ListForAPI(ctx context.Context, apiID string, pageSize int, cursor string) (*model.SpecPage, error)
+	ListForEvent(ctx context.Context, eventID string, pageSize int, cursor string) (*model.SpecPage, error)
+	Update(ctx context.Context, id string, in model.SpecInput) error
+	Delete(ctx context.Context, id string) error
+	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
+	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -49,14 +61,16 @@ type service struct {
 	fetchRequestRepo    FetchRequestRepository
 	uidService          UIDService
 	fetchRequestService FetchRequestService
+	specSvc             SpecService
 	timestampGen        timestamp.Generator
 }
 
-func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
+func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService, specSvc SpecService) *service {
 	return &service{repo: repo,
 		fetchRequestRepo:    fetchRequestRepo,
 		uidService:          uidService,
 		fetchRequestService: fetchRequestService,
+		specSvc:             specSvc,
 		timestampGen:        timestamp.DefaultGenerator(),
 	}
 }
@@ -102,6 +116,7 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return apiDefinition, nil
 }
 
+// TODO: Multiple specs
 func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -113,27 +128,25 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 	}
 	api := in.ToAPIDefinitionWithinBundle(bundleID, tnt)
 
+	spec := in.Spec.ToSpec()
+	api.Spec = nil
+
 	err = s.repo.Create(ctx, api)
 	if err != nil {
 		return "", err
 	}
 
-	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		fr, err := s.createFetchRequest(ctx, tnt, *in.Spec.FetchRequest, in.ID)
+	if spec != nil {
+		_, err = s.specSvc.CreateForAPI(ctx, in.ID, *in.Spec.ToSpec())
 		if err != nil {
-			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", in.ID)
-		}
-
-		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
-
-		err = s.repo.Update(ctx, api)
-		if err != nil {
-			return "", errors.Wrap(err, "while updating api with api spec")
+			return "", errors.Wrapf(err, "error creating spec for api in bundle with id %s", bundleID)
 		}
 	}
 
 	return in.ID, nil
 }
+
+// TODO: Adapt
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -184,6 +197,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// TODO:
 func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
