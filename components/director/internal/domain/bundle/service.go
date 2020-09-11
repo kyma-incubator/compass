@@ -34,19 +34,13 @@ type APIService interface {
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
+	ExistsByCondition(ctx context.Context, conds repo.Conditions) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	GetByField(ctx context.Context, fieldName, fieldValue string) (*model.APIDefinition, error)
+	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
+	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error)
 	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
-	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
-	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
-}
-
-//go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
-type APIRepository interface {
-	Create(ctx context.Context, item *model.APIDefinition) error
-	Update(ctx context.Context, item *model.APIDefinition) error
-	Exists(ctx context.Context, tenant, id string) (bool, error)
-	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
-	GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.APIDefinition, error)
 }
 
 //go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
@@ -82,7 +76,6 @@ type FetchRequestService interface {
 type service struct {
 	bundleRepo       BundleRepository
 	apiSvc           APIService
-	apiRepo          APIRepository
 	eventAPIRepo     EventAPIRepository
 	documentRepo     DocumentRepository
 	fetchRequestRepo FetchRequestRepository
@@ -92,11 +85,10 @@ type service struct {
 	timestampGen        timestamp.Generator
 }
 
-func NewService(bundleRepo BundleRepository, apiSvc APIService, apiRepo APIRepository, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
+func NewService(bundleRepo BundleRepository, apiSvc APIService, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
 	return &service{
 		bundleRepo:          bundleRepo,
 		apiSvc:              apiSvc,
-		apiRepo:             apiRepo,
 		eventAPIRepo:        eventAPIRepo,
 		documentRepo:        documentRepo,
 		fetchRequestRepo:    fetchRequestRepo,
@@ -385,12 +377,12 @@ func (s *service) createOrUpdateAPIs(ctx context.Context, bundleID, tenant strin
 	toUpdate := make([]*model.APIDefinitionInput, 0, 0)
 	toCreate := make([]*model.APIDefinitionInput, 0, 0)
 	for i := range apis {
-		exists, err := s.apiRepo.ExistsByCondition(ctx, tenant, repo.Conditions{repo.NewEqualCondition("od_id", apis[i].OpenDiscoveryID)})
+		exists, err := s.apiSvc.ExistsByCondition(ctx, repo.Conditions{repo.NewEqualCondition("od_id", apis[i].OpenDiscoveryID)})
 		if err != nil {
 			return err
 		}
 		if exists {
-			api, err := s.apiRepo.GetByField(ctx, tenant, "od_id", apis[i].OpenDiscoveryID)
+			api, err := s.apiSvc.GetByField(ctx,"od_id", apis[i].OpenDiscoveryID)
 			if err != nil {
 				return err
 			}
@@ -496,7 +488,7 @@ func (s *service) createOrUpdateDocuments(ctx context.Context, bundleID, tenant 
 	toUpdate := make([]*model.DocumentInput, 0, 0)
 	toCreate := make([]*model.DocumentInput, 0, 0)
 	for i := range documens {
-		exists, err := s.apiRepo.Exists(ctx, tenant, documens[i].ID)
+		exists, err := s.documentRepo.Exists(ctx, tenant, documens[i].ID)
 		if err != nil {
 			return err
 		}

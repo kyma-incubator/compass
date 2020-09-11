@@ -170,9 +170,17 @@ CREATE TABLE specifications (
     spec_format spec_format,
     spec_type spec_type,
     custom_type varchar(64)
+    CONSTRAINT valid_refs CHECK (api_def_id IS NOT NULL OR event_def_id IS NOT NULL)
 );
 
 ALTER TABLE fetch_requests
     ADD COLUMN spec_id UUID;
+
+ALTER TABLE fetch_requests
+    DROP CONSTRAINT valid_refs;
+
+ALTER TABLE fetch_requests
+    ADD CONSTRAINT valid_refs
+        CHECK (api_def_id IS NOT NULL OR event_api_def_id IS NOT NULL OR document_id IS NOT NULL OR spec_id IS NOT NULL);
 
 COMMIT;

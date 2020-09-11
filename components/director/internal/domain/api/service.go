@@ -102,6 +102,20 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
+func (s *service) GetByField(ctx context.Context, fieldName, fieldValue string) (*model.APIDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	api, err := s.repo.GetByField(ctx, tnt, fieldName, fieldValue)
+	if err != nil {
+		return nil, err
+	}
+
+	return api, nil
+}
+
 func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -249,6 +263,22 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 	}
 
 	return fetchRequest, nil
+}
+
+func (s *service) Exists(ctx context.Context, id string) (bool, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+	return s.repo.Exists(ctx, tnt, id)
+}
+
+func (s *service) ExistsByCondition(ctx context.Context, conds repo.Conditions) (bool, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+	return s.repo.ExistsByCondition(ctx, tnt, conds)
 }
 
 func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {

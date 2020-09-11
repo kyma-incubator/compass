@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -18,8 +19,13 @@ type APIService interface {
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
+	ExistsByCondition(ctx context.Context, conds repo.Conditions) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	GetByField(ctx context.Context, fieldName, fieldValue string) (*model.APIDefinition, error)
 	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error)
 	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
+	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
+	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 }
 
 //go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
