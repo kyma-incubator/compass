@@ -314,12 +314,24 @@ type BundleInputWithAssociatedPackages struct {
 	AssociatedPackages []string
 }
 
+type ApiInputWithAssociatedBundle struct {
+	In               *model.APIDefinitionInput
+	AssociatedBundle string
+}
+
+type EventInputWithAssociatedBundle struct {
+	In               *model.EventDefinitionInput
+	AssociatedBundle string
+}
+
 func (docs Documents) ToModelInputs() (map[string]*model.PackageInput, []*BundleInputWithAssociatedPackages, error) {
 	if docs == nil {
 		return nil, nil, nil
 	}
 	pkgs := make(map[string]*model.PackageInput, 0)
 	bundles := make(map[string]*BundleInputWithAssociatedPackages, 0)
+	apis := make(map[string]*ApiInputWithAssociatedBundle)
+	events := make(map[string]*EventInputWithAssociatedBundle)
 
 	for _, d := range docs {
 		for _, pkg := range d.Packages {
@@ -344,28 +356,48 @@ func (docs Documents) ToModelInputs() (map[string]*model.PackageInput, []*Bundle
 		}
 
 		for _, api := range d.APIResources {
-			bundle, ok := bundles[api.AssociatedBundle]
-			if !ok {
-				return nil, nil, fmt.Errorf("api resource with id: %s has unknown associated bundle with id: %s", api.ID, api.AssociatedBundle)
+			if _, ok := apis[api.ID]; ok {
+				return nil, nil, fmt.Errorf("api with id %s found in multiple documents", api.ID)
 			}
 			apiInput, err := api.ToAPIDefinitionInput(d.BaseURL)
 			if err != nil {
 				return nil, nil, err
 			}
-			bundle.In.APIDefinitions = append(bundle.In.APIDefinitions, apiInput)
+			apis[api.ID] = &ApiInputWithAssociatedBundle{
+				In:               apiInput,
+				AssociatedBundle: api.AssociatedBundle,
+			}
 		}
 
 		for _, event := range d.EventResources {
-			bundle, ok := bundles[event.AssociatedBundle]
-			if !ok {
-				return nil, nil, fmt.Errorf("event resource with id: %s has unknown associated bundle with id: %s", event.ID, event.AssociatedBundle)
+			if _, ok := events[event.ID]; ok {
+				return nil, nil, fmt.Errorf("event with id %s found in multiple documents", event.ID)
 			}
 			eventInput, err := event.ToEventDefinitionInput(d.BaseURL)
 			if err != nil {
 				return nil, nil, err
 			}
-			bundle.In.EventDefinitions = append(bundle.In.EventDefinitions, eventInput)
+			events[event.ID] = &EventInputWithAssociatedBundle{
+				In:               eventInput,
+				AssociatedBundle: event.AssociatedBundle,
+			}
 		}
+	}
+
+	for _, api := range apis {
+		bundle, ok := bundles[api.AssociatedBundle]
+		if !ok {
+			return nil, nil, fmt.Errorf("api resource with id: %s has unknown associated bundle with id: %s", api.In.ID, api.AssociatedBundle)
+		}
+		bundle.In.APIDefinitions = append(bundle.In.APIDefinitions, api.In)
+	}
+
+	for _, event := range events {
+		bundle, ok := bundles[event.AssociatedBundle]
+		if !ok {
+			return nil, nil, fmt.Errorf("event resource with id: %s has unknown associated bundle with id: %s", event.In.ID, event.AssociatedBundle)
+		}
+		bundle.In.EventDefinitions = append(bundle.In.EventDefinitions, event.In)
 	}
 
 	resultBundles := make([]*BundleInputWithAssociatedPackages, 0)
