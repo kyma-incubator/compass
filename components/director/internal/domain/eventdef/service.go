@@ -20,7 +20,7 @@ type EventAPIRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
 	Exists(ctx context.Context, tenantID, id string) (bool, error)
 	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
-	GetByField(ctx context.Context, tenant,fieldName, fieldValue string) (*model.EventDefinition, error)
+	GetByConditions(ctx context.Context, tenant string, conds repo.Conditions) (*model.EventDefinition, error)
 	ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	Create(ctx context.Context, item *model.EventDefinition) error
 	CreateMany(ctx context.Context, items []*model.EventDefinition) error
@@ -94,6 +94,28 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	}
 
 	return eventAPI, nil
+}
+
+func (s *service) GetByConditions(ctx context.Context, conds repo.Conditions) (*model.EventDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := s.eventAPIRepo.GetByConditions(ctx, tnt, conds)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
+}
+
+func (s *service) ExistsByCondition(ctx context.Context, conds repo.Conditions) (bool, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+	return s.eventAPIRepo.ExistsByCondition(ctx, tnt, conds)
 }
 
 func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput) (string, error) {

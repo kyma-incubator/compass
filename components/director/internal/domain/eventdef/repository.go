@@ -62,16 +62,16 @@ func (r EventAPIDefCollection) Len() int {
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
-	return r.GetByField(ctx, tenantID, "id", id)
+	return r.GetByConditions(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *pgRepository) ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error) {
 	return r.existQuerier.Exists(ctx, tenant, conds)
 }
 
-func (r *pgRepository) GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.EventDefinition, error) {
+func (r *pgRepository) GetByConditions(ctx context.Context, tenant string, conds repo.Conditions) (*model.EventDefinition, error) {
 	var eventAPIDefEntity Entity
-	err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, fieldValue)}, repo.NoOrderBy, &eventAPIDefEntity)
+	err := r.singleGetter.Get(ctx, tenant, conds, repo.NoOrderBy, &eventAPIDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting EventDefinition")
 	}

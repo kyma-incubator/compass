@@ -21,7 +21,7 @@ type APIService interface {
 	Delete(ctx context.Context, id string) error
 	ExistsByCondition(ctx context.Context, conds repo.Conditions) (bool, error)
 	Exists(ctx context.Context, id string) (bool, error)
-	GetByField(ctx context.Context, fieldName, fieldValue string) (*model.APIDefinition, error)
+	GetByConditions(ctx context.Context, conds repo.Conditions) (*model.APIDefinition, error)
 	RefetchAPISpecs(ctx context.Context, id string) ([]*model.APISpec, error)
 	GetFetchRequests(ctx context.Context, apiDefID string) ([]*model.FetchRequest, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)

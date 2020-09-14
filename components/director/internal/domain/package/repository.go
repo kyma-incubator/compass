@@ -100,12 +100,12 @@ func (r *pgRepository) ExistsByCondition(ctx context.Context, tenant string, con
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Package, error) {
-	return r.GetByField(ctx, tenant, "id", id)
+	return r.GetByConditions(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-func (r *pgRepository) GetByField(ctx context.Context, tenant,fieldName, fieldValue string) (*model.Package, error) {
+func (r *pgRepository) GetByConditions(ctx context.Context, tenant string, conds repo.Conditions) (*model.Package, error) {
 	var packageEnt Entity
-	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, fieldValue)}, repo.NoOrderBy, &packageEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, tenant, conds, repo.NoOrderBy, &packageEnt); err != nil {
 		return nil, err
 	}
 

@@ -21,7 +21,7 @@ type PackageRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Package, error)
 	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
-	GetByField(ctx context.Context, tenant,fieldName, fieldValue string) (*model.Package, error)
+	GetByConditions(ctx context.Context, tenant string, conds repo.Conditions) (*model.Package, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Package, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
 	AssociateBundle(ctx context.Context, id, bundleID string) error
@@ -143,9 +143,12 @@ func (s *service) CreateOrUpdate(ctx context.Context, appID, openDiscoveryID str
 		return "", err
 	}
 
-	exists, err := s.pkgRepo.ExistsByCondition(ctx, tnt, repo.Conditions{repo.NewEqualCondition("od_id", openDiscoveryID)})
+	exists, err := s.pkgRepo.ExistsByCondition(ctx, tnt, repo.Conditions{
+		repo.NewEqualCondition("od_id", openDiscoveryID),
+		repo.NewEqualCondition("app_id", appID),
+	})
 	if err != nil {
-		return "",err
+		return "", err
 	}
 
 	if !exists {
@@ -156,17 +159,17 @@ func (s *service) CreateOrUpdate(ctx context.Context, appID, openDiscoveryID str
 
 		err = s.pkgRepo.Create(ctx, pkg)
 		if err != nil {
-			return "",err
+			return "", err
 		}
 	} else {
-		pkg, err := s.pkgRepo.GetByField(ctx, tnt, "od_id", openDiscoveryID)
+		pkg, err := s.pkgRepo.GetByConditions(ctx, tnt, repo.Conditions{
+			repo.NewEqualCondition("od_id", openDiscoveryID),
+			repo.NewEqualCondition("app_id", appID),
+		})
 		if err != nil {
-			return "",err
+			return "", err
 		}
 		in.ID = pkg.ID
-		if pkg.ApplicationID != appID {
-			return "", fmt.Errorf("error create/update package with id %s: already defined in app with id %s and found duplicate in app with id %s", pkg.ID, pkg.ApplicationID, appID)
-		}
 		pkg.SetFromUpdateInput(in)
 
 		err = s.pkgRepo.Update(ctx, pkg)

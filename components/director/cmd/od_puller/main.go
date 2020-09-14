@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
@@ -83,6 +84,7 @@ func createODPullerSvc(cfgProvider *configprovider.Provider, featuresConfig feat
 	docConverter := document.NewConverter(frConverter)
 	apiConverter := api.NewConverter(frConverter, versionConverter)
 	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	specConverter := spec.NewConverter()
 
 	webhookConverter := webhook.NewConverter(authConverter)
 	bundleConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
@@ -90,9 +92,10 @@ func createODPullerSvc(cfgProvider *configprovider.Provider, featuresConfig feat
 	packageConverter := mp_package.NewConverter(bundleConverter)
 
 	runtimeRepo := runtime.NewRepository()
+	specRepo := spec.NewRepository(specConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	apiRepo := api.NewRepository(apiConverter)
+	apiRepo := api.NewRepository(apiConverter, specRepo)
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
@@ -107,8 +110,11 @@ func createODPullerSvc(cfgProvider *configprovider.Provider, featuresConfig feat
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
+	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc, specSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 
-	bundleSvc := mp_bundle.NewService(bundleRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
 	packageSvc := mp_package.NewService(packageRepo, bundleRepo, uidSvc, bundleSvc)

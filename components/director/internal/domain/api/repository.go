@@ -143,9 +143,9 @@ func (r *pgRepository) ExistsByCondition(ctx context.Context, tenant string, con
 	return r.existQuerier.Exists(ctx, tenant, conds)
 }
 
-func (r *pgRepository) GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.APIDefinition, error) {
+func (r *pgRepository) GetByConditions(ctx context.Context, tenant string, conds repo.Conditions) (*model.APIDefinition, error) {
 	var apiDefEntity Entity
-	err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition(fieldName, fieldValue)}, repo.NoOrderBy, &apiDefEntity)
+	err := r.singleGetter.Get(ctx, tenant, conds, repo.NoOrderBy, &apiDefEntity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting APIDefinition")
 	}

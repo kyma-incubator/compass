@@ -145,7 +145,7 @@ func NewRootResolver(
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, oAuth20HTTPClient)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
-	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	packageSvc := mp_package.NewService(packageRepo, bundleRepo, uidSvc, bundleSvc)
 	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)

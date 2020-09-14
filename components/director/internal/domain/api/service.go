@@ -19,7 +19,7 @@ type APIRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
-	GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.APIDefinition, error)
+	GetByConditions(ctx context.Context, tenant string, conds repo.Conditions) (*model.APIDefinition, error)
 	ListForBundle(ctx context.Context, tenantID, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	CreateMany(ctx context.Context, item []*model.APIDefinition) error
 	Create(ctx context.Context, item *model.APIDefinition) error
@@ -101,13 +101,13 @@ func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, err
 	return api, nil
 }
 
-func (s *service) GetByField(ctx context.Context, fieldName, fieldValue string) (*model.APIDefinition, error) {
+func (s *service) GetByConditions(ctx context.Context, conds repo.Conditions) (*model.APIDefinition, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	api, err := s.repo.GetByField(ctx, tnt, fieldName, fieldValue)
+	api, err := s.repo.GetByConditions(ctx, tnt, conds)
 	if err != nil {
 		return nil, err
 	}

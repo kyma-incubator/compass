@@ -20,7 +20,7 @@ type BundleRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Bundle, error)
 	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
-	GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.Bundle, error)
+	GetByConditions(ctx context.Context, tenant string, conds repo.Conditions) (*model.Bundle, error)
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error)
 	GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
@@ -36,20 +36,23 @@ type APIService interface {
 	Delete(ctx context.Context, id string) error
 	ExistsByCondition(ctx context.Context, conds repo.Conditions) (bool, error)
 	Exists(ctx context.Context, id string) (bool, error)
-	GetByField(ctx context.Context, fieldName, fieldValue string) (*model.APIDefinition, error)
+	GetByConditions(ctx context.Context, conds repo.Conditions) (*model.APIDefinition, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	RefetchAPISpecs(ctx context.Context, id string) ([]*model.APISpec, error)
 	GetFetchRequests(ctx context.Context, apiDefID string) ([]*model.FetchRequest, error)
 }
 
-//go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
-type EventAPIRepository interface {
-	Create(ctx context.Context, items *model.EventDefinition) error
-	Update(ctx context.Context, items *model.EventDefinition) error
-	Exists(ctx context.Context, tenant, id string) (bool, error)
-	ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error)
-	GetByField(ctx context.Context, tenant, fieldName, fieldValue string) (*model.EventDefinition, error)
+//go:generate mockery -name=EventDefService -output=automock -outpkg=automock -case=underscore
+type EventDefService interface {
+	CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput) (string, error)
+	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
+	Get(ctx context.Context, id string) (*model.EventDefinition, error)
+	Delete(ctx context.Context, id string) error
+	RefetchAPISpec(ctx context.Context, id string) (*model.EventSpec, error)
+	GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error)
+	GetByConditions(ctx context.Context, conds repo.Conditions) (*model.EventDefinition, error)
+	ExistsByCondition(ctx context.Context, conds repo.Conditions) (bool, error)
 }
 
 //go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
@@ -76,7 +79,7 @@ type FetchRequestService interface {
 type service struct {
 	bundleRepo       BundleRepository
 	apiSvc           APIService
-	eventAPIRepo     EventAPIRepository
+	eventSvc         EventDefService
 	documentRepo     DocumentRepository
 	fetchRequestRepo FetchRequestRepository
 
@@ -85,11 +88,11 @@ type service struct {
 	timestampGen        timestamp.Generator
 }
 
-func NewService(bundleRepo BundleRepository, apiSvc APIService, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
+func NewService(bundleRepo BundleRepository, apiSvc APIService, eventSvc EventDefService, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
 	return &service{
 		bundleRepo:          bundleRepo,
 		apiSvc:              apiSvc,
-		eventAPIRepo:        eventAPIRepo,
+		eventSvc:            eventSvc,
 		documentRepo:        documentRepo,
 		fetchRequestRepo:    fetchRequestRepo,
 		uidService:          uidService,
@@ -199,7 +202,10 @@ func (s *service) CreateOrUpdate(ctx context.Context, appID, openDiscoveryID str
 	if err != nil {
 		return "", errors.Wrap(err, "while loading tenant from context")
 	}
-	exists, err := s.bundleRepo.ExistsByCondition(ctx, tnt, repo.Conditions{repo.NewEqualCondition("od_id", openDiscoveryID)})
+	exists, err := s.bundleRepo.ExistsByCondition(ctx, tnt, repo.Conditions{
+		repo.NewEqualCondition("od_id", openDiscoveryID),
+		repo.NewEqualCondition("app_id", appID),
+	})
 	if err != nil {
 		return "", err
 	}
@@ -215,14 +221,14 @@ func (s *service) CreateOrUpdate(ctx context.Context, appID, openDiscoveryID str
 			return "", err
 		}
 	} else {
-		bundle, err := s.bundleRepo.GetByField(ctx, tnt, "od_id", openDiscoveryID)
+		bundle, err := s.bundleRepo.GetByConditions(ctx, tnt, repo.Conditions{
+			repo.NewEqualCondition("od_id", openDiscoveryID),
+			repo.NewEqualCondition("app_id", appID),
+		})
 		if err != nil {
 			return "", err
 		}
 		in.ID = bundle.ID
-		if bundle.ApplicationID != appID {
-			return "", fmt.Errorf("error create/update bundle with id %s: already defined in app with id %s and found duplicate in app with id %s", bundle.ID, bundle.ApplicationID, appID)
-		}
 		bundle.SetFromUpdateInput(in)
 
 		err = s.bundleRepo.Update(ctx, bundle)
@@ -353,7 +359,7 @@ func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis 
 	for _, item := range apis {
 		_, err = s.apiSvc.CreateInBundle(ctx, bundleID, *item)
 		if err != nil {
-			return errors.Wrap(err, "while creating API for application")
+			return errors.Wrapf(err, "while creating API for bundle with id %s", bundleID)
 		}
 	}
 
@@ -367,7 +373,7 @@ func (s *service) updateAPIs(ctx context.Context, bundleID, tenant string, apis 
 		}
 		err := s.apiSvc.Update(ctx, item.ID, *item)
 		if err != nil {
-			return errors.Wrap(err, "while creating API for application")
+			return errors.Wrapf(err, "while updating API for bundle with id %s", bundleID)
 		}
 	}
 	return nil
@@ -377,12 +383,18 @@ func (s *service) createOrUpdateAPIs(ctx context.Context, bundleID, tenant strin
 	toUpdate := make([]*model.APIDefinitionInput, 0, 0)
 	toCreate := make([]*model.APIDefinitionInput, 0, 0)
 	for i := range apis {
-		exists, err := s.apiSvc.ExistsByCondition(ctx, repo.Conditions{repo.NewEqualCondition("od_id", apis[i].OpenDiscoveryID)})
+		exists, err := s.apiSvc.ExistsByCondition(ctx, repo.Conditions{
+			repo.NewEqualCondition("od_id", apis[i].OpenDiscoveryID),
+			repo.NewEqualCondition("bundle_id", bundleID),
+		})
 		if err != nil {
 			return err
 		}
 		if exists {
-			api, err := s.apiSvc.GetByField(ctx,"od_id", apis[i].OpenDiscoveryID)
+			api, err := s.apiSvc.GetByConditions(ctx, repo.Conditions{
+				repo.NewEqualCondition("od_id", apis[i].OpenDiscoveryID),
+				repo.NewEqualCondition("bundle_id", bundleID),
+			})
 			if err != nil {
 				return err
 			}
@@ -404,19 +416,9 @@ func (s *service) createOrUpdateAPIs(ctx context.Context, bundleID, tenant strin
 func (s *service) createEvents(ctx context.Context, bundleID, tenant string, events []*model.EventDefinitionInput) error {
 	var err error
 	for _, item := range events {
-		if len(item.ID) == 0 {
-			item.ID = s.uidService.Generate()
-		}
-		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinBundle(bundleID, tenant))
+		_, err = s.eventSvc.CreateInBundle(ctx, bundleID, *item)
 		if err != nil {
-			return errors.Wrap(err, "while creating EventDefinitions for application")
-		}
-
-		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, item.ID)
-			if err != nil {
-				return errors.Wrap(err, "while creating FetchRequest for application")
-			}
+			return errors.Wrapf(err, "while creating Event for bundle with id %s", bundleID)
 		}
 	}
 	return nil
@@ -427,9 +429,9 @@ func (s *service) updateEvents(ctx context.Context, bundleID, tenant string, eve
 		if len(item.ID) == 0 {
 			return fmt.Errorf("id is mandatory when updating Events")
 		}
-		err := s.eventAPIRepo.Update(ctx, item.ToEventDefinitionWithinBundle(bundleID, tenant))
+		err := s.eventSvc.Update(ctx, item.ID, *item)
 		if err != nil {
-			return errors.Wrap(err, "while creating EventDefinitions for application")
+			return errors.Wrapf(err, "while updating EventDefinitions for bundle with id %s", bundleID)
 		}
 	}
 	return nil
@@ -439,12 +441,18 @@ func (s *service) createOrUpdateEvents(ctx context.Context, bundleID, tenant str
 	toUpdate := make([]*model.EventDefinitionInput, 0, 0)
 	toCreate := make([]*model.EventDefinitionInput, 0, 0)
 	for i := range events {
-		exists, err := s.eventAPIRepo.ExistsByCondition(ctx, tenant, repo.Conditions{repo.NewEqualCondition("od_id", events[i].OpenDiscoveryID)})
+		exists, err := s.eventSvc.ExistsByCondition(ctx, repo.Conditions{
+			repo.NewEqualCondition("od_id", events[i].OpenDiscoveryID),
+			repo.NewEqualCondition("bundle_id", bundleID),
+		})
 		if err != nil {
 			return err
 		}
 		if exists {
-			event, err := s.eventAPIRepo.GetByField(ctx, tenant, "od_id", events[i].OpenDiscoveryID)
+			event, err := s.eventSvc.GetByConditions(ctx, repo.Conditions{
+				repo.NewEqualCondition("od_id", events[i].OpenDiscoveryID),
+				repo.NewEqualCondition("bundle_id", bundleID),
+			})
 			if err != nil {
 				return err
 			}
