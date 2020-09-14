@@ -69,6 +69,7 @@ func (APIDefinitionPage) IsPageable() {}
 type APISpecInput struct {
 	Data         *CLOB              `json:"data"`
 	Type         APISpecType        `json:"type"`
+	CustomType   *string            `json:"customType"`
 	Format       SpecFormat         `json:"format"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
@@ -391,6 +392,7 @@ func (EventDefinitionPage) IsPageable() {}
 type EventSpecInput struct {
 	Data         *CLOB              `json:"data"`
 	Type         EventSpecType      `json:"type"`
+	CustomType   *string            `json:"customType"`
 	Format       SpecFormat         `json:"format"`
 	FetchRequest *FetchRequestInput `json:"fetchRequest"`
 }
@@ -668,16 +670,18 @@ type APISpecType string
 const (
 	APISpecTypeOdata   APISpecType = "ODATA"
 	APISpecTypeOpenAPI APISpecType = "OPEN_API"
+	APISpecTypeCustom  APISpecType = "CUSTOM"
 )
 
 var AllAPISpecType = []APISpecType{
 	APISpecTypeOdata,
 	APISpecTypeOpenAPI,
+	APISpecTypeCustom,
 }
 
 func (e APISpecType) IsValid() bool {
 	switch e {
-	case APISpecTypeOdata, APISpecTypeOpenAPI:
+	case APISpecTypeOdata, APISpecTypeOpenAPI, APISpecTypeCustom:
 		return true
 	}
 	return false
@@ -958,15 +962,17 @@ type EventSpecType string
 
 const (
 	EventSpecTypeAsyncAPI EventSpecType = "ASYNC_API"
+	EventSpecTypeCustom   EventSpecType = "CUSTOM"
 )
 
 var AllEventSpecType = []EventSpecType{
 	EventSpecTypeAsyncAPI,
+	EventSpecTypeCustom,
 }
 
 func (e EventSpecType) IsValid() bool {
 	switch e {
-	case EventSpecTypeAsyncAPI:
+	case EventSpecTypeAsyncAPI, EventSpecTypeCustom:
 		return true
 	}
 	return false

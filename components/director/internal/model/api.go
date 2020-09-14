@@ -36,9 +36,10 @@ type APIDefinition struct {
 type APISpec struct {
 	ID string
 	// when fetch request specified, data will be automatically populated
-	Data   *string
-	Format SpecFormat
-	Type   APISpecType
+	Data       *string
+	Format     SpecFormat
+	Type       APISpecType
+	CustomType *string
 }
 
 type APISpecType string
@@ -46,6 +47,7 @@ type APISpecType string
 const (
 	APISpecTypeOdata   APISpecType = "ODATA"
 	APISpecTypeOpenAPI APISpecType = "OPEN_API"
+	APISpecTypeCustom  APISpecType = "CUSTOM"
 )
 
 type Timestamp time.Time
@@ -77,6 +79,7 @@ type APIDefinitionInput struct {
 type APISpecInput struct {
 	Data         *string
 	Type         APISpecType
+	CustomType   *string
 	Format       SpecFormat
 	FetchRequest *FetchRequestInput
 }
@@ -131,9 +134,10 @@ func (a *APISpecInput) ToAPISpec() *APISpec {
 	}
 
 	return &APISpec{
-		Data:   a.Data,
-		Format: a.Format,
-		Type:   a.Type,
+		Data:       a.Data,
+		Format:     a.Format,
+		Type:       a.Type,
+		CustomType: a.CustomType,
 	}
 }
 
@@ -146,6 +150,7 @@ func (a *APISpecInput) ToSpec() *SpecInput {
 		Data:         a.Data,
 		Format:       a.Format,
 		Type:         SpecType(a.Type),
+		CustomType:   a.CustomType,
 		FetchRequest: a.FetchRequest,
 	}
 }

@@ -24,10 +24,11 @@ type EventDefinition struct {
 }
 
 type EventSpec struct {
-	ID     string        // Needed to resolve FetchRequest for given APISpec
-	Data   *CLOB         `json:"data"`
-	Type   EventSpecType `json:"type"`
-	Format SpecFormat    `json:"format"`
+	ID         string        // Needed to resolve FetchRequest for given APISpec
+	Data       *CLOB         `json:"data"`
+	Type       EventSpecType `json:"type"`
+	CustomType *string       `json:"customType"`
+	Format     SpecFormat    `json:"format"`
 }
 
 // Extended types used by external API

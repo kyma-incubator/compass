@@ -171,18 +171,20 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return err
 	}
 
-	specs, err := s.specSvc.ListForAPI(ctx, api.ID)
-	if err != nil {
-		return err
-	}
-
-	for _, spec := range specs {
-		err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+	if len(in.Specs) > 0 {
+		specs, err := s.specSvc.ListForAPI(ctx, api.ID)
 		if err != nil {
-			return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
-		}
-		if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
 			return err
+		}
+
+		for _, spec := range specs {
+			err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+			if err != nil {
+				return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
+			}
+			if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
+				return err
+			}
 		}
 	}
 

@@ -135,10 +135,11 @@ func (c *converter) SpecsToGraphQL(ins []*model.APISpec) []*graphql.APISpec {
 		}
 
 		result = append(result, &graphql.APISpec{
-			Data:   data,
-			Type:   graphql.APISpecType(in.Type),
-			Format: graphql.SpecFormat(in.Format),
-			ID:     in.ID,
+			ID:         in.ID,
+			Data:       data,
+			Type:       graphql.APISpecType(in.Type),
+			CustomType: in.CustomType,
+			Format:     graphql.SpecFormat(in.Format),
 		})
 	}
 	return result
@@ -158,6 +159,7 @@ func (c *converter) apiSpecsInputFromGraphQL(ins []*graphql.APISpecInput) ([]*mo
 		result = append(result, &model.APISpecInput{
 			Data:         (*string)(in.Data),
 			Type:         model.APISpecType(in.Type),
+			CustomType:   in.CustomType,
 			Format:       model.SpecFormat(in.Format),
 			FetchRequest: fetchReq,
 		})

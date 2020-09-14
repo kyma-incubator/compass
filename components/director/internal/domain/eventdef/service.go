@@ -58,7 +58,7 @@ type FetchRequestService interface {
 type service struct {
 	eventAPIRepo     EventAPIRepository
 	fetchRequestRepo FetchRequestRepository
-	fetchRequestSvc FetchRequestService
+	fetchRequestSvc  FetchRequestService
 	specSvc          SpecService
 	uidService       UIDService
 	timestampGen     timestamp.Generator
@@ -67,7 +67,7 @@ type service struct {
 func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, fetchRequestSvc FetchRequestService, specSvc SpecService, uidService UIDService) *service {
 	return &service{eventAPIRepo: eventAPIRepo,
 		fetchRequestRepo: fetchRequestRepo,
-		fetchRequestSvc: fetchRequestSvc,
+		fetchRequestSvc:  fetchRequestSvc,
 		uidService:       uidService,
 		specSvc:          specSvc,
 		timestampGen:     timestamp.DefaultGenerator(),
@@ -180,18 +180,20 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		return err
 	}
 
-	specs, err := s.specSvc.ListForEvent(ctx, event.ID)
-	if err != nil {
-		return err
-	}
-
-	for _, spec := range specs {
-		err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+	if len(in.Specs) > 0 {
+		specs, err := s.specSvc.ListForEvent(ctx, event.ID)
 		if err != nil {
-			return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
-		}
-		if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
 			return err
+		}
+
+		for _, spec := range specs {
+			err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+			if err != nil {
+				return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
+			}
+			if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
+				return err
+			}
 		}
 	}
 

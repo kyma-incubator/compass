@@ -10,4 +10,5 @@ type Entity struct {
 	SpecData          sql.NullString `db:"spec_data"`
 	SpecFormat        sql.NullString `db:"spec_format"`
 	SpecType          sql.NullString `db:"spec_type"`
+	CustomType        sql.NullString `db:"custom_type"`
 }

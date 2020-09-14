@@ -37,6 +37,7 @@ scalar Timestamp
 enum APISpecType {
 	ODATA
 	OPEN_API
+	CUSTOM
 }
 
 enum ApplicationStatusCondition {
@@ -78,6 +79,7 @@ enum DocumentFormat {
 
 enum EventSpecType {
 	ASYNC_API
+	CUSTOM
 }
 
 enum FetchMode {
@@ -194,6 +196,7 @@ input APIDefinitionInput {
 input APISpecInput {
 	data: CLOB
 	type: APISpecType!
+	customType: String
 	format: SpecFormat!
 	fetchRequest: FetchRequestInput
 }
@@ -473,6 +476,7 @@ input EventDefinitionInput {
 input EventSpecInput {
 	data: CLOB
 	type: EventSpecType!
+	customType: String
 	format: SpecFormat!
 	fetchRequest: FetchRequestInput
 }
@@ -682,6 +686,7 @@ type APISpec {
 	data: CLOB
 	format: SpecFormat!
 	type: APISpecType!
+	customType: String
 	fetchRequest: FetchRequest
 }
 
@@ -890,6 +895,7 @@ type EventDefinitionPage implements Pageable {
 type EventSpec {
 	data: CLOB
 	type: EventSpecType!
+	customType: String
 	format: SpecFormat!
 	fetchRequest: FetchRequest
 }

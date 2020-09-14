@@ -12,23 +12,26 @@ type Spec struct {
 	Data              *string
 	Format            SpecFormat
 	Type              SpecType
+	CustomType        *string
 }
 
 func (s *Spec) ToAPISpec() *APISpec {
 	return &APISpec{
-		ID:     s.ID,
-		Data:   s.Data,
-		Format: s.Format,
-		Type:   APISpecType(s.Type), // TODO: Check
+		ID:         s.ID,
+		Data:       s.Data,
+		Format:     s.Format,
+		Type:       APISpecType(s.Type), // TODO: Check
+		CustomType: s.CustomType,
 	}
 }
 
 func (s *Spec) ToEventSpec() *EventSpec {
 	return &EventSpec{
-		ID:     s.ID,
-		Data:   s.Data,
-		Format: s.Format,
-		Type:   EventSpecType(s.Type), // TODO: Check
+		ID:         s.ID,
+		Data:       s.Data,
+		Format:     s.Format,
+		Type:       EventSpecType(s.Type), // TODO: Check
+		CustomType: s.CustomType,
 	}
 }
 
@@ -38,6 +41,7 @@ const (
 	SpecTypeOdata    SpecType = "ODATA"
 	SpecTypeOpenAPI  SpecType = "OPEN_API"
 	SpecTypeAsyncAPI SpecType = "ASYNC_API"
+	SpecTypeCustom   SpecType = "CUSTOM"
 )
 
 type SpecInput struct {
@@ -46,6 +50,7 @@ type SpecInput struct {
 	Data         *string
 	Format       SpecFormat
 	Type         SpecType
+	CustomType   *string
 	FetchRequest *FetchRequestInput
 }
 
@@ -69,6 +74,7 @@ func (a *SpecInput) ToSpecWithinAPI(apiID string, tenant string) *Spec {
 		Data:            a.Data,
 		Format:          a.Format,
 		Type:            a.Type,
+		CustomType:      a.CustomType,
 	}
 }
 
@@ -84,5 +90,6 @@ func (a *SpecInput) ToSpecWithinEvent(eventID string, tenant string) *Spec {
 		Data:              a.Data,
 		Format:            a.Format,
 		Type:              a.Type,
+		CustomType:        a.CustomType,
 	}
 }

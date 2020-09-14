@@ -127,10 +127,11 @@ func (c *converter) EventAPISpecToGraphQL(ins []*model.EventSpec) []*graphql.Eve
 		}
 
 		result = append(result, &graphql.EventSpec{
-			ID:     in.ID,
-			Data:   data,
-			Type:   graphql.EventSpecType(in.Type),
-			Format: graphql.SpecFormat(in.Format),
+			ID:         in.ID,
+			Data:       data,
+			Type:       graphql.EventSpecType(in.Type),
+			CustomType: in.CustomType,
+			Format:     graphql.SpecFormat(in.Format),
 		})
 	}
 	return result
@@ -152,6 +153,7 @@ func (c *converter) eventAPISpecInputFromGraphQL(ins []*graphql.EventSpecInput) 
 			Data:          (*string)(in.Data),
 			Format:        model.SpecFormat(in.Format),
 			EventSpecType: model.EventSpecType(in.Type),
+			CustomType:    in.CustomType,
 			FetchRequest:  fetchReq,
 		})
 	}
@@ -204,7 +206,7 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
 		LastUpdated:      eventModel.LastUpdated,
 		Extensions:       repo.NewNullableString(eventModel.Extensions),
 
-		Version:    c.convertVersionToEntity(eventModel.Version),
+		Version: c.convertVersionToEntity(eventModel.Version),
 	}, nil
 }
 

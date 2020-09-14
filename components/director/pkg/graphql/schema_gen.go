@@ -87,6 +87,7 @@ type ComplexityRoot struct {
 	}
 
 	APISpec struct {
+		CustomType   func(childComplexity int) int
 		Data         func(childComplexity int) int
 		FetchRequest func(childComplexity int) int
 		Format       func(childComplexity int) int
@@ -266,6 +267,7 @@ type ComplexityRoot struct {
 	}
 
 	EventSpec struct {
+		CustomType   func(childComplexity int) int
 		Data         func(childComplexity int) int
 		FetchRequest func(childComplexity int) int
 		Format       func(childComplexity int) int
@@ -840,6 +842,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.APIDefinitionPage.TotalCount(childComplexity), true
+
+	case "APISpec.customType":
+		if e.complexity.APISpec.CustomType == nil {
+			break
+		}
+
+		return e.complexity.APISpec.CustomType(childComplexity), true
 
 	case "APISpec.data":
 		if e.complexity.APISpec.Data == nil {
@@ -1712,6 +1721,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EventDefinitionPage.TotalCount(childComplexity), true
+
+	case "EventSpec.customType":
+		if e.complexity.EventSpec.CustomType == nil {
+			break
+		}
+
+		return e.complexity.EventSpec.CustomType(childComplexity), true
 
 	case "EventSpec.data":
 		if e.complexity.EventSpec.Data == nil {
@@ -3416,6 +3432,7 @@ scalar Timestamp
 enum APISpecType {
 	ODATA
 	OPEN_API
+	CUSTOM
 }
 
 enum ApplicationStatusCondition {
@@ -3457,6 +3474,7 @@ enum DocumentFormat {
 
 enum EventSpecType {
 	ASYNC_API
+	CUSTOM
 }
 
 enum FetchMode {
@@ -3573,6 +3591,7 @@ input APIDefinitionInput {
 input APISpecInput {
 	data: CLOB
 	type: APISpecType!
+	customType: String
 	format: SpecFormat!
 	fetchRequest: FetchRequestInput
 }
@@ -3852,6 +3871,7 @@ input EventDefinitionInput {
 input EventSpecInput {
 	data: CLOB
 	type: EventSpecType!
+	customType: String
 	format: SpecFormat!
 	fetchRequest: FetchRequestInput
 }
@@ -4061,6 +4081,7 @@ type APISpec {
 	data: CLOB
 	format: SpecFormat!
 	type: APISpecType!
+	customType: String
 	fetchRequest: FetchRequest
 }
 
@@ -4269,6 +4290,7 @@ type EventDefinitionPage implements Pageable {
 type EventSpec {
 	data: CLOB
 	type: EventSpecType!
+	customType: String
 	format: SpecFormat!
 	fetchRequest: FetchRequest
 }
@@ -7627,6 +7649,40 @@ func (ec *executionContext) _APISpec_type(ctx context.Context, field graphql.Col
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _APISpec_customType(ctx context.Context, field graphql.CollectedField, obj *APISpec) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "APISpec",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CustomType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *APISpec) (ret graphql.Marshaler) {
@@ -11792,6 +11848,40 @@ func (ec *executionContext) _EventSpec_type(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EventSpec_customType(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "EventSpec",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CustomType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventSpec_format(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
@@ -21456,6 +21546,12 @@ func (ec *executionContext) unmarshalInputAPISpecInput(ctx context.Context, obj 
 			if err != nil {
 				return it, err
 			}
+		case "customType":
+			var err error
+			it.CustomType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "format":
 			var err error
 			it.Format, err = ec.unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, v)
@@ -22228,6 +22324,12 @@ func (ec *executionContext) unmarshalInputEventSpecInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
+		case "customType":
+			var err error
+			it.CustomType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "format":
 			var err error
 			it.Format, err = ec.unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, v)
@@ -22942,6 +23044,8 @@ func (ec *executionContext) _APISpec(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "customType":
+			out.Values[i] = ec._APISpec_customType(ctx, field, obj)
 		case "fetchRequest":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -23967,6 +24071,8 @@ func (ec *executionContext) _EventSpec(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "customType":
+			out.Values[i] = ec._EventSpec_customType(ctx, field, obj)
 		case "format":
 			out.Values[i] = ec._EventSpec_format(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

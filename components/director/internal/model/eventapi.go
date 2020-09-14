@@ -32,13 +32,15 @@ type EventSpecType string
 
 const (
 	EventSpecTypeAsyncAPI EventSpecType = "ASYNC_API"
+	EventSpecTypeCustom   EventSpecType = "CUSTOM"
 )
 
 type EventSpec struct {
-	ID     string
-	Data   *string
-	Type   EventSpecType
-	Format SpecFormat
+	ID         string
+	Data       *string
+	Type       EventSpecType
+	CustomType *string
+	Format     SpecFormat
 }
 
 type EventDefinitionPage struct {
@@ -73,6 +75,7 @@ type EventDefinitionInput struct {
 type EventSpecInput struct {
 	Data          *string
 	EventSpecType EventSpecType
+	CustomType    *string
 	Format        SpecFormat
 	FetchRequest  *FetchRequestInput
 }
@@ -116,9 +119,10 @@ func (e *EventSpecInput) ToEventSpec() *EventSpec {
 	}
 
 	return &EventSpec{
-		Data:   e.Data,
-		Type:   e.EventSpecType,
-		Format: e.Format,
+		Data:       e.Data,
+		Type:       e.EventSpecType,
+		Format:     e.Format,
+		CustomType: e.CustomType,
 	}
 }
 
@@ -130,6 +134,7 @@ func (e *EventSpecInput) ToSpec() *SpecInput {
 	return &SpecInput{
 		Data:         e.Data,
 		Type:         SpecType(e.EventSpecType),
+		CustomType:   e.CustomType,
 		Format:       e.Format,
 		FetchRequest: e.FetchRequest,
 	}

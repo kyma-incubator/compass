@@ -33,6 +33,7 @@ func (c converter) FromEntity(specEnt Entity) model.Spec {
 	if specFormat != nil {
 		spec.Type = model.SpecType(*specType)
 	}
+	spec.CustomType = repo.StringPtrFromNullableString(specEnt.CustomType)
 	spec.Data = repo.StringPtrFromNullableString(specEnt.SpecData)
 	return spec
 }
@@ -46,5 +47,6 @@ func (c converter) ToEntity(apiModel model.Spec) Entity {
 		SpecData:          repo.NewNullableString(apiModel.Data),
 		SpecFormat:        repo.NewNullableString(str.Ptr(string(apiModel.Format))),
 		SpecType:          repo.NewNullableString(str.Ptr(string(apiModel.Type))),
+		CustomType:        repo.NewNullableString(apiModel.CustomType),
 	}
 }
