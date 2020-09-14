@@ -220,7 +220,6 @@ func (c *GraphQLClient) FindPackageInstanceCredentials(ctx context.Context, in *
 		return nil, errors.Wrap(err, "while validating input")
 	}
 
-	//TODO replace with provider with correlation id
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
 			  result: application(id: %q) {
 						package(id: %q) {

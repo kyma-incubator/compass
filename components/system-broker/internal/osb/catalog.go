@@ -27,6 +27,7 @@ import (
 type converter interface {
 	Convert(app *schema.ApplicationExt) ([]domain.Service, error)
 }
+
 type CatalogEndpoint struct {
 	lister    applicationsLister
 	converter converter

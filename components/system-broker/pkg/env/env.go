@@ -70,7 +70,7 @@ type ViperEnv struct {
 
 // EmptyFlagSet creates an empty flag set and adds the default set of flags to it
 func EmptyFlagSet() *pflag.FlagSet {
-	set := pflag.NewFlagSet("Service Manager Configuration Flags", pflag.ExitOnError)
+	set := pflag.NewFlagSet("Configuration Flags", pflag.ExitOnError)
 	set.AddFlagSet(pflag.CommandLine)
 	return set
 }

@@ -30,6 +30,7 @@ type Token struct {
 	Expiration  int64  `json:"expires_in"`
 }
 
+//TODO check if we need to add buffer time?
 func (token Token) EmptyOrExpired() bool {
 	if token.AccessToken == "" {
 		return true

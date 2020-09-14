@@ -110,7 +110,6 @@ func prepareGqlClient(cfg *config.Config, uudSrv httputil.UUIDService) (*directo
 
 	// prepare director graphql client
 	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer), nil
-
 }
 
 func prepareK8sClient() (client.Client, error) {

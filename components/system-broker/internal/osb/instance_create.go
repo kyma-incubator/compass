@@ -36,10 +36,10 @@ type ProvisionEndpoint struct {
 
 // option 1 - have a storage for operations and spawn a go routine during provision that will eventually update the op status, poll last op api just fetches op from storage; benefit - no switch case in last op handler
 // option 2 - have naming pattern on operation id; no operation storage and no go routine during provision, instead, fetch creds during poll last op (op_id returned to platform returns all credential coordinates so that during poll last op we can see the credentials status); drawback - magic op_id pattern, switch case in last op handler
-// option 3 - have a storage for operations and operations also store credential coordinates (appid,packageid), in provision op in inserted, in poll last op, op is fetched and based on coords creds are fetched and status is checked - drawbacks - stroage is needed, we still have a switch on poll last op
+// option 3 - have a storage for operations and operations also store credential coordinates (appid,packageid), in provision op in inserted, in poll last op, op is fetched and based on coords creds are fetched and status is checked - drawbacks - storage is needed, we still have a switch on poll last op
 // preferred option is 2 - requires less cpu/memory (no extra background go routines) and also does not need persistent storage
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
-	log.C(ctx).Infof("Provision instanceID: %s parameters: %s context: %s asyncAllowed: %b", instanceID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
+	log.C(ctx).Infof("Provision instanceID: %s parameters: %s context: %s asyncAllowed: %t", instanceID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
 
 	if !asyncAllowed {
 		return domain.ProvisionedServiceSpec{}, apiresponses.ErrAsyncRequired
@@ -96,7 +96,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 	auth := auths[0]
 
-	logger.Info("package instance credentials have status %+v", *auth.Status)
+	logger.Info("package instance credentials have status %s", auth.Status.Condition)
 
 	if IsFailed(auths[0].Status) {
 		return domain.ProvisionedServiceSpec{}, errors.Errorf("requesting package instance credentials from director failed, got status %+v", *auth.Status)
