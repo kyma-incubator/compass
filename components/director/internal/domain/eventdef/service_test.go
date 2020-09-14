@@ -692,7 +692,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			svc := eventdef.NewService(repo, nil, nil)
 
 			// when
-			result, err := svc.RefetchAPISpec(ctx, apiID)
+			result, err := svc.RefetchAPISpecs(ctx, apiID)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPISpec, result)
@@ -704,7 +704,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := eventdef.NewService(nil, nil, nil)
 		// WHEN
-		_, err := svc.RefetchAPISpec(context.TODO(), "")
+		_, err := svc.RefetchAPISpecs(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

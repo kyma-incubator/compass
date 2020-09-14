@@ -252,7 +252,7 @@ type ComplexityRoot struct {
 		OpenDiscoveryID  func(childComplexity int) int
 		ReleaseStatus    func(childComplexity int) int
 		ShortDescription func(childComplexity int) int
-		Spec             func(childComplexity int) int
+		Specs            func(childComplexity int) int
 		Tags             func(childComplexity int) int
 		Title            func(childComplexity int) int
 		URL              func(childComplexity int) int
@@ -593,7 +593,7 @@ type MutationResolver interface {
 	AddEventDefinitionToBundle(ctx context.Context, bundleID string, in EventDefinitionInput) (*EventDefinition, error)
 	UpdateEventDefinition(ctx context.Context, id string, in EventDefinitionInput) (*EventDefinition, error)
 	DeleteEventDefinition(ctx context.Context, id string) (*EventDefinition, error)
-	RefetchEventDefinitionSpec(ctx context.Context, eventID string) (*EventSpec, error)
+	RefetchEventDefinitionSpec(ctx context.Context, eventID string) ([]*EventSpec, error)
 	AddDocumentToBundle(ctx context.Context, bundleID string, in DocumentInput) (*Document, error)
 	DeleteDocument(ctx context.Context, id string) (*Document, error)
 	CreateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
@@ -1657,12 +1657,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EventDefinition.ShortDescription(childComplexity), true
 
-	case "EventDefinition.spec":
-		if e.complexity.EventDefinition.Spec == nil {
+	case "EventDefinition.specs":
+		if e.complexity.EventDefinition.Specs == nil {
 			break
 		}
 
-		return e.complexity.EventDefinition.Spec(childComplexity), true
+		return e.complexity.EventDefinition.Specs(childComplexity), true
 
 	case "EventDefinition.tags":
 		if e.complexity.EventDefinition.Tags == nil {
@@ -3823,7 +3823,7 @@ input EventDefinitionInput {
 	**Validation:** max=2000
 	"""
 	description: String
-	spec: EventSpecInput
+	specs: [EventSpecInput!]
 	"""
 	**Validation:** max=36
 	"""
@@ -4243,7 +4243,7 @@ type EventDefinition {
 	group allows you to find the same API but in different version
 	"""
 	group: String
-	spec: EventSpec
+	specs: [EventSpec!]
 	version: Version
 	eventDefinitions: JSON!
 	tags: JSON
@@ -4668,7 +4668,7 @@ type Mutation {
 	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
 	"""
 	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
-	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
+	refetchEventDefinitionSpec(eventID: ID!): [EventSpec!] @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	addDocumentToBundle(bundleID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToBundle")
 	"""
 	**Examples**
@@ -11195,7 +11195,7 @@ func (ec *executionContext) _EventDefinition_group(ctx context.Context, field gr
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _EventDefinition_spec(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _EventDefinition_specs(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -11214,7 +11214,7 @@ func (ec *executionContext) _EventDefinition_spec(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Spec, nil
+		return obj.Specs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11223,10 +11223,10 @@ func (ec *executionContext) _EventDefinition_spec(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*EventSpec)
+	res := resTmp.([]*EventSpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
+	return ec.marshalOEventSpec2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_version(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -14860,27 +14860,22 @@ func (ec *executionContext) _Mutation_refetchEventDefinitionSpec(ctx context.Con
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*EventSpec); ok {
+		if data, ok := tmp.([]*EventSpec); ok {
 			return data, nil
-		} else if tmp == nil {
-			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.EventSpec`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.EventSpec`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(*EventSpec)
+	res := resTmp.([]*EventSpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
+	return ec.marshalOEventSpec2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addDocumentToBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -22131,9 +22126,9 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "spec":
+		case "specs":
 			var err error
-			it.Spec, err = ec.unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
+			it.Specs, err = ec.unmarshalOEventSpecInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -23873,8 +23868,8 @@ func (ec *executionContext) _EventDefinition(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EventDefinition_description(ctx, field, obj)
 		case "group":
 			out.Values[i] = ec._EventDefinition_group(ctx, field, obj)
-		case "spec":
-			out.Values[i] = ec._EventDefinition_spec(ctx, field, obj)
+		case "specs":
+			out.Values[i] = ec._EventDefinition_specs(ctx, field, obj)
 		case "version":
 			out.Values[i] = ec._EventDefinition_version(ctx, field, obj)
 		case "eventDefinitions":
@@ -24464,9 +24459,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "refetchEventDefinitionSpec":
 			out.Values[i] = ec._Mutation_refetchEventDefinitionSpec(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "addDocumentToBundle":
 			out.Values[i] = ec._Mutation_addDocumentToBundle(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -26521,6 +26513,18 @@ func (ec *executionContext) marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubator
 	return ec._EventSpec(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
+	return ec.unmarshalInputEventSpecInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (*EventSpecInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx context.Context, v interface{}) (EventSpecType, error) {
 	var res EventSpecType
 	return res, res.UnmarshalGQL(v)
@@ -27977,27 +27981,64 @@ func (ec *executionContext) marshalOEventDefinitionPage2ᚖgithubᚗcomᚋkyma�
 	return ec._EventDefinitionPage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOEventSpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v EventSpec) graphql.Marshaler {
-	return ec._EventSpec(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v *EventSpec) graphql.Marshaler {
+func (ec *executionContext) marshalOEventSpec2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v []*EventSpec) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._EventSpec(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
-	return ec.unmarshalInputEventSpecInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (*EventSpecInput, error) {
-	if v == nil {
-		return nil, nil
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
 	}
-	res, err := ec.unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
-	return &res, err
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOEventSpecInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) ([]*EventSpecInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*EventSpecInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {

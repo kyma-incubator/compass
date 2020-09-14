@@ -14,7 +14,7 @@ type EventDefinition struct {
 	ShortDescription string
 	Description      *string
 	Group            *string
-	Spec             *EventSpec
+	Specs            []*EventSpec
 	Version          *Version
 	EventDefinitions string
 	Tags             *string
@@ -35,6 +35,7 @@ const (
 )
 
 type EventSpec struct {
+	ID     string
 	Data   *string
 	Type   EventSpecType
 	Format SpecFormat
@@ -54,7 +55,7 @@ type EventDefinitionInput struct {
 	Title            string
 	ShortDescription string
 	Description      *string
-	Spec             *EventSpecInput
+	Specs            []*EventSpecInput
 	Group            *string
 	Version          *VersionInput
 	EventDefinitions string
@@ -81,6 +82,11 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(bundleID string, te
 		return nil
 	}
 
+	specs := make([]*EventSpec, 0, 0)
+	for _, spec := range e.Specs {
+		specs = append(specs, spec.ToEventSpec())
+	}
+
 	return &EventDefinition{
 		ID:               e.ID,
 		OpenDiscoveryID:  e.OpenDiscoveryID,
@@ -90,7 +96,7 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(bundleID string, te
 		ShortDescription: e.ShortDescription,
 		Description:      e.Description,
 		Group:            e.Group,
-		Spec:             e.Spec.ToEventSpec(),
+		Specs:            specs,
 		Version:          e.Version.ToVersion(),
 		EventDefinitions: e.EventDefinitions,
 		Tags:             e.Tags,
@@ -113,5 +119,18 @@ func (e *EventSpecInput) ToEventSpec() *EventSpec {
 		Data:   e.Data,
 		Type:   e.EventSpecType,
 		Format: e.Format,
+	}
+}
+
+func (e *EventSpecInput) ToSpec() *SpecInput {
+	if e == nil {
+		return nil
+	}
+
+	return &SpecInput{
+		Data:         e.Data,
+		Type:         SpecType(e.EventSpecType),
+		Format:       e.Format,
+		FetchRequest: e.FetchRequest,
 	}
 }

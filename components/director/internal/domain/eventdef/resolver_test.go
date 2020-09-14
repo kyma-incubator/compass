@@ -588,7 +588,7 @@ func TestResolver_RefetchAPISpec(t *testing.T) {
 			resolver := eventdef.NewResolver(transact, svc, nil, nil, conv, nil)
 
 			// when
-			result, err := resolver.RefetchEventDefinitionSpec(context.TODO(), apiID)
+			result, err := resolver.RefetchEventDefinitionSpecs(context.TODO(), apiID)
 
 			// then
 			assert.Equal(t, testCase.ExpectedEventSpec, result)

@@ -40,7 +40,7 @@ func (c *converter) ToGraphQL(in *model.EventDefinition) *graphql.EventDefinitio
 		ShortDescription: in.ShortDescription,
 		Description:      in.Description,
 		Group:            in.Group,
-		Spec:             c.eventAPISpecToGraphQL(in.ID, in.Spec),
+		Specs:            c.EventAPISpecToGraphQL(in.Specs),
 		Version:          c.vc.ToGraphQL(in.Version),
 		EventDefinitions: graphql.JSON(in.EventDefinitions),
 		Documentation:    in.Documentation,
@@ -86,7 +86,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 		return nil, nil
 	}
 
-	spec, err := c.eventAPISpecInputFromGraphQL(in.Spec)
+	specs, err := c.eventAPISpecInputFromGraphQL(in.Specs)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
 		Description:      in.Description,
-		Spec:             spec,
+		Specs:            specs,
 		Group:            in.Group,
 		Version:          c.vc.InputFromGraphQL(in.Version),
 		EventDefinitions: string(in.EventDefinitions),
@@ -113,41 +113,49 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 	}, nil
 }
 
-func (c *converter) eventAPISpecToGraphQL(definitionID string, in *model.EventSpec) *graphql.EventSpec {
-	if in == nil {
+func (c *converter) EventAPISpecToGraphQL(ins []*model.EventSpec) []*graphql.EventSpec {
+	if ins == nil {
 		return nil
 	}
 
-	var data *graphql.CLOB
-	if in.Data != nil {
-		tmp := graphql.CLOB(*in.Data)
-		data = &tmp
-	}
+	result := make([]*graphql.EventSpec, 0, 0)
+	for _, in := range ins {
+		var data *graphql.CLOB
+		if in.Data != nil {
+			tmp := graphql.CLOB(*in.Data)
+			data = &tmp
+		}
 
-	return &graphql.EventSpec{
-		Data:         data,
-		Type:         graphql.EventSpecType(in.Type),
-		Format:       graphql.SpecFormat(in.Format),
-		DefinitionID: definitionID,
+		result = append(result, &graphql.EventSpec{
+			ID:     in.ID,
+			Data:   data,
+			Type:   graphql.EventSpecType(in.Type),
+			Format: graphql.SpecFormat(in.Format),
+		})
 	}
+	return result
 }
 
-func (c *converter) eventAPISpecInputFromGraphQL(in *graphql.EventSpecInput) (*model.EventSpecInput, error) {
-	if in == nil {
+func (c *converter) eventAPISpecInputFromGraphQL(ins []*graphql.EventSpecInput) ([]*model.EventSpecInput, error) {
+	if ins == nil {
 		return nil, nil
 	}
+	result := make([]*model.EventSpecInput, 0, 0)
 
-	fetchReq, err := c.fr.InputFromGraphQL(in.FetchRequest)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting FetchRequest from GraphQL input")
+	for _, in := range ins {
+		fetchReq, err := c.fr.InputFromGraphQL(in.FetchRequest)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting FetchRequest from GraphQL input")
+		}
+
+		result = append(result, &model.EventSpecInput{
+			Data:          (*string)(in.Data),
+			Format:        model.SpecFormat(in.Format),
+			EventSpecType: model.EventSpecType(in.Type),
+			FetchRequest:  fetchReq,
+		})
 	}
-
-	return &model.EventSpecInput{
-		Data:          (*string)(in.Data),
-		Format:        model.SpecFormat(in.Format),
-		EventSpecType: model.EventSpecType(in.Type),
-		FetchRequest:  fetchReq,
-	}, nil
+	return result, nil
 }
 
 func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
@@ -161,7 +169,6 @@ func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 		Description:      repo.StringPtrFromNullableString(entity.Description),
 		Group:            repo.StringPtrFromNullableString(entity.GroupName),
 		Version:          c.vc.FromEntity(entity.Version),
-		Spec:             c.apiSpecFromEntity(entity.EntitySpec),
 		EventDefinitions: entity.EventDefinitions,
 		Documentation:    repo.StringPtrFromNullableString(entity.Documentation),
 		ChangelogEntries: repo.StringPtrFromNullableString(entity.ChangelogEntries),
@@ -198,7 +205,6 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
 		Extensions:       repo.NewNullableString(eventModel.Extensions),
 
 		Version:    c.convertVersionToEntity(eventModel.Version),
-		EntitySpec: c.apiSpecToEntity(eventModel.Spec),
 	}, nil
 }
 
@@ -223,7 +229,7 @@ func (c *converter) apiSpecToEntity(spec *model.EventSpec) EntitySpec {
 	return apiSpecEnt
 }
 
-func (c *converter) apiSpecFromEntity(specEnt EntitySpec) *model.EventSpec {
+func (c *converter) EventSpecFromEntity(specEnt EntitySpec) *model.EventSpec {
 	if !specEnt.SpecType.Valid && !specEnt.SpecFormat.Valid && !specEnt.SpecData.Valid {
 		return nil
 	}

@@ -120,7 +120,7 @@ func (s *service) CreateForAPI(ctx context.Context, apiID string, in model.SpecI
 	return in.ID, nil
 }
 
-func (s *service) CreateForEvent(ctx context.Context, apiID string, in model.SpecInput) (string, error) {
+func (s *service) CreateForEvent(ctx context.Context, eventID string, in model.SpecInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -129,14 +129,14 @@ func (s *service) CreateForEvent(ctx context.Context, apiID string, in model.Spe
 	if len(in.ID) == 0 {
 		in.ID = s.uidService.Generate()
 	}
-	spec := in.ToSpecWithinEvent(apiID, tnt)
+	spec := in.ToSpecWithinEvent(eventID, tnt)
 
 	err = s.repo.Create(ctx, spec)
 	if err != nil {
 		return "", err
 	}
 
-	if in.Data != nil && in.FetchRequest != nil {
+	if in.FetchRequest != nil {
 		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, in.ID)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", in.ID)

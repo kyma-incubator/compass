@@ -160,7 +160,7 @@ CREATE TYPE spec_type AS ENUM (
 
 CREATE TABLE specifications (
     id UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    tenant_id UUID,
+    tenant_id UUID NOT NULL,
     api_def_id UUID,
     event_def_id UUID,
     FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id) ON DELETE CASCADE,
@@ -177,10 +177,16 @@ ALTER TABLE fetch_requests
     ADD COLUMN spec_id UUID;
 
 ALTER TABLE fetch_requests
+    ADD CONSTRAINT spec_id_fk FOREIGN KEY (spec_id) REFERENCES specifications(id) ON DELETE CASCADE;
+
+ALTER TABLE fetch_requests
     DROP CONSTRAINT valid_refs;
 
 ALTER TABLE fetch_requests
     ADD CONSTRAINT valid_refs
         CHECK (api_def_id IS NOT NULL OR event_api_def_id IS NOT NULL OR document_id IS NOT NULL OR spec_id IS NOT NULL);
+
+DROP INDEX IF EXISTS fetch_requests_tenant_id_coalesce_coalesce1_coalesce2_idx;
+CREATE UNIQUE INDEX ON fetch_requests (tenant_id, coalesce(api_def_id, '00000000-0000-0000-0000-000000000000'), coalesce(event_api_def_id, '00000000-0000-0000-0000-000000000000'), coalesce(document_id, '00000000-0000-0000-0000-000000000000'), coalesce(spec_id, '00000000-0000-0000-0000-000000000000'));
 
 COMMIT;

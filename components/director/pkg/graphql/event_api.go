@@ -8,26 +8,26 @@ type EventDefinition struct {
 	ShortDescription string  `json:"shortDescription"`
 	Description      *string `json:"description"`
 	// group allows you to find the same API but in different version
-	Group            *string    `json:"group"`
-	Spec             *EventSpec `json:"spec"`
-	Version          *Version   `json:"version"`
-	EventDefinitions JSON       `json:"eventDefinitions"`
-	Tags             *JSON      `json:"tags"`
-	Documentation    *string    `json:"documentation"`
-	ChangelogEntries *JSON      `json:"changelogEntries"`
-	Logo             *string    `json:"logo"`
-	Image            *string    `json:"image"`
-	URL              *string    `json:"url"`
-	ReleaseStatus    string     `json:"releaseStatus"`
-	LastUpdated      Timestamp  `json:"lastUpdated"`
-	Extensions       *JSON      `json:"extensions"`
+	Group            *string      `json:"group"`
+	Specs            []*EventSpec `json:"specs"`
+	Version          *Version     `json:"version"`
+	EventDefinitions JSON         `json:"eventDefinitions"`
+	Tags             *JSON        `json:"tags"`
+	Documentation    *string      `json:"documentation"`
+	ChangelogEntries *JSON        `json:"changelogEntries"`
+	Logo             *string      `json:"logo"`
+	Image            *string      `json:"image"`
+	URL              *string      `json:"url"`
+	ReleaseStatus    string       `json:"releaseStatus"`
+	LastUpdated      Timestamp    `json:"lastUpdated"`
+	Extensions       *JSON        `json:"extensions"`
 }
 
 type EventSpec struct {
-	Data         *CLOB         `json:"data"`
-	Type         EventSpecType `json:"type"`
-	Format       SpecFormat    `json:"format"`
-	DefinitionID string        // Needed to resolve FetchRequest for given APISpec
+	ID     string        // Needed to resolve FetchRequest for given APISpec
+	Data   *CLOB         `json:"data"`
+	Type   EventSpecType `json:"type"`
+	Format SpecFormat    `json:"format"`
 }
 
 // Extended types used by external API

@@ -97,7 +97,7 @@ func (_m *EventDefService) GetFetchRequest(ctx context.Context, eventAPIDefID st
 }
 
 // RefetchAPISpec provides a mock function with given fields: ctx, id
-func (_m *EventDefService) RefetchAPISpec(ctx context.Context, id string) (*model.EventSpec, error) {
+func (_m *EventDefService) RefetchAPISpecs(ctx context.Context, id string) ([]*model.EventSpec, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.EventSpec

@@ -2,7 +2,6 @@ package eventdef
 
 import (
 	"context"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -40,17 +39,37 @@ type UIDService interface {
 	Generate() string
 }
 
+//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
+type SpecService interface {
+	CreateForAPI(ctx context.Context, bundleID string, in model.SpecInput) (string, error)
+	CreateForEvent(ctx context.Context, bundleID string, in model.SpecInput) (string, error)
+	ListForEvent(ctx context.Context, eventID string) ([]*model.Spec, error)
+	Update(ctx context.Context, id string, in model.SpecInput) error
+	Delete(ctx context.Context, id string) error
+	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
+	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
+}
+
+//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
+type FetchRequestService interface {
+	HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string
+}
+
 type service struct {
 	eventAPIRepo     EventAPIRepository
 	fetchRequestRepo FetchRequestRepository
+	fetchRequestSvc FetchRequestService
+	specSvc          SpecService
 	uidService       UIDService
 	timestampGen     timestamp.Generator
 }
 
-func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService) *service {
+func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, fetchRequestSvc FetchRequestService, specSvc SpecService, uidService UIDService) *service {
 	return &service{eventAPIRepo: eventAPIRepo,
 		fetchRequestRepo: fetchRequestRepo,
+		fetchRequestSvc: fetchRequestSvc,
 		uidService:       uidService,
+		specSvc:          specSvc,
 		timestampGen:     timestamp.DefaultGenerator(),
 	}
 }
@@ -121,24 +140,29 @@ func (s *service) ExistsByCondition(ctx context.Context, conds repo.Conditions) 
 func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return "", errors.Wrapf(err, "while loading tenant from context")
+		return "", err
 	}
 
 	if len(in.ID) == 0 {
 		in.ID = s.uidService.Generate()
 	}
+	event := in.ToEventDefinitionWithinBundle(bundleID, tnt)
 
-	eventAPI := in.ToEventDefinitionWithinBundle(bundleID, tnt)
+	specs := make([]*model.SpecInput, 0, 0)
+	for _, spec := range in.Specs {
+		specs = append(specs, spec.ToSpec())
+	}
+	event.Specs = nil
 
-	err = s.eventAPIRepo.Create(ctx, eventAPI)
+	err = s.eventAPIRepo.Create(ctx, event)
 	if err != nil {
 		return "", err
 	}
 
-	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, in.ID)
+	for _, spec := range specs {
+		_, err = s.specSvc.CreateForEvent(ctx, in.ID, *spec)
 		if err != nil {
-			return "", errors.Wrapf(err, "while creating FetchRequest for EventDefinition %s", in.ID)
+			return "", errors.Wrapf(err, "error creating spec for event in bundle with id %s", bundleID)
 		}
 	}
 
@@ -148,32 +172,48 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
+		return err
 	}
 
-	eventAPI, err := s.Get(ctx, id)
+	event, err := s.Get(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.EventAPIFetchRequestReference, id)
+	specs, err := s.specSvc.ListForEvent(ctx, event.ID)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting FetchRequest for EventDefinition %s", id)
+		return err
 	}
 
-	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+	for _, spec := range specs {
+		err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
 		if err != nil {
-			return errors.Wrapf(err, "while creating FetchRequest for EventDefinition %s", id)
+			return errors.Wrapf(err, "while deleting FetchRequest for APIDefinition %s", id)
+		}
+		if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
+			return err
 		}
 	}
 
 	in.ID = id
-	eventAPI = in.ToEventDefinitionWithinBundle(eventAPI.BundleID, tnt)
+	event = in.ToEventDefinitionWithinBundle(event.BundleID, tnt)
 
-	err = s.eventAPIRepo.Update(ctx, eventAPI)
+	newSpecs := make([]*model.SpecInput, 0, 0)
+	for _, spec := range in.Specs {
+		newSpecs = append(newSpecs, spec.ToSpec())
+	}
+	event.Specs = nil
+
+	for _, spec := range newSpecs {
+		_, err = s.specSvc.CreateForAPI(ctx, in.ID, *spec)
+		if err != nil {
+			return errors.Wrapf(err, "error creating spec for event with id %s", id)
+		}
+	}
+
+	err = s.eventAPIRepo.Update(ctx, event)
 	if err != nil {
-		return errors.Wrapf(err, "while updating EventDefinition with ID %s", id)
+		return errors.Wrapf(err, "while updating APIDefinition with ID %s", id)
 	}
 
 	return nil
@@ -193,43 +233,50 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.EventSpec, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	eventAPI, err := s.eventAPIRepo.GetByID(ctx, tnt, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return eventAPI.Spec, nil
-}
-
-func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error) {
+func (s *service) RefetchAPISpecs(ctx context.Context, id string) ([]*model.EventSpec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	exists, err := s.eventAPIRepo.Exists(ctx, tnt, eventAPIDefID)
+	api, err := s.eventAPIRepo.GetByID(ctx, tnt, id)
 	if err != nil {
-		return nil, errors.Wrap(err, "while checking if Event Definition exists")
-	}
-	if !exists {
-		return nil, fmt.Errorf("Event Definition with ID %s doesn't exist", eventAPIDefID)
+		return nil, err
 	}
 
-	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.EventAPIFetchRequestReference, eventAPIDefID)
+	specs, err := s.specSvc.ListForEvent(ctx, api.ID)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+		return nil, err
+	}
+
+	for _, spec := range specs {
+		fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", id)
 		}
-		return nil, errors.Wrapf(err, "while getting FetchRequest by Event Definition ID %s", eventAPIDefID)
+
+		if fetchRequest != nil {
+			spec.Data = s.fetchRequestSvc.HandleAPISpec(ctx, fetchRequest)
+		}
+		err = s.specSvc.Update(ctx, spec.ID, model.SpecInput{
+			ID:     spec.ID,
+			Tenant: spec.Tenant,
+			Data:   spec.Data,
+			Format: spec.Format,
+			Type:   spec.Type,
+		})
+
+		if err != nil {
+			return nil, errors.Wrap(err, "while updating api spec")
+		}
 	}
 
-	return fetchRequest, nil
+	apiSpecs := make([]*model.EventSpec, 0, 0)
+	for _, spec := range specs {
+		apiSpecs = append(apiSpecs, spec.ToEventSpec())
+	}
+
+	return apiSpecs, nil
 }
 
 func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, parentObjectID string) (*string, error) {

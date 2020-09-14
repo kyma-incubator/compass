@@ -111,7 +111,7 @@ func NewRootResolver(
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	specRepo := spec.NewRepository(specConverter)
 	apiRepo := api.NewRepository(apiConverter, specRepo)
-	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
+	eventAPIRepo := eventdef.NewRepository(eventAPIConverter, specRepo)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
@@ -132,7 +132,7 @@ func NewRootResolver(
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc, specSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, fetchRequestSvc, specSvc, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
@@ -155,7 +155,7 @@ func NewRootResolver(
 		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, packageSvc, packageConverter),
 		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:                api.NewResolver(transact, apiSvc, specSvc, appSvc, runtimeSvc, bundleSvc, apiConverter, frConverter),
-		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, appSvc, bundleSvc, eventAPIConverter, frConverter),
+		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, specSvc, appSvc, bundleSvc, eventAPIConverter, frConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		runtime:            runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
@@ -354,8 +354,8 @@ func (r *mutationResolver) UpdateEventDefinition(ctx context.Context, id string,
 func (r *mutationResolver) DeleteEventDefinition(ctx context.Context, id string) (*graphql.EventDefinition, error) {
 	return r.eventAPI.DeleteEventDefinition(ctx, id)
 }
-func (r *mutationResolver) RefetchEventDefinitionSpec(ctx context.Context, eventID string) (*graphql.EventSpec, error) {
-	return r.eventAPI.RefetchEventDefinitionSpec(ctx, eventID)
+func (r *mutationResolver) RefetchEventDefinitionSpec(ctx context.Context, eventID string) ([]*graphql.EventSpec, error) {
+	return r.eventAPI.RefetchEventDefinitionSpecs(ctx, eventID)
 }
 func (r *mutationResolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
 	return r.runtime.RegisterRuntime(ctx, in)

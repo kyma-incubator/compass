@@ -48,8 +48,7 @@ type EventDefService interface {
 	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
-	RefetchAPISpec(ctx context.Context, id string) (*model.EventSpec, error)
-	GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error)
+	RefetchAPISpecs(ctx context.Context, id string) ([]*model.EventSpec, error)
 	GetByConditions(ctx context.Context, conds repo.Conditions) (*model.EventDefinition, error)
 	ExistsByCondition(ctx context.Context, conds repo.Conditions) (bool, error)
 }

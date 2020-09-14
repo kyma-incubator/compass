@@ -23,6 +23,15 @@ func (s *Spec) ToAPISpec() *APISpec {
 	}
 }
 
+func (s *Spec) ToEventSpec() *EventSpec {
+	return &EventSpec{
+		ID:     s.ID,
+		Data:   s.Data,
+		Format: s.Format,
+		Type:   EventSpecType(s.Type), // TODO: Check
+	}
+}
+
 type SpecType string
 
 const (

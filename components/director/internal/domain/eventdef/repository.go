@@ -31,6 +31,19 @@ var (
 type EventAPIDefinitionConverter interface {
 	FromEntity(entity Entity) (model.EventDefinition, error)
 	ToEntity(apiModel model.EventDefinition) (Entity, error)
+	EventSpecFromEntity(specEnt EntitySpec) *model.EventSpec
+}
+
+//go:generate mockery -name=SpecRepository -output=automock -outpkg=automock -case=underscore
+type SpecRepository interface {
+	ListForAPI(ctx context.Context, tenantID, apiID string) ([]*model.Spec, error)
+	ListForEvent(ctx context.Context, tenantID, eventID string) ([]*model.Spec, error)
+	Exists(ctx context.Context, tenant, id string) (bool, error)
+	GetByID(ctx context.Context, tenantID, id string) (*model.Spec, error)
+	CreateMany(ctx context.Context, item []*model.Spec) error
+	Create(ctx context.Context, item *model.Spec) error
+	Update(ctx context.Context, item *model.Spec) error
+	Delete(ctx context.Context, tenantID string, id string) error
 }
 
 type pgRepository struct {
@@ -41,9 +54,10 @@ type pgRepository struct {
 	deleter         repo.Deleter
 	existQuerier    repo.ExistQuerier
 	conv            EventAPIDefinitionConverter
+	specRepo        SpecRepository
 }
 
-func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
+func NewRepository(conv EventAPIDefinitionConverter, specRepo SpecRepository) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, apiDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn, apiDefColumns),
@@ -52,6 +66,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 		deleter:         repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
 		existQuerier:    repo.NewExistQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn),
 		conv:            conv,
+		specRepo:        specRepo,
 	}
 }
 
@@ -62,7 +77,32 @@ func (r EventAPIDefCollection) Len() int {
 }
 
 func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error) {
-	return r.GetByConditions(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+	var eventEntity Entity
+	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventEntity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting EventDefinition")
+	}
+
+	eventModel, err := r.conv.FromEntity(eventEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	if !eventEntity.SpecData.Valid {
+		specs, err := r.specRepo.ListForEvent(ctx, tenantID, id)
+		if err != nil {
+			return nil, err
+		}
+		apiSpecs := make([]*model.EventSpec, 0, 0)
+		for _, spec := range specs {
+			apiSpecs = append(apiSpecs, spec.ToEventSpec())
+		}
+		eventModel.Specs = append(eventModel.Specs, apiSpecs...)
+	} else {
+		eventModel.Specs = append(eventModel.Specs, r.conv.EventSpecFromEntity(eventEntity.EntitySpec))
+	}
+
+	return &eventModel, nil
 }
 
 func (r *pgRepository) ExistsByCondition(ctx context.Context, tenant string, conds repo.Conditions) (bool, error) {
@@ -113,7 +153,7 @@ func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundl
 
 func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.EventDefinitionPage, error) {
 	var eventCollection EventAPIDefCollection
-	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, idColumn, &eventCollection, conditions...)
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &eventCollection, conditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +163,20 @@ func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cu
 	for _, eventEnt := range eventCollection {
 		m, err := r.conv.FromEntity(eventEnt)
 		if err != nil {
-			return nil, errors.Wrap(err, "while creating APIDefinition model from entity")
+			return nil, err
+		}
+		if !eventEnt.SpecData.Valid {
+			specs, err := r.specRepo.ListForEvent(ctx, tenant, m.ID)
+			if err != nil {
+				return nil, err
+			}
+			eventSpecs := make([]*model.EventSpec, 0, 0)
+			for _, spec := range specs {
+				eventSpecs = append(eventSpecs, spec.ToEventSpec())
+			}
+			m.Specs = append(m.Specs, eventSpecs...)
+		} else {
+			m.Specs = append(m.Specs, r.conv.EventSpecFromEntity(eventEnt.EntitySpec))
 		}
 		items = append(items, &m)
 	}

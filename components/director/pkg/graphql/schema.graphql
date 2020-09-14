@@ -444,7 +444,7 @@ input EventDefinitionInput {
 	**Validation:** max=2000
 	"""
 	description: String
-	spec: EventSpecInput
+	specs: [EventSpecInput!]
 	"""
 	**Validation:** max=36
 	"""
@@ -864,7 +864,7 @@ type EventDefinition {
 	group allows you to find the same API but in different version
 	"""
 	group: String
-	spec: EventSpec
+	specs: [EventSpec!]
 	version: Version
 	eventDefinitions: JSON!
 	tags: JSON
@@ -1289,7 +1289,7 @@ type Mutation {
 	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
 	"""
 	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
-	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
+	refetchEventDefinitionSpec(eventID: ID!): [EventSpec!] @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	addDocumentToBundle(bundleID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToBundle")
 	"""
 	**Examples**

@@ -20,8 +20,7 @@ type EventDefService interface {
 	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
-	RefetchAPISpec(ctx context.Context, id string) (*model.EventSpec, error)
-	GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error)
+	RefetchAPISpecs(ctx context.Context, id string) ([]*model.EventSpec, error)
 }
 
 //go:generate mockery -name=EventDefConverter -output=automock -outpkg=automock -case=underscore
@@ -30,6 +29,7 @@ type EventDefConverter interface {
 	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
 	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, error)
 	InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, error)
+	EventAPISpecToGraphQL(ins []*model.EventSpec) []*graphql.EventSpec
 }
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
@@ -51,16 +51,18 @@ type BundleService interface {
 type Resolver struct {
 	transact    persistence.Transactioner
 	svc         EventDefService
+	specSvc     SpecService
 	appSvc      ApplicationService
 	bundleSvc   BundleService
 	converter   EventDefConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc ApplicationService, bundleSvc BundleService, converter EventDefConverter, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc EventDefService, specSvc SpecService, appSvc ApplicationService, bundleSvc BundleService, converter EventDefConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
+		specSvc:     specSvc,
 		appSvc:      appSvc,
 		bundleSvc:   bundleSvc,
 		converter:   converter,
@@ -174,7 +176,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 	return deletedAPI, nil
 }
 
-func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID string) (*graphql.EventSpec, error) {
+func (r *Resolver) RefetchEventDefinitionSpecs(ctx context.Context, eventID string) ([]*graphql.EventSpec, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -183,7 +185,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	spec, err := r.svc.RefetchAPISpec(ctx, eventID)
+	spec, err := r.svc.RefetchAPISpecs(ctx, eventID)
 	if err != nil {
 		return nil, err
 	}
@@ -193,14 +195,13 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 		return nil, err
 	}
 
-	convertedOut := r.converter.ToGraphQL(&model.EventDefinition{Spec: spec})
-
-	return convertedOut.Spec, nil
+	converted := r.converter.EventAPISpecToGraphQL(spec)
+	return converted, nil
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
-		return nil, apperrors.NewInternalError("Event Specs cannot be empty")
+		return nil, apperrors.NewInternalError("API Specs cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -211,17 +212,17 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if obj.DefinitionID == "" {
-		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition ID is empty")
+	if obj.ID == "" {
+		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. Spec ID is empty")
 	}
 
-	fr, err := r.svc.GetFetchRequest(ctx, obj.DefinitionID)
+	fr, err := r.specSvc.GetFetchRequest(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	if fr == nil {
-		return nil, tx.Commit()
+		return nil, nil
 	}
 
 	err = tx.Commit()

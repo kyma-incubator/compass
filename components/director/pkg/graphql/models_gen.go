@@ -359,8 +359,8 @@ type EventDefinitionInput struct {
 	Title            string `json:"title"`
 	ShortDescription string `json:"shortDescription"`
 	// **Validation:** max=2000
-	Description *string         `json:"description"`
-	Spec        *EventSpecInput `json:"spec"`
+	Description *string           `json:"description"`
+	Specs       []*EventSpecInput `json:"specs"`
 	// **Validation:** max=36
 	Group            *string       `json:"group"`
 	Version          *VersionInput `json:"version"`
