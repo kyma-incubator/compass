@@ -154,7 +154,7 @@ func NewRootResolver(
 	return &RootResolver{
 		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, packageSvc, packageConverter),
 		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
-		api:                api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, bundleSvc, apiConverter, frConverter),
+		api:                api.NewResolver(transact, apiSvc, specSvc, appSvc, runtimeSvc, bundleSvc, apiConverter, frConverter),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, appSvc, bundleSvc, eventAPIConverter, frConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
@@ -527,14 +527,7 @@ func (r *runtimeResolver) EventingConfiguration(ctx context.Context, obj *graphq
 type apiSpecResolver struct{ *RootResolver }
 
 func (r *apiSpecResolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
-	frs, err := r.api.FetchRequests(ctx, obj)
-	if err != nil {
-		return nil, err
-	}
-	if len(frs) == 0 {
-		return nil, nil
-	}
-	return frs[0], nil
+	return r.api.FetchRequest(ctx, obj)
 }
 
 type documentResolver struct{ *RootResolver }

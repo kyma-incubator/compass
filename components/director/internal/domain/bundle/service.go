@@ -40,7 +40,6 @@ type APIService interface {
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	RefetchAPISpecs(ctx context.Context, id string) ([]*model.APISpec, error)
-	GetFetchRequests(ctx context.Context, apiDefID string) ([]*model.FetchRequest, error)
 }
 
 //go:generate mockery -name=EventDefService -output=automock -outpkg=automock -case=underscore

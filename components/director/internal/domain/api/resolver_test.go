@@ -716,7 +716,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			resolver := api.NewResolver(transact, svc, nil, nil, nil, nil, converter)
 
 			// when
-			result, err := resolver.FetchRequests(context.TODO(), &graphql.APISpec{DefinitionID: id})
+			result, err := resolver.FetchRequest(context.TODO(), &graphql.APISpec{ID: id})
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)

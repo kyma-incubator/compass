@@ -27,11 +27,11 @@ type APIDefinition struct {
 }
 
 type APISpec struct {
+	ID     string      // Needed to resolve FetchRequest for given APISpec
 	// when fetch request specified, data will be automatically populated
-	Data         *CLOB       `json:"data"`
-	Format       SpecFormat  `json:"format"`
-	Type         APISpecType `json:"type"`
-	DefinitionID string      // Needed to resolve FetchRequest for given APISpec
+	Data   *CLOB       `json:"data"`
+	Format SpecFormat  `json:"format"`
+	Type   APISpecType `json:"type"`
 }
 
 // Extended types used by external API

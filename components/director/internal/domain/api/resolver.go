@@ -23,7 +23,6 @@ type APIService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	GetByConditions(ctx context.Context, conds repo.Conditions) (*model.APIDefinition, error)
 	RefetchAPISpecs(ctx context.Context, id string) ([]*model.APISpec, error)
-	GetFetchRequests(ctx context.Context, apiDefID string) ([]*model.FetchRequest, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 }
@@ -39,7 +38,7 @@ type APIConverter interface {
 	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
 	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, error)
 	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, error)
-	SpecsToGraphQL(definitionID string, in []*model.APISpec) []*graphql.APISpec
+	SpecsToGraphQL(in []*model.APISpec) []*graphql.APISpec
 }
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
@@ -62,6 +61,7 @@ type BundleService interface {
 type Resolver struct {
 	transact    persistence.Transactioner
 	svc         APIService
+	specSvc     SpecService
 	appSvc      ApplicationService
 	bundleSvc   BundleService
 	rtmSvc      RuntimeService
@@ -69,10 +69,11 @@ type Resolver struct {
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, bundleSvc BundleService, converter APIConverter, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, specSvc SpecService, appSvc ApplicationService, rtmSvc RuntimeService, bundleSvc BundleService, converter APIConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
+		specSvc: specSvc,
 		appSvc:      appSvc,
 		rtmSvc:      rtmSvc,
 		bundleSvc:   bundleSvc,
@@ -201,11 +202,11 @@ func (r *Resolver) RefetchAPISpecs(ctx context.Context, apiID string) ([]*graphq
 		return nil, err
 	}
 
-	converted := r.converter.SpecsToGraphQL(apiID, spec)
+	converted := r.converter.SpecsToGraphQL(spec)
 	return converted, nil
 }
 
-func (r *Resolver) FetchRequests(ctx context.Context, obj *graphql.APISpec) ([]*graphql.FetchRequest, error) {
+func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("API Specs cannot be empty")
 	}
@@ -218,11 +219,11 @@ func (r *Resolver) FetchRequests(ctx context.Context, obj *graphql.APISpec) ([]*
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if obj.DefinitionID == "" {
-		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. APIDefinition ID is empty")
+	if obj.ID == "" {
+		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. Spec ID is empty")
 	}
 
-	fr, err := r.svc.GetFetchRequests(ctx, obj.DefinitionID)
+	fr, err := r.specSvc.GetFetchRequest(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -236,5 +237,5 @@ func (r *Resolver) FetchRequests(ctx context.Context, obj *graphql.APISpec) ([]*
 		return nil, err
 	}
 
-	return r.frConverter.MultipleToGraphQL(fr)
+	return r.frConverter.ToGraphQL(fr)
 }

@@ -76,10 +76,10 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	format := graphql.SpecFormatYaml
 
 	spec := &graphql.APISpec{
-		Data:         &data,
-		Format:       format,
-		Type:         graphql.APISpecTypeOpenAPI,
-		DefinitionID: apiDefID,
+		Data:   &data,
+		Format: format,
+		Type:   graphql.APISpecTypeOpenAPI,
+		ID:     apiDefID,
 	}
 
 	deprecated := false

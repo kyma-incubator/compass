@@ -41,7 +41,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		Title:            in.Title,
 		ShortDescription: in.ShortDescription,
 		Description:      in.Description,
-		Specs:            c.SpecsToGraphQL(in.ID, in.Specs),
+		Specs:            c.SpecsToGraphQL(in.Specs),
 		EntryPoint:       in.EntryPoint,
 		Group:            in.Group,
 		Version:          c.version.ToGraphQL(in.Version),
@@ -121,7 +121,7 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	}, nil
 }
 
-func (c *converter) SpecsToGraphQL(definitionID string, ins []*model.APISpec) []*graphql.APISpec {
+func (c *converter) SpecsToGraphQL(ins []*model.APISpec) []*graphql.APISpec {
 	if ins == nil {
 		return nil
 	}
@@ -135,10 +135,10 @@ func (c *converter) SpecsToGraphQL(definitionID string, ins []*model.APISpec) []
 		}
 
 		result = append(result, &graphql.APISpec{
-			Data:         data,
-			Type:         graphql.APISpecType(in.Type),
-			Format:       graphql.SpecFormat(in.Format),
-			DefinitionID: definitionID,
+			Data:   data,
+			Type:   graphql.APISpecType(in.Type),
+			Format: graphql.SpecFormat(in.Format),
+			ID:     in.ID,
 		})
 	}
 	return result

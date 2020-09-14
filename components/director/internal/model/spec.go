@@ -16,6 +16,7 @@ type Spec struct {
 
 func (s *Spec) ToAPISpec() *APISpec {
 	return &APISpec{
+		ID:     s.ID,
 		Data:   s.Data,
 		Format: s.Format,
 		Type:   APISpecType(s.Type), // TODO: Check
@@ -31,11 +32,11 @@ const (
 )
 
 type SpecInput struct {
-	ID     string
-	Tenant string
-	Data   *string
-	Format SpecFormat
-	Type   SpecType
+	ID           string
+	Tenant       string
+	Data         *string
+	Format       SpecFormat
+	Type         SpecType
 	FetchRequest *FetchRequestInput
 }
 

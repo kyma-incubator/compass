@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -269,41 +268,6 @@ func (s *service) RefetchAPISpecs(ctx context.Context, id string) ([]*model.APIS
 	}
 
 	return apiSpecs, nil
-}
-
-func (s *service) GetFetchRequests(ctx context.Context, apiDefID string) ([]*model.FetchRequest, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	exists, err := s.repo.Exists(ctx, tnt, apiDefID)
-	if err != nil {
-		return nil, errors.Wrap(err, "while checking if API Definition exists")
-	}
-	if !exists {
-		return nil, fmt.Errorf("API Definition with ID %s doesn't exist", apiDefID)
-	}
-
-	specs, err := s.specSvc.ListForAPI(ctx, apiDefID)
-	if err != nil {
-		return nil, err
-	}
-
-	fetchRequests := make([]*model.FetchRequest, 0, 0)
-
-	for _, spec := range specs {
-		fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return nil, nil
-			}
-			return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition ID %s", apiDefID)
-		}
-		fetchRequests = append(fetchRequests, fetchRequest)
-	}
-
-	return fetchRequests, nil
 }
 
 func (s *service) Exists(ctx context.Context, id string) (bool, error) {

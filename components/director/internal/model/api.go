@@ -34,6 +34,7 @@ type APIDefinition struct {
 }
 
 type APISpec struct {
+	ID string
 	// when fetch request specified, data will be automatically populated
 	Data   *string
 	Format SpecFormat

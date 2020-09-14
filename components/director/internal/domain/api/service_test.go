@@ -1138,7 +1138,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			svc := api.NewService(repo, fetchRequestRepo, nil, nil)
 
 			// when
-			l, err := svc.GetFetchRequests(ctx, testCase.InputAPIDefID)
+			l, err := svc.GetFetchRequest(ctx, testCase.InputAPIDefID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -1157,7 +1157,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// when
-		_, err := svc.GetFetchRequests(context.TODO(), "dd")
+		_, err := svc.GetFetchRequest(context.TODO(), "dd")
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
