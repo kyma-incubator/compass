@@ -125,6 +125,35 @@ func (b *Bundle) ToBundleInput() *model.BundleInput {
 	}
 }
 
+type Spec struct {
+	Type          string  `json:"type"`
+	CustomType    *string `json:"customType"`
+	URL           string  `json:"url"`
+	Serialization string  `json:"serialization"`
+}
+
+func (s *Spec) ToAPISpecInput() *model.APISpecInput {
+	return &model.APISpecInput{
+		Type:       model.APISpecType(s.Type), // TODO: Validation
+		CustomType: s.CustomType,
+		Format:     model.SpecFormat(s.Serialization), // TODO: Validation
+		FetchRequest: &model.FetchRequestInput{
+			URL: s.URL,
+		},
+	}
+}
+
+func (s *Spec) ToEventSpecInput() *model.EventSpecInput {
+	return &model.EventSpecInput{
+		EventSpecType: model.EventSpecType(s.Type), // TODO: Validation
+		CustomType:    s.CustomType,
+		Format:        model.SpecFormat(s.Serialization), // TODO: Validation
+		FetchRequest: &model.FetchRequestInput{
+			URL: s.URL,
+		},
+	}
+}
+
 type APIResource struct {
 	ID               string          `json:"id"`
 	Title            string          `json:"title"`
@@ -133,6 +162,7 @@ type APIResource struct {
 	EntryPoint       string          `json:"entryPoint"`
 	Version          string          `json:"version"`
 	APIDefinitions   json.RawMessage `json:"apiDefinitions"` // TODO: Parse for spec
+	APISpecs         []Spec          `json:"-"`
 	Tags             json.RawMessage `json:"tags"`
 	Documentation    *string         `json:"documentation"`
 	ChangelogEntries json.RawMessage `json:"changelogEntries"`
@@ -190,6 +220,16 @@ func (a *APIResource) ToAPIDefinitionInput(baseURL string) (*model.APIDefinition
 	if a.ChangelogEntries, err = rewriteRelativeURLsInJson(a.ChangelogEntries, baseURL, "url"); err != nil {
 		return nil, fmt.Errorf("error rewriting urls in changelogEntrie for apiResource with ID %s", a.ID)
 	}
+
+	if err := json.Unmarshal(a.APIDefinitions, &a.APISpecs); err != nil {
+		return nil, err
+	}
+
+	specs := make([]*model.APISpecInput, 0, len(a.APISpecs))
+	for _, spec := range a.APISpecs {
+		specs = append(specs, spec.ToAPISpecInput())
+	}
+
 	return &model.APIDefinitionInput{
 		OpenDiscoveryID:  a.ID,
 		Title:            a.Title,
@@ -198,6 +238,7 @@ func (a *APIResource) ToAPIDefinitionInput(baseURL string) (*model.APIDefinition
 		Version: &model.VersionInput{
 			Value: a.Version,
 		},
+		Specs:            specs,
 		EntryPoint:       a.EntryPoint,
 		APIDefinitions:   rawJsonToStr(a.APIDefinitions),
 		Tags:             rawJsonToStrPtr(a.Tags),
@@ -221,6 +262,7 @@ type EventResource struct {
 	Description      *string         `json:"description"`
 	Version          string          `json:"version"`
 	EventDefinitions json.RawMessage `json:"eventDefinitions"` // TODO: Parse for spec
+	EventSpecs       []Spec          `json:"-"`
 	Tags             json.RawMessage `json:"tags"`
 	Documentation    *string         `json:"documentation"`
 	ChangelogEntries json.RawMessage `json:"changelogEntries"`
@@ -274,6 +316,15 @@ func (e *EventResource) ToEventDefinitionInput(baseURL string) (*model.EventDefi
 		return nil, fmt.Errorf("error rewriting urls in changelogEntries for eventResource with ID %s", e.ID)
 	}
 
+	if err := json.Unmarshal(e.EventDefinitions, &e.EventSpecs); err != nil {
+		return nil, err
+	}
+
+	specs := make([]*model.EventSpecInput, 0, len(e.EventSpecs))
+	for _, spec := range e.EventSpecs {
+		specs = append(specs, spec.ToEventSpecInput())
+	}
+
 	return &model.EventDefinitionInput{
 		OpenDiscoveryID:  e.ID,
 		Title:            e.Title,
@@ -282,6 +333,7 @@ func (e *EventResource) ToEventDefinitionInput(baseURL string) (*model.EventDefi
 		Version: &model.VersionInput{
 			Value: e.Version,
 		},
+		Specs:            specs,
 		EventDefinitions: rawJsonToStr(e.EventDefinitions),
 		Tags:             rawJsonToStrPtr(e.Tags),
 		Documentation:    e.Documentation,

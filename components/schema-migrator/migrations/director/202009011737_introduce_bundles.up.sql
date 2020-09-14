@@ -139,23 +139,28 @@ ALTER TABLE event_api_definitions
  */
 
 CREATE TYPE spec_format AS ENUM (
-    'YAML',
-    'XML',
-    'JSON' -- TODO: Enrich with possible values from spec
+    'application/json',
+    'application/ld+json',
+    'application/x-yaml',
+    'application/xml',
+    'application/graphql',
+    'text/plain',
+    'application/octet-stream'
 );
 
 CREATE TYPE spec_type AS ENUM (
-    'ODATA',
-    'OPEN_API',
-    'ASYNC_API',
-    --'openApi2',
-    --'openApi3',
-    --'raml',
-    --'edmx',
-    --'wsdl1',
-    --'wsdl2',
-    --'graphql',
-    'CUSTOM'
+    'openApi2',
+    'openApi3',
+    'raml',
+    'edmx',
+    'wsdl1',
+    'wsdl2',
+    'graphql',
+
+    'asyncApi1',
+    'asyncApi2',
+
+    'custom'
 );
 
 CREATE TABLE specifications (

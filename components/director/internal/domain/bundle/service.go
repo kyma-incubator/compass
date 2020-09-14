@@ -396,6 +396,11 @@ func (s *service) createOrUpdateAPIs(ctx context.Context, bundleID, tenant strin
 			if err != nil {
 				return err
 			}
+
+			if api.Version.Value == apis[i].Version.Value {
+				apis[i].Specs = nil // Will not refetch specs if version stays the same
+			}
+
 			apis[i].ID = api.ID
 			toUpdate = append(toUpdate, apis[i])
 		} else {
@@ -453,6 +458,9 @@ func (s *service) createOrUpdateEvents(ctx context.Context, bundleID, tenant str
 			})
 			if err != nil {
 				return err
+			}
+			if event.Version.Value == events[i].Version.Value {
+				events[i].Specs = nil // Will not refetch specs if version stays the same
 			}
 			events[i].ID = event.ID
 			toUpdate = append(toUpdate, events[i])

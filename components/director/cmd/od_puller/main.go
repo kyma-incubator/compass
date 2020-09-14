@@ -96,7 +96,7 @@ func createODPullerSvc(cfgProvider *configprovider.Provider, featuresConfig feat
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	apiRepo := api.NewRepository(apiConverter, specRepo)
-	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
+	eventAPIRepo := eventdef.NewRepository(eventAPIConverter, specRepo)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
@@ -112,7 +112,7 @@ func createODPullerSvc(cfgProvider *configprovider.Provider, featuresConfig feat
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc, specSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, fetchRequestSvc, specSvc, uidSvc)
 
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
