@@ -121,8 +121,8 @@ func (v *ViperEnv) AllSettings() map[string]interface{} {
 	return v.Viper.AllSettings()
 }
 
-// Unmarshal exposes viper's Unmarshal. Prior to unmarshaling it creates the necessary pflag and env var bindings
-// so that pflag / env var values are also used during the unmarshaling.
+// Unmarshal exposes viper's Unmarshal. Prior to unmarshaling it creates the necessary env var bindings
+// so that env var values are also used during the unmarshaling in case the keys are not specified as pflags or in config file.
 func (v *ViperEnv) Unmarshal(value interface{}) error {
 	parameters := buildParameters(value)
 	for _, parameter := range parameters {
