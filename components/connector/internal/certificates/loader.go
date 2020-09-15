@@ -54,6 +54,7 @@ func (cl *certLoader) Run() {
 			shouldNotify = false
 			log.Info("All needed secrets are loaded, notifying readiness")
 			cl.readinessCh <- struct{}{}
+			close(cl.readinessCh)
 		}
 
 		select {
