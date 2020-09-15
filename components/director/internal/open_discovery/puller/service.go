@@ -21,16 +21,21 @@ type Service struct {
 	webhookSvc webhook.WebhookService
 	bundleSvc  mp_bundle.BundleService
 	packageSvc mp_package.PackageService
+
+	associatedPackages map[string][]string
+	pkgIDs             map[string][]string
 }
 
 func NewService(transact persistence.Transactioner, appSvc application.ApplicationService, webhookSvc webhook.WebhookService, bundleSvc mp_bundle.BundleService, packageSvc mp_package.PackageService) *Service {
 	return &Service{
 		transact: transact,
 
-		appSvc:     appSvc,
-		webhookSvc: webhookSvc,
-		bundleSvc:  bundleSvc,
-		packageSvc: packageSvc,
+		appSvc:             appSvc,
+		webhookSvc:         webhookSvc,
+		bundleSvc:          bundleSvc,
+		packageSvc:         packageSvc,
+		associatedPackages: make(map[string][]string, 0),
+		pkgIDs:             make(map[string][]string, 0),
 	}
 }
 
@@ -41,6 +46,11 @@ func (s *Service) SyncODDocuments(ctx context.Context) error {
 	}
 	defer s.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	defer func() { // Clean up cache
+		s.associatedPackages = make(map[string][]string, 0)
+		s.pkgIDs = make(map[string][]string, 0)
+	}()
 
 	pageCount := 1
 	pageSize := 100
@@ -63,6 +73,11 @@ func (s *Service) SyncODDocuments(ctx context.Context) error {
 		}
 		pageCount++
 	}
+
+	if err := s.resyncPackageBundleAssociations(ctx); err != nil {
+		return err
+	}
+
 	return tx.Commit()
 }
 
@@ -100,19 +115,32 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error create/update package with id %s", pkgInput.ID))
 		}
-		pkgInput.ID = id
+		s.pkgIDs[pkgInput.OpenDiscoveryID] = append(s.pkgIDs[pkgInput.OpenDiscoveryID], id)
+		if err := s.packageSvc.DeleteAllBundleAssociations(ctx, id); err != nil {
+			return err
+		}
 	}
 	for _, bundleInput := range bundlesWithAssociatedPackages {
 		id, err := s.bundleSvc.CreateOrUpdate(ctx, appID, bundleInput.In.OpenDiscoveryID, *bundleInput.In)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error create/update bundle with id %s", bundleInput.In.ID))
 		}
-		bundleInput.In.ID = id
+		s.associatedPackages[id] = bundleInput.AssociatedPackages
 	}
-	for _, bundleInput := range bundlesWithAssociatedPackages {
-		for _, pkgOpenDiscoveryID := range bundleInput.AssociatedPackages {
-			if err := s.packageSvc.AssociateBundle(ctx, packages[pkgOpenDiscoveryID].ID, bundleInput.In.ID); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("error associating bundle with id %s with package with id %s", bundleInput.In.ID, packages[pkgOpenDiscoveryID].ID))
+	return nil
+}
+
+func (s *Service) resyncPackageBundleAssociations(ctx context.Context) error {
+	for bundleID, associatedPkgs := range s.associatedPackages {
+		for _, pkgODID := range associatedPkgs {
+			pkgIDs, ok := s.pkgIDs[pkgODID]
+			if !ok {
+				continue
+			}
+			for _, pkgID := range pkgIDs {
+				if err := s.packageSvc.AssociateBundle(ctx, pkgID, bundleID); err != nil {
+					return errors.Wrap(err, fmt.Sprintf("error associating bundle with id %s with package with id %s", bundleID, pkgID))
+				}
 			}
 		}
 	}

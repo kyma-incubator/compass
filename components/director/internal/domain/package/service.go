@@ -25,6 +25,7 @@ type PackageRepository interface {
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Package, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
 	AssociateBundle(ctx context.Context, id, bundleID string) error
+	DeleteAllBundleAssociations(ctx context.Context, packageId string) error
 }
 
 //go:generate mockery -name=BundleRepository -output=automock -outpkg=automock -case=underscore
@@ -53,10 +54,6 @@ type service struct {
 
 	uidService   UIDService
 	timestampGen timestamp.Generator
-}
-
-func (s *service) AssociateBundle(ctx context.Context, id, bundleID string) error {
-	return s.pkgRepo.AssociateBundle(ctx, id, bundleID)
 }
 
 func NewService(pkgRepo PackageRepository, bundleRepo BundleRepository, uidService UIDService, bundleSvc BundleService) *service {
@@ -298,4 +295,12 @@ func (s *service) createOrUpdateBundles(ctx context.Context, appID, pkgID string
 		}
 	}
 	return nil
+}
+
+func (s *service) AssociateBundle(ctx context.Context, id, bundleID string) error {
+	return s.pkgRepo.AssociateBundle(ctx, id, bundleID)
+}
+
+func (s *service) DeleteAllBundleAssociations(ctx context.Context, packageId string) error {
+	return s.pkgRepo.DeleteAllBundleAssociations(ctx, packageId)
 }

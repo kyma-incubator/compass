@@ -22,6 +22,7 @@ type PackageService interface {
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*model.Package, error)
 	AssociateBundle(ctx context.Context, id, bundleID string) error
+	DeleteAllBundleAssociations(ctx context.Context, packageId string) error
 }
 
 //go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore

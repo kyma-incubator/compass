@@ -33,6 +33,7 @@ type pgRepository struct {
 	relationshipExistQuerier repo.ExistQuerierGlobal
 	singleGetter             repo.SingleGetter
 	deleter                  repo.Deleter
+	relationshipDeleter      repo.DeleterGlobal
 	pageableQuerier          repo.PageableQuerier
 	creator                  repo.Creator
 	relationshipCreator      repo.Creator
@@ -46,6 +47,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		relationshipExistQuerier: repo.NewExistQuerierGlobal(resource.PackageBundle, packageBundleTable),
 		singleGetter:             repo.NewSingleGetter(resource.Package, packageTable, tenantColumn, packageColumns),
 		deleter:                  repo.NewDeleter(resource.Package, packageTable, tenantColumn),
+		relationshipDeleter:      repo.NewDeleterGlobal(resource.PackageBundle, packageBundleTable),
 		pageableQuerier:          repo.NewPageableQuerier(resource.Package, packageTable, tenantColumn, packageColumns),
 		creator:                  repo.NewCreator(resource.Package, packageTable, packageColumns),
 		relationshipCreator:      repo.NewCreator(resource.PackageBundle, packageBundleTable, packageBundleColumns),
@@ -187,4 +189,11 @@ func (r *pgRepository) AssociateBundle(ctx context.Context, id, bundleID string)
 		return r.relationshipCreator.Create(ctx, entity)
 	}
 	return nil
+}
+
+func (r *pgRepository) DeleteAllBundleAssociations(ctx context.Context, packageId string) error {
+	if len(packageId) == 0 {
+		return apperrors.NewInternalError("packageID can not be empty")
+	}
+	return r.relationshipDeleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition("package_id", packageId)})
 }
