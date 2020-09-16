@@ -55,21 +55,28 @@ type FetchRequestService interface {
 	HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
+//go:generate mockery -name=SpecConverter -output=automock -outpkg=automock -case=underscore
+type SpecConverter interface {
+	EventSpecInputFromSpec(spec *model.Spec, fr *model.FetchRequest) *model.EventSpecInput
+}
+
 type service struct {
 	eventAPIRepo     EventAPIRepository
 	fetchRequestRepo FetchRequestRepository
 	fetchRequestSvc  FetchRequestService
 	specSvc          SpecService
+	specConverter    SpecConverter
 	uidService       UIDService
 	timestampGen     timestamp.Generator
 }
 
-func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, fetchRequestSvc FetchRequestService, specSvc SpecService, uidService UIDService) *service {
+func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, fetchRequestSvc FetchRequestService, specSvc SpecService, specConverter SpecConverter, uidService UIDService) *service {
 	return &service{eventAPIRepo: eventAPIRepo,
 		fetchRequestRepo: fetchRequestRepo,
 		fetchRequestSvc:  fetchRequestSvc,
 		uidService:       uidService,
 		specSvc:          specSvc,
+		specConverter:    specConverter,
 		timestampGen:     timestamp.DefaultGenerator(),
 	}
 }
@@ -180,12 +187,12 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		return err
 	}
 
-	if len(in.Specs) > 0 {
-		specs, err := s.specSvc.ListForEvent(ctx, event.ID)
-		if err != nil {
-			return err
-		}
+	specs, err := s.specSvc.ListForEvent(ctx, event.ID)
+	if err != nil {
+		return err
+	}
 
+	if len(in.Specs) > 0 {
 		for _, spec := range specs {
 			err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
 			if err != nil {
@@ -193,6 +200,22 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 			}
 			if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
 				return err
+			}
+		}
+	} else {
+		for _, spec := range specs {
+			fr, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+			if err != nil {
+				return err
+			}
+			if fr.Status.Condition == model.FetchRequestStatusConditionFailed {
+				if err := s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID); err != nil {
+					return err
+				}
+				in.Specs = append(in.Specs, s.specConverter.EventSpecInputFromSpec(spec, fr))
+				if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -207,7 +230,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 	event.Specs = nil
 
 	for _, spec := range newSpecs {
-		_, err = s.specSvc.CreateForAPI(ctx, in.ID, *spec)
+		_, err = s.specSvc.CreateForEvent(ctx, in.ID, *spec)
 		if err != nil {
 			return errors.Wrapf(err, "error creating spec for event with id %s", id)
 		}

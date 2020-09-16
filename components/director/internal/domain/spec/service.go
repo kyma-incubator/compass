@@ -201,7 +201,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	err = s.repo.Delete(ctx, tnt, id)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting APIDefinition with ID %s", id)
+		return errors.Wrapf(err, "while deleting Spec with ID %s", id)
 	}
 
 	return nil

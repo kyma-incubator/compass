@@ -44,6 +44,11 @@ type SpecService interface {
 	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
 }
 
+//go:generate mockery -name=SpecConverter -output=automock -outpkg=automock -case=underscore
+type SpecConverter interface {
+	APISpecInputFromSpec(spec *model.Spec, fr *model.FetchRequest) *model.APISpecInput
+}
+
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
@@ -60,15 +65,17 @@ type service struct {
 	uidService          UIDService
 	fetchRequestService FetchRequestService
 	specSvc             SpecService
+	specConverter       SpecConverter
 	timestampGen        timestamp.Generator
 }
 
-func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService, specSvc SpecService) *service {
+func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService, specSvc SpecService, specConverter SpecConverter) *service {
 	return &service{repo: repo,
 		fetchRequestRepo:    fetchRequestRepo,
 		uidService:          uidService,
 		fetchRequestService: fetchRequestService,
 		specSvc:             specSvc,
+		specConverter:       specConverter,
 		timestampGen:        timestamp.DefaultGenerator(),
 	}
 }
@@ -171,12 +178,11 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return err
 	}
 
+	specs, err := s.specSvc.ListForAPI(ctx, api.ID)
+	if err != nil {
+		return err
+	}
 	if len(in.Specs) > 0 {
-		specs, err := s.specSvc.ListForAPI(ctx, api.ID)
-		if err != nil {
-			return err
-		}
-
 		for _, spec := range specs {
 			err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
 			if err != nil {
@@ -184,6 +190,22 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 			}
 			if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
 				return err
+			}
+		}
+	} else {
+		for _, spec := range specs {
+			fr, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+			if err != nil {
+				return err
+			}
+			if fr.Status.Condition == model.FetchRequestStatusConditionFailed {
+				if err := s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID); err != nil {
+					return err
+				}
+				in.Specs = append(in.Specs, s.specConverter.APISpecInputFromSpec(spec, fr))
+				if err := s.specSvc.Delete(ctx, spec.ID); err != nil {
+					return err
+				}
 			}
 		}
 	}

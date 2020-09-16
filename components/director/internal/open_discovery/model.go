@@ -183,6 +183,13 @@ func (a *APIResource) ToAPIDefinitionInput(baseURL string) (*model.APIDefinition
 		return nil, err
 	}
 
+	if !IsUrl(a.EntryPoint) {
+		if len(baseURL) == 0 {
+			return nil, fmt.Errorf("entryPoint for apiResource with ID %s should be absolute URL if baseURL not provided in the document", a.ID)
+		} else {
+			a.EntryPoint = baseURL + a.EntryPoint
+		}
+	}
 	if a.Documentation != nil && !IsUrl(*a.Documentation) {
 		if len(baseURL) == 0 {
 			return nil, fmt.Errorf("documentation for apiResource with ID %s should be absolute URL if baseURL not provided in the document", a.ID)

@@ -24,6 +24,8 @@ var (
 type SpecConverter interface {
 	FromEntity(entity Entity) model.Spec
 	ToEntity(apiModel model.Spec) Entity
+	APISpecInputFromSpec(spec *model.Spec, fr *model.FetchRequest) *model.APISpecInput
+	EventSpecInputFromSpec(spec *model.Spec, fr *model.FetchRequest) *model.EventSpecInput
 }
 
 type pgRepository struct {

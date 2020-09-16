@@ -111,8 +111,8 @@ func createODPullerSvc(cfgProvider *configprovider.Provider, featuresConfig feat
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc, specSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, fetchRequestSvc, specSvc, uidSvc)
+	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc, specSvc, specConverter)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, fetchRequestSvc, specSvc, specConverter, uidSvc)
 
 	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
