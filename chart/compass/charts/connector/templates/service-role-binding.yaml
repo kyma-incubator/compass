@@ -20,8 +20,8 @@ spec:
     - from:
       - source:
           principals:
-          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassDirector }}
-          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassConnectorTests }}
+          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassDirector . }}
+          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassConnectorTests . }}
     - to:
       - operation:
           ports:
