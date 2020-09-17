@@ -3,18 +3,28 @@ apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
   name: {{ template "fullname" . }}-internal
+  namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}-internal
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
   action: ALLOW
   rules:
     - from:
-        - source:
-            principals: [{{ .Values.istio.rbac.connectorInternalApi.compassDirector }}, {{ .Values.istio.rbac.connectorInternalApi.compassConnectorTests }}]
+      - source:
+          principals:
+          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassDirector }}
+          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassConnectorTests }}
+    - to:
+      - operation:
+          ports:
+          - {{ .Values.global.connector.graphql.internal.port }}
+          - {{ .Values.global.istio.proxy.port }}
 {{ end }}
