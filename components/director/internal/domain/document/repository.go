@@ -2,6 +2,7 @@ package document
 
 import (
 	"context"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"

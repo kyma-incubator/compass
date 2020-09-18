@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
