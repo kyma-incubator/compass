@@ -3,6 +3,7 @@ package mp_package
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -71,6 +72,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Package) error {
 		return errors.Wrap(err, "while converting to Package entity")
 	}
 
+	log.Debugf("Persisting Package entity with id %s to db", model.ID)
 	return r.creator.Create(ctx, pkgEnt)
 }
 

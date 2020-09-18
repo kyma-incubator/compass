@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/pkg/errors"
 )
@@ -23,6 +24,7 @@ type authenticator struct {
 func (a *authenticator) Authenticate(context context.Context) (string, error) {
 	clientId, tokenAuthErr := a.AuthenticateToken(context)
 	if tokenAuthErr == nil {
+		log.Debugf("Client with id %s successfully authenticated with token", clientId)
 		return clientId, nil
 	}
 
@@ -32,6 +34,7 @@ func (a *authenticator) Authenticate(context context.Context) (string, error) {
 			tokenAuthErr.Error(), certAuthErr.Error())
 	}
 
+	log.Debugf("Client with id %s successfully authenticated with certificate", clientId)
 	return clientId, nil
 }
 

@@ -60,7 +60,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 		return nil, errors.Wrap(err, "Failed to authenticate with token")
 	}
 
-	r.log.Infof("Signing Certificate Signing Request for %s client.", clientId)
+	r.log.Infof("Signing Certificate Signing Request for client with id %s", clientId)
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
@@ -94,8 +94,9 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 		return false, errors.Wrap(err, "Failed to authenticate with certificate")
 	}
 
-	r.log.Infof("Revoking certificate for %s client.", clientId)
+	r.log.Infof("Revoking certificate for client with id %s", clientId)
 
+	r.log.Debugf("Inserting certificate hash of client with id %s to revocation list", clientId)
 	err = r.revocationList.Insert(certificateHash)
 	if err != nil {
 		r.log.Errorf("Failed to add certificate hash of client with id %s to revocation list. %s ", clientId, err.Error())
@@ -114,12 +115,12 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 		r.log.Error("Failed authentication while fetching the configuration. ", err.Error())
 		return nil, err
 	}
+	r.log.Infof("Fetching configuration for client with id %s", clientId)
 
-	r.log.Infof("Fetching configuration for %s client...", clientId)
-
+	r.log.Infof("Creating one-time token as part of fetching configuration process for client with id %s", clientId)
 	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
 	if err != nil {
-		r.log.Errorf("Error occurred while creating token for client with id %s : %s", clientId, err.Error())
+		r.log.Errorf("Error occurred while creating one-time token for client with id %s : %s", clientId, err.Error())
 		return nil, err
 	}
 
@@ -128,7 +129,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 		KeyAlgorithm: "rsa2048",
 	}
 
-	r.log.Info("Configuration successfully fetched.")
+	r.log.Infof("Configuration for client with id %s successfully fetched.", clientId)
 
 	return &externalschema.Configuration{
 		Token:                         &externalschema.Token{Token: token},

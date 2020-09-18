@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -43,11 +44,13 @@ func NewService(appTemplateRepo ApplicationTemplateRepository, uidService UIDSer
 
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
 	id := s.uidService.Generate()
+	log.Debugf("ID %s generated for Application Template with name %s", id, in.Name)
+
 	appTemplate := in.ToApplicationTemplate(id)
 
 	err := s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
-		return "", errors.Wrap(err, "while creating Application Template")
+		return "", errors.Wrapf(err, "while creating Application Template with name %s", in.Name)
 	}
 
 	return id, nil
@@ -56,7 +59,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
 	appTemplate, err := s.appTemplateRepo.Get(ctx, id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Application Template with ID %s", id)
+		return nil, errors.Wrapf(err, "while getting Application Template with id %s", id)
 	}
 
 	return appTemplate, nil
@@ -65,7 +68,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplat
 func (s *service) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
 	appTemplate, err := s.appTemplateRepo.GetByName(ctx, name)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Application Template with [name=%s]", name)
+		return nil, errors.Wrapf(err, "while getting Application Template with name %s", name)
 	}
 
 	return appTemplate, nil

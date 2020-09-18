@@ -2,6 +2,7 @@ package application
 
 import (
 	"encoding/json"
+	log "github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -99,11 +100,13 @@ func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) 
 		labels = *in.Labels
 	}
 
+	log.Debugf("Converting Webhooks from Application registration GraphQL input with name %s", in.Name)
 	webhooks, err := c.webhook.MultipleInputFromGraphQL(in.Webhooks)
 	if err != nil {
 		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Webhooks")
 	}
 
+	log.Debugf("Converting Packages from Application registration GraphQL input with name %s", in.Name)
 	packages, err := c.pkg.MultipleCreateInputFromGraphQL(in.Packages)
 	if err != nil {
 		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Packages")

@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
@@ -75,8 +75,9 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 		}
 		err := s.labelDefinitionRepo.Create(ctx, *labelDef)
 		if err != nil {
-			return errors.Wrapf(err, "while creating  a new LabelDefinition for Label '%s'", labelInput.Key)
+			return errors.Wrapf(err, "while creating a new LabelDefinition for Label with key: '%s'", labelInput.Key)
 		}
+		log.Debugf("Successfully created LabelDefinition with id %s and key %s for Label with key %s", labelDef.ID, labelDef.Key, labelInput.Key)
 	}
 
 	err = s.validateLabelInputValue(ctx, tenant, labelInput, labelDef)
@@ -85,10 +86,12 @@ func (s *labelUpsertService) UpsertLabel(ctx context.Context, tenant string, lab
 	}
 
 	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
+
 	err = s.labelRepo.Upsert(ctx, label)
 	if err != nil {
-		return errors.Wrapf(err, "while creating label '%s' for %s '%s'", labelInput.Key, labelInput.ObjectType, labelInput.ObjectID)
+		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 	}
+	log.Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
 
 	return nil
 }

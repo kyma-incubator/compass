@@ -137,13 +137,11 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	convertedIn, err := r.packageConverter.CreateInputFromGraphQL(in)
 	if err != nil {
-		log.Error("Error occurred while converting GraphQL input to Package.")
 		return nil, errors.Wrap(err, "while converting input from GraphQL")
 	}
 
 	id, err := r.packageSvc.Create(ctx, applicationID, convertedIn)
 	if err != nil {
-		log.Errorf("Error occurred when creating Package to Application with id %s", applicationID)
 		return nil, err
 	}
 
@@ -159,11 +157,10 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	gqlPackage, err := r.packageConverter.ToGraphQL(pkg)
 	if err != nil {
-		log.Errorf("Error occurred while converting Package with id %s to GraphQL.", id)
-		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Package with id %s to GraphQL", id)
 	}
 
-	log.Infof("Package with id %s successfully added to Application %s", id, applicationID)
+	log.Infof("Package with id %s successfully added to Application with id %s", id, applicationID)
 	return gqlPackage, nil
 }
 
@@ -180,13 +177,11 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 
 	convertedIn, err := r.packageConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
-		log.Errorf("Error occurred while converting GraphQL input to Package with id %s.", id)
-		return nil, errors.Wrapf(err, "while converting Package update input from GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting converting GraphQL input to Package with id %s", id)
 	}
 
 	err = r.packageSvc.Update(ctx, id, *convertedIn)
 	if err != nil {
-		log.Errorf("Error occurred when updating Package with id %s", id)
 		return nil, err
 	}
 
@@ -202,11 +197,10 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 
 	gqlPkg, err := r.packageConverter.ToGraphQL(pkg)
 	if err != nil {
-		log.Errorf("Error occurred while converting Package with id %s to GraphQL.", id)
-		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Package with id %s to GraphQL", id)
 	}
 
-	log.Infof("Package %s successfully updated.", id)
+	log.Infof("Package with id %s successfully updated.", id)
 	return gqlPkg, nil
 }
 
@@ -228,7 +222,6 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 
 	err = r.packageSvc.Delete(ctx, id)
 	if err != nil {
-		log.Errorf("Error occurred when deleting Package with id %s", id)
 		return nil, err
 	}
 
@@ -239,8 +232,7 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 
 	deletedPkg, err := r.packageConverter.ToGraphQL(pkg)
 	if err != nil {
-		log.Errorf("Error occurred while converting Package with id %s to GraphQL.", id)
-		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Package with id %s to GraphQL", id)
 	}
 
 	log.Infof("Package with id %s successfully deleted.", id)

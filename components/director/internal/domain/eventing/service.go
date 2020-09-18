@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -59,7 +58,7 @@ func (s *service) CleanupAfterUnregisteringApplication(ctx context.Context, appI
 	labelKey := getDefaultEventingForAppLabelKey(appID)
 	err = s.labelRepo.DeleteByKey(ctx, tenantID, labelKey)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while deleting labels [key=%s]", labelKey)
+		return nil, errors.Wrapf(err, "while deleting Labels for Application with id %s", appID)
 	}
 
 	return model.NewEmptyApplicationEventingConfig()

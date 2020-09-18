@@ -326,7 +326,7 @@ func TestService_SetAuth(t *testing.T) {
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
-			ExpectedError: errors.New("auth can be set only on Package Instance Auths in PENDING state"),
+			ExpectedError: errors.New("auth can be set only on PackageInstanceAuths in PENDING state"),
 		},
 		{
 			Name: "Error when Package Instance Auth status condition different from PENDING",
@@ -341,7 +341,7 @@ func TestService_SetAuth(t *testing.T) {
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
-			ExpectedError: errors.New("auth can be set only on Package Instance Auths in PENDING state"),
+			ExpectedError: errors.New("auth can be set only on PackageInstanceAuths in PENDING state"),
 		},
 		{
 			Name: "Error when retrieved Package Instance Auth is nil",
@@ -352,7 +352,7 @@ func TestService_SetAuth(t *testing.T) {
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
-			ExpectedError: errors.Errorf("Package Instance Auth with ID %s not found", testID),
+			ExpectedError: errors.Errorf("PackageInstanceAuth with id %s not found", testID),
 		},
 	}
 
@@ -756,7 +756,7 @@ func TestService_RequestDeletion(t *testing.T) {
 
 	t.Run("Error - nil", func(t *testing.T) {
 		// GIVEN
-		expectedError := errors.New("instance auth is required to request its deletion")
+		expectedError := errors.New("PackageInstanceAuth is required to request its deletion")
 
 		// WHEN
 		svc := packageinstanceauth.NewService(nil, nil)

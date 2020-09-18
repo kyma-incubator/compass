@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -236,7 +237,8 @@ func TestRepositoryCreateMany(t *testing.T) {
 		// WHEN
 		err := sut.CreateMany(ctx, given)
 		// THEN
-		require.EqualError(t, err, "while creating many webhooks: while converting model to entity: some error")
+		expectedErr := fmt.Sprintf("while creating Webhook with type %s and id %s for Application with id %s: while converting model to entity: some error", model.WebhookTypeConfigurationChanged, "one", "")
+		require.EqualError(t, err, expectedErr)
 	})
 
 	t.Run(testCaseErrorOnDBCommunication, func(t *testing.T) {
@@ -257,7 +259,8 @@ func TestRepositoryCreateMany(t *testing.T) {
 		// WHEN
 		err := sut.CreateMany(ctx, given)
 		// THEN
-		require.EqualError(t, err, "while creating many webhooks: Internal Server Error: while inserting row to 'public.webhooks' table: some error")
+		expectedErr := fmt.Sprintf("while creating Webhook with type %s and id %s for Application with id %s: Internal Server Error: while inserting row to 'public.webhooks' table: some error", model.WebhookTypeConfigurationChanged, "one", "")
+		require.EqualError(t, err, expectedErr)
 	})
 }
 

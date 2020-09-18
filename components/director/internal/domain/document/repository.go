@@ -2,6 +2,7 @@ package document
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -95,6 +96,7 @@ func (r *repository) Create(ctx context.Context, item *model.Document) error {
 		return errors.Wrap(err, "while creating Document entity from model")
 	}
 
+	log.Debugf("Persisting Document entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
 }
 

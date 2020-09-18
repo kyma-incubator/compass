@@ -2,6 +2,7 @@ package packageinstanceauth
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -57,9 +58,10 @@ func (r *repository) Create(ctx context.Context, item *model.PackageInstanceAuth
 		return errors.Wrap(err, "while converting PackageInstanceAuth model to entity")
 	}
 
+	log.Debugf("Persisting PackageInstanceAuth entity with id %s to db", item.ID)
 	err = r.creator.Create(ctx, entity)
 	if err != nil {
-		return errors.Wrap(err, "while saving entity to db")
+		return errors.Wrapf(err, "while saving entity with id %s to db", item.ID)
 	}
 
 	return nil
@@ -124,6 +126,7 @@ func (r *repository) Update(ctx context.Context, item *model.PackageInstanceAuth
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
+	log.Debugf("Updating PackageInstanceAuth entity with id %s in db", item.ID)
 	return r.updater.UpdateSingle(ctx, entity)
 }
 

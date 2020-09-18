@@ -2,6 +2,7 @@ package packageinstanceauth_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -78,7 +79,8 @@ func TestRepository_Create(t *testing.T) {
 		err := repo.Create(ctx, piaModel)
 
 		// then
-		require.EqualError(t, err, "while saving entity to db: Internal Server Error: while inserting row to 'public.package_instance_auths' table: test")
+		expectedError := fmt.Sprintf("while saving entity with id %s to db: Internal Server Error: while inserting row to 'public.package_instance_auths' table: test", testID)
+		require.EqualError(t, err, expectedError)
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {

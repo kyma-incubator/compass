@@ -2,6 +2,7 @@ package eventdef
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -64,7 +65,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	var eventAPIDefEntity Entity
 	err := r.singleGetter.Get(ctx, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &eventAPIDefEntity)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting EventDefinition")
+		return nil, errors.Wrapf(err, "while getting EventDefinition with id %s", id)
 	}
 
 	eventAPIDefModel, err := r.conv.FromEntity(eventAPIDefEntity)
@@ -136,6 +137,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) 
 		return errors.Wrap(err, "while creating EventDefinition model to entity")
 	}
 
+	log.Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
 	err = r.creator.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")

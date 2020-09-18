@@ -82,25 +82,21 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		log.Error("Error occurred while converting GraphQL input to EventDefinition.")
-		return nil, errors.Wrap(err, "while converting EventDefinition input")
+		return nil, errors.Wrap(err, "while converting GraphQL input to EventDefinition")
 	}
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
-		log.Errorf("Error occurred when checking existence of Package with id %s when adding EventDefinition.", packageID)
-		return nil, errors.Wrapf(err, "while checking existence of Package")
+		return nil, errors.Wrapf(err, "while checking existence of Package with id %s when adding EventDefinition", packageID)
 	}
 
 	if !found {
-		log.Errorf("Failed to add EventDefinition to package with id %s: package does not exist", packageID)
 		return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Package")
 	}
 
 	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
 	if err != nil {
-		log.Errorf("Error occurred when creating EventDefinition in package with id %s.", packageID)
-		return nil, err
+		return nil, errors.Wrapf(err, "while creating EventDefinition in Package with id %s", packageID)
 	}
 
 	api, err := r.svc.Get(ctx, id)
@@ -132,13 +128,11 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		log.Errorf("Error occurred while converting GraphQL input to EventDefinition with id %s", id)
-		return nil, errors.Wrap(err, "while converting EventDefinition input")
+		return nil, errors.Wrapf(err, "while converting GraphQL input to EventDefinition with id %s", id)
 	}
 
 	err = r.svc.Update(ctx, id, *convertedIn)
 	if err != nil {
-		log.Errorf("Error occurred when updating EventDefinition with id %s", id)
 		return nil, err
 	}
 
@@ -178,7 +172,6 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 
 	err = r.svc.Delete(ctx, id)
 	if err != nil {
-		log.Errorf("Error occurred when deleting EventDefinition with id %s", id)
 		return nil, err
 	}
 
@@ -204,7 +197,6 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 	spec, err := r.svc.RefetchAPISpec(ctx, eventID)
 	if err != nil {
-		log.Errorf("Error occurred when refetching EventDefinitionSpec for EventDefinition with id %s", eventID)
 		return nil, err
 	}
 
@@ -221,7 +213,6 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*graphql.FetchRequest, error) {
 	if obj == nil {
-		log.Error("Error occurred when fetching request for EventDefinition. Event Spec cannot be empty.")
 		return nil, apperrors.NewInternalError("Event Spec cannot be empty")
 	}
 
@@ -234,7 +225,6 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if obj.DefinitionID == "" {
-		log.Error("Error occurred when fetching FetchRequest. EventDefinition ID is empty.")
 		return nil, apperrors.NewInternalError("Cannot fetch FetchRequest. EventDefinition ID is empty")
 	}
 

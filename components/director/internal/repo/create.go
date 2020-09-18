@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -46,6 +47,7 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 	}
 
 	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
+	log.Debugf("Executing query: %s", stmt)
 
 	_, err = persist.NamedExec(stmt, dbEntity)
 	return persistence.MapSQLError(err, c.resourceType, "while inserting row to '%s' table", c.tableName)

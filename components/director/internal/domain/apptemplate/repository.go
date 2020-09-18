@@ -2,6 +2,7 @@ package apptemplate
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -47,11 +48,13 @@ func NewRepository(conv EntityConverter) *repository {
 }
 
 func (r *repository) Create(ctx context.Context, item model.ApplicationTemplate) error {
+	log.Debugf("Converting Application Template with id %s to entity", item.ID)
 	entity, err := r.conv.ToEntity(&item)
 	if err != nil {
 		return errors.Wrapf(err, "while converting Application Template with ID %s", item.ID)
 	}
 
+	log.Debugf("Persisting Application Template entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
 }
 

@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -99,8 +100,9 @@ func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) error {
 	for _, item := range items {
 		if err := r.Create(ctx, item); err != nil {
-			return errors.Wrap(err, "while creating many webhooks")
+			return errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", item.Type, item.ID, item.ApplicationID)
 		}
+		log.Debugf("Successfully created Webhook with type %s and id %s for Application with id %s", item.Type, item.ID, item.ApplicationID)
 	}
 	return nil
 }

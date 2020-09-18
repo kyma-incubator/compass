@@ -48,12 +48,14 @@ func (svc *certificateService) SignCSR(encodedCSR []byte, subject CSRSubject) (E
 		log.Errorf("Error occurred while loading the CSR with Common Name %s", subject.CommonName)
 		return EncodedCertificateChain{}, err
 	}
+	log.Debugf("Successfully loaded the CSR with Common Name %s", subject.CommonName)
 
 	err = svc.checkCSR(csr, subject)
 	if err != nil {
-		log.Errorf("Error occurred while checking the values of the CSR with common name %s", subject.CommonName)
+		log.Errorf("Error occurred while checking the values of the CSR with Common Name %s", subject.CommonName)
 		return EncodedCertificateChain{}, err
 	}
+	log.Debugf("Successfully checked the values of the CSR with Common Name %s", subject.CommonName)
 
 	return svc.signCSR(csr)
 }

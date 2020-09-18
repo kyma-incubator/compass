@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -75,6 +76,7 @@ func (s *scenariosService) AddDefaultScenarioIfEnabled(labels *map[string]interf
 			*labels = map[string]interface{}{}
 		}
 		(*labels)[model.ScenariosKey] = model.ScenariosDefaultValue
+		log.Info("Successfully added Default scenario")
 	}
 }
 
