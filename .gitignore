@@ -12,6 +12,7 @@
 
 # IntelliJ
 /out/
+target/
 
 # vscode
 .vscode/
@@ -51,6 +52,7 @@ Temporary Items
 
 # Temporary files
 local/tmp/
+olingo-jpa-processor-v4/
 
 # Installer temporary files
 /temp-*
