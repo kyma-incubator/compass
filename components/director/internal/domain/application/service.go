@@ -290,13 +290,12 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return errors.Wrap(err, "while updating Application")
 	}
 
-	intSysLabel := createLabel(intSysKey, "", id)
 	if in.IntegrationSystemID != nil {
-		intSysLabel = createLabel(intSysKey, *in.IntegrationSystemID, id)
-	}
-	err = s.SetLabel(ctx, intSysLabel)
-	if err != nil {
-		return errors.Wrap(err, "while setting the integration system label")
+		intSysLabel := createLabel(intSysKey, *in.IntegrationSystemID, id)
+		err = s.SetLabel(ctx, intSysLabel)
+		if err != nil {
+			return errors.Wrap(err, "while setting the integration system label")
+		}
 	}
 
 	labelName := createLabel(nameKey, app.Name, app.ID)

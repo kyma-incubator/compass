@@ -75,25 +75,59 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 }
 
 func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
-	//GIVEN
-	timestamp := time.Now()
-	statusCondition := model.ApplicationStatusConditionConnected
-	filledAppUpdate := model.ApplicationUpdateInput{
-		ProviderName:        str.Ptr("provider name"),
-		Description:         str.Ptr("description"),
-		HealthCheckURL:      str.Ptr("https://kyma-project.io"),
-		IntegrationSystemID: str.Ptr("int sys id"),
-		StatusCondition:     &statusCondition,
-	}
-	app := model.Application{}
+	const (
+		providerName   = "provider name"
+		description    = "description"
+		healthCheckURL = "https://kyma-project.io"
+		intSysID       = "int sys id"
+	)
+	t.Run("successfully overrides values with new input", func(t *testing.T) {
+		//GIVEN
+		timestamp := time.Now()
+		statusCondition := model.ApplicationStatusConditionConnected
+		filledAppUpdate := model.ApplicationUpdateInput{
+			ProviderName:        str.Ptr(providerName),
+			Description:         str.Ptr(description),
+			HealthCheckURL:      str.Ptr(healthCheckURL),
+			IntegrationSystemID: str.Ptr(intSysID),
+			StatusCondition:     &statusCondition,
+		}
+		app := model.Application{}
 
-	//WHEN
-	app.SetFromUpdateInput(filledAppUpdate, timestamp)
+		//WHEN
+		app.SetFromUpdateInput(filledAppUpdate, timestamp)
 
-	//THEN
-	assert.Equal(t, filledAppUpdate.Description, app.Description)
-	assert.Equal(t, filledAppUpdate.HealthCheckURL, app.HealthCheckURL)
-	assert.Equal(t, filledAppUpdate.IntegrationSystemID, app.IntegrationSystemID)
-	assert.Equal(t, filledAppUpdate.ProviderName, app.ProviderName)
-	assert.Equal(t, *filledAppUpdate.StatusCondition, app.Status.Condition)
+		//THEN
+		assert.Equal(t, filledAppUpdate.Description, app.Description)
+		assert.Equal(t, filledAppUpdate.HealthCheckURL, app.HealthCheckURL)
+		assert.Equal(t, filledAppUpdate.IntegrationSystemID, app.IntegrationSystemID)
+		assert.Equal(t, filledAppUpdate.ProviderName, app.ProviderName)
+		assert.Equal(t, *filledAppUpdate.StatusCondition, app.Status.Condition)
+	})
+
+	t.Run("does not override values when input is missing", func(t *testing.T) {
+		//GIVEN
+		timestamp := time.Now()
+		statusCondition := model.ApplicationStatusConditionConnected
+		filledAppUpdate := model.ApplicationUpdateInput{
+			StatusCondition: &statusCondition,
+		}
+
+		app := model.Application{
+			ProviderName:        str.Ptr(providerName),
+			Description:         str.Ptr(description),
+			HealthCheckURL:      str.Ptr(healthCheckURL),
+			IntegrationSystemID: str.Ptr(intSysID),
+		}
+
+		//WHEN
+		app.SetFromUpdateInput(filledAppUpdate, timestamp)
+
+		//THEN
+		assert.Equal(t, description, *app.Description)
+		assert.Equal(t, healthCheckURL, *app.HealthCheckURL)
+		assert.Equal(t, intSysID, *app.IntegrationSystemID)
+		assert.Equal(t, providerName, *app.ProviderName)
+		assert.Equal(t, *filledAppUpdate.StatusCondition, app.Status.Condition)
+	})
 }
