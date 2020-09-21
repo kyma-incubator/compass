@@ -569,20 +569,36 @@ func TestService_Update(t *testing.T) {
 	id := "foo"
 	tnt := "tenant"
 	externalTnt := "external-tnt"
-
 	conditionTimestamp := time.Now()
 	timestampGenFunc := func() time.Time { return conditionTimestamp }
 
-	appName := "initialn"
-	updatedDescription := "updatedd"
-	updatedURL := "updatedu"
-	updateInput := fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected)
-	applicationModelBefore := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, "initiald", "initialu", model.ApplicationStatusConditionConnected, conditionTimestamp)
-	applicationModelAfter := fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
-	intSysLabel := fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
-	nameLabel := fixLabelInput("name", appName, id, model.ApplicationLabelableObject)
+	var updateInput model.ApplicationUpdateInput
+	var applicationModelBefore *model.Application
+	var applicationModelAfter *model.Application
+	var intSysLabel *model.LabelInput
+	var nameLabel *model.LabelInput
+	var updateInputStatusOnly model.ApplicationUpdateInput
+	var applicationModelAfterStatusUpdate *model.Application
+
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	resetModels := func() {
+		appName := "initialn"
+		initialDescrription := "initald"
+		initialURL := "initialu"
+		updatedDescription := "updatedd"
+		updatedURL := "updatedu"
+		updateInput = fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected)
+		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, tnt, appName, initialDescrription, initialURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		intSysLabel = fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
+		nameLabel = fixLabelInput("name", appName, id, model.ApplicationLabelableObject)
+		updateInputStatusOnly = fixModelApplicationUpdateInputStatus(model.ApplicationStatusConditionConnected)
+		applicationModelAfterStatusUpdate = fixModelApplicationWithAllUpdatableFields(id, tnt, appName, initialDescrription, initialURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+	}
+
+	resetModels()
 
 	testCases := []struct {
 		Name               string
@@ -615,6 +631,28 @@ func TestService_Update(t *testing.T) {
 			},
 			InputID:            "foo",
 			Input:              updateInput,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Success Status Condition Update",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, applicationModelAfterStatusUpdate).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(true, nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertLabel", ctx, tnt, nameLabel).Return(nil).Once()
+				return svc
+			},
+			InputID:            "foo",
+			Input:              updateInputStatusOnly,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -767,6 +805,7 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
+			resetModels()
 			appRepo := testCase.AppRepoFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			lblUpsrtSvc := testCase.LabelUpsertSvcFn()

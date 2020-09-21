@@ -298,22 +298,21 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return errors.Wrapf(err, "while updating Application with id %s", id)
 	}
 
-	intSysLabel := createLabel(intSysKey, "", id)
 	if in.IntegrationSystemID != nil {
-		intSysLabel = createLabel(intSysKey, *in.IntegrationSystemID, id)
+		intSysLabel := createLabel(intSysKey, *in.IntegrationSystemID, id)
+		err = s.SetLabel(ctx, intSysLabel)
+		if err != nil {
+			return errors.Wrapf(err, "while setting the integration system label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
+		}
+		log.Debugf("Successfully set Label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
 	}
-	err = s.SetLabel(ctx, intSysLabel)
-	if err != nil {
-		return errors.Wrapf(err, "while setting the integration system label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
-	}
-	log.Debugf("Successfully set Label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
 
 	labelName := createLabel(nameKey, app.Name, app.ID)
 	err = s.SetLabel(ctx, labelName)
 	if err != nil {
 		return errors.Wrap(err, "while setting application name label")
 	}
-	log.Debugf("Successfully set Label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
+	log.Debugf("Successfully set Label for Application with id %s", app.ID)
 	return nil
 }
 
