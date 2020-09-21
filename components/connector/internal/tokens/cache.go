@@ -1,8 +1,9 @@
 package tokens
 
 import (
-	log "github.com/sirupsen/logrus"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 
