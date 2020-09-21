@@ -2,8 +2,9 @@ package repo
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
