@@ -244,7 +244,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 		return "", err
 	}
 
-	log.Debugf("Checking to add Default scenario if enabled for Application with id %s", id)
 	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
 
 	if in.Labels == nil {

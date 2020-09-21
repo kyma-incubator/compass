@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -69,6 +70,8 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}
+
+	log.Debugf("Executing query: %s", query)
 
 	err = persist.Get(dest, query, args...)
 

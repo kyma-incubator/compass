@@ -171,7 +171,7 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
 
-	log.Infof("Updating Package %s", id)
+	log.Infof("Updating Package with id %s", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

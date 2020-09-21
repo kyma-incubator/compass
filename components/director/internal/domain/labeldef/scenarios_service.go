@@ -77,7 +77,7 @@ func (s *scenariosService) AddDefaultScenarioIfEnabled(labels *map[string]interf
 			*labels = map[string]interface{}{}
 		}
 		(*labels)[model.ScenariosKey] = model.ScenariosDefaultValue
-		log.Info("Successfully added Default scenario")
+		log.Debug("Successfully added Default scenario")
 	}
 }
 

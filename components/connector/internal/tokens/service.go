@@ -2,7 +2,6 @@ package tokens
 
 import (
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
-	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Service
@@ -25,8 +24,6 @@ func NewTokenService(store Cache, generator TokenGenerator) *tokenService {
 }
 
 func (svc *tokenService) CreateToken(clientId string, tokenType TokenType) (string, apperrors.AppError) {
-	log.Infof("Generating token for %s with id %s", tokenType, clientId)
-
 	token, err := svc.generator.NewToken()
 	if err != nil {
 		return "", err
@@ -37,7 +34,6 @@ func (svc *tokenService) CreateToken(clientId string, tokenType TokenType) (stri
 		ClientId: clientId,
 	}
 
-	log.Debugf("Storing token for %s with id %s in the cache", tokenType, clientId)
 	svc.store.Put(token, tokenData)
 
 	return token, nil

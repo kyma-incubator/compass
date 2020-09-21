@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	log "github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
@@ -47,6 +48,7 @@ func (c *tokenCache) Put(token string, data TokenData) {
 		tokenTTL = c.csrTokenTTL
 	}
 
+	log.Debugf("Storing token for %s with id %s in the cache for %s", data.Type, data.ClientId, tokenTTL)
 	c.tokenCache.Set(token, data, tokenTTL)
 }
 

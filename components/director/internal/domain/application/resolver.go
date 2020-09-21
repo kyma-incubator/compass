@@ -292,7 +292,7 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 
 	gqlApp := r.appConverter.ToGraphQL(app)
 
-	log.Infof("Application with id %s successfully registered", id)
+	log.Infof("Application with name %s and id %s successfully registered", in.Name, id)
 	return gqlApp, nil
 }
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
@@ -304,7 +304,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.Infof("Updating Application with name %s", id)
+	log.Infof("Updating Application with id %s", id)
 
 	convertedIn := r.appConverter.UpdateInputFromGraphQL(in)
 	err = r.appSvc.Update(ctx, id, convertedIn)

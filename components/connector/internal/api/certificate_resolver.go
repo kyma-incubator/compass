@@ -120,8 +120,8 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 	r.log.Infof("Creating one-time token as part of fetching configuration process for client with id %s", clientId)
 	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
 	if err != nil {
-		r.log.Errorf("Error occurred while creating one-time token for client with id %s : %s", clientId, err.Error())
-		return nil, err
+		r.log.Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process: %s", clientId, err.Error())
+		return nil, errors.Wrap(err, "Failed to create one-time token during fetching configuration process")
 	}
 
 	csrInfo := &externalschema.CertificateSigningRequestInfo{
