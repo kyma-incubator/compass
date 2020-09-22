@@ -16,7 +16,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "true"
       labels:
-        app: {{ .Chart.Name }}-tests
+        app: {{ .Chart.Name }}-tests-gateway-external-services-integration
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
