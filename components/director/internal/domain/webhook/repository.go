@@ -95,6 +95,7 @@ func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
+	log.Debugf("Persisting Webhook entity with type %s and id %s for Application with id %s to db", item.Type, item.ID, item.ApplicationID)
 	return r.creator.Create(ctx, entity)
 }
 
@@ -103,7 +104,7 @@ func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) err
 		if err := r.Create(ctx, item); err != nil {
 			return errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", item.Type, item.ID, item.ApplicationID)
 		}
-		log.Debugf("Successfully created Webhook with type %s and id %s for Application with id %s", item.Type, item.ID, item.ApplicationID)
+		log.Infof("Successfully created Webhook with type %s and id %s for Application with id %s", item.Type, item.ID, item.ApplicationID)
 	}
 	return nil
 }

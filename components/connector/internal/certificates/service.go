@@ -57,7 +57,13 @@ func (svc *certificateService) SignCSR(encodedCSR []byte, subject CSRSubject) (E
 	}
 	log.Debugf("Successfully checked the values of the CSR with Common Name %s", subject.CommonName)
 
-	return svc.signCSR(csr)
+	encodedCertChain, err := svc.signCSR(csr)
+	if err != nil {
+		return EncodedCertificateChain{}, err
+	}
+	log.Debugf("Successfully signed CSR with Common Name %s", subject.CommonName)
+
+	return encodedCertChain, nil
 }
 
 func (svc *certificateService) signCSR(csr *x509.CertificateRequest) (EncodedCertificateChain, apperrors.AppError) {
