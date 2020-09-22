@@ -12,6 +12,9 @@ metadata:
 spec:
   disableConcurrency: true
   template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-tests
     spec:
       serviceAccountName: {{ template "fullname" . }}-tests
       containers:
