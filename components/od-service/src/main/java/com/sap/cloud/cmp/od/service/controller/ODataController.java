@@ -2,7 +2,6 @@ package com.sap.cloud.cmp.od.service.controller;
 
 import com.sap.olingo.jpa.processor.core.api.JPAODataCRUDContextAccess;
 import com.sap.olingo.jpa.processor.core.api.JPAODataCRUDHandler;
-import com.sap.olingo.jpa.processor.core.api.example.JPAExampleCUDRequestHandler;
 import org.apache.olingo.commons.api.ex.ODataException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -23,7 +22,6 @@ public class ODataController {
     public void handleODataRequest(HttpServletRequest request, HttpServletResponse response) throws ODataException {
         final JPAODataCRUDHandler handler = new JPAODataCRUDHandler(serviceContext);
 
-        handler.getJPAODataRequestContext().setCUDRequestHandler(new JPAExampleCUDRequestHandler());
         handler.process(request, response);
     }
 }

@@ -29,6 +29,28 @@ spec:
             - {{ . }}
             {{- end }}
     - match:
+        - uri:
+            prefix: /open-discovery
+      route:
+        - destination:
+            host: {{ .Values.global.open_discovery_service.host }}
+            port:
+              number: {{ .Values.global.open_discovery_service.port }}
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+      {{- end }}
+      corsPolicy:
+        allowOrigin:
+          - "*"
+        allowHeaders:
+          - "accept"
+          - "content-type"
+        allowMethods:
+          - "GET"
+    - match:
       - uri:
           exact: /director
       redirect:
