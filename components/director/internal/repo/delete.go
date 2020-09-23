@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -83,6 +85,7 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, conditions Conditio
 	allArgs := getAllArgs(conditions)
 
 	query := getQueryFromBuilder(stmtBuilder)
+	log.Debugf("Executing query %s", query)
 	res, err := persist.Exec(query, allArgs...)
 	if err = persistence.MapSQLError(err, g.resourceType, "while deleting object from database"); err != nil {
 		return err

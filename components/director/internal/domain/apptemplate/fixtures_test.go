@@ -201,7 +201,7 @@ func fixSQLRows(entities []apptemplate.Entity) *sqlmock.Rows {
 }
 
 func fixJSONApplicationCreateInput(name string) string {
-	return fmt.Sprintf(`{"Name": "%s", "ProviderName": "%s", "Description": "%s", "HealthCheckURL": "%s"}`, name, testProviderName, testDescription, testURL)
+	return fmt.Sprintf(`{"name": "%s", "providerName": "%s", "description": "%s", "healthCheckURL": "%s"}`, name, testProviderName, testDescription, testURL)
 }
 
 func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput {

@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -130,6 +131,8 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
 
+	log.Infof("Adding package to Application with id %s", applicationID)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.packageConverter.CreateInputFromGraphQL(in)
@@ -154,9 +157,10 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 
 	gqlPackage, err := r.packageConverter.ToGraphQL(pkg)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Package with id %s to GraphQL", id)
 	}
 
+	log.Infof("Package with id %s successfully added to Application with id %s", id, applicationID)
 	return gqlPackage, nil
 }
 
@@ -167,11 +171,13 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
 
+	log.Infof("Updating Package with id %s", id)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.packageConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Package update input from GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting converting GraphQL input to Package with id %s", id)
 	}
 
 	err = r.packageSvc.Update(ctx, id, *convertedIn)
@@ -191,9 +197,10 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 
 	gqlPkg, err := r.packageConverter.ToGraphQL(pkg)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Package with id %s to GraphQL", id)
 	}
 
+	log.Infof("Package with id %s successfully updated.", id)
 	return gqlPkg, nil
 }
 
@@ -203,6 +210,8 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
+
+	log.Infof("Deleting Package with id %s", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -223,9 +232,10 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 
 	deletedPkg, err := r.packageConverter.ToGraphQL(pkg)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Package to GraphQL with ID: [%s]", id)
+		return nil, errors.Wrapf(err, "while converting Package with id %s to GraphQL", id)
 	}
 
+	log.Infof("Package with id %s successfully deleted.", id)
 	return deletedPkg, nil
 }
 

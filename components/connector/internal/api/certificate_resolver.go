@@ -52,17 +52,19 @@ func NewCertificateResolver(
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
+	r.log.Debug("Authenticating the call for signing the Certificate Signing Request.")
+
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Failed authentication during the signing CSR process. ", err.Error())
 		return nil, errors.Wrap(err, "Failed to authenticate with token")
 	}
 
-	r.log.Infof("Signing Certificate Signing Request for %s client.", clientId)
+	r.log.Infof("Signing Certificate Signing Request for client with id %s", clientId)
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Errorf("Failed to decode the input CSR of client with id %s during the certificate signing process. %s", clientId, err.Error())
 		return nil, errors.Wrap(err, "Error while decoding Certificate Signing Request")
 	}
 
@@ -73,54 +75,61 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Errorf("Error occurred while signing the CSR with Common Name %s of client with id %s : %s ", subject.CommonName, clientId, err.Error())
 		return nil, errors.Wrap(err, "Error while signing Certificate Signing Request")
 	}
 
 	certificationResult := certificates.ToCertificationResult(encodedCertificates)
 
-	r.log.Infof("Certificate Signing Request signed.")
+	r.log.Infof("Certificate Signing Request with Common Name %s of client with id %s successfully signed.", subject.CommonName, clientId)
 	return &certificationResult, nil
 }
 
 func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
+	r.log.Debug("Authenticating the call for certificate revocation.")
+
 	clientId, certificateHash, err := r.authenticator.AuthenticateCertificate(ctx)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Failed authentication while revoking the certificate. ", err.Error())
 		return false, errors.Wrap(err, "Failed to authenticate with certificate")
 	}
 
-	r.log.Infof("Revoking certificate for %s client.", clientId)
+	r.log.Infof("Revoking certificate for client with id %s", clientId)
 
+	r.log.Debugf("Inserting certificate hash of client with id %s to revocation list", clientId)
 	err = r.revocationList.Insert(certificateHash)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Errorf("Failed to add certificate hash of client with id %s to revocation list. %s ", clientId, err.Error())
 		return false, errors.Wrap(err, "Failed to add hash to revocation list")
 	}
 
-	r.log.Infof("Certificate revoked.")
+	r.log.Infof("Certificate of client with id %s successfully revoked.", clientId)
 	return true, nil
 }
 
 func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
+	r.log.Debug("Authenticating the call for configuration fetching.")
+
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		r.log.Errorf(err.Error())
+		r.log.Error("Failed authentication while fetching the configuration. ", err.Error())
 		return nil, err
 	}
+	r.log.Infof("Fetching configuration for client with id %s", clientId)
 
-	r.log.Infof("Fetching configuration for %s client...", clientId)
-
+	r.log.Infof("Creating one-time token as part of fetching configuration process for client with id %s", clientId)
 	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
 	if err != nil {
-		r.log.Errorf(err.Error())
-		return nil, err
+		r.log.Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process: %s", clientId, err.Error())
+		return nil, errors.Wrap(err, "Failed to create one-time token during fetching configuration process")
 	}
 
 	csrInfo := &externalschema.CertificateSigningRequestInfo{
 		Subject:      r.csrSubjectConsts.ToString(clientId),
 		KeyAlgorithm: "rsa2048",
 	}
+
+	r.log.Infof("Configuration for client with id %s successfully fetched.", clientId)
 
 	return &externalschema.Configuration{
 		Token:                         &externalschema.Token{Token: token},

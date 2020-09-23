@@ -3,6 +3,8 @@ package mp_package
 import (
 	"context"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -90,12 +92,14 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 
 	err = s.pkgRepo.Create(ctx, pkg)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "error occurred while creating a Package with id %s and name %s for Application with id %s", id, pkg.Name, applicationID)
 	}
+	log.Infof("Successfully created a Package with id %s and name %s for Application with id %s", id, pkg.Name, applicationID)
 
+	log.Infof("Creating related resources in Package with id %s and name %s for Application with id %s", id, pkg.Name, applicationID)
 	err = s.createRelatedResources(ctx, in, tnt, id)
 	if err != nil {
-		return "", errors.Wrap(err, "while creating related Application resources")
+		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", applicationID)
 	}
 
 	return id, nil
@@ -113,7 +117,7 @@ func (s *service) CreateMultiple(ctx context.Context, applicationID string, in [
 
 		_, err := s.Create(ctx, applicationID, *pkg)
 		if err != nil {
-			return errors.Wrap(err, "while creating Package for Application")
+			return errors.Wrapf(err, "while creating Package for Application with id %s", applicationID)
 		}
 	}
 
@@ -128,14 +132,14 @@ func (s *service) Update(ctx context.Context, id string, in model.PackageUpdateI
 
 	pkg, err := s.pkgRepo.GetByID(ctx, tnt, id)
 	if err != nil {
-		return errors.Wrapf(err, "while getting Package with ID: [%s]", id)
+		return errors.Wrapf(err, "while getting Package with id %s", id)
 	}
 
 	pkg.SetFromUpdateInput(in)
 
 	err = s.pkgRepo.Update(ctx, pkg)
 	if err != nil {
-		return errors.Wrapf(err, "while updating Package with ID: [%s]", id)
+		return errors.Wrapf(err, "while updating Package with id %s", id)
 	}
 	return nil
 }
@@ -148,7 +152,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	err = s.pkgRepo.Delete(ctx, tnt, id)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting Package with ID: [%s]", id)
+		return errors.Wrapf(err, "while deleting Package with id %s", id)
 	}
 
 	return nil
@@ -190,7 +194,7 @@ func (s *service) GetByInstanceAuthID(ctx context.Context, instanceAuthID string
 
 	pkg, err := s.pkgRepo.GetByInstanceAuthID(ctx, tnt, instanceAuthID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Package by Instance Auth ID: [%s]", instanceAuthID)
+		return nil, errors.Wrapf(err, "while getting Package by PackageInstanceAuth with id %s", instanceAuthID)
 	}
 
 	return pkg, nil
@@ -251,8 +255,9 @@ func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis
 
 		err = s.apiRepo.Create(ctx, api)
 		if err != nil {
-			return errors.Wrap(err, "while creating API for application")
+			return errors.Wrapf(err, "while creating APIDefinition with id %s within Package with id %s", apiDefID, packageID)
 		}
+		log.Infof("Successfully created APIDefinition with id %s within Package with id %s", apiDefID, packageID)
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
 			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
@@ -278,8 +283,9 @@ func (s *service) createEvents(ctx context.Context, packageID, tenant string, ev
 		eventID := s.uidService.Generate()
 		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinPackage(eventID, packageID, tenant))
 		if err != nil {
-			return errors.Wrap(err, "while creating EventDefinitions for application")
+			return errors.Wrapf(err, "while creating EventDefinition with id %s in Package with id %s", eventID, packageID)
 		}
+		log.Infof("Successfully created EventDefinition with id %s in Package with id %s", eventID, packageID)
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
 			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventID)
@@ -295,10 +301,12 @@ func (s *service) createDocuments(ctx context.Context, packageID, tenant string,
 	var err error
 	for _, item := range events {
 		documentID := s.uidService.Generate()
+
 		err = s.documentRepo.Create(ctx, item.ToDocumentWithinPackage(documentID, tenant, packageID))
 		if err != nil {
-			return errors.Wrapf(err, "while creating Document for application")
+			return errors.Wrapf(err, "while creating Document with id %s in Package with id %s", documentID, packageID)
 		}
+		log.Infof("Successfully created Document with id %s in Package with id %s", documentID, packageID)
 
 		if item.FetchRequest != nil {
 			_, err = s.createFetchRequest(ctx, tenant, item.FetchRequest, model.DocumentFetchRequestReference, documentID)
@@ -317,10 +325,11 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in *mod
 
 	id := s.uidService.Generate()
 	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, objectType, objectID)
+
 	err := s.fetchRequestRepo.Create(ctx, fr)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", objectType, objectID)
+		return nil, errors.Wrapf(err, "while creating FetchRequest with id %s for %s with id %s", id, objectType, objectID)
 	}
-
+	log.Infof("Successfully created FetchRequest with id %s for type %s with id %s", id, objectType, objectID)
 	return fr, nil
 }

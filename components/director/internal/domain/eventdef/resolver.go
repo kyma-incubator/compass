@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -75,16 +76,18 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
 
+	log.Infof("Adding EventDefinition to package with id %s", packageID)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting EventDefinition input")
+		return nil, errors.Wrap(err, "while converting GraphQL input to EventDefinition")
 	}
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while checking existence of Package")
+		return nil, errors.Wrapf(err, "while checking existence of Package with id %s when adding EventDefinition", packageID)
 	}
 
 	if !found {
@@ -93,7 +96,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while creating EventDefinition in Package with id %s", packageID)
 	}
 
 	api, err := r.svc.Get(ctx, id)
@@ -108,6 +111,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	gqlAPI := r.converter.ToGraphQL(api)
 
+	log.Infof("EventDefinition with id %s successfully added to package with id %s", id, packageID)
 	return gqlAPI, nil
 }
 
@@ -118,11 +122,13 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
 
+	log.Infof("Updating EventDefinition with id %s", id)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting EventDefinition input")
+		return nil, errors.Wrapf(err, "while converting GraphQL input to EventDefinition with id %s", id)
 	}
 
 	err = r.svc.Update(ctx, id, *convertedIn)
@@ -142,6 +148,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 		return nil, err
 	}
 
+	log.Infof("EventDefinition with id %s successfully updated.", id)
 	return gqlAPI, nil
 }
 
@@ -151,6 +158,8 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
+
+	log.Infof("Deleting EventDefinition with id %s", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -171,6 +180,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
+	log.Infof("EventDefinition with id %s successfully deleted.", id)
 	return deletedAPI, nil
 }
 
@@ -180,6 +190,8 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommitted(tx)
+
+	log.Infof("Refetching EventDefinitionSpec for EventDefinition with id %s", eventID)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -195,6 +207,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 	convertedOut := r.converter.ToGraphQL(&model.EventDefinition{Spec: spec})
 
+	log.Infof("Successfully refetched EventDefinitionSpec for EventDefinition with id %s", eventID)
 	return convertedOut.Spec, nil
 }
 
@@ -229,5 +242,6 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 		return nil, err
 	}
 
+	log.Infof("Successfully fetched request for EventDefinition %s", obj.DefinitionID)
 	return r.frConverter.ToGraphQL(fr)
 }

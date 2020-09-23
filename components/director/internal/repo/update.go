@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -94,6 +96,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 	if err = persistence.MapSQLError(err, u.resourceType, "while updating single entity"); err != nil {
 		return err
 	}
+	log.Debugf("Executing query: %s", stmtBuilder.String())
 
 	affected, err := res.RowsAffected()
 	if err != nil {

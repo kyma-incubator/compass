@@ -50,7 +50,7 @@ func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
 
 	t.Run("Error when cleanup returns errors", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while deleting labels [key=%s]: some-error`, getDefaultEventingForAppLabelKey(applicationID))
+		expectedError := fmt.Sprintf(`while deleting Labels for Application with id %s: some-error`, applicationID)
 		ctx := fixCtxWithTenant()
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("DeleteByKey", ctx, tenantID.String(), getDefaultEventingForAppLabelKey(applicationID)).Return(errors.New("some-error"))

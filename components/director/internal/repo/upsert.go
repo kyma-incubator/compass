@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -55,6 +57,7 @@ func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) er
 	stmtWithoutUpsert := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", u.tableName, strings.Join(u.insertColumns, ", "), strings.Join(values, ", "))
 	stmtWithUpsert := fmt.Sprintf("%s ON CONFLICT ( %s ) DO UPDATE SET %s", stmtWithoutUpsert, strings.Join(u.conflictingColumns, ", "), strings.Join(update, ", "))
 
+	log.Debugf("Executing query: %s", stmtWithUpsert)
 	_, err = persist.NamedExec(stmtWithUpsert, dbEntity)
 	return persistence.MapSQLError(err, u.resourceType, "while upserting row to '%s' table", u.tableName)
 }

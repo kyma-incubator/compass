@@ -28,28 +28,28 @@ func NewTokenResolver(tokenService tokens.Service) TokenResolver {
 }
 
 func (r *tokenResolver) GenerateApplicationToken(ctx context.Context, appID string) (*externalschema.Token, error) {
-	r.log.Infof("Generating token for %s Application...", appID)
+	r.log.Infof("Generating one-time token for Application with id %s", appID)
 
 	token, err := r.tokenService.CreateToken(appID, tokens.ApplicationToken)
 	if err != nil {
-		r.log.Error(err.Error())
-		return &externalschema.Token{}, errors.Wrap(err, "Failed to create Application token")
+		r.log.Errorf("Error occurred while creating one-time token for Application with id %s : %s ", appID, err.Error())
+		return &externalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for Application")
 	}
 
-	r.log.Infof("Token generated for %s Application...", appID)
+	r.log.Infof("One-time token generated successfully for Application with id %s", appID)
 	return &externalschema.Token{Token: token}, nil
 }
 
 func (r *tokenResolver) GenerateRuntimeToken(ctx context.Context, runtimeID string) (*externalschema.Token, error) {
-	r.log.Infof("Generating token for %s Runtime...", runtimeID)
+	r.log.Infof("Generating one-time token for Runtime with id %s", runtimeID)
 
 	token, err := r.tokenService.CreateToken(runtimeID, tokens.RuntimeToken)
 	if err != nil {
-		r.log.Error(err.Error())
-		return &externalschema.Token{}, errors.Wrap(err, "Failed to create Runtime token")
+		r.log.Errorf("Error occurred while creating one-time token for Runtime with id %s : %s ", runtimeID, err.Error())
+		return &externalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for Runtime")
 	}
 
-	r.log.Infof("Token generated for %s Runtime...", runtimeID)
+	r.log.Infof("One-time token generated successfully for Runtime with id %s", runtimeID)
 	return &externalschema.Token{Token: token}, nil
 }
 

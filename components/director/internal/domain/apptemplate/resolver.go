@@ -2,6 +2,7 @@ package apptemplate
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=ApplicationTemplateService -output=automock -outpkg=automock -case=underscore
@@ -152,10 +154,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	log.Infof("Creating an Application Template with name %s", convertedIn.Name)
 	id, err := r.appTemplateSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("Successfully created an Application Template with name %s and id %s", convertedIn.Name, id)
 
 	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
@@ -169,7 +173,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	gqlAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting application template to graphql")
+		return nil, errors.Wrapf(err, "error occurred while converting Application Template with id %s to GraphQL", id)
 	}
 
 	return gqlAppTemplate, nil
@@ -184,25 +188,35 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	//log.Infof("Registering an Application from Application Template with name %s", in.TemplateName)
 	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
 
+	log.Debugf("Extracting Application Template with name %s from GraphQL input", in.TemplateName)
 	appTemplate, err := r.appTemplateSvc.GetByName(ctx, convertedIn.TemplateName)
 	if err != nil {
 		return nil, err
 	}
+	applicationName, err := extractApplicationNameFromTemplateInput(appTemplate.ApplicationInputJSON)
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("Registering an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 
+	log.Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	appCreateInputJSON, err := r.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, convertedIn.Values)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "error occurred while preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	}
 
+	log.Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
 	appCreateInputGQL, err := r.appConverter.CreateInputJSONToGQL(appCreateInputJSON)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "error occurred while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
 	}
 
+	log.Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %s", convertedIn.TemplateName)
 	if err := inputvalidation.Validate(appCreateInputGQL); err != nil {
-		return nil, errors.Wrapf(err, "while validating application input from application template [name=%s]", convertedIn.TemplateName)
+		return nil, errors.Wrapf(err, "while validating application input from Application Template with name %s", convertedIn.TemplateName)
 	}
 
 	appCreateInputModel, err := r.appConverter.CreateInputFromGraphQL(appCreateInputGQL)
@@ -210,10 +224,12 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 		return nil, errors.Wrap(err, "while converting ApplicationFromTemplate input")
 	}
 
+	log.Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	id, err := r.appSvc.Create(ctx, appCreateInputModel)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "error occurred while creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	}
+	log.Infof("Application with name %s and id %s successfully created from Application Template with name %s", applicationName, id, in.TemplateName)
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
@@ -296,4 +312,16 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 	}
 
 	return deletedAppTemplate, nil
+}
+
+func extractApplicationNameFromTemplateInput(applicationInputJSON string) (string, error) {
+	b := []byte(applicationInputJSON)
+	data := make(map[string]interface{})
+
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		return "", errors.Wrap(err, "while unmarshalling application input JSON")
+	}
+
+	return data["name"].(string), nil
 }

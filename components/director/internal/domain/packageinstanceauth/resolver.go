@@ -7,6 +7,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
+
+	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
@@ -69,6 +71,8 @@ func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string)
 		return nil, err
 	}
 
+	log.Infof("PackageInstanceAuth with id %s successfully deleted", authID)
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
@@ -86,9 +90,11 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	log.Infof("Setting credentials for PackageInstanceAuth with id %s", authID)
+
 	convertedIn, err := r.conv.SetInputFromGraphQL(in)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting PackageInstanceAuth from GraphQL")
+		return nil, errors.Wrapf(err, "while converting PackageInstanceAuth with id %s from GraphQL", authID)
 	}
 
 	err = r.svc.SetAuth(ctx, authID, convertedIn)
@@ -100,6 +106,8 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 	if err != nil {
 		return nil, err
 	}
+
+	log.Infof("Credentials successfully set for PackageInstanceAuth with id %s", authID)
 
 	err = tx.Commit()
 	if err != nil {
@@ -118,6 +126,8 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	log.Infof("Requesting PackageInstanceAuth creation for Package with id %s", packageID)
+
 	pkg, err := r.pkgSvc.Get(ctx, packageID)
 	if err != nil {
 		return nil, err
@@ -134,6 +144,7 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("Successfully created PackageInstanceAuth with id %s for Package with id %s", instanceAuthID, packageID)
 
 	err = tx.Commit()
 	if err != nil {
@@ -151,6 +162,8 @@ func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authI
 
 	defer r.transact.RollbackUnlessCommitted(tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.Infof("Requesting PackageInstanceAuth deletion for PackageInstanceAuth with id %s", authID)
 
 	instanceAuth, err := r.svc.Get(ctx, authID)
 	if err != nil {
@@ -173,6 +186,8 @@ func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authI
 			return nil, err
 		}
 	}
+
+	log.Infof("PackageInstanceAuth with id %s successfully deleted", authID)
 
 	err = tx.Commit()
 	if err != nil {
