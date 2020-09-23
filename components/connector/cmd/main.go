@@ -4,6 +4,9 @@ import (
 	"log"
 	"path/filepath"
 	"sync"
+	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/kyma-incubator/compass/components/connector/config"
 
@@ -27,7 +30,7 @@ func main() {
 	log.Println("Starting Connector Service")
 	log.Printf("Config: %s", cfg.String())
 
-	k8sClientSet, appErr := newCoreClientSet()
+	k8sClientSet, appErr := newCoreClientSet(cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout)
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
 	internalComponents, certificateLoader := config.InitInternalComponents(cfg, k8sClientSet)
@@ -84,7 +87,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func newCoreClientSet() (*kubernetes.Clientset, error) {
+func newCoreClientSet(interval, timeout time.Duration) (*kubernetes.Clientset, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
 		logrus.Warnf("Failed to read in cluster Config: %s", err.Error())
@@ -102,5 +105,18 @@ func newCoreClientSet() (*kubernetes.Clientset, error) {
 		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
 	}
 
+	err = wait.PollImmediate(interval, timeout, func() (bool, error) {
+		_, err := coreClientset.ServerVersion()
+		if err != nil {
+			logrus.Debugf("Failed to access API Server: %s", err.Error())
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	logrus.Info("Successfully initialized kubernetes client")
 	return coreClientset, nil
 }

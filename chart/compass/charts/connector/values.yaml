@@ -16,6 +16,9 @@ deployment:
       province: "province"
     certificateValidityTime: "2160h"
     attachRootCAToChain: false
+  kubernetesClient:
+    pollInterval: 2s
+    pollTimeout: 1m
 
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
 
