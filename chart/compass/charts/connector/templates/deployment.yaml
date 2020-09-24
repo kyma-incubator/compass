@@ -93,6 +93,10 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_CERTIFICATE_SECURED_CONNECTOR_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql"
+            - name: APP_KUBERNETES_CLIENT_POLL_INTERVAL
+              value: {{ .Values.deployment.kubernetesClient.pollInterval | quote }}
+            - name: APP_KUBERNETES_CLIENT_POLL_TIMEOUT
+              value: {{ .Values.deployment.kubernetesClient.pollTimeout | quote }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
