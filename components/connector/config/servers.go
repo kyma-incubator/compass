@@ -3,6 +3,9 @@ package config
 import (
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/error_presenter"
+	"github.com/kyma-incubator/compass/components/connector/internal/panic_handler"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
 	log "github.com/sirupsen/logrus"
 
@@ -17,7 +20,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
-func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolver, authContextMiddleware mux.MiddlewareFunc) *http.Server {
+func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolver, authContextMiddleware mux.MiddlewareFunc, presenter *error_presenter.Presenter) *http.Server {
 	externalResolver := api.ExternalResolver{CertificateResolver: certResolver}
 
 	gqlInternalCfg := externalschema.Config{
@@ -28,7 +31,7 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 
 	externalRouter := mux.NewRouter()
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
+	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema, handler.ErrorPresenter(presenter.Do), handler.RecoverFunc(panic_handler.RecoverFn)))
 	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
 	externalRouter.Use(authContextMiddleware)
@@ -39,7 +42,7 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	}
 }
 
-func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) *http.Server {
+func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver, presenter *error_presenter.Presenter) *http.Server {
 	internalResolver := api.InternalResolver{TokenResolver: tokenResolver}
 
 	gqlInternalCfg := internalschema.Config{
@@ -50,7 +53,7 @@ func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) *
 
 	internalRouter := mux.NewRouter()
 	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
+	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema, handler.ErrorPresenter(presenter.Do), handler.RecoverFunc(panic_handler.RecoverFn)))
 
 	return &http.Server{
 		Addr:    cfg.InternalAddress,

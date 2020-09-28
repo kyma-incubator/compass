@@ -6,6 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/error_presenter"
+	"github.com/kyma-incubator/compass/components/connector/internal/uid"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/kyma-incubator/compass/components/connector/config"
@@ -49,8 +52,10 @@ func main() {
 
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
-	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication)
-	internalGqlServer := config.PrepareInternalGraphQLServer(cfg, tokenResolver)
+	presenter := error_presenter.NewPresenter(logrus.StandardLogger(), uid.NewService())
+
+	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication, presenter)
+	internalGqlServer := config.PrepareInternalGraphQLServer(cfg, tokenResolver, presenter)
 	hydratorServer := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.SubjectConsts, internalComponents.RevocationsRepository)
 
 	wg := &sync.WaitGroup{}

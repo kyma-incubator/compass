@@ -1,8 +1,12 @@
 package apperrors
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 const (
+	CodeUnknown                  = 0
 	CodeInternal                 = 1
 	CodeNotFound                 = 2
 	CodeAlreadyExists            = 3
@@ -10,6 +14,7 @@ const (
 	CodeUpstreamServerCallFailed = 5
 	CodeForbidden                = 5
 	CodeBadRequest               = 6
+	CodeNotAuthenticated         = 7
 )
 
 type AppError interface {
@@ -18,13 +23,22 @@ type AppError interface {
 	Error() string
 }
 
-type appError struct {
+type Error struct {
 	code    int
 	message string
 }
 
 func errorf(code int, format string, a ...interface{}) AppError {
-	return appError{code: code, message: fmt.Sprintf(format, a...)}
+	return Error{code: code, message: fmt.Sprintf(format, a...)}
+}
+
+func ErrorCode(err error) int {
+	var customErr Error
+	found := errors.As(err, &customErr)
+	if found {
+		return customErr.code
+	}
+	return CodeUnknown
 }
 
 func Internal(format string, a ...interface{}) AppError {
@@ -55,15 +69,19 @@ func BadRequest(format string, a ...interface{}) AppError {
 	return errorf(CodeBadRequest, format, a...)
 }
 
-func (ae appError) Append(additionalFormat string, a ...interface{}) AppError {
+func NotAuthenticated(format string, a ...interface{}) AppError {
+	return errorf(CodeNotAuthenticated, format, a...)
+}
+
+func (ae Error) Append(additionalFormat string, a ...interface{}) AppError {
 	format := additionalFormat + ", " + ae.message
 	return errorf(ae.code, format, a...)
 }
 
-func (ae appError) Code() int {
+func (ae Error) Code() int {
 	return ae.code
 }
 
-func (ae appError) Error() string {
+func (ae Error) Error() string {
 	return ae.message
 }

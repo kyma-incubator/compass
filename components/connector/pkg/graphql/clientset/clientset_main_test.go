@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/kyma-incubator/compass/components/connector/internal/error_presenter"
+	"github.com/kyma-incubator/compass/components/connector/internal/uid"
+	"github.com/sirupsen/logrus"
+
 	"k8s.io/client-go/kubernetes"
 
 	v1 "k8s.io/api/core/v1"
@@ -117,7 +121,9 @@ func TestMain(m *testing.M) {
 		})
 	}
 
-	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextTestMiddleware)
+	presenter := error_presenter.NewPresenter(logrus.StandardLogger(), uid.NewService())
+
+	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextTestMiddleware, presenter)
 	externalGqlServer.TLSConfig = &tls.Config{ClientAuth: tls.RequestClientCert}
 
 	go func() {

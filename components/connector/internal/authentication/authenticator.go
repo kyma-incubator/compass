@@ -3,9 +3,9 @@ package authentication
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 
-	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Authenticator
@@ -31,7 +31,7 @@ func (a *authenticator) Authenticate(context context.Context) (string, error) {
 
 	clientId, _, certAuthErr := a.AuthenticateCertificate(context)
 	if certAuthErr != nil {
-		return "", errors.Errorf("Failed to authenticate request. Token authentication error: %s. Certificate authentication error: %s",
+		return "", apperrors.NotAuthenticated("Failed to authenticate request. Token authentication error: %s. Certificate authentication error: %s",
 			tokenAuthErr.Error(), certAuthErr.Error())
 	}
 
@@ -42,11 +42,11 @@ func (a *authenticator) Authenticate(context context.Context) (string, error) {
 func (a *authenticator) AuthenticateToken(context context.Context) (string, error) {
 	clientId, err := GetStringFromContext(context, ClientIdFromTokenKey)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to authenticate request, token not provided")
+		return "", err.Append("Failed to authenticate request, token not provided")
 	}
 
 	if clientId == "" {
-		return "", errors.New("Failed to authenticate with one time token.")
+		return "", apperrors.NotAuthenticated("Failed to authenticate with one time token.")
 	}
 
 	return clientId, nil
@@ -55,16 +55,16 @@ func (a *authenticator) AuthenticateToken(context context.Context) (string, erro
 func (a *authenticator) AuthenticateCertificate(context context.Context) (string, string, error) {
 	clientId, err := GetStringFromContext(context, ClientIdFromCertificateKey)
 	if err != nil {
-		return "", "", errors.Wrap(err, "Failed to authenticate with Certificate. Invalid subject.")
+		return "", "", err.Append("Failed to authenticate with Certificate. Invalid subject.")
 	}
 
 	if clientId == "" {
-		return "", "", errors.New("Failed to authenticate with Certificate. Invalid subject.")
+		return "", "", apperrors.NotAuthenticated("Failed to authenticate with Certificate. Invalid subject.")
 	}
 
 	certificateHash, err := GetStringFromContext(context, ClientCertificateHashKey)
 	if err != nil {
-		return "", "", errors.Wrap(err, "Failed to authenticate with Certificate. Invalid certificate hash.")
+		return "", "", err.Append("Failed to authenticate with Certificate. Invalid certificate hash.")
 	}
 
 	return clientId, certificateHash, nil

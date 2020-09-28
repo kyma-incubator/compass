@@ -91,6 +91,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:ffe5ba52b122a56df4f9854ea2918e0d9f86e74919db63dc138f8fee3253d3d6"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0e4e31197428a347842d152773b4cace4645ca25"
+  version = "v1.1.2"
+
+[[projects]]
   digest = "1:ca4524b4855ded427c7003ec903a5c854f37e7b1e8e2a93277243462c5b753a8"
   name = "github.com/googleapis/gnostic"
   packages = [
@@ -212,9 +220,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
+  digest = "1:31538f8d774e8bf2fb9380d2d2a82d69e206a7d0603946586926f1819c546c26"
   name = "github.com/sirupsen/logrus"
-  packages = ["."]
+  packages = [
+    ".",
+    "hooks/test",
+  ]
   pruneopts = "UT"
   revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
   version = "v1.4.2"
@@ -666,17 +677,20 @@
     "github.com/99designs/gqlgen/graphql",
     "github.com/99designs/gqlgen/graphql/introspection",
     "github.com/99designs/gqlgen/handler",
+    "github.com/google/uuid",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
     "github.com/machinebox/graphql",
     "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",
     "github.com/sirupsen/logrus",
+    "github.com/sirupsen/logrus/hooks/test",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
+    "github.com/vektah/gqlparser/gqlerror",
     "github.com/vrischmann/envconfig",
     "golang.org/x/tools/cmd/goimports",
     "k8s.io/api/core/v1",

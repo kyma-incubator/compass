@@ -5,7 +5,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,8 +31,7 @@ func (r *tokenResolver) GenerateApplicationToken(ctx context.Context, appID stri
 
 	token, err := r.tokenService.CreateToken(appID, tokens.ApplicationToken)
 	if err != nil {
-		r.log.Errorf("Error occurred while creating one-time token for Application with id %s : %s ", appID, err.Error())
-		return &externalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for Application")
+		return &externalschema.Token{}, err.Append("Error occurred while creating one-time token for Application with id %s", appID)
 	}
 
 	r.log.Infof("One-time token generated successfully for Application with id %s", appID)
@@ -45,8 +43,7 @@ func (r *tokenResolver) GenerateRuntimeToken(ctx context.Context, runtimeID stri
 
 	token, err := r.tokenService.CreateToken(runtimeID, tokens.RuntimeToken)
 	if err != nil {
-		r.log.Errorf("Error occurred while creating one-time token for Runtime with id %s : %s ", runtimeID, err.Error())
-		return &externalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for Runtime")
+		return &externalschema.Token{}, err.Append("Error occurred while creating one-time token for Runtime with id %s", runtimeID)
 	}
 
 	r.log.Infof("One-time token generated successfully for Runtime with id %s", runtimeID)

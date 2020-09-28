@@ -2,8 +2,8 @@ package authentication
 
 import (
 	"context"
-	"errors"
-	"fmt"
+
+	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 )
 
 type ContextKey string
@@ -16,12 +16,12 @@ const (
 	ClientCertificateHashKey   ContextKey = "ClientCertificateHash"
 )
 
-func GetStringFromContext(ctx context.Context, key ContextKey) (string, error) {
+func GetStringFromContext(ctx context.Context, key ContextKey) (string, apperrors.AppError) {
 	value := ctx.Value(key)
 
 	str, ok := value.(string)
 	if !ok {
-		return "", errors.New(fmt.Sprintf("Cannot read %s key from context", string(key)))
+		return "", apperrors.NotAuthenticated("Cannot read %s key from context", string(key))
 	}
 
 	return str, nil
