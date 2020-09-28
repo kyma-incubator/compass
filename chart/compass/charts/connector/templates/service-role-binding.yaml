@@ -25,8 +25,6 @@ spec:
     - to:
       - operation:
           ports:
-          - "{{ .Values.global.connector.graphql.internal.port }}"
-          - "{{ .Values.global.istio.proxy.port }}"
           - "{{ .Values.global.connector.validator.port }}"
           - "{{ .Values.global.connector.graphql.external.port }}"
 {{ end }}
