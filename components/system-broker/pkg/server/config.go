@@ -30,7 +30,7 @@ type Config struct {
 	SelfURL         string        `mapstructure:"self_url" description:"an externally accessible url pointing to this server's fully qualified root address'"`
 }
 
-// DefaultSettings returns the default values for configuring the Service Manager
+// DefaultSettings returns the default values for configuring the System Broker
 func DefaultConfig() *Config {
 	return &Config{
 		Port:            8080,

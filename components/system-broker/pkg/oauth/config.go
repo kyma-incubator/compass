@@ -19,12 +19,16 @@ package oauth
 import "github.com/pkg/errors"
 
 type Config struct {
+	Local           bool   `mapstructure:"local"`
+	TokenValue      string `mapstructure:"token_value"`
 	SecretName      string `mapstructure:"secret_name"`
 	SecretNamespace string `mapstructure:"secret_namespace"`
 }
 
 func DefaultConfig() *Config {
 	return &Config{
+		Local:           false,
+		TokenValue:      "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0.",
 		SecretName:      "compass-system-broker-credentials",
 		SecretNamespace: "compass-system",
 	}
@@ -37,6 +41,10 @@ func (c *Config) Validate() error {
 
 	if c.SecretNamespace == "" {
 		return errors.New("secret namespace cannot be empty")
+	}
+
+	if c.Local && len(c.TokenValue) == 0 {
+		return errors.New("token value cannot be empty when run locally")
 	}
 
 	return nil

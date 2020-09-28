@@ -39,7 +39,7 @@ type File struct {
 	Format   string `description:"extension of the configuration file"`
 }
 
-// DefaultConfigFile holds the default SM config file properties
+// DefaultConfigFile holds the default System Broker config file properties
 func DefaultConfigFile() File {
 	return File{
 		Name:     "application",
@@ -53,7 +53,7 @@ func CreatePFlagsForConfigFile(set *pflag.FlagSet) {
 	CreatePFlags(set, struct{ File File }{File: DefaultConfigFile()})
 }
 
-// Environment represents an abstraction over the env from which Service Manager configuration will be loaded
+// Environment represents an abstraction over the env from which System Broker configuration will be loaded
 //go:generate counterfeiter . Environment
 type Environment interface {
 	Get(key string) interface{}
@@ -190,7 +190,7 @@ func (v *ViperEnv) setupConfigFile(ctx context.Context, onConfigChangeHandlers .
 	return nil
 }
 
-// Default creates a default environment that can be used to boot up a Service Manager
+// Default creates a default environment that can be used to boot up a System Broker
 func Default(ctx context.Context, additionalPFlags ...func(set *pflag.FlagSet)) (Environment, error) {
 	set := EmptyFlagSet()
 

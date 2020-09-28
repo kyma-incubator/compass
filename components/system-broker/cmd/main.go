@@ -31,12 +31,6 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/signal"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	k8scfg "sigs.k8s.io/controller-runtime/pkg/client/config"
-	"time"
 )
 
 func main() {
@@ -82,18 +76,13 @@ func prepareGqlClient(cfg *config.Config, uudSrv httputil.UUIDService) (*directo
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
 	httpClient := httputil.NewClient(cfg.HttpClient.Timeout, httpTransport)
 
-	//prepare k8s client
-	k8sClient, err := prepareK8sClient()
-	if err != nil {
-		return nil, err
-	}
-
 	//prepare secured http client with token provider picked from secret
 	requestProvider := httputil.NewRequestProvider(uudSrv)
 
-	//TODO uncomment this to run locally - replace oauthTokenProvider
-	//oauthTokenProvider := oauth.NewTokenProviderFromValue("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0.")
-	oauthTokenProvider := oauth.NewTokenProviderFromSecret(cfg.OAuthProvider, httpClient, requestProvider, k8sClient)
+	oauthTokenProvider, err := oauth.NewTokenProvider(cfg.OAuthProvider, httpClient, requestProvider)
+	if err != nil {
+		return nil, err
+	}
 	securedClient, err := httputil.NewSecuredHTTPClient(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
 	if err != nil {
 		return nil, err
@@ -112,30 +101,4 @@ func prepareGqlClient(cfg *config.Config, uudSrv httputil.UUIDService) (*directo
 	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer), nil
 }
 
-func prepareK8sClient() (client.Client, error) {
-	k8sCfg, err := k8scfg.GetConfig()
-	if err != nil {
-		return nil, err
-	}
 
-	mapper, err := apiutil.NewDiscoveryRESTMapper(k8sCfg)
-	if err != nil {
-		err = wait.Poll(time.Second, time.Minute, func() (bool, error) {
-			mapper, err = apiutil.NewDiscoveryRESTMapper(k8sCfg)
-			if err != nil {
-				return false, nil
-			}
-			return true, nil
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "while waiting for client mapper")
-		}
-	}
-
-	cli, err := client.New(k8sCfg, client.Options{Mapper: mapper})
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating a client")
-	}
-
-	return cli, nil
-}
