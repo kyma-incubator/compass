@@ -27,4 +27,4 @@ spec:
           ports:
           - "{{ .Values.global.connector.validator.port }}"
           - "{{ .Values.global.connector.graphql.external.port }}"
-{{ end }}
+  {{ end }}
