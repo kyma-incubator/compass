@@ -31,13 +31,16 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/signal"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
+	"os"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	defer cancel()
 
-	signal.HandleInterrupts(ctx, cancel)
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
 
 	env, err := env.Default(ctx, config.AddPFlags)
 	fatalOnError(err)
@@ -59,8 +62,7 @@ func main() {
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL)
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, log.NewDefaultLagerAdapter())
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
-	srv, err := server.New(cfg.Server, uuidSrv, osbApi, specsApi.Routes)
-	fatalOnError(err)
+	srv := server.New(cfg.Server, uuidSrv, osbApi, specsApi)
 
 	srv.Start(ctx)
 }
@@ -100,5 +102,3 @@ func prepareGqlClient(cfg *config.Config, uudSrv httputil.UUIDService) (*directo
 	// prepare director graphql client
 	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer), nil
 }
-
-

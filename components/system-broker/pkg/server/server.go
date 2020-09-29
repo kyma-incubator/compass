@@ -22,13 +22,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/panic_recovery"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"net/http/pprof"
 	"strconv"
 	"sync/atomic"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Server struct {
@@ -38,7 +37,7 @@ type Server struct {
 	shutdownTimeout time.Duration
 }
 
-func New(c *Config, service log.UUIDService, routesProvider ...func(router *mux.Router)) (*Server, error) {
+func New(c *Config, service log.UUIDService, routesProvider ...func(router *mux.Router)) *Server {
 	s := &Server{
 		shutdownTimeout: c.ShutdownTimeout,
 		routesProvider:  routesProvider,
@@ -70,7 +69,7 @@ func New(c *Config, service log.UUIDService, routesProvider ...func(router *mux.
 		IdleTimeout:  c.RequestTimeout,
 	}
 
-	return s, nil
+	return s
 }
 
 func (s *Server) Start(parentCtx context.Context) {

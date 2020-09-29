@@ -25,8 +25,7 @@ import (
 )
 
 // HandleInterrupts handles process signal interrupts
-func HandleInterrupts(ctx context.Context, cancel context.CancelFunc) {
-	term := make(chan os.Signal)
+func HandleInterrupts(ctx context.Context, cancel context.CancelFunc, term chan os.Signal) {
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		select {

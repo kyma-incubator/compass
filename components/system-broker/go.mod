@@ -22,6 +22,7 @@ require (
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.3.2
+	github.com/stretchr/testify v1.4.0
 	github.com/tidwall/gjson v1.6.0 // indirect
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6

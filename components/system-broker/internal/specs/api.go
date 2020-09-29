@@ -23,11 +23,11 @@ type SpecsFetcher interface {
 	FindSpecification(ctx context.Context, in *director.FindPackageSpecificationInput) (*director.FindPackageSpecificationOutput, error)
 }
 
-func API(rootAPI string, specsFetcher SpecsFetcher) *SpecsHandler {
-	return &SpecsHandler{
+func API(rootAPI string, specsFetcher SpecsFetcher) func(router *mux.Router) {
+	return SpecsHandler {
 		specsFetcher: specsFetcher,
 		rootAPI:      rootAPI,
-	}
+	}.Routes
 }
 
 type SpecsHandler struct {
