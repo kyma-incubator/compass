@@ -24,10 +24,11 @@ type SpecsFetcher interface {
 }
 
 func API(rootAPI string, specsFetcher SpecsFetcher) func(router *mux.Router) {
-	return SpecsHandler {
+	handler := &SpecsHandler{
 		specsFetcher: specsFetcher,
 		rootAPI:      rootAPI,
-	}.Routes
+	}
+	return handler.Routes
 }
 
 type SpecsHandler struct {
