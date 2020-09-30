@@ -29,7 +29,7 @@ func TestTokenProviderFromValue_GetAuthorizationToken(t *testing.T) {
 	require.Equal(t, tokenValue, token.AccessToken)
 }
 
-func TestExampleTestSuite(t *testing.T) {
+func TestTokenProviderFromSecretTestSuite(t *testing.T) {
 	suite.Run(t, new(TokenProviderFromSecretTestSuite))
 }
 
