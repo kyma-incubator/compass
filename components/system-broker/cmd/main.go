@@ -78,10 +78,7 @@ func prepareGqlClient(cfg *config.Config, uudSrv httputil.UUIDService) (*directo
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
 	httpClient := httputil.NewClient(cfg.HttpClient.Timeout, httpTransport)
 
-	//prepare secured http client with token provider picked from secret
-	requestProvider := httputil.NewRequestProvider(uudSrv)
-
-	oauthTokenProvider, err := oauth.NewTokenProvider(cfg.OAuthProvider, httpClient, requestProvider)
+	oauthTokenProvider, err := oauth.NewTokenProvider(cfg.OAuthProvider, httpClient)
 	if err != nil {
 		return nil, err
 	}

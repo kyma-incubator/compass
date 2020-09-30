@@ -44,6 +44,22 @@ func TestConfig_Validate(t *testing.T) {
 				return config
 			},
 		},
+		{
+			Msg: "Negative WaitSecretTimeout should be invalid",
+			ConfigProvider: func() *oauth.Config {
+				config := oauth.DefaultConfig()
+				config.WaitSecretTimeout = -1
+				return config
+			},
+		},
+		{
+			Msg: "Negative WaitSecretTimeout should be invalid",
+			ConfigProvider: func() *oauth.Config {
+				config := oauth.DefaultConfig()
+				config.WaitSecretTimeout = 0
+				return config
+			},
+		},
 	}
 
 	for _, test := range tests {

@@ -19,11 +19,11 @@ import (
 )
 
 type OAuthTokenProvider struct {
-	httpClient      *http.Client
-	requestProvider RequestProvider
-	k8sClient       client.Client
-	secretName      string
-	secretNamespace string
+	httpClient        httputils.Client
+	k8sClient         client.Client
+	waitSecretTimeout time.Duration
+	secretName        string
+	secretNamespace   string
 }
 
 type credentials struct {
@@ -32,17 +32,13 @@ type credentials struct {
 	tokensEndpoint string
 }
 
-func NewTokenProviderFromSecret(config *Config, httpClient *http.Client, requestProvider RequestProvider) (*OAuthTokenProvider, error) {
-	k8sClient, err := prepareK8sClient()
-	if err != nil {
-		return nil, err
-	}
+func NewTokenProviderFromSecret(config *Config, httpClient httputils.Client, k8sClient client.Client) (*OAuthTokenProvider, error) {
 	return &OAuthTokenProvider{
-		httpClient:      httpClient,
-		requestProvider: requestProvider,
-		k8sClient:       k8sClient,
-		secretName:      config.SecretName,
-		secretNamespace: config.SecretNamespace,
+		httpClient:        httpClient,
+		k8sClient:         k8sClient,
+		waitSecretTimeout: config.WaitSecretTimeout,
+		secretName:        config.SecretName,
+		secretNamespace:   config.SecretNamespace,
 	}, nil
 }
 
@@ -55,9 +51,9 @@ func (c *OAuthTokenProvider) GetAuthorizationToken(ctx context.Context) (httputi
 	return c.getAuthorizationToken(ctx, credentials)
 }
 
-func (c *OAuthTokenProvider) WaitForCredentials(ctx context.Context) error {
-	err := wait.Poll(time.Second, time.Minute*3, func() (bool, error) {
-		secret := &v1.Secret{}
+func (c *OAuthTokenProvider) extractOAuthClientFromSecret(ctx context.Context) (credentials, error) {
+	secret := &v1.Secret{}
+	err := wait.Poll(time.Second*2, c.waitSecretTimeout, func() (bool, error) {
 		err := c.k8sClient.Get(ctx, client.ObjectKey{
 			Namespace: c.secretNamespace,
 			Name:      c.secretName,
@@ -69,16 +65,6 @@ func (c *OAuthTokenProvider) WaitForCredentials(ctx context.Context) error {
 		}
 		return true, nil
 	})
-
-	return errors.Wrapf(err, "while waiting for secret %s", c.secretName)
-}
-
-func (c *OAuthTokenProvider) extractOAuthClientFromSecret(ctx context.Context) (credentials, error) {
-	secret := &v1.Secret{}
-	err := c.k8sClient.Get(ctx, client.ObjectKey{
-		Namespace: c.secretNamespace,
-		Name:      c.secretName,
-	}, secret)
 	if err != nil {
 		return credentials{}, err
 	}
@@ -101,20 +87,6 @@ func (c *OAuthTokenProvider) getAuthorizationToken(ctx context.Context, credenti
 	if err != nil {
 		return httputils.Token{}, errors.Wrap(err, "Failed to create authorisation token request")
 	}
-
-	//we can use a request provider or maybe its an overkill (reason for making it was correlation ids but then i moved them to a transport)
-	//input := httputils.RequestInput{
-	//	Method:  http.MethodPost,
-	//	URL:     credentials.tokensEndpoint,
-	//	Body:    body,
-	//	Headers: headers,
-	//}
-	//
-	//log.C(ctx).Errorf("%+v", input)
-	//request, err := c.requestProvider.Provide(ctx, input)
-	//if err != nil {
-	//	return httputils.Token{}, errors.Wrap(err, "while creating authorisation token request")
-	//}
 
 	request.SetBasicAuth(credentials.clientID, credentials.clientSecret)
 	request.Header.Set(contentTypeHeader, contentTypeApplicationURLEncoded)

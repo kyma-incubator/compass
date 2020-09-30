@@ -23,6 +23,10 @@ import (
 	"time"
 )
 
+type Client interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 func NewHTTPTransport(config *Config) *http.Transport {
 	return &http.Transport{
 		TLSClientConfig: &tls.Config{

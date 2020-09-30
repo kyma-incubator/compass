@@ -17,9 +17,7 @@
 package oauth
 
 import (
-	"context"
 	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"net/http"
 )
 
 const (
@@ -37,13 +35,13 @@ const (
 	tokensEndpointKey = "tokens_endpoint"
 )
 
-type RequestProvider interface {
-	Provide(ctx context.Context, input httputils.RequestInput) (*http.Request, error)
-}
-
-func NewTokenProvider(config *Config, httpClient *http.Client, requestProvider RequestProvider) (httputils.TokenProvider, error) {
+func NewTokenProvider(config *Config, httpClient httputils.Client) (httputils.TokenProvider, error) {
 	if config.Local {
 		return NewTokenProviderFromValue(config.TokenValue), nil
 	}
-	return NewTokenProviderFromSecret(config, httpClient, requestProvider)
+	k8sClient, err := prepareK8sClient()
+	if err != nil {
+		return nil, err
+	}
+	return NewTokenProviderFromSecret(config, httpClient, k8sClient)
 }

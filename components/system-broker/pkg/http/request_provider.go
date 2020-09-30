@@ -25,8 +25,13 @@ import (
 	"net/http"
 )
 
-func NewRequestProvider(uidsrv UUIDService) *RequestProvider {
-	return &RequestProvider{
+
+type RequestProvider interface {
+	Provide(ctx context.Context, input RequestInput) (*http.Request, error)
+}
+
+func NewRequestProvider(uidsrv UUIDService) RequestProvider {
+	return &RequestProviderImpl{
 		uuidService: uidsrv,
 	}
 }
@@ -43,11 +48,11 @@ type RequestInput struct {
 	Headers    map[string]string
 }
 
-type RequestProvider struct {
+type RequestProviderImpl struct {
 	uuidService UUIDService
 }
 
-func (rp *RequestProvider) Provide(ctx context.Context, input RequestInput) (*http.Request, error) {
+func (rp *RequestProviderImpl) Provide(ctx context.Context, input RequestInput) (*http.Request, error) {
 	var bodyReader io.Reader
 	if input.Body != nil {
 		bodyBytes, err := json.Marshal(input.Body)
