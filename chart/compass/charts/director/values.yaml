@@ -19,9 +19,12 @@ metrics:
   port: 3001
 
 adminGroupNames:
-  - "mps-superadmin"
+  - "cmp-superadmin"
   - "runtimeAdmin"
   - "runtimeNamespaceAdmin"
+
+viewerGroupNames:
+  - "cmp-viewer"
 
 operatorGroupNames:
   - "runtimeOperator"

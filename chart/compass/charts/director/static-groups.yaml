@@ -16,7 +16,18 @@
     - "automatic_scenario_assignment:read"
     - "automatic_scenario_assignment:write"
 {{- end }}
-{{- range $name := .Values.operatorGroupNames }}
+{{- range $name := .Values.viewerGroupNames }}
+- groupname: "{{ $name }}"
+  scopes:
+    - "application:read"
+    - "application_template:read"
+    - "integration_system:read"
+    - "runtime:read"
+    - "label_definition:read"
+    - "eventing:read"
+    - "tenant:read"
+    - "automatic_scenario_assignment:read"
+{{- end }}{{- range $name := .Values.operatorGroupNames }}
 - groupname: "{{ $name }}"
   scopes:
     - "application:read"
