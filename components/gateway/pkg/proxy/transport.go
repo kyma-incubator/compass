@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -47,6 +48,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 
 	resp, err = t.RoundTripper.RoundTrip(req)
 	if err != nil {
+		log.Errorf("Request %v failed", req)
 		return nil, errors.Wrap(err, "while rount trip the request")
 	}
 
