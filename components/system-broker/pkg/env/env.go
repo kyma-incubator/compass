@@ -162,18 +162,20 @@ func (v *ViperEnv) setupConfigFile(ctx context.Context, onConfigChangeHandlers .
 			if strings.Contains(event.String(), "WRITE") || strings.Contains(event.String(), "CREATE") {
 				logLevel := env.Get("log.level").(string)
 				logFormat := env.Get("log.format").(string)
-				logOutput := log.Configuration().Output
+				logOutput := env.Get("log.output").(string)
+				bootstrapCorrelationID := log.Configuration().BootstrapCorrelationID
 
 				log.C(ctx).Warnf("Reconfiguring logrus logging using level %s and format %s", logLevel, logFormat)
-				var err error
-				ctx, err = log.Configure(ctx, &log.Config{
-					Level:  logLevel,
-					Format: logFormat,
-					Output: logOutput,
+				newCtx, err := log.Configure(ctx, &log.Config{
+					Level:                  logLevel,
+					Format:                 logFormat,
+					Output:                 logOutput,
+					BootstrapCorrelationID: bootstrapCorrelationID,
 				})
 				if err != nil {
 					log.C(ctx).WithError(err).Errorf("Could not set log level to %s and log format to %s after config file modification event of type %s", logLevel, logFormat, event.String())
 				}
+				ctx = newCtx
 			}
 		}
 	}
