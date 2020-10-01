@@ -24,7 +24,6 @@
     - "integration_system:read"
     - "runtime:read"
     - "label_definition:read"
-    - "eventing:read"
     - "tenant:read"
     - "automatic_scenario_assignment:read"
 {{- end }}{{- range $name := .Values.operatorGroupNames }}
