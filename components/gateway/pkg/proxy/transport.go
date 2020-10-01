@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -46,9 +47,14 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(requestBody))
 
+	requestDump, err := httputil.DumpRequest(req, true)
+	if err != nil {
+		log.Errorf("Failed to dump request %v", req)
+	}
+
 	resp, err = t.RoundTripper.RoundTrip(req)
 	if err != nil {
-		log.Errorf("Request %v failed", req)
+		log.Errorf("Request %s failed", string(requestDump))
 		return nil, errors.Wrap(err, "while rount trip the request")
 	}
 
