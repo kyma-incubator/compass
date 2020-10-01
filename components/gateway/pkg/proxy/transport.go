@@ -49,13 +49,13 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 
 	requestDump, err := httputil.DumpRequest(req, true)
 	if err != nil {
-		log.Errorf("Failed to dump request %v", req)
+		log.Errorf("Failed to dump request %v: %v", req, err)
 	}
 
 	resp, err = t.RoundTripper.RoundTrip(req)
 	if err != nil {
 		log.Errorf("Request %s failed", string(requestDump))
-		return nil, errors.Wrap(err, "while rount trip the request")
+		return nil, errors.Wrap(err, "while round trip the request")
 	}
 
 	claims, err := t.getClaims(req.Header)
