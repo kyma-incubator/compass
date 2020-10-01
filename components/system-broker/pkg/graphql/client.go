@@ -19,28 +19,31 @@ package graphql
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/pkg/errors"
-	"net/http"
-
 	"github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 )
 
+//go:generate counterfeiter . GraphQLClient
+type GraphQLClient interface {
+	Run(ctx context.Context, req *graphql.Request, resp interface{}) error
+}
+
 type Client struct {
-	gqlClient *graphql.Client
+	gqlClient GraphQLClient
 	logs      []string
 	logging   bool
 }
 
-func NewClient(config *Config, httpClient *http.Client) (*Client, error) {
-	gqlClient := graphql.NewClient(config.GraphqlEndpoint, graphql.WithHTTPClient(httpClient))
-
+func NewClient(config *Config, gqlClient GraphQLClient) (*Client, error) {
 	client := &Client{
 		gqlClient: gqlClient,
 		logging:   config.EnableLogging,
 		logs:      []string{},
 	}
 
-	client.gqlClient.Log = client.addLog
+	if c, ok := client.gqlClient.(*graphql.Client); ok {
+		c.Log = client.addLog
+	}
 
 	return client, nil
 }

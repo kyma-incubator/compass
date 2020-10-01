@@ -29,6 +29,7 @@ func DefaultConfig() *Config {
 		EnableLogging:   true,
 	}
 }
+
 func (c *Config) Validate() error {
 	if c.GraphqlEndpoint == "" {
 		return errors.New("graphql endpoint cannot be empty")

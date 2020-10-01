@@ -18,6 +18,8 @@ package main
 
 import (
 	"context"
+	"os"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
@@ -31,7 +33,7 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/signal"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
-	"os"
+	gql "github.com/machinebox/graphql"
 )
 
 func main() {
@@ -88,7 +90,8 @@ func prepareGqlClient(cfg *config.Config, uudSrv httputil.UUIDService) (*directo
 	}
 
 	// prepare graphql client that uses secured http client as a basis
-	gqlClient, err := graphql.NewClient(cfg.GraphQLClient, securedClient)
+	graphClient := gql.NewClient(cfg.GraphQLClient.GraphqlEndpoint, gql.WithHTTPClient(securedClient))
+	gqlClient, err := graphql.NewClient(cfg.GraphQLClient, graphClient)
 	if err != nil {
 		return nil, err
 	}
