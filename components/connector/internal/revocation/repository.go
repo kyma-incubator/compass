@@ -31,26 +31,27 @@ func NewRepository(configListManager Manager, configMapName string) RevocationLi
 }
 
 func (r *revocationListRepository) Insert(hash string) error {
-	configMap, err := r.configListManager.Get(r.configMapName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
+	//configMap, err := r.configListManager.Get(r.configMapName, metav1.GetOptions{})
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//revokedCerts := configMap.Data
+	//if revokedCerts == nil {
+	//	revokedCerts = map[string]string{}
+	//}
+	//revokedCerts[hash] = hash
+	//
+	//updatedConfigMap := configMap
+	//updatedConfigMap.Data = revokedCerts
+	//
+	//err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	//	_, err = r.configListManager.Update(updatedConfigMap)
+	//	return err
+	//})
 
-	revokedCerts := configMap.Data
-	if revokedCerts == nil {
-		revokedCerts = map[string]string{}
-	}
-	revokedCerts[hash] = hash
-
-	updatedConfigMap := configMap
-	updatedConfigMap.Data = revokedCerts
-
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		_, err = r.configListManager.Update(updatedConfigMap)
-		return err
-	})
-
-	return err
+	//return err
+	return nil
 }
 
 func (r *revocationListRepository) Contains(hash string) (bool, error) {
