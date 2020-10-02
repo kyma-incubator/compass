@@ -64,7 +64,6 @@ func New(env env.Environment) (*Config, error) {
 	return config, nil
 }
 
-// TODO: Verify if reflection is ok in this case
 func (c *Config) Validate() error {
 	validatableFields := make([]Validatable, 0, 0)
 
