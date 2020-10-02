@@ -322,6 +322,73 @@ func (suite *EnvSuite) TestBindPFlagAllowsGettingAFlagFromTheEnvironmentWithAnAl
 	suite.Require().Equal(suite.environment.Get(aliasKey), flagDefaultValue)
 }
 
+func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaStandardPFlags() {
+	var overrideOuter Outer
+	var overrideOuterOutput FlatOuter
+
+	ovrNest := Nest{
+		NBool:      false,
+		NInt:       9999,
+		NString:    "overrideval",
+		NSlice:     []string{"nval1", "nval2", "nval3"},
+		NMappedVal: "overrideval",
+	}
+
+	overrideOuter = Outer{
+		WBool:      false,
+		WInt:       8888,
+		WString:    "overrideval",
+		WMappedVal: "overrideval",
+		Nest:       ovrNest,
+		Squash:     ovrNest,
+		Log: log.DefaultConfig(),
+	}
+
+	overrideOuterOutput = FlatOuter{
+		WBool:      false,
+		WInt:       8888,
+		WString:    "overrideval",
+		WMappedVal: "overrideval",
+		Nest:       ovrNest,
+		NBool:      false,
+		NInt:       9999,
+		NString:    "overrideval",
+		NSlice:     []string{"nval1", "nval2", "nval3"},
+		NMappedVal: "overrideval",
+		Log: log.DefaultConfig(),
+	}
+
+	var tests = []struct {
+		Msg      string
+		TestFunc func()
+	}{
+		{
+			Msg: "returns the default flag value if the flag is not set",
+			TestFunc: func() {
+				suite.verifyEnvContainsValues(suite.flatOuter)
+			},
+		},
+		{
+			Msg: "returns the flags values if the flags are set",
+			TestFunc: func() {
+				suite.setPFlags(overrideOuter)
+				suite.verifyEnvContainsValues(overrideOuterOutput)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		suite.Run(test.Msg, func() {
+			defer suite.TearDownTest()
+
+			suite.testFlags.AddFlagSet(standardPFlagsSet(suite.outer))
+			suite.verifyEnvCreated()
+
+			test.TestFunc()
+		})
+	}
+}
+
 // Helper functions
 
 func generatedPFlagsSet(s interface{}) *pflag.FlagSet {
