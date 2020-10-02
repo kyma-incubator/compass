@@ -31,34 +31,6 @@ const (
 	flagValue        = "pflagValue"
 	overrideValue    = "overrideValue"
 
-	keyWbool      = "wbool"
-	keyWint       = "wint"
-	keyWstring    = "wstring"
-	keyWmappedVal = "w_mapped_val"
-
-	keyNbool      = "nest.nbool"
-	keyNint       = "nest.nint"
-	keyNstring    = "nest.nstring"
-	keyNslice     = "nest.nslice"
-	keyNmappedVal = "nest.n_mapped_val"
-
-	keySquashNbool      = "nbool"
-	keySquashNint       = "nint"
-	keySquashNstring    = "nstring"
-	keySquashNslice     = "nslice"
-	keySquashNmappedVal = "n_mapped_val"
-
-	keyMapNbool      = "wmapnest" + "." + mapKey + "." + "nbool"
-	keyMapNint       = "wmapnest" + "." + mapKey + "." + "nint"
-	keyMapNstring    = "wmapnest" + "." + mapKey + "." + "nstring"
-	keyMapNslice     = "wmapnest" + "." + mapKey + "." + "nslice"
-	keyMapNmappedVal = "wmapnest" + "." + mapKey + "." + "n_mapped_val"
-
-	keyLogFormat = "log.format"
-	keyLogLevel  = "log.level"
-	keyOutput = "log.output"
-	keyBootstrapCorrelationID = "log.bootstrap_correlation_id"
-
 	keyFileName     = "file.name"
 	keyFileLocation = "file.location"
 	keyFileFormat   = "file.format"
@@ -79,7 +51,7 @@ type Outer struct {
 	WMappedVal string `mapstructure:"w_mapped_val" structs:"w_mapped_val" yaml:"w_mapped_val"`
 	WMapNest   map[string]Nest
 	Nest       Nest
-	Squash     Nest `mapstructure:",squash"`
+	Squash     Nest `mapstructure:",squash" structs:"squash,flatten"`
 	Log        *log.Config
 }
 
@@ -176,7 +148,7 @@ func (suite *EnvSuite) TearDownTest() {
 // Tests
 
 func (suite *EnvSuite) TestNewAddsViperBindingsForTheProvidedFlags() {
-	suite.testFlags.AddFlagSet(standardPFlagsSet(suite.outer))
+	suite.testFlags.AddFlagSet(suite.standardPFlagsSet(suite.outer))
 	suite.cfgFile.content = nil
 
 	suite.verifyEnvCreated()
@@ -304,25 +276,25 @@ func (suite *EnvSuite) TestNewWhenConfigFileFlagsAreProvided() {
 
 func (suite *EnvSuite) TestBindPFlagAllowsGettingAFlagFromTheEnvironmentWithAnAliasName() {
 	const (
-		key         = "test_flag"
-		aliasKey    = "test.flag"
+		key      = "test_flag"
+		aliasKey = "test.flag"
 	)
 
 	suite.testFlags.AddFlagSet(singlePFlagSet(key, flagDefaultValue, description))
 
 	suite.verifyEnvCreated()
 
-	suite.Require().Equal(suite.environment.Get(key),flagDefaultValue)
+	suite.Require().Equal(suite.environment.Get(key), flagDefaultValue)
 	suite.Require().Nil(suite.environment.Get(aliasKey))
 
 	err := suite.environment.BindPFlag(aliasKey, suite.testFlags.Lookup(key))
 	suite.Require().NoError(err)
 
-	suite.Require().Equal(suite.environment.Get(key),flagDefaultValue)
+	suite.Require().Equal(suite.environment.Get(key), flagDefaultValue)
 	suite.Require().Equal(suite.environment.Get(aliasKey), flagDefaultValue)
 }
 
-func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaStandardPFlags() {
+func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaPFlags() {
 	var overrideOuter Outer
 	var overrideOuterOutput FlatOuter
 
@@ -341,7 +313,7 @@ func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaStandardPFlags() {
 		WMappedVal: "overrideval",
 		Nest:       ovrNest,
 		Squash:     ovrNest,
-		Log: log.DefaultConfig(),
+		Log:        log.DefaultConfig(),
 	}
 
 	overrideOuterOutput = FlatOuter{
@@ -355,21 +327,47 @@ func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaStandardPFlags() {
 		NString:    "overrideval",
 		NSlice:     []string{"nval1", "nval2", "nval3"},
 		NMappedVal: "overrideval",
-		Log: log.DefaultConfig(),
+		Log:        log.DefaultConfig(),
 	}
 
 	var tests = []struct {
-		Msg      string
-		TestFunc func()
+		Msg       string
+		SetUpFunc func()
+		TestFunc  func()
 	}{
 		{
-			Msg: "returns the default flag value if the flag is not set",
+			Msg: "standard pflags returns the default flag value if the flag is not set",
+			SetUpFunc: func() {
+				suite.testFlags.AddFlagSet(suite.standardPFlagsSet(suite.outer))
+			},
 			TestFunc: func() {
 				suite.verifyEnvContainsValues(suite.flatOuter)
 			},
 		},
 		{
-			Msg: "returns the flags values if the flags are set",
+			Msg: "standard pflags returns the flags values if the flags are set",
+			SetUpFunc: func() {
+				suite.testFlags.AddFlagSet(suite.standardPFlagsSet(suite.outer))
+			},
+			TestFunc: func() {
+				suite.setPFlags(overrideOuter)
+				suite.verifyEnvContainsValues(overrideOuterOutput)
+			},
+		},
+		{
+			Msg: "generated pflags returns the default flag value if the flag is not set",
+			SetUpFunc: func() {
+				suite.testFlags.AddFlagSet(generatedPFlagsSet(suite.outer))
+			},
+			TestFunc: func() {
+				suite.verifyEnvContainsValues(suite.flatOuter)
+			},
+		},
+		{
+			Msg: "generated pflags returns the flags values if the flags are set",
+			SetUpFunc: func() {
+				suite.testFlags.AddFlagSet(generatedPFlagsSet(suite.outer))
+			},
 			TestFunc: func() {
 				suite.setPFlags(overrideOuter)
 				suite.verifyEnvContainsValues(overrideOuterOutput)
@@ -380,13 +378,171 @@ func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaStandardPFlags() {
 	for _, test := range tests {
 		suite.Run(test.Msg, func() {
 			defer suite.TearDownTest()
+			test.SetUpFunc()
 
-			suite.testFlags.AddFlagSet(standardPFlagsSet(suite.outer))
 			suite.verifyEnvCreated()
 
 			test.TestFunc()
 		})
 	}
+}
+
+func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaConfigFile() {
+	suite.cfgFile = testFile{
+		File:    env.DefaultConfigFile(),
+		content: suite.flatOuter,
+	}
+	config.AddPFlags(suite.testFlags)
+	suite.verifyEnvCreated()
+
+	suite.verifyEnvContainsValues(suite.flatOuter)
+}
+
+func (suite *EnvSuite) TestGetWhenPropertiesAreLoadedViaOSEnvironmentVariables() {
+	suite.setEnvVars()
+	suite.verifyEnvCreated()
+
+	suite.verifyEnvContainsValues(suite.flatOuter)
+}
+
+func (suite *EnvSuite) TestGetOverridePriorityOverPflagSetOverEnvironmentOverFileOverPflagDefault() {
+	suite.testFlags.AddFlagSet(singlePFlagSet(key, flagDefaultValue, description))
+	suite.verifyEnvCreated()
+
+	suite.Require().Equal(suite.environment.Get(key), flagDefaultValue)
+
+	config.AddPFlags(suite.testFlags)
+	suite.cfgFile = testFile{
+		File: env.DefaultConfigFile(),
+		content: map[string]interface{}{
+			key: fileValue,
+		},
+	}
+	suite.verifyEnvCreated()
+	suite.Require().Equal(suite.environment.Get(key), fileValue)
+
+	suite.Require().NoError(os.Setenv(strings.ToTitle(key), envValue))
+	suite.Require().Equal(suite.environment.Get(key), envValue)
+
+	suite.Require().NoError(suite.testFlags.Set(key, flagValue))
+	suite.Require().Equal(suite.environment.Get(key), flagValue)
+
+	suite.environment.Set(key, overrideValue)
+	suite.Require().Equal(suite.environment.Get(key), overrideValue)
+}
+
+func (suite *EnvSuite) TestSetAddsThePropertyInTheEnvironmentAbstraction() {
+	suite.verifyEnvCreated()
+	suite.environment.Set(key, overrideValue)
+
+	suite.Require().Equal(suite.environment.Get(key), overrideValue)
+}
+
+func (suite *EnvSuite) TestSetHasHighestPriority() {
+	suite.testFlags.AddFlagSet(singlePFlagSet(key, flagDefaultValue, description))
+	suite.Require().NoError(os.Setenv(key, envValue))
+	suite.verifyEnvCreated()
+	suite.Require().NoError(suite.testFlags.Set(key, flagValue))
+
+	suite.environment.Set(key, overrideValue)
+
+	suite.Require().Equal(suite.environment.Get(key), overrideValue)
+}
+
+func (suite *EnvSuite) TestUnmarshalWhenParameterIsNotAPointerToAStruct() {
+	suite.verifyEnvCreated()
+
+	suite.Require().NotNil(suite.environment.Unmarshal(Outer{
+		WMapNest: map[string]Nest{
+			mapKey: {},
+		},
+	}))
+	suite.Require().NotNil(suite.environment.Unmarshal(10))
+}
+
+func (suite *EnvSuite) TestUnmarshalParameterIsAPointerToAStruct() {
+	actual := Outer{
+		WMapNest: map[string]Nest{
+			mapKey: {},
+		},
+	}
+
+	var tests = []struct {
+		Msg       string
+		SetUpFunc func()
+	}{
+		{
+			Msg: "when properties are loaded via standard pflags",
+			SetUpFunc: func() {
+				suite.testFlags.AddFlagSet(suite.standardPFlagsSet(suite.outer))
+			},
+		},
+		{
+			Msg: "when properties are loaded via generated pflags",
+			SetUpFunc: func() {
+				suite.testFlags.AddFlagSet(generatedPFlagsSet(suite.outer))
+			},
+		},
+		{
+			Msg: "when property is loaded via config file",
+			SetUpFunc: func() {
+				suite.cfgFile = testFile{
+					File:    env.DefaultConfigFile(),
+					content: suite.flatOuter,
+				}
+				config.AddPFlags(suite.testFlags)
+			},
+		},
+		{
+			Msg: "when properties are loaded via OS environment variables",
+			SetUpFunc: func() {
+				suite.setEnvVars()
+			},
+		},
+	}
+
+	for _, test := range tests {
+		suite.Run(test.Msg, func() {
+			defer suite.TearDownTest()
+			test.SetUpFunc()
+
+			suite.verifyEnvCreated()
+
+			suite.verifyUnmarshallingIsCorrect(&actual, &suite.outer)
+		})
+	}
+}
+
+func (suite *EnvSuite) TestUnmarshalOverridePriorityOverPflagSetOverEnvironmentOverFileOverPflagDefault() {
+	type s struct {
+		Key string `mapstructure:"key"`
+	}
+
+	str := s{}
+	suite.testFlags.AddFlagSet(singlePFlagSet(key, flagDefaultValue, ""))
+	suite.verifyEnvCreated()
+
+	suite.verifyUnmarshallingIsCorrect(&str, &s{flagDefaultValue})
+
+	suite.cfgFile = testFile{
+		File: env.DefaultConfigFile(),
+		content: map[string]interface{}{
+			key: fileValue,
+		},
+	}
+	config.AddPFlags(suite.testFlags)
+	suite.verifyEnvCreated()
+	suite.verifyUnmarshallingIsCorrect(&str, &s{fileValue})
+
+	suite.Require().NoError(os.Setenv(strings.ToTitle(key), envValue))
+	suite.verifyUnmarshallingIsCorrect(&str, &s{envValue})
+	suite.Require().Equal(suite.environment.Get(key), envValue)
+
+	suite.testFlags.Set(key, flagValue)
+	suite.verifyUnmarshallingIsCorrect(&str, &s{flagValue})
+
+	suite.environment.Set(key, overrideValue)
+	suite.verifyUnmarshallingIsCorrect(&str, &s{overrideValue})
 }
 
 // Helper functions
@@ -398,36 +554,21 @@ func generatedPFlagsSet(s interface{}) *pflag.FlagSet {
 	return set
 }
 
-func standardPFlagsSet(s Outer) *pflag.FlagSet {
+func (suite *EnvSuite) standardPFlagsSet(o Outer) *pflag.FlagSet {
 	set := pflag.NewFlagSet("testflags", pflag.ExitOnError)
 
-	set.Bool(keyWbool, s.WBool, description)
-	set.Int(keyWint, s.WInt, description)
-	set.String(keyWstring, s.WString, description)
-	set.String(keyWmappedVal, s.WMappedVal, description)
-
-	set.Bool(keySquashNbool, s.Squash.NBool, description)
-	set.Int(keySquashNint, s.Squash.NInt, description)
-	set.String(keySquashNstring, s.Squash.NString, description)
-	set.StringSlice(keySquashNslice, s.Squash.NSlice, description)
-	set.String(keySquashNmappedVal, s.Squash.NMappedVal, description)
-
-	set.Bool(keyNbool, s.Nest.NBool, description)
-	set.Int(keyNint, s.Nest.NInt, description)
-	set.String(keyNstring, s.Nest.NString, description)
-	set.StringSlice(keyNslice, s.Nest.NSlice, description)
-	set.String(keyNmappedVal, s.Nest.NMappedVal, description)
-
-	set.Bool(keyMapNbool, s.WMapNest[mapKey].NBool, description)
-	set.Int(keyMapNint, s.WMapNest[mapKey].NInt, description)
-	set.String(keyMapNstring, s.WMapNest[mapKey].NString, description)
-	set.StringSlice(keyMapNslice, s.WMapNest[mapKey].NSlice, description)
-	set.String(keyMapNmappedVal, s.WMapNest[mapKey].NMappedVal, description)
-
-	set.String(keyLogLevel, s.Log.Level, description)
-	set.String(keyLogFormat, s.Log.Format, description)
-	set.String(keyOutput, s.Log.Output, description)
-	set.String(keyBootstrapCorrelationID, s.Log.BootstrapCorrelationID, description)
+	suite.walkStructFields(o, func(name string, value interface{}) {
+		switch v := value.(type) {
+		case bool:
+			set.Bool(name, v, description)
+		case int:
+			set.Int(name, v, description)
+		case string:
+			set.String(name, v, description)
+		case []string:
+			set.StringSlice(name, v, description)
+		}
+	})
 
 	return set
 }
@@ -440,92 +581,43 @@ func singlePFlagSet(key, defaultValue, description string) *pflag.FlagSet {
 }
 
 func (suite *EnvSuite) setPFlags(o Outer) {
-	suite.Require().NoError(suite.testFlags.Set(keyWbool, cast.ToString(o.WBool)))
-	suite.Require().NoError(suite.testFlags.Set(keyWint, cast.ToString(o.WInt)))
-	suite.Require().NoError(suite.testFlags.Set(keyWstring, o.WString))
-	suite.Require().NoError(suite.testFlags.Set(keyWmappedVal, o.WMappedVal))
-
-	suite.Require().NoError(suite.testFlags.Set(keySquashNbool, cast.ToString(o.Squash.NBool)))
-	suite.Require().NoError(suite.testFlags.Set(keySquashNint, cast.ToString(o.Squash.NInt)))
-	suite.Require().NoError(suite.testFlags.Set(keySquashNstring, o.Squash.NString))
-	suite.Require().NoError(suite.testFlags.Set(keySquashNslice, strings.Join(o.Squash.NSlice, ",")))
-	suite.Require().NoError(suite.testFlags.Set(keySquashNmappedVal, o.Squash.NMappedVal))
-
-	suite.Require().NoError(suite.testFlags.Set(keyNbool, cast.ToString(o.Nest.NBool)))
-	suite.Require().NoError(suite.testFlags.Set(keyNint, cast.ToString(o.Nest.NInt)))
-	suite.Require().NoError(suite.testFlags.Set(keyNstring, o.Nest.NString))
-	suite.Require().NoError(suite.testFlags.Set(keyNmappedVal, o.Nest.NMappedVal))
-
-	suite.Require().NoError(suite.testFlags.Set(keyMapNbool, cast.ToString(o.WMapNest[mapKey].NBool)))
-	suite.Require().NoError(suite.testFlags.Set(keyMapNint, cast.ToString(o.WMapNest[mapKey].NInt)))
-	suite.Require().NoError(suite.testFlags.Set(keyMapNstring, o.WMapNest[mapKey].NString))
-	suite.Require().NoError(suite.testFlags.Set(keyMapNmappedVal, o.WMapNest[mapKey].NMappedVal))
-
-	suite.Require().NoError(suite.testFlags.Set(keyLogFormat, o.Log.Format))
-	suite.Require().NoError(suite.testFlags.Set(keyLogLevel, o.Log.Level))
-	suite.Require().NoError(suite.testFlags.Set(keyOutput, o.Log.Output))
-	suite.Require().NoError(suite.testFlags.Set(keyBootstrapCorrelationID, o.Log.BootstrapCorrelationID))
+	suite.walkStructFields(o, func(name string, value interface{}) {
+		switch v := value.(type) {
+		case []string:
+			suite.Require().NoError(suite.testFlags.Set(name, strings.Join(v, ",")))
+		case []interface{}:
+			strs := make([]string, 0, 0)
+			for _, val := range v {
+				strs = append(strs, fmt.Sprint(val))
+			}
+			suite.Require().NoError(suite.testFlags.Set(name, strings.Join(strs, ",")))
+		default:
+			suite.Require().NoError(suite.testFlags.Set(name, cast.ToString(v)))
+		}
+	})
 }
 
 func (suite *EnvSuite) setEnvVars() {
-	suite.Require().NoError(os.Setenv(strings.ToTitle(keyWbool), cast.ToString(suite.outer.WBool)))
-	suite.Require().NoError(os.Setenv(strings.ToTitle(keyWint), cast.ToString(suite.outer.WInt)))
-	suite.Require().NoError(os.Setenv(strings.ToTitle(keyWstring), suite.outer.WString))
-	suite.Require().NoError(os.Setenv(strings.ToTitle(keyWmappedVal), suite.outer.WMappedVal))
-
-	suite.Require().NoError(os.Setenv(strings.ToTitle(keySquashNbool), cast.ToString(suite.outer.Squash.NBool)))
-	suite.Require().NoError(os.Setenv(strings.ToTitle(keySquashNint), cast.ToString(suite.outer.Squash.NInt)))
-	suite.Require().NoError(os.Setenv(strings.ToTitle(keySquashNstring), suite.outer.Squash.NString))
-	suite.Require().NoError(os.Setenv(strings.ToTitle(keySquashNslice), strings.Join(suite.outer.Squash.NSlice, ",")))
-	suite.Require().NoError(os.Setenv(strings.ToTitle(keySquashNmappedVal), suite.outer.Squash.NMappedVal))
-
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyNbool), ".", "_", -1), cast.ToString(suite.outer.Nest.NBool)))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyNint), ".", "_", -1), cast.ToString(suite.outer.Nest.NInt)))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyNstring), ".", "_", -1), suite.outer.Nest.NString))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyNslice), ".", "_", -1), strings.Join(suite.outer.Nest.NSlice, ",")))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyNmappedVal), ".", "_", -1), suite.outer.Nest.NMappedVal))
-
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyMapNbool), ".", "_", -1), cast.ToString(suite.outer.WMapNest[mapKey].NBool)))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyMapNint), ".", "_", -1), cast.ToString(suite.outer.WMapNest[mapKey].NInt)))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyMapNstring), ".", "_", -1), suite.outer.WMapNest[mapKey].NString))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyMapNslice), ".", "_", -1), strings.Join(suite.outer.WMapNest[mapKey].NSlice, ",")))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyMapNmappedVal), ".", "_", -1), suite.outer.WMapNest[mapKey].NMappedVal))
-
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyLogFormat), ".", "_", -1), suite.outer.Log.Format))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyLogLevel), ".", "_", -1), suite.outer.Log.Level))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyOutput), ".", "_", -1), suite.outer.Log.Output))
-	suite.Require().NoError(os.Setenv(strings.Replace(strings.ToTitle(keyBootstrapCorrelationID), ".", "_", -1), suite.outer.Log.BootstrapCorrelationID))
+	suite.walkStructFields(suite.outer, func(name string, value interface{}) {
+		switch v := value.(type) {
+		case []string:
+			suite.Require().NoError(os.Setenv(strings.ReplaceAll(strings.ToTitle(name), ".", "_"), strings.Join(v, ",")))
+		case []interface{}:
+			strs := make([]string, 0, 0)
+			for _, val := range v {
+				strs = append(strs, fmt.Sprint(val))
+			}
+			suite.Require().NoError(os.Setenv(strings.ReplaceAll(strings.ToTitle(name), ".", "_"), strings.Join(strs, ",")))
+		default:
+			suite.Require().NoError(os.Setenv(strings.ReplaceAll(strings.ToTitle(name), ".", "_"), cast.ToString(v)))
+		}
+	})
 }
 
 func (suite *EnvSuite) cleanUpEnvVars() {
-	suite.Require().NoError(os.Unsetenv(strings.ToTitle(keyWbool)))
-	suite.Require().NoError(os.Unsetenv(strings.ToTitle(keyWint)))
-	suite.Require().NoError(os.Unsetenv(strings.ToTitle(keyWstring)))
-	suite.Require().NoError(os.Unsetenv(strings.ToTitle(keyWmappedVal)))
-
-	suite.Require().NoError(os.Unsetenv(strings.ToTitle(keySquashNbool)))
-	suite.Require().NoError(os.Unsetenv(strings.ToTitle(keySquashNint)))
-	suite.Require().NoError(os.Unsetenv(strings.ToTitle(keySquashNstring)))
-	suite.Require().NoError(os.Unsetenv(strings.ToTitle(keySquashNslice)))
-	suite.Require().NoError(os.Unsetenv(strings.ToTitle(keySquashNmappedVal)))
-
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyNbool), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyNint), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyNstring), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyNslice), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyNmappedVal), ".", "_", -1)))
-
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyMapNbool), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyMapNint), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyMapNstring), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyMapNslice), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyMapNmappedVal), ".", "_", -1)))
-
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyLogFormat), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyLogLevel), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyOutput), ".", "_", -1)))
-	suite.Require().NoError(os.Unsetenv(strings.Replace(strings.ToTitle(keyBootstrapCorrelationID), ".", "_", -1)))
-
+	suite.walkStructFields(suite.outer, func(name string, value interface{}) {
+		suite.Require().NoError(os.Unsetenv(strings.ReplaceAll(strings.ToTitle(name), ".", "_")))
+	})
 	suite.Require().NoError(os.Unsetenv(strings.ToTitle(key)))
 }
 
@@ -554,15 +646,18 @@ func (suite *EnvSuite) cleanUpFile() {
 	os.Remove(f)
 }
 
+func (suite *EnvSuite) verifyUnmarshallingIsCorrect(actual, expected interface{}) {
+	suite.Require().NoError(suite.environment.Unmarshal(actual))
+	suite.Require().Equal(actual, expected)
+}
+
 func (suite *EnvSuite) verifyEnvCreated() {
 	suite.Require().NoError(suite.createEnv())
 }
 
 func (suite *EnvSuite) verifyValues(fields map[string]interface{}, prefix string) {
-	for name, value := range fields {
+	suite.walk(fields, prefix, func(name string, value interface{}) {
 		switch v := value.(type) {
-		case map[string]interface{}:
-			suite.verifyValues(v, prefix+name+".")
 		case []string:
 			switch envVar := suite.environment.Get(prefix + name).(type) {
 			case string:
@@ -574,6 +669,23 @@ func (suite *EnvSuite) verifyValues(fields map[string]interface{}, prefix string
 			}
 		default:
 			suite.Require().Equal(cast.ToString(suite.environment.Get(prefix+name)), cast.ToString(v), prefix+name)
+		}
+	})
+}
+
+func (suite *EnvSuite) walkStructFields(s interface{}, operation func(string, interface{})) {
+	fields := structs.Map(s)
+	suite.walk(fields, "", operation)
+}
+
+func (suite *EnvSuite) walk(fields map[string]interface{}, prefix string, operation func(string, interface{})) {
+	for name, value := range fields {
+		name = strings.ToLower(name)
+		switch v := value.(type) {
+		case map[string]interface{}:
+			suite.walk(v, prefix+name+".", operation)
+		default:
+			operation(prefix+name, value)
 		}
 	}
 }
