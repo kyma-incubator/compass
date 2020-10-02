@@ -11,20 +11,20 @@ type Service struct {
 	mock.Mock
 }
 
-// SignCSR provides a mock function with given fields: encodedCSR, subject
-func (_m *Service) SignCSR(encodedCSR []byte, subject certificates.CSRSubject) (certificates.EncodedCertificateChain, apperrors.AppError) {
-	ret := _m.Called(encodedCSR, subject)
+// SignCSR provides a mock function with given fields: encodedCSR, subject, clientId
+func (_m *Service) SignCSR(encodedCSR []byte, subject certificates.CSRSubject, clientId string) (certificates.EncodedCertificateChain, apperrors.AppError) {
+	ret := _m.Called(encodedCSR, subject, clientId)
 
 	var r0 certificates.EncodedCertificateChain
-	if rf, ok := ret.Get(0).(func([]byte, certificates.CSRSubject) certificates.EncodedCertificateChain); ok {
-		r0 = rf(encodedCSR, subject)
+	if rf, ok := ret.Get(0).(func([]byte, certificates.CSRSubject, string) certificates.EncodedCertificateChain); ok {
+		r0 = rf(encodedCSR, subject, clientId)
 	} else {
 		r0 = ret.Get(0).(certificates.EncodedCertificateChain)
 	}
 
 	var r1 apperrors.AppError
-	if rf, ok := ret.Get(1).(func([]byte, certificates.CSRSubject) apperrors.AppError); ok {
-		r1 = rf(encodedCSR, subject)
+	if rf, ok := ret.Get(1).(func([]byte, certificates.CSRSubject, string) apperrors.AppError); ok {
+		r1 = rf(encodedCSR, subject, clientId)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(apperrors.AppError)

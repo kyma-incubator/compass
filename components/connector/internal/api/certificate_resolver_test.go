@@ -60,7 +60,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
-		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
+		certService.On("SignCSR", decodedCSR, subject, mock.Anything).Return(encodedChain, nil)
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
@@ -93,7 +93,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		authenticator.On("Authenticate", context.TODO()).Return("", fmt.Errorf("error"))
 
 		certService := &certificatesMocks.Service{}
-		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
+		certService.On("SignCSR", decodedCSR, subject, mock.Anything).Return(encodedChain, nil)
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
@@ -123,7 +123,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
-		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
+		certService.On("SignCSR", decodedCSR, subject, mock.Anything).Return(encodedChain, nil)
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 
@@ -143,7 +143,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
-		certService.On("SignCSR", decodedCSR, subject).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
+		certService.On("SignCSR", decodedCSR, subject, mock.Anything).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revocationList)
 

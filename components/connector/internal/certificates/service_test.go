@@ -96,7 +96,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 			rootCACertificateSecretKey)
 
 		// when
-		encodedCertChain, apperr := certificatesService.SignCSR(rawCSR, subjectValues)
+		encodedCertChain, apperr := certificatesService.SignCSR(rawCSR, subjectValues, "")
 
 		// then
 		require.NoError(t, apperr)
@@ -142,7 +142,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 			rootCACertificateSecretKey)
 
 		// when
-		encodedCertChain, apperr := certificatesService.SignCSR(rawCSR, subjectValues)
+		encodedCertChain, apperr := certificatesService.SignCSR(rawCSR, subjectValues, "")
 
 		// then
 		require.NoError(t, apperr)
@@ -176,7 +176,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 			rootCACertificateSecretKey)
 
 		// when
-		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues)
+		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues, "")
 
 		// then
 		require.Error(t, err)
@@ -202,7 +202,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 			rootCACertificateSecretKey)
 
 		// when
-		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues)
+		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues, "")
 
 		// then
 		require.Error(t, err)
@@ -229,7 +229,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 			rootCACertificateSecretKey)
 
 		// when
-		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues)
+		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues, "")
 
 		// then
 		require.Error(t, err)
@@ -258,7 +258,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 			rootCACertificateSecretKey)
 
 		// when
-		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues)
+		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues, "")
 
 		// then
 		require.Error(t, err)
@@ -288,7 +288,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 			rootCACertificateSecretKey)
 
 		// when
-		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues)
+		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues, "")
 
 		// then
 		require.Error(t, err)
@@ -319,7 +319,7 @@ func TestCertificateService_SignCSR(t *testing.T) {
 			rootCACertificateSecretKey)
 
 		// when
-		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues)
+		encodedChain, err := certificatesService.SignCSR(rawCSR, subjectValues, "")
 
 		// then
 		require.Error(t, err)

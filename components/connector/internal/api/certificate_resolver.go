@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
@@ -52,6 +53,7 @@ func NewCertificateResolver(
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
+	r.log.Infof("Start signing Certificate Signing Request.")
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
 		r.log.Errorf(err.Error())
@@ -63,23 +65,27 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
 		r.log.Errorf(err.Error())
-		return nil, errors.Wrap(err, "Error while decoding Certificate Signing Request")
+		return nil, errors.Wrap(err, fmt.Sprintf("Error while decoding Certificate Signing Request %s", clientId))
 	}
+
+	r.log.Infof("Successfully decoded signing Request for %s client.", clientId)
 
 	subject := certificates.CSRSubject{
 		CommonName:       clientId,
 		CSRSubjectConsts: r.csrSubjectConsts,
 	}
 
-	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject)
+	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject, clientId)
 	if err != nil {
 		r.log.Errorf(err.Error())
 		return nil, errors.Wrap(err, "Error while signing Certificate Signing Request")
 	}
 
+	r.log.Infof("Successfully signed CSR for %s client.", clientId)
+
 	certificationResult := certificates.ToCertificationResult(encodedCertificates)
 
-	r.log.Infof("Certificate Signing Request signed.")
+	r.log.Infof("Certificate Signing complete for %s client.", clientId)
 	return &certificationResult, nil
 }
 
