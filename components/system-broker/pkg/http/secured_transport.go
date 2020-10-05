@@ -31,7 +31,7 @@ type TokenProvider interface {
 type SecuredTransport struct {
 	roundTripper  HTTPRoundTripper
 	tokenProvider TokenProvider
-	lock          sync.Mutex
+	lock          sync.RWMutex
 
 	token Token
 }
@@ -40,7 +40,7 @@ func NewSecuredTransport(roundTripper HTTPRoundTripper, provider TokenProvider) 
 	return &SecuredTransport{
 		roundTripper:  roundTripper,
 		tokenProvider: provider,
-		lock:          sync.Mutex{},
+		lock:          sync.RWMutex{},
 	}
 }
 
@@ -55,7 +55,7 @@ func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, err
 }
 
 func (c *SecuredTransport) refreshToken(ctx context.Context) error {
-	if !c.token.EmptyOrExpired() {
+	if c.validToken() {
 		return nil
 	}
 
@@ -69,4 +69,10 @@ func (c *SecuredTransport) refreshToken(ctx context.Context) error {
 	c.token = token
 
 	return nil
+}
+
+func (c *SecuredTransport) validToken() bool {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	return !c.token.EmptyOrExpired()
 }

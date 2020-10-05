@@ -79,8 +79,6 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsNewTokenAfterExpiration(t 
 	_, err = securedTransport.RoundTrip(request)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 100)
-
 	transport.RoundTripStub = func(req *http.Request) (*http.Response, error) {
 		authHeader := req.Header.Get("Authorization")
 		require.Equal(t, "Bearer " + accessToken2, authHeader)
