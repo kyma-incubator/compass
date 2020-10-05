@@ -23,6 +23,7 @@ import (
 	"sync"
 )
 
+//go:generate counterfeiter . TokenProvider
 type TokenProvider interface {
 	GetAuthorizationToken(ctx context.Context) (Token, error)
 }

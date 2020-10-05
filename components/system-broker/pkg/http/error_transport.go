@@ -40,13 +40,13 @@ func (c *ErrorHandlerTransport) RoundTrip(request *http.Request) (*http.Response
 	}
 
 	if response.StatusCode >= http.StatusBadRequest {
-		return nil, HandleResponseError(response)
+		return nil, handleResponseError(response)
 	}
 
 	return response, nil
 }
 
-func HandleResponseError(response *http.Response) error {
+func handleResponseError(response *http.Response) error {
 	defer func() {
 		if err := response.Body.Close(); err != nil {
 			log.D().Errorf("ReadCloser couldn't be closed: %v", err)
