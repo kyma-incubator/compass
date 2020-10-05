@@ -35,6 +35,14 @@ type SecuredTransport struct {
 	token Token
 }
 
+func NewSecuredTransport(roundTripper HTTPRoundTripper, provider TokenProvider) *SecuredTransport {
+	return &SecuredTransport{
+		roundTripper:  roundTripper,
+		tokenProvider: provider,
+		lock:          sync.Mutex{},
+	}
+}
+
 func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	if err := c.refreshToken(request.Context()); err != nil {
 		return nil, err

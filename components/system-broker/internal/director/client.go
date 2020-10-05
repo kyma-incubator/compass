@@ -174,7 +174,6 @@ func (c *GraphQLClient) FindPackageInstanceCredentialsForContext(ctx context.Con
 	if err != nil {
 		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auths")
 	}
-
 	var authsResp []*schema.PackageInstanceAuth
 	for _, auth := range resp.Result.Package.InstanceAuths {
 		if auth == nil {

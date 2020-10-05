@@ -19,7 +19,6 @@ package http
 import (
 	"crypto/tls"
 	"net/http"
-	"sync"
 	"time"
 )
 
@@ -47,15 +46,9 @@ func NewClient(timeout time.Duration, transport http.RoundTripper) *http.Client 
 	}
 }
 
-func NewSecuredHTTPClient(timeout time.Duration, roundTripper HTTPRoundTripper, provider TokenProvider) (*http.Client, error) {
-	transport := &SecuredTransport{
-		roundTripper:  roundTripper,
-		tokenProvider: provider,
-		lock:          sync.Mutex{},
-	}
-
+func NewSecuredHTTPClient(timeout time.Duration, securedTransport HTTPRoundTripper) (*http.Client, error) {
 	return &http.Client{
-		Transport: transport,
+		Transport: securedTransport,
 		Timeout:   timeout,
 	}, nil
 }

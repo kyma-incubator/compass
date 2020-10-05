@@ -84,7 +84,9 @@ func prepareGqlClient(cfg *config.Config, uudSrv uid.UUIDService) (*director.Gra
 	if err != nil {
 		return nil, err
 	}
-	securedClient, err := httputil.NewSecuredHTTPClient(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
+
+	securedTransport := httputil.NewSecuredTransport(httpTransport, oauthTokenProvider)
+	securedClient, err := httputil.NewSecuredHTTPClient(cfg.HttpClient.Timeout, securedTransport)
 	if err != nil {
 		return nil, err
 	}
