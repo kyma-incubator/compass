@@ -1,4 +1,4 @@
-{{- range $key, $name := .Values.groupNames | fromYaml}}
+{{- range $name := .Values.adminGroupNames }}
 - groupname: "{{ $name }}"
   scopes:
     - "application:read"
