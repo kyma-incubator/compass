@@ -18,7 +18,7 @@ deployment:
 metrics:
   port: 3001
 
-adminGroupNames: |-
+adminGroupNames:
   - "mps-superadmin"
   - "runtimeAdmin"
   - "runtimeNamespaceAdmin"
