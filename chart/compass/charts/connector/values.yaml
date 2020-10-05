@@ -36,5 +36,6 @@ istio:
   rbac:
     enabledd: true
     connectorInternalApi:
-      compassDirector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-director
-      compassConnectorTests: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector-tests
+      subjects:
+        - user: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-director
+        - user: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector-tests
