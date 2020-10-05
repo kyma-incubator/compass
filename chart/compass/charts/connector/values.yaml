@@ -34,7 +34,7 @@ certsSetupJob:
 
 istio:
   rbac:
-    enabled: true
+    enabledd: true
     connectorInternalApi:
       subjects:
         - user: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-director

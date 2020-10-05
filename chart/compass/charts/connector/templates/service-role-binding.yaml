@@ -1,4 +1,4 @@
-{{ if .Values.istio.rbac.enabled  }}
+{{ if .Values.istio.rbac.enabledd  }}
 apiVersion: "rbac.istio.io/v1alpha1"
 kind: ServiceRole
 metadata:
