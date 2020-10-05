@@ -18,10 +18,11 @@ package http
 
 import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
 	"net/http"
 )
 
-func NewCorrelationIDTransport(roundTripper HTTPRoundTripper, uuidService UUIDService) *CorrelationIDTransport {
+func NewCorrelationIDTransport(roundTripper HTTPRoundTripper, uuidService uid.UUIDService) *CorrelationIDTransport {
 	return &CorrelationIDTransport{
 		roundTripper: roundTripper,
 		uuidService:  uuidService,
@@ -30,7 +31,7 @@ func NewCorrelationIDTransport(roundTripper HTTPRoundTripper, uuidService UUIDSe
 
 type CorrelationIDTransport struct {
 	roundTripper HTTPRoundTripper
-	uuidService  UUIDService
+	uuidService  uid.UUIDService
 }
 
 func (c *CorrelationIDTransport) RoundTrip(r *http.Request) (*http.Response, error) {

@@ -18,6 +18,10 @@ package uid
 
 import "github.com/google/uuid"
 
+type UUIDService interface {
+	Generate() string
+}
+
 type service struct{}
 
 func NewService() *service {
