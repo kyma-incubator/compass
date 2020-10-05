@@ -1,4 +1,4 @@
-{{- range $key, $name := .Values.groupNames }}
+{{- range $name := .Values.groupNames }}
 - groupname: "{{ $name }}"
   scopes:
     - "application:read"
