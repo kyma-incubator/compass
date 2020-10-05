@@ -313,7 +313,7 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 }
 
 func createServer(address string, handler http.Handler, name string) (func(), func()) {
-	//testpr
+	// testpr
 	srv := &http.Server{Addr: address, Handler: handler}
 
 	runFn := func() {
