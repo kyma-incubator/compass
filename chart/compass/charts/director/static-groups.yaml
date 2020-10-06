@@ -1,5 +1,5 @@
-{{- range $name := .Values.adminGroupNames }}
-- groupname: "{{ $name }}"
+{{ $AdminGroupNamesArr := regexSplit "," .Values.adminGroupNames -1 }}{{- range $name := $AdminGroupNamesArr}}
+- groupname: "{{ trim $name }}"
   scopes:
     - "application:read"
     - "application:write"
@@ -15,8 +15,7 @@
     - "tenant:read"
     - "automatic_scenario_assignment:read"
     - "automatic_scenario_assignment:write"
-{{- end }}
-{{- range $name := .Values.viewerGroupNames }}
+{{- end }}{{ $ViewerGroupNamesArr := regexSplit "," .Values.viewerGroupNames -1 }}{{- range $name := $ViewerGroupNamesArr}}
 - groupname: "{{ $name }}"
   scopes:
     - "application:read"
