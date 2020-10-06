@@ -1,5 +1,4 @@
-{{ $AdminGroupNamesArr := regexSplit "," .Values.adminGroupNames -1 }}{{- range $name := $AdminGroupNamesArr}}
-- groupname: "{{ trim $name }}"
+{{ $AdminGroupNamesArr := regexSplit "," .Values.adminGroupNames -1 }}{{- range $name := $AdminGroupNamesArr}}- groupname: "{{ trim $name }}"
   scopes:
     - "application:read"
     - "application:write"
