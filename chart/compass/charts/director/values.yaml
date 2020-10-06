@@ -18,9 +18,9 @@ deployment:
 metrics:
   port: 3001
 
-adminGroupNames: "cmp-superadmin-canary, runtimeAdmin, runtimeNamespaceAdmin"
+adminGroupNames: "cmp-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
 
-viewerGroupNames: "cmp-viewer, another-viewer"
+viewerGroupNames: "cmp-viewer"
 
 operatorGroupNames:
   - "runtimeOperator"
