@@ -10,7 +10,7 @@ type RevocationListRepository struct {
 }
 
 // Contains provides a mock function with given fields: hash
-func (_m *RevocationListRepository) Contains(hash string) (bool, error) {
+func (_m *RevocationListRepository) Contains(hash string) bool {
 	ret := _m.Called(hash)
 
 	var r0 bool
@@ -20,14 +20,7 @@ func (_m *RevocationListRepository) Contains(hash string) (bool, error) {
 		r0 = ret.Get(0).(bool)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(hash)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Insert provides a mock function with given fields: hash

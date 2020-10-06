@@ -3,6 +3,7 @@ package revocation
 import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -10,24 +11,29 @@ import (
 type Manager interface {
 	Get(name string, options metav1.GetOptions) (*v1.ConfigMap, error)
 	Update(configmap *v1.ConfigMap) (*v1.ConfigMap, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 }
 
 //go:generate mockery -name=RevocationListRepository
 type RevocationListRepository interface {
 	Insert(hash string) error
-	Contains(hash string) (bool, error)
+	Contains(hash string) bool
 }
 
 type revocationListRepository struct {
-	configListManager Manager
-	configMapName     string
+	configListManager   Manager
+	configMapName       string
+	revocationListCache Cache
 }
 
-func NewRepository(configListManager Manager, configMapName string) RevocationListRepository {
-	return &revocationListRepository{
-		configListManager: configListManager,
-		configMapName:     configMapName,
+func NewRepository(configListManager Manager, revocationListCache Cache, configMapName string) RevocationListRepository {
+	obj := &revocationListRepository{
+		configListManager:   configListManager,
+		configMapName:       configMapName,
+		revocationListCache: revocationListCache,
 	}
+
+	return obj
 }
 
 func (r *revocationListRepository) Insert(hash string) error {
@@ -53,16 +59,13 @@ func (r *revocationListRepository) Insert(hash string) error {
 	return err
 }
 
-func (r *revocationListRepository) Contains(hash string) (bool, error) {
-	configMap, err := r.configListManager.Get(r.configMapName, metav1.GetOptions{})
-	if err != nil {
-		return false, err
-	}
+func (r *revocationListRepository) Contains(hash string) bool {
+	configMap := r.revocationListCache.Get()
 
 	found := false
-	if configMap.Data != nil {
-		_, found = configMap.Data[hash]
+	if configMap != nil {
+		_, found = configMap[hash]
 	}
 
-	return found, nil
+	return found
 }
