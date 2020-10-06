@@ -15,7 +15,7 @@
     - "tenant:read"
     - "automatic_scenario_assignment:read"
     - "automatic_scenario_assignment:write"
-{{- end }}
+{{ end }}
 {{- range $name := regexSplit "," .Values.operatorGroupNames -1 }}
 - groupname: "{{ trim $name }}"
   scopes:
@@ -26,4 +26,4 @@
     - "label_definition:read"
     - "tenant:read"
     - "automatic_scenario_assignment:read"
-{{- end }}
+{{ end }}
