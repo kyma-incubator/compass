@@ -37,4 +37,4 @@
     - "label_definition:read"
     - "tenant:read"
     - "automatic_scenario_assignment:read"
-{{- end }}
+{{- end -}}
