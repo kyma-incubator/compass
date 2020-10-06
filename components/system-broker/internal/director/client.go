@@ -350,15 +350,15 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *FindPackageSp
 		}, nil
 	}
 
-	eventdef := response.Result.Package.APIDefinition
+	eventdef := response.Result.Package.EventDefinition
 	if eventdef.Spec != nil {
 		return &FindPackageSpecificationOutput{
-			Name:        apidef.Name,
-			Description: apidef.Description,
-			Data:        apidef.Spec.Data,
-			Format:      apidef.Spec.Format,
-			Type:        string(apidef.Spec.Type),
-			Version:     apidef.Version,
+			Name:        eventdef.Name,
+			Description: eventdef.Description,
+			Data:        eventdef.Spec.Data,
+			Format:      eventdef.Spec.Format,
+			Type:        string(eventdef.Spec.Type),
+			Version:     eventdef.Version,
 		}, nil
 	}
 
