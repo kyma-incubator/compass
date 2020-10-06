@@ -1,4 +1,19 @@
 # Required because Prometheus Operator doesn't have Istio Sidecar
+# If new istio resource is available
+{{- if .Capabilities.APIVersions.Has "security.istio.io/v1beta1/PeerAuthentication" }}
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: {{ template "fullname" . }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  portLevelMtls:
+    {{ .Values.metrics.port }}:
+      mode: "PERMISSIVE"
+{{- else }}
+# Else proceed with old Policy
 apiVersion: authentication.istio.io/v1alpha1
 kind: Policy
 metadata:
@@ -9,3 +24,4 @@ spec:
         mode: PERMISSIVE
   targets:
     - name: {{ template "fullname" . }}-metrics
+{{- end }}
