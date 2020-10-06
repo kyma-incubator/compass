@@ -34,10 +34,10 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Port:            8080,
-		RequestTimeout:  time.Second * 50000,
-		ShutdownTimeout: time.Second * 50000,
+		RequestTimeout:  time.Second * 10,
+		ShutdownTimeout: time.Second * 10,
 		RootAPI:         "/broker",
-		SelfURL:         fmt.Sprintf("http://localhost:8080/broker"),
+		SelfURL:         "http://localhost:8080",
 	}
 }
 

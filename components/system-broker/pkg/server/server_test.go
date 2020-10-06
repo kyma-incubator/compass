@@ -1,7 +1,8 @@
-package server
+package server_test
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -10,10 +11,10 @@ import (
 )
 
 func TestNewAddsAdditionalRoutes(t *testing.T) {
-	config := DefaultConfig()
+	config := server.DefaultConfig()
 	uuid := uid.NewService()
 
-	server := New(config, uuid, func(router *mux.Router) {
+	server := server.New(config, uuid, func(router *mux.Router) {
 		router.HandleFunc(config.RootAPI+"/test", func(writer http.ResponseWriter, request *http.Request) {
 			writer.WriteHeader(http.StatusOK)
 		})
@@ -23,7 +24,7 @@ func TestNewAddsAdditionalRoutes(t *testing.T) {
 }
 
 func TestNewAddsSystemRoutes(t *testing.T) {
-	config := DefaultConfig()
+	config := server.DefaultConfig()
 	uuid := uid.NewService()
 
 	var tests = []struct {
@@ -62,14 +63,14 @@ func TestNewAddsSystemRoutes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Msg, func(t *testing.T) {
-			server := New(config, uuid)
+			server := server.New(config, uuid)
 			AssertRouteExists(t, server, config.RootAPI+test.Route)
 		})
 	}
 }
 
-func AssertRouteExists(t *testing.T, server *Server, path string) {
-	router, ok := server.server.Handler.(*mux.Router)
+func AssertRouteExists(t *testing.T, server *server.Server, path string) {
+	router, ok := server.Handler.(*mux.Router)
 	require.True(t, ok)
 
 	match := &mux.RouteMatch{}

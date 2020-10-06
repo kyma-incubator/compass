@@ -31,7 +31,8 @@ import (
 )
 
 type Server struct {
-	server          *http.Server
+	*http.Server
+
 	healthy         int32
 	routesProvider  []func(router *mux.Router)
 	shutdownTimeout time.Duration
@@ -60,7 +61,7 @@ func New(c *Config, service log.UUIDService, routesProvider ...func(router *mux.
 		applyRoutes(router)
 	}
 
-	s.server = &http.Server{
+	s.Server = &http.Server{
 		Addr:    ":" + strconv.Itoa(c.Port),
 		Handler: router,
 
@@ -83,12 +84,12 @@ func (s *Server) Start(parentCtx context.Context) {
 		close(idleConnsClosed)
 	}()
 
-	log.C(ctx).Infof("Starting and listening on %s://%s", "http", s.server.Addr)
+	log.C(ctx).Infof("Starting and listening on %s://%s", "http", s.Addr)
 
 	atomic.StoreInt32(&s.healthy, 1)
 
-	if err := s.server.ListenAndServe(); err != http.ErrServerClosed {
-		log.C(ctx).Fatalf("Could not listen on %s://%s: %v\n", "http", s.server.Addr, err)
+	if err := s.ListenAndServe(); err != http.ErrServerClosed {
+		log.C(ctx).Fatalf("Could not listen on %s://%s: %v\n", "http", s.Addr, err)
 	}
 
 	<-idleConnsClosed
@@ -110,9 +111,9 @@ func (s *Server) stop(parentCtx context.Context) {
 		}
 	}(ctx)
 
-	s.server.SetKeepAlivesEnabled(false)
+	s.SetKeepAlivesEnabled(false)
 
-	if err := s.server.Shutdown(ctx); err != nil {
+	if err := s.Shutdown(ctx); err != nil {
 		log.C(ctx).Fatalf("Could not gracefully shutdown the server: %v\n", err)
 	}
 }

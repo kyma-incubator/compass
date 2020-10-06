@@ -29,7 +29,7 @@ type BindEndpoint struct {
 }
 
 func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, details domain.BindDetails, asyncAllowed bool) (domain.Binding, error) {
-	log.C(ctx).Infof("Bind instanceID: %s bindingID: %s parameters: %s context: %s asyncAllowed: %s", instanceID, bindingID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
+	log.C(ctx).Infof("Bind instanceID: %s bindingID: %s parameters: %s context: %s asyncAllowed: %t", instanceID, bindingID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
 
 	appID := details.ServiceID
 	packageID := details.PlanID

@@ -88,7 +88,7 @@ func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, insta
 	}
 
 	if authContext["instance_id"] != instanceID {
-		logger.Info("Package instance credentials instance id in context %s does not match instance id from request", authContext["instance_id"])
+		logger.Infof("Package instance credentials instance id in context %s does not match instance id from request", authContext["instance_id"])
 		return domain.LastOperation{}, apiresponses.ErrInstanceDoesNotExist
 	}
 
