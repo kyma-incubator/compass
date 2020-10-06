@@ -16,7 +16,7 @@
     - "automatic_scenario_assignment:read"
     - "automatic_scenario_assignment:write"
 {{- end }}{{ $ViewerGroupNamesArr := regexSplit "," .Values.viewerGroupNames -1 }}{{- range $name := $ViewerGroupNamesArr}}
-- groupname: "{{ $name }}"
+- groupname: "{{ trim $name }}"
   scopes:
     - "application:read"
     - "application_template:read"
