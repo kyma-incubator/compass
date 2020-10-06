@@ -1,3 +1,5 @@
+# If new istio resource is available
+{{- if .Capabilities.APIVersions.Has "security.istio.io/v1beta1/PeerAuthentication" }}
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
@@ -8,3 +10,15 @@ spec:
       app: {{ template "prometheus-postgres-exporter.name" . }}
   mtls:
     mode: "PERMISSIVE"
+{{- else }}
+apiVersion: authentication.istio.io/v1alpha1
+kind: Policy
+metadata:
+  name: {{ template "prometheus-postgres-exporter.fullname" . }}
+spec:
+  peers:
+    - mtls:
+        mode: PERMISSIVE
+  targets:
+    - name: {{ template "prometheus-postgres-exporter.fullname" . }}
+{{- end }}
