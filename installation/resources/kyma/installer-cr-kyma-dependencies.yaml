@@ -28,8 +28,6 @@ spec:
       namespace: "kyma-system"
     - name: "api-gateway"
       namespace: "kyma-system"
-    - name: "core"
-      namespace: "kyma-system"
     - name: "monitoring"
       namespace: "kyma-system"
     - name: "logging"
