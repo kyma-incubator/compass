@@ -19,8 +19,7 @@ metrics:
   port: 3001
 
 adminGroupNames: "cmp-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
-viewerGroupNames: "cmp-viewer"
-operatorGroupNames: "runtimeOperator"
+operatorGroupNames: "cmp-viewer, runtimeOperator"
 
 applicationHideSelectors: |-
   applicationHideSelectorKey:

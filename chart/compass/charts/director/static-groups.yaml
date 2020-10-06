@@ -16,7 +16,7 @@
     - "automatic_scenario_assignment:read"
     - "automatic_scenario_assignment:write"
 {{- end }}
-{{- range $name := regexSplit "," .Values.viewerGroupNames -1}}
+{{- range $name := regexSplit "," .Values.operatorGroupNames -1 }}
 - groupname: "{{ trim $name }}"
   scopes:
     - "application:read"
@@ -27,14 +27,3 @@
     - "tenant:read"
     - "automatic_scenario_assignment:read"
 {{- end }}
-{{- range $name := regexSplit "," .Values.operatorGroupNames -1}}
-- groupname: "{{ $name }}"
-  scopes:
-    - "application:read"
-    - "application_template:read"
-    - "integration_system:read"
-    - "runtime:read"
-    - "label_definition:read"
-    - "tenant:read"
-    - "automatic_scenario_assignment:read"
-{{- end -}}
