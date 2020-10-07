@@ -18,8 +18,8 @@ deployment:
 metrics:
   port: 3001
 
-adminGroupNames: "cmp-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
-operatorGroupNames: "cmp-viewer, runtimeOperator"
+adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
+operatorGroupNames: "runtimeOperator"
 
 applicationHideSelectors: |-
   applicationHideSelectorKey:
