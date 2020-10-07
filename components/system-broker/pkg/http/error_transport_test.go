@@ -18,7 +18,7 @@ func TestErrorHandlerTransport_RoundTripReturnsAnErrorOnBadRequest(t *testing.T)
 	transport := &httpfakes.FakeHTTPRoundTripper{}
 	transport.RoundTripReturns(&http.Response{
 		StatusCode: http.StatusBadRequest,
-		Body: ioutil.NopCloser(bytes.NewBufferString(failedResponseBody)),
+		Body:       ioutil.NopCloser(bytes.NewBufferString(failedResponseBody)),
 	}, nil)
 
 	errTransport := httputil.NewErrorHandlerTransport(transport)
@@ -33,7 +33,7 @@ func TestErrorHandlerTransport_RoundTripReturnsAValidResponseOnSuccessRequest(t 
 	transport := &httpfakes.FakeHTTPRoundTripper{}
 	transport.RoundTripReturns(&http.Response{
 		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(&bytes.Buffer{}),
+		Body:       ioutil.NopCloser(&bytes.Buffer{}),
 	}, nil)
 
 	errTransport := httputil.NewErrorHandlerTransport(transport)

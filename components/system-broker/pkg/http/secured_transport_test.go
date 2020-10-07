@@ -16,16 +16,16 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsTokenAndUsesItUntilExpire(
 
 	transport := &httpfakes.FakeHTTPRoundTripper{}
 	transport.RoundTripStub = func(req *http.Request) (*http.Response, error) {
-			authHeader := req.Header.Get("Authorization")
-			require.Equal(t, "Bearer " + accessToken, authHeader)
+		authHeader := req.Header.Get("Authorization")
+		require.Equal(t, "Bearer "+accessToken, authHeader)
 
-			return nil, nil
+		return nil, nil
 	}
 
 	tokenProvider := &httpfakes.FakeTokenProvider{}
 	tokenProvider.GetAuthorizationTokenReturns(httputil.Token{
 		AccessToken: accessToken,
-		Expiration: time.Now().Add(time.Second * 10).Unix(),
+		Expiration:  time.Now().Add(time.Second * 10).Unix(),
 	}, nil)
 
 	testUrl, err := url.Parse("http://localhost:8080")
@@ -51,11 +51,11 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsNewTokenAfterExpiration(t 
 	tokenProvider := &httpfakes.FakeTokenProvider{}
 	tokenProvider.GetAuthorizationTokenReturnsOnCall(0, httputil.Token{
 		AccessToken: accessToken1,
-		Expiration: time.Now().Add(time.Millisecond * 100).Unix(),
+		Expiration:  time.Now().Add(time.Millisecond * 100).Unix(),
 	}, nil)
 	tokenProvider.GetAuthorizationTokenReturnsOnCall(1, httputil.Token{
 		AccessToken: accessToken2,
-		Expiration: time.Now().Add(time.Second * 10).Unix(),
+		Expiration:  time.Now().Add(time.Second * 10).Unix(),
 	}, nil)
 
 	transport := &httpfakes.FakeHTTPRoundTripper{}
@@ -70,7 +70,7 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsNewTokenAfterExpiration(t 
 
 	transport.RoundTripStub = func(req *http.Request) (*http.Response, error) {
 		authHeader := req.Header.Get("Authorization")
-		require.Equal(t, "Bearer " + accessToken1, authHeader)
+		require.Equal(t, "Bearer "+accessToken1, authHeader)
 
 		return nil, nil
 	}
@@ -81,7 +81,7 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsNewTokenAfterExpiration(t 
 
 	transport.RoundTripStub = func(req *http.Request) (*http.Response, error) {
 		authHeader := req.Header.Get("Authorization")
-		require.Equal(t, "Bearer " + accessToken2, authHeader)
+		require.Equal(t, "Bearer "+accessToken2, authHeader)
 
 		return nil, nil
 	}

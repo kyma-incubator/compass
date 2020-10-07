@@ -82,4 +82,3 @@ func (suite *LagerAdapterSuite) TestLagerAdapterDoesNotUseSinks() {
 
 	suite.Require().Contains(suite.buffer.String(), "LagerAdapter does not work with sinks.")
 }
-

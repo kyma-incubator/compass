@@ -49,7 +49,7 @@ func NewTestContextBuilder() *TestContextBuilder {
 				env.Set("server.shutdown_timeout", "1s")
 				port := findFreePort()
 				env.Set("server.port", port)
-				env.Set("server.self_url", "http://localhost:" + port)
+				env.Set("server.self_url", "http://localhost:"+port)
 			},
 		},
 		Servers: map[string]FakeServer{},
@@ -153,7 +153,7 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 
 func findFreePort() string {
 	for {
-		port := strconv.Itoa(rand.Intn(math.MaxInt16 - 1023) + 1023)
+		port := strconv.Itoa(rand.Intn(math.MaxInt16-1023) + 1023)
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort("", port), time.Second)
 		if conn != nil {
 			_ = conn.Close()

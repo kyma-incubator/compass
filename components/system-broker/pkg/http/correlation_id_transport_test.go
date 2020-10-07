@@ -16,13 +16,13 @@ func TestCorrelationIDTransport_RoundTripSetsCorrelationIDIfSuchIsPresent(t *tes
 
 	transport := &httpfakes.FakeHTTPRoundTripper{}
 	transport.RoundTripStub = func(req *http.Request) (*http.Response, error) {
-			entry := log.C(req.Context())
+		entry := log.C(req.Context())
 
-			correlationIDFromLogger, exists := entry.Data[log.FieldCorrelationID]
-			require.True(t, exists)
-			require.Equal(t, correlationID, correlationIDFromLogger)
+		correlationIDFromLogger, exists := entry.Data[log.FieldCorrelationID]
+		require.True(t, exists)
+		require.Equal(t, correlationID, correlationIDFromLogger)
 
-			return nil, nil
+		return nil, nil
 	}
 
 	testUrl, err := url.Parse("http://localhost:8080")

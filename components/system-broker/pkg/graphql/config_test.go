@@ -8,10 +8,10 @@ import (
 
 func TestConfig_Validate(t *testing.T) {
 	var tests = []struct {
-		Msg string
-		ConfigProvider func () *graphql.Config
-		ExpectValid bool
-	} {
+		Msg            string
+		ConfigProvider func() *graphql.Config
+		ExpectValid    bool
+	}{
 		{
 			Msg: "Default config should be valid",
 			ConfigProvider: func() *graphql.Config {

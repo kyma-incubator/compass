@@ -18,7 +18,7 @@ type FormatterSuite struct {
 	suite.Suite
 
 	buffer *bytes.Buffer
-	entry *logrus.Entry
+	entry  *logrus.Entry
 }
 
 func (suite *FormatterSuite) SetupTest() {
@@ -49,7 +49,7 @@ func (suite *FormatterSuite) TestFormatterAppendErrorsToTheMessage() {
 	suite.entry.WithError(err).Error("test message")
 
 	suite.Require().Contains(suite.buffer.String(), `"level":"error"`)
-	suite.Require().Contains(suite.buffer.String(), `"msg":"test message: ` + err.Error() + `"`)
+	suite.Require().Contains(suite.buffer.String(), `"msg":"test message: `+err.Error()+`"`)
 }
 
 func (suite *FormatterSuite) TestFormatterCustomFields() {
@@ -57,6 +57,3 @@ func (suite *FormatterSuite) TestFormatterCustomFields() {
 
 	suite.Require().Contains(suite.buffer.String(), `,"test_field":"test_value",`)
 }
-
-
-
