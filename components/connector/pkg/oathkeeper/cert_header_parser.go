@@ -1,6 +1,7 @@
 package oathkeeper
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"regexp"
 
@@ -20,20 +21,26 @@ type certificateInfo struct {
 type headerParser struct {
 	certHeaderName string
 	certificates.CSRSubjectConsts
+	log *logrus.Entry
 }
 
 func NewHeaderParser(certHeaderName string, csrSubjectConsts certificates.CSRSubjectConsts) CertificateHeaderParser {
 	return &headerParser{
 		certHeaderName:   certHeaderName,
 		CSRSubjectConsts: csrSubjectConsts,
+		log:              logrus.WithField("Handler", "CertHeaderParser"),
 	}
 }
 
 func (hp *headerParser) GetCertificateData(r *http.Request) (string, string, bool) {
+	hp.log.Infof("Parsing certificate header")
 	certHeader := r.Header.Get(hp.certHeaderName)
 	if certHeader == "" {
+		hp.log.Errorf("Certificate header not found")
 		return "", "", false
 	}
+
+	hp.log.Infof("Certificate header = %s", certHeader)
 
 	subjectRegex := regexp.MustCompile(`Subject="(.*?)"`)
 	hashRegex := regexp.MustCompile(`Hash=([0-9a-f]*)`)
@@ -45,6 +52,7 @@ func (hp *headerParser) GetCertificateData(r *http.Request) (string, string, boo
 
 	certificateInfo, found := hp.getCertificateInfoWithMatchingSubject(certificateInfos)
 	if !found {
+		hp.log.Errorf("Certificate header not matching")
 		return "", "", false
 	}
 
@@ -82,8 +90,14 @@ func newCertificateInfo(subject, hash string) certificateInfo {
 }
 
 func (hp *headerParser) isSubjectMatching(i certificateInfo) bool {
-	return GetOrganization(i.Subject) == hp.Organization && GetOrganizationalUnit(i.Subject) == hp.OrganizationalUnit &&
+	hp.log.Info("Checking if subject is matching")
+
+	matching := GetOrganization(i.Subject) == hp.Organization && GetOrganizationalUnit(i.Subject) == hp.OrganizationalUnit &&
 		GetCountry(i.Subject) == hp.Country && GetLocality(i.Subject) == hp.Locality && GetProvince(i.Subject) == hp.Province
+
+	hp.log.Infof("Subject matching = %v", matching)
+
+	return matching
 }
 
 func extractFromHeader(certHeader string, regex *regexp.Regexp) []string {
