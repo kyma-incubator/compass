@@ -1,9 +1,10 @@
 package oathkeeper
 
 import (
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"regexp"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 )
