@@ -54,7 +54,6 @@ func (hp *headerParser) GetCertificateData(r *http.Request) (string, string, boo
 	hp.log.Infof("Hashes = %v", hashes)
 	hp.log.Infof("Certificate infos = %v", certificateInfos)
 
-
 	certificateInfo, found := hp.getCertificateInfoWithMatchingSubject(certificateInfos)
 	if !found {
 		hp.log.Errorf("Certificate header not matching")
