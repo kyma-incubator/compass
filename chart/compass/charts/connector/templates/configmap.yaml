@@ -15,6 +15,6 @@ metadata:
 data:
 {{ else }}
 data:
-{{ toYaml (lookup "v1" "ConfigMap" "compass-system" "revocations-config").data | indent 2}}
+{{ toYaml (lookup "v1" "ConfigMap" "compass-system" "revocations-config").data | indent 2 }}
 {{ end }}
 {{ end }}
