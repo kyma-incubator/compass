@@ -1,11 +1,9 @@
 {{ if .Values.global.disableLegacyConnectivity }}
 apiVersion: v1
 kind: ConfigMap
-{{ $configmapName := .Values.global.connector.revocation.configmap.name }}
-{{ $configmapNamespace := (tpl .Values.global.connector.revocation.configmap.namespace .) }}
 metadata:
-  name: {{ $configmapName }}
-  namespace: {{ $configmapNamespace }}
+  name: {{ .Values.global.connector.revocation.configmap.name }}
+  namespace: {{ tpl .Values.global.connector.revocation.configmap.namespace . }}
   labels:
     app: {{ template "name" . }}
     release: {{ .Release.Name }}
@@ -13,11 +11,10 @@ metadata:
     app.kubernetes.io/name: {{ template "name" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-{{ $configmap := (lookup "v1" "ConfigMap" "compass-system" "revocations-config") }}
-{{ if empty $configmap }}
+{{ if empty (lookup "v1" "ConfigMap" "compass-system" "revocations-config") }}
 data:
 {{ else }}
 data:
-{{ toYaml $configmap.data | indent 2}}
+{{ toYaml (lookup "v1" "ConfigMap" "compass-system" "revocations-config").data | indent 2}}
 {{ end }}
 {{ end }}
