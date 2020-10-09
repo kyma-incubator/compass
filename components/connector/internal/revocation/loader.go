@@ -56,6 +56,7 @@ func (rl *revocationListLoader) startKubeWatch(ctx context.Context) {
 		for {
 			if !rl.processEvents(ctx, watcher.ResultChan()) {
 				// Cleanup any allocated resources
+				log.Printf("Stopping revocation configmap watcher")
 				watcher.Stop()
 				time.Sleep(rl.reconnectInternal)
 				break
