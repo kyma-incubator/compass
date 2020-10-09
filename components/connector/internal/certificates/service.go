@@ -3,6 +3,7 @@ package certificates
 import (
 	"crypto/x509"
 	"encoding/base64"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
@@ -40,7 +41,7 @@ func NewCertificateService(
 		caKeySecretKey:              caKeySecretKey,
 		rootCACertificateSecretName: rootCACertificateSecretName,
 		rootCACertificateSecretKey:  rootCACertificateSecretKey,
-		logger : logrus.WithField("CertificateService", "Certificate"),
+		logger:                      logrus.WithField("CertificateService", "Certificate"),
 	}
 }
 

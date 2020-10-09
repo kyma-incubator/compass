@@ -90,21 +90,21 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 }
 
 func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
-	//clientId, certificateHash, err := r.authenticator.AuthenticateCertificate(ctx)
-	//if err != nil {
-	//	r.log.Errorf(err.Error())
-	//	return false, errors.Wrap(err, "Failed to authenticate with certificate")
-	//}
-	//
-	//r.log.Infof("Revoking certificate for %s client.", clientId)
-	//
-	//err = r.revocationList.Insert(certificateHash)
-	//if err != nil {
-	//	r.log.Errorf(err.Error())
-	//	return false, errors.Wrap(err, "Failed to add hash to revocation list")
-	//}
-	//
-	//r.log.Infof("Certificate revoked.")
+	clientId, certificateHash, err := r.authenticator.AuthenticateCertificate(ctx)
+	if err != nil {
+		r.log.Errorf(err.Error())
+		return false, errors.Wrap(err, "Failed to authenticate with certificate")
+	}
+
+	r.log.Infof("Revoking certificate for %s client.", clientId)
+
+	err = r.revocationList.Insert(certificateHash)
+	if err != nil {
+		r.log.Errorf(err.Error())
+		return false, errors.Wrap(err, "Failed to add hash to revocation list")
+	}
+
+	r.log.Infof("Certificate revoked.")
 	return true, nil
 }
 
