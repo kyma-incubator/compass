@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -33,7 +34,7 @@ type DeprovisionEndpoint struct {
 }
 
 func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string, details domain.DeprovisionDetails, asyncAllowed bool) (domain.DeprovisionServiceSpec, error) {
-	log.C(ctx).Infof("Deprovision instanceID: %s asyncAllowed: %s force: %b", instanceID, asyncAllowed, details.Force)
+	log.C(ctx).Infof("Deprovision instanceID: %s asyncAllowed: %t force: %t", instanceID, asyncAllowed, details.Force)
 
 	if !asyncAllowed {
 		return domain.DeprovisionServiceSpec{}, apiresponses.ErrAsyncRequired
@@ -94,7 +95,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 	}
 
 	status = &deleteResp.Status
-	logger.Info("package instance credentials have status %+v", *status)
+	logger.Infof("package instance credentials have status %+v", *status)
 
 	logger.Info("Successfully requested deletion of package instance credentials")
 

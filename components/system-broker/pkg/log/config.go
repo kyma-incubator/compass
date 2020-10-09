@@ -18,8 +18,9 @@ package log
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -30,9 +31,9 @@ const (
 // Config type to be loaded from the environment
 type Config struct {
 	Level                  string `description:"minimum level for log messages" json:"level,omitempty" mapstructure:"level"`
-	Format                 string `description:"format of log messages. Allowed values - text, json" json:"format,omitempty" mapstructure:"text"`
+	Format                 string `description:"format of log messages. Allowed values - text, json" json:"format,omitempty" mapstructure:"format"`
 	Output                 string `description:"output for the logs. Allowed values - /dev/stdout, /dev/stderr" json:"output,omitempty" mapstructure:"output"`
-	BootstrapCorrelationID string `description:"the value of the bootstrap correlation id for this component" json:"bootstrap_correlation_id,omitempty" mapstructure:"bootstrap_correlation_id"`
+	BootstrapCorrelationID string `description:"the value of the bootstrap correlation id for this component" json:"bootstrap_correlation_id,omitempty" mapstructure:"bootstrap_correlation_id" structs:"bootstrap_correlation_id"`
 }
 
 // DefaultConfig returns default values for Log settings

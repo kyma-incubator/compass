@@ -17,6 +17,8 @@
 package config
 
 import (
+	"reflect"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
@@ -26,6 +28,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
+
+type Validatable interface {
+	Validate() error
+}
 
 type Config struct {
 	Server        *server.Config  `mapstructure:"server"`
@@ -60,17 +66,17 @@ func New(env env.Environment) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	validatable := []interface {
-		Validate() error
-	}{
-		c.Server,
-		c.Log,
-		c.HttpClient,
-		c.GraphQLClient,
-		c.OAuthProvider,
+	validatableFields := make([]Validatable, 0, 0)
+
+	v := reflect.ValueOf(*c)
+	for i := 0; i < v.NumField(); i++ {
+		field, ok := v.Field(i).Interface().(Validatable)
+		if ok {
+			validatableFields = append(validatableFields, field)
+		}
 	}
 
-	for _, item := range validatable {
+	for _, item := range validatableFields {
 		if err := item.Validate(); err != nil {
 			return err
 		}

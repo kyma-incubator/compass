@@ -17,8 +17,9 @@
 package director
 
 import (
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 func IsGQLNotFoundError(err error) bool {

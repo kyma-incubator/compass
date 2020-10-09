@@ -18,6 +18,9 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"os"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
@@ -30,20 +33,17 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/signal"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	k8scfg "sigs.k8s.io/controller-runtime/pkg/client/config"
-	"time"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
+	gql "github.com/machinebox/graphql"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	defer cancel()
 
-	signal.HandleInterrupts(ctx, cancel)
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
 
 	env, err := env.Default(ctx, config.AddPFlags)
 	fatalOnError(err)
@@ -57,16 +57,15 @@ func main() {
 	ctx, err = log.Configure(ctx, cfg.Log)
 	fatalOnError(err)
 
-	uuidSrv := uid.NewService()
+	uuidSrv := uuid.NewService()
 
 	directorGraphQLClient, err := prepareGqlClient(cfg, uuidSrv)
 	fatalOnError(err)
 
-	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL)
+	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, log.NewDefaultLagerAdapter())
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
-	srv, err := server.New(cfg.Server, uuidSrv, osbApi, specsApi.Routes)
-	fatalOnError(err)
+	srv := server.New(cfg.Server, uuidSrv, osbApi, specsApi)
 
 	srv.Start(ctx)
 }
@@ -77,65 +76,29 @@ func fatalOnError(err error) {
 	}
 }
 
-func prepareGqlClient(cfg *config.Config, uudSrv httputil.UUIDService) (*director.GraphQLClient, error) {
+func prepareGqlClient(cfg *config.Config, uudSrv uuid.Service) (*director.GraphQLClient, error) {
 	// prepare raw http transport and http client based on cfg
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
 	httpClient := httputil.NewClient(cfg.HttpClient.Timeout, httpTransport)
 
-	//prepare k8s client
-	k8sClient, err := prepareK8sClient()
+	oauthTokenProvider, err := oauth.NewTokenProvider(cfg.OAuthProvider, httpClient)
 	if err != nil {
 		return nil, err
 	}
 
-	//prepare secured http client with token provider picked from secret
-	requestProvider := httputil.NewRequestProvider(uudSrv)
-
-	//TODO uncomment this to run locally - replace oauthTokenProvider
-	//oauthTokenProvider := oauth.NewTokenProviderFromValue("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0.")
-	oauthTokenProvider := oauth.NewTokenProviderFromSecret(cfg.OAuthProvider, httpClient, requestProvider, k8sClient)
-	securedClient, err := httputil.NewSecuredHTTPClient(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
-	if err != nil {
-		return nil, err
+	securedTransport := httputil.NewSecuredTransport(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
+	securedClient := &http.Client{
+		Transport: securedTransport,
+		Timeout:   cfg.HttpClient.Timeout,
 	}
 
 	// prepare graphql client that uses secured http client as a basis
-	gqlClient, err := graphql.NewClient(cfg.GraphQLClient, securedClient)
-	if err != nil {
-		return nil, err
-	}
+	graphClient := gql.NewClient(cfg.GraphQLClient.GraphqlEndpoint, gql.WithHTTPClient(securedClient))
+	gqlClient := graphql.NewClient(cfg.GraphQLClient, graphClient)
 
 	inputGraphqlizer := &graphqlizer.Graphqlizer{}
 	outputGraphqlizer := &graphqlizer.GqlFieldsProvider{}
 
 	// prepare director graphql client
 	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer), nil
-}
-
-func prepareK8sClient() (client.Client, error) {
-	k8sCfg, err := k8scfg.GetConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	mapper, err := apiutil.NewDiscoveryRESTMapper(k8sCfg)
-	if err != nil {
-		err = wait.Poll(time.Second, time.Minute, func() (bool, error) {
-			mapper, err = apiutil.NewDiscoveryRESTMapper(k8sCfg)
-			if err != nil {
-				return false, nil
-			}
-			return true, nil
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "while waiting for client mapper")
-		}
-	}
-
-	cli, err := client.New(k8sCfg, client.Options{Mapper: mapper})
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating a client")
-	}
-
-	return cli, nil
 }

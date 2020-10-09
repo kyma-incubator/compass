@@ -42,7 +42,6 @@ func (l *LagerAdapter) RegisterSink(Sink) {
 // Session returns new Logger with provided data
 func (l *LagerAdapter) Session(session string, data ...Data) Logger {
 	logger := l.newWithData(data...)
-	// this is being overridden by filename hook in Peripli, Session method is used interchangeably with WithData
 	logger.entry.Data[FieldComponentName] = session
 	return logger
 }

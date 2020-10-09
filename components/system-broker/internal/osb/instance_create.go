@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
@@ -96,7 +97,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 	auth := auths[0]
 
-	logger.Info("package instance credentials have status %s", auth.Status.Condition)
+	logger.Infof("package instance credentials have status %s", auth.Status.Condition)
 
 	if IsFailed(auths[0].Status) {
 		return domain.ProvisionedServiceSpec{}, errors.Errorf("requesting package instance credentials from director failed, got status %+v", *auth.Status)

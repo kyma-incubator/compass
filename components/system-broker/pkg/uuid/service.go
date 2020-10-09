@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package uid
+package uuid
 
 import "github.com/google/uuid"
+
+type Service interface {
+	Generate() string
+}
 
 type service struct{}
 

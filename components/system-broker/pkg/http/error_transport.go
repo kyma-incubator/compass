@@ -17,10 +17,11 @@
 package http
 
 import (
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/pkg/errors"
 )
 
 func NewErrorHandlerTransport(roundTripper HTTPRoundTripper) *ErrorHandlerTransport {
@@ -40,13 +41,13 @@ func (c *ErrorHandlerTransport) RoundTrip(request *http.Request) (*http.Response
 	}
 
 	if response.StatusCode >= http.StatusBadRequest {
-		return nil, HandleResponseError(response)
+		return nil, handleResponseError(response)
 	}
 
 	return response, nil
 }
 
-func HandleResponseError(response *http.Response) error {
+func handleResponseError(response *http.Response) error {
 	defer func() {
 		if err := response.Body.Close(); err != nil {
 			log.D().Errorf("ReadCloser couldn't be closed: %v", err)

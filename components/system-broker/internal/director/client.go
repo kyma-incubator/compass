@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/asaskevich/govalidator"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
@@ -174,7 +175,6 @@ func (c *GraphQLClient) FindPackageInstanceCredentialsForContext(ctx context.Con
 	if err != nil {
 		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auths")
 	}
-
 	var authsResp []*schema.PackageInstanceAuth
 	for _, auth := range resp.Result.Package.InstanceAuths {
 		if auth == nil {

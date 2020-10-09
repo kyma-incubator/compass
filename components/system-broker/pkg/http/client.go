@@ -19,9 +19,12 @@ package http
 import (
 	"crypto/tls"
 	"net/http"
-	"sync"
 	"time"
 )
+
+type Client interface {
+	Do(req *http.Request) (*http.Response, error)
+}
 
 func NewHTTPTransport(config *Config) *http.Transport {
 	return &http.Transport{
@@ -41,17 +44,4 @@ func NewClient(timeout time.Duration, transport http.RoundTripper) *http.Client 
 		Transport: transport,
 		Timeout:   timeout,
 	}
-}
-
-func NewSecuredHTTPClient(timeout time.Duration, roundTripper HTTPRoundTripper, provider TokenProvider) (*http.Client, error) {
-	transport := &SecuredTransport{
-		roundTripper:  roundTripper,
-		tokenProvider: provider,
-		lock:          sync.Mutex{},
-	}
-
-	return &http.Client{
-		Transport: transport,
-		Timeout:   timeout,
-	}, nil
 }

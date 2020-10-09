@@ -18,6 +18,7 @@ package osb
 
 import (
 	"context"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/pkg/errors"

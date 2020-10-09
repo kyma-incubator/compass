@@ -20,13 +20,14 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"strings"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 type InstanceLastOperationEndpoint struct {
@@ -88,7 +89,7 @@ func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, insta
 	}
 
 	if authContext["instance_id"] != instanceID {
-		logger.Info("Package instance credentials instance id in context %s does not match instance id from request", authContext["instance_id"])
+		logger.Infof("Package instance credentials instance id in context %s does not match instance id from request", authContext["instance_id"])
 		return domain.LastOperation{}, apiresponses.ErrInstanceDoesNotExist
 	}
 

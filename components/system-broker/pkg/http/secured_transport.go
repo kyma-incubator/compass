@@ -18,21 +18,34 @@ package http
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"net/http"
 	"sync"
+	"time"
+
+	"github.com/pkg/errors"
 )
 
+//go:generate counterfeiter . TokenProvider
 type TokenProvider interface {
 	GetAuthorizationToken(ctx context.Context) (Token, error)
 }
 
 type SecuredTransport struct {
+	timeout       time.Duration
 	roundTripper  HTTPRoundTripper
 	tokenProvider TokenProvider
-	lock          sync.Mutex
+	lock          sync.RWMutex
 
 	token Token
+}
+
+func NewSecuredTransport(timeout time.Duration, roundTripper HTTPRoundTripper, provider TokenProvider) *SecuredTransport {
+	return &SecuredTransport{
+		timeout:       timeout,
+		roundTripper:  roundTripper,
+		tokenProvider: provider,
+		lock:          sync.RWMutex{},
+	}
 }
 
 func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, error) {
@@ -46,7 +59,7 @@ func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, err
 }
 
 func (c *SecuredTransport) refreshToken(ctx context.Context) error {
-	if !c.token.EmptyOrExpired() {
+	if c.validToken() {
 		return nil
 	}
 
@@ -60,4 +73,10 @@ func (c *SecuredTransport) refreshToken(ctx context.Context) error {
 	c.token = token
 
 	return nil
+}
+
+func (c *SecuredTransport) validToken() bool {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	return !c.token.EmptyOrExpired(c.timeout)
 }

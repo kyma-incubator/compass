@@ -19,10 +19,11 @@ package env
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"os"
 	"reflect"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 
 	"github.com/fsnotify/fsnotify"
 
@@ -39,7 +40,7 @@ type File struct {
 	Format   string `description:"extension of the configuration file"`
 }
 
-// DefaultConfigFile holds the default SM config file properties
+// DefaultConfigFile holds the default System Broker config file properties
 func DefaultConfigFile() File {
 	return File{
 		Name:     "application",
@@ -53,7 +54,7 @@ func CreatePFlagsForConfigFile(set *pflag.FlagSet) {
 	CreatePFlags(set, struct{ File File }{File: DefaultConfigFile()})
 }
 
-// Environment represents an abstraction over the env from which Service Manager configuration will be loaded
+// Environment represents an abstraction over the env from which System Broker configuration will be loaded
 //go:generate counterfeiter . Environment
 type Environment interface {
 	Get(key string) interface{}
@@ -162,18 +163,20 @@ func (v *ViperEnv) setupConfigFile(ctx context.Context, onConfigChangeHandlers .
 			if strings.Contains(event.String(), "WRITE") || strings.Contains(event.String(), "CREATE") {
 				logLevel := env.Get("log.level").(string)
 				logFormat := env.Get("log.format").(string)
-				logOutput := log.Configuration().Output
+				logOutput := env.Get("log.output").(string)
+				bootstrapCorrelationID := log.Configuration().BootstrapCorrelationID
 
 				log.C(ctx).Warnf("Reconfiguring logrus logging using level %s and format %s", logLevel, logFormat)
-				var err error
-				ctx, err = log.Configure(ctx, &log.Config{
-					Level:  logLevel,
-					Format: logFormat,
-					Output: logOutput,
+				newCtx, err := log.Configure(ctx, &log.Config{
+					Level:                  logLevel,
+					Format:                 logFormat,
+					Output:                 logOutput,
+					BootstrapCorrelationID: bootstrapCorrelationID,
 				})
 				if err != nil {
 					log.C(ctx).WithError(err).Errorf("Could not set log level to %s and log format to %s after config file modification event of type %s", logLevel, logFormat, event.String())
 				}
+				ctx = newCtx
 			}
 		}
 	}
@@ -190,7 +193,7 @@ func (v *ViperEnv) setupConfigFile(ctx context.Context, onConfigChangeHandlers .
 	return nil
 }
 
-// Default creates a default environment that can be used to boot up a Service Manager
+// Default creates a default environment that can be used to boot up a System Broker
 func Default(ctx context.Context, additionalPFlags ...func(set *pflag.FlagSet)) (Environment, error) {
 	set := EmptyFlagSet()
 
