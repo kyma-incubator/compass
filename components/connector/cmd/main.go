@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"path/filepath"
 	"sync"
@@ -35,7 +36,7 @@ func main() {
 
 	internalComponents, certificateLoader, revocationListLoader := config.InitInternalComponents(cfg, k8sClientSet)
 	go certificateLoader.Run()
-	revocationListLoader.Run()
+	go revocationListLoader.Run(context.Background())
 
 	tokenResolver := api.NewTokenResolver(internalComponents.TokenService)
 	certificateResolver := api.NewCertificateResolver(

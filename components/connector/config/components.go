@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
 	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
@@ -55,6 +57,7 @@ func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface) (Comp
 	revocationListLoader := revocation.NewRevocationListLoader(revocationListCache,
 		k8sClientset.CoreV1().ConfigMaps(configmapNamespace.Namespace),
 		configmapNamespace.Name,
+		time.Second,
 	)
 
 	csrSubjectConsts := certificates.CSRSubjectConsts{
