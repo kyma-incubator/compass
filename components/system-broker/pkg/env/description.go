@@ -35,7 +35,7 @@ func newDescriptionTree(root string) *descriptionTree {
 	}
 }
 
-func (t *descriptionTree) аddNode(tree *descriptionTree) {
+func (t *descriptionTree) addNode(tree *descriptionTree) {
 	if t.Children == nil {
 		t.Children = []*descriptionTree{tree}
 		return
@@ -134,7 +134,7 @@ func buildDescriptionTreeWithParameters(value interface{}, tree *descriptionTree
 				}
 
 				baseTree := newDescriptionTree(description)
-				tree.аddNode(baseTree)
+				tree.addNode(baseTree)
 				buildDescriptionTreeWithParameters(field.Value(), baseTree, buffer+name+".", result)
 			}
 		}

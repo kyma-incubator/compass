@@ -13,11 +13,10 @@ func TestClient_DoDoesNotReturnErrorWhenGQLSucceeds(t *testing.T) {
 	fakeGQLClient := &graphqlfakes.FakeGraphQLClient{}
 	fakeGQLClient.RunReturns(nil)
 
-	gqlClient, err := graphql.NewClient(graphql.DefaultConfig(), fakeGQLClient)
-	require.NoError(t, err)
+	gqlClient := graphql.NewClient(graphql.DefaultConfig(), fakeGQLClient)
 
 	require.NotNil(t, gqlClient)
-	err = gqlClient.Do(context.TODO(), nil, nil)
+	err := gqlClient.Do(context.TODO(), nil, nil)
 	require.NoError(t, err)
 }
 
@@ -26,11 +25,10 @@ func TestClient_DoDoesReturnErrorWhenGQLFails(t *testing.T) {
 	expectedError := errors.New("GraphQL client error")
 	fakeGQLClient.RunReturns(expectedError)
 
-	gqlClient, err := graphql.NewClient(graphql.DefaultConfig(), fakeGQLClient)
-	require.NoError(t, err)
+	gqlClient := graphql.NewClient(graphql.DefaultConfig(), fakeGQLClient)
 
 	require.NotNil(t, gqlClient)
-	err = gqlClient.Do(context.TODO(), nil, nil)
+	err := gqlClient.Do(context.TODO(), nil, nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), expectedError.Error())
 }

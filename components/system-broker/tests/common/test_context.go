@@ -2,11 +2,14 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"github.com/gavv/httpexpect"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"log"
 	"math"
 	"math/rand"
 	"net"
@@ -144,6 +147,19 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 
 	go sbServer.Start(ctx)
 
+	err = wait.PollImmediate(time.Millisecond * 250, time.Second * 5, func() (bool, error) {
+		_, err := http.Get(fmt.Sprintf("http://%s", sbServer.Addr))
+		if err != nil {
+			log.Printf("Waiting for server to start: %v", err)
+			return false, nil
+		}
+		return true, nil
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
 	return &testSystemBrokerServer{
 		url:             cfg.Server.SelfURL + cfg.Server.RootAPI,
 		cancel:          cancel,
@@ -153,7 +169,7 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 
 func findFreePort() string {
 	for {
-		port := strconv.Itoa(rand.Intn(math.MaxInt16-1023) + 1023)
+		port := strconv.Itoa(rand.Intn(math.MaxInt16) + math.MaxInt16 + 1)
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort("", port), time.Second)
 		if conn != nil {
 			_ = conn.Close()

@@ -34,7 +34,7 @@ type Client struct {
 	logging   bool
 }
 
-func NewClient(config *Config, gqlClient GraphQLClient) (*Client, error) {
+func NewClient(config *Config, gqlClient GraphQLClient) *Client {
 	client := &Client{
 		gqlClient: gqlClient,
 		logging:   config.EnableLogging,
@@ -45,7 +45,7 @@ func NewClient(config *Config, gqlClient GraphQLClient) (*Client, error) {
 		c.Log = client.addLog
 	}
 
-	return client, nil
+	return client
 }
 
 func (c *Client) Do(ctx context.Context, req *graphql.Request, res interface{}) error {

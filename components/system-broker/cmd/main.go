@@ -94,10 +94,7 @@ func prepareGqlClient(cfg *config.Config, uudSrv uuid.Service) (*director.GraphQ
 
 	// prepare graphql client that uses secured http client as a basis
 	graphClient := gql.NewClient(cfg.GraphQLClient.GraphqlEndpoint, gql.WithHTTPClient(securedClient))
-	gqlClient, err := graphql.NewClient(cfg.GraphQLClient, graphClient)
-	if err != nil {
-		return nil, err
-	}
+	gqlClient := graphql.NewClient(cfg.GraphQLClient, graphClient)
 
 	inputGraphqlizer := &graphqlizer.Graphqlizer{}
 	outputGraphqlizer := &graphqlizer.GqlFieldsProvider{}

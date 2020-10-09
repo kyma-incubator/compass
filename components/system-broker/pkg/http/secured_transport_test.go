@@ -51,7 +51,7 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsNewTokenAfterExpiration(t 
 	tokenProvider := &httpfakes.FakeTokenProvider{}
 	tokenProvider.GetAuthorizationTokenReturnsOnCall(0, httputil.Token{
 		AccessToken: accessToken1,
-		Expiration:  time.Now().Add(time.Millisecond * 100).Unix(),
+		Expiration:  time.Now().Unix(),
 	}, nil)
 	tokenProvider.GetAuthorizationTokenReturnsOnCall(1, httputil.Token{
 		AccessToken: accessToken2,
