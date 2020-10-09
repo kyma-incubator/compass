@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math"
-	"math/rand"
 	"net"
 	"net/http"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -169,16 +166,19 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 }
 
 func findFreePort() string {
-	for {
-		port := strconv.Itoa(rand.Intn(math.MaxInt16) + math.MaxInt16 + 1)
-		conn, err := net.DialTimeout("tcp", net.JoinHostPort("", port), time.Second)
-		if conn != nil {
-			_ = conn.Close()
-		}
-		if err != nil {
-			if strings.Contains(err.Error(), "connection refused") {
-				return port
-			}
-		}
+	// Create a new listener without specifying a port which will result in an open port being chosen
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		panic(err)
 	}
+
+	defer listener.Close()
+
+	hostString := listener.Addr().String()
+	_, port, err := net.SplitHostPort(hostString)
+	if err != nil {
+		panic(err)
+	}
+
+	return port
 }
