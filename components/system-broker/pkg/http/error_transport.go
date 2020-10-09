@@ -17,10 +17,11 @@
 package http
 
 import (
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/pkg/errors"
 )
 
 func NewErrorHandlerTransport(roundTripper HTTPRoundTripper) *ErrorHandlerTransport {

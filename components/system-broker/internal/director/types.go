@@ -18,6 +18,7 @@ package director
 
 import (
 	"encoding/json"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"strconv"

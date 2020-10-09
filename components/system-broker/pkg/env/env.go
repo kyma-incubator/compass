@@ -19,10 +19,11 @@ package env
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"os"
 	"reflect"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 
 	"github.com/fsnotify/fsnotify"
 

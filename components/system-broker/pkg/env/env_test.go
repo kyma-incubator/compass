@@ -3,6 +3,13 @@ package env_test
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/fatih/structs"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
@@ -11,12 +18,6 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/suite"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-	"testing"
-	"time"
 
 	"gopkg.in/yaml.v2"
 )

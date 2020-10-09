@@ -1,9 +1,10 @@
 package graphql_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestConfig_Validate(t *testing.T) {

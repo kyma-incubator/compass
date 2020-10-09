@@ -20,13 +20,14 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"strings"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 type InstanceLastOperationEndpoint struct {

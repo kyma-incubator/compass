@@ -2,9 +2,10 @@ package oauth
 
 import (
 	"context"
+	"time"
+
 	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"time"
 )
 
 func NewTokenProviderFromValue(t string) *TokenProviderFromValue {

@@ -19,6 +19,7 @@ package osb
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
 	"github.com/pivotal-cf/brokerapi/v7/domain"

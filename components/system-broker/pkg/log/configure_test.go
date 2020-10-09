@@ -3,12 +3,13 @@ package log_test
 import (
 	"bytes"
 	"context"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/require"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
 
 // TestMultipleGoroutinesDefaultLog validates that no race conditions occur when two go routines log using the default log

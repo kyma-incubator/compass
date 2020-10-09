@@ -2,12 +2,13 @@ package signal_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/signal"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/signal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHandleInterrupts(t *testing.T) {

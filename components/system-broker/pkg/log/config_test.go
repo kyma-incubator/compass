@@ -1,9 +1,10 @@
 package log_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestConfig_Validate(t *testing.T) {

@@ -3,11 +3,12 @@ package http_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
+	"github.com/stretchr/testify/require"
 
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 )

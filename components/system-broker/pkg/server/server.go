@@ -19,15 +19,16 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/panic_recovery"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"net/http/pprof"
 	"strconv"
 	"sync/atomic"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/panic_recovery"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Server struct {

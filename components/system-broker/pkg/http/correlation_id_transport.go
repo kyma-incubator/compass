@@ -17,9 +17,10 @@
 package http
 
 import (
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
-	"net/http"
 )
 
 func NewCorrelationIDTransport(roundTripper HTTPRoundTripper, uuidService uuid.Service) *CorrelationIDTransport {

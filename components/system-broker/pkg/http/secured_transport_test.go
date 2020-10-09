@@ -2,13 +2,14 @@ package http_test
 
 import (
 	"errors"
-	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
+
+	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSecuredTransport_RoundTripSuccessfullyObtainsTokenAndUsesItUntilExpire(t *testing.T) {

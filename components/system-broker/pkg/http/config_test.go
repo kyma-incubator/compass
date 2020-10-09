@@ -1,9 +1,10 @@
 package http_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestConfig_Validate(t *testing.T) {

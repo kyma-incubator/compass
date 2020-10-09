@@ -1,13 +1,14 @@
 package log_test
 
 import (
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRequestLoggerGeneratesCorrelationIDWhenNotFoundInHeaders(t *testing.T) {

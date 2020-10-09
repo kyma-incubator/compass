@@ -3,10 +3,11 @@ package graphql_test
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql/graphqlfakes"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestClient_DoDoesNotReturnErrorWhenGQLSucceeds(t *testing.T) {

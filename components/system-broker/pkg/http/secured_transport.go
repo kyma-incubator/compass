@@ -18,10 +18,11 @@ package http
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 //go:generate counterfeiter . TokenProvider

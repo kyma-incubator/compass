@@ -17,6 +17,8 @@
 package config
 
 import (
+	"reflect"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
@@ -25,7 +27,6 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	"reflect"
 )
 
 type Validatable interface {

@@ -2,13 +2,14 @@ package log_test
 
 import (
 	"bytes"
-	"code.cloudfoundry.org/lager"
 	"context"
 	"errors"
+	"testing"
+
+	"code.cloudfoundry.org/lager"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 func TestLagerAdapter_Session(t *testing.T) {

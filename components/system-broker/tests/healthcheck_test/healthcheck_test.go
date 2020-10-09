@@ -1,10 +1,11 @@
 package healthcheck_test
 
 import (
-	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
+	"github.com/stretchr/testify/suite"
 )
 
 func TestTokenProviderFromSecretTestSuite(t *testing.T) {

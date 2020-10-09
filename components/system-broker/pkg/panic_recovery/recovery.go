@@ -2,11 +2,12 @@ package panic_recovery
 
 import (
 	"encoding/json"
+	"net/http"
+	"runtime/debug"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
 	"github.com/pkg/errors"
-	"net/http"
-	"runtime/debug"
 )
 
 // NewRecoveryMiddleware returns a standard mux middleware that provides panic recovery

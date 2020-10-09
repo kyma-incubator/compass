@@ -3,19 +3,20 @@ package oauth
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
 	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pkg/errors"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"net/http"
-	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	k8scfg "sigs.k8s.io/controller-runtime/pkg/client/config"
-	"strings"
-	"time"
 )
 
 type OAuthTokenProvider struct {

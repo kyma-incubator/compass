@@ -1,9 +1,10 @@
 package server_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestConfig_Validate(t *testing.T) {

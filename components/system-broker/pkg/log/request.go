@@ -17,9 +17,10 @@
 package log
 
 import (
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // CorrelationIDHeaders are the headers whose values will be taken as a correlation id for incoming requests

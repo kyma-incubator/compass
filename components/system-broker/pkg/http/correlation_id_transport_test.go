@@ -1,14 +1,15 @@
 package http_test
 
 import (
+	"net/http"
+	"net/url"
+	"testing"
+
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/url"
-	"testing"
 )
 
 func TestCorrelationIDTransport_RoundTripSetsCorrelationIDIfSuchIsPresent(t *testing.T) {

@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 func TestStructuredFormatter(t *testing.T) {
