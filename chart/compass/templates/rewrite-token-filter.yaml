@@ -21,8 +21,12 @@ spec:
         operation: INSERT_BEFORE
         value:
           name: envoy.lua
+          {{- if .Capabilities.APIVersions.Has "security.istio.io/v1beta1/PeerAuthentication" }}
           typed_config:
             "@type": "type.googleapis.com/envoy.config.filter.http.lua.v2.Lua"
+          {{- else }}
+          config:
+          {{- end }} 
             inlineCode: |
               function envoy_on_request(request_handle)
                 function urldecode(s)
