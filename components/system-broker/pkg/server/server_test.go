@@ -3,7 +3,7 @@ package server_test
 import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/url"
@@ -12,7 +12,7 @@ import (
 
 func TestNewAddsAdditionalRoutes(t *testing.T) {
 	config := server.DefaultConfig()
-	uuid := uid.NewService()
+	uuid := uuid.NewService()
 
 	server := server.New(config, uuid, func(router *mux.Router) {
 		router.HandleFunc(config.RootAPI+"/test", func(writer http.ResponseWriter, request *http.Request) {
@@ -25,7 +25,7 @@ func TestNewAddsAdditionalRoutes(t *testing.T) {
 
 func TestNewAddsSystemRoutes(t *testing.T) {
 	config := server.DefaultConfig()
-	uuid := uid.NewService()
+	uuid := uuid.NewService()
 
 	var tests = []struct {
 		Msg   string

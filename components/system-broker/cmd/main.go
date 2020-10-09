@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
@@ -32,7 +33,7 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/signal"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	gql "github.com/machinebox/graphql"
 )
 
@@ -56,7 +57,7 @@ func main() {
 	ctx, err = log.Configure(ctx, cfg.Log)
 	fatalOnError(err)
 
-	uuidSrv := uid.NewService()
+	uuidSrv := uuid.NewService()
 
 	directorGraphQLClient, err := prepareGqlClient(cfg, uuidSrv)
 	fatalOnError(err)
@@ -75,7 +76,7 @@ func fatalOnError(err error) {
 	}
 }
 
-func prepareGqlClient(cfg *config.Config, uudSrv uid.UUIDService) (*director.GraphQLClient, error) {
+func prepareGqlClient(cfg *config.Config, uudSrv uuid.Service) (*director.GraphQLClient, error) {
 	// prepare raw http transport and http client based on cfg
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
 	httpClient := httputil.NewClient(cfg.HttpClient.Timeout, httpTransport)
@@ -85,10 +86,10 @@ func prepareGqlClient(cfg *config.Config, uudSrv uid.UUIDService) (*director.Gra
 		return nil, err
 	}
 
-	securedTransport := httputil.NewSecuredTransport(httpTransport, oauthTokenProvider)
-	securedClient, err := httputil.NewSecuredHTTPClient(cfg.HttpClient.Timeout, securedTransport)
-	if err != nil {
-		return nil, err
+	securedTransport := httputil.NewSecuredTransport(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
+	securedClient := &http.Client{
+		Transport: securedTransport,
+		Timeout:   cfg.HttpClient.Timeout,
 	}
 
 	// prepare graphql client that uses secured http client as a basis

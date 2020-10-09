@@ -2,7 +2,7 @@ package log_test
 
 import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +21,7 @@ func TestRequestLoggerGeneratesCorrelationIDWhenNotFoundInHeaders(t *testing.T) 
 		Header: map[string][]string{},
 	}
 
-	handler := log.RequestLogger(uid.NewService())
+	handler := log.RequestLogger(uuid.NewService())
 	handler(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		entry := log.C(request.Context())
 
@@ -45,7 +45,7 @@ func TestRequestLoggerUseCorrelationIDFromHeaderIfProvided(t *testing.T) {
 	request.Header.Set("X-Correlation-ID", correlationID)
 	request.Header.Set("X-Real-IP", "127.0.0.1")
 
-	handler := log.RequestLogger(uid.NewService())
+	handler := log.RequestLogger(uuid.NewService())
 	handler(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		entry := log.C(request.Context())
 

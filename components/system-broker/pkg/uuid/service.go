@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package uid
+package uuid
 
 import "github.com/google/uuid"
 
-type UUIDService interface {
+type Service interface {
 	Generate() string
 }
 

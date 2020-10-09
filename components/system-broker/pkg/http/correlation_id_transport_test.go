@@ -4,7 +4,7 @@ import (
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http/httpfakes"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/url"
@@ -34,7 +34,7 @@ func TestCorrelationIDTransport_RoundTripSetsCorrelationIDIfSuchIsPresent(t *tes
 	}
 	request.Header.Set("X-Correlation-ID", correlationID)
 
-	correlationTransport := httputil.NewCorrelationIDTransport(transport, uid.NewService())
+	correlationTransport := httputil.NewCorrelationIDTransport(transport, uuid.NewService())
 	_, err = correlationTransport.RoundTrip(request)
 	require.NoError(t, err)
 }

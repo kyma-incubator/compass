@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uid"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"math"
 	"math/rand"
 	"net"
@@ -138,7 +138,7 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 		panic(err)
 	}
 
-	sbServer := server.New(cfg.Server, uid.NewService())
+	sbServer := server.New(cfg.Server, uuid.NewService())
 
 	sbServer.Addr = "localhost:" + strconv.Itoa(cfg.Server.Port) // Needed to avoid annoying macOS permissions popup
 

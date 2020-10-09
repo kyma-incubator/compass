@@ -36,7 +36,7 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsTokenAndUsesItUntilExpire(
 		Header: map[string][]string{},
 	}
 
-	securedTransport := httputil.NewSecuredTransport(transport, tokenProvider)
+	securedTransport := httputil.NewSecuredTransport(time.Second, transport, tokenProvider)
 	_, err = securedTransport.RoundTrip(request)
 	require.NoError(t, err)
 
@@ -75,7 +75,7 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsNewTokenAfterExpiration(t 
 		return nil, nil
 	}
 
-	securedTransport := httputil.NewSecuredTransport(transport, tokenProvider)
+	securedTransport := httputil.NewSecuredTransport(time.Second, transport, tokenProvider)
 	_, err = securedTransport.RoundTrip(request)
 	require.NoError(t, err)
 
@@ -104,7 +104,7 @@ func TestSecuredTransport_RoundTripFailsOnTokenProviderError(t *testing.T) {
 		Header: map[string][]string{},
 	}
 
-	securedTransport := httputil.NewSecuredTransport(transport, tokenProvider)
+	securedTransport := httputil.NewSecuredTransport(time.Second, transport, tokenProvider)
 	_, err = securedTransport.RoundTrip(request)
 	require.Error(t, err)
 }

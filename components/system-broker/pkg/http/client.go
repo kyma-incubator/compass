@@ -45,10 +45,3 @@ func NewClient(timeout time.Duration, transport http.RoundTripper) *http.Client 
 		Timeout:   timeout,
 	}
 }
-
-func NewSecuredHTTPClient(timeout time.Duration, securedTransport HTTPRoundTripper) (*http.Client, error) {
-	return &http.Client{
-		Transport: securedTransport,
-		Timeout:   timeout,
-	}, nil
-}

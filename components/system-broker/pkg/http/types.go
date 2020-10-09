@@ -21,8 +21,6 @@ import (
 	"time"
 )
 
-const TokenExpirationBuffer = 10 * time.Second
-
 //go:generate counterfeiter . HTTPRoundTripper
 type HTTPRoundTripper interface {
 	RoundTrip(*http.Request) (*http.Response, error)
@@ -33,11 +31,11 @@ type Token struct {
 	Expiration  int64  `json:"expires_in"`
 }
 
-func (token Token) EmptyOrExpired() bool {
+func (token Token) EmptyOrExpired(tokenExpirationBuffer time.Duration) bool {
 	if token.AccessToken == "" {
 		return true
 	}
 
 	expiration := time.Unix(token.Expiration, 0)
-	return time.Now().Add(TokenExpirationBuffer).After(expiration)
+	return time.Now().Add(tokenExpirationBuffer).After(expiration)
 }
