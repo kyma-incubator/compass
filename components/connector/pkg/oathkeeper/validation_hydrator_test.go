@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/pkg/errors"
-
 	"github.com/stretchr/testify/mock"
 
 	revocationMocks "github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
