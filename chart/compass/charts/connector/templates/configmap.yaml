@@ -13,6 +13,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 {{ if empty (lookup "v1" "ConfigMap" "compass-system" "revocations-config") }}
 data:
+  testKey: testValue
 {{ else }}
 data:
 {{ toYaml (lookup "v1" "ConfigMap" "compass-system" "revocations-config").data | indent 2 }}
