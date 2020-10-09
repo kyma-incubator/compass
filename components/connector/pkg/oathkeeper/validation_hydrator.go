@@ -92,6 +92,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		respondWithAuthSession(w, authSession)
 		return
 	}
+	// TODO Restore the functionality of verification whether the client certificate has been revoked inside validationHydrator in a safe way, probably with using a caching mechanism.
 
 	if authSession.Header == nil {
 		authSession.Header = map[string][]string{}
