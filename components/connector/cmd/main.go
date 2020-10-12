@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"path/filepath"
 	"sync"
@@ -33,9 +34,9 @@ func main() {
 	k8sClientSet, appErr := newCoreClientSet(cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout)
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
-	internalComponents, certificateLoader := config.InitInternalComponents(cfg, k8sClientSet)
-
+	internalComponents, certificateLoader, revocationListLoader := config.InitInternalComponents(cfg, k8sClientSet)
 	go certificateLoader.Run()
+	go revocationListLoader.Run(context.Background())
 
 	tokenResolver := api.NewTokenResolver(internalComponents.TokenService)
 	certificateResolver := api.NewCertificateResolver(

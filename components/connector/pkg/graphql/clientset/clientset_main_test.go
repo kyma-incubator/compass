@@ -1,6 +1,7 @@
 package clientset
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
@@ -74,9 +75,10 @@ func TestMain(m *testing.M) {
 		},
 	)
 
-	internalComponents, certLoader := config.InitInternalComponents(cfg, k8sClientSet)
+	internalComponents, certLoader, revocationListLoader := config.InitInternalComponents(cfg, k8sClientSet)
 
 	go certLoader.Run()
+	go revocationListLoader.Run(context.Background())
 
 	tokenService = internalComponents.TokenService
 	externalAPIUrl = fmt.Sprintf("https://%s%s", cfg.ExternalAddress, cfg.APIEndpoint)
