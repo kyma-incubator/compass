@@ -93,8 +93,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		return
 	}
 
-	isCertificateRevoked := tvh.revocationList.Contains(hash)
-	if isCertificateRevoked {
+	if isCertificateRevoked := tvh.revocationList.Contains(hash); isCertificateRevoked {
 		tvh.log.Info("Certificate is revoked.")
 		respondWithAuthSession(w, authSession)
 		return

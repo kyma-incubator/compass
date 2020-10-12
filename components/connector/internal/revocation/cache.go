@@ -1,6 +1,8 @@
 package revocation
 
 import (
+	"github.com/sirupsen/logrus"
+
 	"github.com/patrickmn/go-cache"
 )
 
@@ -32,6 +34,7 @@ func (cc *revocationCache) Get() map[string]string {
 
 	revocationListData, ok := data.(map[string]string)
 	if !ok {
+		logrus.Error("revocation cache did not have the expected config map type")
 		return make(map[string]string)
 	}
 

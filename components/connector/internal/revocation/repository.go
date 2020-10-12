@@ -27,13 +27,11 @@ type revocationListRepository struct {
 }
 
 func NewRepository(configListManager Manager, revocationListCache Cache, configMapName string) RevocationListRepository {
-	obj := &revocationListRepository{
+	return &revocationListRepository{
 		configListManager:   configListManager,
 		configMapName:       configMapName,
 		revocationListCache: revocationListCache,
 	}
-
-	return obj
 }
 
 func (r *revocationListRepository) Insert(hash string) error {
