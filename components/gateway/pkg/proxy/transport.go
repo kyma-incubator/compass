@@ -14,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var emptyQuery error = errors.New("empty graphql query")
+
 //go:generate mockery -name=RoundTrip -output=automock -outpkg=automock -case=underscore
 type RoundTrip interface {
 	RoundTrip(*http.Request) (*http.Response, error)
@@ -65,12 +67,14 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	defer httpcommon.CloseBody(resp.Body)
 
 	isMutation, err := checkQueryType(requestBody, "mutation")
-	if err != nil {
-		return nil, err
-	}
-	if !isMutation {
-		log.Println("Will not auditlog queries")
-		return resp, nil
+	if err != emptyQuery {
+		if err != nil {
+			return nil, err
+		}
+		if !isMutation {
+			log.Println("Will not auditlog queries")
+			return resp, nil
+		}
 	}
 
 	err = t.auditlogSvc.Log(string(requestBody), string(responseBody), claims)
@@ -87,7 +91,7 @@ func checkQueryType(requestBody []byte, typee string) (bool, error) {
 	}
 	queryObj, ok := query["query"]
 	if !ok {
-		return false, errors.New("empty query")
+		return false, emptyQuery
 	}
 	queryString, ok := queryObj.(string)
 	if !ok {
