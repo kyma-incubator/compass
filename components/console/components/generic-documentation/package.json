@@ -1,0 +1,31 @@
+{
+  "name": "@kyma-project/generic-documentation",
+  "private": false,
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@braintree/sanitize-url": "^3.1.0",
+    "@kyma-project/dc-async-api-render-engine": "0.3.3",
+    "@kyma-project/dc-markdown-render-engine": "0.3.0",
+    "@kyma-project/dc-odata-render-engine": "0.3.0",
+    "@kyma-project/dc-open-api-render-engine": "0.3.0",
+    "@kyma-project/documentation-component": "0.3.0",
+    "@kyma-project/odata-react": "0.4.0",
+    "@types/lodash.unescape": "^4.0.6",
+    "css.escape": "^1.5.1",
+    "lodash.unescape": "^4.0.1",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/react-copy-to-clipboard": "^4.2.6",
+    "kind-of": "^6.0.3",
+    "swagger-ui-dist": "^3.23.11"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc && npm run copy-assets-open-api",
+    "watch": "../../node_modules/.bin/tsc -p tsconfig.dev.json --watch",
+    "type-check": "../../node_modules/.bin/tsc --noEmit",
+    "copy-assets-open-api": "cp -r ./src/render-engines/open-api/styles/assets ./dist/render-engines/open-api/styles/assets"
+  }
+}

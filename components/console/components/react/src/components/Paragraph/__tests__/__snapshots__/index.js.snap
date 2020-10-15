@@ -1,0 +1,82 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Paragraph Element adds the extraSmall modifier 1`] = `
+.c0 {
+  font-size: 1rem;
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+<p
+  className="c0"
+>
+  A paragraph
+</p>
+`;
+
+exports[`Paragraph Element adds the fontWeightBold modifier 1`] = `
+.c0 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+<p
+  className="c0"
+>
+  A paragraph
+</p>
+`;
+
+exports[`Paragraph Element adds the italic modifier 1`] = `
+.c0 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+<p
+  className="c0"
+>
+  A paragraph
+</p>
+`;
+
+exports[`Paragraph Element adds the large modifier 1`] = `
+.c0 {
+  font-size: 1rem;
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+<p
+  className="c0"
+>
+  A paragraph
+</p>
+`;
+
+exports[`Paragraph Element adds the small modifier 1`] = `
+.c0 {
+  font-size: 1rem;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+<p
+  className="c0"
+>
+  A paragraph
+</p>
+`;
+
+exports[`Paragraph Element renders correctly 1`] = `
+.c0 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+<p
+  className="c0"
+>
+  A paragraph tag
+</p>
+`;

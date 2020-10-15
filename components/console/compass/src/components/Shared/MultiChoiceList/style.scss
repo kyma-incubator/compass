@@ -1,0 +1,11 @@
+.multi-choice-list__list-element {
+    list-style-type: none;
+    display: flex;
+    justify-content: space-between;
+    vertical-align: middle;
+    align-items: center;
+
+    & > :first-child {
+      margin-left: 3px;
+    }
+}
