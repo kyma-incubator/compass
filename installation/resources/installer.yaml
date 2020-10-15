@@ -116,7 +116,7 @@ spec:
       containers:
       - name: compass-installer-container
         image: eu.gcr.io/kyma-project/develop/installer:408cb6a6
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         env:
           - name: INST_RESOURCE
             value: "compass-installation"
