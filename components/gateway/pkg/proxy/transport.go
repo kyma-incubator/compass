@@ -97,8 +97,8 @@ func checkQueryType(requestBody []byte, typee string) (bool, error) {
 	if !ok {
 		return false, errors.New("query is not a string")
 	}
-
-	if strings.HasPrefix(string(queryString), typee) {
+	queryString = strings.TrimSpace(queryString)
+	if strings.HasPrefix(queryString, typee) {
 		return true, nil
 	}
 	return false, nil
