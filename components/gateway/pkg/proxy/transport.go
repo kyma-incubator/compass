@@ -2,7 +2,9 @@ package proxy
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 
@@ -62,11 +64,40 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	resp.Body = ioutil.NopCloser(bytes.NewReader(responseBody))
 	defer httpcommon.CloseBody(resp.Body)
 
+	isMutation, err := checkQueryType(requestBody, "mutation")
+	if err != nil {
+		return nil, err
+	}
+	if !isMutation {
+		log.Println("Will not auditlog queries")
+		return resp, nil
+	}
+
 	err = t.auditlogSvc.Log(string(requestBody), string(responseBody), claims)
 	if err != nil {
 		return nil, errors.Wrap(err, "while sending to auditlog")
 	}
 	return resp, nil
+}
+
+func checkQueryType(requestBody []byte, typee string) (bool, error) {
+	var query map[string]interface{}
+	if err := json.Unmarshal(requestBody, &query); err != nil {
+		return false, errors.Wrap(err, "could not unmarshal query")
+	}
+	queryObj, ok := query["query"]
+	if !ok {
+		return false, errors.New("empty query")
+	}
+	queryString, ok := queryObj.(string)
+	if !ok {
+		return false, errors.New("query is not a string")
+	}
+
+	if strings.HasPrefix(string(queryString), typee) {
+		return true, nil
+	}
+	return false, nil
 }
 
 type Claims struct {
