@@ -51,7 +51,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 
 	resp, err = t.RoundTripper.RoundTrip(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "while rount trip the request")
+		return nil, errors.Wrap(err, "on request round trip")
 	}
 
 	claims, err := t.getClaims(req.Header)

@@ -29,11 +29,12 @@ func (w *Worker) Start() {
 	for {
 		select {
 		case <-w.done:
+			log.Println("Worker for auditlog message processing has finished")
 			return
 		case msg := <-w.auditlogChannel:
 			err := w.svc.Log(msg.Request, msg.Response, msg.Claims)
 			if err != nil {
-				log.Printf("error while saving auditlog: %s\n", err.Error())
+				log.Printf("Error while saving auditlog message with error: %s", err.Error())
 			}
 		}
 	}
