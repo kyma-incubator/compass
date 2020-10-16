@@ -140,7 +140,7 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 			msgFactory = auditlog.NewMessageFactory(oauthCfg.User, oauthCfg.Tenant, uuidSvc, timeSvc)
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("invalid auditlog auth mode: %s", cfg.AuthMode))
+		return nil, fmt.Errorf("invalid auditlog auth mode: %s", cfg.AuthMode)
 	}
 
 	auditlogClient, err := auditlog.NewClient(cfg, httpClient)
