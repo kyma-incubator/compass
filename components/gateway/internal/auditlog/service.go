@@ -2,6 +2,8 @@ package auditlog
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -35,10 +37,15 @@ func (sink *Sink) Log(request, response string, claims proxy.Claims) error {
 		Claims:   claims,
 	}
 
+	log.Printf("Attempting to register auditlog message %+v for processing to the queue (size=%d, capacity=%d)\n",
+		msg, len(sink.logsChannel), cap(sink.logsChannel))
+
 	select {
 	case sink.logsChannel <- msg:
+		log.Printf("Successfully registered auditlog message %+v for processing to the queue (size=%d, capacity=%d)\n",
+			msg, len(sink.logsChannel), cap(sink.logsChannel))
 	case <-time.After(sink.timeout):
-		return errors.New("Cannot write to the channel")
+		return errors.New(fmt.Sprintf("Failed to write message %+v to the channel", msg))
 	}
 	return nil
 }

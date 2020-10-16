@@ -48,9 +48,11 @@ func main() {
 	done := make(chan bool)
 	var auditlogSvc AuditogService
 	if cfg.AuditlogEnabled {
+		log.Println("Auditlog is enabled")
 		auditlogSvc, err = initAuditLogs(done)
 		exitOnError(err, "Error while initializing auditlog service")
 	} else {
+		log.Println("Auditlog is disabled")
 		auditlogSvc = &auditlog.NoOpService{}
 	}
 
@@ -71,7 +73,7 @@ func main() {
 
 	http.Handle("/", router)
 
-	log.Printf("Listening on %s", cfg.Address)
+	log.Printf("Listening on %s\n", cfg.Address)
 	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
 		done <- true
 		panic(err)
@@ -101,11 +103,10 @@ func exitOnError(err error, context string) {
 }
 
 func initAuditLogs(done chan bool) (AuditogService, error) {
-	log.Println("Auditlog enabled")
 	cfg := auditlog.Config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
-		return nil, errors.Wrap(err, "Error while loading auditlog cfg")
+		return nil, errors.Wrap(err, "while loading auditlog cfg")
 	}
 
 	uuidSvc := uuid.NewService()
@@ -139,7 +140,7 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 			msgFactory = auditlog.NewMessageFactory(oauthCfg.User, oauthCfg.Tenant, uuidSvc, timeSvc)
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("Invalid Auditlog Auth mode: %s", cfg.AuthMode))
+		return nil, errors.New(fmt.Sprintf("Invalid auditlog auth mode: %s", cfg.AuthMode))
 	}
 
 	auditlogClient, err := auditlog.NewClient(cfg, httpClient)
@@ -167,6 +168,7 @@ func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
 func initWorker(auditlogSvc auditlog.AuditlogService, done chan bool, msgChannel chan auditlog.Message) {
 	worker := auditlog.NewWorker(auditlogSvc, msgChannel, done)
 	go func() {
+		log.Println("Starting worker for auditlog message processing")
 		worker.Start()
 	}()
 }
