@@ -38,8 +38,8 @@ func (sink *Sink) Log(request, response string, claims proxy.Claims) error {
 
 	select {
 	case sink.logsChannel <- msg:
-		log.Printf("Successfully registered auditlog message %+v for processing to the queue (size=%d, capacity=%d)",
-			msg, len(sink.logsChannel), cap(sink.logsChannel))
+		log.Printf("Successfully registered auditlog message for processing to the queue (size=%d, capacity=%d)",
+			len(sink.logsChannel), cap(sink.logsChannel))
 	case <-time.After(sink.timeout):
 		return errors.New("Cannot write to the channel")
 	}
