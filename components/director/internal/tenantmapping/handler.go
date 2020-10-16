@@ -34,22 +34,18 @@ type ObjectContextForSystemAuthProvider interface {
 	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string, authFlow oathkeeper.AuthFlow) (ObjectContext, error)
 }
 
-//go:generate mockery -name=Logger -output=automock -outpkg=automock -case=underscore
-type Logger interface {
-	Error(args ...interface{})
-}
-
 //go:generate mockery -name=TenantRepository -output=automock -outpkg=automock -case=underscore
 type TenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
+
+type LoggerKey = struct{}
 
 type Handler struct {
 	reqDataParser       ReqDataParser
 	transact            persistence.Transactioner
 	mapperForUser       ObjectContextForUserProvider
 	mapperForSystemAuth ObjectContextForSystemAuthProvider
-	logger              Logger
 }
 
 func NewHandler(
@@ -62,43 +58,47 @@ func NewHandler(
 		transact:            transact,
 		mapperForUser:       mapperForUser,
 		mapperForSystemAuth: mapperForSystemAuth,
-		logger:              logrus.WithField("component", "tenant-mapping-handler"),
 	}
 }
 
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	log := LoggerFromContextOrDefault(req.Context())
+
 	if req.Method != http.MethodPost {
-		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusBadRequest)
+		err := fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method)
+		log.Errorf(err)
+		http.Error(writer, err, http.StatusBadRequest)
 		return
 	}
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		h.logError(err, "while parsing the request")
-		h.respond(writer, reqData.Body)
+		log.Errorf("An error occurred while parsing the request: %s", err.Error())
+		h.respond(writer, reqData.Body, log)
 		return
 	}
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		h.logError(err, "while opening the db transaction")
-		h.respond(writer, reqData.Body)
+		log.Errorf("An error occurred while opening the db transaction: %s", err.Error())
+		h.respond(writer, reqData.Body, log)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(tx)
 
 	ctx := persistence.SaveToContext(req.Context(), tx)
 
+	log.Infof("Getting object context")
 	objCtx, err := h.getObjectContext(ctx, reqData)
 	if err != nil {
-		h.logError(err, "while getting object context")
-		h.respond(writer, reqData.Body)
+		log.Errorf("An error occurred while getting object context: %s", err.Error())
+		h.respond(writer, reqData.Body, log)
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		h.logError(err, "while committing transaction")
-		h.respond(writer, reqData.Body)
+		log.Errorf("An error occurred while committing transaction: %s", err.Error())
+		h.respond(writer, reqData.Body, log)
 		return
 	}
 
@@ -108,7 +108,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData.Body.Extra["consumerID"] = objCtx.ConsumerID
 	reqData.Body.Extra["consumerType"] = objCtx.ConsumerType
 
-	h.respond(writer, reqData.Body)
+	h.respond(writer, reqData.Body, log)
 }
 
 func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData) (ObjectContext, error) {
@@ -116,6 +116,12 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqDa
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while determining the auth ID from the request")
 	}
+
+	log := LoggerFromContextOrDefault(ctx).WithFields(logrus.Fields{
+		"authID":   authID,
+		"authFlow": authFlow,
+	})
+	ctx = SaveLoggerToContext(ctx, log)
 
 	switch authFlow {
 	case oathkeeper.JWTAuthFlow:
@@ -127,15 +133,22 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqDa
 	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)
 }
 
-func (h *Handler) logError(err error, wrapperStr string) {
-	wrappedErr := errors.Wrap(err, wrapperStr)
-	h.logger.Error(wrappedErr)
-}
-
-func (h *Handler) respond(writer http.ResponseWriter, body oathkeeper.ReqBody) {
+func (h *Handler) respond(writer http.ResponseWriter, body oathkeeper.ReqBody, log *logrus.Entry) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {
-		h.logError(err, "while encoding data")
+		log.Errorf("while encoding data: %s", err.Error())
 	}
+}
+
+func SaveLoggerToContext(ctx context.Context, logger *logrus.Entry) context.Context {
+	return context.WithValue(ctx, LoggerKey{}, logger)
+}
+
+func LoggerFromContextOrDefault(ctx context.Context) *logrus.Entry {
+	log, ok := ctx.Value(LoggerKey{}).(*logrus.Entry)
+	if !ok {
+		return logrus.WithField("component", "tenant-mapping-handler")
+	}
+	return log
 }

@@ -2,6 +2,7 @@ package tenantmapping_test
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -150,6 +151,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 	t.Run("returns error when unable to get the ReferenceObjectType of underlying SystemAuth", func(t *testing.T) {
 		authID := uuid.New()
 		sysAuth := &model.SystemAuth{}
+		sysAuth.ID = "42"
 
 		reqData := oathkeeper.ReqData{}
 
@@ -160,7 +162,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while getting reference object type: Internal Server Error: unknown reference object type")
+		require.EqualError(t, err, "while getting reference object type for system auth id 42: Internal Server Error: unknown reference object type")
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -182,7 +184,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Integration System: while fetching scopes: the key does not exist in the source object [key=scope]")
+		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Integration System, using auth flow: OAuth2: while fetching scopes: the key does not exist in the source object [key=scope]", sysAuth.ID))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -212,7 +214,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching tenant: while parsing the value for tenant: Internal Server Error: unable to cast the value to a string type")
+		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: OAuth2: while fetching tenant external id: while parsing the value for key=tenant: Internal Server Error: unable to cast the value to a string type", sysAuth.ID))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -280,7 +282,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: Internal Server Error: system auth tenant id cannot be nil")
+		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: OAuth2: Internal Server Error: system auth tenant id cannot be nil", sysAuth.ID))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -303,7 +305,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching scopes: the key does not exist in the source object [key=scope]")
+		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: OAuth2: while fetching scopes: the key does not exist in the source object [key=scope]", sysAuth.ID))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock)
 	})
@@ -329,7 +331,7 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.CertificateFlow)
 
-		require.EqualError(t, err, "while fetching the tenant and scopes for object of type Application: while fetching scopes: some-error")
+		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: Certificate: while fetching scopes: some-error", sysAuth.ID))
 
 		mock.AssertExpectationsForObjects(t, systemAuthSvcMock, scopesGetterMock)
 	})
