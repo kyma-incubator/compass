@@ -35,8 +35,6 @@ func (w *Worker) Start() {
 			err := w.svc.Log(msg.Request, msg.Response, msg.Claims)
 			if err != nil {
 				log.Printf("error while saving auditlog message with error: %s", err.Error())
-			} else {
-				log.Printf("Successfully processed auditlog message")
 			}
 		}
 	}
