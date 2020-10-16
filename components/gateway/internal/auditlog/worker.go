@@ -34,10 +34,10 @@ func (w *Worker) Start() {
 		case msg := <-w.auditlogChannel:
 			err := w.svc.Log(msg.Request, msg.Response, msg.Claims)
 			if err != nil {
-				log.Printf("error while saving auditlog message %+v with error: %s", msg, err.Error())
-				return
+				log.Printf("error while saving auditlog message with error: %s", err.Error())
+			} else {
+				log.Printf("Successfully processed auditlog message")
 			}
-			log.Printf("Successfully processed auditlog message %+v", msg)
 		}
 	}
 }
