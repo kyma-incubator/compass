@@ -37,12 +37,12 @@ func (sink *Sink) Log(request, response string, claims proxy.Claims) error {
 		Claims:   claims,
 	}
 
-	log.Printf("Attempting to register auditlog message %+v for processing to the queue (size=%d, capacity=%d)\n",
+	log.Printf("Attempting to register auditlog message %+v for processing to the queue (size=%d, capacity=%d)",
 		msg, len(sink.logsChannel), cap(sink.logsChannel))
 
 	select {
 	case sink.logsChannel <- msg:
-		log.Printf("Successfully registered auditlog message %+v for processing to the queue (size=%d, capacity=%d)\n",
+		log.Printf("Successfully registered auditlog message %+v for processing to the queue (size=%d, capacity=%d)",
 			msg, len(sink.logsChannel), cap(sink.logsChannel))
 	case <-time.After(sink.timeout):
 		return errors.New(fmt.Sprintf("Failed to write message %+v to the channel", msg))

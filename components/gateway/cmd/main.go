@@ -73,7 +73,7 @@ func main() {
 
 	http.Handle("/", router)
 
-	log.Printf("Listening on %s\n", cfg.Address)
+	log.Printf("Listening on %s", cfg.Address)
 	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
 		done <- true
 		panic(err)
@@ -81,7 +81,7 @@ func main() {
 }
 
 func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string, transport HTTPTransport, middleware ...mux.MiddlewareFunc) error {
-	log.Printf("Proxying requests on path `%s` to `%s`\n", path, targetOrigin)
+	log.Printf("Proxying requests on path `%s` to `%s`", path, targetOrigin)
 
 	componentProxy, err := proxy.New(targetOrigin, path, transport)
 	if err != nil {
@@ -152,7 +152,7 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 	msgChannel := make(chan auditlog.Message, cfg.MsgChannelSize)
 	initWorker(auditlogSvc, done, msgChannel)
 
-	log.Printf("Auditlog configured successfully, auth mode:%s\n", cfg.AuthMode)
+	log.Printf("Auditlog configured successfully, auth mode:%s", cfg.AuthMode)
 	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout), nil
 }
 
