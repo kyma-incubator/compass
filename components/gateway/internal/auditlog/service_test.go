@@ -233,7 +233,7 @@ func TestSink_TimeoutOnWrite(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "Cannot write to the channel")
+	assert.EqualError(t, err, "cannot write to the channel")
 }
 
 func fixClaims() proxy.Claims {
