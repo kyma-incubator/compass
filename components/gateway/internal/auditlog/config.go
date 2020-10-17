@@ -9,6 +9,7 @@ type Config struct {
 	AuthMode          AuthMode      `envconfig:"APP_AUDITLOG_AUTH_MODE"`
 	MsgChannelSize    int           `envconfig:"APP_AUDITLOG_CHANNEL_SIZE,default=100"`
 	MsgChannelTimeout time.Duration `envconfig:"APP_AUDITLOG_CHANNEL_TIMEOUT,default=5s"`
+	WriteWorkers      int           `envconfig:"APP_AUDITLOG_WRITE_WORKERS,default=5"`
 }
 
 type BasicAuthConfig struct {

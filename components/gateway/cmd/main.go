@@ -150,7 +150,8 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 
 	auditlogSvc := auditlog.NewService(auditlogClient, msgFactory)
 	msgChannel := make(chan auditlog.Message, cfg.MsgChannelSize)
-	initWorker(auditlogSvc, done, msgChannel)
+	workers := make(chan bool, cfg.WriteWorkers)
+	initWorkers(workers, auditlogSvc, done, msgChannel)
 
 	log.Printf("Auditlog configured successfully, auth mode:%s", cfg.AuthMode)
 	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout), nil
@@ -165,10 +166,21 @@ func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
 	}
 }
 
-func initWorker(auditlogSvc auditlog.AuditlogService, done chan bool, msgChannel chan auditlog.Message) {
-	worker := auditlog.NewWorker(auditlogSvc, msgChannel, done)
+func initWorkers(workers chan bool, auditlogSvc auditlog.AuditlogService, done chan bool, msgChannel chan auditlog.Message) {
 	go func() {
-		log.Println("Starting worker for auditlog message processing")
-		worker.Start()
+		for {
+			select {
+			case <-done:
+				log.Println("Worker starter goroutine finished")
+				return
+			case workers <- true:
+			}
+			worker := auditlog.NewWorker(auditlogSvc, msgChannel, done)
+			go func() {
+				log.Println("Starting worker for auditlog message processing")
+				worker.Start()
+				<-workers
+			}()
+		}
 	}()
 }

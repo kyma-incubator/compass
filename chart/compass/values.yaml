@@ -26,7 +26,7 @@ global:
       version: "PR-1529"
     gateway:
       dir:
-      version: "PR-1559"
+      version: "PR-1565"
     healthchecker:
       dir:
       version: "PR-1460"

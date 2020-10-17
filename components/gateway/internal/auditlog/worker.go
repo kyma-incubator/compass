@@ -32,6 +32,7 @@ func (w *Worker) Start() {
 			log.Println("Worker for auditlog message processing has finished")
 			return
 		case msg := <-w.auditlogChannel:
+			log.Printf("Read from auditlog channel (size=%d, cap=%d)", len(w.auditlogChannel), cap(w.auditlogChannel))
 			err := w.svc.Log(msg.Request, msg.Response, msg.Claims)
 			if err != nil {
 				log.Printf("Error while saving auditlog message with error: %s", err.Error())
