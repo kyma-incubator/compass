@@ -267,12 +267,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsers
 
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	handler := tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth)
-	logger := log.WithField("component", "tenant-mapping-handler")
-	return func(writer http.ResponseWriter, req *http.Request) {
-		newCtx := tenantmapping.SaveLoggerToContext(req.Context(), logger)
-		handler.ServeHTTP(writer, req.WithContext(newCtx))
-	}, nil
+	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }
 
 func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {

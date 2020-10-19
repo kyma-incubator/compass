@@ -30,7 +30,7 @@ type mapperForSystemAuth struct {
 }
 
 func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string, authFlow oathkeeper.AuthFlow) (ObjectContext, error) {
-	log := LoggerFromContextOrDefault(ctx)
+	log := loggerFromContextOrDefault(ctx)
 
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authID)
 	if err != nil {
@@ -62,7 +62,7 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 
 	refObjID, err := sysAuth.GetReferenceObjectID()
 	if err != nil {
-		return ObjectContext{}, errors.Wrap(err, "while getting context object")
+		return ObjectContext{}, errors.Wrap(err, "while getting reference object id")
 	}
 	log.Debugf("Reference object id is %s", refObjID)
 
@@ -80,7 +80,7 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper.ReqData) (TenantContext, string, error) {
 	var externalTenantID, scopes string
 
-	log := LoggerFromContextOrDefault(ctx)
+	log := loggerFromContextOrDefault(ctx)
 
 	scopes, err := reqData.GetScopes()
 	if err != nil {
@@ -93,7 +93,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context
 		if !apperrors.IsKeyDoesNotExist(err) {
 			return TenantContext{}, scopes, errors.Wrap(err, "while fetching tenant external id")
 		}
-		log.Warning(err.Error())
+		log.Warningf("Could not get tenant external id, error: %s", err.Error())
 
 		log.Info("Could not create tenant context, returning empty context...")
 		return TenantContext{}, scopes, nil
@@ -118,7 +118,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 	var externalTenantID, scopes string
 	var err error
 
-	log := LoggerFromContextOrDefault(ctx)
+	log := loggerFromContextOrDefault(ctx)
 
 	if sysAuth.TenantID == nil {
 		return TenantContext{}, scopes, apperrors.NewInternalError("system auth tenant id cannot be nil")
@@ -147,10 +147,10 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 		if !apperrors.IsKeyDoesNotExist(err) {
 			return TenantContext{}, scopes, errors.Wrap(err, "while fetching tenant external id")
 		}
-		log.Warning(err.Error())
+		log.Warningf("Could not get tenant external id, error: %s", err.Error())
 
 		log.Infof("Returning context with empty external tenant ID and internal tenant id: %s", *sysAuth.TenantID)
-		return NewTenantContext(externalTenantID, *sysAuth.TenantID), scopes, nil
+		return NewTenantContext("", *sysAuth.TenantID), scopes, nil
 	}
 
 	log.Infof("Getting the tenant with external ID: %s", externalTenantID)

@@ -32,7 +32,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 	var staticUser *StaticUser
 	var err error
 
-	log := LoggerFromContextOrDefault(ctx).WithFields(logrus.Fields{
+	log := loggerFromContextOrDefault(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumer.User,
 	})
 
@@ -52,7 +52,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 		if !apperrors.IsKeyDoesNotExist(err) {
 			return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", username)
 		}
-		log.Warning(err.Error())
+		log.Warningf("Could not get tenant external id, error: %s", err.Error())
 
 		log.Info("Could not create tenant context, returning empty context...")
 		return NewObjectContext(TenantContext{}, scopes, username, consumer.User), nil
