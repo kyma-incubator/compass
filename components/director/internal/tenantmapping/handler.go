@@ -88,7 +88,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	ctx := persistence.SaveToContext(req.Context(), tx)
 
-	log.Infof("Getting object context")
+	log.Info("Getting object context")
 	objCtx, err := h.getObjectContext(ctx, reqData)
 	if err != nil {
 		log.Errorf("An error occurred while getting object context: %s", err.Error())

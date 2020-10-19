@@ -36,7 +36,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 		"consumer_type": consumer.User,
 	})
 
-	log.Infof("Getting scopes from groups")
+	log.Info("Getting scopes from groups")
 	scopes = m.getScopesForUserGroups(reqData, log)
 	if !hasScopes(scopes) {
 		log.Info("No scopes found from groups, getting user data")
