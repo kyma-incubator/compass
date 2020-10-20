@@ -20,10 +20,8 @@ import (
 )
 
 func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolver, authContextMiddleware mux.MiddlewareFunc) (*http.Server, error) {
-	externalResolver := api.ExternalResolver{CertificateResolver: certResolver}
-
 	gqlInternalCfg := externalschema.Config{
-		Resolvers: &externalResolver,
+		Resolvers: &api.ExternalResolver{CertificateResolver: certResolver},
 	}
 
 	externalExecutableSchema := externalschema.NewExecutableSchema(gqlInternalCfg)
@@ -48,10 +46,8 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 }
 
 func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) (*http.Server, error) {
-	internalResolver := api.InternalResolver{TokenResolver: tokenResolver}
-
 	gqlInternalCfg := internalschema.Config{
-		Resolvers: &internalResolver,
+		Resolvers: &api.InternalResolver{TokenResolver: tokenResolver},
 	}
 
 	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)

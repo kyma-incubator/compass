@@ -15,22 +15,22 @@ type Loader interface {
 }
 
 type revocationListLoader struct {
-	revocationListCache Cache
-	configMapManager    Manager
-	configMapName       string
-	reconnectInterval   time.Duration
+	revokedCertsCache Cache
+	configMapManager  Manager
+	configMapName     string
+	reconnectInterval time.Duration
 }
 
-func NewRevocationListLoader(revocationListCache Cache,
+func NewRevokedCertificatesLoader(revokedCertsCache Cache,
 	configMapManager Manager,
 	configMapName string,
 	reconnectInterval time.Duration,
 ) Loader {
 	return &revocationListLoader{
-		revocationListCache: revocationListCache,
-		configMapManager:    configMapManager,
-		configMapName:       configMapName,
-		reconnectInterval:   reconnectInterval,
+		revokedCertsCache: revokedCertsCache,
+		configMapManager:  configMapManager,
+		configMapName:     configMapName,
+		reconnectInterval: reconnectInterval,
 	}
 }
 
@@ -82,11 +82,11 @@ func (rl *revocationListLoader) processEvents(ctx context.Context, events <-chan
 					log.Error("Unexpected error: object is not configmap. Try again")
 					continue
 				}
-				rl.revocationListCache.Put(config.Data)
+				rl.revokedCertsCache.Put(config.Data)
 				log.Debug("New configmap is:", config.Data)
 			case watch.Deleted:
 				log.Println("revocation list deleted")
-				rl.revocationListCache.Put(make(map[string]string))
+				rl.revokedCertsCache.Put(make(map[string]string))
 			case watch.Error:
 				log.Error("Error event is received, stop revocation list configmap watcher and try again...")
 				return

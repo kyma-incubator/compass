@@ -25,7 +25,7 @@ func prep(ctx context.Context, number int) (Cache, *testWatch, *mocks.Manager) {
 		On("Watch", mock.AnythingOfType("v1.ListOptions")).
 		Return(watcher, nil).
 		Times(number)
-	loader := NewRevocationListLoader(cache, configListManagerMock, configMapName, time.Millisecond)
+	loader := NewRevokedCertificatesLoader(cache, configListManagerMock, configMapName, time.Millisecond)
 
 	go loader.Run(ctx)
 	return cache, watcher, configListManagerMock

@@ -15,18 +15,18 @@ type Loader interface {
 }
 
 type certLoader struct {
-	certificatesCache       Cache
+	certsCache              Cache
 	secretsRepository       secrets.Repository
 	caSecret                types.NamespacedName
 	rootCACertificateSecret types.NamespacedName
 }
 
-func NewCertificateLoader(certificatesCache Cache,
+func NewCertificateLoader(certsCache Cache,
 	secretsRepository secrets.Repository,
 	caSecret types.NamespacedName,
 	rootCACertificateSecretName types.NamespacedName) Loader {
 	return &certLoader{
-		certificatesCache:       certificatesCache,
+		certsCache:              certsCache,
 		secretsRepository:       secretsRepository,
 		caSecret:                caSecret,
 		rootCACertificateSecret: rootCACertificateSecretName,
@@ -53,5 +53,5 @@ func (cl *certLoader) loadSecretToCache(secret types.NamespacedName) {
 		return
 	}
 
-	cl.certificatesCache.Put(secret.Name, secretData)
+	cl.certsCache.Put(secret.Name, secretData)
 }

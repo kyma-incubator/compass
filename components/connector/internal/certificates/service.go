@@ -26,13 +26,13 @@ type certificateService struct {
 }
 
 func NewCertificateService(
-	certificateCache Cache,
+	certsCache Cache,
 	certUtil CertificateUtility,
 	caSecretName, rootCACertificateSecretName string,
 	caCertificateSecretKey, caKeySecretKey, rootCACertificateSecretKey string) Service {
 
 	return &certificateService{
-		certificateCache:            certificateCache,
+		certificateCache:            certsCache,
 		certUtil:                    certUtil,
 		caSecretName:                caSecretName,
 		caCertificateSecretKey:      caCertificateSecretKey,
