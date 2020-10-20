@@ -113,7 +113,7 @@ func (d *ReqData) GetExternalTenantID() (string, error) {
 	if tenantVal, ok := d.Body.Extra[ExternalTenantKey]; ok {
 		tenant, err := str.Cast(tenantVal)
 		if err != nil {
-			return "", errors.Wrapf(err, "while parsing the value for %s", ExternalTenantKey)
+			return "", errors.Wrapf(err, "while parsing the value for key=%s", ExternalTenantKey)
 		}
 
 		return tenant, nil
