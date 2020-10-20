@@ -17,6 +17,7 @@ import (
 
 type methodToTest = func(ctx context.Context, tenant string, conditions repo.Conditions) error
 type methodToTestWithoutTenant = func(ctx context.Context, conditions repo.Conditions) error
+
 var tableName = "users"
 
 func TestDelete(t *testing.T) {
