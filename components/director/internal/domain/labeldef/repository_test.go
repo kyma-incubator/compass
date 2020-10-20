@@ -166,7 +166,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
+		require.EqualError(t, err, "Internal Server Error: while updating single entity from 'public.label_definitions' table: some error")
 	})
 
 	t.Run("returns error if update fails", func(t *testing.T) {
@@ -187,7 +187,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
+		require.EqualError(t, err, "Internal Server Error: while updating single entity from 'public.label_definitions' table: some error")
 	})
 
 	t.Run("returns error if no row was affected by query", func(t *testing.T) {
@@ -302,7 +302,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 		// WHEN
 		_, err := sut.GetByKey(ctx, "tenant", "key")
 		// THEN
-		require.EqualError(t, err, "while getting Label Definition by key=key: Internal Server Error: while getting object from table public.label_definitions: persistence error")
+		require.EqualError(t, err, "while getting Label Definition by key=key: Internal Server Error: while getting object from 'public.label_definitions' table: persistence error")
 	})
 }
 
@@ -415,7 +415,7 @@ func TestRepositoryList(t *testing.T) {
 		// WHEN
 		_, err := sut.List(ctx, "tenant")
 		// THEN
-		require.EqualError(t, err, "while listing Label Definitions: Internal Server Error: while fetching list of objects from DB: db error")
+		require.EqualError(t, err, "while listing Label Definitions: Internal Server Error: while fetching list of objects from 'public.label_definitions' table: db error")
 	})
 }
 
@@ -470,7 +470,7 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		// WHEN
 		_, err := sut.Exists(ctx, "tenant", "key")
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from DB: persistence error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.label_definitions' table: persistence error")
 	})
 }
 

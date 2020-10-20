@@ -133,7 +133,7 @@ func TestRepository_Get(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while getting object from table public.app_templates: test error")
+		assert.EqualError(t, err, "Internal Server Error: while getting object from 'public.app_templates' table: test error")
 	})
 
 	t.Run("Error when converting", func(t *testing.T) {
@@ -210,7 +210,7 @@ func TestRepository_GetByName(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while getting object from table public.app_templates: test error")
+		assert.EqualError(t, err, "Internal Server Error: while getting object from 'public.app_templates' table: test error")
 	})
 
 	t.Run("Error when converting", func(t *testing.T) {
@@ -422,7 +422,7 @@ func TestRepository_Update(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while updating single entity: test error")
+		assert.EqualError(t, err, "Internal Server Error: while updating single entity from 'public.app_templates' table: test error")
 	})
 
 	t.Run("Error when converting", func(t *testing.T) {
@@ -479,6 +479,6 @@ func TestRepository_Delete(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while deleting object from database: test error")
+		assert.EqualError(t, err, "Internal Server Error: while deleting object from 'public.app_templates' table: test error")
 	})
 }

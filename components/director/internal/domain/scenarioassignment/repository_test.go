@@ -114,7 +114,7 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 		_, err := repo.GetForScenarioName(ctx, tenantID, scenarioName)
 
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.automatic_scenario_assignments: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.automatic_scenario_assignments' table: some error")
 	})
 }
 
@@ -168,7 +168,7 @@ func TestRepository_ListForSelector(t *testing.T) {
 		result, err := repo.ListForSelector(ctx, fixLabelSelector(), tenantID)
 
 		// THEN
-		require.EqualError(t, err, "while getting automatic scenario assignments from db: Internal Server Error: while fetching list of objects from DB: some error")
+		require.EqualError(t, err, "while getting automatic scenario assignments from db: Internal Server Error: while fetching list of objects from 'public.automatic_scenario_assignments' table: some error")
 		assert.Nil(t, result)
 	})
 }
@@ -292,7 +292,7 @@ func TestRepository_DeleteForSelector(t *testing.T) {
 		err := repo.DeleteForSelector(ctx, tenantID, fixLabelSelector())
 
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from 'public.automatic_scenario_assignments' table: some error")
 	})
 }
 
@@ -331,6 +331,6 @@ func TestRepository_DeleteForScenarioName(t *testing.T) {
 		err := repo.DeleteForScenarioName(ctx, tenantID, scenarioName)
 
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from 'public.automatic_scenario_assignments' table: some error")
 	})
 }

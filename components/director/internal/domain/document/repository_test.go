@@ -379,7 +379,7 @@ func TestRepository_GetByID(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByID(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.documents: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.documents' table: some error")
 	})
 }
 
@@ -454,7 +454,7 @@ func TestRepository_GetForPackage(t *testing.T) {
 		// WHEN
 		_, err := repo.GetForPackage(ctx, givenTenant(), givenID(), pkgID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.documents: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.documents' table: some error")
 	})
 }
 
@@ -488,7 +488,7 @@ func TestRepository_Delete(t *testing.T) {
 		// WHEN
 		err := repo.Delete(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from 'public.documents' table: some error")
 	})
 }
 

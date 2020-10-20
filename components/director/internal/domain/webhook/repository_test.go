@@ -115,7 +115,7 @@ func TestRepositoryGetByID(t *testing.T) {
 		// WHEN
 		_, err := sut.GetByID(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.webhooks: some error")
+		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.webhooks' table: some error")
 	})
 
 }
@@ -314,7 +314,7 @@ func TestRepositoryUpdate(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, ptr(givenModel()))
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
+		require.EqualError(t, err, "Internal Server Error: while updating single entity from 'public.webhooks' table: some error")
 	})
 }
 
@@ -348,7 +348,7 @@ func TestRepositoryDelete(t *testing.T) {
 		// WHEN
 		err := sut.Delete(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from 'public.webhooks' table: some error")
 	})
 }
 
@@ -381,7 +381,7 @@ func TestRepositoryDeleteAllByApplicationID(t *testing.T) {
 		// WHEN
 		err := sut.DeleteAllByApplicationID(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
+		require.EqualError(t, err, "Internal Server Error: while deleting object from 'public.webhooks' table: some error")
 	})
 }
 
@@ -459,7 +459,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		// WHEN
 		_, err := sut.ListByApplicationID(ctx, givenTenant(), givenApplicationID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from DB: some error")
+		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from 'public.webhooks' table: some error")
 	})
 
 	t.Run(testCaseErrorOnConvertingObjects, func(t *testing.T) {
