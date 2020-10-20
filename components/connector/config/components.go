@@ -1,6 +1,7 @@
 package config
 
 import (
+	"k8s.io/apimachinery/pkg/types"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
@@ -9,54 +10,47 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 )
 
 type Components struct {
-	TokenCache    tokens.Cache
 	TokenService  tokens.Service
 	Authenticator authentication.Authenticator
 
-	RevocationsRepository revocation.RevocationListRepository
-	SecretsRepository     secrets.Repository
+	RevokedCertsRepository revocation.RevocationListRepository
 
-	CertificateUtility certificates.CertificateUtility
 	CertificateService certificates.Service
 
 	SubjectConsts certificates.CSRSubjectConsts
 }
 
-func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface) (Components, certificates.Loader, revocation.Loader) {
+func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface) (Components, certificates.Loader, revocation.Loader) {
 	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration)
 	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
+
 	revocationListCache := revocation.NewCache()
-	configmapNamespace := namespacedname.Parse(cfg.RevocationConfigMapName)
-	revokedCertsRepository := newRevokedCertsRepository(k8sClientset, configmapNamespace, revocationListCache)
+	revocationListConfigMap := namespacedname.Parse(cfg.RevocationConfigMapName)
+	revokedCertsRepository := newRevokedCertsRepository(k8sClientSet, revocationListConfigMap, revocationListCache)
 
-	authenticator := authentication.NewAuthenticator()
-
-	caSecretName := namespacedname.Parse(cfg.CASecret.Name)
-	rootCASecretName := namespacedname.Parse(cfg.RootCASecret.Name)
+	caSecret := namespacedname.Parse(cfg.CASecret.Name)
+	rootCASecret := namespacedname.Parse(cfg.RootCASecret.Name)
 
 	certCache := certificates.NewCertificateCache()
 
-	secretsRepository := newSecretsRepository(k8sClientset)
-	certificateUtility := certificates.NewCertificateUtility(cfg.CertificateValidityTime)
 	certificateService := certificates.NewCertificateService(
 		certCache,
-		certificateUtility,
-		caSecretName.Name,
-		rootCASecretName.Name,
+		certificates.NewCertificateUtility(cfg.CertificateValidityTime),
+		caSecret.Name,
+		rootCASecret.Name,
 		cfg.CASecret.CertificateKey,
 		cfg.CASecret.KeyKey,
 		cfg.RootCASecret.CertificateKey,
 	)
 
-	certLoader := certificates.NewCertificateLoader(certCache, secretsRepository, caSecretName, rootCASecretName)
+	certLoader := certificates.NewCertificateLoader(certCache, newSecretsRepository(k8sClientSet), caSecret, rootCASecret)
 	revocationListLoader := revocation.NewRevocationListLoader(revocationListCache,
-		k8sClientset.CoreV1().ConfigMaps(configmapNamespace.Namespace),
-		configmapNamespace.Name,
+		k8sClientSet.CoreV1().ConfigMaps(revocationListConfigMap.Namespace),
+		revocationListConfigMap.Name,
 		time.Second,
 	)
 
@@ -69,27 +63,24 @@ func InitInternalComponents(cfg Config, k8sClientset kubernetes.Interface) (Comp
 	}
 
 	return Components{
-		TokenCache:            tokenCache,
-		TokenService:          tokenService,
-		Authenticator:         authenticator,
-		RevocationsRepository: revokedCertsRepository,
-		SecretsRepository:     secretsRepository,
-		CertificateUtility:    certificateUtility,
-		CertificateService:    certificateService,
-		SubjectConsts:         csrSubjectConsts,
+		TokenService:           tokenService,
+		Authenticator:          authentication.NewAuthenticator(),
+		RevokedCertsRepository: revokedCertsRepository,
+		CertificateService:     certificateService,
+		SubjectConsts:          csrSubjectConsts,
 	}, certLoader, revocationListLoader
 }
 
-func newSecretsRepository(coreClientSet kubernetes.Interface) secrets.Repository {
-	core := coreClientSet.CoreV1()
+func newRevokedCertsRepository(k8sClientSet kubernetes.Interface, revocationListConfigMap types.NamespacedName, cache revocation.Cache) revocation.RevocationListRepository {
+	cmi := k8sClientSet.CoreV1().ConfigMaps(revocationListConfigMap.Namespace)
+
+	return revocation.NewRepository(cmi, revocationListConfigMap.Name, cache)
+}
+
+func newSecretsRepository(k8sClientSet kubernetes.Interface) secrets.Repository {
+	core := k8sClientSet.CoreV1()
 
 	return secrets.NewRepository(func(namespace string) secrets.Manager {
 		return core.Secrets(namespace)
 	})
-}
-
-func newRevokedCertsRepository(coreClientSet kubernetes.Interface, revocationSecret types.NamespacedName, cache revocation.Cache) revocation.RevocationListRepository {
-	cmi := coreClientSet.CoreV1().ConfigMaps(revocationSecret.Namespace)
-
-	return revocation.NewRepository(cmi, cache, revocationSecret.Name)
 }

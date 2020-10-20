@@ -21,21 +21,21 @@ type RevocationListRepository interface {
 }
 
 type revocationListRepository struct {
-	configListManager   Manager
+	configMapManager    Manager
 	configMapName       string
 	revocationListCache Cache
 }
 
-func NewRepository(configListManager Manager, revocationListCache Cache, configMapName string) RevocationListRepository {
+func NewRepository(configMapManager Manager, configMapName string, revocationListCache Cache) RevocationListRepository {
 	return &revocationListRepository{
-		configListManager:   configListManager,
+		configMapManager:    configMapManager,
 		configMapName:       configMapName,
 		revocationListCache: revocationListCache,
 	}
 }
 
 func (r *revocationListRepository) Insert(hash string) error {
-	configMap, err := r.configListManager.Get(r.configMapName, metav1.GetOptions{})
+	configMap, err := r.configMapManager.Get(r.configMapName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (r *revocationListRepository) Insert(hash string) error {
 	updatedConfigMap.Data = revokedCerts
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		_, err = r.configListManager.Update(updatedConfigMap)
+		_, err = r.configMapManager.Update(updatedConfigMap)
 		return err
 	})
 

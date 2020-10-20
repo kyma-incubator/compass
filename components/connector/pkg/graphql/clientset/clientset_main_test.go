@@ -90,7 +90,7 @@ func TestMain(m *testing.M) {
 		internalComponents.SubjectConsts,
 		cfg.DirectorURL,
 		cfg.CertificateSecuredConnectorURL,
-		internalComponents.RevocationsRepository)
+		internalComponents.RevokedCertsRepository)
 
 	authContextTestMiddleware := func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

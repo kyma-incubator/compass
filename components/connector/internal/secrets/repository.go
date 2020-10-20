@@ -31,15 +31,15 @@ func NewRepository(secretsManagerConstructor ManagerConstructor) Repository {
 	}
 }
 
-func (r *repository) Get(name types.NamespacedName) (secretData map[string][]byte, appError apperrors.AppError) {
-	secretsManager := r.secretsManagerConstructor(name.Namespace)
-	secret, err := secretsManager.Get(name.Name, metav1.GetOptions{})
+func (r *repository) Get(secret types.NamespacedName) (secretData map[string][]byte, appError apperrors.AppError) {
+	secretsManager := r.secretsManagerConstructor(secret.Namespace)
+	secretObj, err := secretsManager.Get(secret.Name, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return nil, apperrors.NotFound("secret %s not found", name)
+			return nil, apperrors.NotFound("secret %s not found", secret)
 		}
-		return nil, apperrors.Internal("failed to get %s secret, %s", name, err)
+		return nil, apperrors.Internal("failed to get %s secret, %s", secret, err)
 	}
 
-	return secret.Data, nil
+	return secretObj.Data, nil
 }

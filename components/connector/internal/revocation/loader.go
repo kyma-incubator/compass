@@ -22,13 +22,13 @@ type revocationListLoader struct {
 }
 
 func NewRevocationListLoader(revocationListCache Cache,
-	manager Manager,
+	configMapManager Manager,
 	configMapName string,
 	reconnectInterval time.Duration,
 ) Loader {
 	return &revocationListLoader{
 		revocationListCache: revocationListCache,
-		manager:             manager,
+		manager:             configMapManager,
 		configMapName:       configMapName,
 		reconnectInterval:   reconnectInterval,
 	}
