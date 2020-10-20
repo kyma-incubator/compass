@@ -23,7 +23,6 @@ var tableName = "users"
 func TestDelete(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	//tableName := "users"
 	sut := repo.NewDeleter(UserType, tableName, "tenant_id")
 
 	tc := map[string]methodToTest{
