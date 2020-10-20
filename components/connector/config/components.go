@@ -56,7 +56,7 @@ func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface) (Comp
 		Authenticator:          authentication.NewAuthenticator(),
 		RevokedCertsRepository: revokedCertsRepository,
 		CertificateService:     certificateService,
-		CSRSubjectConsts:       certificates.NewCSRSubjectConsts(cfg),
+		CSRSubjectConsts:       newCSRSubjectConsts(cfg),
 	}, certLoader, revocationListLoader
 }
 
@@ -72,4 +72,14 @@ func newSecretsRepository(k8sClientSet kubernetes.Interface) secrets.Repository 
 	return secrets.NewRepository(func(namespace string) secrets.Manager {
 		return core.Secrets(namespace)
 	})
+}
+
+func newCSRSubjectConsts(config Config) certificates.CSRSubjectConsts {
+	return certificates.CSRSubjectConsts{
+		Country:            config.CSRSubject.Country,
+		Organization:       config.CSRSubject.Organization,
+		OrganizationalUnit: config.CSRSubject.OrganizationalUnit,
+		Locality:           config.CSRSubject.Locality,
+		Province:           config.CSRSubject.Province,
+	}
 }
