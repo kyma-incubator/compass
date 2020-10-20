@@ -27,7 +27,7 @@ import (
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
 
-	ServerTimeout time.Duration `envconfig:"default=115s"`
+	ServerTimeout time.Duration `envconfig:"default=114s"`
 
 	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3001"`
 	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3002"`

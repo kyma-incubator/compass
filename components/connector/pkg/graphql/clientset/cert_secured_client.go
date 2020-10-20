@@ -15,7 +15,7 @@ type CertificateSecuredClient struct {
 	queryProvider queryProvider
 }
 
-func newCertificateSecuredConnectorClient(endpoint string, tlsCert tls.Certificate) *CertificateSecuredClient {
+func newCertificateSecuredConnectorClient(endpoint string, tlsCert tls.Certificate, opts *clientsetOptions) *CertificateSecuredClient {
 	tlsConfig := &tls.Config{
 		Certificates:       []tls.Certificate{tlsCert},
 		InsecureSkipVerify: true,
@@ -25,6 +25,7 @@ func newCertificateSecuredConnectorClient(endpoint string, tlsCert tls.Certifica
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConfig,
 		},
+		Timeout: opts.timeout,
 	}
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))

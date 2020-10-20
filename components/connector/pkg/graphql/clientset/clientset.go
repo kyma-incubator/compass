@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -33,11 +34,18 @@ func (f optionFunc) apply(o *clientsetOptions) {
 
 type clientsetOptions struct {
 	skipTLSVerify bool
+	timeout time.Duration
 }
 
 func WithSkipTLSVerify(skipTLSVerify bool) Option {
 	return optionFunc(func(o *clientsetOptions) {
 		o.skipTLSVerify = skipTLSVerify
+	})
+}
+
+func WithTimeout(timeout time.Duration) Option {
+	return optionFunc(func(o *clientsetOptions) {
+		o.timeout = timeout
 	})
 }
 
@@ -56,15 +64,15 @@ func NewConnectorClientSet(options ...Option) *ConnectorClientSet {
 }
 
 func (cs ConnectorClientSet) TokenSecuredClient(baseURL string) *TokenSecuredClient {
-	return newTokenSecuredClient(baseURL, cs.clientsetOptions.skipTLSVerify)
+	return newTokenSecuredClient(baseURL, cs.clientsetOptions)
 }
 
 func (cs ConnectorClientSet) CertificateSecuredClient(baseURL string, certificate tls.Certificate) *CertificateSecuredClient {
-	return newCertificateSecuredConnectorClient(baseURL, certificate)
+	return newCertificateSecuredConnectorClient(baseURL, certificate, cs.clientsetOptions)
 }
 
 func (cs ConnectorClientSet) GenerateCertificateForToken(token, connectorURL string) (tls.Certificate, error) {
-	connectorClient := newTokenSecuredClient(connectorURL, cs.skipTLSVerify)
+	connectorClient := newTokenSecuredClient(connectorURL, cs.clientsetOptions)
 
 	config, err := connectorClient.Configuration(token)
 	if err != nil {

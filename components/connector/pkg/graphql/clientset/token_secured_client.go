@@ -19,13 +19,14 @@ type TokenSecuredClient struct {
 	queryProvider queryProvider
 }
 
-func newTokenSecuredClient(endpoint string, skipTLSVerify bool) *TokenSecuredClient {
+func newTokenSecuredClient(endpoint string, opts *clientsetOptions) *TokenSecuredClient {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: skipTLSVerify,
+				InsecureSkipVerify: opts.skipTLSVerify,
 			},
 		},
+		Timeout: opts.timeout,
 	}
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
