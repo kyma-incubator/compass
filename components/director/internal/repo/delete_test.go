@@ -17,11 +17,13 @@ import (
 
 type methodToTest = func(ctx context.Context, tenant string, conditions repo.Conditions) error
 type methodToTestWithoutTenant = func(ctx context.Context, conditions repo.Conditions) error
+var tableName = "users"
 
 func TestDelete(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewDeleter(UserType, "users", "tenant_id")
+	//tableName := "users"
+	sut := repo.NewDeleter(UserType, tableName, "tenant_id")
 
 	tc := map[string]methodToTest{
 		"DeleteMany": sut.DeleteMany,
@@ -42,7 +44,7 @@ func TestDelete(t *testing.T) {
 
 		t.Run(fmt.Sprintf("[%s] success when no conditions", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_id = $1")
+			expectedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE tenant_id = $1", tableName))
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -55,7 +57,7 @@ func TestDelete(t *testing.T) {
 
 		t.Run(fmt.Sprintf("[%s] success when more conditions", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3")
+			expectedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE tenant_id = $1 AND first_name = $2 AND last_name = $3", tableName))
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -75,7 +77,7 @@ func TestDelete(t *testing.T) {
 			// WHEN
 			err := testedMethod(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
-			require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
+			require.EqualError(t, err, fmt.Sprintf(fmt.Sprintf("Internal Server Error: while deleting object from '%s' table: some error", tableName)))
 		})
 
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
@@ -88,7 +90,7 @@ func TestDelete(t *testing.T) {
 
 func TestDeleteGlobal(t *testing.T) {
 	givenID := uuidA()
-	sut := repo.NewDeleterGlobal(UserType, "users")
+	sut := repo.NewDeleterGlobal(UserType, tableName)
 
 	tc := map[string]methodToTestWithoutTenant{
 		"DeleteMany": sut.DeleteManyGlobal,
@@ -97,7 +99,7 @@ func TestDeleteGlobal(t *testing.T) {
 	for tn, testedMethod := range tc {
 		t.Run(fmt.Sprintf("[%s] success", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE id_col = $1")
+			expectedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE id_col = $1", tableName))
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -110,7 +112,7 @@ func TestDeleteGlobal(t *testing.T) {
 
 		t.Run(fmt.Sprintf("[%s] success when no conditions", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta("DELETE FROM users")
+			expectedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s", tableName))
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -123,7 +125,7 @@ func TestDeleteGlobal(t *testing.T) {
 
 		t.Run(fmt.Sprintf("[%s] success when more conditions", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE first_name = $1 AND last_name = $2")
+			expectedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE first_name = $1 AND last_name = $2", tableName))
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -136,7 +138,7 @@ func TestDeleteGlobal(t *testing.T) {
 
 		t.Run(fmt.Sprintf("[%s] returns error on db operation", tn), func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE id_col = $1")
+			expectedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE id_col = $1", tableName))
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -144,7 +146,7 @@ func TestDeleteGlobal(t *testing.T) {
 			// WHEN
 			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
-			require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
+			require.EqualError(t, err, fmt.Sprintf("Internal Server Error: while deleting object from '%s' table: some error", tableName))
 		})
 
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
@@ -158,7 +160,7 @@ func TestDeleteGlobal(t *testing.T) {
 func TestDeleteReactsOnNumberOfRemovedObjects(t *testing.T) {
 	givenID := uuidA()
 	givenTenant := uuidB()
-	sut := repo.NewDeleter(UserType, "users", "tenant_id")
+	sut := repo.NewDeleter(UserType, tableName, "tenant_id")
 
 	cases := map[string]struct {
 		methodToTest      methodToTest
@@ -206,7 +208,7 @@ func TestDeleteReactsOnNumberOfRemovedObjects(t *testing.T) {
 
 func TestDeleteGlobalReactsOnNumberOfRemovedObjects(t *testing.T) {
 	givenID := uuidA()
-	sut := repo.NewDeleterGlobal(UserType, "users")
+	sut := repo.NewDeleterGlobal(UserType, tableName)
 
 	cases := map[string]struct {
 		methodToTest      methodToTestWithoutTenant
@@ -238,7 +240,7 @@ func TestDeleteGlobalReactsOnNumberOfRemovedObjects(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			// GIVEN
-			expectedQuery := regexp.QuoteMeta("DELETE FROM users WHERE id_col = $1")
+			expectedQuery := regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE id_col = $1", tableName))
 			db, mock := testdb.MockDatabase(t)
 			ctx := persistence.SaveToContext(context.TODO(), db)
 			defer mock.AssertExpectations(t)
@@ -254,7 +256,7 @@ func TestDeleteGlobalReactsOnNumberOfRemovedObjects(t *testing.T) {
 }
 
 func defaultExpectedDeleteQuery() string {
-	return regexp.QuoteMeta("DELETE FROM users WHERE tenant_id = $1 AND id_col = $2")
+	return regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE tenant_id = $1 AND id_col = $2", tableName))
 }
 
 func uuidA() string {

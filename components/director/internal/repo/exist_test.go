@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -80,7 +81,7 @@ func TestExist(t *testing.T) {
 		// WHEN
 		_, err := sut.Exists(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from DB: some error")
+		require.EqualError(t, err, fmt.Sprintf("Internal Server Error: while getting object from '%s' table: some error", tableName))
 
 	})
 
@@ -160,7 +161,7 @@ func TestExistGlobal(t *testing.T) {
 		// WHEN
 		_, err := sut.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from DB: some error")
+		require.EqualError(t, err, fmt.Sprintf("Internal Server Error: while getting object from '%s' table: some error", tableName))
 
 	})
 

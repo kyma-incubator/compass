@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -61,11 +62,14 @@ func (l *universalLister) unsafeList(ctx context.Context, dest Collection, condi
 		return err
 	}
 
+	log.Debug("Building DB query...")
 	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, OrderByParams{})
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}
 
+	log.Debugf("Executing DB query: %s", query)
 	err = persist.Select(dest, query, args...)
-	return persistence.MapSQLError(err, l.resourceType, "while fetching list of objects from DB")
+
+	return persistence.MapSQLError(err, l.resourceType, "while fetching list of objects from '%s' table", l.tableName)
 }

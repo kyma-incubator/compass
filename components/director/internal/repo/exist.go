@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -60,17 +61,20 @@ func (g *universalExistQuerier) unsafeExists(ctx context.Context, conditions Con
 		stmtBuilder.WriteString(" WHERE")
 	}
 
+	log.Debug("Add conditions to the query")
 	err = writeEnumeratedConditions(&stmtBuilder, conditions)
 	if err != nil {
 		return false, errors.Wrap(err, "while writing enumerated conditions")
 	}
 	allArgs := getAllArgs(conditions)
 
+	log.Debug("Building DB query...")
 	query := getQueryFromBuilder(stmtBuilder)
 
+	log.Debugf("Executing DB query: %s", query)
 	var count int
 	err = persist.Get(&count, query, allArgs...)
-	err = persistence.MapSQLError(err, g.resourceType, "while getting object from DB")
+	err = persistence.MapSQLError(err, g.resourceType, "while getting object from '%s' table", g.tableName)
 
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {

@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -18,7 +19,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	sut := repo.NewCreator(UserType, "users", []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
+	sut := repo.NewCreator(UserType, tableName, []string{"id_col", "tenant_id", "first_name", "last_name", "age"})
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
 		db, mock := testdb.MockDatabase(t)
@@ -32,7 +33,7 @@ func TestCreate(t *testing.T) {
 			Age:       55,
 		}
 
-		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )", tableName))).
 			WithArgs("given_id", "given_tenant", "given_first_name", "given_last_name", 55).WillReturnResult(sqlmock.NewResult(1, 1))
 		// WHEN
 		err := sut.Create(ctx, givenUser)
@@ -47,12 +48,12 @@ func TestCreate(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		givenUser := User{}
 
-		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )", tableName))).
 			WillReturnError(someError())
 		// WHEN
 		err := sut.Create(ctx, givenUser)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while inserting row to 'users' table: some error")
+		require.EqualError(t, err, fmt.Sprintf("Internal Server Error: while inserting row to '%s' table: some error", tableName))
 	})
 
 	t.Run("returns non unique error", func(t *testing.T) {
@@ -62,7 +63,7 @@ func TestCreate(t *testing.T) {
 		defer mock.AssertExpectations(t)
 		givenUser := User{}
 
-		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO users ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )")).
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id_col, tenant_id, first_name, last_name, age ) VALUES ( ?, ?, ?, ?, ? )", tableName))).
 			WillReturnError(&pq.Error{Code: persistence.UniqueViolation})
 		// WHEN
 		err := sut.Create(ctx, givenUser)
@@ -86,7 +87,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestCreateWhenWrongConfiguration(t *testing.T) {
-	sut := repo.NewCreator(UserType, "users", []string{"id_col", "tenant_id", "column_does_not_exist"})
+	sut := repo.NewCreator(UserType, tableName, []string{"id_col", "tenant_id", "column_does_not_exist"})
 	// GIVEN
 	db, mock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), db)

@@ -2,6 +2,7 @@ package repo_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -66,7 +67,7 @@ func TestUpdateSingle(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingle(ctx, givenUser)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
+		require.EqualError(t, err, fmt.Sprintf("Internal Server Error: while updating single entity from '%s' table: some error", tableName))
 	})
 
 	t.Run("returns non unique error", func(t *testing.T) {
@@ -175,7 +176,7 @@ func TestUpdateSingleGlobal(t *testing.T) {
 		// WHEN
 		err := sut.UpdateSingleGlobal(ctx, givenUser)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
+		require.EqualError(t, err, fmt.Sprintf("Internal Server Error: while updating single entity from '%s' table: some error", tableName))
 	})
 
 	t.Run("returns non unique error", func(t *testing.T) {
