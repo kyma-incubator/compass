@@ -115,7 +115,7 @@ func TestRepositoryGetByID(t *testing.T) {
 		// WHEN
 		_, err := sut.GetByID(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.webhooks' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 }
@@ -177,7 +177,7 @@ func TestRepositoryCreate(t *testing.T) {
 		// WHEN
 		err := sut.Create(ctx, ptr(givenModel()))
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while inserting row to 'public.webhooks' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run(testCaseErrorOnConvertingObjects, func(t *testing.T) {
@@ -259,7 +259,7 @@ func TestRepositoryCreateMany(t *testing.T) {
 		// WHEN
 		err := sut.CreateMany(ctx, given)
 		// THEN
-		expectedErr := fmt.Sprintf("while creating Webhook with type %s and id %s for Application with id %s: Internal Server Error: while inserting row to 'public.webhooks' table: some error", model.WebhookTypeConfigurationChanged, "one", "")
+		expectedErr := fmt.Sprintf("while creating Webhook with type %s and id %s for Application with id %s: Internal Server Error: Unexpected error while executing SQL query", model.WebhookTypeConfigurationChanged, "one", "")
 		require.EqualError(t, err, expectedErr)
 	})
 }
@@ -314,7 +314,7 @@ func TestRepositoryUpdate(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, ptr(givenModel()))
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while updating single entity from 'public.webhooks' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -348,7 +348,7 @@ func TestRepositoryDelete(t *testing.T) {
 		// WHEN
 		err := sut.Delete(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while deleting object from 'public.webhooks' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -381,7 +381,7 @@ func TestRepositoryDeleteAllByApplicationID(t *testing.T) {
 		// WHEN
 		err := sut.DeleteAllByApplicationID(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while deleting object from 'public.webhooks' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -459,7 +459,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		// WHEN
 		_, err := sut.ListByApplicationID(ctx, givenTenant(), givenApplicationID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from 'public.webhooks' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run(testCaseErrorOnConvertingObjects, func(t *testing.T) {

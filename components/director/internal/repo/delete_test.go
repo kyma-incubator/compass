@@ -78,7 +78,7 @@ func TestDelete(t *testing.T) {
 			// WHEN
 			err := testedMethod(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
-			require.EqualError(t, err, fmt.Sprintf(fmt.Sprintf("Internal Server Error: while deleting object from '%s' table: some error", tableName)))
+			require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		})
 
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {
@@ -147,7 +147,7 @@ func TestDeleteGlobal(t *testing.T) {
 			// WHEN
 			err := testedMethod(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)})
 			// THEN
-			require.EqualError(t, err, fmt.Sprintf("Internal Server Error: while deleting object from '%s' table: some error", tableName))
+			require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		})
 
 		t.Run(fmt.Sprintf("[%s] returns error if missing persistence context", tn), func(t *testing.T) {

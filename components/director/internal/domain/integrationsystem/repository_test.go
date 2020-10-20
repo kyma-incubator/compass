@@ -63,7 +63,7 @@ func TestPgRepository_Create(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while inserting row to 'public.integration_systems' table: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -115,7 +115,7 @@ func TestPgRepository_Get(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while getting object from 'public.integration_systems' table: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, result)
 	})
 }
@@ -157,7 +157,7 @@ func TestPgRepository_Exists(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 		assert.False(t, result)
 	})
 }
@@ -275,7 +275,7 @@ func TestPgRepository_Update(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while updating single entity from 'public.integration_systems' table: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -314,6 +314,6 @@ func TestPgRepository_Delete(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while deleting object from 'public.integration_systems' table: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }

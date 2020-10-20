@@ -85,7 +85,7 @@ func TestRepositoryCreateLabelDefinition(t *testing.T) {
 		// WHEN
 		err := sut.Create(ctx, in)
 		// THEN
-		require.EqualError(t, err, "while inserting Label Definition: Internal Server Error: while inserting row to 'public.label_definitions' table: some error")
+		require.EqualError(t, err, "while inserting Label Definition: Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -166,7 +166,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while updating single entity from 'public.label_definitions' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns error if update fails", func(t *testing.T) {
@@ -187,7 +187,7 @@ func TestRepositoryUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		err := sut.Update(ctx, in)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while updating single entity from 'public.label_definitions' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns error if no row was affected by query", func(t *testing.T) {
@@ -302,7 +302,7 @@ func TestRepositoryGetByKey(t *testing.T) {
 		// WHEN
 		_, err := sut.GetByKey(ctx, "tenant", "key")
 		// THEN
-		require.EqualError(t, err, "while getting Label Definition by key=key: Internal Server Error: while getting object from 'public.label_definitions' table: persistence error")
+		require.EqualError(t, err, "while getting Label Definition by key=key: Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -415,7 +415,7 @@ func TestRepositoryList(t *testing.T) {
 		// WHEN
 		_, err := sut.List(ctx, "tenant")
 		// THEN
-		require.EqualError(t, err, "while listing Label Definitions: Internal Server Error: while fetching list of objects from 'public.label_definitions' table: db error")
+		require.EqualError(t, err, "while listing Label Definitions: Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -470,7 +470,7 @@ func TestRepositoryLabelDefExists(t *testing.T) {
 		// WHEN
 		_, err := sut.Exists(ctx, "tenant", "key")
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.label_definitions' table: persistence error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -522,7 +522,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		err := repo.DeleteByKey(ctx, tnt, key)
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Error - No rows affected", func(t *testing.T) {

@@ -19,25 +19,27 @@ func MapSQLError(err error, resourceType resource.Type, format string, args ...i
 	}
 
 	if err == sql.ErrNoRows {
-		log.Warnf("SQL: no rows in result set for '%s' table", resourceType)
+		log.Errorf("SQL: no rows in result set for '%s' resource type", resourceType)
 		return apperrors.NewNotFoundErrorWithType(resourceType)
 	}
 
 	pgErr, ok := err.(*pq.Error)
 	if !ok {
-		log.Warn("Error while getting postgres error code")
-		return apperrors.InternalErrorFrom(err, format, args...)
+		log.Errorf("Error while casting to postgres error. Actual error: %s", err)
+		return apperrors.NewInternalError("Unexpected error while executing SQL query")
 	}
+
+	log.Errorf("SQL Error: %s. Caused by: %s. DETAILS: %s", fmt.Sprintf(format, args...), pgErr.Message, pgErr.Detail)
 
 	log.Debug("Checking Postgres error code...")
 	switch pgErr.Code {
 	case UniqueViolation:
-		log.Warn("Postgres unique violation error code found")
+		log.Errorf("Postgres unique violation error code found in '%s' table. Error message: '%s'. DETAILS: %s Postgres error code: '%s'", pgErr.Table, pgErr.Message, pgErr.Detail, pgErr.Code)
 		return apperrors.NewNotUniqueError(resourceType)
 	case ForeignKeyViolation:
-		log.Warn("Postgres foreign key violation error found")
+		log.Errorf("Postgres foreign key violation error found in '%s' table. Error message: '%s'. DETAILS: %s Postgres error code: '%s'", pgErr.Table, pgErr.Message, pgErr.Detail, pgErr.Code)
 		return apperrors.NewInvalidDataError("Object already exist")
 	}
 
-	return apperrors.InternalErrorFrom(err, "SQL Error: %s", fmt.Sprintf(format, args...))
+	return apperrors.NewInternalError("SQL Error occurred")
 }

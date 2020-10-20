@@ -53,7 +53,7 @@ func TestCreate(t *testing.T) {
 		// WHEN
 		err := sut.Create(ctx, givenUser)
 		// THEN
-		require.EqualError(t, err, fmt.Sprintf("Internal Server Error: while inserting row to '%s' table: some error", tableName))
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns non unique error", func(t *testing.T) {
@@ -96,5 +96,5 @@ func TestCreateWhenWrongConfiguration(t *testing.T) {
 	err := sut.Create(ctx, User{})
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "could not find name column_does_not_exist")
+	assert.Contains(t, err.Error(), "Unexpected error while executing SQL query")
 }

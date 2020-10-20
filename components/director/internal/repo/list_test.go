@@ -83,7 +83,7 @@ func TestList(t *testing.T) {
 		var dest UserCollection
 
 		err := sut.List(ctx, givenTenant, &dest)
-		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from 'users' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -152,6 +152,6 @@ func TestListGlobal(t *testing.T) {
 		var dest UserCollection
 
 		err := sut.ListGlobal(ctx, &dest)
-		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from 'users' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }

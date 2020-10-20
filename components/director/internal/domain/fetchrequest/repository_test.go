@@ -66,7 +66,7 @@ func TestRepository_Create(t *testing.T) {
 		// WHEN
 		err := repo.Create(ctx, &frModel)
 		// THEN
-		require.EqualError(t, err, apperrors.NewInternalError("while inserting row to 'public.fetch_requests' table: some error").Error())
+		require.EqualError(t, err, apperrors.NewInternalError("Unexpected error while executing SQL query").Error())
 	})
 
 	t.Run("Error - Converter", func(t *testing.T) {
@@ -172,7 +172,7 @@ func TestRepository_GetByReferenceObjectID(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByReferenceObjectID(ctx, givenTenant(), model.DocumentFetchRequestReference, givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.fetch_requests' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Error - Invalid Object Reference Type", func(t *testing.T) {
@@ -220,7 +220,7 @@ func TestRepository_Delete(t *testing.T) {
 		// WHEN
 		err := repo.Delete(ctx, givenTenant(), givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while deleting object from 'public.fetch_requests' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -283,7 +283,7 @@ func TestRepository_DeleteByReferenceObjectID(t *testing.T) {
 		// WHEN
 		err := repo.DeleteByReferenceObjectID(ctx, givenTenant(), model.APIFetchRequestReference, givenID())
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while deleting object from 'public.fetch_requests' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 

@@ -137,7 +137,7 @@ func TestRepository_Create(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while inserting row to 'public.system_auths' table: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 
 		dbMock.AssertExpectations(t)
 		convMock.AssertExpectations(t)
@@ -216,7 +216,7 @@ func TestRepository_GetByID(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByID(ctx, testTenant, saID)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.system_auths' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -292,7 +292,7 @@ func TestRepository_GetByIDGlobal(t *testing.T) {
 		// WHEN
 		_, err := repo.GetByIDGlobal(ctx, saID)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from 'public.system_auths' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -475,7 +475,7 @@ func TestRepository_ListForObject(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, result)
 		dbMock.AssertExpectations(t)
 	})
@@ -595,7 +595,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 		err := repo.DeleteAllForObject(ctx, testTenant, model.RuntimeReference, sysAuthID)
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while deleting object from 'public.system_auths' table: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Error listing auths for unsupported reference object type", func(t *testing.T) {
@@ -677,7 +677,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.ApplicationReference)
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while deleting object from 'public.system_auths' table: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
