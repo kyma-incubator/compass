@@ -27,7 +27,7 @@ type certificateResolver struct {
 	csrSubjectConsts               certificates.CSRSubjectConsts
 	directorURL                    string
 	certificateSecuredConnectorURL string
-	revocationList                 revocation.RevocationListRepository
+	revokedCertsRepository         revocation.RevocationListRepository
 	log                            *logrus.Entry
 }
 
@@ -38,7 +38,7 @@ func NewCertificateResolver(
 	csrSubjectConsts certificates.CSRSubjectConsts,
 	directorURL string,
 	certificateSecuredConnectorURL string,
-	revocationList revocation.RevocationListRepository) CertificateResolver {
+	revokedCertsRepository revocation.RevocationListRepository) CertificateResolver {
 	return &certificateResolver{
 		authenticator:                  authenticator,
 		tokenService:                   tokenService,
@@ -46,7 +46,7 @@ func NewCertificateResolver(
 		csrSubjectConsts:               csrSubjectConsts,
 		directorURL:                    directorURL,
 		certificateSecuredConnectorURL: certificateSecuredConnectorURL,
-		revocationList:                 revocationList,
+		revokedCertsRepository:         revokedCertsRepository,
 		log:                            logrus.WithField("Resolver", "Certificate"),
 	}
 }
@@ -97,7 +97,7 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 	r.log.Infof("Revoking certificate for client with id %s", clientId)
 
 	r.log.Debugf("Inserting certificate hash of client with id %s to revocation list", clientId)
-	err = r.revocationList.Insert(certificateHash)
+	err = r.revokedCertsRepository.Insert(certificateHash)
 	if err != nil {
 		r.log.Errorf("Failed to add certificate hash of client with id %s to revocation list. %s ", clientId, err.Error())
 		return false, errors.Wrap(err, "Failed to add hash to revocation list")

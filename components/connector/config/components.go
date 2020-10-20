@@ -17,26 +17,17 @@ type Components struct {
 	TokenService  tokens.Service
 	Authenticator authentication.Authenticator
 
+	CertificateService     certificates.Service
 	RevokedCertsRepository revocation.RevocationListRepository
 
-	CertificateService certificates.Service
-
-	SubjectConsts certificates.CSRSubjectConsts
+	CSRSubjectConsts certificates.CSRSubjectConsts
 }
 
 func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface) (Components, certificates.Loader, revocation.Loader) {
-	tokenCache := tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration)
-	tokenService := tokens.NewTokenService(tokenCache, tokens.NewTokenGenerator(cfg.Token.Length))
-
-	revocationListCache := revocation.NewCache()
-	revocationListConfigMap := namespacedname.Parse(cfg.RevocationConfigMapName)
-	revokedCertsRepository := newRevokedCertsRepository(k8sClientSet, revocationListConfigMap, revocationListCache)
-
 	caSecret := namespacedname.Parse(cfg.CASecret.Name)
 	rootCASecret := namespacedname.Parse(cfg.RootCASecret.Name)
 
 	certCache := certificates.NewCertificateCache()
-
 	certificateService := certificates.NewCertificateService(
 		certCache,
 		certificates.NewCertificateUtility(cfg.CertificateValidityTime),
@@ -46,28 +37,26 @@ func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface) (Comp
 		cfg.CASecret.KeyKey,
 		cfg.RootCASecret.CertificateKey,
 	)
-
 	certLoader := certificates.NewCertificateLoader(certCache, newSecretsRepository(k8sClientSet), caSecret, rootCASecret)
+
+	revocationListCache := revocation.NewCache()
+	revocationListConfigMap := namespacedname.Parse(cfg.RevocationConfigMapName)
+	revokedCertsRepository := newRevokedCertsRepository(k8sClientSet, revocationListConfigMap, revocationListCache)
+
 	revocationListLoader := revocation.NewRevocationListLoader(revocationListCache,
 		k8sClientSet.CoreV1().ConfigMaps(revocationListConfigMap.Namespace),
 		revocationListConfigMap.Name,
 		time.Second,
 	)
 
-	csrSubjectConsts := certificates.CSRSubjectConsts{
-		Country:            cfg.CSRSubject.Country,
-		Organization:       cfg.CSRSubject.Organization,
-		OrganizationalUnit: cfg.CSRSubject.OrganizationalUnit,
-		Locality:           cfg.CSRSubject.Locality,
-		Province:           cfg.CSRSubject.Province,
-	}
-
 	return Components{
-		TokenService:           tokenService,
+		TokenService: tokens.NewTokenService(
+			tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration),
+			tokens.NewTokenGenerator(cfg.Token.Length)),
 		Authenticator:          authentication.NewAuthenticator(),
 		RevokedCertsRepository: revokedCertsRepository,
 		CertificateService:     certificateService,
-		SubjectConsts:          csrSubjectConsts,
+		CSRSubjectConsts:       certificates.NewCSRSubjectConsts(cfg),
 	}, certLoader, revocationListLoader
 }
 

@@ -87,7 +87,7 @@ func TestMain(m *testing.M) {
 		internalComponents.Authenticator,
 		internalComponents.TokenService,
 		internalComponents.CertificateService,
-		internalComponents.SubjectConsts,
+		internalComponents.CSRSubjectConsts,
 		cfg.DirectorURL,
 		cfg.CertificateSecuredConnectorURL,
 		internalComponents.RevokedCertsRepository)

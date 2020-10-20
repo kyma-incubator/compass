@@ -16,7 +16,7 @@ type Loader interface {
 
 type revocationListLoader struct {
 	revocationListCache Cache
-	manager             Manager
+	configMapManager    Manager
 	configMapName       string
 	reconnectInterval   time.Duration
 }
@@ -28,7 +28,7 @@ func NewRevocationListLoader(revocationListCache Cache,
 ) Loader {
 	return &revocationListLoader{
 		revocationListCache: revocationListCache,
-		manager:             configMapManager,
+		configMapManager:    configMapManager,
 		configMapName:       configMapName,
 		reconnectInterval:   reconnectInterval,
 	}
@@ -46,7 +46,7 @@ func (rl *revocationListLoader) startKubeWatch(ctx context.Context) {
 			return
 		default:
 		}
-		watcher, err := connectWatch(rl.manager, rl.configMapName)
+		watcher, err := connectWatch(rl.configMapManager, rl.configMapName)
 		if err != nil {
 			log.Errorf("Could not initialize watcher: %s. Sleep for %s and try again...", err, rl.reconnectInterval.String())
 			time.Sleep(rl.reconnectInterval)
@@ -95,9 +95,9 @@ func (rl *revocationListLoader) processEvents(ctx context.Context, events <-chan
 	}
 }
 
-func connectWatch(manager Manager, configMapName string) (watch.Interface, error) {
+func connectWatch(configMapManager Manager, configMapName string) (watch.Interface, error) {
 	log.Println("Starting watcher for revocation list configmap changes...")
-	watcher, err := manager.Watch(metav1.ListOptions{
+	watcher, err := configMapManager.Watch(metav1.ListOptions{
 		FieldSelector: "metadata.name=" + configMapName,
 		Watch:         true,
 	})

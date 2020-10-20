@@ -2,6 +2,7 @@ package certificates
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/connector/config"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 )
@@ -17,6 +18,16 @@ type CSRSubjectConsts struct {
 	OrganizationalUnit string
 	Locality           string
 	Province           string
+}
+
+func NewCSRSubjectConsts(config config.Config) CSRSubjectConsts {
+	return CSRSubjectConsts{
+		Country:            config.CSRSubject.Country,
+		Organization:       config.CSRSubject.Organization,
+		OrganizationalUnit: config.CSRSubject.OrganizationalUnit,
+		Locality:           config.CSRSubject.Locality,
+		Province:           config.CSRSubject.Province,
+	}
 }
 
 func (s CSRSubjectConsts) ToString(commonName string) string {
