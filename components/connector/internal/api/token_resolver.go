@@ -27,7 +27,7 @@ func NewTokenResolver(tokenService tokens.Service) TokenResolver {
 	}
 }
 
-func (r *tokenResolver) GenerateApplicationToken(ctx context.Context, appID string) (*externalschema.Token, error) {
+func (r *tokenResolver) GenerateApplicationToken(_ context.Context, appID string) (*externalschema.Token, error) {
 	r.log.Infof("Generating one-time token for Application with id %s", appID)
 
 	token, err := r.tokenService.CreateToken(appID, tokens.ApplicationToken)
@@ -40,7 +40,7 @@ func (r *tokenResolver) GenerateApplicationToken(ctx context.Context, appID stri
 	return &externalschema.Token{Token: token}, nil
 }
 
-func (r *tokenResolver) GenerateRuntimeToken(ctx context.Context, runtimeID string) (*externalschema.Token, error) {
+func (r *tokenResolver) GenerateRuntimeToken(_ context.Context, runtimeID string) (*externalschema.Token, error) {
 	r.log.Infof("Generating one-time token for Runtime with id %s", runtimeID)
 
 	token, err := r.tokenService.CreateToken(runtimeID, tokens.RuntimeToken)
@@ -53,6 +53,6 @@ func (r *tokenResolver) GenerateRuntimeToken(ctx context.Context, runtimeID stri
 	return &externalschema.Token{Token: token}, nil
 }
 
-func (r *tokenResolver) IsHealthy(ctx context.Context) (bool, error) {
+func (r *tokenResolver) IsHealthy(_ context.Context) (bool, error) {
 	return true, nil
 }

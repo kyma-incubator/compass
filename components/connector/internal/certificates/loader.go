@@ -15,31 +15,31 @@ type Loader interface {
 }
 
 type certLoader struct {
-	certsCache              Cache
-	secretsRepository       secrets.Repository
-	caSecret                types.NamespacedName
-	rootCACertificateSecret types.NamespacedName
+	certsCache        Cache
+	secretsRepository secrets.Repository
+	caCertSecret      types.NamespacedName
+	rootCACertSecret  types.NamespacedName
 }
 
 func NewCertificateLoader(certsCache Cache,
 	secretsRepository secrets.Repository,
-	caSecret types.NamespacedName,
-	rootCACertificateSecretName types.NamespacedName) Loader {
+	caCertSecret types.NamespacedName,
+	rootCACertSecretName types.NamespacedName) Loader {
 	return &certLoader{
-		certsCache:              certsCache,
-		secretsRepository:       secretsRepository,
-		caSecret:                caSecret,
-		rootCACertificateSecret: rootCACertificateSecretName,
+		certsCache:        certsCache,
+		secretsRepository: secretsRepository,
+		caCertSecret:      caCertSecret,
+		rootCACertSecret:  rootCACertSecretName,
 	}
 }
 
 func (cl *certLoader) Run() {
 	for {
-		if cl.caSecret.Name != "" {
-			cl.loadSecretToCache(cl.caSecret)
+		if cl.caCertSecret.Name != "" {
+			cl.loadSecretToCache(cl.caCertSecret)
 		}
-		if cl.rootCACertificateSecret.Name != "" {
-			cl.loadSecretToCache(cl.rootCACertificateSecret)
+		if cl.rootCACertSecret.Name != "" {
+			cl.loadSecretToCache(cl.rootCACertSecret)
 		}
 		time.Sleep(interval)
 	}

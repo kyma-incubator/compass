@@ -51,6 +51,40 @@ func NewCertificateResolver(
 	}
 }
 
+func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
+	r.log.Debug("Authenticating the call for configuration fetching.")
+
+	clientId, err := r.authenticator.Authenticate(ctx)
+	if err != nil {
+		r.log.Error("Failed authentication while fetching the configuration. ", err.Error())
+		return nil, err
+	}
+	r.log.Infof("Fetching configuration for client with id %s", clientId)
+
+	r.log.Infof("Creating one-time token as part of fetching configuration process for client with id %s", clientId)
+	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
+	if err != nil {
+		r.log.Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process: %s", clientId, err.Error())
+		return nil, errors.Wrap(err, "Failed to create one-time token during fetching configuration process")
+	}
+
+	csrInfo := &externalschema.CertificateSigningRequestInfo{
+		Subject:      r.csrSubjectConsts.ToString(clientId),
+		KeyAlgorithm: "rsa2048",
+	}
+
+	r.log.Infof("Configuration for client with id %s successfully fetched.", clientId)
+
+	return &externalschema.Configuration{
+		Token:                         &externalschema.Token{Token: token},
+		CertificateSigningRequestInfo: csrInfo,
+		ManagementPlaneInfo: &externalschema.ManagementPlaneInfo{
+			DirectorURL:                    &r.directorURL,
+			CertificateSecuredConnectorURL: &r.certificateSecuredConnectorURL,
+		},
+	}, nil
+}
+
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
 	r.log.Debug("Authenticating the call for signing the Certificate Signing Request.")
 
@@ -105,40 +139,6 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 
 	r.log.Infof("Certificate of client with id %s successfully revoked.", clientId)
 	return true, nil
-}
-
-func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
-	r.log.Debug("Authenticating the call for configuration fetching.")
-
-	clientId, err := r.authenticator.Authenticate(ctx)
-	if err != nil {
-		r.log.Error("Failed authentication while fetching the configuration. ", err.Error())
-		return nil, err
-	}
-	r.log.Infof("Fetching configuration for client with id %s", clientId)
-
-	r.log.Infof("Creating one-time token as part of fetching configuration process for client with id %s", clientId)
-	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
-	if err != nil {
-		r.log.Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process: %s", clientId, err.Error())
-		return nil, errors.Wrap(err, "Failed to create one-time token during fetching configuration process")
-	}
-
-	csrInfo := &externalschema.CertificateSigningRequestInfo{
-		Subject:      r.csrSubjectConsts.ToString(clientId),
-		KeyAlgorithm: "rsa2048",
-	}
-
-	r.log.Infof("Configuration for client with id %s successfully fetched.", clientId)
-
-	return &externalschema.Configuration{
-		Token:                         &externalschema.Token{Token: token},
-		CertificateSigningRequestInfo: csrInfo,
-		ManagementPlaneInfo: &externalschema.ManagementPlaneInfo{
-			DirectorURL:                    &r.directorURL,
-			CertificateSecuredConnectorURL: &r.certificateSecuredConnectorURL,
-		},
-	}, nil
 }
 
 func decodeStringFromBase64(string string) ([]byte, apperrors.AppError) {
