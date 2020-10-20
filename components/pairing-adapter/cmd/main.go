@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/handler"
 	"log"
 	"net/http"
 
@@ -30,12 +31,15 @@ func main() {
 	}
 
 	client := cc.Client(context.Background())
+	client.Timeout = conf.ClientTimeout
 
 	cli := adapter.NewClient(client, conf.Mapping)
 
 	h := adapter.NewHandler(cli)
+	handlerWithTimeout, err := handler.WithTimeout(h, conf.ServerTimeout)
+	exitOnError(err, "Filed configuring timeout on handler")
 
-	http.Handle("/adapter", h)
+	http.Handle("/adapter", handlerWithTimeout)
 	http.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	})
