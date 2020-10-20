@@ -1254,13 +1254,8 @@ func TestHandler_Delete(t *testing.T) {
 
 }
 
-type response struct {
-	Code  int    `json:"code"`
-	Error string `json:"error"`
-}
-
 func getErrorMessage(t *testing.T, data []byte) string {
-	var body response
+	var body res.ErrorResponse
 	err := json.Unmarshal(data, &body)
 	require.NoError(t, err)
 	return body.Error

@@ -8,12 +8,13 @@ import (
 )
 
 const (
-	CodeInternal                 = 1
-	CodeNotFound                 = 2
-	CodeAlreadyExists            = 3
-	CodeWrongInput               = 4
-	CodeUpstreamServerCallFailed = 5
-	CodeForbidden                = 6
+	CodeInternal = iota + 1
+	CodeNotFound
+	CodeAlreadyExists
+	CodeWrongInput
+	CodeUpstreamServerCallFailed
+	CodeForbidden
+	CodeTimeout
 )
 
 type AppError interface {

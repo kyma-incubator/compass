@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/handler"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry"
@@ -14,7 +16,9 @@ import (
 )
 
 type config struct {
-	Address string `envconfig:"default=127.0.0.1:8080"`
+	Address       string        `envconfig:"default=127.0.0.1:8080"`
+
+	ServerTimeout time.Duration `envconfig:"default=119s"`
 
 	AppRegistry appregistry.Config
 	Connector   connector.Config
@@ -26,13 +30,18 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "while loading app config")
 
-	handler, err := initAPIHandler(cfg)
+	h, err := initAPIHandler(cfg)
 	if err != nil {
 		exitOnError(err, "Failed to init External Connector handler")
 	}
 
+	handlerWithTimeout, err := handler.WithTimeout(h, cfg.ServerTimeout)
+	if err != nil {
+		exitOnError(err, "Filed configuring timeout on handler")
+	}
+
 	log.Printf("API listening on %s", cfg.Address)
-	err = http.ListenAndServe(cfg.Address, handler)
+	err = http.ListenAndServe(cfg.Address, handlerWithTimeout)
 	exitOnError(err, fmt.Sprintf("while listening on %s", cfg.Address))
 }
 
@@ -45,7 +54,7 @@ func initAPIHandler(cfg config) (http.Handler, error) {
 
 	appRegistryRouter := applicationRegistryRouter.PathPrefix("/metadata").Subrouter()
 	appregistry.RegisterHandler(appRegistryRouter, cfg.AppRegistry)
-	err := connector.RegisterHandler(connectorRouter, cfg.Connector, cfg.AppRegistry.DirectorEndpoint)
+	err := connector.RegisterHandler(connectorRouter, cfg.Connector, cfg.AppRegistry.DirectorEndpoint, cfg.AppRegistry.ClientTimeout)
 	if err != nil {
 		return nil, err
 	}
