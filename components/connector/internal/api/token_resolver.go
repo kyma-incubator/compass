@@ -10,8 +10,8 @@ import (
 )
 
 type TokenResolver interface {
-	GenerateApplicationToken(ctx context.Context, systemAuthID string) (*externalschema.Token, error)
-	GenerateRuntimeToken(ctx context.Context, systemAuthID string) (*externalschema.Token, error)
+	GenerateApplicationToken(ctx context.Context, authID string) (*externalschema.Token, error)
+	GenerateRuntimeToken(ctx context.Context, authID string) (*externalschema.Token, error)
 	IsHealthy(ctx context.Context) (bool, error)
 }
 
@@ -27,29 +27,29 @@ func NewTokenResolver(tokenService tokens.Service) TokenResolver {
 	}
 }
 
-func (r *tokenResolver) GenerateApplicationToken(_ context.Context, systemAuthID string) (*externalschema.Token, error) {
-	r.log.Infof("Generating one-time token for Application with systemAuthID %s", systemAuthID)
+func (r *tokenResolver) GenerateApplicationToken(_ context.Context, authID string) (*externalschema.Token, error) {
+	r.log.Infof("Generating one-time token for Application with authID %s", authID)
 
-	token, err := r.tokenService.CreateToken(systemAuthID, tokens.ApplicationToken)
+	token, err := r.tokenService.CreateToken(authID, tokens.ApplicationToken)
 	if err != nil {
-		r.log.Errorf("Error occurred while creating one-time token for Application with systemAuthID %s : %s ", systemAuthID, err.Error())
+		r.log.Errorf("Error occurred while creating one-time token for Application with authID %s : %s ", authID, err.Error())
 		return &externalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for Application")
 	}
 
-	r.log.Infof("One-time token generated successfully for Application with systemAuthID %s", systemAuthID)
+	r.log.Infof("One-time token generated successfully for Application with authID %s", authID)
 	return &externalschema.Token{Token: token}, nil
 }
 
-func (r *tokenResolver) GenerateRuntimeToken(_ context.Context, systemAuthID string) (*externalschema.Token, error) {
-	r.log.Infof("Generating one-time token for Runtime with systemAuthID %s", systemAuthID)
+func (r *tokenResolver) GenerateRuntimeToken(_ context.Context, authID string) (*externalschema.Token, error) {
+	r.log.Infof("Generating one-time token for Runtime with authID %s", authID)
 
-	token, err := r.tokenService.CreateToken(systemAuthID, tokens.RuntimeToken)
+	token, err := r.tokenService.CreateToken(authID, tokens.RuntimeToken)
 	if err != nil {
-		r.log.Errorf("Error occurred while creating one-time token for Runtime with systemAuthID %s : %s ", systemAuthID, err.Error())
+		r.log.Errorf("Error occurred while creating one-time token for Runtime with authID %s : %s ", authID, err.Error())
 		return &externalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for Runtime")
 	}
 
-	r.log.Infof("One-time token generated successfully for Runtime with systemAuthID %s", systemAuthID)
+	r.log.Infof("One-time token generated successfully for Runtime with authID %s", authID)
 	return &externalschema.Token{Token: token}, nil
 }
 

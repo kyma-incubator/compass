@@ -44,8 +44,8 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		GenerateApplicationToken func(childComplexity int, systemAuthID string) int
-		GenerateRuntimeToken     func(childComplexity int, systemAuthID string) int
+		GenerateApplicationToken func(childComplexity int, authID string) int
+		GenerateRuntimeToken     func(childComplexity int, authID string) int
 	}
 
 	Query struct {
@@ -58,8 +58,8 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	GenerateApplicationToken(ctx context.Context, systemAuthID string) (*externalschema.Token, error)
-	GenerateRuntimeToken(ctx context.Context, systemAuthID string) (*externalschema.Token, error)
+	GenerateApplicationToken(ctx context.Context, authID string) (*externalschema.Token, error)
+	GenerateRuntimeToken(ctx context.Context, authID string) (*externalschema.Token, error)
 }
 type QueryResolver interface {
 	IsHealthy(ctx context.Context) (bool, error)
@@ -90,7 +90,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.GenerateApplicationToken(childComplexity, args["systemAuthID"].(string)), true
+		return e.complexity.Mutation.GenerateApplicationToken(childComplexity, args["authID"].(string)), true
 
 	case "Mutation.generateRuntimeToken":
 		if e.complexity.Mutation.GenerateRuntimeToken == nil {
@@ -102,7 +102,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.GenerateRuntimeToken(childComplexity, args["systemAuthID"].(string)), true
+		return e.complexity.Mutation.GenerateRuntimeToken(childComplexity, args["authID"].(string)), true
 
 	case "Query.isHealthy":
 		if e.complexity.Query.IsHealthy == nil {
@@ -206,8 +206,8 @@ type Query {
 
 type Mutation {	
     # Tokens	
-    generateApplicationToken(systemAuthID: ID!): Token!
-    generateRuntimeToken(systemAuthID: ID!): Token!
+    generateApplicationToken(authID: ID!): Token!
+    generateRuntimeToken(authID: ID!): Token!
 }
 `},
 )
@@ -220,13 +220,13 @@ func (ec *executionContext) field_Mutation_generateApplicationToken_args(ctx con
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["systemAuthID"]; ok {
+	if tmp, ok := rawArgs["authID"]; ok {
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["systemAuthID"] = arg0
+	args["authID"] = arg0
 	return args, nil
 }
 
@@ -234,13 +234,13 @@ func (ec *executionContext) field_Mutation_generateRuntimeToken_args(ctx context
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["systemAuthID"]; ok {
+	if tmp, ok := rawArgs["authID"]; ok {
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["systemAuthID"] = arg0
+	args["authID"] = arg0
 	return args, nil
 }
 
@@ -310,7 +310,7 @@ func (ec *executionContext) _Mutation_generateApplicationToken(ctx context.Conte
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().GenerateApplicationToken(rctx, args["systemAuthID"].(string))
+		return ec.resolvers.Mutation().GenerateApplicationToken(rctx, args["authID"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -344,7 +344,7 @@ func (ec *executionContext) _Mutation_generateRuntimeToken(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().GenerateRuntimeToken(rctx, args["systemAuthID"].(string))
+		return ec.resolvers.Mutation().GenerateRuntimeToken(rctx, args["authID"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {

@@ -9,6 +9,6 @@ type Query {
 
 type Mutation {	
     # Tokens	
-    generateApplicationToken(systemAuthID: ID!): Token!
-    generateRuntimeToken(systemAuthID: ID!): Token!
+    generateApplicationToken(authID: ID!): Token!
+    generateRuntimeToken(authID: ID!): Token!
 }
