@@ -14,7 +14,7 @@ type Loader interface {
 	Run(ctx context.Context)
 }
 
-type revocationListLoader struct {
+type revokedCertificatesLoader struct {
 	revokedCertsCache Cache
 	configMapManager  Manager
 	configMapName     string
@@ -26,7 +26,7 @@ func NewRevokedCertificatesLoader(revokedCertsCache Cache,
 	configMapName string,
 	reconnectInterval time.Duration,
 ) Loader {
-	return &revocationListLoader{
+	return &revokedCertificatesLoader{
 		revokedCertsCache: revokedCertsCache,
 		configMapManager:  configMapManager,
 		configMapName:     configMapName,
@@ -34,11 +34,11 @@ func NewRevokedCertificatesLoader(revokedCertsCache Cache,
 	}
 }
 
-func (rl *revocationListLoader) Run(ctx context.Context) {
+func (rl *revokedCertificatesLoader) Run(ctx context.Context) {
 	rl.startKubeWatch(ctx)
 }
 
-func (rl *revocationListLoader) startKubeWatch(ctx context.Context) {
+func (rl *revokedCertificatesLoader) startKubeWatch(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -63,7 +63,7 @@ func (rl *revocationListLoader) startKubeWatch(ctx context.Context) {
 	}
 }
 
-func (rl *revocationListLoader) processEvents(ctx context.Context, events <-chan watch.Event) {
+func (rl *revokedCertificatesLoader) processEvents(ctx context.Context, events <-chan watch.Event) {
 	for {
 		select {
 		case <-ctx.Done():

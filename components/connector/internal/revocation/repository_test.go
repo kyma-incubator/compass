@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func TestRevocationListRepository(t *testing.T) {
+func TestRevokedCertificatesRepository(t *testing.T) {
 
 	configMapName := "revokedCertificates"
 

@@ -19,7 +19,7 @@ type Components struct {
 	Authenticator authentication.Authenticator
 
 	CertificateService     certificates.Service
-	RevokedCertsRepository revocation.RevocationListRepository
+	RevokedCertsRepository revocation.RevokedCertificatesRepository
 
 	CSRSubjectConsts certificates.CSRSubjectConsts
 }
@@ -60,7 +60,7 @@ func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface) (Comp
 	}, certsLoader, revokedCertsLoader
 }
 
-func newRevokedCertsRepository(k8sClientSet kubernetes.Interface, revokedCertsConfigMap types.NamespacedName, revokedCertsCache revocation.Cache) revocation.RevocationListRepository {
+func newRevokedCertsRepository(k8sClientSet kubernetes.Interface, revokedCertsConfigMap types.NamespacedName, revokedCertsCache revocation.Cache) revocation.RevokedCertificatesRepository {
 	cmi := k8sClientSet.CoreV1().ConfigMaps(revokedCertsConfigMap.Namespace)
 
 	return revocation.NewRepository(cmi, revokedCertsConfigMap.Name, revokedCertsCache)

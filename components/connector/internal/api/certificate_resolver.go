@@ -27,7 +27,7 @@ type certificateResolver struct {
 	csrSubjectConsts               certificates.CSRSubjectConsts
 	directorURL                    string
 	certificateSecuredConnectorURL string
-	revokedCertsRepository         revocation.RevocationListRepository
+	revokedCertsRepository         revocation.RevokedCertificatesRepository
 	log                            *logrus.Entry
 }
 
@@ -38,7 +38,7 @@ func NewCertificateResolver(
 	csrSubjectConsts certificates.CSRSubjectConsts,
 	directorURL string,
 	certificateSecuredConnectorURL string,
-	revokedCertsRepository revocation.RevocationListRepository) CertificateResolver {
+	revokedCertsRepository revocation.RevokedCertificatesRepository) CertificateResolver {
 	return &certificateResolver{
 		authenticator:                  authenticator,
 		tokenService:                   tokenService,

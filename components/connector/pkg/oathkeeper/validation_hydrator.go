@@ -19,11 +19,11 @@ type ValidationHydrator interface {
 type validationHydrator struct {
 	tokenService           tokens.Service
 	certHeaderParser       CertificateHeaderParser
-	revokedCertsRepository revocation.RevocationListRepository
+	revokedCertsRepository revocation.RevokedCertificatesRepository
 	log                    *logrus.Entry
 }
 
-func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser, revokedCertsRepository revocation.RevocationListRepository) ValidationHydrator {
+func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser, revokedCertsRepository revocation.RevokedCertificatesRepository) ValidationHydrator {
 	return &validationHydrator{
 		tokenService:           tokenService,
 		certHeaderParser:       certHeaderParser,

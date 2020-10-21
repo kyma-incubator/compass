@@ -75,10 +75,10 @@ func TestMain(m *testing.M) {
 		},
 	)
 
-	internalComponents, certLoader, revocationListLoader := config.InitInternalComponents(cfg, k8sClientSet)
+	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet)
 
-	go certLoader.Run()
-	go revocationListLoader.Run(context.Background())
+	go certsLoader.Run()
+	go revokedCertsLoader.Run(context.Background())
 
 	tokenService = internalComponents.TokenService
 	externalAPIUrl = fmt.Sprintf("https://%s%s", cfg.ExternalAddress, cfg.APIEndpoint)

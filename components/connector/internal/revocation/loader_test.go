@@ -31,7 +31,7 @@ func prep(ctx context.Context, number int) (Cache, *testWatch, *mocks.Manager) {
 	return cache, watcher, configListManagerMock
 }
 
-func Test_revocationListLoader(t *testing.T) {
+func Test_revokedCertificatesLoader(t *testing.T) {
 
 	t.Run("should load configmap on add event", func(t *testing.T) {
 		// given
