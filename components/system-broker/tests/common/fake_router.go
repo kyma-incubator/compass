@@ -3,7 +3,6 @@ package common
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"sync"
 
@@ -41,7 +40,10 @@ func NewGqlFakeRouter(schemaName, path string) (*GqlFakeRouter, error) {
 		return nil, errors.New(gqlErr.Error())
 	}
 
-	return &GqlFakeRouter{Schema: schema}, nil
+	return &GqlFakeRouter{
+		ResponseConfig: make(map[GraphqlQueryKey]interface{}),
+		Schema:         schema,
+	}, nil
 }
 
 func (g *GqlFakeRouter) Handler() http.Handler {
@@ -65,14 +67,16 @@ func (g *GqlFakeRouter) configHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
-	requestBody, err := ioutil.ReadAll(r.Body)
+
+	jsonBody := make(map[string]interface{})
+	err := json.NewDecoder(r.Body).Decode(&jsonBody)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError)
 		return
 	}
 
-	query, err := gqlparser.LoadQuery(g.Schema, string(requestBody))
-	if err != nil {
+	query, GQLerr := gqlparser.LoadQuery(g.Schema, jsonBody["query"].(string))
+	if GQLerr != nil {
 		writeError(w, http.StatusInternalServerError)
 		return
 	}
