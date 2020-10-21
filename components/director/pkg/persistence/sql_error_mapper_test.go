@@ -44,7 +44,7 @@ func TestMapSQLError(t *testing.T) {
 		{
 			Name:       "Not mapper sql error",
 			Error:      &pq.Error{Code: "123", Message: "SQL fault"},
-			AssertFunc: isInternalServerErr(t, "Internal Server Error: SQL Error occurred"),
+			AssertFunc: isInternalServerErr(t, "Internal Server Error: Unexpected error while executing SQL query"),
 		},
 	}
 

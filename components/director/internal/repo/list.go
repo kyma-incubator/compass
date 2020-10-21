@@ -63,7 +63,6 @@ func (l *universalLister) unsafeList(ctx context.Context, dest Collection, condi
 		return err
 	}
 
-	log.Debug("Building DB query...")
 	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, OrderByParams{})
 	if err != nil {
 		return errors.Wrap(err, "while building list query")

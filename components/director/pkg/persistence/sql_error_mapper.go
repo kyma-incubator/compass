@@ -31,15 +31,12 @@ func MapSQLError(err error, resourceType resource.Type, format string, args ...i
 
 	log.Errorf("SQL Error: %s. Caused by: %s. DETAILS: %s", fmt.Sprintf(format, args...), pgErr.Message, pgErr.Detail)
 
-	log.Debug("Checking Postgres error code...")
 	switch pgErr.Code {
 	case UniqueViolation:
-		log.Errorf("Postgres unique violation error code found in '%s' table. Error message: '%s'. DETAILS: %s Postgres error code: '%s'", pgErr.Table, pgErr.Message, pgErr.Detail, pgErr.Code)
 		return apperrors.NewNotUniqueError(resourceType)
 	case ForeignKeyViolation:
-		log.Errorf("Postgres foreign key violation error found in '%s' table. Error message: '%s'. DETAILS: %s Postgres error code: '%s'", pgErr.Table, pgErr.Message, pgErr.Detail, pgErr.Code)
 		return apperrors.NewInvalidDataError("Object already exist")
 	}
 
-	return apperrors.NewInternalError("SQL Error occurred")
+	return apperrors.NewInternalError("Unexpected error while executing SQL query")
 }

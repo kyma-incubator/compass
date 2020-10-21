@@ -78,14 +78,12 @@ func (g *universalDeleter) unsafeDelete(ctx context.Context, conditions Conditio
 		stmtBuilder.WriteString(" WHERE")
 	}
 
-	log.Debug("Add conditions to the query")
 	err = writeEnumeratedConditions(&stmtBuilder, conditions)
 	if err != nil {
 		return errors.Wrap(err, "while writing enumerated conditions")
 	}
 	allArgs := getAllArgs(conditions)
 
-	log.Debug("Building DB query...")
 	query := getQueryFromBuilder(stmtBuilder)
 	log.Debugf("Executing DB query: %s", query)
 	res, err := persist.Exec(query, allArgs...)

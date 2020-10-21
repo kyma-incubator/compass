@@ -74,7 +74,6 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 
 	var stmtBuilder strings.Builder
 
-	log.Debug("Building DB query...")
 	stmtBuilder.WriteString(fmt.Sprintf("UPDATE %s SET %s", u.tableName, strings.Join(fieldsToSet, ", ")))
 	if !isGlobal || len(u.idColumns) > 0 {
 		stmtBuilder.WriteString(" WHERE")

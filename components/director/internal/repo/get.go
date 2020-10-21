@@ -67,7 +67,6 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 		return err
 	}
 
-	log.Debug("Building DB query...")
 	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, orderByParams)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")

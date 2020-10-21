@@ -62,14 +62,12 @@ func (g *universalExistQuerier) unsafeExists(ctx context.Context, conditions Con
 		stmtBuilder.WriteString(" WHERE")
 	}
 
-	log.Debug("Add conditions to the query")
 	err = writeEnumeratedConditions(&stmtBuilder, conditions)
 	if err != nil {
 		return false, errors.Wrap(err, "while writing enumerated conditions")
 	}
 	allArgs := getAllArgs(conditions)
 
-	log.Debug("Building DB query...")
 	query := getQueryFromBuilder(stmtBuilder)
 
 	log.Debugf("Executing DB query: %s", query)
