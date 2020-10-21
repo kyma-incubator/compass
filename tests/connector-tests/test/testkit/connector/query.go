@@ -6,7 +6,7 @@ type queryProvider struct{}
 
 func (qp queryProvider) generateApplicationToken(id string) string {
 	return fmt.Sprintf(`mutation {
-	result: generateApplicationToken(appID: "%s") {
+	result: generateApplicationToken(authID: "%s") {
 		token
 	}
 }`, id)
@@ -14,7 +14,7 @@ func (qp queryProvider) generateApplicationToken(id string) string {
 
 func (qp queryProvider) generateRuntimeToken(id string) string {
 	return fmt.Sprintf(`mutation {
-	result: generateRuntimeToken(runtimeID: "%s") {
+	result: generateRuntimeToken(authID: "%s") {
 		token
 	}
 }`, id)
