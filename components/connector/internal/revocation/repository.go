@@ -21,16 +21,16 @@ type RevocationListRepository interface {
 }
 
 type revocationListRepository struct {
-	configMapManager    Manager
-	configMapName       string
-	revocationListCache Cache
+	configMapManager  Manager
+	configMapName     string
+	revokedCertsCache Cache
 }
 
-func NewRepository(configMapManager Manager, configMapName string, revocationListCache Cache) RevocationListRepository {
+func NewRepository(configMapManager Manager, configMapName string, revokedCertsCache Cache) RevocationListRepository {
 	return &revocationListRepository{
-		configMapManager:    configMapManager,
-		configMapName:       configMapName,
-		revocationListCache: revocationListCache,
+		configMapManager:  configMapManager,
+		configMapName:     configMapName,
+		revokedCertsCache: revokedCertsCache,
 	}
 }
 
@@ -58,7 +58,7 @@ func (r *revocationListRepository) Insert(hash string) error {
 }
 
 func (r *revocationListRepository) Contains(hash string) bool {
-	configMap := r.revocationListCache.Get()
+	configMap := r.revokedCertsCache.Get()
 
 	found := false
 	if configMap != nil {
