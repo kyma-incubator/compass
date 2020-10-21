@@ -24,7 +24,7 @@ global:
     director:
       dir:
       version: "PR-1568"
-    gateway:
+    gatgeway:
       dir:
       version: "PR-1565"
     healthchecker:

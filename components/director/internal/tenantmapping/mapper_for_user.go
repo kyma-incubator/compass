@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -30,56 +32,78 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 	var staticUser *StaticUser
 	var err error
 
-	scopes = m.getScopesForUserGroups(reqData)
+	log := loggerFromContextOrDefault(ctx).WithFields(logrus.Fields{
+		"consumer_type": consumer.User,
+	})
+
+	log.Info("Getting scopes from groups")
+	scopes = m.getScopesForUserGroups(reqData, log)
 	if !hasScopes(scopes) {
-		staticUser, scopes, err = m.getUserData(reqData, username)
+		log.Info("No scopes found from groups, getting user data")
+
+		staticUser, scopes, err = m.getUserData(reqData, username, log)
 		if err != nil {
-			return ObjectContext{}, errors.Wrap(err, fmt.Sprintf("while getting user data"))
+			return ObjectContext{}, errors.Wrapf(err, "while getting user data for user: %s", username)
 		}
 	}
 
 	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
 		if !apperrors.IsKeyDoesNotExist(err) {
-			return ObjectContext{}, errors.Wrap(err, "while fetching external tenant")
+			return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", username)
 		}
+		log.Warningf("Could not get tenant external id, error: %s", err.Error())
+
+		log.Info("Could not create tenant context, returning empty context...")
 		return NewObjectContext(TenantContext{}, scopes, username, consumer.User), nil
 	}
 
+	log.Infof("Getting the tenant with external ID: %s", externalTenantID)
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
+			log.Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
+
+			log.Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
 			return NewObjectContext(NewTenantContext(externalTenantID, ""), scopes, username, consumer.User), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
 	if staticUser != nil && !hasValidTenant(staticUser.Tenants, tenantMapping.ExternalTenant) {
-		return ObjectContext{}, apperrors.NewInternalError("tenant mismatch")
+		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: %s missmatch external tenant: %s", staticUser.Username, tenantMapping.ExternalTenant))
 	}
 
-	return NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, username, consumer.User), nil
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, username, consumer.User)
+	log.Infof("Successfully got object context: %+v", objCtx)
+
+	return objCtx, nil
 }
 
-func (m *mapperForUser) getScopesForUserGroups(reqData oathkeeper.ReqData) string {
+func (m *mapperForUser) getScopesForUserGroups(reqData oathkeeper.ReqData, log *logrus.Entry) string {
 	userGroups := reqData.GetUserGroups()
 	if len(userGroups) == 0 {
 		return ""
 	}
+	log.Debugf("Found user groups: %s", strings.Join(userGroups, " "))
 
 	staticGroups := m.staticGroupRepo.Get(userGroups)
 	if len(staticGroups) == 0 {
 		return ""
 	}
 
-	return staticGroups.GetGroupScopes()
+	scopes := staticGroups.GetGroupScopes()
+	log.Debugf("Found scopes: %s", scopes)
+
+	return scopes
 }
 
-func (m *mapperForUser) getUserData(reqData oathkeeper.ReqData, username string) (*StaticUser, string, error) {
+func (m *mapperForUser) getUserData(reqData oathkeeper.ReqData, username string, log *logrus.Entry) (*StaticUser, string, error) {
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
-		return nil, "", errors.Wrap(err, fmt.Sprintf("while searching for a static user with username %s", username))
+		return nil, "", errors.Wrapf(err, "while searching for a static user with username %s", username)
 	}
+	log.Debugf("Found static user with name %s and tenants: %s", staticUser.Username, staticUser.Tenants)
 
 	scopes, err := reqData.GetScopes()
 	if err != nil {
@@ -88,6 +112,7 @@ func (m *mapperForUser) getUserData(reqData oathkeeper.ReqData, username string)
 		}
 		scopes = strings.Join(staticUser.Scopes, " ")
 	}
+	log.Debugf("Found scopes: %s", scopes)
 
 	return &staticUser, scopes, nil
 }
