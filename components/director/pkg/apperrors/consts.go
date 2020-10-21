@@ -14,6 +14,7 @@ const (
 	TenantNotFound     ErrorType = 25
 	Unauthorized       ErrorType = 26
 	InvalidOperation   ErrorType = 27
+	OperationTimeout   ErrorType = 28
 )
 
 const (
@@ -30,4 +31,5 @@ const (
 	cannotReadTenantMsg          = "cannot read tenant from context"
 	invalidOperationMsg          = "the operation is not allowed"
 	unauthorizedMsg              = "Unauthorized"
+	operationTimeoutMsg          = "operation has timed out"
 )
