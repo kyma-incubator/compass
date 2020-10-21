@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/kyma-incubator/compass v0.0.0-20200703104319-1c4490318bfd
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200703104319-1c4490318bfd
+	github.com/kyma-incubator/compass/components/director v0.0.0-20201021083502-00fbe681e327
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -19,7 +19,6 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/vektah/gqlparser v1.3.1 // indirect
 	github.com/vrischmann/envconfig v1.2.0
-	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
 	gopkg.in/asaskevich/govalidator.v9 v9.0.0-20180315120708-ccb8e960c48f
 	k8s.io/api v0.17.2 // indirect
 	k8s.io/apimachinery v0.17.3 // indirect

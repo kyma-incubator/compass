@@ -9,7 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 
-	timeouthandler "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/handler"
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 
 	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 

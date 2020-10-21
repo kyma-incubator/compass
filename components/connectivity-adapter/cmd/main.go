@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/handler"
+	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"log"
 	"net/http"
 	"time"

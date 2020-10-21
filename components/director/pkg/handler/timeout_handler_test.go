@@ -3,8 +3,8 @@ package handler_test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/handler"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
+	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"

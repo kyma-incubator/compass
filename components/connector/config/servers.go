@@ -1,7 +1,7 @@
 package config
 
 import (
-	timeouthandler "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/handler"
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/healthz"

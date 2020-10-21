@@ -680,7 +680,7 @@
     "github.com/99designs/gqlgen/handler",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
-    "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/handler",
+    "github.com/kyma-incubator/compass/components/director/pkg/handler",
     "github.com/machinebox/graphql",
     "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",
