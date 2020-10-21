@@ -164,6 +164,18 @@
   version = "v1.0.2"
 
 [[projects]]
+  branch = "timeouts"
+  digest = "1:ded980c1123072517e4bf53bedbc678d4935576b05b10a9fc4b631d6e3968d20"
+  name = "github.com/kyma-incubator/compass"
+  packages = [
+    "components/connectivity-adapter/pkg/apperrors",
+    "components/connectivity-adapter/pkg/handler",
+    "components/connectivity-adapter/pkg/res",
+  ]
+  pruneopts = "UT"
+  revision = "754956070c89b2e889a50619984053190f3598e7"
+
+[[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
   name = "github.com/machinebox/graphql"
   packages = ["."]
@@ -668,6 +680,7 @@
     "github.com/99designs/gqlgen/handler",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
+    "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/handler",
     "github.com/machinebox/graphql",
     "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",

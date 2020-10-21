@@ -39,6 +39,10 @@ required = [
   name = "k8s.io/kubernetes"
   version = "kubernetes-1.16.10"
 
+[[override]]
+  name = "github.com/kyma-incubator/compass"
+  branch = "timeouts"
+
 [prune]
   go-tests = true
   unused-packages = true
