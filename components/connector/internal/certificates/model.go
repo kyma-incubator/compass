@@ -2,6 +2,7 @@ package certificates
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 )
 
