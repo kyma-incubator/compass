@@ -2,9 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
 const (
