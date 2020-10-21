@@ -3,11 +3,12 @@ package common
 import (
 	"encoding/json"
 	"errors"
-	"github.com/vektah/gqlparser"
-	"github.com/vektah/gqlparser/ast"
 	"io/ioutil"
 	"net/http"
 	"sync"
+
+	"github.com/vektah/gqlparser"
+	"github.com/vektah/gqlparser/ast"
 )
 
 type GraphqlQueryKey struct {
@@ -20,11 +21,10 @@ type ConfigRequestBody struct {
 	Response interface{}
 }
 
-
 type GqlFakeRouter struct {
-	m sync.RWMutex
+	m              sync.RWMutex
 	ResponseConfig map[GraphqlQueryKey]interface{}
-	Schema *ast.Schema
+	Schema         *ast.Schema
 }
 
 func NewGqlFakeRouter(schemaName, path string) (*GqlFakeRouter, error) {
@@ -52,7 +52,7 @@ func (g *GqlFakeRouter) Handler() http.Handler {
 	return mux
 }
 
-func (g *GqlFakeRouter) configHandler(w http.ResponseWriter, r *http.Request)  {
+func (g *GqlFakeRouter) configHandler(w http.ResponseWriter, r *http.Request) {
 	body := ConfigRequestBody{}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusInternalServerError)
@@ -64,15 +64,14 @@ func (g *GqlFakeRouter) configHandler(w http.ResponseWriter, r *http.Request)  {
 	g.ResponseConfig[body.GraphqlQueryKey] = body.Response
 }
 
-func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request)  {
-
+func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError)
 		return
 	}
 
-	query , err := gqlparser.LoadQuery(g.Schema, string(requestBody))
+	query, err := gqlparser.LoadQuery(g.Schema, string(requestBody))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError)
 		return
@@ -91,5 +90,3 @@ func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request)  
 		return
 	}
 }
-
-

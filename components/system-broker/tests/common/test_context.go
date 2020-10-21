@@ -19,6 +19,7 @@ import (
 )
 
 const SystemBrokerServer = "system-broker-server"
+const DirectorServer = "director-server"
 
 type TestContext struct {
 	SystemBroker *httpexpect.Expect
@@ -95,6 +96,13 @@ func (tcb *TestContextBuilder) Build(t *testing.T) *TestContext {
 
 	sbServer := newSystemBrokerServer(tcb.Environment)
 	tcb.Servers[SystemBrokerServer] = sbServer
+
+	gqlMockHandler, err := NewGqlFakeRouter("director", "../../../director/pkg/graphql/schema.graphql")
+	if err != nil {
+		panic(fmt.Errorf("could not build gql mock handler: %s", err))
+	}
+	gqlMockServer := NewGqlFakeServer(gqlMockHandler.Handler())
+	tcb.Servers[DirectorServer] = gqlMockServer
 
 	systemBroker := httpexpect.New(t, sbServer.URL()).Builder(func(request *httpexpect.Request) {
 		request.WithClient(tcb.HttpClient)
