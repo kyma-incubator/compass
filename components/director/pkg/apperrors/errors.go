@@ -59,6 +59,13 @@ func ErrorCode(err error) ErrorType {
 
 }
 
+func NewOperationTimeoutError() error {
+	return Error{
+		errorCode: OperationTimeout,
+		Message:   operationTimeoutMsg,
+	}
+}
+
 func NewNotUniqueError(resourceType resource.Type) error {
 	return Error{
 		errorCode: NotUnique,
@@ -72,7 +79,6 @@ func NewNotFoundError(resourceType resource.Type, objectID string) error {
 		errorCode: NotFound,
 		Message:   notFoundMsg,
 		arguments: map[string]string{"object": string(resourceType), "ID": objectID},
-		parentErr: nil,
 	}
 }
 
@@ -81,7 +87,6 @@ func NewNotFoundErrorWithType(resourceType resource.Type) error {
 		errorCode: NotFound,
 		Message:   notFoundMsg,
 		arguments: map[string]string{"object": string(resourceType)},
-		parentErr: nil,
 	}
 }
 
