@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 
 	timeservices "github.com/kyma-incubator/compass/components/gateway/internal/time"
 

@@ -34,7 +34,7 @@ func (f optionFunc) apply(o *clientsetOptions) {
 
 type clientsetOptions struct {
 	skipTLSVerify bool
-	timeout time.Duration
+	timeout       time.Duration
 }
 
 func WithSkipTLSVerify(skipTLSVerify bool) Option {

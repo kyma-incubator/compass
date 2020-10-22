@@ -1,8 +1,9 @@
 package config
 
 import (
-	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"net/http"
+
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
 	log "github.com/sirupsen/logrus"

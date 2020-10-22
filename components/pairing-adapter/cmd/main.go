@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 
 	"golang.org/x/oauth2"
 
@@ -45,7 +46,7 @@ func main() {
 	})
 
 	server := &http.Server{
-		Addr: fmt.Sprintf(":%s", conf.Port),
+		Addr:              fmt.Sprintf(":%s", conf.Port),
 		ReadHeaderTimeout: conf.ServerTimeout,
 	}
 

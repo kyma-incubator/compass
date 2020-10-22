@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry"

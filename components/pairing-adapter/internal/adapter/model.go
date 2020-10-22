@@ -1,8 +1,9 @@
 package adapter
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 const (
@@ -14,9 +15,9 @@ const (
 type AuthStyle string
 
 type Configuration struct {
-	Mapping Mapping
-	OAuth   OAuth
-	Port    string `envconfig:"default=8080"`
+	Mapping       Mapping
+	OAuth         OAuth
+	Port          string        `envconfig:"default=8080"`
 	ClientTimeout time.Duration `envconfig:"default=30s"`
 	ServerTimeout time.Duration `envconfig:"default=30s"`
 }
