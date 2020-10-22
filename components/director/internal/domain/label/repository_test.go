@@ -166,7 +166,7 @@ func TestRepository_Upsert(t *testing.T) {
 		err := labelRepo.Upsert(ctx, &labelModel)
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while upserting row to 'public.labels' table: Test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -1067,7 +1067,7 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testErr.Error())
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 		dbMock.AssertExpectations(t)
 	})
 

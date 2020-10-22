@@ -56,7 +56,7 @@ func TestUpsert(t *testing.T) {
 		// WHEN
 		err := sut.Upsert(ctx, givenUser)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while upserting row to 'users' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns non unique error", func(t *testing.T) {
@@ -99,5 +99,5 @@ func TestUpsertWhenWrongConfiguration(t *testing.T) {
 	err := sut.Upsert(ctx, User{})
 	// THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "could not find name column_does_not_exist")
+	assert.Contains(t, err.Error(), "Unexpected error while executing SQL query")
 }

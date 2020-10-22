@@ -92,11 +92,11 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		stmtBuilder.WriteString(fmt.Sprintf(" %s", strings.Join(preparedIDColumns, " AND ")))
 	}
 
+	log.Debugf("Executing DB query: %s", stmtBuilder.String())
 	res, err := persist.NamedExec(stmtBuilder.String(), dbEntity)
-	if err = persistence.MapSQLError(err, u.resourceType, "while updating single entity"); err != nil {
+	if err = persistence.MapSQLError(err, u.resourceType, "while updating single entity from '%s' table", u.tableName); err != nil {
 		return err
 	}
-	log.Debugf("Executing query: %s", stmtBuilder.String())
 
 	affected, err := res.RowsAffected()
 	if err != nil {

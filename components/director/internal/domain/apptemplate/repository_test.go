@@ -82,7 +82,7 @@ func TestRepository_Create(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while inserting row to 'public.app_templates' table: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -133,7 +133,7 @@ func TestRepository_Get(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while getting object from table public.app_templates: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Error when converting", func(t *testing.T) {
@@ -210,7 +210,7 @@ func TestRepository_GetByName(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while getting object from table public.app_templates: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Error when converting", func(t *testing.T) {
@@ -277,7 +277,7 @@ func TestRepository_Exists(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), testError.Error())
+		assert.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
 		assert.False(t, result)
 	})
 }
@@ -422,7 +422,7 @@ func TestRepository_Update(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while updating single entity: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Error when converting", func(t *testing.T) {
@@ -479,6 +479,6 @@ func TestRepository_Delete(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		assert.EqualError(t, err, "Internal Server Error: while deleting object from database: test error")
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
