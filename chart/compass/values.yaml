@@ -14,19 +14,19 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1550"
+      version: "PR-1571"
     connectivity_adapter:
       dir:
-      version: "PR-1480"
+      version: "PR-1571"
     pairing_adapter:
       dir:
-      version: "PR-1460"
+      version: "PR-1571"
     director:
       dir:
-      version: "PR-1568"
+      version: "PR-1571"
     gateway:
       dir:
-      version: "PR-1565"
+      version: "PR-1571"
     healthchecker:
       dir:
       version: "PR-1460"
