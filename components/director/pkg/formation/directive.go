@@ -31,6 +31,7 @@ import (
 )
 
 const (
+	GetApplicationID                      = "GetApplicationID"
 	GetApplicationIDByPackage             = "GetApplicationIDByPackage"
 	GetApplicationIDByPackageInstanceAuth = "GetApplicationIDByPackageInstanceAuth"
 )
@@ -45,6 +46,7 @@ type directive struct {
 	log                  *logrus.Logger
 }
 
+// NewDirective returns a new formation directive
 func NewDirective(log *logrus.Logger) *directive {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
@@ -67,6 +69,9 @@ func NewDirective(log *logrus.Logger) *directive {
 		labelRepo: label.NewRepository(label.NewConverter()),
 		log:       log,
 		applicationProviders: map[string]func(context.Context, string, string) (string, error){
+			GetApplicationID: func(ctx context.Context, tenantID string, appID string) (string, error) {
+				return appID, nil
+			},
 			GetApplicationIDByPackage: getApplicationIDByPackageFunc,
 			GetApplicationIDByPackageInstanceAuth: func(ctx context.Context, tenantID, packageInstanceAuthID string) (string, error) {
 				packageInstanceAuth, err := packageInstanceAuthRepo.GetByID(ctx, tenantID, packageInstanceAuthID)
@@ -80,6 +85,8 @@ func NewDirective(log *logrus.Logger) *directive {
 	}
 }
 
+// HasFormation ensures that the runtime is in a formation with the application which resources are being manipulated.
+// If the caller is not a Runtime, then request is forwarded to the next resolver.
 func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -135,6 +142,11 @@ func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphq
 	if len(commonScenarios) == 0 {
 		return nil, errors.New("Forbidden: Missing formations")
 	}
+	/*
+		if !hasCommonScenarios(appScenarios, runtimeScenarios) {
+			return nil, errors.New("Forbidden: Missing formations")
+		}
+	*/
 
 	err = tx.Commit()
 	if err != nil {
@@ -166,4 +178,18 @@ func stringsIntersection(str1, str2 []string) []string {
 		}
 	}
 	return intersection
+}
+
+// hasCommonScenarios returns whether there are common elements in two string slices.
+func hasCommonScenarios(str1, str2 []string) bool {
+	strings := make(map[string]bool)
+	for _, v := range str1 {
+		strings[v] = true
+	}
+	for _, v := range str2 {
+		if strings[v] {
+			return true
+		}
+	}
+	return false
 }

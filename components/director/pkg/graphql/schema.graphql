@@ -957,7 +957,7 @@ type Query {
 	**Examples**
 	- [query application](examples/query-application/query-application.graphql)
 	"""
-	application(id: ID!): Application @hasScopes(path: "graphql.query.application")
+	application(id: ID!): Application @hasScopes(path: "graphql.query.application") @hasFormation(applicationProvider: "GetApplicationID", idField: "id")
 	"""
 	Maximum `first` parameter value is 100
 	
