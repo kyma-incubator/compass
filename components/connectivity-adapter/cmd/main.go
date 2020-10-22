@@ -32,14 +32,10 @@ func main() {
 	exitOnError(err, "while loading app config")
 
 	h, err := initAPIHandler(cfg)
-	if err != nil {
-		exitOnError(err, "Failed to init External Connector handler")
-	}
+	exitOnError(err, "Failed to init External Connector handler")
 
 	handlerWithTimeout, err := handler.WithTimeout(h, cfg.ServerTimeout)
-	if err != nil {
-		exitOnError(err, "Filed configuring timeout on handler")
-	}
+	exitOnError(err, "Failed configuring timeout on handler")
 
 	server := &http.Server{
 		Addr:              cfg.Address,
