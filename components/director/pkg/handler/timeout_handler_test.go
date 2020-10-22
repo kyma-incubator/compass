@@ -18,7 +18,8 @@ func TestHandlerWithTimeout_ReturnsTimeoutMessage(t *testing.T) {
 	timeout := time.Millisecond * 100
 	h := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		time.Sleep(time.Second)
-		writer.WriteHeader(http.StatusOK)
+		_, err := writer.Write([]byte("test"))
+		require.Equal(t, http.ErrHandlerTimeout, err)
 	})
 
 	handlerWithTimeout, err := handler.WithTimeout(h, timeout)
@@ -30,10 +31,8 @@ func TestHandlerWithTimeout_ReturnsTimeoutMessage(t *testing.T) {
 	handlerWithTimeout.ServeHTTP(w, req)
 
 	resp := w.Result()
-
 	require.NotNil(t, resp)
 
-	require.NotNil(t, resp)
 	require.Equal(t, handler.HeaderContentTypeValue, resp.Header.Get(handler.HeaderContentTypeKey))
 
 	respBody, err := ioutil.ReadAll(resp.Body)
