@@ -14,7 +14,6 @@ const (
 	CodeWrongInput
 	CodeUpstreamServerCallFailed
 	CodeForbidden
-	CodeTimeout
 )
 
 type AppError interface {
