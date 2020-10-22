@@ -86,7 +86,7 @@ func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConst
 	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
 	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
 
-	handlerWithTimeout, err := timeouthandler.WithTimeout(v1Router, cfg.ServerTimeout)
+	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
 	if err != nil {
 		return nil, err
 	}
