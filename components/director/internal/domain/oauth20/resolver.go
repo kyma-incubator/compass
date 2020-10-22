@@ -112,7 +112,7 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 	}
 
 	id := clientCreds.ClientID
-	r.logger.Debugf("Creating SystemAuth model for the client credentials for %s with id %s", objType, objID)
+	r.logger.Debugf("Creating SystemAuth for the client credentials for %s with id %s", objType, objID)
 	_, err = r.systemAuthSvc.CreateWithCustomID(ctx, id, objType, objID, &model.AuthInput{
 		Credential: &model.CredentialDataInput{
 			Oauth: clientCreds,
@@ -120,9 +120,9 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 	})
 	if err != nil {
 		finalErr := cleanupOnError(err)
-		return nil, errors.Wrapf(finalErr, "error occurred while creating SystemAuth model for %s with id %s", objType, objID)
+		return nil, errors.Wrapf(finalErr, "error occurred while creating SystemAuth for %s with id %s", objType, objID)
 	}
-	r.logger.Debugf("Successfully created SystemAuth model for the client credentials for %s with id %s", objType, objID)
+	r.logger.Debugf("Successfully created SystemAuth for the client credentials for %s with id %s", objType, objID)
 
 	sysAuth, err := r.systemAuthSvc.GetByIDForObject(ctx, objType, id)
 	if err != nil {

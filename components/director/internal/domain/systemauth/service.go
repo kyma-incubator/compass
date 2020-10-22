@@ -59,7 +59,7 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 		}
 	}
 
-	s.logger.Debugf("Tenant %s loaded while creating SystemAuth model for %s with id %s", tnt, objectType, objectID)
+	s.logger.Debugf("Tenant %s loaded while creating SystemAuth for %s with id %s", tnt, objectType, objectID)
 
 	systemAuth := model.SystemAuth{
 		ID:    id,
