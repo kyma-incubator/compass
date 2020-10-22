@@ -67,7 +67,6 @@ func (g *GqlFakeRouter) configHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
-
 	jsonBody := make(map[string]interface{})
 	err := json.NewDecoder(r.Body).Decode(&jsonBody)
 	if err != nil {

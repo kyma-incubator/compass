@@ -3,9 +3,10 @@ package healthcheck_test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
 	"github.com/stretchr/testify/suite"
@@ -84,12 +85,16 @@ func (suite *OSBCatalogTestSuite) TearDownSuite() {
 func (suite *OSBCatalogTestSuite) TestCatalogIsOK() {
 	url := suite.testContext.Servers[common.DirectorServer].URL() + "/config"
 
+	var applicationsResponse map[string]interface{}
+	err := json.Unmarshal([]byte(dummyResponse), &applicationsResponse)
+	assert.NoError(suite.T(), err)
+
 	body := common.ConfigRequestBody{
 		GraphqlQueryKey: common.GraphqlQueryKey{
 			Type: "query",
 			Name: "applications",
 		},
-		Response: dummyResponse,
+		Response: applicationsResponse,
 	}
 	jsonBody, err := json.Marshal(body)
 
