@@ -2,17 +2,19 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+)
+
+const (
+	HeaderContentTypeKey   = "Content-Type"
+	HeaderContentTypeValue = "application/json;charset=UTF-8"
 )
 
 func WithTimeout(h http.Handler, timeout time.Duration) (http.Handler, error) {
-	msg, err := json.Marshal(res.ErrorResponse{
-		Code:  apperrors.CodeTimeout,
-		Error: "operation has timed out",
-	})
+	msg, err := json.Marshal(apperrors.NewOperationTimeoutError())
 	if err != nil {
 		return nil, err
 	}
@@ -31,6 +33,6 @@ type contentTypeHandler struct {
 }
 
 func (h *contentTypeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set(res.HeaderContentTypeKey, res.HeaderContentTypeValue)
+	w.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
 	h.h.ServeHTTP(w, r)
 }

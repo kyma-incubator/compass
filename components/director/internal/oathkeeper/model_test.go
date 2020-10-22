@@ -183,7 +183,7 @@ func TestReqData_GetTenantID(t *testing.T) {
 
 		_, err := reqData.GetExternalTenantID()
 
-		require.EqualError(t, err, "while parsing the value for tenant: Internal Server Error: unable to cast the value to a string type")
+		require.EqualError(t, err, "while parsing the value for key=tenant: Internal Server Error: unable to cast the value to a string type")
 	})
 
 	t.Run("returns error when tenant ID is not specified", func(t *testing.T) {

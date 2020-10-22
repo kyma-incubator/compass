@@ -36,6 +36,7 @@ type service struct {
 	scopeCfgProvider          ScopeCfgProvider
 	httpCli                   *http.Client
 	uidService                UIDService
+	logger                    *logrus.Logger
 }
 
 func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Config, httpCli *http.Client) *service {
@@ -45,6 +46,7 @@ func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Co
 		publicAccessTokenEndpoint: cfg.PublicAccessTokenEndpoint,
 		httpCli:                   httpCli,
 		uidService:                uidService,
+		logger:                    logrus.New(),
 	}
 }
 
@@ -55,11 +57,12 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 			return nil, err
 		}
 	}
+	s.logger.Debugf("Fetched client credential scopes: %s for %s", scopes, objectType)
 
 	clientID := s.uidService.Generate()
 	clientSecret, err := s.registerClient(clientID, scopes)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while registering client credentials in Hydra")
 	}
 
 	credentialData := &model.OAuthCredentialDataInput{
@@ -94,7 +97,7 @@ func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []m
 func (s *service) getClientCredentialScopes(objType model.SystemAuthReferenceObjectType) ([]string, error) {
 	scopes, err := s.scopeCfgProvider.GetRequiredScopes(s.buildPath(objType))
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting scopes for registering Client Credentials")
+		return nil, errors.Wrapf(err, "while getting scopes for registering Client Credentials for %s", objType)
 	}
 
 	return scopes, nil
@@ -111,6 +114,7 @@ type clientCredentialsRegistrationResponse struct {
 }
 
 func (s *service) registerClient(clientID string, scopes []string) (string, error) {
+	s.logger.Debugf("Registering client_id %s and client_secret in Hydra with scopes: %s", clientID, scopes)
 	reqBody := &clientCredentialsRegistrationBody{
 		GrantTypes: defaultGrantTypes,
 		ClientID:   clientID,
@@ -139,10 +143,12 @@ func (s *service) registerClient(clientID string, scopes []string) (string, erro
 		return "", errors.Wrap(err, "while decoding response body")
 	}
 
+	s.logger.Debugf("client_id %s and client_secret successfully registered in Hydra", clientID)
 	return registrationResp.ClientSecret, nil
 }
 
 func (s *service) unregisterClient(clientID string) error {
+	s.logger.Debugf("Unregistering client_id %s and client_secret in Hydra", clientID)
 	endpoint := fmt.Sprintf("%s/%s", s.clientEndpoint, clientID)
 
 	resp, closeBody, err := s.doRequest(http.MethodDelete, endpoint, nil)
@@ -155,6 +161,7 @@ func (s *service) unregisterClient(clientID string) error {
 		return fmt.Errorf("invalid HTTP status code: received: %d, expected %d", resp.StatusCode, http.StatusNoContent)
 	}
 
+	s.logger.Debugf("client_id %s and client_secret successfully unregistered in Hydra", clientID)
 	return nil
 }
 
@@ -178,12 +185,12 @@ func (s *service) doRequest(method string, endpoint string, body io.Reader) (*ht
 		}
 		_, err = io.Copy(ioutil.Discard, resp.Body)
 		if err != nil {
-			logrus.Error(err)
+			s.logger.Error(err)
 		}
 
 		err := body.Close()
 		if err != nil {
-			logrus.Error(err)
+			s.logger.Error(err)
 		}
 	}
 
