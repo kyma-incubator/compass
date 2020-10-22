@@ -323,7 +323,11 @@ func createServer(address string, handler http.Handler, name string, timeout tim
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
-	srv := &http.Server{Addr: address, Handler: handlerWithTimeout}
+	srv := &http.Server{
+		Addr:              address,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: timeout,
+	}
 
 	runFn := func() {
 		log.Infof("Running %s server on %s...", name, address)

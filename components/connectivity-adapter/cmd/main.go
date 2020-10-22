@@ -16,7 +16,7 @@ import (
 )
 
 type config struct {
-	Address       string        `envconfig:"default=127.0.0.1:8080"`
+	Address string `envconfig:"default=127.0.0.1:8080"`
 
 	ServerTimeout time.Duration `envconfig:"default=119s"`
 
@@ -40,9 +40,14 @@ func main() {
 		exitOnError(err, "Filed configuring timeout on handler")
 	}
 
+	server := &http.Server{
+		Addr:              cfg.Address,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
+	}
+
 	log.Printf("API listening on %s", cfg.Address)
-	err = http.ListenAndServe(cfg.Address, handlerWithTimeout)
-	exitOnError(err, fmt.Sprintf("while listening on %s", cfg.Address))
+	exitOnError(server.ListenAndServe(), fmt.Sprintf("while listening on %s", cfg.Address))
 }
 
 func initAPIHandler(cfg config) (http.Handler, error) {

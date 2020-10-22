@@ -41,7 +41,7 @@ required = [
 
 [[override]]
   name = "github.com/kyma-incubator/compass"
-  branch = "timeouts"
+  branch = "master"
 
 [prune]
   go-tests = true

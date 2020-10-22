@@ -40,8 +40,9 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	}
 
 	return &http.Server{
-		Addr:    cfg.ExternalAddress,
-		Handler: handlerWithTimeout,
+		Addr:              cfg.ExternalAddress,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
 	}, nil
 }
 
@@ -64,8 +65,9 @@ func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) (
 	}
 
 	return &http.Server{
-		Addr:    cfg.InternalAddress,
-		Handler: handlerWithTimeout,
+		Addr:              cfg.InternalAddress,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
 	}, nil
 }
 
@@ -89,7 +91,8 @@ func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConst
 	}
 
 	return &http.Server{
-		Addr:    cfg.HydratorAddress,
-		Handler: handlerWithTimeout,
+		Addr:              cfg.HydratorAddress,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
 	}, nil
 }

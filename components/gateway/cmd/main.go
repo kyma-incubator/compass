@@ -80,8 +80,13 @@ func main() {
 
 	http.Handle("/", handlerWithTimeout)
 
+	server := &http.Server{
+		Addr:              cfg.Address,
+		ReadHeaderTimeout: cfg.ServerTimeout,
+	}
+
 	log.Printf("Listening on %s", cfg.Address)
-	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		done <- true
 		panic(err)
 	}

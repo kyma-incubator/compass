@@ -44,8 +44,12 @@ func main() {
 		writer.WriteHeader(http.StatusOK)
 	})
 
-	err = http.ListenAndServe(fmt.Sprintf(":%s", conf.Port), nil)
-	exitOnError(err, "on starting HTTP server")
+	server := &http.Server{
+		Addr: fmt.Sprintf(":%s", conf.Port),
+		ReadHeaderTimeout: conf.ServerTimeout,
+	}
+
+	exitOnError(server.ListenAndServe(), "on starting HTTP server")
 }
 
 func exitOnError(err error, context string) {
