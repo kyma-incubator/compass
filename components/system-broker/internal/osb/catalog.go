@@ -45,7 +45,7 @@ func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error
 		return nil, err
 	}
 
-	for _, app := range applications.Result.Data {
+	for _, app := range *applications {
 		if app == nil {
 			continue
 		}

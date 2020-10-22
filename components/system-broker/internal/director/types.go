@@ -24,9 +24,7 @@ import (
 	"strconv"
 )
 
-type ApplicationsOutput struct {
-	Result *schema.ApplicationPageExt `json:"result"`
-}
+type ApplicationsOutput []*schema.ApplicationExt
 
 type RequestPackageInstanceCredentialsInput struct {
 	PackageID   string `valid:"required"`
