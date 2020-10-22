@@ -22,7 +22,7 @@ type ConfigRequestBody struct {
 
 type GqlFakeRouter struct {
 	m              sync.RWMutex
-	ResponseConfig map[GraphqlQueryKey]interface{}
+	ResponseConfig map[GraphqlQueryKey][]interface{}
 	Schema         *ast.Schema
 }
 
@@ -41,7 +41,7 @@ func NewGqlFakeRouter(schemaName, path string) (*GqlFakeRouter, error) {
 	}
 
 	return &GqlFakeRouter{
-		ResponseConfig: make(map[GraphqlQueryKey]interface{}),
+		ResponseConfig: make(map[GraphqlQueryKey][]interface{}),
 		Schema:         schema,
 	}, nil
 }
@@ -50,23 +50,35 @@ func (g *GqlFakeRouter) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/config", g.configHandler)
 	mux.HandleFunc("/graphql", g.graphqlHandler)
+	mux.HandleFunc("/config/reset", g.resetHandler)
 
 	return mux
 }
 
 func (g *GqlFakeRouter) configHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed)
+		return
+	}
+
 	body := ConfigRequestBody{}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusInternalServerError)
 		return
 	}
+
 	g.m.Lock()
 	defer g.m.Unlock()
 
-	g.ResponseConfig[body.GraphqlQueryKey] = body.Response
+	g.ResponseConfig[body.GraphqlQueryKey] = append(g.ResponseConfig[body.GraphqlQueryKey], body.Response)
 }
 
 func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed)
+		return
+	}
+
 	jsonBody := make(map[string]interface{})
 	err := json.NewDecoder(r.Body).Decode(&jsonBody)
 	if err != nil {
@@ -87,9 +99,33 @@ func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
 		Type: queryType,
 		Name: queryName,
 	}
+	var response interface{}
+	func() {
+		g.m.Lock()
+		defer g.m.Unlock()
+		if len(g.ResponseConfig[key]) == 0 {
+			writeError(w, http.StatusInternalServerError)
+			return
+		}
 
-	if err := json.NewEncoder(w).Encode(g.ResponseConfig[key]); err != nil {
+		response = g.ResponseConfig[key][0]
+		g.ResponseConfig[key] = g.ResponseConfig[key][1:]
+	}()
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		writeError(w, http.StatusInternalServerError)
 		return
 	}
+}
+
+func (g *GqlFakeRouter) resetHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed)
+		return
+	}
+
+	g.m.Lock()
+	defer g.m.Unlock()
+
+	g.ResponseConfig = make(map[GraphqlQueryKey][]interface{})
 }
