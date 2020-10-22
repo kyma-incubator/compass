@@ -3809,7 +3809,7 @@ type Query {
 	**Examples**
 	- [query application](examples/query-application/query-application.graphql)
 	"""
-	application(id: ID!): Application @hasScopes(path: "graphql.query.application") @hasFormation(applicationProvider: "GetApplicationID", idField: "id")
+	application(id: ID!): Application @hasFormation(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
@@ -4082,14 +4082,14 @@ type Mutation {
 	**Examples**
 	- [request package instance auth creation](examples/request-package-instance-auth-creation/request-package-instance-auth-creation.graphql)
 	"""
-	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation") @hasFormation(applicationProvider: "GetApplicationIDByPackage", idField: "packageID")
+	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasFormation(applicationProvider: "GetApplicationIDByPackage", idField: "packageID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
 	
 	**Examples**
 	- [request package instance auth deletion](examples/request-package-instance-auth-deletion/request-package-instance-auth-deletion.graphql)
 	"""
-	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion") @hasFormation(applicationProvider: "GetApplicationIDByPackageInstanceAuth", idField: "authID")
+	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasFormation(applicationProvider: "GetApplicationIDByPackageInstanceAuth", idField: "authID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
 	"""
 	**Examples**
 	- [add package](examples/add-package/add-package.graphql)
@@ -12873,13 +12873,6 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuthCreation(ctx con
 			return ec.resolvers.Mutation().RequestPackageInstanceAuthCreation(rctx, args["packageID"].(string), args["in"].(PackageInstanceAuthRequestInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuthCreation")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
 			applicationProvider, err := ec.unmarshalNString2string(ctx, "GetApplicationIDByPackage")
 			if err != nil {
 				return nil, err
@@ -12888,7 +12881,14 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuthCreation(ctx con
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.HasFormation(ctx, nil, directive1, applicationProvider, idField)
+			return ec.directives.HasFormation(ctx, nil, directive0, applicationProvider, idField)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuthCreation")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScopes(ctx, nil, directive1, path)
 		}
 
 		tmp, err := directive2(rctx)
@@ -12948,13 +12948,6 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuthDeletion(ctx con
 			return ec.resolvers.Mutation().RequestPackageInstanceAuthDeletion(rctx, args["authID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuthDeletion")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
 			applicationProvider, err := ec.unmarshalNString2string(ctx, "GetApplicationIDByPackageInstanceAuth")
 			if err != nil {
 				return nil, err
@@ -12963,7 +12956,14 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuthDeletion(ctx con
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.HasFormation(ctx, nil, directive1, applicationProvider, idField)
+			return ec.directives.HasFormation(ctx, nil, directive0, applicationProvider, idField)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuthDeletion")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScopes(ctx, nil, directive1, path)
 		}
 
 		tmp, err := directive2(rctx)
@@ -15012,13 +15012,6 @@ func (ec *executionContext) _Query_application(ctx context.Context, field graphq
 			return ec.resolvers.Query().Application(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.query.application")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
 			applicationProvider, err := ec.unmarshalNString2string(ctx, "GetApplicationID")
 			if err != nil {
 				return nil, err
@@ -15027,7 +15020,14 @@ func (ec *executionContext) _Query_application(ctx context.Context, field graphq
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.HasFormation(ctx, nil, directive1, applicationProvider, idField)
+			return ec.directives.HasFormation(ctx, nil, directive0, applicationProvider, idField)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.application")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScopes(ctx, nil, directive1, path)
 		}
 
 		tmp, err := directive2(rctx)

@@ -36,7 +36,6 @@ const (
 	GetApplicationIDByPackageInstanceAuth = "GetApplicationIDByPackageInstanceAuth"
 )
 
-// TODO check order of directives
 // TODO check if logs are present
 type directive struct {
 	transact  persistence.Transactioner
@@ -142,10 +141,11 @@ func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphq
 	if len(commonScenarios) == 0 {
 		return nil, errors.New("Forbidden: Missing formations")
 	}
-	/*
-		if !hasCommonScenarios(appScenarios, runtimeScenarios) {
-			return nil, errors.New("Forbidden: Missing formations")
-		}
+
+	/* TODO: leave or remove? or we could extract stringsIntersaction in pkg/utils of some sort
+	if !hasCommonScenarios(appScenarios, runtimeScenarios) {
+		return nil, errors.New("Forbidden: Missing formations")
+	}
 	*/
 
 	err = tx.Commit()
