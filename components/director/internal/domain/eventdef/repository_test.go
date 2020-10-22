@@ -134,7 +134,7 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 
 		sqlMock.AssertExpectations(t)
 		assert.Nil(t, eventApiDef)
-		require.EqualError(t, err, `Internal Server Error: while getting object from table "public"."event_api_definitions": test error`)
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {

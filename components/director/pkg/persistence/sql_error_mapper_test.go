@@ -29,7 +29,7 @@ func TestMapSQLError(t *testing.T) {
 		{
 			Name:       "Standard error",
 			Error:      errors.New("test error"),
-			AssertFunc: isInternalServerErr(t, "Internal Server Error: testErr: test error"),
+			AssertFunc: isInternalServerErr(t, "Internal Server Error: Unexpected error while executing SQL query"),
 		},
 		{
 			Name:       "Unique violation error",
@@ -44,7 +44,7 @@ func TestMapSQLError(t *testing.T) {
 		{
 			Name:       "Not mapper sql error",
 			Error:      &pq.Error{Code: "123", Message: "SQL fault"},
-			AssertFunc: isInternalServerErr(t, "Internal Server Error: SQL Error: testErr: pq: SQL fault"),
+			AssertFunc: isInternalServerErr(t, "Internal Server Error: Unexpected error while executing SQL query"),
 		},
 	}
 

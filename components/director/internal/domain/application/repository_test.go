@@ -79,7 +79,7 @@ func TestRepository_Delete(t *testing.T) {
 		err := repository.Delete(ctx, givenTenant(), givenID())
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -131,7 +131,7 @@ func TestRepository_Create(t *testing.T) {
 		err := repository.Create(ctx, appModel)
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while inserting row to 'public.applications' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -202,7 +202,7 @@ func TestRepository_Update(t *testing.T) {
 		err := repository.Update(ctx, appModel)
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -269,7 +269,7 @@ func TestRepository_GetByID(t *testing.T) {
 		_, err := repository.GetByID(ctx, givenTenant(), givenID())
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.applications: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
