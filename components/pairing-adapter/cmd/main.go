@@ -38,7 +38,7 @@ func main() {
 
 	h := adapter.NewHandler(cli)
 	handlerWithTimeout, err := handler.WithTimeout(h, conf.ServerTimeout)
-	exitOnError(err, "Filed configuring timeout on handler")
+	exitOnError(err, "Failed configuring timeout on handler")
 
 	http.Handle("/adapter", handlerWithTimeout)
 	http.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {

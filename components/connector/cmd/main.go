@@ -51,13 +51,13 @@ func main() {
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
 	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication)
-	exitOnError(err, "Filed configuring external graphQL handler")
+	exitOnError(err, "Failed configuring external graphQL handler")
 
 	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, tokenResolver)
-	exitOnError(err, "Filed configuring internal graphQL handler")
+	exitOnError(err, "Failed configuring internal graphQL handler")
 
 	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.SubjectConsts, internalComponents.RevocationsRepository)
-	exitOnError(err, "Filed configuring hydrator handler")
+	exitOnError(err, "Failed configuring hydrator handler")
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)

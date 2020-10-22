@@ -77,7 +77,7 @@ func main() {
 	})
 
 	handlerWithTimeout, err := handler.WithTimeout(router, cfg.ServerTimeout)
-	exitOnError(err, "Filed configuring timeout on handler")
+	exitOnError(err, "Failed configuring timeout on handler")
 
 	http.Handle("/", handlerWithTimeout)
 
