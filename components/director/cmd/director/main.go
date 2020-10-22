@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/formation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 
@@ -112,6 +113,7 @@ func main() {
 
 	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			transact,
@@ -124,8 +126,9 @@ func main() {
 			cfg.ClientTimeout,
 		),
 		Directives: graphql.DirectiveRoot{
-			HasScopes: scope.NewDirective(cfgProvider).VerifyScopes,
-			Validate:  inputvalidation.NewDirective().Validate,
+			HasFormation: formation.NewDirective(log.New()).HasFormation,
+			HasScopes:    scope.NewDirective(cfgProvider).VerifyScopes,
+			Validate:     inputvalidation.NewDirective().Validate,
 		},
 	}
 

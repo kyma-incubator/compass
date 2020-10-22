@@ -1,4 +1,8 @@
 """
+HasFormation directive is added to queries and mutations to ensure that runtime could access formation scoped resources
+"""
+directive @hasFormation(applicationProvider: String!, idField: String!) on FIELD_DEFINITION
+"""
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
@@ -1226,14 +1230,14 @@ type Mutation {
 	**Examples**
 	- [request package instance auth creation](examples/request-package-instance-auth-creation/request-package-instance-auth-creation.graphql)
 	"""
-	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
+	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation") @hasFormation(applicationProvider: "GetApplicationIDByPackage", idField: "packageID")
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
 	
 	**Examples**
 	- [request package instance auth deletion](examples/request-package-instance-auth-deletion/request-package-instance-auth-deletion.graphql)
 	"""
-	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
+	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion") @hasFormation(applicationProvider: "GetApplicationIDByPackageInstanceAuth", idField: "authID")
 	"""
 	**Examples**
 	- [add package](examples/add-package/add-package.graphql)

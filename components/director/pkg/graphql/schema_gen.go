@@ -49,6 +49,8 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	HasFormation func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
+
 	HasScopes func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
 
 	Validate func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
@@ -2849,6 +2851,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `"""
+HasFormation directive is added to queries and mutations to ensure that runtime could access formation scoped resources
+"""
+directive @hasFormation(applicationProvider: String!, idField: String!) on FIELD_DEFINITION
+"""
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
@@ -4076,14 +4082,14 @@ type Mutation {
 	**Examples**
 	- [request package instance auth creation](examples/request-package-instance-auth-creation/request-package-instance-auth-creation.graphql)
 	"""
-	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
+	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation") @hasFormation(applicationProvider: "GetApplicationByPackage", idField: "packageID")
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
 	
 	**Examples**
 	- [request package instance auth deletion](examples/request-package-instance-auth-deletion/request-package-instance-auth-deletion.graphql)
 	"""
-	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
+	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion") @hasFormation(applicationProvider: "GetApplicationByPackageInstanceAuth", idField: "authID")
 	"""
 	**Examples**
 	- [add package](examples/add-package/add-package.graphql)
@@ -4122,6 +4128,28 @@ type Mutation {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_hasFormation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["applicationProvider"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["applicationProvider"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["idField"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["idField"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) dir_hasScopes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -12851,8 +12879,19 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuthCreation(ctx con
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			applicationProvider, err := ec.unmarshalNString2string(ctx, "GetApplicationByPackage")
+			if err != nil {
+				return nil, err
+			}
+			idField, err := ec.unmarshalNString2string(ctx, "packageID")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasFormation(ctx, nil, directive1, applicationProvider, idField)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -12915,8 +12954,19 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuthDeletion(ctx con
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			applicationProvider, err := ec.unmarshalNString2string(ctx, "GetApplicationByPackageInstanceAuth")
+			if err != nil {
+				return nil, err
+			}
+			idField, err := ec.unmarshalNString2string(ctx, "authID")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasFormation(ctx, nil, directive1, applicationProvider, idField)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
