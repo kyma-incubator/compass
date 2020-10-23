@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Text Element renders correctly 1`] = `
+.c0 {
+  font-size: 16px;
+  font-weight: normal;
+  color: #515559;
+  line-height: 1.57;
+  margin: 0;
+}
+
+<p
+  className="c0"
+>
+  A text tag
+</p>
+`;

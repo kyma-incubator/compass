@@ -1,0 +1,6 @@
+.action-bar-wrapper {
+  @media (min-width: 500px) {
+    display: flex;
+    justify-content: space-between;
+  }
+}
