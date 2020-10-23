@@ -13,7 +13,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func MapSQLError(err error, resourceType resource.Type, sqlOperation apperrors.SQLOperation, format string, args ...interface{}) error {
+func MapSQLError(err error, resourceType resource.Type, sqlOperation resource.SQLOperation, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
 	}

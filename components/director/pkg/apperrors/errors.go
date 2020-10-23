@@ -174,12 +174,12 @@ func NewInvalidOperationError(reason string) error {
 	}
 }
 
-func NewForeignKeyInvalidOperationError(sqlOperation SQLOperation, resourceType resource.Type) error {
+func NewForeignKeyInvalidOperationError(sqlOperation resource.SQLOperation, resourceType resource.Type) error {
 	var reason string
 	switch sqlOperation {
-	case Create, Update, Upsert:
+	case resource.Create, resource.Update, resource.Upsert:
 		reason = "The referenced entity does not exists"
-	case Delete:
+	case resource.Delete:
 		reason = "The record cannot be deleted because another record refers to it"
 	}
 
