@@ -37,7 +37,7 @@ func newTokenSecuredClient(endpoint string, opts *clientsetOptions) *TokenSecure
 	}
 }
 
-func (c *TokenSecuredClient) Configuration(ctx context.Context,token string, headers ...http.Header) (externalschema.Configuration, error) {
+func (c *TokenSecuredClient) Configuration(ctx context.Context, token string, headers ...http.Header) (externalschema.Configuration, error) {
 	query := c.queryProvider.configuration()
 	req := newRequest(query, headers...)
 	req.Header.Add(TokenHeader, token)
