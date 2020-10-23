@@ -56,14 +56,14 @@ func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	contextLogger := contextLogger(ih.logger, systemAuthID)
 	contextLogger.Info("Getting Info")
 
-	application, err := ih.directorClientProvider.Client(r).GetApplication(systemAuthID)
+	application, err := ih.directorClientProvider.Client(r).GetApplication(r.Context(), systemAuthID)
 	if err != nil {
 		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to get application from Director"), apperrors.CodeInternal)
 
 		return
 	}
 
-	configuration, err := ih.connectorClientProvider.Client(r).Configuration(authorizationHeaders)
+	configuration, err := ih.connectorClientProvider.Client(r).Configuration(r.Context(), authorizationHeaders)
 	if err != nil {
 		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to get configuration from Connector"), apperrors.CodeInternal)
 

@@ -1,6 +1,7 @@
 package clientset
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -71,10 +72,10 @@ func (cs ConnectorClientSet) CertificateSecuredClient(baseURL string, certificat
 	return newCertificateSecuredConnectorClient(baseURL, certificate, cs.clientsetOptions)
 }
 
-func (cs ConnectorClientSet) GenerateCertificateForToken(token, connectorURL string) (tls.Certificate, error) {
+func (cs ConnectorClientSet) GenerateCertificateForToken(ctx context.Context, token, connectorURL string) (tls.Certificate, error) {
 	connectorClient := newTokenSecuredClient(connectorURL, cs.clientsetOptions)
 
-	config, err := connectorClient.Configuration(token)
+	config, err := connectorClient.Configuration(ctx, token)
 	if err != nil {
 		return tls.Certificate{}, err
 	}
@@ -86,7 +87,7 @@ func (cs ConnectorClientSet) GenerateCertificateForToken(token, connectorURL str
 
 	encodedCSR := encodeCSR(csr)
 
-	certResult, err := connectorClient.SignCSR(encodedCSR, config.Token.Token)
+	certResult, err := connectorClient.SignCSR(ctx, encodedCSR, config.Token.Token)
 	if err != nil {
 		return tls.Certificate{}, err
 	}

@@ -49,7 +49,7 @@ func TestHandler_Info(t *testing.T) {
 
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
-		directorClientMock.On("GetApplication", "myapp").Return(application, nil)
+		directorClientMock.On("GetApplication", mock.Anything, "myapp").Return(application, nil)
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		newToken := "new_token"
@@ -70,7 +70,7 @@ func TestHandler_Info(t *testing.T) {
 			},
 		}
 
-		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -145,12 +145,12 @@ func TestHandler_Info(t *testing.T) {
 			},
 		}
 
-		directorClientMock.On("GetApplication", "myapp").Return(directorApp, nil)
+		directorClientMock.On("GetApplication", mock.Anything, "myapp").Return(directorApp, nil)
 
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
-		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -198,7 +198,7 @@ func TestHandler_Info(t *testing.T) {
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
-		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, apperrors.Internal("error"))
+		directorClientMock.On("GetApplication", mock.Anything, mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, apperrors.Internal("error"))
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		connectorClientMock := &connectorMock.Client{}
@@ -220,7 +220,7 @@ func TestHandler_Info(t *testing.T) {
 				CertificateSecuredConnectorURL: &certificateSecuredConnectorUrl,
 			},
 		}
-		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 		r := httptest.NewRecorder()
@@ -238,13 +238,13 @@ func TestHandler_Info(t *testing.T) {
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
-		connectorClientMock.On("Configuration", headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
 		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
-		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
+		directorClientMock.On("GetApplication", mock.Anything, mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -283,13 +283,13 @@ func TestHandler_Info(t *testing.T) {
 	t.Run("Should return error when failed to build response", func(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
-		connectorClientMock.On("Configuration", headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
 		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
-		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
+		directorClientMock.On("GetApplication", mock.Anything, mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)

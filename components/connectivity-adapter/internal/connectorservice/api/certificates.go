@@ -51,7 +51,7 @@ func (ch *certificatesHandler) SignCSR(w http.ResponseWriter, r *http.Request) {
 	contextLogger.Info("Generating certificate")
 
 	{
-		certificationResult, err := ch.connectorClientProvider.Client(r).SignCSR(certRequest.CSR, authorizationHeaders)
+		certificationResult, err := ch.connectorClientProvider.Client(r).SignCSR(r.Context(), certRequest.CSR, authorizationHeaders)
 		if err != nil {
 			respondWithError(w, contextLogger, errors.Wrap(err, "Failed to sign CSR"), err.Code())
 
