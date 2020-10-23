@@ -59,5 +59,5 @@ func (u *universalUpserter) Upsert(ctx context.Context, dbEntity interface{}) er
 
 	log.Debugf("Executing DB query: %s", stmtWithUpsert)
 	_, err = persist.NamedExec(stmtWithUpsert, dbEntity)
-	return persistence.MapSQLError(err, u.resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName)
+	return persistence.MapSQLError(err, u.resourceType, apperrors.Upsert, "while upserting row to '%s' table", u.tableName)
 }

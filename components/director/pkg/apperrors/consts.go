@@ -37,3 +37,15 @@ const (
 	emptyDataMsg                 = "Some required data was left out"
 	inconsistentDataMsg          = "Inconsistent or out-of-range data"
 )
+
+type SQLOperation string
+
+const (
+	Create SQLOperation = "Create"
+	Update SQLOperation = "Update"
+	Upsert SQLOperation = "Upsert"
+	Delete SQLOperation = "Delete"
+	Exists SQLOperation = "Exists"
+	Get    SQLOperation = "Get"
+	List   SQLOperation = "List"
+)

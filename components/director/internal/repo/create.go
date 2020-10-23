@@ -52,5 +52,5 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 	log.Debugf("Executing DB query: %s", stmt)
 	_, err = persist.NamedExec(stmt, dbEntity)
 
-	return persistence.MapSQLError(err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
+	return persistence.MapSQLError(err, c.resourceType, apperrors.Create, "while inserting row to '%s' table", c.tableName)
 }

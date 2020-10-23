@@ -94,7 +94,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 
 	log.Debugf("Executing DB query: %s", stmtBuilder.String())
 	res, err := persist.NamedExec(stmtBuilder.String(), dbEntity)
-	if err = persistence.MapSQLError(err, u.resourceType, resource.Update, "while updating single entity from '%s' table", u.tableName); err != nil {
+	if err = persistence.MapSQLError(err, u.resourceType, apperrors.Update, "while updating single entity from '%s' table", u.tableName); err != nil {
 		return err
 	}
 

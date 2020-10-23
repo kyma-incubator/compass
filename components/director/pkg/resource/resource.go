@@ -20,15 +20,3 @@ const (
 	AutomaticScenarioAssigment Type = "AutomaticScenarioAssigment"
 	Webhook                    Type = "Webhook"
 )
-
-type SQLOperation string
-
-const (
-	Create SQLOperation = "Create"
-	Update SQLOperation = "Update"
-	Upsert SQLOperation = "Upsert"
-	Delete SQLOperation = "Delete"
-	Exists SQLOperation = "Exists"
-	Get    SQLOperation = "Get"
-	List   SQLOperation = "List"
-)
