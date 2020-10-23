@@ -2851,7 +2851,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `"""
-HasFormation directive is added to queries and mutations to ensure that runtime could access formation scoped resources
+HasFormation directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same formation as them
 """
 directive @hasFormation(applicationProvider: String!, idField: String!) on FIELD_DEFINITION
 """
