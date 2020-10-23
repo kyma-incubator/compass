@@ -174,6 +174,22 @@ func NewInvalidOperationError(reason string) error {
 	}
 }
 
+func NewForeignKeyInvalidOperationError(sqlOperation resource.SQLOperation, resourceType resource.Type) error {
+	var reason string
+	switch sqlOperation {
+	case resource.Create, resource.Update, resource.Upsert:
+		reason = "The referenced entity does not exists"
+	case resource.Delete:
+		reason = "The record cannot be deleted because another record refers to it"
+	}
+
+	return Error{
+		errorCode: InvalidOperation,
+		Message:   invalidOperationMsg,
+		arguments: map[string]string{"reason": reason, "object": string(resourceType)},
+	}
+}
+
 const valueNotFoundInConfigMsg = "value under specified path not found in configuration"
 
 func NewValueNotFoundInConfigurationError() error {

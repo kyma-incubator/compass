@@ -71,5 +71,5 @@ func (l *universalLister) unsafeList(ctx context.Context, dest Collection, condi
 	log.Debugf("Executing DB query: %s", query)
 	err = persist.Select(dest, query, args...)
 
-	return persistence.MapSQLError(err, l.resourceType, "while fetching list of objects from '%s' table", l.tableName)
+	return persistence.MapSQLError(err, l.resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)
 }

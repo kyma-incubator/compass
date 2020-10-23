@@ -13,7 +13,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func MapSQLError(err error, resourceType resource.Type, format string, args ...interface{}) error {
+func MapSQLError(err error, resourceType resource.Type, sqlOperation resource.SQLOperation, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
 	}
@@ -39,7 +39,7 @@ func MapSQLError(err error, resourceType resource.Type, format string, args ...i
 	case UniqueViolation:
 		return apperrors.NewNotUniqueError(resourceType)
 	case ForeignKeyViolation:
-		return apperrors.NewInvalidOperationError("The record cannot be deleted because another record refers to it")
+		return apperrors.NewForeignKeyInvalidOperationError(sqlOperation, resourceType)
 	}
 
 	return apperrors.NewInternalError("Unexpected error while executing SQL query")
