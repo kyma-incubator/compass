@@ -3,23 +3,26 @@ package common
 import (
 	"context"
 	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"path"
+	"runtime"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	gql "github.com/machinebox/graphql"
-	"log"
-	"net"
-	"net/http"
-	"strconv"
-	"testing"
-	"time"
 
 	"github.com/gavv/httpexpect"
-	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
+	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -61,7 +64,7 @@ func NewTestContextBuilder() *TestContextBuilder {
 				env.Set("server.self_url", "http://localhost:"+port)
 			},
 			func(env env.Environment, servers map[string]FakeServer) {
-				env.Set("graphql_client.graphql_endpoint", servers[DirectorServer].URL() + "/graphql")
+				env.Set("graphql_client.graphql_endpoint", servers[DirectorServer].URL()+"/graphql")
 			},
 		},
 		Servers: map[string]FakeServer{},
@@ -100,7 +103,8 @@ func (tcb *TestContextBuilder) WithHttpClient(client *http.Client) *TestContextB
 }
 
 func (tcb *TestContextBuilder) Build(t *testing.T) *TestContext {
-	gqlMockHandler, err := NewGqlFakeRouter("director", "../../../director/pkg/graphql/schema.graphql")
+	schemaPath := path.Join(getBasePath(), "../../../director/pkg/graphql/schema.graphql")
+	gqlMockHandler, err := NewGqlFakeRouter("director", schemaPath)
 	if err != nil {
 		panic(fmt.Errorf("could not build gql mock handler: %s", err))
 	}
@@ -195,9 +199,8 @@ func prepareGQLClient(cfg *config.Config) (*director.GraphQLClient, error) {
 	outputGraphqlizer := &graphqlizer.GqlFieldsProvider{}
 
 	// prepare director graphql client
-	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer), nil
+	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer, cfg.DirectorGQL), nil
 }
-
 
 func findFreePort() string {
 	// Create a new listener without specifying a port which will result in an open port being chosen
@@ -215,4 +218,9 @@ func findFreePort() string {
 	}
 
 	return port
+}
+
+func getBasePath() string {
+	_, b, _, _ := runtime.Caller(0)
+	return path.Dir(b)
 }

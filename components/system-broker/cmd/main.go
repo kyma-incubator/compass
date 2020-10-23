@@ -100,5 +100,5 @@ func prepareGqlClient(cfg *config.Config, uudSrv uuid.Service) (*director.GraphQ
 	outputGraphqlizer := &graphqlizer.GqlFieldsProvider{}
 
 	// prepare director graphql client
-	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer), nil
+	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer, cfg.DirectorGQL), nil
 }

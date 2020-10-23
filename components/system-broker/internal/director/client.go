@@ -20,10 +20,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	gcli "github.com/machinebox/graphql"
@@ -52,12 +50,13 @@ type GraphQLizer interface {
 	PackageInstanceAuthRequestInputToGQL(in schema.PackageInstanceAuthRequestInput) (string, error)
 }
 
-func NewGraphQLClient(gqlClient Client, gqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *GraphQLClient {
+func NewGraphQLClient(gqlClient Client, gqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider, c *Config) *GraphQLClient {
 	return &GraphQLClient{
 		gcli: gqlClient,
 		//queryProvider:     queryProvider{}, - gqlizers are better
 		inputGraphqlizer:  gqlizer,
 		outputGraphqlizer: gqlFieldsProvider,
+		pageSize:          c.PageSize,
 	}
 }
 
@@ -65,92 +64,11 @@ type GraphQLClient struct {
 	gcli              Client
 	inputGraphqlizer  GraphQLizer
 	outputGraphqlizer GqlFieldsProvider
+	pageSize          int
 	//queryProvider     queryProvider
 }
 
-type GenericPage struct {
-	Data       interface{}       `json:"data"`
-	PageInfo   *graphql.PageInfo `json:"pageInfo"`
-	TotalCount int               `json:"totalCount"`
-}
-
-type GenericOutput struct {
-	Result *GenericPage `json:"result"`
-}
-
-type Pager struct {
-	QueryGenerator func(pageSize int, page string) string
-	PageSize       int
-	PageToken      string
-	Client         Client
-	hasNext        bool
-}
-
-func NewPager(queryGenerator func(pageSize int, page string) string, pageSize int, client Client) *Pager {
-	return &Pager{
-		QueryGenerator: queryGenerator,
-		PageSize:       pageSize,
-		Client:         client,
-		hasNext:        true,
-	}
-}
-
-func (p *Pager) Next(ctx context.Context, output interface{}) error {
-	if !p.hasNext {
-		return errors.New("Could not fetch")
-	}
-
-	query := p.QueryGenerator(p.PageSize, p.PageToken)
-	req := gcli.NewRequest(query)
-
-	response := GenericOutput{
-		Result: &GenericPage{
-			Data: output,
-		},
-	}
-
-	err := p.Client.Do(ctx, req, &response)
-	if err != nil {
-		return err
-	}
-
-	if !response.Result.PageInfo.HasNextPage {
-		p.hasNext = false
-		return nil
-	}
-
-	p.PageToken = string(response.Result.PageInfo.EndCursor)
-
-	return nil
-}
-
-func (p *Pager) HasNext() bool {
-	return p.hasNext
-}
-
-func (p *Pager) ListAll(ctx context.Context, output interface{}) error {
-	itemsType := reflect.TypeOf(output)
-	if itemsType.Kind() != reflect.Ptr || itemsType.Elem().Kind() != reflect.Slice {
-		return fmt.Errorf("items should be a pointer to a slice, but got %v", itemsType)
-	}
-
-	allItems := reflect.MakeSlice(itemsType.Elem(), 0, 0)
-
-	for p.HasNext() {
-		pageSlice := reflect.New(itemsType.Elem())
-		err := p.Next(ctx, pageSlice.Interface())
-		if err != nil {
-			return err
-		}
-
-		allItems = reflect.AppendSlice(allItems, pageSlice.Elem())
-	}
-
-	reflect.ValueOf(output).Elem().Set(allItems)
-	return nil
-}
-
-func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOutput, error) {
+func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutput, error) {
 	response := ApplicationsOutput{}
 
 	query := fmt.Sprintf(`query {
@@ -158,31 +76,16 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 					%s
 			}
 	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForApplication()))
-
-	//req := gcli.NewRequest(query)
-	//
-	//err := c.gcli.Do(ctx, req, &response)
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "while fetching applications in gqlclient")
-	//}
 	queryGenerator := func(pageSize int, page string) string {
 		return fmt.Sprintf(query, pageSize, page)
 	}
 
-	pager := NewPager(queryGenerator, 1, c.gcli)
+	pager := NewPager(queryGenerator, c.pageSize, c.gcli)
 	if err := pager.ListAll(ctx, &response); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while fetching applications in gqlclient")
 	}
 
-	//There is a transport on http client that takes care of that now
-	// Nil check is necessary due to GraphQL client not checking response code
-	//if response.Result == nil {
-	//	return nil, errors.New("Failed fetch Applications for Runtime from Director: received nil response")
-	//}
-
-	//TODO paging, and dont return page details outside of the client method
-
-	return &response, nil
+	return response, nil
 }
 
 func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *RequestPackageInstanceCredentialsInput) (*RequestPackageInstanceCredentialsOutput, error) {

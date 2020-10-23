@@ -25,7 +25,7 @@ import (
 )
 
 type applicationsLister interface {
-	FetchApplications(ctx context.Context) (*director.ApplicationsOutput, error)
+	FetchApplications(ctx context.Context) (director.ApplicationsOutput, error)
 }
 
 type packageCredentialsFetcher interface {

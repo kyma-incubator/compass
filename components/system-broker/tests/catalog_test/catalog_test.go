@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
@@ -255,6 +257,21 @@ const (
   }
 }`
 	appsExpectedCatalogPaging = `{"services":[{"id":"4310851a-04a0-4217-a2b8-1766c6a3f0fe","name":"test-app2","description":"a test application","bindable":true,"plan_updateable":false,"plans":null,"metadata":{"displayName":"test-app2","group":["production","experimental"],"integrationSystemID":"","name":"test-app2","providerDisplayName":"test provider","scenarios":["DEFAULT"]}},{"id":"5cf79030-0433-4b32-8618-9844085ca7a6","name":"test-app","description":"a test application","bindable":true,"plan_updateable":false,"plans":null,"metadata":{"displayName":"test-app","group":["production","experimental"],"integrationSystemID":"","name":"test-app","providerDisplayName":"test provider","scenarios":["DEFAULT"]}},{"id":"75ab9628-24d1-4e39-bdae-9c5042e908f2","name":"test-app3","description":"a test application","bindable":true,"plan_updateable":false,"plans":null,"metadata":{"displayName":"test-app3","group":["production","experimental"],"integrationSystemID":"","name":"test-app3","providerDisplayName":"test provider","scenarios":["DEFAULT"]}},{"id":"f945951c-bcaf-46af-a017-b3e2b575bdbd","name":"test-app1","description":"a test application","bindable":true,"plan_updateable":false,"plans":null,"metadata":{"displayName":"test-app1","group":["production","experimental"],"integrationSystemID":"","name":"test-app1","providerDisplayName":"test provider","scenarios":["DEFAULT"]}}]}` + "\n"
+	appsErrorResponse         = `{
+  "errors": [
+    {
+      "message": "Internal Server Error",
+      "path": [
+        "result"
+      ],
+      "extensions": {
+        "error": "InternalError",
+        "error_code": 10
+      }
+    }
+  ],
+  "data": null
+}`
 )
 
 func TestOSBCatalog(t *testing.T) {
@@ -268,7 +285,10 @@ type OSBCatalogTestSuite struct {
 }
 
 func (suite *OSBCatalogTestSuite) SetupSuite() {
-	suite.testContext = common.NewTestContextBuilder().Build(suite.T())
+	suite.testContext = common.NewTestContextBuilder().
+		WithEnvExtensions(func(e env.Environment, servers map[string]common.FakeServer) {
+			e.Set("director_gql.page_size", 3)
+		}).Build(suite.T())
 	suite.configURL = suite.testContext.Servers[common.DirectorServer].URL() + "/config"
 }
 
@@ -300,6 +320,15 @@ func (suite *OSBCatalogTestSuite) TestResponseWithSeveralPages() {
 	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
 		Status(http.StatusOK).
 		Body().Equal(appsExpectedCatalogPaging)
+}
+
+func (suite *OSBCatalogTestSuite) TestErrorWhileFetchingApplicaitons() {
+	suite.configureResponse("query", "applications", appsPageResponse1)
+	suite.configureResponse("query", "applications", appsErrorResponse)
+
+	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
+		Status(http.StatusInternalServerError).
+		JSON().Object().Value("description").Equal("could not build catalog")
 }
 
 func (suite *OSBCatalogTestSuite) configureResponse(queryType, queryName, response string) {
