@@ -59,7 +59,7 @@ type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
-	ServerTimeout time.Duration `envconfig:"default=3s"`
+	ServerTimeout time.Duration `envconfig:"default=110s"`
 
 	Database                persistence.DatabaseConfig
 	APIEndpoint             string `envconfig:"default=/graphql"`
