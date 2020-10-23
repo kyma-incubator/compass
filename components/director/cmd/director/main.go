@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"net/http"
 	"os"
 	"time"
@@ -140,6 +141,9 @@ func main() {
 
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+
+	contextEnricher := correlation.NewContextEnrichMiddleware()
+	mainRouter.Use(contextEnricher.AttachCorrelationIDToContext)
 
 	presenter := error_presenter.NewPresenter(log.StandardLogger(), uid.NewService())
 

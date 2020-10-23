@@ -7,16 +7,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
-
 	"github.com/avast/retry-go"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
+	"github.com/kyma-incubator/compass/components/director/pkg/request"
+	"github.com/kyma-project/kyma/tests/end-to-end/external-solution-integration/pkg/retry"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const requestForRuntime = `
@@ -125,7 +125,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	var externalToken string
 	err = retry.Do(func() error {
 		buf := bytes.NewBuffer(asJSON)
-		req, err := http.NewRequest(http.MethodPost, adapterURL, buf)
+		req, err := request.NewHttpRequest(ctx, http.MethodPost, adapterURL, buf)
 		if err != nil {
 			return errors.Wrap(err, "while creating request")
 		}
@@ -163,19 +163,19 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 }
 
 func (s service) getOneTimeToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType) (string, error) {
-	var request *gcli.Request
+	var req *gcli.Request
 
 	switch tokenType {
 	case model.RuntimeReference:
-		request = gcli.NewRequest(fmt.Sprintf(requestForRuntime, id))
+		req = request.NewGQLRequest(ctx, fmt.Sprintf(requestForRuntime, id))
 	case model.ApplicationReference:
-		request = gcli.NewRequest(fmt.Sprintf(requestForApplication, id))
+		req = request.NewGQLRequest(ctx, fmt.Sprintf(requestForApplication, id))
 	default:
 		return "", errors.Errorf("cannot generate token for %T", tokenType)
 	}
 
 	output := ConnectorTokenModel{}
-	err := s.cli.Run(ctx, request, &output)
+	err := s.cli.Run(ctx, req, &output)
 	if err != nil {
 		return "", errors.Wrapf(err, "while calling connector for %s one time token", tokenType)
 	}
