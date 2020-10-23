@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/director/pkg/formation"
+	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 
 	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 
@@ -126,9 +126,9 @@ func main() {
 			cfg.ClientTimeout,
 		),
 		Directives: graphql.DirectiveRoot{
-			HasFormation: formation.NewDirective().HasFormation,
-			HasScopes:    scope.NewDirective(cfgProvider).VerifyScopes,
-			Validate:     inputvalidation.NewDirective().Validate,
+			HasScenario: scenario.NewDirective(scenario.RepoBuilder).HasScenario,
+			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
+			Validate:    inputvalidation.NewDirective().Validate,
 		},
 	}
 

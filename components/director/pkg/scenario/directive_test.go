@@ -1,8 +1,15 @@
-package formation_test
+package scenario_test
 
-import "testing"
+import (
+	"testing"
 
-func TestHasFormation(t *testing.T) {
+	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	packageMock "github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
+)
+
+func TestHasScenario(t *testing.T) {
 	t.Run("consumer is of type user", func(t *testing.T) {
 		// GIVEN
 		// WHEN
@@ -72,4 +79,9 @@ func TestHasFormation(t *testing.T) {
 		// WHEN
 		// THEN
 	})
+
+}
+
+func fakeRepoBuilder() (mp_package.PackageRepository, packageinstanceauth.Repository) {
+	return &packageMock.PackageRepository{}, &automock.Repository{}
 }

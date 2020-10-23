@@ -1,7 +1,7 @@
 """
-HasFormation directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same formation as them
+HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
 """
-directive @hasFormation(applicationProvider: String!, idField: String!) on FIELD_DEFINITION
+directive @hasScenario(applicationProvider: String!, idField: String!) on FIELD_DEFINITION
 """
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
@@ -957,7 +957,7 @@ type Query {
 	**Examples**
 	- [query application](examples/query-application/query-application.graphql)
 	"""
-	application(id: ID!): Application @hasFormation(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
+	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum `first` parameter value is 100
 	
@@ -1230,14 +1230,14 @@ type Mutation {
 	**Examples**
 	- [request package instance auth creation](examples/request-package-instance-auth-creation/request-package-instance-auth-creation.graphql)
 	"""
-	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasFormation(applicationProvider: "GetApplicationIDByPackage", idField: "packageID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
+	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByPackage", idField: "packageID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
 	
 	**Examples**
 	- [request package instance auth deletion](examples/request-package-instance-auth-deletion/request-package-instance-auth-deletion.graphql)
 	"""
-	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasFormation(applicationProvider: "GetApplicationIDByPackageInstanceAuth", idField: "authID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
+	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByPackageInstanceAuth", idField: "authID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
 	"""
 	**Examples**
 	- [add package](examples/add-package/add-package.graphql)

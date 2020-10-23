@@ -1,8 +1,9 @@
-package formation
+package scenario
 
 import (
 	"context"
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
@@ -43,16 +44,9 @@ type directive struct {
 	applicationProviders map[string]func(context.Context, string, string) (string, error)
 }
 
-// NewDirective returns a new formation directive
-func NewDirective() *directive {
-	authConverter := auth.NewConverter()
-	frConverter := fetchrequest.NewConverter(authConverter)
-	versionConverter := version.NewConverter()
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
-	docConverter := document.NewConverter(frConverter)
-	apiConverter := api.NewConverter(frConverter, versionConverter)
-	packageRepo := mp_package.NewRepository(mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
-	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageinstanceauth.NewConverter(authConverter))
+// NewDirective returns a new scenario directive
+func NewDirective(repoBuilder func() (mp_package.PackageRepository, packageinstanceauth.Repository)) *directive {
+	packageRepo, packageInstanceAuthRepo := repoBuilder()
 
 	getApplicationIDByPackageFunc := func(ctx context.Context, tenantID, packageID string) (string, error) {
 		pkg, err := packageRepo.GetByID(ctx, tenantID, packageID)
@@ -81,15 +75,9 @@ func NewDirective() *directive {
 	}
 }
 
-// HasFormation ensures that the runtime is in a formation with the application which resources are being manipulated.
+// HasScenario ensures that the runtime is in a scenario with the application which resources are being manipulated.
 // If the caller is not a Runtime, then request is forwarded to the next resolver.
-func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error) {
-	log.Infof("Attempting to verify that the requesting runtime is in formation with the owning application entity")
-	tenantID, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
+func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -98,6 +86,12 @@ func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphq
 	if consumerInfo.ConsumerType != consumer.Runtime {
 		log.Debugf("Consumer type %v is not of type %v. Skipping verification directive...", consumerInfo.ConsumerType, consumer.Runtime)
 		return next(ctx)
+	}
+	log.Infof("Attempting to verify that the requesting runtime is in scenario with the owning application entity")
+
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
 	runtimeID := consumerInfo.ConsumerID
@@ -147,16 +141,16 @@ func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphq
 
 	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
 	if len(commonScenarios) == 0 {
-		return nil, errors.New("Forbidden: Missing formations")
+		return nil, errors.New("Forbidden: Missing scenarios")
 	}
 
 	/* TODO: leave or remove? or we could extract stringsIntersaction in pkg/utils of some sort
 	if !hasCommonScenarios(appScenarios, runtimeScenarios) {
-		return nil, errors.New("Forbidden: Missing formations")
+		return nil, errors.New("Forbidden: Missing scenarios")
 	}
 	*/
 
-	log.Infof("Runtime with ID %s is in formation with the owning application entity with id %s", runtimeID, appID)
+	log.Infof("Runtime with ID %s is in scenario with the owning application entity with id %s", runtimeID, appID)
 	return next(ctx)
 }
 
@@ -195,4 +189,17 @@ func hasCommonScenarios(str1, str2 []string) bool {
 		}
 	}
 	return false
+}
+
+func RepoBuilder() (mp_package.PackageRepository, packageinstanceauth.Repository) {
+	authConverter := auth.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	docConverter := document.NewConverter(frConverter)
+	apiConverter := api.NewConverter(frConverter, versionConverter)
+	packageRepo := mp_package.NewRepository(mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
+	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageinstanceauth.NewConverter(authConverter))
+
+	return packageRepo, packageInstanceAuthRepo
 }
