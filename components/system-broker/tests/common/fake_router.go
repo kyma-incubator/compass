@@ -57,13 +57,13 @@ func (g *GqlFakeRouter) Handler() http.Handler {
 
 func (g *GqlFakeRouter) configHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, errors.New("method not POST"))
 		return
 	}
 
 	body := ConfigRequestBody{}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -75,20 +75,20 @@ func (g *GqlFakeRouter) configHandler(w http.ResponseWriter, r *http.Request) {
 
 func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, errors.New("method not POST"))
 		return
 	}
 
 	jsonBody := make(map[string]interface{})
 	err := json.NewDecoder(r.Body).Decode(&jsonBody)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	query, GQLerr := gqlparser.LoadQuery(g.Schema, jsonBody["query"].(string))
 	if GQLerr != nil {
-		writeError(w, http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, GQLerr[0])
 		return
 	}
 	queryField := query.Operations[0].SelectionSet[0].(*ast.Field)
@@ -104,7 +104,7 @@ func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
 		g.m.Lock()
 		defer g.m.Unlock()
 		if len(g.ResponseConfig[key]) == 0 {
-			writeError(w, http.StatusInternalServerError)
+			writeError(w, http.StatusInternalServerError, errors.New("no GQL response configured"))
 			return
 		}
 
@@ -113,14 +113,14 @@ func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		writeError(w, http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 }
 
 func (g *GqlFakeRouter) resetHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, errors.New("method not POST"))
 		return
 	}
 

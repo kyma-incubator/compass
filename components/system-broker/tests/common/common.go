@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -19,9 +20,9 @@ type FakeServer interface {
 	urler
 }
 
-func writeError(w http.ResponseWriter, status int) {
+func writeError(w http.ResponseWriter, status int, err error) {
 	w.WriteHeader(status)
-	w.Write([]byte("{}"))
+	w.Write([]byte(fmt.Sprintf(`{"description": %q`, err.Error())))
 }
 
 func getFileContent(path string) (string, error) {
