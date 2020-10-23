@@ -126,7 +126,7 @@ func main() {
 			cfg.ClientTimeout,
 		),
 		Directives: graphql.DirectiveRoot{
-			HasScenario: scenario.NewDirective(scenario.RepoBuilder).HasScenario,
+			HasScenario: scenario.NewDirective(transact, scenario.RepoBuilder).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},

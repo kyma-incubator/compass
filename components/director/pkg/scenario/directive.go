@@ -45,7 +45,7 @@ type directive struct {
 }
 
 // NewDirective returns a new scenario directive
-func NewDirective(repoBuilder func() (mp_package.PackageRepository, packageinstanceauth.Repository)) *directive {
+func NewDirective(transact persistence.Transactioner, repoBuilder func() (mp_package.PackageRepository, packageinstanceauth.Repository)) *directive {
 	packageRepo, packageInstanceAuthRepo := repoBuilder()
 
 	getApplicationIDByPackageFunc := func(ctx context.Context, tenantID, packageID string) (string, error) {
@@ -57,6 +57,7 @@ func NewDirective(repoBuilder func() (mp_package.PackageRepository, packageinsta
 	}
 
 	return &directive{
+		transact:  transact,
 		labelRepo: label.NewRepository(label.NewConverter()),
 		applicationProviders: map[string]func(context.Context, string, string) (string, error){
 			GetApplicationID: func(ctx context.Context, tenantID string, appID string) (string, error) {
