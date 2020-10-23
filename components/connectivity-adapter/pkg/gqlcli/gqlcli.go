@@ -10,9 +10,9 @@ import (
 
 const AuthorizationHeaderKey = "Authorization"
 
-func NewAuthorizedGraphQLClient(url string, rq *http.Request) *gcli.Client {
+func NewAuthorizedGraphQLClient(url string, timeout time.Duration, rq *http.Request) *gcli.Client {
 	authorizationHeaderValue := rq.Header.Get(AuthorizationHeaderKey)
-	authorizedClient := newAuthorizedHTTPClient(authorizationHeaderValue)
+	authorizedClient := newAuthorizedHTTPClient(authorizationHeaderValue, timeout)
 	return gcli.NewClient(url, gcli.WithHTTPClient(authorizedClient))
 }
 
@@ -21,7 +21,7 @@ type authenticatedTransport struct {
 	authorizationHeaderValue string
 }
 
-func newAuthorizedHTTPClient(authorizationHeaderValue string) *http.Client {
+func newAuthorizedHTTPClient(authorizationHeaderValue string, timeout time.Duration) *http.Client {
 	transport := &authenticatedTransport{
 		Transport: http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -31,7 +31,7 @@ func newAuthorizedHTTPClient(authorizationHeaderValue string) *http.Client {
 
 	return &http.Client{
 		Transport: transport,
-		Timeout:   time.Second * 30,
+		Timeout:   timeout,
 	}
 }
 

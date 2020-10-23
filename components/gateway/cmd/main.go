@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 
 	timeservices "github.com/kyma-incubator/compass/components/gateway/internal/time"
 
@@ -24,6 +27,8 @@ import (
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
+
+	ServerTimeout time.Duration `envconfig:"default=114s"`
 
 	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3001"`
 	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3002"`
@@ -71,10 +76,18 @@ func main() {
 		}
 	})
 
-	http.Handle("/", router)
+	handlerWithTimeout, err := handler.WithTimeout(router, cfg.ServerTimeout)
+	exitOnError(err, "Failed configuring timeout on handler")
+
+	http.Handle("/", handlerWithTimeout)
+
+	server := &http.Server{
+		Addr:              cfg.Address,
+		ReadHeaderTimeout: cfg.ServerTimeout,
+	}
 
 	log.Printf("Listening on %s", cfg.Address)
-	if err := http.ListenAndServe(cfg.Address, nil); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		done <- true
 		panic(err)
 	}
@@ -125,7 +138,7 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 			}
 
 			msgFactory = auditlog.NewMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
-			httpClient = auditlog.NewBasicAuthClient(basicCfg)
+			httpClient = auditlog.NewBasicAuthClient(basicCfg, cfg.ClientTimeout)
 		}
 	case auditlog.OAuth:
 		{
@@ -135,8 +148,12 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 				return nil, errors.Wrap(err, "while loading auditlog OAuth configuration")
 			}
 
-			cfg := fillJWTCredentials(oauthCfg)
-			httpClient = cfg.Client(context.Background())
+			ccCfg := fillJWTCredentials(oauthCfg)
+			client := ccCfg.Client(context.Background())
+
+			client.Timeout = cfg.ClientTimeout
+			httpClient = client
+
 			msgFactory = auditlog.NewMessageFactory(oauthCfg.User, oauthCfg.Tenant, uuidSvc, timeSvc)
 		}
 	default:

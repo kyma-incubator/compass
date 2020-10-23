@@ -3,6 +3,8 @@ package config
 import (
 	"net/http"
 
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
 	log "github.com/sirupsen/logrus"
 
@@ -17,7 +19,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
-func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolver, authContextMiddleware mux.MiddlewareFunc) *http.Server {
+func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolver, authContextMiddleware mux.MiddlewareFunc) (*http.Server, error) {
 	externalResolver := api.ExternalResolver{CertificateResolver: certResolver}
 
 	gqlInternalCfg := externalschema.Config{
@@ -33,13 +35,19 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 
 	externalRouter.Use(authContextMiddleware)
 
-	return &http.Server{
-		Addr:    cfg.ExternalAddress,
-		Handler: externalRouter,
+	handlerWithTimeout, err := timeouthandler.WithTimeout(externalRouter, cfg.ServerTimeout)
+	if err != nil {
+		return nil, err
 	}
+
+	return &http.Server{
+		Addr:              cfg.ExternalAddress,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
+	}, nil
 }
 
-func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) *http.Server {
+func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) (*http.Server, error) {
 	internalResolver := api.InternalResolver{TokenResolver: tokenResolver}
 
 	gqlInternalCfg := internalschema.Config{
@@ -52,13 +60,19 @@ func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) *
 	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
 
-	return &http.Server{
-		Addr:    cfg.InternalAddress,
-		Handler: internalRouter,
+	handlerWithTimeout, err := timeouthandler.WithTimeout(internalRouter, cfg.ServerTimeout)
+	if err != nil {
+		return nil, err
 	}
+
+	return &http.Server{
+		Addr:              cfg.InternalAddress,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
+	}, nil
 }
 
-func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts, revokedCertsRepository revocation.RevocationListRepository) *http.Server {
+func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts, revokedCertsRepository revocation.RevocationListRepository) (*http.Server, error) {
 	certHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, subjectConsts)
 
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser, revokedCertsRepository)
@@ -72,8 +86,14 @@ func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConst
 	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
 	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
 
-	return &http.Server{
-		Addr:    cfg.HydratorAddress,
-		Handler: router,
+	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
+	if err != nil {
+		return nil, err
 	}
+
+	return &http.Server{
+		Addr:              cfg.HydratorAddress,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
+	}, nil
 }

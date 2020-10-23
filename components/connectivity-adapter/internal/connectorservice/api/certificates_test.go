@@ -31,7 +31,7 @@ func TestHandler_Certificates(t *testing.T) {
 	t.Run("Should sign certificate", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		connectorClientMock.On("SignCSR", "Q1NSCg==", headersFromToken).Return(schema.CertificationResult{
+		connectorClientMock.On("SignCSR", mock.Anything, "Q1NSCg==", headersFromToken).Return(schema.CertificationResult{
 			CaCertificate:     "ca_cert",
 			CertificateChain:  "cert_chain",
 			ClientCertificate: "client_cert",
@@ -66,7 +66,7 @@ func TestHandler_Certificates(t *testing.T) {
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		connectorClientMock.On("SignCSR", "Q1NSCg==", headersFromToken).
+		connectorClientMock.On("SignCSR", mock.Anything, "Q1NSCg==", headersFromToken).
 			Return(schema.CertificationResult{}, apperrors.Internal("error"))
 
 		connectorClientProviderMock := &mocks.ClientProvider{}

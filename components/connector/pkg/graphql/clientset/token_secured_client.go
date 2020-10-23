@@ -19,13 +19,14 @@ type TokenSecuredClient struct {
 	queryProvider queryProvider
 }
 
-func newTokenSecuredClient(endpoint string, skipTLSVerify bool) *TokenSecuredClient {
+func newTokenSecuredClient(endpoint string, opts *clientsetOptions) *TokenSecuredClient {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: skipTLSVerify,
+				InsecureSkipVerify: opts.skipTLSVerify,
 			},
 		},
+		Timeout: opts.timeout,
 	}
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))
@@ -36,28 +37,28 @@ func newTokenSecuredClient(endpoint string, skipTLSVerify bool) *TokenSecuredCli
 	}
 }
 
-func (c *TokenSecuredClient) Configuration(token string, headers ...http.Header) (externalschema.Configuration, error) {
+func (c *TokenSecuredClient) Configuration(ctx context.Context, token string, headers ...http.Header) (externalschema.Configuration, error) {
 	query := c.queryProvider.configuration()
 	req := newRequest(query, headers...)
 	req.Header.Add(TokenHeader, token)
 
 	var response ConfigurationResponse
 
-	err := c.graphQlClient.Run(context.Background(), req, &response)
+	err := c.graphQlClient.Run(ctx, req, &response)
 	if err != nil {
 		return externalschema.Configuration{}, errors.Wrap(err, "Failed to get configuration")
 	}
 	return response.Result, nil
 }
 
-func (c *TokenSecuredClient) SignCSR(csr string, token string, headers ...http.Header) (externalschema.CertificationResult, error) {
+func (c *TokenSecuredClient) SignCSR(ctx context.Context, csr string, token string, headers ...http.Header) (externalschema.CertificationResult, error) {
 	query := c.queryProvider.signCSR(csr)
 	req := newRequest(query, headers...)
 	req.Header.Add(TokenHeader, token)
 
 	var response CertificationResponse
 
-	err := c.graphQlClient.Run(context.Background(), req, &response)
+	err := c.graphQlClient.Run(ctx, req, &response)
 	if err != nil {
 		return externalschema.CertificationResult{}, errors.Wrap(err, "Failed to generate certificate")
 	}

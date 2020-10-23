@@ -11,6 +11,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+
 	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -54,7 +56,11 @@ import (
 )
 
 type config struct {
-	Address                 string `envconfig:"default=127.0.0.1:3000"`
+	Address string `envconfig:"default=127.0.0.1:3000"`
+
+	ClientTimeout time.Duration `envconfig:"default=105s"`
+	ServerTimeout time.Duration `envconfig:"default=110s"`
+
 	Database                persistence.DatabaseConfig
 	APIEndpoint             string `envconfig:"default=/graphql"`
 	TenantMappingEndpoint   string `envconfig:"default=/tenant-mapping"`
@@ -115,6 +121,7 @@ func main() {
 			pairingAdapters,
 			cfg.Features,
 			metricsCollector,
+			cfg.ClientTimeout,
 		),
 		Directives: graphql.DirectiveRoot{
 			HasScopes: scope.NewDirective(cfgProvider).VerifyScopes,
@@ -179,8 +186,8 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
-	runMetricsSrv, shutdownMetricsSrv := createServer(cfg.MetricsAddress, metricsHandler, "metrics")
-	runMainSrv, shutdownMainSrv := createServer(cfg.Address, mainRouter, "main")
+	runMetricsSrv, shutdownMetricsSrv := createServer(cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
+	runMainSrv, shutdownMainSrv := createServer(cfg.Address, mainRouter, "main", cfg.ServerTimeout)
 
 	go func() {
 		<-stopCh
@@ -317,8 +324,15 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 		tenantSvc).ServeHTTP, nil
 }
 
-func createServer(address string, handler http.Handler, name string) (func(), func()) {
-	srv := &http.Server{Addr: address, Handler: handler}
+func createServer(address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
+	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
+	exitOnError(err, "Error while configuring tenant mapping handler")
+
+	srv := &http.Server{
+		Addr:              address,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: timeout,
+	}
 
 	runFn := func() {
 		log.Infof("Running %s server on %s...", name, address)

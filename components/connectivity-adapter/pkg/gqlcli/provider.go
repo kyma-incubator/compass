@@ -3,6 +3,7 @@ package gqlcli
 import (
 	"context"
 	"net/http"
+	"time"
 
 	gcli "github.com/machinebox/graphql"
 )
@@ -18,13 +19,17 @@ type Provider interface {
 }
 
 type graphQLClientProvider struct {
-	url string
+	url     string
+	timeout time.Duration
 }
 
-func NewProvider(url string) *graphQLClientProvider {
-	return &graphQLClientProvider{url: url}
+func NewProvider(url string, timeout time.Duration) *graphQLClientProvider {
+	return &graphQLClientProvider{
+		url:     url,
+		timeout: timeout,
+	}
 }
 
 func (p *graphQLClientProvider) GQLClient(rq *http.Request) GraphQLClient {
-	return NewAuthorizedGraphQLClient(p.url, rq)
+	return NewAuthorizedGraphQLClient(p.url, p.timeout, rq)
 }

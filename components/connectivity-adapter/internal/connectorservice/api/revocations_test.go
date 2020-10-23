@@ -23,7 +23,7 @@ func TestHandlerRevocations(t *testing.T) {
 	t.Run("Should revoke certificate", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		connectorClientMock.On("Revoke", headersFromCertificate).Return(nil)
+		connectorClientMock.On("Revoke", mock.Anything, headersFromCertificate).Return(nil)
 
 		connectorClientProviderMock := &mocks.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
@@ -44,7 +44,7 @@ func TestHandlerRevocations(t *testing.T) {
 	t.Run("Should return error when failed to call Connector", func(t *testing.T) {
 		// given
 		connectorClientMock := &mocks.Client{}
-		connectorClientMock.On("Revoke", headersFromCertificate).Return(apperrors.Internal("error"))
+		connectorClientMock.On("Revoke", mock.Anything, headersFromCertificate).Return(apperrors.Internal("error"))
 
 		connectorClientProviderMock := &mocks.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)

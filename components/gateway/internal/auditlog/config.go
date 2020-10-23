@@ -7,6 +7,7 @@ type Config struct {
 	ConfigPath        string        `envconfig:"APP_AUDITLOG_CONFIG_PATH"`
 	SecurityPath      string        `envconfig:"APP_AUDITLOG_SECURITY_PATH"`
 	AuthMode          AuthMode      `envconfig:"APP_AUDITLOG_AUTH_MODE"`
+	ClientTimeout     time.Duration `envconfig:"APP_AUDITLOG_CLIENT_TIMEOUT,default=30s"`
 	MsgChannelSize    int           `envconfig:"APP_AUDITLOG_CHANNEL_SIZE,default=100"`
 	MsgChannelTimeout time.Duration `envconfig:"APP_AUDITLOG_CHANNEL_TIMEOUT,default=5s"`
 	WriteWorkers      int           `envconfig:"APP_AUDITLOG_WRITE_WORKERS,default=5"`

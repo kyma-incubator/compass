@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -35,7 +36,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: endpoint + "/deleted",
 		EndpointTenantUpdated: endpoint + "/updated",
 	}
-	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
@@ -77,7 +78,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: "http://127.0.0.1:8111/badpath",
 		EndpointTenantUpdated: endpoint + "/empty",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
@@ -111,7 +112,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: endpoint + "/deleted",
 		EndpointTenantUpdated: endpoint + "/badRequest",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
