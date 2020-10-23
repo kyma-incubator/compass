@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -147,6 +149,9 @@ func main() {
 
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+
+	contextEnricher := correlation.NewContextEnrichMiddleware()
+	mainRouter.Use(contextEnricher.AttachCorrelationIDToContext)
 
 	presenter := error_presenter.NewPresenter(log.StandardLogger(), uid.NewService())
 

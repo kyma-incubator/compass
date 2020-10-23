@@ -1,0 +1,1 @@
+export { disableClickEventFromSwagger } from './disableClickEventFromSwagger';
