@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -19,7 +23,59 @@ func WithTimeout(h http.Handler, timeout time.Duration) (http.Handler, error) {
 		return nil, err
 	}
 
-	return newContentTypeHandler(http.TimeoutHandler(h, timeout, string(msg))), nil
+	preTimoutLoggingHandler := newTimeoutLoggingHandler(h, timeout, msg)
+	timeoutHandler := http.TimeoutHandler(preTimoutLoggingHandler, timeout, string(msg))
+	postTimeoutLoggingHandler := newTimeoutLoggingHandler(timeoutHandler, timeout, msg)
+
+	return newContentTypeHandler(postTimeoutLoggingHandler), nil
+}
+
+func newTimeoutLoggingHandler(h http.Handler, timeout time.Duration, msg []byte) http.Handler {
+	return &timeoutLoggingHandler{
+		h:       h,
+		timeout: timeout,
+		msg:     msg,
+	}
+}
+
+type timeoutLoggingHandler struct {
+	h       http.Handler
+	timeout time.Duration
+	msg     []byte
+}
+
+func (h *timeoutLoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	timoutRW := &timoutLoggingResponseWriter{
+		ResponseWriter: w,
+		method:         r.Method,
+		url:            r.URL.String(),
+		timeout:        h.timeout,
+		msg:            h.msg,
+		ctx:            r.Context(),
+	}
+	h.h.ServeHTTP(timoutRW, r)
+}
+
+type timoutLoggingResponseWriter struct {
+	http.ResponseWriter
+	method  string
+	url     string
+	timeout time.Duration
+	msg     []byte
+	ctx     context.Context // TODO: Use logger from context once we have that in place
+}
+
+func (lrw *timoutLoggingResponseWriter) Write(b []byte) (int, error) {
+	if bytes.Equal(lrw.msg, b) {
+		logrus.Warnf("%s request to %s timed out after %s", lrw.method, lrw.url, lrw.timeout)
+	}
+
+	i, err := lrw.ResponseWriter.Write(b)
+
+	if err != nil && strings.Contains(err.Error(), http.ErrHandlerTimeout.Error()) {
+		logrus.Warnf("finished processing %s request to %s due to exceeded timeout of %s", lrw.method, lrw.url, lrw.timeout)
+	}
+	return i, err
 }
 
 func newContentTypeHandler(h http.Handler) http.Handler {
