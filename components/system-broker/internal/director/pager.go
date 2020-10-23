@@ -40,7 +40,7 @@ func NewPager(queryGenerator func(pageSize int, page string) string, pageSize in
 
 func (p *Pager) Next(ctx context.Context, output interface{}) error {
 	if !p.hasNext {
-		return errors.New("could not fetch page")
+		return errors.New("no more pages")
 	}
 
 	query := p.QueryGenerator(p.PageSize, p.PageToken)
