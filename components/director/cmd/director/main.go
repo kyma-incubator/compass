@@ -126,7 +126,7 @@ func main() {
 			cfg.ClientTimeout,
 		),
 		Directives: graphql.DirectiveRoot{
-			HasFormation: formation.NewDirective(log.New()).HasFormation,
+			HasFormation: formation.NewDirective().HasFormation,
 			HasScopes:    scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:     inputvalidation.NewDirective().Validate,
 		},

@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 
@@ -14,8 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -42,11 +41,10 @@ type directive struct {
 	labelRepo label.LabelRepository
 
 	applicationProviders map[string]func(context.Context, string, string) (string, error)
-	log                  *logrus.Logger
 }
 
 // NewDirective returns a new formation directive
-func NewDirective(log *logrus.Logger) *directive {
+func NewDirective() *directive {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -66,7 +64,6 @@ func NewDirective(log *logrus.Logger) *directive {
 
 	return &directive{
 		labelRepo: label.NewRepository(label.NewConverter()),
-		log:       log,
 		applicationProviders: map[string]func(context.Context, string, string) (string, error){
 			GetApplicationID: func(ctx context.Context, tenantID string, appID string) (string, error) {
 				return appID, nil
@@ -87,6 +84,7 @@ func NewDirective(log *logrus.Logger) *directive {
 // HasFormation ensures that the runtime is in a formation with the application which resources are being manipulated.
 // If the caller is not a Runtime, then request is forwarded to the next resolver.
 func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error) {
+	log.Infof("Attempting to verify that the requesting runtime is in formation with the owning application entity")
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -98,10 +96,12 @@ func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphq
 	}
 
 	if consumerInfo.ConsumerType != consumer.Runtime {
+		log.Debugf("Consumer type %v is not of type %v. Skipping verification directive...", consumerInfo.ConsumerType, consumer.Runtime)
 		return next(ctx)
 	}
 
 	runtimeID := consumerInfo.ConsumerID
+	log.Debugf("Found Consumer ID for the requesting runtime: %v", runtimeID)
 
 	resCtx := graphql.GetResolverContext(ctx)
 	id, ok := resCtx.Args[idField].(string)
@@ -118,6 +118,7 @@ func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphq
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not derive app id, an error occurred")
 	}
+	log.Debugf("Found Application ID based on the request parameter %s: %s", idField, appID)
 
 	tx, err := d.transact.Begin()
 	if err != nil {
@@ -131,10 +132,17 @@ func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching scenarios for application")
 	}
+	log.Debugf("Found the following application scenarios: %s", appScenarios)
 
 	runtimeScenarios, err := d.getObjectScenarios(ctx, tenantID, model.RuntimeLabelableObject, runtimeID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching scenarios for runtime")
+	}
+	log.Debugf("Found the following runtime scenarios: %s", runtimeScenarios)
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
@@ -148,12 +156,7 @@ func (d *directive) HasFormation(ctx context.Context, _ interface{}, next graphq
 	}
 	*/
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: check if can be reused for applications query
+	log.Infof("Runtime with ID %s is in formation with the owning application entity with id %s", runtimeID, appID)
 	return next(ctx)
 }
 
