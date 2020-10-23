@@ -18,7 +18,7 @@ func TestContextEnrichMiddleware_AttachCorrelationIDToContext(t *testing.T) {
 
 		nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			actual := correlation.IDFromContext(r.Context())
-			assert.Equal(t,actual, expectedCorrelationID)
+			assert.Equal(t, actual, expectedCorrelationID)
 		})
 
 		req := httptest.NewRequest("GET", "/", nil)
