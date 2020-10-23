@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/request"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -60,7 +61,7 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 	s.logger.Debugf("Fetched client credential scopes: %s for %s", scopes, objectType)
 
 	clientID := s.uidService.Generate()
-	clientSecret, err := s.registerClient(clientID, scopes)
+	clientSecret, err := s.registerClient(ctx, clientID, scopes)
 	if err != nil {
 		return nil, errors.Wrap(err, "while registering client credentials in Hydra")
 	}
@@ -75,7 +76,7 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 }
 
 func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) error {
-	return s.unregisterClient(clientID)
+	return s.unregisterClient(ctx, clientID)
 }
 
 func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error {
@@ -113,7 +114,7 @@ type clientCredentialsRegistrationResponse struct {
 	ClientSecret string `json:"client_secret"`
 }
 
-func (s *service) registerClient(clientID string, scopes []string) (string, error) {
+func (s *service) registerClient(ctx context.Context, clientID string, scopes []string) (string, error) {
 	s.logger.Debugf("Registering client_id %s and client_secret in Hydra with scopes: %s", clientID, scopes)
 	reqBody := &clientCredentialsRegistrationBody{
 		GrantTypes: defaultGrantTypes,
@@ -127,7 +128,7 @@ func (s *service) registerClient(clientID string, scopes []string) (string, erro
 		return "", errors.Wrap(err, "while encoding body")
 	}
 
-	resp, closeBody, err := s.doRequest(http.MethodPost, s.clientEndpoint, buffer)
+	resp, closeBody, err := s.doRequest(ctx, http.MethodPost, s.clientEndpoint, buffer)
 	if err != nil {
 		return "", err
 	}
@@ -147,11 +148,11 @@ func (s *service) registerClient(clientID string, scopes []string) (string, erro
 	return registrationResp.ClientSecret, nil
 }
 
-func (s *service) unregisterClient(clientID string) error {
+func (s *service) unregisterClient(ctx context.Context, clientID string) error {
 	s.logger.Debugf("Unregistering client_id %s and client_secret in Hydra", clientID)
 	endpoint := fmt.Sprintf("%s/%s", s.clientEndpoint, clientID)
 
-	resp, closeBody, err := s.doRequest(http.MethodDelete, endpoint, nil)
+	resp, closeBody, err := s.doRequest(ctx, http.MethodDelete, endpoint, nil)
 	if err != nil {
 		return err
 	}
@@ -165,8 +166,8 @@ func (s *service) unregisterClient(clientID string) error {
 	return nil
 }
 
-func (s *service) doRequest(method string, endpoint string, body io.Reader) (*http.Response, func(body io.ReadCloser), error) {
-	req, err := http.NewRequest(method, endpoint, body)
+func (s *service) doRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Response, func(body io.ReadCloser), error) {
+	req, err := request.NewHttpRequest(ctx, method, endpoint, body)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while creating new request")
 	}
