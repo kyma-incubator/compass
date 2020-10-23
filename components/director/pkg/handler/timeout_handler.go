@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
