@@ -1,6 +1,7 @@
 package director_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
@@ -129,7 +130,7 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, nil)
 
-			result, err := dirCli.CreatePackage(appID, in)
+			result, err := dirCli.CreatePackage(context.TODO(), appID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -236,7 +237,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, nil)
 
-			err := dirCli.UpdatePackage(packageID, in)
+			err := dirCli.UpdatePackage(context.TODO(), packageID, in)
 
 			if tC.ExpectedErr != nil {
 				require.Error(t, err)
@@ -333,7 +334,7 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, nil, gqlFieldsProvider)
 
-			result, err := dirCli.GetPackage(appID, packageID)
+			result, err := dirCli.GetPackage(context.TODO(), appID, packageID)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -428,7 +429,7 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, nil, gqlFieldsProvider)
 
-			result, err := dirCli.ListPackages(appID)
+			result, err := dirCli.ListPackages(context.TODO(), appID)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, tC.ExpectedResult, result)
@@ -502,7 +503,7 @@ func TestDirectorClient_DeletePackage(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, nil, nil)
 
-			err := dirCli.DeletePackage(id)
+			err := dirCli.DeletePackage(context.TODO(), id)
 
 			if tC.ExpectedErr != nil {
 				require.Error(t, err)
@@ -629,7 +630,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, gqlFieldsProvider)
 
-			result, err := dirCli.CreateAPIDefinition(packageID, in)
+			result, err := dirCli.CreateAPIDefinition(context.TODO(), packageID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -703,7 +704,7 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, nil, nil)
 
-			err := dirCli.DeleteAPIDefinition(id)
+			err := dirCli.DeleteAPIDefinition(context.TODO(), id)
 
 			if tC.ExpectedErr != nil {
 				require.Error(t, err)
@@ -830,7 +831,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, gqlFieldsProvider)
 
-			result, err := dirCli.CreateEventDefinition(packageID, in)
+			result, err := dirCli.CreateEventDefinition(context.TODO(), packageID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -904,7 +905,7 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, nil, nil)
 
-			err := dirCli.DeleteEventDefinition(id)
+			err := dirCli.DeleteEventDefinition(context.TODO(), id)
 
 			if tC.ExpectedErr != nil {
 				require.Error(t, err)
@@ -1031,7 +1032,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, gqlFieldsProvider)
 
-			result, err := dirCli.CreateDocument(packageID, in)
+			result, err := dirCli.CreateDocument(context.TODO(), packageID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -1105,7 +1106,7 @@ func TestDirectorClient_DeleteDocument(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, nil, nil)
 
-			err := dirCli.DeleteDocument(apiID)
+			err := dirCli.DeleteDocument(context.TODO(), apiID)
 
 			if tC.ExpectedErr != nil {
 				require.Error(t, err)
@@ -1184,7 +1185,7 @@ func TestDirectorClient_SetApplicationLabel(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, nil, gqlFieldsProvider)
 
-			err := dirCli.SetApplicationLabel(appID, labelInput)
+			err := dirCli.SetApplicationLabel(context.TODO(), appID, labelInput)
 
 			if tC.ExpectedErr == nil {
 				require.NoError(t, err)
