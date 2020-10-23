@@ -32,10 +32,14 @@ func MapSQLError(err error, resourceType resource.Type, format string, args ...i
 	log.Errorf("SQL Error: %s. Caused by: %s. DETAILS: %s", fmt.Sprintf(format, args...), pgErr.Message, pgErr.Detail)
 
 	switch pgErr.Code {
+	case NotNullViolation:
+		return apperrors.NewNotNullViolationError(resourceType)
+	case CheckViolation:
+		return apperrors.NewCheckViolationError(resourceType)
 	case UniqueViolation:
 		return apperrors.NewNotUniqueError(resourceType)
 	case ForeignKeyViolation:
-		return apperrors.NewInvalidDataError("Object already exist")
+		return apperrors.NewInvalidOperationError("The record cannot be deleted because another record refers to it")
 	}
 
 	return apperrors.NewInternalError("Unexpected error while executing SQL query")

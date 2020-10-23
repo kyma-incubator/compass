@@ -32,12 +32,22 @@ func TestMapSQLError(t *testing.T) {
 			AssertFunc: isInternalServerErr(t, "Internal Server Error: Unexpected error while executing SQL query"),
 		},
 		{
+			Name:       "Not null violation",
+			Error:      &pq.Error{Code: persistence.NotNullViolation},
+			AssertFunc: apperrors.IsNewNotNullViolationError,
+		},
+		{
+			Name:       "Check violation",
+			Error:      &pq.Error{Code: persistence.CheckViolation},
+			AssertFunc: apperrors.IsNewCheckViolationError,
+		},
+		{
 			Name:       "Unique violation error",
 			Error:      &pq.Error{Code: persistence.UniqueViolation},
 			AssertFunc: apperrors.IsNotUniqueError,
 		},
 		{
-			Name:       "Unique violation error",
+			Name:       "Foreign key violation error",
 			Error:      &pq.Error{Code: persistence.ForeignKeyViolation},
 			AssertFunc: apperrors.IsNewInvalidDataError,
 		},

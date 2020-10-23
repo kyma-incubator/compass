@@ -59,6 +59,22 @@ func ErrorCode(err error) ErrorType {
 
 }
 
+func NewNotNullViolationError(resourceType resource.Type) error {
+	return Error{
+		errorCode: EmptyData,
+		Message:   emptyDataMsg,
+		arguments: map[string]string{"object": string(resourceType)},
+	}
+}
+
+func NewCheckViolationError(resourceType resource.Type) error {
+	return Error{
+		errorCode: InconsistentData,
+		Message:   inconsistentDataMsg,
+		arguments: map[string]string{"object": string(resourceType)},
+	}
+}
+
 func NewOperationTimeoutError() error {
 	return Error{
 		errorCode: OperationTimeout,
@@ -243,7 +259,7 @@ func IsCannotReadTenant(err error) bool {
 }
 
 func IsNewInvalidDataError(err error) bool {
-	return ErrorCode(err) == InvalidData
+	return ErrorCode(err) == InvalidOperation
 }
 
 func IsNotFoundError(err error) bool {
@@ -260,6 +276,14 @@ func IsTenantNotFoundError(err error) bool {
 
 func IsNotUniqueError(err error) bool {
 	return ErrorCode(err) == NotUnique
+}
+
+func IsNewNotNullViolationError(err error) bool {
+	return ErrorCode(err) == EmptyData
+}
+
+func IsNewCheckViolationError(err error) bool {
+	return ErrorCode(err) == InconsistentData
 }
 
 func sortMapKey(m map[string]string) []string {
