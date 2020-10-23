@@ -218,6 +218,7 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 }
 
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	time.Sleep(time.Second * 4)
 	return r.app.Applications(ctx, filter, first, after)
 }
 
