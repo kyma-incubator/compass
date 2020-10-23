@@ -31,6 +31,10 @@ required = [
   name = "k8s.io/client-go"
   version = "kubernetes-1.16.10"
 
+[[constraint]]
+  name = "github.com/kyma-incubator/compass"
+  branch = "master"
+
 [[override]]
   name = "gopkg.in/yaml.v2"
   version = "v2.2.8"
@@ -38,10 +42,6 @@ required = [
 [[override]]
   name = "k8s.io/kubernetes"
   version = "kubernetes-1.16.10"
-
-[[override]]
-  name = "github.com/kyma-incubator/compass"
-  branch = "master"
 
 [prune]
   go-tests = true

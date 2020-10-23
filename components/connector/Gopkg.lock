@@ -165,7 +165,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:22ea56ad74b4e0fa0adf30a7a65c86962bd76f470bf43229dd8eca2e4f0cebe0"
+  digest = "1:8fb2bdf3ce81f55974fed50161923c3265881ff9e7c093442d2f942b742a6558"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/apperrors",
@@ -173,7 +173,7 @@
     "components/director/pkg/resource",
   ]
   pruneopts = "UT"
-  revision = "c480a02149cd7d80c3955b86fe0a51729d68365e"
+  revision = "74d69e24ad9944f631c4dba54e55a260d09cb00c"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"

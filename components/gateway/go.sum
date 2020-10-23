@@ -117,6 +117,8 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2020102
 github.com/kyma-incubator/compass/components/director v0.0.0-20200703104319-1c4490318bfd/go.mod h1:mXQbZvsoQH+zJB8ywkFIqtG2Rp8Lt7bhwIzKPRRnlNA=
 github.com/kyma-incubator/compass/components/director v0.0.0-20201022103343-c480a02149cd h1:aTbcAqcDkM+itbBgM0PZLDaRWbec4y2mYiSzVxfYq5Q=
 github.com/kyma-incubator/compass/components/director v0.0.0-20201022103343-c480a02149cd/go.mod h1:EZD2wmWbHm2df+Kn2Tib8l2hvNh5eVJNdPh/57UjSmk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20201023161319-74d69e24ad99 h1:z14Zn7MLdZlfkeeQjpJvUEU/f/3u3uS8Puwd8EVXzRw=
+github.com/kyma-incubator/compass/components/director v0.0.0-20201023161319-74d69e24ad99/go.mod h1:qK20A1LOVGrFoGZwYZANRRKrOX1V5+9ZafYD4bbhx8A=
 github.com/lestrrat-go/jwx v0.9.0/go.mod h1:iEoxlYfZjvoGpuWwxUz+eR5e6KTJGsaRcy/YNA/UnBk=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
