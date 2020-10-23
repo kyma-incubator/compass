@@ -7,7 +7,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 
 	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
@@ -126,7 +134,7 @@ func main() {
 			cfg.ClientTimeout,
 		),
 		Directives: graphql.DirectiveRoot{
-			HasScenario: scenario.NewDirective(transact, scenario.RepoBuilder).HasScenario,
+			HasScenario: scenario.NewDirective(label.NewRepository(label.NewConverter()), defaultPackageRepository(), defaultPackageInstanceAuth()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},
@@ -352,4 +360,21 @@ func createServer(address string, handler http.Handler, name string, timeout tim
 	}
 
 	return runFn, shutdownFn
+}
+
+func defaultPackageInstanceAuth() packageinstanceauth.Repository {
+	authConverter := auth.NewConverter()
+
+	return packageinstanceauth.NewRepository(packageinstanceauth.NewConverter(authConverter))
+}
+
+func defaultPackageRepository() mp_package.PackageRepository {
+	authConverter := auth.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	docConverter := document.NewConverter(frConverter)
+	apiConverter := api.NewConverter(frConverter, versionConverter)
+
+	return mp_package.NewRepository(mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }

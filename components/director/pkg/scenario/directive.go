@@ -8,13 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
-
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -24,8 +17,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/99designs/gqlgen/graphql"
 )
@@ -38,16 +29,13 @@ const (
 
 // TODO check if logs are present
 type directive struct {
-	transact  persistence.Transactioner
 	labelRepo label.LabelRepository
 
 	applicationProviders map[string]func(context.Context, string, string) (string, error)
 }
 
 // NewDirective returns a new scenario directive
-func NewDirective(transact persistence.Transactioner, repoBuilder func() (mp_package.PackageRepository, packageinstanceauth.Repository)) *directive {
-	packageRepo, packageInstanceAuthRepo := repoBuilder()
-
+func NewDirective(labelRepo label.LabelRepository, packageRepo mp_package.PackageRepository, packageInstanceAuthRepo packageinstanceauth.Repository) *directive {
 	getApplicationIDByPackageFunc := func(ctx context.Context, tenantID, packageID string) (string, error) {
 		pkg, err := packageRepo.GetByID(ctx, tenantID, packageID)
 		if err != nil {
@@ -57,8 +45,7 @@ func NewDirective(transact persistence.Transactioner, repoBuilder func() (mp_pac
 	}
 
 	return &directive{
-		transact:  transact,
-		labelRepo: label.NewRepository(label.NewConverter()),
+		labelRepo: labelRepo,
 		applicationProviders: map[string]func(context.Context, string, string) (string, error){
 			GetApplicationID: func(ctx context.Context, tenantID string, appID string) (string, error) {
 				return appID, nil
@@ -115,14 +102,6 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	}
 	log.Debugf("Found Application ID based on the request parameter %s: %s", idField, appID)
 
-	tx, err := d.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer d.transact.RollbackUnlessCommitted(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	appScenarios, err := d.getObjectScenarios(ctx, tenantID, model.ApplicationLabelableObject, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching scenarios for application")
@@ -135,21 +114,11 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	}
 	log.Debugf("Found the following runtime scenarios: %s", runtimeScenarios)
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
 	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
 	if len(commonScenarios) == 0 {
 		return nil, errors.New("Forbidden: Missing scenarios")
 	}
-
-	/* TODO: leave or remove? or we could extract stringsIntersaction in pkg/utils of some sort
-	if !hasCommonScenarios(appScenarios, runtimeScenarios) {
-		return nil, errors.New("Forbidden: Missing scenarios")
-	}
-	*/
+	log.Debugf("Found the following common scenarios: %+v", commonScenarios)
 
 	log.Infof("Runtime with ID %s is in scenario with the owning application entity with id %s", runtimeID, appID)
 	return next(ctx)
@@ -176,31 +145,4 @@ func stringsIntersection(str1, str2 []string) []string {
 		}
 	}
 	return intersection
-}
-
-// hasCommonScenarios returns whether there are common elements in two string slices.
-func hasCommonScenarios(str1, str2 []string) bool {
-	strings := make(map[string]bool)
-	for _, v := range str1 {
-		strings[v] = true
-	}
-	for _, v := range str2 {
-		if strings[v] {
-			return true
-		}
-	}
-	return false
-}
-
-func RepoBuilder() (mp_package.PackageRepository, packageinstanceauth.Repository) {
-	authConverter := auth.NewConverter()
-	frConverter := fetchrequest.NewConverter(authConverter)
-	versionConverter := version.NewConverter()
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
-	docConverter := document.NewConverter(frConverter)
-	apiConverter := api.NewConverter(frConverter, versionConverter)
-	packageRepo := mp_package.NewRepository(mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
-	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageinstanceauth.NewConverter(authConverter))
-
-	return packageRepo, packageInstanceAuthRepo
 }
