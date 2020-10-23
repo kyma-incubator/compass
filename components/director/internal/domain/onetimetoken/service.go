@@ -9,11 +9,9 @@ import (
 
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
 	"github.com/kyma-incubator/compass/components/director/pkg/request"
-	"github.com/kyma-project/kyma/tests/end-to-end/external-solution-integration/pkg/retry"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
