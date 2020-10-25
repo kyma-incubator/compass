@@ -31,7 +31,7 @@ func main() {
 	log.Println("Starting Connector Service")
 	log.Printf("Config: %s", cfg.String())
 
-	k8sClientSet, appErr := newCoreClientSet(cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout)
+	k8sClientSet, appErr := newCoreClientSet(cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout, cfg.KubernetesClient.Timeout)
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
 	internalComponents, certificateLoader, revocationListLoader := config.InitInternalComponents(cfg, k8sClientSet)
@@ -50,9 +50,14 @@ func main() {
 
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
-	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication)
-	internalGqlServer := config.PrepareInternalGraphQLServer(cfg, tokenResolver)
-	hydratorServer := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.SubjectConsts, internalComponents.RevocationsRepository)
+	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication)
+	exitOnError(err, "Failed configuring external graphQL handler")
+
+	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, tokenResolver)
+	exitOnError(err, "Failed configuring internal graphQL handler")
+
+	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.SubjectConsts, internalComponents.RevocationsRepository)
+	exitOnError(err, "Failed configuring hydrator handler")
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -88,7 +93,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func newCoreClientSet(interval, timeout time.Duration) (*kubernetes.Clientset, error) {
+func newCoreClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
 		logrus.Warnf("Failed to read in cluster Config: %s", err.Error())
@@ -101,12 +106,14 @@ func newCoreClientSet(interval, timeout time.Duration) (*kubernetes.Clientset, e
 		}
 	}
 
+	k8sConfig.Timeout = timeout
+
 	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
 	if err != nil {
 		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
 	}
 
-	err = wait.PollImmediate(interval, timeout, func() (bool, error) {
+	err = wait.PollImmediate(interval, pollingTimeout, func() (bool, error) {
 		_, err := coreClientset.ServerVersion()
 		if err != nil {
 			logrus.Debugf("Failed to access API Server: %s", err.Error())

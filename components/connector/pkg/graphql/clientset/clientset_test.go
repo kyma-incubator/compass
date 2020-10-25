@@ -1,6 +1,7 @@
 package clientset
 
 import (
+	"context"
 	"testing"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +25,7 @@ func Test_Clientset(t *testing.T) {
 	clientSet := NewConnectorClientSet(WithSkipTLSVerify(true))
 
 	// when
-	certificate, err := clientSet.GenerateCertificateForToken(token, externalAPIUrl)
+	certificate, err := clientSet.GenerateCertificateForToken(context.TODO(), token, externalAPIUrl)
 
 	// then
 	require.NoError(t, err)
@@ -36,7 +37,7 @@ func Test_Clientset(t *testing.T) {
 	certSecuredClient := clientSet.CertificateSecuredClient(externalAPIUrl, certificate)
 
 	// when
-	configuration, err := certSecuredClient.Configuration()
+	configuration, err := certSecuredClient.Configuration(context.TODO())
 
 	// then
 	require.NoError(t, err)
@@ -46,7 +47,7 @@ func Test_Clientset(t *testing.T) {
 	_, csr, err := NewCSR(configuration.CertificateSigningRequestInfo.Subject, nil)
 	require.NoError(t, err)
 
-	certResponse, err := certSecuredClient.SignCSR(encodeCSR(csr))
+	certResponse, err := certSecuredClient.SignCSR(context.TODO(), encodeCSR(csr))
 
 	// then
 	require.NoError(t, err)
@@ -54,7 +55,7 @@ func Test_Clientset(t *testing.T) {
 	assert.NotEmpty(t, certResponse.ClientCertificate)
 
 	// when
-	revokeResponse, err := certSecuredClient.RevokeCertificate()
+	revokeResponse, err := certSecuredClient.RevokeCertificate(context.TODO())
 
 	// then
 	require.NoError(t, err)

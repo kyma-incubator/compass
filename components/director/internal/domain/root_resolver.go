@@ -73,8 +73,11 @@ func NewRootResolver(
 	pairingAdaptersMapping map[string]string,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
+	clientTimeout time.Duration,
 ) *RootResolver {
-	oAuth20HTTPClient := &http.Client{Timeout: oAuth20Cfg.HTTPClientTimeout}
+	oAuth20HTTPClient := &http.Client{
+		Timeout: oAuth20Cfg.HTTPClientTimeout,
+	}
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
 
 	authConverter := auth.NewConverter()
@@ -115,13 +118,15 @@ func NewRootResolver(
 	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageInstanceAuthConv)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 
-	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
+	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL, clientTimeout)
 
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
-	httpClient := getHttpClient()
+	httpClient := &http.Client{
+		Timeout: clientTimeout,
+	}
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
@@ -163,13 +168,6 @@ func NewRootResolver(
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
 		scenarioAssignment:  scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv),
 	}
-}
-
-func getHttpClient() *http.Client {
-	out := &http.Client{
-		Timeout: time.Second * 3,
-	}
-	return out
 }
 
 func (r *RootResolver) Mutation() graphql.MutationResolver {

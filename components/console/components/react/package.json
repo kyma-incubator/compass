@@ -1,0 +1,90 @@
+{
+  "name": "@kyma-project/react-components",
+  "version": "0.0.43",
+  "main": "dist/index.js",
+  "private": false,
+  "license": "Apache-2.0",
+  "directories": {
+    "dist": "src"
+  },
+  "scripts": {
+    "start": "npm run styleguide",
+    "start:kyma": "npm run build:watch",
+    "start:kyma:api": "npm run build:watch",
+    "build": "webpack --config webpack.config.prod.js",
+    "build:watch": "webpack -w --config webpack.config.dev.js",
+    "styleguide": "styleguidist server",
+    "styleguide:build": "styleguidist build",
+    "test": "jest src/**; exit 0",
+    "test:watch": "jest src/** --watch",
+    "test:watchAll": "jest src/** --watchAll",
+    "test:coverage:report": "open ./coverage/lcov-report/index.html",
+    "lint-fix": "prettier --config ../../.prettierrc --write \"./src/**/*.{js,jsx,ts,tsx,html,css,json}\"",
+    "lint-check": "prettier --config ../../.prettierrc --check \"./src/**/*.{js,jsx,ts,tsx,html,css,json}\""
+  },
+  "dependencies": {
+    "polished": "^1.8.1",
+    "styled-components-modifiers": "^1.0.1"
+  },
+  "devDependencies": {
+    "@babel/types": "7.0.0-beta.44",
+    "ajv": "^6.12.3",
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-eslint": "^8.0.1",
+    "babel-jest": "^22.4.1",
+    "babel-loader": "^7.1.2",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "enzyme": "^3.1.0",
+    "enzyme-adapter-react-16": "^1.0.2",
+    "file-loader": "^1.1.11",
+    "fiori-fundamentals": "1.5.3",
+    "fontfaceobserver": "^2.0.13",
+    "handlebars": "^4.7.3",
+    "jest": "^21.2.1",
+    "jest-styled-components": "^4.11.0-1",
+    "npm-run-all": "^4.1.1",
+    "raf": "^3.4.0",
+    "react-jsonschema-form": "1.7.0",
+    "react-modal": "^3.5.1",
+    "react-scrollbar": "^0.5.4",
+    "react-styleguidist": "^8.0.6",
+    "react-test-renderer": "^16.0.0",
+    "style-loader": "^0.20.2",
+    "styled-components": "^3.2.3",
+    "styled-components-grid": "^2.2.0",
+    "webpack": "^4.28.1",
+    "webpack-cli": "^3.2.1",
+    "webpack-merge": "^4.2.1"
+  },
+  "peerDependencies": {
+    "styled-components": "^3.2.3"
+  },
+  "resolutions": {
+    "uglify-es": "3.3.7"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**",
+      "!src/**/*.snap",
+      "!src/components/index.js",
+      "!src/modifiers/**",
+      "!src/index.js"
+    ],
+    "moduleNameMapper": {
+      "^.+\\.(css|less|scss)$": "babel-jest"
+    },
+    "moduleDirectories": [
+      "node_modules",
+      "./"
+    ],
+    "setupFiles": [
+      "raf/polyfill",
+      "./test_setup/config"
+    ]
+  }
+}

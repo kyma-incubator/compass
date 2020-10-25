@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
@@ -20,6 +22,8 @@ type config struct {
 
 	TenantProvider      string `envconfig:"APP_TENANT_PROVIDER"`
 	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+
+	ClientTimeout time.Duration `envconfig:"default=60s"`
 }
 
 func main() {
@@ -31,7 +35,7 @@ func main() {
 
 	var metricsPusher *metrics.Pusher
 	if cfg.MetricsPushEndpoint != "" {
-		metricsPusher = metrics.NewPusher(cfg.MetricsPushEndpoint)
+		metricsPusher = metrics.NewPusher(cfg.MetricsPushEndpoint, cfg.ClientTimeout)
 	}
 
 	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
@@ -68,7 +72,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, metr
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
 	tenantStorageSvc := tenant.NewService(tenantStorageRepo, uidSvc)
 
-	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig)
+	eventAPIClient := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.APIConfig, cfg.ClientTimeout)
 	if metricsPusher != nil {
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}

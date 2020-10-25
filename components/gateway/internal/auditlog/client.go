@@ -38,9 +38,11 @@ func NewClient(cfg Config, httpClient HttpClient) (*Client, error) {
 		return nil, errors.Wrap(err, "while creating auditlog security event url")
 	}
 
-	return &Client{configChangeURL: configChangeURL.String(),
+	return &Client{
+		configChangeURL:  configChangeURL.String(),
 		securityEventURL: securityEventURL.String(),
-		httpClient:       httpClient}, nil
+		httpClient:       httpClient,
+	}, nil
 }
 
 func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error {

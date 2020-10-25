@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -49,7 +50,7 @@ type Client struct {
 	apiConfig APIConfig
 }
 
-func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
+func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, timeout time.Duration) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
 		ClientSecret: oAuth2Config.ClientSecret,
@@ -57,6 +58,7 @@ func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
 	}
 
 	httpClient := cfg.Client(context.Background())
+	httpClient.Timeout = timeout
 
 	return &Client{
 		httpClient: httpClient,

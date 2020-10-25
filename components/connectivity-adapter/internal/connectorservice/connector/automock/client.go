@@ -5,6 +5,8 @@ package automock
 import (
 	apperrors "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
+	context "context"
+
 	externalschema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 
 	mock "github.com/stretchr/testify/mock"
@@ -15,20 +17,20 @@ type Client struct {
 	mock.Mock
 }
 
-// Configuration provides a mock function with given fields: headers
-func (_m *Client) Configuration(headers map[string]string) (externalschema.Configuration, apperrors.AppError) {
-	ret := _m.Called(headers)
+// Configuration provides a mock function with given fields: ctx, headers
+func (_m *Client) Configuration(ctx context.Context, headers map[string]string) (externalschema.Configuration, apperrors.AppError) {
+	ret := _m.Called(ctx, headers)
 
 	var r0 externalschema.Configuration
-	if rf, ok := ret.Get(0).(func(map[string]string) externalschema.Configuration); ok {
-		r0 = rf(headers)
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]string) externalschema.Configuration); ok {
+		r0 = rf(ctx, headers)
 	} else {
 		r0 = ret.Get(0).(externalschema.Configuration)
 	}
 
 	var r1 apperrors.AppError
-	if rf, ok := ret.Get(1).(func(map[string]string) apperrors.AppError); ok {
-		r1 = rf(headers)
+	if rf, ok := ret.Get(1).(func(context.Context, map[string]string) apperrors.AppError); ok {
+		r1 = rf(ctx, headers)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(apperrors.AppError)
@@ -38,13 +40,13 @@ func (_m *Client) Configuration(headers map[string]string) (externalschema.Confi
 	return r0, r1
 }
 
-// Revoke provides a mock function with given fields: headers
-func (_m *Client) Revoke(headers map[string]string) apperrors.AppError {
-	ret := _m.Called(headers)
+// Revoke provides a mock function with given fields: ctx, headers
+func (_m *Client) Revoke(ctx context.Context, headers map[string]string) apperrors.AppError {
+	ret := _m.Called(ctx, headers)
 
 	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(map[string]string) apperrors.AppError); ok {
-		r0 = rf(headers)
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]string) apperrors.AppError); ok {
+		r0 = rf(ctx, headers)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(apperrors.AppError)
@@ -54,20 +56,20 @@ func (_m *Client) Revoke(headers map[string]string) apperrors.AppError {
 	return r0
 }
 
-// SignCSR provides a mock function with given fields: csr, headers
-func (_m *Client) SignCSR(csr string, headers map[string]string) (externalschema.CertificationResult, apperrors.AppError) {
-	ret := _m.Called(csr, headers)
+// SignCSR provides a mock function with given fields: ctx, csr, headers
+func (_m *Client) SignCSR(ctx context.Context, csr string, headers map[string]string) (externalschema.CertificationResult, apperrors.AppError) {
+	ret := _m.Called(ctx, csr, headers)
 
 	var r0 externalschema.CertificationResult
-	if rf, ok := ret.Get(0).(func(string, map[string]string) externalschema.CertificationResult); ok {
-		r0 = rf(csr, headers)
+	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]string) externalschema.CertificationResult); ok {
+		r0 = rf(ctx, csr, headers)
 	} else {
 		r0 = ret.Get(0).(externalschema.CertificationResult)
 	}
 
 	var r1 apperrors.AppError
-	if rf, ok := ret.Get(1).(func(string, map[string]string) apperrors.AppError); ok {
-		r1 = rf(csr, headers)
+	if rf, ok := ret.Get(1).(func(context.Context, string, map[string]string) apperrors.AppError); ok {
+		r1 = rf(ctx, csr, headers)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(apperrors.AppError)

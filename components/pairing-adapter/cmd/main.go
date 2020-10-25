@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/handler"
+
 	"golang.org/x/oauth2"
 
 	"github.com/kyma-incubator/compass/components/pairing-adapter/internal/adapter"
@@ -30,18 +32,25 @@ func main() {
 	}
 
 	client := cc.Client(context.Background())
+	client.Timeout = conf.ClientTimeout
 
 	cli := adapter.NewClient(client, conf.Mapping)
 
 	h := adapter.NewHandler(cli)
+	handlerWithTimeout, err := handler.WithTimeout(h, conf.ServerTimeout)
+	exitOnError(err, "Failed configuring timeout on handler")
 
-	http.Handle("/adapter", h)
+	http.Handle("/adapter", handlerWithTimeout)
 	http.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	})
 
-	err = http.ListenAndServe(fmt.Sprintf(":%s", conf.Port), nil)
-	exitOnError(err, "on starting HTTP server")
+	server := &http.Server{
+		Addr:              fmt.Sprintf(":%s", conf.Port),
+		ReadHeaderTimeout: conf.ServerTimeout,
+	}
+
+	exitOnError(server.ListenAndServe(), "on starting HTTP server")
 }
 
 func exitOnError(err error, context string) {

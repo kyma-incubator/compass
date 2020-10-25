@@ -2,6 +2,7 @@ package appregistry
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 
@@ -15,14 +16,15 @@ import (
 )
 
 type Config struct {
-	DirectorEndpoint string `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	DirectorEndpoint string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	ClientTimeout    time.Duration `envconfig:"default=115s"`
 }
 
 func RegisterHandler(router *mux.Router, cfg Config) {
 	logger := logrus.New().WithField("component", "app-registry").Logger
 	logger.SetReportCaller(true)
 
-	gqlCliProvider := gqlcli.NewProvider(cfg.DirectorEndpoint)
+	gqlCliProvider := gqlcli.NewProvider(cfg.DirectorEndpoint, cfg.ClientTimeout)
 	reqContextProvider := service.NewRequestContextProvider()
 
 	converter := service.NewConverter()

@@ -38,7 +38,7 @@ func (rh *revocationsHandler) RevokeCertificate(w http.ResponseWriter, r *http.R
 
 	contextLogger.Info("Revoke certificate")
 
-	err = rh.connectorClientProvider.Client(r).Revoke(authorizationHeaders)
+	err = rh.connectorClientProvider.Client(r).Revoke(r.Context(), authorizationHeaders)
 
 	if err != nil {
 		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to revoke certificate"), apperrors.CodeInternal)

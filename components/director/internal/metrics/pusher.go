@@ -1,7 +1,9 @@
 package metrics
 
 import (
+	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -17,7 +19,7 @@ type Pusher struct {
 	instanceID           uuid.UUID
 }
 
-func NewPusher(endpoint string) *Pusher {
+func NewPusher(endpoint string, timeout time.Duration) *Pusher {
 	eventingRequestTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: Namespace,
 		Subsystem: TenantFetcherSubsystem,
@@ -30,7 +32,9 @@ func NewPusher(endpoint string) *Pusher {
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(eventingRequestTotal)
-	pusher := push.New(endpoint, TenantFetcherJobName).Gatherer(registry)
+	pusher := push.New(endpoint, TenantFetcherJobName).Gatherer(registry).Client(&http.Client{
+		Timeout: timeout,
+	})
 
 	return &Pusher{
 		eventingRequestTotal: eventingRequestTotal,
