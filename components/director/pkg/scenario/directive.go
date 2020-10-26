@@ -27,6 +27,8 @@ const (
 	GetApplicationIDByPackageInstanceAuth = "GetApplicationIDByPackageInstanceAuth"
 )
 
+var ErrMissingScenario = errors.New("Forbidden: Missing scenarios")
+
 // TODO check if logs are present
 type directive struct {
 	labelRepo label.LabelRepository
@@ -116,7 +118,7 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 
 	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
 	if len(commonScenarios) == 0 {
-		return nil, errors.New("Forbidden: Missing scenarios")
+		return nil, ErrMissingScenario
 	}
 	log.Debugf("Found the following common scenarios: %+v", commonScenarios)
 

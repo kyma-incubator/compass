@@ -152,7 +152,7 @@ func TestHasScenario(t *testing.T) {
 		const (
 			pkgAuthIDField = "authID"
 			tenantID       = "42"
-			authID         = "24"
+			pkgAuthID      = "24"
 		)
 
 		pkgAuthRepo := &pkg_auth_mock.Repository{}
@@ -164,13 +164,13 @@ func TestHasScenario(t *testing.T) {
 		rCtx := &graphql.ResolverContext{
 			Object:   "PackageInstanceAuth",
 			Field:    graphql.CollectedField{},
-			Args:     map[string]interface{}{pkgAuthIDField: authID},
+			Args:     map[string]interface{}{pkgAuthIDField: pkgAuthID},
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 
 		notFoundErr := apperrors.NewNotFoundErrorWithType(resource.PackageInstanceAuth)
-		pkgAuthRepo.On("GetByID", ctx, tenantID, authID).Return(nil, notFoundErr)
+		pkgAuthRepo.On("GetByID", ctx, tenantID, pkgAuthID).Return(nil, notFoundErr)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackageInstanceAuth, pkgAuthIDField)
 		// THEN
@@ -181,33 +181,90 @@ func TestHasScenario(t *testing.T) {
 
 	t.Run("runtime is in formation with application in application query", func(t *testing.T) {
 		// GIVEN
+		const (
+			idField       = "id"
+			tenantID      = "42"
+			runtimeID     = "23"
+			applicationID = "24"
+		)
+
+		lblRepo := &lbl_mock.LabelRepository{}
+		defer lblRepo.AssertExpectations(t)
+
+		directive := scenario.NewDirective(lblRepo, nil, nil)
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
+		rCtx := &graphql.ResolverContext{
+			Object:   "Application",
+			Field:    graphql.CollectedField{},
+			Args:     map[string]interface{}{idField: applicationID},
+			IsMethod: false,
+		}
+		ctx = graphql.WithResolverContext(ctx, rCtx)
+
+		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
+		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
+		dummyResolver := &dummyResolver{}
 		// WHEN
+		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, scenario.GetApplicationID, idField)
 		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, res, mockedNextOutput())
 	})
 
 	t.Run("runtime is NOT in formation with application in application query", func(t *testing.T) {
 		// GIVEN
+		const (
+			idField       = "id"
+			tenantID      = "42"
+			runtimeID     = "23"
+			applicationID = "24"
+		)
+
+		lblRepo := &lbl_mock.LabelRepository{}
+		defer lblRepo.AssertExpectations(t)
+
+		directive := scenario.NewDirective(lblRepo, nil, nil)
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
+		rCtx := &graphql.ResolverContext{
+			Object:   "Application",
+			Field:    graphql.CollectedField{},
+			Args:     map[string]interface{}{idField: applicationID},
+			IsMethod: false,
+		}
+		ctx = graphql.WithResolverContext(ctx, rCtx)
+
+		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
+		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
+		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
+		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
+		// WHEN
+		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationID, idField)
+		// THEN
+		require.Error(t, err)
+		assert.Error(t, err, scenario.ErrMissingScenario)
+		assert.Equal(t, res, nil)
+	})
+
+	t.Run("runtime is in formation with owning application in request package instance auth flow ", func(t *testing.T) {
+		// GIVEN
+		// WHEN
+		// THEN
+	})
+	t.Run("runtime is NOT in formation with owning application in request package instance auth flow ", func(t *testing.T) {
+		// GIVEN
 		// WHEN
 		// THEN
 	})
 
-	t.Run("runtime is in formation with package in request package instance auth flow ", func(t *testing.T) {
+	t.Run("runtime is in formation with owning application in delete package instance auth flow", func(t *testing.T) {
 		// GIVEN
 		// WHEN
 		// THEN
 	})
-	t.Run("runtime is NOT in formation with package in request package instance auth flow ", func(t *testing.T) {
-		// GIVEN
-		// WHEN
-		// THEN
-	})
-
-	t.Run("runtime is in formation with package in delete package instance auth flow", func(t *testing.T) {
-		// GIVEN
-		// WHEN
-		// THEN
-	})
-	t.Run("runtime is NOT in formation with package in delete package instance auth flow", func(t *testing.T) {
+	t.Run("runtime is NOT in formation with owning application in delete package instance auth flow", func(t *testing.T) {
 		// GIVEN
 		// WHEN
 		// THEN
