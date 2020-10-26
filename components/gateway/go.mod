@@ -6,7 +6,6 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20201020064040-c7a7b32e5c1a // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20201023161319-74d69e24ad99
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/objx v0.2.0 // indirect
@@ -15,4 +14,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )
 
-replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+replace (
+	golang.org/x/text => golang.org/x/text v0.3.3
+	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+)

@@ -46,6 +46,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20191118222007-07fc4c7f2b98 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	k8s.io/apimachinery v0.17.3
@@ -53,5 +54,6 @@ require (
 
 replace (
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
+	golang.org/x/text => golang.org/x/text v0.3.3
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
 )
