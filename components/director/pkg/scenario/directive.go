@@ -29,7 +29,6 @@ const (
 
 var ErrMissingScenario = errors.New("Forbidden: Missing scenarios")
 
-// TODO check if logs are present
 type directive struct {
 	labelRepo label.LabelRepository
 
