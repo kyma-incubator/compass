@@ -49,6 +49,8 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
+
 	HasScopes func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
 
 	Validate func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
@@ -2849,6 +2851,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `"""
+HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
+"""
+directive @hasScenario(applicationProvider: String!, idField: String!) on FIELD_DEFINITION
+"""
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
 directive @hasScopes(path: String!) on FIELD_DEFINITION
@@ -3803,7 +3809,7 @@ type Query {
 	**Examples**
 	- [query application](examples/query-application/query-application.graphql)
 	"""
-	application(id: ID!): Application @hasScopes(path: "graphql.query.application")
+	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
@@ -4076,14 +4082,14 @@ type Mutation {
 	**Examples**
 	- [request package instance auth creation](examples/request-package-instance-auth-creation/request-package-instance-auth-creation.graphql)
 	"""
-	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
+	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByPackage", idField: "packageID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
 	
 	**Examples**
 	- [request package instance auth deletion](examples/request-package-instance-auth-deletion/request-package-instance-auth-deletion.graphql)
 	"""
-	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
+	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByPackageInstanceAuth", idField: "authID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
 	"""
 	**Examples**
 	- [add package](examples/add-package/add-package.graphql)
@@ -4122,6 +4128,28 @@ type Mutation {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_hasScenario_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["applicationProvider"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["applicationProvider"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["idField"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["idField"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) dir_hasScopes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -12845,14 +12873,25 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuthCreation(ctx con
 			return ec.resolvers.Mutation().RequestPackageInstanceAuthCreation(rctx, args["packageID"].(string), args["in"].(PackageInstanceAuthRequestInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
+			applicationProvider, err := ec.unmarshalNString2string(ctx, "GetApplicationIDByPackage")
+			if err != nil {
+				return nil, err
+			}
+			idField, err := ec.unmarshalNString2string(ctx, "packageID")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScenario(ctx, nil, directive0, applicationProvider, idField)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuthCreation")
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
+			return ec.directives.HasScopes(ctx, nil, directive1, path)
 		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -12909,14 +12948,25 @@ func (ec *executionContext) _Mutation_requestPackageInstanceAuthDeletion(ctx con
 			return ec.resolvers.Mutation().RequestPackageInstanceAuthDeletion(rctx, args["authID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
+			applicationProvider, err := ec.unmarshalNString2string(ctx, "GetApplicationIDByPackageInstanceAuth")
+			if err != nil {
+				return nil, err
+			}
+			idField, err := ec.unmarshalNString2string(ctx, "authID")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScenario(ctx, nil, directive0, applicationProvider, idField)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.requestPackageInstanceAuthDeletion")
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
+			return ec.directives.HasScopes(ctx, nil, directive1, path)
 		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -14962,14 +15012,25 @@ func (ec *executionContext) _Query_application(ctx context.Context, field graphq
 			return ec.resolvers.Query().Application(rctx, args["id"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
+			applicationProvider, err := ec.unmarshalNString2string(ctx, "GetApplicationID")
+			if err != nil {
+				return nil, err
+			}
+			idField, err := ec.unmarshalNString2string(ctx, "id")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.HasScenario(ctx, nil, directive0, applicationProvider, idField)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.query.application")
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
+			return ec.directives.HasScopes(ctx, nil, directive1, path)
 		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
