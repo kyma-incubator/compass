@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func TestRevocationListRepository(t *testing.T) {
+func TestRevokedCertificatesRepository(t *testing.T) {
 
 	configMapName := "revokedCertificates"
 
@@ -22,7 +22,7 @@ func TestRevocationListRepository(t *testing.T) {
 		configListManagerMock := &mocks.Manager{}
 		configMapName := "revokedCertificates"
 
-		repository := NewRepository(configListManagerMock, cache, configMapName)
+		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
 		isPresent := repository.Contains(someHash)
@@ -42,7 +42,7 @@ func TestRevocationListRepository(t *testing.T) {
 		configListManagerMock := &mocks.Manager{}
 		configMapName := "revokedCertificates"
 
-		repository := NewRepository(configListManagerMock, cache, configMapName)
+		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
 		isPresent := repository.Contains(someHash)
@@ -71,7 +71,7 @@ func TestRevocationListRepository(t *testing.T) {
 				someHash: someHash,
 			}}, nil)
 
-		repository := NewRepository(configListManagerMock, cache, configMapName)
+		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
 		err := repository.Insert(someHash)
@@ -97,7 +97,7 @@ func TestRevocationListRepository(t *testing.T) {
 				someHash: someHash,
 			}}).Return(nil, errors.New("some error"))
 
-		repository := NewRepository(configListManagerMock, cache, configMapName)
+		repository := NewRepository(configListManagerMock, configMapName, cache)
 
 		// when
 		err := repository.Insert(someHash)

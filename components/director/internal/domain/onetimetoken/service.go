@@ -18,14 +18,14 @@ import (
 )
 
 const requestForRuntime = `
-		mutation { generateRuntimeToken (runtimeID:"%s")
+		mutation { generateRuntimeToken (authID:"%s")
 		  {
 			token
 		  }
 		}`
 
 const requestForApplication = `
-		mutation { generateApplicationToken (appID:"%s")
+		mutation { generateApplicationToken (authID:"%s")
 		  {
 			token
 		  }

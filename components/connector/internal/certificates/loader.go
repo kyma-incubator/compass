@@ -15,43 +15,43 @@ type Loader interface {
 }
 
 type certLoader struct {
-	certificatesCache           Cache
-	repository                  secrets.Repository
-	caSecretName                types.NamespacedName
-	rootCACertificateSecretName types.NamespacedName
+	certsCache        Cache
+	secretsRepository secrets.Repository
+	caCertSecret      types.NamespacedName
+	rootCACertSecret  types.NamespacedName
 }
 
-func NewCertificateLoader(certificatesCache Cache,
-	repository secrets.Repository,
-	caSecretName types.NamespacedName,
-	rootCACertificateSecretName types.NamespacedName) Loader {
+func NewCertificateLoader(certsCache Cache,
+	secretsRepository secrets.Repository,
+	caCertSecret types.NamespacedName,
+	rootCACertSecretName types.NamespacedName) Loader {
 	return &certLoader{
-		certificatesCache:           certificatesCache,
-		repository:                  repository,
-		caSecretName:                caSecretName,
-		rootCACertificateSecretName: rootCACertificateSecretName,
+		certsCache:        certsCache,
+		secretsRepository: secretsRepository,
+		caCertSecret:      caCertSecret,
+		rootCACertSecret:  rootCACertSecretName,
 	}
 }
 
 func (cl *certLoader) Run() {
 	for {
-		if cl.caSecretName.Name != "" {
-			cl.loadSecretToCache(cl.caSecretName)
+		if cl.caCertSecret.Name != "" {
+			cl.loadSecretToCache(cl.caCertSecret)
 		}
-		if cl.rootCACertificateSecretName.Name != "" {
-			cl.loadSecretToCache(cl.rootCACertificateSecretName)
+		if cl.rootCACertSecret.Name != "" {
+			cl.loadSecretToCache(cl.rootCACertSecret)
 		}
 		time.Sleep(interval)
 	}
 }
 
-func (cl *certLoader) loadSecretToCache(name types.NamespacedName) {
-	secretData, appError := cl.repository.Get(name)
+func (cl *certLoader) loadSecretToCache(secret types.NamespacedName) {
+	secretData, appError := cl.secretsRepository.Get(secret)
 
 	if appError != nil {
-		log.Errorf("Failed to load secret %s to cache: %s", name.String(), appError.Error())
+		log.Errorf("Failed to load secret %s to cache: %s", secret.String(), appError.Error())
 		return
 	}
 
-	cl.certificatesCache.Put(name.Name, secretData)
+	cl.certsCache.Put(secret.Name, secretData)
 }

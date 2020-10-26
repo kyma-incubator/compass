@@ -25,13 +25,13 @@ func prep(ctx context.Context, number int) (Cache, *testWatch, *mocks.Manager) {
 		On("Watch", mock.AnythingOfType("v1.ListOptions")).
 		Return(watcher, nil).
 		Times(number)
-	loader := NewRevocationListLoader(cache, configListManagerMock, configMapName, time.Millisecond)
+	loader := NewRevokedCertificatesLoader(cache, configListManagerMock, configMapName, time.Millisecond)
 
 	go loader.Run(ctx)
 	return cache, watcher, configListManagerMock
 }
 
-func Test_revocationListLoader(t *testing.T) {
+func Test_revokedCertificatesLoader(t *testing.T) {
 
 	t.Run("should load configmap on add event", func(t *testing.T) {
 		// given
