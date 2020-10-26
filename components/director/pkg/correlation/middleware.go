@@ -1,8 +1,26 @@
+/*
+ * Copyright 2020 The Compass Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package correlation
 
 import (
 	"context"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -10,7 +28,8 @@ const (
 	RequestIDHeaderKey = "x-request-id"
 )
 
-var headerKeys = []string{
+// CorrelationIDHeaders are the headers whose values will be taken as a correlation id for incoming requests
+var CorrelationIDHeaders = []string{
 	RequestIDHeaderKey,
 	"X-Request-ID",
 	"X-Request-Id",
@@ -18,26 +37,36 @@ var headerKeys = []string{
 	"X-CorrelationID",
 	"X-ForRequest-ID"}
 
-type ContextEnrichMiddleware struct{}
+//AttachCorrelationIDToContext returns middleware that attaches a correlation ID to the current request
+func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			if correlationID := CorrelationIDForRequest(r); correlationID != "" {
+				ctx = context.WithValue(ctx, ContextField, correlationID)
+				r.Header.Set(RequestIDHeaderKey, correlationID)
+			}
 
-func NewContextEnrichMiddleware() *ContextEnrichMiddleware {
-	return &ContextEnrichMiddleware{}
+			next.ServeHTTP(rw, r)
+		})
+	}
 }
 
-func (cem *ContextEnrichMiddleware) AttachCorrelationIDToContext(nextHandler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var correlationID string
-		for _, h := range headerKeys {
-			if correlationID = r.Header.Get(h); correlationID != "" {
-				break
-			}
+// CorrelationIDForRequest checks the http headers for any of the supported correlation id headers.
+// The first that matches is taken as the correlation id. If none exists a new one is generated and set as a header.
+func CorrelationIDForRequest(request *http.Request) string {
+	for _, header := range CorrelationIDHeaders {
+		headerValue := request.Header.Get(header)
+		if headerValue != "" {
+			return headerValue
 		}
+	}
 
-		if correlationID == "" {
-			correlationID = newID()
-		}
+	var correlationID string
+	if correlationID = request.Context().Value(ContextField).(string); correlationID == "" {
+		correlationID = uuid.New().String()
+	}
 
-		r = r.WithContext(context.WithValue(r.Context(), ContextField, correlationID))
-		nextHandler.ServeHTTP(w, r)
-	})
+	request.Header.Set(CorrelationIDHeaders[0], correlationID)
+	return correlationID
 }

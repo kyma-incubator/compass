@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
-	"github.com/kyma-incubator/compass/components/director/pkg/request"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -123,7 +122,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	var externalToken string
 	err = retry.Do(func() error {
 		buf := bytes.NewBuffer(asJSON)
-		req, err := request.NewHttpRequest(ctx, http.MethodPost, adapterURL, buf)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, adapterURL, buf)
 		if err != nil {
 			return errors.Wrap(err, "while creating request")
 		}
@@ -165,9 +164,9 @@ func (s service) getOneTimeToken(ctx context.Context, id string, tokenType model
 
 	switch tokenType {
 	case model.RuntimeReference:
-		req = request.NewGQLRequest(ctx, fmt.Sprintf(requestForRuntime, id))
+		req = gcli.NewRequest(fmt.Sprintf(requestForRuntime, id))
 	case model.ApplicationReference:
-		req = request.NewGQLRequest(ctx, fmt.Sprintf(requestForApplication, id))
+		req = gcli.NewRequest(fmt.Sprintf(requestForApplication, id))
 	default:
 		return "", errors.Errorf("cannot generate token for %T", tokenType)
 	}
