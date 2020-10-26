@@ -59,6 +59,22 @@ func ErrorCode(err error) ErrorType {
 
 }
 
+func NewNotNullViolationError(resourceType resource.Type) error {
+	return Error{
+		errorCode: EmptyData,
+		Message:   emptyDataMsg,
+		arguments: map[string]string{"object": string(resourceType)},
+	}
+}
+
+func NewCheckViolationError(resourceType resource.Type) error {
+	return Error{
+		errorCode: InconsistentData,
+		Message:   inconsistentDataMsg,
+		arguments: map[string]string{"object": string(resourceType)},
+	}
+}
+
 func NewOperationTimeoutError() error {
 	return Error{
 		errorCode: OperationTimeout,
@@ -158,6 +174,22 @@ func NewInvalidOperationError(reason string) error {
 	}
 }
 
+func NewForeignKeyInvalidOperationError(sqlOperation resource.SQLOperation, resourceType resource.Type) error {
+	var reason string
+	switch sqlOperation {
+	case resource.Create, resource.Update, resource.Upsert:
+		reason = "The referenced entity does not exists"
+	case resource.Delete:
+		reason = "The record cannot be deleted because another record refers to it"
+	}
+
+	return Error{
+		errorCode: InvalidOperation,
+		Message:   invalidOperationMsg,
+		arguments: map[string]string{"reason": reason, "object": string(resourceType)},
+	}
+}
+
 const valueNotFoundInConfigMsg = "value under specified path not found in configuration"
 
 func NewValueNotFoundInConfigurationError() error {
@@ -243,7 +275,7 @@ func IsCannotReadTenant(err error) bool {
 }
 
 func IsNewInvalidDataError(err error) bool {
-	return ErrorCode(err) == InvalidData
+	return ErrorCode(err) == InvalidOperation
 }
 
 func IsNotFoundError(err error) bool {
@@ -260,6 +292,14 @@ func IsTenantNotFoundError(err error) bool {
 
 func IsNotUniqueError(err error) bool {
 	return ErrorCode(err) == NotUnique
+}
+
+func IsNewNotNullViolationError(err error) bool {
+	return ErrorCode(err) == EmptyData
+}
+
+func IsNewCheckViolationError(err error) bool {
+	return ErrorCode(err) == InconsistentData
 }
 
 func sortMapKey(m map[string]string) []string {
