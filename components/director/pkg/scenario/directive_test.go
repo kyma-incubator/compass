@@ -250,13 +250,84 @@ func TestHasScenario(t *testing.T) {
 
 	t.Run("runtime is in formation with owning application in request package instance auth flow ", func(t *testing.T) {
 		// GIVEN
+		const (
+			packageIDField = "packageID"
+			tenantID       = "42"
+			packageID      = "24"
+			runtimeID      = "23"
+			applicationID  = "22"
+		)
+
+		pkgRepo := &pkg_mock.PackageRepository{}
+		defer pkgRepo.AssertExpectations(t)
+
+		lblRepo := &lbl_mock.LabelRepository{}
+		defer lblRepo.AssertExpectations(t)
+
+		directive := scenario.NewDirective(lblRepo, pkgRepo, nil)
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
+		rCtx := &graphql.ResolverContext{
+			Object:   "PackageInstanceAuth",
+			Field:    graphql.CollectedField{},
+			Args:     map[string]interface{}{packageIDField: packageID},
+			IsMethod: false,
+		}
+		ctx = graphql.WithResolverContext(ctx, rCtx)
+
+		mockedPkg := &model.Package{ApplicationID: applicationID}
+		pkgRepo.On("GetByID", ctx, tenantID, packageID).Return(mockedPkg, nil)
+
+		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
+		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
+		dummyResolver := &dummyResolver{}
 		// WHEN
+		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, scenario.GetApplicationIDByPackage, packageIDField)
 		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, res, mockedNextOutput())
 	})
 	t.Run("runtime is NOT in formation with owning application in request package instance auth flow ", func(t *testing.T) {
 		// GIVEN
+		const (
+			packageIDField = "packageID"
+			tenantID       = "42"
+			packageID      = "24"
+			runtimeID      = "23"
+			applicationID  = "22"
+		)
+
+		pkgRepo := &pkg_mock.PackageRepository{}
+		defer pkgRepo.AssertExpectations(t)
+
+		lblRepo := &lbl_mock.LabelRepository{}
+		defer lblRepo.AssertExpectations(t)
+
+		directive := scenario.NewDirective(lblRepo, pkgRepo, nil)
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
+		rCtx := &graphql.ResolverContext{
+			Object:   "PackageInstanceAuth",
+			Field:    graphql.CollectedField{},
+			Args:     map[string]interface{}{packageIDField: packageID},
+			IsMethod: false,
+		}
+		ctx = graphql.WithResolverContext(ctx, rCtx)
+
+		mockedPkg := &model.Package{ApplicationID: applicationID}
+		pkgRepo.On("GetByID", ctx, tenantID, packageID).Return(mockedPkg, nil)
+
+		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
+		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
+		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
+		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
 		// WHEN
+		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackage, packageIDField)
 		// THEN
+		require.Error(t, err)
+		assert.Error(t, err, scenario.ErrMissingScenario)
+		assert.Equal(t, res, nil)
 	})
 
 	t.Run("runtime is in formation with owning application in delete package instance auth flow", func(t *testing.T) {
