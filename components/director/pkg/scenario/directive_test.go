@@ -84,31 +84,32 @@ func TestHasScenario(t *testing.T) {
 	t.Run("runtime requests non-existent application", func(t *testing.T) {
 		// GIVEN
 		const (
-			idField           = "id"
-			resoverContextKey = "resolver_context"
+			idField       = "id"
+			tenantID      = "42"
+			applicationID = "24"
 		)
-		notFoundErr := apperrors.NewNotFoundError(resource.Label, model.ScenariosKey)
 
 		labelRepo := &automock.LabelRepository{}
 		defer labelRepo.AssertExpectations(t)
-		labelRepo.On("GetByKey").Return(nil, notFoundErr)
 
 		directive := scenario.NewDirective(labelRepo, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
-		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: "42"})
+		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
 			Object:   "Application",
 			Field:    graphql.CollectedField{},
-			Args:     map[string]interface{}{idField: "42"},
+			Args:     map[string]interface{}{idField: applicationID},
 			IsMethod: false,
 		}
-		ctx = context.WithValue(ctx, resoverContextKey, rCtx)
-		dummyResolver := &dummyResolver{}
+		ctx = graphql.WithResolverContext(ctx, rCtx)
+
+		notFoundErr := apperrors.NewNotFoundError(resource.Label, model.ScenariosKey)
+		labelRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(nil, notFoundErr)
 		// WHEN
-		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, scenario.GetApplicationID, idField)
+		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationID, idField)
 		// THEN
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), notFoundErr)
+		assert.Error(t, err, notFoundErr)
 		assert.Equal(t, res, nil)
 	})
 
@@ -164,7 +165,7 @@ type dummyResolver struct {
 	called bool
 }
 
-func (d *dummyResolver) SuccessResolve(ctx context.Context) (res interface{}, err error) {
+func (d *dummyResolver) SuccessResolve(_ context.Context) (res interface{}, err error) {
 	d.called = true
 	return mockedNextOutput(), nil
 }
