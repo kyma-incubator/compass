@@ -17,18 +17,18 @@ type ValidationHydrator interface {
 }
 
 type validationHydrator struct {
-	tokenService     tokens.Service
-	certHeaderParser CertificateHeaderParser
-	revocationList   revocation.RevocationListRepository
-	log              *logrus.Entry
+	tokenService           tokens.Service
+	certHeaderParser       CertificateHeaderParser
+	revokedCertsRepository revocation.RevokedCertificatesRepository
+	log                    *logrus.Entry
 }
 
-func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser, revocationList revocation.RevocationListRepository) ValidationHydrator {
+func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser, revokedCertsRepository revocation.RevokedCertificatesRepository) ValidationHydrator {
 	return &validationHydrator{
-		tokenService:     tokenService,
-		certHeaderParser: certHeaderParser,
-		revocationList:   revocationList,
-		log:              logrus.WithField("Handler", "ValidationHydrator"),
+		tokenService:           tokenService,
+		certHeaderParser:       certHeaderParser,
+		revokedCertsRepository: revokedCertsRepository,
+		log:                    logrus.WithField("Handler", "ValidationHydrator"),
 	}
 }
 
@@ -93,7 +93,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 		return
 	}
 
-	if isCertificateRevoked := tvh.revocationList.Contains(hash); isCertificateRevoked {
+	if isCertificateRevoked := tvh.revokedCertsRepository.Contains(hash); isCertificateRevoked {
 		tvh.log.Info("Certificate is revoked.")
 		respondWithAuthSession(w, authSession)
 		return

@@ -14,31 +14,31 @@ type Loader interface {
 	Run(ctx context.Context)
 }
 
-type revocationListLoader struct {
-	revocationListCache Cache
-	manager             Manager
-	configMapName       string
-	reconnectInterval   time.Duration
+type revokedCertificatesLoader struct {
+	revokedCertsCache Cache
+	configMapManager  Manager
+	configMapName     string
+	reconnectInterval time.Duration
 }
 
-func NewRevocationListLoader(revocationListCache Cache,
-	manager Manager,
+func NewRevokedCertificatesLoader(revokedCertsCache Cache,
+	configMapManager Manager,
 	configMapName string,
 	reconnectInterval time.Duration,
 ) Loader {
-	return &revocationListLoader{
-		revocationListCache: revocationListCache,
-		manager:             manager,
-		configMapName:       configMapName,
-		reconnectInterval:   reconnectInterval,
+	return &revokedCertificatesLoader{
+		revokedCertsCache: revokedCertsCache,
+		configMapManager:  configMapManager,
+		configMapName:     configMapName,
+		reconnectInterval: reconnectInterval,
 	}
 }
 
-func (rl *revocationListLoader) Run(ctx context.Context) {
+func (rl *revokedCertificatesLoader) Run(ctx context.Context) {
 	rl.startKubeWatch(ctx)
 }
 
-func (rl *revocationListLoader) startKubeWatch(ctx context.Context) {
+func (rl *revokedCertificatesLoader) startKubeWatch(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -46,7 +46,7 @@ func (rl *revocationListLoader) startKubeWatch(ctx context.Context) {
 			return
 		default:
 		}
-		watcher, err := connectWatch(rl.manager, rl.configMapName)
+		watcher, err := connectWatch(rl.configMapManager, rl.configMapName)
 		if err != nil {
 			log.Errorf("Could not initialize watcher: %s. Sleep for %s and try again...", err, rl.reconnectInterval.String())
 			time.Sleep(rl.reconnectInterval)
@@ -63,7 +63,7 @@ func (rl *revocationListLoader) startKubeWatch(ctx context.Context) {
 	}
 }
 
-func (rl *revocationListLoader) processEvents(ctx context.Context, events <-chan watch.Event) {
+func (rl *revokedCertificatesLoader) processEvents(ctx context.Context, events <-chan watch.Event) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -82,11 +82,11 @@ func (rl *revocationListLoader) processEvents(ctx context.Context, events <-chan
 					log.Error("Unexpected error: object is not configmap. Try again")
 					continue
 				}
-				rl.revocationListCache.Put(config.Data)
+				rl.revokedCertsCache.Put(config.Data)
 				log.Debug("New configmap is:", config.Data)
 			case watch.Deleted:
 				log.Println("revocation list deleted")
-				rl.revocationListCache.Put(make(map[string]string))
+				rl.revokedCertsCache.Put(make(map[string]string))
 			case watch.Error:
 				log.Error("Error event is received, stop revocation list configmap watcher and try again...")
 				return
@@ -95,9 +95,9 @@ func (rl *revocationListLoader) processEvents(ctx context.Context, events <-chan
 	}
 }
 
-func connectWatch(manager Manager, configMapName string) (watch.Interface, error) {
+func connectWatch(configMapManager Manager, configMapName string) (watch.Interface, error) {
 	log.Println("Starting watcher for revocation list configmap changes...")
-	watcher, err := manager.Watch(metav1.ListOptions{
+	watcher, err := configMapManager.Watch(metav1.ListOptions{
 		FieldSelector: "metadata.name=" + configMapName,
 		Watch:         true,
 	})

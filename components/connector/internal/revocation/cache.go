@@ -32,11 +32,11 @@ func (cc *revocationCache) Get() map[string]string {
 		return make(map[string]string)
 	}
 
-	revocationListData, ok := data.(map[string]string)
+	revokedCertsData, ok := data.(map[string]string)
 	if !ok {
 		logrus.Error("revocation cache did not have the expected config map type")
 		return make(map[string]string)
 	}
 
-	return revocationListData
+	return revokedCertsData
 }
