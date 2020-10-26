@@ -134,7 +134,7 @@ func main() {
 			cfg.ClientTimeout,
 		),
 		Directives: graphql.DirectiveRoot{
-			HasScenario: scenario.NewDirective(label.NewRepository(label.NewConverter()), defaultPackageRepository(), defaultPackageInstanceAuth()).HasScenario,
+			HasScenario: scenario.NewDirective(label.NewRepository(label.NewConverter()), defaultPackageRepo(), defaultPackageInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},
@@ -362,13 +362,13 @@ func createServer(address string, handler http.Handler, name string, timeout tim
 	return runFn, shutdownFn
 }
 
-func defaultPackageInstanceAuth() packageinstanceauth.Repository {
+func defaultPackageInstanceAuthRepo() packageinstanceauth.Repository {
 	authConverter := auth.NewConverter()
 
 	return packageinstanceauth.NewRepository(packageinstanceauth.NewConverter(authConverter))
 }
 
-func defaultPackageRepository() mp_package.PackageRepository {
+func defaultPackageRepo() mp_package.PackageRepository {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
