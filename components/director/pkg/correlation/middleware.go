@@ -62,8 +62,8 @@ func CorrelationIDForRequest(request *http.Request) string {
 		}
 	}
 
-	var correlationID string
-	if correlationID = request.Context().Value(ContextField).(string); correlationID == "" {
+	correlationID, ok := request.Context().Value(ContextField).(string)
+	if !ok || correlationID == "" {
 		correlationID = uuid.New().String()
 	}
 
