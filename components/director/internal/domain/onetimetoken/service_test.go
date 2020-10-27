@@ -31,7 +31,7 @@ func TestTokenService_GetOneTimeTokenForRuntime(t *testing.T) {
 	authID := "90923fe8-91bd-4070-aa31-f2ebb07a0963"
 
 	expectedRuntimeRequest := gcli.NewRequest(fmt.Sprintf(`
-		mutation { generateRuntimeToken (runtimeID:"%s")
+		mutation { generateRuntimeToken (authID:"%s")
 		  {
 			token
 		  }
@@ -107,7 +107,7 @@ func TestTokenService_GetOneTimeTokenForRuntime(t *testing.T) {
 func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 	authID := "77cabc16-9fb8-4338-b252-7b404f2e6487"
 	expectedRequest := gcli.NewRequest(fmt.Sprintf(`
-		mutation { generateApplicationToken (appID:"%s")
+		mutation { generateApplicationToken (authID:"%s")
 		  {
 			token
 		  }

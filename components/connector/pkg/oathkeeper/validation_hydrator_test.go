@@ -178,10 +178,10 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 
 		certHeaderParser := &mocks2.CertificateHeaderParser{}
 		certHeaderParser.On("GetCertificateData", req).Return(clientId, hash, true)
-		revocationList := &revocationMocks.RevocationListRepository{}
-		revocationList.On("Contains", hash).Return(false)
+		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
+		revokedCertsRepository.On("Contains", hash).Return(false)
 
-		validator := NewValidationHydrator(nil, certHeaderParser, revocationList)
+		validator := NewValidationHydrator(nil, certHeaderParser, revokedCertsRepository)
 
 		// when
 		validator.ResolveIstioCertHeader(rr, req)
@@ -230,10 +230,10 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 
 		certHeaderParser := &mocks2.CertificateHeaderParser{}
 		certHeaderParser.On("GetCertificateData", req).Return(clientId, hash, true)
-		revocationList := &revocationMocks.RevocationListRepository{}
-		revocationList.On("Contains", hash).Return(true)
+		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
+		revokedCertsRepository.On("Contains", hash).Return(true)
 
-		validator := NewValidationHydrator(nil, certHeaderParser, revocationList)
+		validator := NewValidationHydrator(nil, certHeaderParser, revokedCertsRepository)
 
 		// when
 		validator.ResolveIstioCertHeader(rr, req)

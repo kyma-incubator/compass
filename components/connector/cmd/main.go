@@ -31,32 +31,31 @@ func main() {
 	log.Println("Starting Connector Service")
 	log.Printf("Config: %s", cfg.String())
 
-	k8sClientSet, appErr := newCoreClientSet(cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout, cfg.KubernetesClient.Timeout)
+	k8sClientSet, appErr := newK8SClientSet(cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout, cfg.KubernetesClient.Timeout)
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
-	internalComponents, certificateLoader, revocationListLoader := config.InitInternalComponents(cfg, k8sClientSet)
-	go certificateLoader.Run()
-	go revocationListLoader.Run(context.Background())
+	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet)
+	go certsLoader.Run()
+	go revokedCertsLoader.Run(context.Background())
 
-	tokenResolver := api.NewTokenResolver(internalComponents.TokenService)
 	certificateResolver := api.NewCertificateResolver(
 		internalComponents.Authenticator,
 		internalComponents.TokenService,
 		internalComponents.CertificateService,
-		internalComponents.SubjectConsts,
+		internalComponents.CSRSubjectConsts,
 		cfg.DirectorURL,
 		cfg.CertificateSecuredConnectorURL,
-		internalComponents.RevocationsRepository)
+		internalComponents.RevokedCertsRepository)
 
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
 	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication)
 	exitOnError(err, "Failed configuring external graphQL handler")
 
-	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, tokenResolver)
+	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, api.NewTokenResolver(internalComponents.TokenService))
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
-	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.SubjectConsts, internalComponents.RevocationsRepository)
+	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository)
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	wg := &sync.WaitGroup{}
@@ -93,7 +92,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func newCoreClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
+func newK8SClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
 		logrus.Warnf("Failed to read in cluster Config: %s", err.Error())
@@ -108,13 +107,13 @@ func newCoreClientSet(interval, pollingTimeout, timeout time.Duration) (*kuberne
 
 	k8sConfig.Timeout = timeout
 
-	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
+	k8sClientSet, err := kubernetes.NewForConfig(k8sConfig)
 	if err != nil {
 		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
 	}
 
 	err = wait.PollImmediate(interval, pollingTimeout, func() (bool, error) {
-		_, err := coreClientset.ServerVersion()
+		_, err := k8sClientSet.ServerVersion()
 		if err != nil {
 			logrus.Debugf("Failed to access API Server: %s", err.Error())
 			return false, nil
@@ -126,5 +125,5 @@ func newCoreClientSet(interval, pollingTimeout, timeout time.Duration) (*kuberne
 	}
 
 	logrus.Info("Successfully initialized kubernetes client")
-	return coreClientset, nil
+	return k8sClientSet, nil
 }

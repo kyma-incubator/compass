@@ -14,28 +14,28 @@ type Manager interface {
 	Watch(opts metav1.ListOptions) (watch.Interface, error)
 }
 
-//go:generate mockery -name=RevocationListRepository
-type RevocationListRepository interface {
+//go:generate mockery -name=RevokedCertificatesRepository
+type RevokedCertificatesRepository interface {
 	Insert(hash string) error
 	Contains(hash string) bool
 }
 
-type revocationListRepository struct {
-	configListManager   Manager
-	configMapName       string
-	revocationListCache Cache
+type revokedCertifiatesRepository struct {
+	configMapManager  Manager
+	configMapName     string
+	revokedCertsCache Cache
 }
 
-func NewRepository(configListManager Manager, revocationListCache Cache, configMapName string) RevocationListRepository {
-	return &revocationListRepository{
-		configListManager:   configListManager,
-		configMapName:       configMapName,
-		revocationListCache: revocationListCache,
+func NewRepository(configMapManager Manager, configMapName string, revokedCertsCache Cache) RevokedCertificatesRepository {
+	return &revokedCertifiatesRepository{
+		configMapManager:  configMapManager,
+		configMapName:     configMapName,
+		revokedCertsCache: revokedCertsCache,
 	}
 }
 
-func (r *revocationListRepository) Insert(hash string) error {
-	configMap, err := r.configListManager.Get(r.configMapName, metav1.GetOptions{})
+func (r *revokedCertifiatesRepository) Insert(hash string) error {
+	configMap, err := r.configMapManager.Get(r.configMapName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -50,15 +50,15 @@ func (r *revocationListRepository) Insert(hash string) error {
 	updatedConfigMap.Data = revokedCerts
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		_, err = r.configListManager.Update(updatedConfigMap)
+		_, err = r.configMapManager.Update(updatedConfigMap)
 		return err
 	})
 
 	return err
 }
 
-func (r *revocationListRepository) Contains(hash string) bool {
-	configMap := r.revocationListCache.Get()
+func (r *revokedCertifiatesRepository) Contains(hash string) bool {
+	configMap := r.revokedCertsCache.Get()
 
 	found := false
 	if configMap != nil {
