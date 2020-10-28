@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
@@ -31,12 +33,13 @@ var ErrMissingScenario = errors.New("Forbidden: Missing scenarios")
 
 type directive struct {
 	labelRepo label.LabelRepository
+	transact  persistence.Transactioner
 
 	applicationProviders map[string]func(context.Context, string, string) (string, error)
 }
 
 // NewDirective returns a new scenario directive
-func NewDirective(labelRepo label.LabelRepository, packageRepo mp_package.PackageRepository, packageInstanceAuthRepo packageinstanceauth.Repository) *directive {
+func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepository, packageRepo mp_package.PackageRepository, packageInstanceAuthRepo packageinstanceauth.Repository) *directive {
 	getApplicationIDByPackageFunc := func(ctx context.Context, tenantID, packageID string) (string, error) {
 		pkg, err := packageRepo.GetByID(ctx, tenantID, packageID)
 		if err != nil {
@@ -46,6 +49,7 @@ func NewDirective(labelRepo label.LabelRepository, packageRepo mp_package.Packag
 	}
 
 	return &directive{
+		transact:  transact,
 		labelRepo: labelRepo,
 		applicationProviders: map[string]func(context.Context, string, string) (string, error){
 			GetApplicationID: func(ctx context.Context, tenantID string, appID string) (string, error) {
@@ -78,13 +82,28 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	}
 	log.Infof("Attempting to verify that the requesting runtime is in scenario with the owning application entity")
 
+	runtimeID := consumerInfo.ConsumerID
+	log.Debugf("Found Runtime ID for the requesting runtime: %v", runtimeID)
+
+	commonScenarios, err := d.extractCommonScenarios(ctx, runtimeID, applicationProvider, idField)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(commonScenarios) == 0 {
+		return nil, ErrMissingScenario
+	}
+	log.Debugf("Found the following common scenarios: %+v", commonScenarios)
+
+	log.Infof("Runtime with ID %s is in scenario with the owning application entity", runtimeID)
+	return next(ctx)
+}
+
+func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, applicationProvider, idField string) ([]string, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
-
-	runtimeID := consumerInfo.ConsumerID
-	log.Debugf("Found Consumer ID for the requesting runtime: %v", runtimeID)
 
 	resCtx := graphql.GetResolverContext(ctx)
 	id, ok := resCtx.Args[idField].(string)
@@ -97,11 +116,20 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 		return nil, errors.New(fmt.Sprintf("Could not get app provider func: %s from provider list", applicationProvider))
 	}
 
+	tx, err := d.transact.Begin()
+	if err != nil {
+		log.Errorf("An error occurred while opening the db transaction: %s", err.Error())
+		return nil, err
+	}
+	defer d.transact.RollbackUnlessCommitted(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	appID, err := appProviderFunc(ctx, tenantID, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not derive app id, an error occurred")
 	}
-	log.Debugf("Found Application ID based on the request parameter %s: %s", idField, appID)
+	log.Infof("Found owning Application ID based on the request parameter %s: %s", idField, appID)
 
 	appScenarios, err := d.getObjectScenarios(ctx, tenantID, model.ApplicationLabelableObject, appID)
 	if err != nil {
@@ -115,14 +143,13 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	}
 	log.Debugf("Found the following runtime scenarios: %s", runtimeScenarios)
 
-	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
-	if len(commonScenarios) == 0 {
-		return nil, ErrMissingScenario
+	if err := tx.Commit(); err != nil {
+		log.Errorf("An error occurred while committing transaction: %s", err.Error())
+		return nil, err
 	}
-	log.Debugf("Found the following common scenarios: %+v", commonScenarios)
 
-	log.Infof("Runtime with ID %s is in scenario with the owning application entity with id %s", runtimeID, appID)
-	return next(ctx)
+	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
+	return commonScenarios, nil
 }
 
 func (d *directive) getObjectScenarios(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string) ([]string, error) {

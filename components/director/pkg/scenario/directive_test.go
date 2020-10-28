@@ -4,7 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -25,7 +28,7 @@ import (
 func TestHasScenario(t *testing.T) {
 	t.Run("could not extract consumer information, should return error", func(t *testing.T) {
 		// GIVEN
-		directive := scenario.NewDirective(nil, nil, nil)
+		directive := scenario.NewDirective(nil, nil, nil, nil)
 		// WHEN
 		res, err := directive.HasScenario(context.TODO(), nil, nil, "", "")
 		// THEN
@@ -36,7 +39,7 @@ func TestHasScenario(t *testing.T) {
 
 	t.Run("consumer is of type user, should proceed with next resolver", func(t *testing.T) {
 		// GIVEN
-		directive := scenario.NewDirective(nil, nil, nil)
+		directive := scenario.NewDirective(nil, nil, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.User})
 		dummyResolver := &dummyResolver{}
 		// WHEN
@@ -48,7 +51,7 @@ func TestHasScenario(t *testing.T) {
 
 	t.Run("consumer is of type application, should proceed with next resolver", func(t *testing.T) {
 		// GIVEN
-		directive := scenario.NewDirective(nil, nil, nil)
+		directive := scenario.NewDirective(nil, nil, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Application})
 		dummyResolver := &dummyResolver{}
 		// WHEN
@@ -60,7 +63,7 @@ func TestHasScenario(t *testing.T) {
 
 	t.Run("consumer is of type integration system, should proceed with next resolver", func(t *testing.T) {
 		// GIVEN
-		directive := scenario.NewDirective(nil, nil, nil)
+		directive := scenario.NewDirective(nil, nil, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.IntegrationSystem})
 		dummyResolver := &dummyResolver{}
 		// WHEN
@@ -72,7 +75,7 @@ func TestHasScenario(t *testing.T) {
 
 	t.Run("could not extract tenant from context, should return error", func(t *testing.T) {
 		// GIVEN
-		directive := scenario.NewDirective(nil, nil, nil)
+		directive := scenario.NewDirective(nil, nil, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
 		dummyResolver := &dummyResolver{}
 		// WHEN
@@ -94,7 +97,11 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		directive := scenario.NewDirective(lblRepo, nil, nil)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
@@ -104,9 +111,10 @@ func TestHasScenario(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		notFoundErr := apperrors.NewNotFoundError(resource.Label, model.ScenariosKey)
-		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(nil, notFoundErr)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(nil, notFoundErr)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationID, idField)
 		// THEN
@@ -126,7 +134,11 @@ func TestHasScenario(t *testing.T) {
 		pkgRepo := &pkg_mock.PackageRepository{}
 		defer pkgRepo.AssertExpectations(t)
 
-		directive := scenario.NewDirective(nil, pkgRepo, nil)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := scenario.NewDirective(mockedTransactioner, nil, pkgRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
@@ -136,9 +148,10 @@ func TestHasScenario(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Package)
-		pkgRepo.On("GetByID", ctx, tenantID, packageID).Return(nil, notFoundErr)
+		pkgRepo.On("GetByID", ctxWithTx, tenantID, packageID).Return(nil, notFoundErr)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackage, packageIDField)
 		// THEN
@@ -158,7 +171,11 @@ func TestHasScenario(t *testing.T) {
 		pkgAuthRepo := &pkg_auth_mock.Repository{}
 		defer pkgAuthRepo.AssertExpectations(t)
 
-		directive := scenario.NewDirective(nil, nil, pkgAuthRepo)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := scenario.NewDirective(mockedTransactioner, nil, nil, pkgAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
@@ -168,9 +185,10 @@ func TestHasScenario(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		notFoundErr := apperrors.NewNotFoundErrorWithType(resource.PackageInstanceAuth)
-		pkgAuthRepo.On("GetByID", ctx, tenantID, pkgAuthID).Return(nil, notFoundErr)
+		pkgAuthRepo.On("GetByID", ctxWithTx, tenantID, pkgAuthID).Return(nil, notFoundErr)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackageInstanceAuth, pkgAuthIDField)
 		// THEN
@@ -191,7 +209,11 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		directive := scenario.NewDirective(lblRepo, nil, nil)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
@@ -201,10 +223,11 @@ func TestHasScenario(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
-		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedLabel, nil)
-		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
 
 		dummyResolver := &dummyResolver{}
 		// WHEN
@@ -226,7 +249,11 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		directive := scenario.NewDirective(lblRepo, nil, nil)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
@@ -236,11 +263,12 @@ func TestHasScenario(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
 		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
-		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
-		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationID, idField)
 		// THEN
@@ -265,7 +293,11 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		directive := scenario.NewDirective(lblRepo, pkgRepo, nil)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
@@ -275,13 +307,14 @@ func TestHasScenario(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedPkg := &model.Package{ApplicationID: applicationID}
-		pkgRepo.On("GetByID", ctx, tenantID, packageID).Return(mockedPkg, nil)
+		pkgRepo.On("GetByID", ctxWithTx, tenantID, packageID).Return(mockedPkg, nil)
 
 		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
-		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
-		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
 
 		dummyResolver := &dummyResolver{}
 		// WHEN
@@ -306,7 +339,11 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		directive := scenario.NewDirective(lblRepo, pkgRepo, nil)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
@@ -316,14 +353,15 @@ func TestHasScenario(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedPkg := &model.Package{ApplicationID: applicationID}
-		pkgRepo.On("GetByID", ctx, tenantID, packageID).Return(mockedPkg, nil)
+		pkgRepo.On("GetByID", ctxWithTx, tenantID, packageID).Return(mockedPkg, nil)
 
 		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
 		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
-		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
-		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackage, packageIDField)
 		// THEN
@@ -352,7 +390,11 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		directive := scenario.NewDirective(lblRepo, pkgRepo, pkgAuthRepo)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, pkgAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
@@ -362,16 +404,17 @@ func TestHasScenario(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedPkgAuth := &model.PackageInstanceAuth{PackageID: packageID}
-		pkgAuthRepo.On("GetByID", ctx, tenantID, pkgAuthID).Return(mockedPkgAuth, nil)
+		pkgAuthRepo.On("GetByID", ctxWithTx, tenantID, pkgAuthID).Return(mockedPkgAuth, nil)
 
 		mockedPkg := &model.Package{ApplicationID: applicationID}
-		pkgRepo.On("GetByID", ctx, tenantID, mockedPkgAuth.PackageID).Return(mockedPkg, nil)
+		pkgRepo.On("GetByID", ctxWithTx, tenantID, mockedPkgAuth.PackageID).Return(mockedPkg, nil)
 
 		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
-		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
-		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
 
 		dummyResolver := &dummyResolver{}
 		// WHEN
@@ -400,7 +443,11 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		directive := scenario.NewDirective(lblRepo, pkgRepo, pkgAuthRepo)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, pkgAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
@@ -410,17 +457,18 @@ func TestHasScenario(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
+		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
 		mockedPkgAuth := &model.PackageInstanceAuth{PackageID: packageID}
-		pkgAuthRepo.On("GetByID", ctx, tenantID, pkgAuthID).Return(mockedPkgAuth, nil)
+		pkgAuthRepo.On("GetByID", ctxWithTx, tenantID, pkgAuthID).Return(mockedPkgAuth, nil)
 
 		mockedPkg := &model.Package{ApplicationID: applicationID}
-		pkgRepo.On("GetByID", ctx, tenantID, mockedPkgAuth.PackageID).Return(mockedPkg, nil)
+		pkgRepo.On("GetByID", ctxWithTx, tenantID, mockedPkgAuth.PackageID).Return(mockedPkg, nil)
 
 		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
 		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
-		lblRepo.On("GetByKey", ctx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
-		lblRepo.On("GetByKey", ctx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackageInstanceAuth, pkgAuthIDField)
 		// THEN
