@@ -2,12 +2,11 @@ package scenario_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -97,9 +96,9 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		mockedTransactioner, mockedTx := mockedPersistence(false)
-		defer mockedTransactioner.AssertExpectations(t)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
@@ -134,9 +133,9 @@ func TestHasScenario(t *testing.T) {
 		pkgRepo := &pkg_mock.PackageRepository{}
 		defer pkgRepo.AssertExpectations(t)
 
-		mockedTransactioner, mockedTx := mockedPersistence(false)
-		defer mockedTransactioner.AssertExpectations(t)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, nil, pkgRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
@@ -171,9 +170,9 @@ func TestHasScenario(t *testing.T) {
 		pkgAuthRepo := &pkg_auth_mock.Repository{}
 		defer pkgAuthRepo.AssertExpectations(t)
 
-		mockedTransactioner, mockedTx := mockedPersistence(false)
-		defer mockedTransactioner.AssertExpectations(t)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, nil, nil, pkgAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
@@ -209,9 +208,9 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		mockedTransactioner, mockedTx := mockedPersistence(true)
-		defer mockedTransactioner.AssertExpectations(t)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
@@ -249,9 +248,9 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		mockedTransactioner, mockedTx := mockedPersistence(true)
-		defer mockedTransactioner.AssertExpectations(t)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
@@ -293,9 +292,9 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		mockedTransactioner, mockedTx := mockedPersistence(true)
-		defer mockedTransactioner.AssertExpectations(t)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
@@ -339,9 +338,9 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		mockedTransactioner, mockedTx := mockedPersistence(true)
-		defer mockedTransactioner.AssertExpectations(t)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
@@ -390,9 +389,9 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		mockedTransactioner, mockedTx := mockedPersistence(true)
-		defer mockedTransactioner.AssertExpectations(t)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, pkgAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
@@ -443,9 +442,9 @@ func TestHasScenario(t *testing.T) {
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
 
-		mockedTransactioner, mockedTx := mockedPersistence(true)
-		defer mockedTransactioner.AssertExpectations(t)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, pkgAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
@@ -490,27 +489,4 @@ func (d *dummyResolver) SuccessResolve(_ context.Context) (res interface{}, err 
 
 func mockedNextOutput() string {
 	return "nextOutput"
-}
-
-func mockedTx(shouldCommit bool) *persistenceautomock.PersistenceTx {
-	persistTx := &persistenceautomock.PersistenceTx{}
-	if !shouldCommit {
-		return persistTx
-	}
-
-	persistTx.On("Commit").Return(nil).Once()
-	return persistTx
-}
-
-func mockedTransactioner(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-	transact := &persistenceautomock.Transactioner{}
-	transact.On("Begin").Return(persistTx, nil).Once()
-	transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
-
-	return transact
-}
-
-func mockedPersistence(shouldCommit bool) (*persistenceautomock.Transactioner, *persistenceautomock.PersistenceTx) {
-	mockedTx := mockedTx(shouldCommit)
-	return mockedTransactioner(mockedTx), mockedTx
 }
