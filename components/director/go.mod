@@ -49,6 +49,7 @@ require (
 	golang.org/x/tools v0.0.0-20191118222007-07fc4c7f2b98 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	k8s.io/apimachinery v0.17.3
+	golang.org/x/text v0.3.3 // indirect
 )
 
 replace (
