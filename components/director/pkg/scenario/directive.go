@@ -82,14 +82,25 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	}
 	log.Infof("Attempting to verify that the requesting runtime is in scenario with the owning application entity")
 
+	runtimeID := consumerInfo.ConsumerID
+	log.Debugf("Found Runtime ID for the requesting runtime: %v", runtimeID)
+
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	runtimeID := consumerInfo.ConsumerID
-	log.Debugf("Found Consumer ID for the requesting runtime: %v", runtimeID)
+	commonScenarios, err := d.extractCommonScenarios(ctx, tenantID, runtimeID, applicationProvider, idField)
+	if len(commonScenarios) == 0 {
+		return nil, ErrMissingScenario
+	}
+	log.Debugf("Found the following common scenarios: %+v", commonScenarios)
 
+	log.Infof("Runtime with ID %s is in scenario with the owning application entity", runtimeID)
+	return next(ctx)
+}
+
+func (d *directive) extractCommonScenarios(ctx context.Context, tenantID, runtimeID, applicationProvider, idField string) ([]string, error) {
 	resCtx := graphql.GetResolverContext(ctx)
 	id, ok := resCtx.Args[idField].(string)
 	if !ok {
@@ -114,7 +125,7 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not derive app id, an error occurred")
 	}
-	log.Debugf("Found Application ID based on the request parameter %s: %s", idField, appID)
+	log.Infof("Found owning Application ID based on the request parameter %s: %s", idField, appID)
 
 	appScenarios, err := d.getObjectScenarios(ctx, tenantID, model.ApplicationLabelableObject, appID)
 	if err != nil {
@@ -134,13 +145,7 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	}
 
 	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
-	if len(commonScenarios) == 0 {
-		return nil, ErrMissingScenario
-	}
-	log.Debugf("Found the following common scenarios: %+v", commonScenarios)
-
-	log.Infof("Runtime with ID %s is in scenario with the owning application entity with id %s", runtimeID, appID)
-	return next(ctx)
+	return commonScenarios, nil
 }
 
 func (d *directive) getObjectScenarios(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string) ([]string, error) {
