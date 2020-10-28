@@ -2,9 +2,10 @@ package scenario_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
