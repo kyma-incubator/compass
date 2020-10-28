@@ -85,12 +85,11 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	runtimeID := consumerInfo.ConsumerID
 	log.Debugf("Found Runtime ID for the requesting runtime: %v", runtimeID)
 
-	tenantID, err := tenant.LoadFromContext(ctx)
+	commonScenarios, err := d.extractCommonScenarios(ctx, runtimeID, applicationProvider, idField)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
+		return nil, err
 	}
 
-	commonScenarios, err := d.extractCommonScenarios(ctx, tenantID, runtimeID, applicationProvider, idField)
 	if len(commonScenarios) == 0 {
 		return nil, ErrMissingScenario
 	}
@@ -100,7 +99,12 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	return next(ctx)
 }
 
-func (d *directive) extractCommonScenarios(ctx context.Context, tenantID, runtimeID, applicationProvider, idField string) ([]string, error) {
+func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, applicationProvider, idField string) ([]string, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
 	resCtx := graphql.GetResolverContext(ctx)
 	id, ok := resCtx.Args[idField].(string)
 	if !ok {
