@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	log "github.com/sirupsen/logrus"
 
@@ -31,12 +32,13 @@ var ErrMissingScenario = errors.New("Forbidden: Missing scenarios")
 
 type directive struct {
 	labelRepo label.LabelRepository
+	transact  persistence.Transactioner
 
 	applicationProviders map[string]func(context.Context, string, string) (string, error)
 }
 
 // NewDirective returns a new scenario directive
-func NewDirective(labelRepo label.LabelRepository, packageRepo mp_package.PackageRepository, packageInstanceAuthRepo packageinstanceauth.Repository) *directive {
+func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepository, packageRepo mp_package.PackageRepository, packageInstanceAuthRepo packageinstanceauth.Repository) *directive {
 	getApplicationIDByPackageFunc := func(ctx context.Context, tenantID, packageID string) (string, error) {
 		pkg, err := packageRepo.GetByID(ctx, tenantID, packageID)
 		if err != nil {
@@ -46,6 +48,7 @@ func NewDirective(labelRepo label.LabelRepository, packageRepo mp_package.Packag
 	}
 
 	return &directive{
+		transact:  transact,
 		labelRepo: labelRepo,
 		applicationProviders: map[string]func(context.Context, string, string) (string, error){
 			GetApplicationID: func(ctx context.Context, tenantID string, appID string) (string, error) {
@@ -97,6 +100,15 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 		return nil, errors.New(fmt.Sprintf("Could not get app provider func: %s from provider list", applicationProvider))
 	}
 
+	tx, err := d.transact.Begin()
+	if err != nil {
+		log.Errorf("An error occurred while opening the db transaction: %s", err.Error())
+		return nil, err
+	}
+	defer d.transact.RollbackUnlessCommitted(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	appID, err := appProviderFunc(ctx, tenantID, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not derive app id, an error occurred")
@@ -114,6 +126,11 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 		return nil, errors.Wrap(err, "while fetching scenarios for runtime")
 	}
 	log.Debugf("Found the following runtime scenarios: %s", runtimeScenarios)
+
+	if err := tx.Commit(); err != nil {
+		log.Errorf("An error occurred while committing transaction: %s", err.Error())
+		return nil, err
+	}
 
 	commonScenarios := stringsIntersection(appScenarios, runtimeScenarios)
 	if len(commonScenarios) == 0 {
