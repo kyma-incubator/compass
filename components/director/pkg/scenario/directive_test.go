@@ -2,8 +2,9 @@ package scenario_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
