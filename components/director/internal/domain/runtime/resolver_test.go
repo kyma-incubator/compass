@@ -2,8 +2,9 @@ package runtime_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
