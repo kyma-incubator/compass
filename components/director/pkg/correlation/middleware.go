@@ -28,8 +28,10 @@ const (
 	RequestIDHeaderKey = "x-request-id"
 )
 
-// Headers are the expected headers that are used for distributed tracing.
-var Headers = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-parentspanid", "x-b3-sampled", "x-b3-flags", "b3"}
+// headerKeys are the expected headers that are used for distributed tracing.
+var headerKeys = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-parentspanid", "x-b3-sampled", "x-b3-flags", "b3"}
+
+type Headers map[string]string
 
 //AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
 func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
@@ -48,11 +50,11 @@ func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 // HeadersForRequest returns all http headers used for tracing of the passed request.
 // If the request headers are not set, but are part of the context, they're set as headers as well.
 // If the x-request-id header does not exists a new one is generated, and set as a header.
-func HeadersForRequest(request *http.Request) map[string]string {
+func HeadersForRequest(request *http.Request) Headers {
 	reqHeaders := make(map[string]string)
 	headersFromCtx := headersFromContext(request.Context())
 
-	for _, headerKey := range Headers {
+	for _, headerKey := range headerKeys {
 		headerValue := request.Header.Get(headerKey)
 		if headerValue != "" {
 			reqHeaders[headerKey] = headerValue
@@ -72,10 +74,10 @@ func HeadersForRequest(request *http.Request) map[string]string {
 	return reqHeaders
 }
 
-func headersFromContext(ctx context.Context) map[string]string {
+func headersFromContext(ctx context.Context) Headers {
 	var headersFromCtx map[string]string
 	if ctx.Value(HeadersContextKey) != nil {
-		headersFromCtx = ctx.Value(HeadersContextKey).(map[string]string)
+		headersFromCtx, _ = ctx.Value(HeadersContextKey).(Headers)
 	}
 
 	return headersFromCtx
