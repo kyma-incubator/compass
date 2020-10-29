@@ -40,7 +40,7 @@ func TestCorrelationIDTransport_RoundTrip(t *testing.T) {
 	})
 
 	t.Run("sets correlation ID when it is present in the context", func(t *testing.T) {
-		requestHeaders := map[string]string{requestIDHeaderKey: requestID}
+		requestHeaders := correlation.Headers{requestIDHeaderKey: requestID}
 		ctx := context.WithValue(context.TODO(), correlation.HeadersContextKey, requestHeaders)
 		request, err := http.NewRequestWithContext(ctx, http.MethodPost, testUrl, nil)
 		assert.NoError(t, err)
