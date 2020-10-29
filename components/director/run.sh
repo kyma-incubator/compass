@@ -22,6 +22,14 @@ do
             SKIP_APP_START=true
             shift # past argument
         ;;
+        --debug)
+            DEBUG=true
+            shift
+        ;;
+        --*)
+            echo "Unknown flag ${1}"
+            exit 1
+        ;;
     esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
@@ -81,24 +89,34 @@ cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql | \
     docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
 
 if [[  ${SKIP_APP_START} ]]; then
-        echo -e "${GREEN}Skipping starting application${NC}"
-        while true
-        do
-            sleep 1
-        done
+    echo -e "${GREEN}Skipping starting application${NC}"
+    while true
+    do
+        sleep 1
+    done
 fi
 
 echo -e "${GREEN}Starting application${NC}"
 
-APP_DB_USER=${DB_USER} \
-APP_DB_PASSWORD=${DB_PWD} \
-APP_DB_NAME=${DB_NAME} \
-APP_CONFIGURATION_FILE=${ROOT_PATH}/hack/config-local.yaml \
-APP_STATIC_USERS_SRC=${ROOT_PATH}/hack/static-users-local.yaml \
-APP_STATIC_GROUPS_SRC=${ROOT_PATH}/hack/static-groups-local.yaml \
-APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients" \
-APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token" \
-APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql" \
-APP_CONNECTOR_URL="http://connector.not.configured.url/graphql" \
-APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info" \
-go run ${ROOT_PATH}/cmd/director/main.go
+export APP_DB_USER=${DB_USER}
+export APP_DB_PASSWORD=${DB_PWD}
+export APP_DB_NAME=${DB_NAME}
+export APP_CONFIGURATION_FILE=${ROOT_PATH}/hack/config-local.yaml
+export APP_STATIC_USERS_SRC=${ROOT_PATH}/hack/static-users-local.yaml
+export APP_STATIC_GROUPS_SRC=${ROOT_PATH}/hack/static-groups-local.yaml
+export APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients"
+export APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token"
+export APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql"
+export APP_CONNECTOR_URL="http://connector.not.configured.url/graphql"
+export APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info"
+
+if [[  ${DEBUG} ]]; then
+    PORT=40000
+    echo -e "${GREEN}Debug mode activated on port $PORT${NC}"
+    cd $GOPATH/src/github.com/kyma-incubator/compass/components/director && \
+    CGO_ENABLED=0 go build ./cmd/director && \
+    dlv --listen=:$PORT --headless=true --api-version=2 exec ./director
+    rm ./director
+else
+    go run ${ROOT_PATH}/cmd/director/main.go
+fi
