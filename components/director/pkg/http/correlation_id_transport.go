@@ -23,19 +23,19 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 )
 
-// NewCorrelationIDTransport returns a transport that attaches a correlation ID header to the ongoing request.
+// NewCorrelationIDTransport returns a transport that attaches all correlation ID headers to the ongoing request context.
 func NewCorrelationIDTransport(roundTripper HTTPRoundTripper) *CorrelationIDTransport {
 	return &CorrelationIDTransport{
 		roundTripper: roundTripper,
 	}
 }
 
-// CorrelationIDTransport is a transport that attaches a correlation ID header to the ongoing request.
+// CorrelationIDTransport is a transport that attaches all correlation ID headers to the ongoing request context.
 type CorrelationIDTransport struct {
 	roundTripper HTTPRoundTripper
 }
 
-// RoundTrip attaches a correlation ID header to the ongoing request.
+// RoundTrip attaches a correlation ID header to the ongoing request context.
 func (c *CorrelationIDTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	ctx := r.Context()
 	correlationHeaders := correlation.HeadersForRequest(r)

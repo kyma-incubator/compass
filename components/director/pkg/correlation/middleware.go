@@ -28,7 +28,7 @@ const (
 	RequestIDHeaderKey = "x-request-id"
 )
 
-// Headers are the expected headers that are used for distributed tracing in Istio.
+// Headers are the expected headers that are used for distributed tracing.
 var Headers = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-parentspanid", "x-b3-sampled", "x-b3-flags", "b3"}
 
 //AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
@@ -46,8 +46,8 @@ func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 }
 
 // HeadersForRequest returns all http headers used for tracing of the passed request.
-// If the request headers are not sut, but are part of the context, they're set as well.
-// If the x-request-id header does not exists a new one is generated and set as a header.
+// If the request headers are not set, but are part of the context, they're set as headers as well.
+// If the x-request-id header does not exists a new one is generated, and set as a header.
 func HeadersForRequest(request *http.Request) map[string]string {
 	reqHeaders := make(map[string]string)
 	headersFromCtx := headersFromContext(request.Context())
