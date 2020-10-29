@@ -14,7 +14,4 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )
 
-replace (
-	github.com/form3tech-oss/jwt-go => github.com/form3tech-oss/jwt-go v3.2.2+incompatible
-	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-)
+replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
