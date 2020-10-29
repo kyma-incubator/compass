@@ -158,7 +158,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
@@ -297,7 +297,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -316,19 +316,21 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
 	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
+	scneariosNotFoundErr := apperrors.NewNotFoundError(resource.Label, model.ScenariosKey)
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	testAuths := fixOAuths()
 
 	testCases := []struct {
-		Name             string
-		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn        func() *automock.RuntimeService
-		SysAuthServiceFn func() *automock.SystemAuthService
-		OAuth20ServiceFn func() *automock.OAuth20Service
-		ConverterFn      func() *automock.RuntimeConverter
-		InputID          string
-		ExpectedRuntime  *graphql.Runtime
-		ExpectedErr      error
+		Name                 string
+		TransactionerFn      func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn            func() *automock.RuntimeService
+		ScenarioAssignmentFn func() *automock.ScenarioAssignmentService
+		SysAuthServiceFn     func() *automock.SystemAuthService
+		OAuth20ServiceFn     func() *automock.OAuth20Service
+		ConverterFn          func() *automock.RuntimeConverter
+		InputID              string
+		ExpectedRuntime      *graphql.Runtime
+		ExpectedErr          error
 	}{
 		{
 			Name:            "Success",
@@ -337,6 +339,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scneariosNotFoundErr).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -366,6 +373,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(testErr).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scneariosNotFoundErr).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -396,6 +408,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
 				return svc
 			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
 				return conv
@@ -417,6 +433,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnBegin,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -442,6 +462,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, modelRuntime.ID).Return(nil)
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scneariosNotFoundErr).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -471,6 +496,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				return svc
 			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
 				return conv
@@ -497,6 +526,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 
 				return svc
 			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
 				return conv
@@ -521,11 +554,12 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
+			scenarioAssignmentSvc := testCase.ScenarioAssignmentFn()
 			converter := testCase.ConverterFn()
 			sysAuthSvc := testCase.SysAuthServiceFn()
 			oAuth20Svc := testCase.OAuth20ServiceFn()
 
-			resolver := runtime.NewResolver(transact, svc, sysAuthSvc, oAuth20Svc, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil)
 
 			// when
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -652,7 +686,7 @@ func TestResolver_Runtime(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -764,7 +798,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -884,7 +918,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -898,7 +932,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 	}
 
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// when
 		result, err := resolver.SetRuntimeLabel(context.TODO(), "", "", "")
@@ -1030,7 +1064,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, converter, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
 
 			// when
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
@@ -1162,7 +1196,7 @@ func TestResolver_Labels(t *testing.T) {
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil)
 
 			// when
 			result, err := resolver.Labels(context.TODO(), gqlRuntime, &testCase.InputKey)
@@ -1278,7 +1312,7 @@ func TestResolver_Auths(t *testing.T) {
 			sysAuthSvc := testCase.SysAuthSvcFn()
 			sysAuthConv := testCase.SysAuthConvFn()
 
-			resolver := runtime.NewResolver(transact, nil, sysAuthSvc, nil, nil, sysAuthConv, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil)
 
 			// WHEN
 			result, err := resolver.Auths(ctx, parentRuntime)
@@ -1297,7 +1331,7 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.Auths(context.TODO(), nil)
@@ -1383,7 +1417,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			eventingSvc := testCase.EventingSvcFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, eventingSvc)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc)
 
 			// WHEN
 			result, err := resolver.EventingConfiguration(ctx, gqlRuntime)
@@ -1403,7 +1437,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(ctx, &graphql.Runtime{ID: "abc"})
@@ -1416,7 +1450,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(context.TODO(), nil)

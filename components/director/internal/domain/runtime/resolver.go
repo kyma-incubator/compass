@@ -2,9 +2,9 @@ package runtime
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -47,6 +47,12 @@ type RuntimeService interface {
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
 }
 
+//go:generate mockery -name=ScenarioAssignmentService -output=automock -outpkg=automock -case=underscore
+type ScenarioAssignmentService interface {
+	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
+}
+
 //go:generate mockery -name=RuntimeConverter -output=automock -outpkg=automock -case=underscore
 type RuntimeConverter interface {
 	ToGraphQL(in *model.Runtime) *graphql.Runtime
@@ -67,7 +73,7 @@ type SystemAuthService interface {
 type Resolver struct {
 	transact                  persistence.Transactioner
 	runtimeService            RuntimeService
-	scenarioAssignmentService scenarioassignment.Service
+	scenarioAssignmentService ScenarioAssignmentService
 	sysAuthSvc                SystemAuthService
 	converter                 RuntimeConverter
 	sysAuthConv               SystemAuthConverter
@@ -75,7 +81,7 @@ type Resolver struct {
 	eventingSvc               EventingService
 }
 
-func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService scenarioassignment.Service, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService) *Resolver {
+func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
