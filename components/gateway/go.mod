@@ -6,7 +6,6 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20201020064040-c7a7b32e5c1a // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20201023161319-74d69e24ad99
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/objx v0.2.0 // indirect
