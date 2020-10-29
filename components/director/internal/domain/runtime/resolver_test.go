@@ -2,6 +2,7 @@ package runtime_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -316,9 +317,13 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
 	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
 	testErr := errors.New("Test error")
-	scneariosNotFoundErr := apperrors.NewNotFoundError(resource.Label, model.ScenariosKey)
+	scenariosNotFoundErr := apperrors.NewNotFoundError(resource.Label, "")
+	scenarioAssignmentNotFoundErr := apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, "")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	testAuths := fixOAuths()
+	emptyScenariosLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{}}
+	singleScenarioLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{"scenario-0"}}
+	multiScenariosLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{"scenario-0", "scenario-1", "scenario-2", "scenario-3"}}
 
 	testCases := []struct {
 		Name                 string
@@ -339,7 +344,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scneariosNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -373,7 +378,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(testErr).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scneariosNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -462,7 +467,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, modelRuntime.ID).Return(nil)
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scneariosNotFoundErr).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
@@ -548,6 +553,432 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ExpectedRuntime: nil,
 			ExpectedErr:     testErr,
 		},
+		{
+			Name:            "Returns error when listing scenarios label",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, testErr)
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Returns not found when listing scenarios label should succeed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr)
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
+		},
+		{
+			Name:            "Returns empty scenarios when listing scenarios label should succeed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(emptyScenariosLabel, nil)
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
+		},
+		{
+			Name:            "Returns scenario when listing scenarios label and error when listing scenario assignments should fail",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				scenarios, _ := label.ValueToStringsSlice(singleScenarioLabel.Value)
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(model.AutomaticScenarioAssignment{}, testErr)
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Returns scenario when listing scenarios label and not found when listing scenario assignments should succeed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				scenarios, _ := label.ValueToStringsSlice(singleScenarioLabel.Value)
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(model.AutomaticScenarioAssignment{}, scenarioAssignmentNotFoundErr)
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
+		},
+		{
+			Name:            "Returns scenario when listing scenarios label and scenario assignment when listing scenario assignments but fails on deletion of scenario assignment should fail",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				scenarios, _ := label.ValueToStringsSlice(singleScenarioLabel.Value)
+				scenarioAssignment := model.AutomaticScenarioAssignment{}
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment, nil)
+				svc.On("Delete", contextParam, scenarioAssignment).Return(testErr)
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Returns scenario when listing scenarios label and scenario assignment when listing scenario assignments and succeeds on deletion of scenario assignment should succeed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				scenarios, _ := label.ValueToStringsSlice(singleScenarioLabel.Value)
+				scenarioAssignment := model.AutomaticScenarioAssignment{}
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment, nil)
+				svc.On("Delete", contextParam, scenarioAssignment).Return(nil)
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
+		},
+		{
+			Name:            "Returns multiple scenarios when listing scenarios label and only some are created by a scenario assignment should succeed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				scenarios, _ := label.ValueToStringsSlice(multiScenariosLabel.Value)
+
+				emptyAssignment := model.AutomaticScenarioAssignment{}
+				scenarioAssignment1 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
+				scenarioAssignment2 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
+
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(scenarioAssignment1, nil)
+				svc.On("GetForScenarioName", contextParam, scenarios[2]).Return(scenarioAssignment2, nil)
+				svc.On("GetForScenarioName", contextParam, scenarios[3]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+
+				svc.On("Delete", contextParam, scenarioAssignment1).Return(nil).Once()
+				svc.On("Delete", contextParam, scenarioAssignment2).Return(nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
+		},
+		{
+			Name:            "Returns scenario when listing scenarios label and scenario assignment when listing scenario assignments and succeeds on deletion of scenario assignment should succeed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				scenarios, _ := label.ValueToStringsSlice(singleScenarioLabel.Value)
+				scenarioAssignment := model.AutomaticScenarioAssignment{}
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment, nil)
+				svc.On("Delete", contextParam, scenarioAssignment).Return(nil)
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
+		},
+		{
+			Name:            "Returns multiple scenarios when listing scenarios label and all are created by a scenario assignment should succeed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				scenarios, _ := label.ValueToStringsSlice(multiScenariosLabel.Value)
+
+				scenarioAssignment0 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[0]}
+				scenarioAssignment1 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
+				scenarioAssignment2 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
+				scenarioAssignment3 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[3]}
+
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment0, nil)
+				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(scenarioAssignment1, nil)
+				svc.On("GetForScenarioName", contextParam, scenarios[2]).Return(scenarioAssignment2, nil)
+				svc.On("GetForScenarioName", contextParam, scenarios[3]).Return(scenarioAssignment3, nil)
+
+				svc.On("Delete", contextParam, scenarioAssignment0).Return(nil).Once()
+				svc.On("Delete", contextParam, scenarioAssignment1).Return(nil).Once()
+				svc.On("Delete", contextParam, scenarioAssignment2).Return(nil).Once()
+				svc.On("Delete", contextParam, scenarioAssignment3).Return(nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
+		},
+		{
+			Name:            "Returns multiple scenarios when listing scenarios label and none are created by a scenario assignment should succeed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
+				svc.On("Delete", contextParam, "foo").Return(nil).Once()
+				return svc
+			},
+			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
+				svc := &automock.ScenarioAssignmentService{}
+				scenarios, _ := label.ValueToStringsSlice(multiScenariosLabel.Value)
+
+				emptyAssignment := model.AutomaticScenarioAssignment{}
+
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+				svc.On("GetForScenarioName", contextParam, scenarios[2]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+				svc.On("GetForScenarioName", contextParam, scenarios[3]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
+
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SysAuthServiceFn: func() *automock.SystemAuthService {
+				svc := &automock.SystemAuthService{}
+				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				return svc
+			},
+			OAuth20ServiceFn: func() *automock.OAuth20Service {
+				svc := &automock.OAuth20Service{}
+				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+
+				return svc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -572,7 +1003,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx, sysAuthSvc, oAuth20Svc)
+			mock.AssertExpectationsForObjects(t, svc, scenarioAssignmentSvc, converter, transact, persistTx, sysAuthSvc, oAuth20Svc)
 		})
 	}
 }
