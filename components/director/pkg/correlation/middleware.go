@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -77,7 +78,11 @@ func HeadersForRequest(request *http.Request) Headers {
 func headersFromContext(ctx context.Context) Headers {
 	var headersFromCtx map[string]string
 	if ctx.Value(HeadersContextKey) != nil {
-		headersFromCtx, _ = ctx.Value(HeadersContextKey).(Headers)
+		var ok bool
+		headersFromCtx, ok = ctx.Value(HeadersContextKey).(Headers)
+		if !ok {
+			logrus.Errorf("unexpected type of %s: %T, should be %T", HeadersContextKey, headersFromCtx, Headers{})
+		}
 	}
 
 	return headersFromCtx
