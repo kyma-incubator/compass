@@ -20,13 +20,13 @@ global:
       version: "PR-1569"
     pairing_adapter:
       dir:
-      version: "PR-1575"
+      version: "PR-1584"
     director:
       dir:
-      version: "PR-1580"
+      version: "PR-1584"
     gateway:
       dir:
-      version: "PR-1575"
+      version: "PR-1584"
     healthchecker:
       dir:
       version: "PR-1460"
@@ -40,14 +40,14 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1460"
+      version: "PR-1584"
     metris:
       dir:
       version: "PR-1434"
     tests:
       director:
         dir:
-        version: "PR-1573"
+        version: "PR-1584"
       connector:
         dir:
         version: "PR-1569"
