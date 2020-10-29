@@ -17,10 +17,10 @@ global:
       version: "PR-1582"
     connectivity_adapter:
       dir:
-      version: "PR-1582"
+      version: "PR-1584"
     pairing_adapter:
       dir:
-      version: "PR-1582"
+      version: "PR-1584"
     director:
       dir:
       version: "PR-1584"
