@@ -76,21 +76,25 @@ function cleanup() {
 
 trap cleanup EXIT
 
-
 if [[ ${REUSE_DB} = true ]]; then
     echo -e "${GREEN}Will reuse existing Postgres container${NC}"
 else
+    set +e
     echo -e "${GREEN}Start Postgres in detached mode${NC}"
-    docker run -d --name ${POSTGRES_CONTAINER} \
+    OUTPUT=$(docker run -d --name ${POSTGRES_CONTAINER} \
                 -e POSTGRES_HOST=${DB_HOST} \
                 -e POSTGRES_USER=${DB_USER} \
                 -e POSTGRES_PASSWORD=${DB_PWD} \
                 -e POSTGRES_DB=${DB_NAME} \
                 -e POSTGRES_PORT=${DB_PORT} \
                 -p ${DB_PORT}:${DB_PORT} \
-                postgres:${POSTGRES_VERSION}
+                postgres:${POSTGRES_VERSION})
 
-    set +e
+    if [[ $? -ne 0 ]] ; then
+        SKIP_DB_CLEANUP=true
+        exit 1
+    fi
+
     echo '# WAITING FOR CONNECTION WITH DATABASE #'
     for i in {1..30}
     do
