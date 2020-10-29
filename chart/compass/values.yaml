@@ -153,6 +153,15 @@ global:
       namespace: "compass-system"
     proxy:
       port: 15020
+    namespace: istio-system
+    ingressgateway:
+      workloadLabel: istio-ingressgateway
+      correlationHeaderRewriteFilter:
+        expectedHeaders:
+        - "x-request-id"
+        - "x-correlation-id"
+        - "x-correlationid"
+        - "x-forrequest-id"
 
   database:
     manageSecrets: true

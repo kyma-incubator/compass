@@ -17,7 +17,9 @@ func TestContextEnrichMiddleware_AttachCorrelationIDToContext(t *testing.T) {
 		expectedCorrelationID := "123"
 
 		nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			actual := correlation.CorrelationIDForRequest(r)
+			headers := correlation.HeadersForRequest(r)
+			actual, ok := headers[correlation.RequestIDHeaderKey]
+			assert.True(t, ok)
 			assert.Equal(t, actual, expectedCorrelationID)
 		})
 
@@ -29,8 +31,10 @@ func TestContextEnrichMiddleware_AttachCorrelationIDToContext(t *testing.T) {
 
 	t.Run("when no identifying headers are present a new correlation ID is added to the request context", func(t *testing.T) {
 		nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			actual := correlation.CorrelationIDForRequest(r)
-			assert.NotEmpty(t, actual)
+			headers := correlation.HeadersForRequest(r)
+			requestIDHeader, ok := headers[correlation.RequestIDHeaderKey]
+			assert.True(t, ok)
+			assert.NotEmpty(t, requestIDHeader)
 		})
 
 		req := httptest.NewRequest("GET", "/", nil)

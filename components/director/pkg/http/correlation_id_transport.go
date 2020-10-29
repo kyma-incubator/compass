@@ -38,9 +38,9 @@ type CorrelationIDTransport struct {
 // RoundTrip attaches a correlation ID header to the ongoing request.
 func (c *CorrelationIDTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	ctx := r.Context()
-	correlationID := correlation.CorrelationIDForRequest(r)
+	correlationHeaders := correlation.HeadersForRequest(r)
 
-	ctx = context.WithValue(ctx, correlation.ContextField, correlationID)
+	ctx = context.WithValue(ctx, correlation.HeadersContextKey, correlationHeaders)
 	r = r.WithContext(ctx)
 
 	return c.roundTripper.RoundTrip(r)

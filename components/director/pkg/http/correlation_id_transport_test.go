@@ -10,29 +10,29 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/http/automock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCorrelationIDTransport_RoundTrip(t *testing.T) {
 	const (
-		testUrl       = "http://localhost:8080"
-		correlationID = "123"
+		testUrl            = "http://localhost:8080"
+		requestIDHeaderKey = "x-request-id"
+		requestID          = "123"
 	)
 
 	// GIVEN
 	rt := &automock.HTTPRoundTripper{}
 	rt.On("RoundTrip", mock.Anything).Return(nil, nil).Run(func(args mock.Arguments) {
 		req, ok := args.Get(0).(*http.Request)
-		require.True(t, ok)
+		assert.True(t, ok)
 
-		correlationIDFromRequest := correlation.CorrelationIDForRequest(req)
-		require.Equal(t, correlationID, correlationIDFromRequest)
+		correlationHeaders := correlation.HeadersForRequest(req)
+		assert.Equal(t, requestID, correlationHeaders[requestIDHeaderKey])
 	})
 
 	t.Run("sets correlation ID when it is present in a header", func(t *testing.T) {
 		request, err := http.NewRequest(http.MethodPost, testUrl, nil)
 		assert.NoError(t, err)
-		request.Header.Set("X-Correlation-ID", correlationID)
+		request.Header.Set(requestIDHeaderKey, requestID)
 
 		correlationTransport := httputil.NewCorrelationIDTransport(rt)
 		_, err = correlationTransport.RoundTrip(request)
@@ -40,7 +40,8 @@ func TestCorrelationIDTransport_RoundTrip(t *testing.T) {
 	})
 
 	t.Run("sets correlation ID when it is present in the context", func(t *testing.T) {
-		ctx := context.WithValue(context.TODO(), correlation.ContextField, correlationID)
+		requestHeaders := map[string]string{requestIDHeaderKey: requestID}
+		ctx := context.WithValue(context.TODO(), correlation.HeadersContextKey, requestHeaders)
 		request, err := http.NewRequestWithContext(ctx, http.MethodPost, testUrl, nil)
 		assert.NoError(t, err)
 

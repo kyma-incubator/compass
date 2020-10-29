@@ -24,27 +24,20 @@ import (
 )
 
 const (
-	ContextField       = "CorrelationID"
+	HeadersContextKey  = "CorrelationHeaders"
 	RequestIDHeaderKey = "x-request-id"
 )
 
-// CorrelationIDHeaders are the headers whose values will be taken as a correlation id for incoming requests
-var CorrelationIDHeaders = []string{
-	RequestIDHeaderKey,
-	"X-Request-ID",
-	"X-Request-Id",
-	"X-Correlation-ID",
-	"X-CorrelationID",
-	"X-ForRequest-ID"}
+// Headers are the expected headers that are used for distributed tracing in Istio.
+var Headers = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-parentspanid", "x-b3-sampled", "x-b3-flags", "b3"}
 
-//AttachCorrelationIDToContext returns middleware that attaches a correlation ID to the current request
+//AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
 func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			if correlationID := CorrelationIDForRequest(r); correlationID != "" {
-				ctx = context.WithValue(ctx, ContextField, correlationID)
-				r.Header.Set(RequestIDHeaderKey, correlationID)
+			if correlationHeaders := HeadersForRequest(r); len(correlationHeaders) != 0 {
+				ctx = context.WithValue(ctx, HeadersContextKey, correlationHeaders)
 			}
 
 			next.ServeHTTP(rw, r)
@@ -52,21 +45,38 @@ func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 	}
 }
 
-// CorrelationIDForRequest checks the http headers for any of the supported correlation id headers.
-// The first that matches is taken as the correlation id. If none exists a new one is generated and set as a header.
-func CorrelationIDForRequest(request *http.Request) string {
-	for _, header := range CorrelationIDHeaders {
-		headerValue := request.Header.Get(header)
+// HeadersForRequest returns all http headers used for tracing of the passed request.
+// If the request headers are not sut, but are part of the context, they're set as well.
+// If the x-request-id header does not exists a new one is generated and set as a header.
+func HeadersForRequest(request *http.Request) map[string]string {
+	reqHeaders := make(map[string]string)
+	headersFromCtx := headersFromContext(request.Context())
+
+	for _, headerKey := range Headers {
+		headerValue := request.Header.Get(headerKey)
 		if headerValue != "" {
-			return headerValue
+			reqHeaders[headerKey] = headerValue
+			continue
+		}
+
+		if headerValue, ok := headersFromCtx[headerKey]; ok {
+			request.Header.Set(headerKey, headerValue)
+			reqHeaders[headerKey] = headerValue
 		}
 	}
 
-	correlationID, ok := request.Context().Value(ContextField).(string)
-	if !ok || correlationID == "" {
-		correlationID = uuid.New().String()
+	if _, ok := reqHeaders[RequestIDHeaderKey]; !ok {
+		reqHeaders[RequestIDHeaderKey] = uuid.New().String()
 	}
 
-	request.Header.Set(CorrelationIDHeaders[0], correlationID)
-	return correlationID
+	return reqHeaders
+}
+
+func headersFromContext(ctx context.Context) map[string]string {
+	var headersFromCtx map[string]string
+	if ctx.Value(HeadersContextKey) != nil {
+		headersFromCtx = ctx.Value(HeadersContextKey).(map[string]string)
+	}
+
+	return headersFromCtx
 }
