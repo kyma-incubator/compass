@@ -27,16 +27,14 @@ type Pager struct {
 	PageToken      string
 	Client         Client
 	hasNext        bool
-	PageInfoPath   string
 }
 
-func NewPager(queryGenerator func(pageSize int, page string) string, pageSize int, pageInfoPath string, client Client) *Pager {
+func NewPager(queryGenerator func(pageSize int, page string) string, pageSize int, client Client) *Pager {
 	return &Pager{
 		QueryGenerator: queryGenerator,
 		PageSize:       pageSize,
 		Client:         client,
 		hasNext:        true,
-		PageInfoPath:   pageInfoPath,
 	}
 }
 
@@ -47,7 +45,7 @@ func (p *Pager) Next(ctx context.Context, output PageItem) error {
 
 	query := p.QueryGenerator(p.PageSize, p.PageToken)
 	req := gcli.NewRequest(query)
-
+	// fmt.Println(">>>query", query)
 	// segments := strings.Split(p.PageInfoPath, ".")
 
 	// var response map[string]interface{}
@@ -66,6 +64,8 @@ func (p *Pager) Next(ctx context.Context, output PageItem) error {
 
 	// mapstructure.Decode(r["data"], &output)
 	// mapstructure.Decode(r["pageInfo"], &pageInfo)
+
+	// fmt.Println(">>>result", output)
 
 	pageInfo := output.PageInfo()
 	if !pageInfo.HasNextPage {

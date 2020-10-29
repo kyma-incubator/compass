@@ -60,8 +60,6 @@ func (c Converter) Convert(app *director.ApplicationExt) ([]domain.Service, erro
 func (c *Converter) toPlans(appID string, packages []graphql.PackageExt) ([]domain.ServicePlan, error) {
 	var plans []domain.ServicePlan
 	for _, p := range packages {
-		fmt.Println(">>>>>here")
-
 		schemas, err := c.toSchemas(&p)
 		if err != nil {
 			return nil, err

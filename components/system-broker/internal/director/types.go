@@ -17,7 +17,6 @@
 package director
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -38,34 +37,39 @@ type ApplicationExt struct {
 
 type ApplicationsOutput []ApplicationExt
 
-// go:generate Page
+//go:generate paginator ApplicationResponse ApplicationsOutput ".Result"
 type ApplicationResponse struct {
 	Result struct {
-		Apps ApplicationsOutput `json:"data"`
+		Data ApplicationsOutput `json:"data"`
 		Page graphql.PageInfo   `json:"pageInfo"`
 	} `json:"result"`
 }
 
-func (ao *ApplicationResponse) PageInfo() *graphql.PageInfo {
-	return &ao.Result.Page
-}
-
-func (ao *ApplicationResponse) ListAll(ctx context.Context, pager *Pager) (ApplicationsOutput, error) {
-	appsResult := ApplicationsOutput{}
-
-	for pager.HasNext() {
-		apps := &ApplicationResponse{}
-		if err := pager.Next(ctx, apps); err != nil {
-			return nil, err
-		}
-		appsResult = append(appsResult, apps.Result.Apps...)
-	}
-	return appsResult, nil
-}
-
 type PackagessOutput []schema.PackageExt
 
-type ApiDefinitionsOutput []schema.APIDefinitionExt
+//go:generate paginator PackagesResponse PackagessOutput ".Result.Packages"
+type PackagesResponse struct {
+	Result struct {
+		Packages struct {
+			Data PackagessOutput  `json:"data"`
+			Page graphql.PageInfo `json:"pageInfo"`
+		} `json:"packages"`
+	} `json:"result"`
+}
+
+type ApiDefinitionsOutput []*schema.APIDefinitionExt
+
+//go:generate paginator ApiDefinitionsResponse ApiDefinitionsOutput ".Result.Package.ApiDefinitions"
+type ApiDefinitionsResponse struct {
+	Result struct {
+		Package struct {
+			ApiDefinitions struct {
+				Data ApiDefinitionsOutput `json:"data"`
+				Page graphql.PageInfo     `json:"pageInfo"`
+			} `json:"apiDefinitions"`
+		} `json:"package"`
+	} `json:"result"`
+}
 
 type EventDefinitionsOutput []schema.EventAPIDefinitionExt
 
