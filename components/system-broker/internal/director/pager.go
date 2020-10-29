@@ -27,18 +27,20 @@ type Pager struct {
 	PageToken      string
 	Client         Client
 	hasNext        bool
+	PageInfoPath   string
 }
 
-func NewPager(queryGenerator func(pageSize int, page string) string, pageSize int, client Client) *Pager {
+func NewPager(queryGenerator func(pageSize int, page string) string, pageSize int, pageInfoPath string, client Client) *Pager {
 	return &Pager{
 		QueryGenerator: queryGenerator,
 		PageSize:       pageSize,
 		Client:         client,
 		hasNext:        true,
+		PageInfoPath:   pageInfoPath,
 	}
 }
 
-func (p *Pager) Next(ctx context.Context, output interface{}) error {
+func (p *Pager) Next(ctx context.Context, output PageItem) error {
 	if !p.hasNext {
 		return errors.New("no more pages")
 	}
@@ -46,27 +48,32 @@ func (p *Pager) Next(ctx context.Context, output interface{}) error {
 	query := p.QueryGenerator(p.PageSize, p.PageToken)
 	req := gcli.NewRequest(query)
 
-	response := GenericOutput{
-		Result: &GenericPage{
-			Data: output,
-		},
-	}
+	// segments := strings.Split(p.PageInfoPath, ".")
 
-	err := p.Client.Do(ctx, req, &response)
+	// var response map[string]interface{}
+
+	// var pageInfo graphql.PageInfo
+
+	err := p.Client.Do(ctx, req, &output)
 	if err != nil {
 		return errors.Wrap(err, "while getting page")
 	}
 
-	if response.Result == nil {
-		return errors.New("unexpected empty response")
-	}
+	// var r = response
+	// for _, s := range segments {
+	// 	r = r[s].(map[string]interface{})
+	// }
 
-	if !response.Result.PageInfo.HasNextPage {
+	// mapstructure.Decode(r["data"], &output)
+	// mapstructure.Decode(r["pageInfo"], &pageInfo)
+
+	pageInfo := output.PageInfo()
+	if !pageInfo.HasNextPage {
 		p.hasNext = false
 		return nil
 	}
 
-	p.PageToken = string(response.Result.PageInfo.EndCursor)
+	p.PageToken = string(pageInfo.EndCursor)
 
 	return nil
 }
@@ -85,7 +92,7 @@ func (p *Pager) ListAll(ctx context.Context, output interface{}) error {
 
 	for p.HasNext() {
 		pageSlice := reflect.New(itemsType.Elem())
-		err := p.Next(ctx, pageSlice.Interface())
+		err := p.Next(ctx, pageSlice.Interface().(PageItem))
 		if err != nil {
 			return err
 		}
@@ -95,4 +102,30 @@ func (p *Pager) ListAll(ctx context.Context, output interface{}) error {
 
 	reflect.ValueOf(output).Elem().Set(allItems)
 	return nil
+}
+
+// func (p *Pager) ListAll(ctx context.Context, output interface{}) error {
+// 	itemsType := reflect.TypeOf(output)
+// 	if itemsType.Kind() != reflect.Ptr || itemsType.Elem().Kind() != reflect.Slice {
+// 		return fmt.Errorf("items should be a pointer to a slice, but got %v", itemsType)
+// 	}
+
+// 	allItems := reflect.MakeSlice(itemsType.Elem(), 0, 0)
+
+// 	for p.HasNext() {
+// 		pageSlice := reflect.New(itemsType.Elem())
+// 		err := p.Next(ctx, pageSlice.Interface())
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		allItems = reflect.AppendSlice(allItems, pageSlice.Elem())
+// 	}
+
+// 	reflect.ValueOf(output).Elem().Set(allItems)
+// 	return nil
+// }
+
+type PageItem interface {
+	PageInfo() *graphql.PageInfo
 }

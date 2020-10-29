@@ -17,14 +17,57 @@
 package director
 
 import (
+	"context"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"strconv"
 )
 
-type ApplicationsOutput []*schema.ApplicationExt
+type ApplicationExt struct {
+	schema.Application    `mapstructure:",squash"`
+	Labels                schema.Labels                           `json:"labels"`
+	Webhooks              []schema.Webhook                        `json:"webhooks"`
+	Auths                 []*schema.SystemAuth                    `json:"auths"`
+	EventingConfiguration schema.ApplicationEventingConfiguration `json:"eventingConfiguration"`
+
+	Packages []schema.PackageExt `json:"packages"`
+}
+
+type ApplicationsOutput []ApplicationExt
+
+// go:generate Page
+type ApplicationResponse struct {
+	Result struct {
+		Apps ApplicationsOutput `json:"data"`
+		Page graphql.PageInfo   `json:"pageInfo"`
+	} `json:"result"`
+}
+
+func (ao *ApplicationResponse) PageInfo() *graphql.PageInfo {
+	return &ao.Result.Page
+}
+
+func (ao *ApplicationResponse) ListAll(ctx context.Context, pager *Pager) (ApplicationsOutput, error) {
+	appsResult := ApplicationsOutput{}
+
+	for pager.HasNext() {
+		apps := &ApplicationResponse{}
+		if err := pager.Next(ctx, apps); err != nil {
+			return nil, err
+		}
+		appsResult = append(appsResult, apps.Result.Apps...)
+	}
+	return appsResult, nil
+}
+
+type PackagessOutput []schema.PackageExt
+
+type ApiDefinitionsOutput []schema.APIDefinitionExt
+
+type EventDefinitionsOutput []schema.EventAPIDefinitionExt
 
 type RequestPackageInstanceCredentialsInput struct {
 	PackageID   string `valid:"required"`

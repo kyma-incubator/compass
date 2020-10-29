@@ -65,11 +65,10 @@ type GraphQLClient struct {
 	inputGraphqlizer  GraphQLizer
 	outputGraphqlizer GqlFieldsProvider
 	pageSize          int
-	//queryProvider     queryProvider
 }
 
 func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutput, error) {
-	response := ApplicationsOutput{}
+	appsResult := ApplicationsOutput{}
 
 	query := fmt.Sprintf(`query {
 			result: applications(first: %%d, after: %%q) {
@@ -80,13 +79,70 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutp
 		return fmt.Sprintf(query, pageSize, page)
 	}
 
-	pager := NewPager(queryGenerator, c.pageSize, c.gcli)
-	if err := pager.ListAll(ctx, &response); err != nil {
-		return nil, errors.Wrap(err, "while fetching applications in gqlclient")
+	pager := NewPager(queryGenerator, c.pageSize, "result", c.gcli)
+	apps := &ApplicationResponse{}
+	var err error
+	appsResult, err = apps.ListAll(ctx, pager)
+	if err != nil {
+		return nil, err
 	}
 
-	return response, nil
+	fmt.Printf("%+v\n", appsResult)
+
+	return appsResult, nil
 }
+
+// func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps ApplicationsOutput) error {
+// 	for i, app := range apps {
+// 		responsePackages := PackagessOutput{}
+
+// 		query := fmt.Sprintf(`query {
+// 			result: application(id: %q) {
+// 			  %s
+// 			  packages(first: %%d, after: %%q) {
+// 				  %s
+// 			  }
+// 			}
+// 		}`, app.ID, c.outputGraphqlizer.ForApplication(), c.outputGraphqlizer.Page(c.outputGraphqlizer.ForPackage()))
+// 		queryGenerator := func(pageSize int, page string) string {
+// 			return fmt.Sprintf(query, pageSize, page)
+// 		}
+
+// 		pager := NewPager(queryGenerator, c.pageSize, "result.packages", c.gcli)
+// 		if err := pager.ListAll(ctx, &responsePackages); err != nil {
+// 			return errors.Wrap(err, "while fetching applications in gqlclient")
+// 		}
+
+// 		apps[i].Packages = responsePackages
+// 	}
+// 	return nil
+// }
+
+// func (c *GraphQLClient) fetchApiDefinitions(ctx context.Context, packages PackagessOutput) error {
+// 	for i, app := range packages {
+// 		responsePackages := PackagessOutput{}
+
+// 		query := fmt.Sprintf(`query {
+// 			result: application(id: %q) {
+// 			  %s
+// 			  packages(first: %%d, after: %%q) {
+// 				  %s
+// 			  }
+// 			}
+// 		}`, app.ID, c.outputGraphqlizer.ForApplication(), c.outputGraphqlizer.Page(c.outputGraphqlizer.ForPackage()))
+// 		queryGenerator := func(pageSize int, page string) string {
+// 			return fmt.Sprintf(query, pageSize, page)
+// 		}
+
+// 		pager := NewPager(queryGenerator, c.pageSize, "result.packages", c.gcli)
+// 		if err := pager.ListAll(ctx, &responsePackages); err != nil {
+// 			return errors.Wrap(err, "while fetching applications in gqlclient")
+// 		}
+
+// 		apps[i].Packages = responsePackages
+// 	}
+// 	return nil
+// }
 
 func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *RequestPackageInstanceCredentialsInput) (*RequestPackageInstanceCredentialsOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
