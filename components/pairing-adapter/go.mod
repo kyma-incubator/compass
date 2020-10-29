@@ -9,6 +9,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/vrischmann/envconfig v1.2.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/text v0.3.3 // indirect
 )
 
 replace (
