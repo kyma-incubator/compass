@@ -25,17 +25,7 @@ import (
 	"strconv"
 )
 
-type ApplicationExt struct {
-	schema.Application    `mapstructure:",squash"`
-	Labels                schema.Labels                           `json:"labels"`
-	Webhooks              []schema.Webhook                        `json:"webhooks"`
-	Auths                 []*schema.SystemAuth                    `json:"auths"`
-	EventingConfiguration schema.ApplicationEventingConfiguration `json:"eventingConfiguration"`
-
-	Packages []schema.PackageExt `json:"packages"`
-}
-
-type ApplicationsOutput []ApplicationExt
+type ApplicationsOutput []schema.ApplicationExt
 
 //go:generate paginator ApplicationResponse ApplicationsOutput ".Result"
 type ApplicationResponse struct {
@@ -45,7 +35,7 @@ type ApplicationResponse struct {
 	} `json:"result"`
 }
 
-type PackagessOutput []schema.PackageExt
+type PackagessOutput []*schema.PackageExt
 
 //go:generate paginator PackagesResponse PackagessOutput ".Result.Packages"
 type PackagesResponse struct {
@@ -71,7 +61,33 @@ type ApiDefinitionsResponse struct {
 	} `json:"result"`
 }
 
-type EventDefinitionsOutput []schema.EventAPIDefinitionExt
+type EventDefinitionsOutput []*schema.EventAPIDefinitionExt
+
+//go:generate paginator EventDefinitionsResponse EventDefinitionsOutput ".Result.Package.EventDefinitions"
+type EventDefinitionsResponse struct {
+	Result struct {
+		Package struct {
+			EventDefinitions struct {
+				Data EventDefinitionsOutput `json:"data"`
+				Page graphql.PageInfo       `json:"pageInfo"`
+			} `json:"eventDefinitions"`
+		} `json:"package"`
+	} `json:"result"`
+}
+
+type DocumentsOutput []*schema.DocumentExt
+
+//go:generate paginator DocumentsResponse DocumentsOutput ".Result.Package.Documents"
+type DocumentsResponse struct {
+	Result struct {
+		Package struct {
+			Documents struct {
+				Data DocumentsOutput  `json:"data"`
+				Page graphql.PageInfo `json:"pageInfo"`
+			} `json:"documents"`
+		} `json:"package"`
+	} `json:"result"`
+}
 
 type RequestPackageInstanceCredentialsInput struct {
 	PackageID   string `valid:"required"`

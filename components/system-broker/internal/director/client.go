@@ -87,8 +87,7 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutp
 	}
 
 	if err := c.fetchPackagesForApps(ctx, appsResult); err != nil {
-		// TODO: Wrap error
-		return nil, err
+		return nil, errors.Wrap(err, "while fetching packages")
 	}
 
 	return appsResult, nil
@@ -114,11 +113,18 @@ func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps Applicati
 			return errors.Wrap(err, "while fetching applications in gqlclient")
 		}
 
-		apps[i].Packages = packagesResult
+		apps[i].Packages = schema.PackagePageExt{
+			Data: packagesResult,
+		}
 
 		if err := c.fetchApiDefinitions(ctx, app.ID, packagesResult); err != nil {
-			// TODO: Wrap error
-			return err
+			return errors.Wrap(err, "while fetching api definitions")
+		}
+		if err := c.fetchEventDefinitions(ctx, app.ID, packagesResult); err != nil {
+			return errors.Wrap(err, "while fetching event definitions")
+		}
+		if err := c.fetchDocuments(ctx, app.ID, packagesResult); err != nil {
+			return errors.Wrap(err, "while fetching documents")
 		}
 	}
 	return nil
@@ -149,6 +155,63 @@ func (c *GraphQLClient) fetchApiDefinitions(ctx context.Context, appID string, p
 
 		packages[i].APIDefinitions = schema.APIDefinitionPageExt{
 			Data: responseApiDefinitions,
+		}
+	}
+	return nil
+}
+
+func (c *GraphQLClient) fetchEventDefinitions(ctx context.Context, appID string, packages PackagessOutput) error {
+	for i, packaged := range packages {
+		query := fmt.Sprintf(`query {
+			result: application(id: %q) {
+				package(id: %q) {
+					eventDefinitions(first: %%d, after: %%q) {
+						%s
+					}
+			  	}
+			}
+		}`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForEventDefinition()))
+
+		queryGenerator := func(pageSize int, page string) string {
+			return fmt.Sprintf(query, pageSize, page)
+		}
+		pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+		definitions := &EventDefinitionsResponse{}
+		responseEventDefinitions, err := definitions.ListAll(ctx, pager)
+		if err != nil {
+			return errors.Wrap(err, "while fetching applications in gqlclient")
+		}
+		packages[i].EventDefinitions = schema.EventAPIDefinitionPageExt{
+			Data: responseEventDefinitions,
+		}
+	}
+	return nil
+}
+
+func (c *GraphQLClient) fetchDocuments(ctx context.Context, appID string, packages PackagessOutput) error {
+	for i, packaged := range packages {
+		query := fmt.Sprintf(`query {
+			result: application(id: %q) {
+				package(id: %q) {
+					documents(first: %%d, after: %%q) {
+						%s
+					}
+			  	}
+			}
+		}`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForDocument()))
+
+		queryGenerator := func(pageSize int, page string) string {
+			return fmt.Sprintf(query, pageSize, page)
+		}
+		pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+		definitions := &DocumentsResponse{}
+		responseDocuments, err := definitions.ListAll(ctx, pager)
+		if err != nil {
+			return errors.Wrap(err, "while fetching applications in gqlclient")
+		}
+
+		packages[i].Documents = schema.DocumentPageExt{
+			Data: responseDocuments,
 		}
 	}
 	return nil

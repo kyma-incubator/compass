@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
@@ -31,8 +31,8 @@ type Converter struct {
 	baseURL string
 }
 
-func (c Converter) Convert(app *director.ApplicationExt) ([]domain.Service, error) {
-	plans, err := c.toPlans(app.ID, app.Packages)
+func (c Converter) Convert(app *schema.ApplicationExt) ([]domain.Service, error) {
+	plans, err := c.toPlans(app.ID, app.Packages.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +57,10 @@ func (c Converter) Convert(app *director.ApplicationExt) ([]domain.Service, erro
 	}, nil
 }
 
-func (c *Converter) toPlans(appID string, packages []graphql.PackageExt) ([]domain.ServicePlan, error) {
+func (c *Converter) toPlans(appID string, packages []*graphql.PackageExt) ([]domain.ServicePlan, error) {
 	var plans []domain.ServicePlan
 	for _, p := range packages {
-		schemas, err := c.toSchemas(&p)
+		schemas, err := c.toSchemas(p)
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +69,7 @@ func (c *Converter) toPlans(appID string, packages []graphql.PackageExt) ([]doma
 			desc = fmt.Sprintf("plan generated from package with name %s", p.Name)
 		}
 
-		metadata, err := c.toPlanMetadata(appID, &p)
+		metadata, err := c.toPlanMetadata(appID, p)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +140,7 @@ func (c *Converter) toPlanMetadata(appID string, pkg *graphql.PackageExt) (*doma
 	return metadata, nil
 }
 
-func (c *Converter) toServiceMetadata(app *director.ApplicationExt) *domain.ServiceMetadata {
+func (c *Converter) toServiceMetadata(app *schema.ApplicationExt) *domain.ServiceMetadata {
 	if app.Labels == nil {
 		app.Labels = map[string]interface{}{}
 	}

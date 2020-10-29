@@ -19,14 +19,15 @@ package osb
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 )
 
 type converter interface {
-	Convert(app *director.ApplicationExt) ([]domain.Service, error)
+	Convert(app *schema.ApplicationExt) ([]domain.Service, error)
 }
 
 type CatalogEndpoint struct {
