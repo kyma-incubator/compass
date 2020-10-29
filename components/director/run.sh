@@ -81,14 +81,14 @@ if [[ ${REUSE_DB} = true ]]; then
 else
     set +e
     echo -e "${GREEN}Start Postgres in detached mode${NC}"
-    OUTPUT=$(docker run -d --name ${POSTGRES_CONTAINER} \
+    docker run -d --name ${POSTGRES_CONTAINER} \
                 -e POSTGRES_HOST=${DB_HOST} \
                 -e POSTGRES_USER=${DB_USER} \
                 -e POSTGRES_PASSWORD=${DB_PWD} \
                 -e POSTGRES_DB=${DB_NAME} \
                 -e POSTGRES_PORT=${DB_PORT} \
                 -p ${DB_PORT}:${DB_PORT} \
-                postgres:${POSTGRES_VERSION})
+                postgres:${POSTGRES_VERSION}
 
     if [[ $? -ne 0 ]] ; then
         SKIP_DB_CLEANUP=true
