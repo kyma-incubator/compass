@@ -114,7 +114,7 @@ if [[  ${DEBUG} ]]; then
     PORT=40000
     echo -e "${GREEN}Debug mode activated on port $PORT${NC}"
     cd $GOPATH/src/github.com/kyma-incubator/compass/components/director && \
-    CGO_ENABLED=0 go build ./cmd/director && \
+    CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/director && \
     dlv --listen=:$PORT --headless=true --api-version=2 exec ./director
     rm ./director
 else
