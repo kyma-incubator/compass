@@ -41,6 +41,7 @@ func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			if correlationHeaders := HeadersForRequest(r); len(correlationHeaders) != 0 {
 				ctx = context.WithValue(ctx, HeadersContextKey, correlationHeaders)
+				r = r.WithContext(ctx)
 			}
 
 			next.ServeHTTP(rw, r)
