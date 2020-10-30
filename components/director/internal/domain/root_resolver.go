@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"net/http"
 	"time"
 
@@ -218,6 +219,16 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 }
 
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if consumerInfo.ConsumerType == consumer.Runtime {
+		log.Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
+		return r.app.ApplicationsForRuntime(ctx, consumerInfo.ConsumerID, first, after)
+	}
+
 	return r.app.Applications(ctx, filter, first, after)
 }
 
