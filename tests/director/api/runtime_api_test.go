@@ -205,7 +205,6 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 
 	// WHEN
 	delReq := fixUnregisterRuntimeRequest(actualRuntime.ID)
-	saveExample(t, delReq.Query(), "unregister runtime")
 	err = tc.RunOperation(ctx, delReq, nil)
 
 	//THEN
