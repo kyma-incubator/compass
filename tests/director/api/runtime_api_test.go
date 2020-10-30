@@ -129,7 +129,6 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 
 	// WHEN
 	registerReq := fixRegisterRuntimeRequest(runtimeInGQL)
-	saveExampleInCustomDir(t, registerReq.Query(), registerRuntimeCategory, "register runtime")
 	err = tc.RunOperation(ctx, registerReq, &actualRuntime)
 
 	//THEN
