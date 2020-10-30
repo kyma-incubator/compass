@@ -7,16 +7,34 @@ import (
 	"github.com/pkg/errors"
 )
 
+type ConsumerType string
+
+const (
+	RuntimeConsumer           ConsumerType = "Runtime"
+	ApplicationConsumer       ConsumerType = "Application"
+	IntegrationSystemConsumer ConsumerType = "Integration System"
+	UserConsumer              ConsumerType = "Static User"
+)
+
 type jwtTokenClaims struct {
-	Scopes string `json:"scopes"`
-	Tenant string `json:"tenant"`
+	Scopes       string       `json:"scopes"`
+	Tenant       string       `json:"tenant"`
+	ConsumerID   string       `json:"consumerID,omitempty"`
+	ConsumerType ConsumerType `json:"consumerType,omitempty"`
 	jwt.StandardClaims
 }
 
-func Do(tenant string, scopes []string) (string, error) {
+type Consumer struct {
+	ID   string
+	Type ConsumerType
+}
+
+func Do(tenant string, scopes []string, consumer *Consumer) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, jwtTokenClaims{
-		Tenant: tenant,
-		Scopes: strings.Join(scopes, " "),
+		Tenant:       tenant,
+		Scopes:       strings.Join(scopes, " "),
+		ConsumerID:   consumer.ID,
+		ConsumerType: consumer.Type,
 	})
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
