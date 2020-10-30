@@ -1,16 +1,12 @@
 package healthcheck_test
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -301,51 +297,38 @@ func (suite *OSBCatalogTestSuite) TearDownSuite() {
 }
 
 func (suite *OSBCatalogTestSuite) TestEmptyResponse() {
-	suite.configureResponse("query", "applications", appsEmptyResponse)
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsEmptyResponse)
+	assert.NoError(suite.T(), err)
 	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
 		Status(http.StatusOK).
 		Body().Equal("{\"services\":[]}\n")
 }
 
 func (suite *OSBCatalogTestSuite) TestResponseWithOnePage() {
-	suite.configureResponse("query", "applications", appsMockResponse)
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsMockResponse)
+	assert.NoError(suite.T(), err)
 	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
 		Status(http.StatusOK).
 		Body().Equal(appsExpectedCatalog)
 }
 
 func (suite *OSBCatalogTestSuite) TestResponseWithSeveralPages() {
-	suite.configureResponse("query", "applications", appsPageResponse1)
-	suite.configureResponse("query", "applications", appsPageResponse2)
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsPageResponse1)
+	assert.NoError(suite.T(), err)
+	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsPageResponse2)
+	assert.NoError(suite.T(), err)
 	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
 		Status(http.StatusOK).
 		Body().Equal(appsExpectedCatalogPaging)
 }
 
 func (suite *OSBCatalogTestSuite) TestErrorWhileFetchingApplicaitons() {
-	suite.configureResponse("query", "applications", appsPageResponse1)
-	suite.configureResponse("query", "applications", appsErrorResponse)
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsPageResponse1)
+	assert.NoError(suite.T(), err)
+	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsErrorResponse)
+	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
 		Status(http.StatusInternalServerError).
 		JSON().Object().Value("description").Equal("could not build catalog")
-}
-
-func (suite *OSBCatalogTestSuite) configureResponse(queryType, queryName, response string) {
-	var applicationsResponse map[string]interface{}
-
-	err := json.Unmarshal([]byte(response), &applicationsResponse)
-	assert.NoError(suite.T(), err)
-
-	body := common.ConfigRequestBody{
-		GraphqlQueryKey: common.GraphqlQueryKey{
-			Type: queryType,
-			Name: queryName,
-		},
-		Response: applicationsResponse,
-	}
-	jsonBody, err := json.Marshal(body)
-
-	assert.NoError(suite.T(), err)
-	http.DefaultClient.Post(suite.configURL, "application/json", bytes.NewReader(jsonBody))
 }

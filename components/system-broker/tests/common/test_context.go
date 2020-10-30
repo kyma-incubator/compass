@@ -1,7 +1,9 @@
 package common
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -128,6 +130,29 @@ func (tcb *TestContextBuilder) Build(t *testing.T) *TestContext {
 	}
 
 	return testContext
+}
+
+func (tc *TestContext) ConfigureResponse(configURL, queryType, queryName, response string) error {
+	var applicationsResponse map[string]interface{}
+
+	if err := json.Unmarshal([]byte(response), &applicationsResponse); err != nil {
+		return err
+	}
+
+	body := ConfigRequestBody{
+		GraphqlQueryKey: GraphqlQueryKey{
+			Type: queryType,
+			Name: queryName,
+		},
+		Response: applicationsResponse,
+	}
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	http.DefaultClient.Post(configURL, "application/json", bytes.NewReader(jsonBody))
+	return nil
 }
 
 func TestEnv() env.Environment {
