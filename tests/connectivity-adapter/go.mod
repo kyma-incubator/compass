@@ -16,8 +16,8 @@ require (
 )
 
 replace (
-    github.com/kyma-incubator/compass/components/director => github.com/kyma-incubator/compass/components/director v0.0.0-20201029155255-f6f02b451a2f
-    github.com/kyma-incubator/compass/components/gateway => github.com/kyma-incubator/compass/components/gateway v0.0.0-20201029161524-d83f1f7576b8
+	github.com/kyma-incubator/compass/components/director => github.com/kyma-incubator/compass/components/director v0.0.0-20201029155255-f6f02b451a2f
+	github.com/kyma-incubator/compass/components/gateway => github.com/kyma-incubator/compass/components/gateway v0.0.0-20201029161524-d83f1f7576b8
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
 )
