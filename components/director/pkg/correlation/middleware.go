@@ -70,7 +70,9 @@ func HeadersForRequest(request *http.Request) Headers {
 	}
 
 	if _, ok := reqHeaders[RequestIDHeaderKey]; !ok {
-		reqHeaders[RequestIDHeaderKey] = uuid.New().String()
+		newRequestID := uuid.New().String()
+		reqHeaders[RequestIDHeaderKey] = newRequestID
+		request.Header.Set(RequestIDHeaderKey, newRequestID)
 	}
 
 	return reqHeaders
