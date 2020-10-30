@@ -103,7 +103,7 @@ func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps Applicati
 
 	for i, app := range apps {
 		wg.Add(3)
-		go func() {
+		go func(i int, app schema.ApplicationExt) {
 			select {
 			case <-childContext.Done():
 				return
@@ -142,7 +142,7 @@ func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps Applicati
 			go c.fetchApiDefinitions(childContext, app.ID, packagesResult, &wg, errChan)
 			go c.fetchEventDefinitions(childContext, app.ID, packagesResult, &wg, errChan)
 			go c.fetchDocuments(childContext, app.ID, packagesResult, &wg, errChan)
-		}()
+		}(i, app)
 	}
 
 	success := make(chan interface{})
@@ -156,6 +156,7 @@ func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps Applicati
 		return nil
 	case err := <-errChan:
 		cancel()
+		fmt.Println()
 		return errors.Wrap(err, "while fetching packages for apps")
 	}
 }
@@ -164,14 +165,20 @@ func (c *GraphQLClient) fetchApiDefinitions(ctx context.Context, appID string, p
 	defer wg.Done()
 	fmt.Println(">>>>> START ApiDefinitions")
 	defer fmt.Println(">>>>> End ApiDefinitions")
-	for i, packaged := range packages {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
 
-		query := fmt.Sprintf(`query {
+	innerWg := sync.WaitGroup{}
+
+	for i, packaged := range packages {
+		innerWg.Add(1)
+		go func(i int, packaged *schema.PackageExt) {
+			defer innerWg.Done()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			query := fmt.Sprintf(`query {
 			result: application(id: %q) {
 				package(id: %q) {
 					apiDefinitions(first: %%d, after: %%q) {
@@ -181,39 +188,47 @@ func (c *GraphQLClient) fetchApiDefinitions(ctx context.Context, appID string, p
 			}
 		}`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForAPIDefinition()))
 
-		queryGenerator := func(pageSize int, page string) string {
-			return fmt.Sprintf(query, pageSize, page)
-		}
-
-		pager := NewPager(queryGenerator, c.pageSize, c.gcli)
-		definitions := &ApiDefinitionsResponse{}
-		responseApiDefinitions, err := definitions.ListAll(ctx, pager)
-		if err != nil {
-			select {
-			case errChan <- errors.Wrap(err, "while fetching api definitions"):
-				return
-			case <-ctx.Done():
-				return
+			queryGenerator := func(pageSize int, page string) string {
+				return fmt.Sprintf(query, pageSize, page)
 			}
-		}
-		packages[i].APIDefinitions = schema.APIDefinitionPageExt{
-			Data: responseApiDefinitions,
-		}
+
+			pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+			definitions := &ApiDefinitionsResponse{}
+			responseApiDefinitions, err := definitions.ListAll(ctx, pager)
+			if err != nil {
+				select {
+				case errChan <- errors.Wrap(err, "while fetching api definitions"):
+					return
+				case <-ctx.Done():
+					return
+				}
+			}
+			packages[i].APIDefinitions = schema.APIDefinitionPageExt{
+				Data: responseApiDefinitions,
+			}
+		}(i, packaged)
 	}
+	innerWg.Wait()
 }
 
 func (c *GraphQLClient) fetchEventDefinitions(ctx context.Context, appID string, packages PackagessOutput, wg *sync.WaitGroup, errChan chan<- error) {
 	defer wg.Done()
+
+	innerWg := sync.WaitGroup{}
+
 	fmt.Println(">>>>> START EventDefinitions")
 	defer fmt.Println(">>>>> End EventDefinitions")
 	for i, packaged := range packages {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
+		innerWg.Add(1)
+		go func(i int, app *schema.PackageExt) {
+			defer innerWg.Done()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
 
-		query := fmt.Sprintf(`query {
+			query := fmt.Sprintf(`query {
 			result: application(id: %q) {
 				package(id: %q) {
 					eventDefinitions(first: %%d, after: %%q) {
@@ -223,38 +238,47 @@ func (c *GraphQLClient) fetchEventDefinitions(ctx context.Context, appID string,
 			}
 		}`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForEventDefinition()))
 
-		queryGenerator := func(pageSize int, page string) string {
-			return fmt.Sprintf(query, pageSize, page)
-		}
-		pager := NewPager(queryGenerator, c.pageSize, c.gcli)
-		definitions := &EventDefinitionsResponse{}
-		responseEventDefinitions, err := definitions.ListAll(ctx, pager)
-		if err != nil {
-			select {
-			case errChan <- errors.Wrap(err, "while fetching api definitions"):
-				return
-			case <-ctx.Done():
-				return
+			queryGenerator := func(pageSize int, page string) string {
+				return fmt.Sprintf(query, pageSize, page)
 			}
-		}
+			pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+			definitions := &EventDefinitionsResponse{}
+			responseEventDefinitions, err := definitions.ListAll(ctx, pager)
+			if err != nil {
+				select {
+				case errChan <- errors.Wrap(err, "while fetching api definitions"):
+					return
+				case <-ctx.Done():
+					return
+				}
+			}
 
-		packages[i].EventDefinitions = schema.EventAPIDefinitionPageExt{
-			Data: responseEventDefinitions,
-		}
+			packages[i].EventDefinitions = schema.EventAPIDefinitionPageExt{
+				Data: responseEventDefinitions,
+			}
+		}(i, packaged)
 	}
+
+	innerWg.Wait()
 }
 
 func (c *GraphQLClient) fetchDocuments(ctx context.Context, appID string, packages PackagessOutput, wg *sync.WaitGroup, errChan chan<- error) {
 	defer wg.Done()
 	fmt.Println(">>>>> START Documents")
 	defer fmt.Println(">>>>> End Documents")
+
+	innerWg := sync.WaitGroup{}
+
 	for i, packaged := range packages {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-		query := fmt.Sprintf(`query {
+		innerWg.Add(1)
+		go func(i int, packaged *schema.PackageExt) {
+			defer innerWg.Done()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+			query := fmt.Sprintf(`query {
 			result: application(id: %q) {
 				package(id: %q) {
 					documents(first: %%d, after: %%q) {
@@ -264,25 +288,28 @@ func (c *GraphQLClient) fetchDocuments(ctx context.Context, appID string, packag
 			}
 		}`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForDocument()))
 
-		queryGenerator := func(pageSize int, page string) string {
-			return fmt.Sprintf(query, pageSize, page)
-		}
-		pager := NewPager(queryGenerator, c.pageSize, c.gcli)
-		definitions := &DocumentsResponse{}
-		responseDocuments, err := definitions.ListAll(ctx, pager)
-
-		if err != nil {
-			select {
-			case errChan <- errors.Wrap(err, "while fetching api definitions"):
-				return
-			case <-ctx.Done():
-				return
+			queryGenerator := func(pageSize int, page string) string {
+				return fmt.Sprintf(query, pageSize, page)
 			}
-		}
-		packages[i].Documents = schema.DocumentPageExt{
-			Data: responseDocuments,
-		}
+			pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+			definitions := &DocumentsResponse{}
+			responseDocuments, err := definitions.ListAll(ctx, pager)
+
+			if err != nil {
+				select {
+				case errChan <- errors.Wrap(err, "while fetching api definitions"):
+					return
+				case <-ctx.Done():
+					return
+				}
+			}
+			packages[i].Documents = schema.DocumentPageExt{
+				Data: responseDocuments,
+			}
+
+		}(i, packaged)
 	}
+	innerWg.Wait()
 }
 
 func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *RequestPackageInstanceCredentialsInput) (*RequestPackageInstanceCredentialsOutput, error) {
