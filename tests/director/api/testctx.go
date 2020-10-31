@@ -79,7 +79,7 @@ func (o *Operation) WithConsumer(consumer *jwtbuilder.Consumer) *Operation {
 func (o *Operation) Run(req *gcli.Request, resp interface{}) error {
 	m := resultMapperFor(&resp)
 
-	token, err := jwtbuilder.Do(o.tenant, o.scopes, o.consumer)
+	token, err := jwtbuilder.Build(o.tenant, o.scopes, o.consumer)
 	if err != nil {
 		return errors.Wrap(err, "while building JWT token")
 	}
