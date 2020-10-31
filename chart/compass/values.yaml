@@ -47,13 +47,13 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1586"
+        version: "PR-1588"
       connector:
         dir:
         version: "PR-1582"
       connectivity_adapter:
         dir:
-        version: "PR-1453"
+        version: "PR-1588"
   isLocalEnv: false
   oauth2:
     host: oauth2
