@@ -1,14 +1,14 @@
 import LuigiClient from '@luigi-project/client';
 
-export default async function unassignScenarioAssignmentHandler(
+export default async function deleteScenarioAssignmentHandler(
   deleteScenarioAssignmentMutation,
   scenarioName,
   successCallback,
 ) {
   const showConfirmation = () =>
     LuigiClient.uxManager().showConfirmationModal({
-      header: `Unassign scenario assignment`,
-      body: `Are you sure you want to delete ${scenarioName}'s automatic scenario assignment?`,
+      header: `Delete scenario assignment`,
+      body: `Are you sure you want to delete the automatic scenario assignment for "${scenarioName}"?`,
       buttonConfirm: 'Confirm',
       buttonDismiss: 'Cancel',
     });

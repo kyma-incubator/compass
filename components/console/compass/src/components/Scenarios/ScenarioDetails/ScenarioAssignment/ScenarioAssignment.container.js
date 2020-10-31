@@ -4,6 +4,8 @@ import { fromRenderProps } from 'recompose';
 import {
   GET_ASSIGNMENT_FOR_SCENARIO,
   DELETE_ASSIGNMENT_FOR_SCENARIO,
+  GET_RUNTIMES_FOR_SCENARIO,
+  createEqualityQuery,
 } from '../../gql';
 import { SEND_NOTIFICATION } from '../../../../gql';
 
@@ -26,13 +28,28 @@ export default compose(
     name: 'getScenarioAssignment',
     options: ({ scenarioName }) => {
       return {
+        errorPolicy: 'all',
         variables: {
-          errorPolicy: 'ignore',
           scenarioName: scenarioName,
         },
       };
     },
   }),
+  graphql(GET_RUNTIMES_FOR_SCENARIO, {
+    name: 'getRuntimesForScenario',
+    options: ({ scenarioName }) => {
+      const filter = {
+        key: 'scenarios',
+        query: createEqualityQuery(scenarioName),
+      };
+      return {
+        variables: {
+          filter: [filter],
+        },
+      };
+    },
+  }),
+
   graphql(SEND_NOTIFICATION, {
     name: 'sendNotification',
   }),
