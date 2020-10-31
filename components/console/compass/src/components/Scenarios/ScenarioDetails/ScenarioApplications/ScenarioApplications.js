@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@apollo/react-hooks';
 import { GenericList } from 'react-shared';
 import AssignEntityToScenarioModal from './../shared/AssignEntityToScenarioModal/AssignApplicationsToScenarioModal.container';
 import unassignScenarioHandler from './../shared/unassignScenarioHandler';
+
 import {
   createEqualityQuery,
   GET_APPLICATIONS_FOR_SCENARIO,

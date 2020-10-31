@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+
 import { GenericList } from 'react-shared';
 import { useMutation } from '@apollo/react-hooks';
 

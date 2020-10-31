@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import ScenarioDetailsHeader from './ScenarioDetailsHeader/ScenarioDetailsHeader';
 import ScenarioApplications from './ScenarioApplications/ScenarioApplications';
 import ScenarioRuntimes from './ScenarioRuntimes/ScenarioRuntimes.container';
+import ScenarioAssignment from './ScenarioAssignment/ScenarioAssignment.container';
 
 import ScenarioNameContext from './ScenarioNameContext';
 
@@ -19,6 +20,7 @@ export default function ScenarioDetails({ scenarioName }) {
       <ScenarioDetailsHeader applicationsCount={applicationsCount} />
       <ScenarioApplications updateApplicationsCount={setApplicationsCount} />
       <ScenarioRuntimes />
+      <ScenarioAssignment />
     </ScenarioNameContext.Provider>
   );
 }

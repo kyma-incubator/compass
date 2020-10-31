@@ -120,3 +120,29 @@ export const GET_RUNTIMES_FOR_SCENARIO = gql`
     }
   }
 `;
+
+export const GET_ASSIGNMENT_FOR_SCENARIO = gql`
+  query assignmentForScenario($scenarioName: String!) {
+    automaticScenarioAssignmentForScenario(scenarioName: $scenarioName) {
+      scenarioName
+      selector {
+        key
+        value
+      }
+    }
+  }
+`;
+
+export const DELETE_ASSIGNMENT_FOR_SCENARIO = gql`
+  mutation deleteAutomaticScenarioAssignmentForScenario(
+    $scenarioName: String!
+  ) {
+    deleteAutomaticScenarioAssignmentForScenario(scenarioName: $scenarioName) {
+      scenarioName
+      selector {
+        key
+        value
+      }
+    }
+  }
+`;
