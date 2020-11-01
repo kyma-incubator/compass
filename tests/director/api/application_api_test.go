@@ -482,50 +482,37 @@ func TestQuerySpecificApplication(t *testing.T) {
 		assert.Equal(t, appID, actualApp.ID)
 	})
 
-	// update label definitions
 	ctx := context.Background()
-	tenantID := testTenants.GetDefaultTenantID()
+
+	runtime := registerRuntime(t, ctx, "runtime-test")
+	defer unregisterRuntime(t, runtime.ID)
+
 	scenarios := []string{defaultScenario, "test-scenario"}
 
-	jsonSchema := map[string]interface{}{
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": scenarios,
-		},
-	}
-	var schema interface{} = jsonSchema
+	// update label definitions
+	updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios)
+	defer updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios[:1])
 
-	updateLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+	runtimeConsumer := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
+		ID:   runtime.ID,
+		Type: jwtbuilder.RuntimeConsumer,
+	})
 
 	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
 		// set application scenarios label
-		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios)
+		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[1:])
+		defer setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1])
 
-		// register runtime
-		runtimeInput := fixRuntimeInput("runtime")
-		(*runtimeInput.Labels)[scenariosLabel] = scenarios
-		runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
-		require.NoError(t, err)
-
-		registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
-		actualRuntime := graphql.Runtime{}
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeRequest, &actualRuntime)
-		require.NoError(t, err)
-		require.NotEmpty(t, actualRuntime.ID)
-		defer unregisterRuntimeWithinTenant(t, actualRuntime.ID, tenantID)
+		// set runtime scenarios label
+		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
+		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
 
 		// query application
 		actualApp := graphql.Application{}
 
 		// WHEN
 		queryAppReq := fixApplicationRequest(appID)
-		err = tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
-			ID:   actualRuntime.ID,
-			Type: jwtbuilder.RuntimeConsumer,
-		}).Run(queryAppReq, &actualApp)
+		err = runtimeConsumer.Run(queryAppReq, &actualApp)
 
 		//THEN
 		require.NoError(t, err)
@@ -534,30 +521,18 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 	t.Run("Query Application With Consumer Runtime not in same scenario", func(t *testing.T) {
 		// set application scenarios label
-		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1]) // leave out only DEFAULT scenario
+		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1])
 
-		// register runtime
-		runtimeInput := fixRuntimeInput("runtime")
-		(*runtimeInput.Labels)[scenariosLabel] = scenarios[1:] // remove DEFAULT scenario of which the application is part of
-		runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
-		require.NoError(t, err)
-
-		registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
-		actualRuntime := graphql.Runtime{}
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeRequest, &actualRuntime)
-		require.NoError(t, err)
-		require.NotEmpty(t, actualRuntime.ID)
-		defer unregisterRuntimeWithinTenant(t, actualRuntime.ID, tenantID)
+		// set runtime scenarios label
+		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
+		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
 
 		// query application
 		actualApp := graphql.Application{}
 
 		// WHEN
 		queryAppReq := fixApplicationRequest(appID)
-		err = tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
-			ID:   actualRuntime.ID,
-			Type: jwtbuilder.RuntimeConsumer,
-		}).Run(queryAppReq, &actualApp)
+		err = runtimeConsumer.Run(queryAppReq, &actualApp)
 
 		//THEN
 		require.Error(t, err)
