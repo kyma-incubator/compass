@@ -60,7 +60,7 @@ export default async function unassignScenarioHandler(
 
     canDelete =
       !currentEntityLabels[asaLabelKey] ||
-      currentEntityLabels[asaLabelKey] != asaLabelValue;
+      currentEntityLabels[asaLabelKey] !== asaLabelValue;
   }
 
   if (!canDelete) {
