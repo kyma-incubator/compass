@@ -48,7 +48,6 @@ export default function ScenarioAssignment({
     });
   };
 
-  let scenarioAssignments = [];
   const actions = [
     {
       name: 'Delete',
@@ -66,6 +65,7 @@ export default function ScenarioAssignment({
     },
   ];
 
+  let scenarioAssignments = [];
   if (hasScenarioAssignment) {
     scenarioAssignments[0] =
       getScenarioAssignment.automaticScenarioAssignmentForScenario;

@@ -68,9 +68,10 @@ export default function ScenarioApplications({ updateApplicationsCount }) {
     await unassignScenarioHandler(
       application.name,
       application.id,
-      application.labels.scenarios,
+      application.labels,
       removeApplicationFromScenario,
       deleteApplicationScenarios,
+      undefined,
       scenarioName,
       async () => {
         await refetchApplications();

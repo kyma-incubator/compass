@@ -6,6 +6,7 @@ import {
   SET_RUNTIME_SCENARIOS,
   createEqualityQuery,
   DELETE_RUNTIME_SCENARIOS_LABEL,
+  GET_ASSIGNMENT_FOR_SCENARIO,
 } from '../../gql';
 import { SEND_NOTIFICATION } from '../../../../gql';
 
@@ -39,6 +40,17 @@ export default compose(
       return {
         variables: {
           filter: [filter],
+        },
+      };
+    },
+  }),
+  graphql(GET_ASSIGNMENT_FOR_SCENARIO, {
+    name: 'getScenarioAssignment',
+    options: ({ scenarioName }) => {
+      return {
+        errorPolicy: 'all',
+        variables: {
+          scenarioName: scenarioName,
         },
       };
     },

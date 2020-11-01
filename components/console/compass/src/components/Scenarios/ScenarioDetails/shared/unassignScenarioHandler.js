@@ -3,23 +3,31 @@ import LuigiClient from '@luigi-project/client';
 export default async function unassignScenarioHandler(
   entityName,
   entityId,
-  currentEntityScenarios,
+  currentEntityLabels,
   unassignMutation,
   deleteScenarioMutation,
+  scenarioAssignment,
   scenarioName,
   successCallback,
 ) {
   const showConfirmation = () =>
     LuigiClient.uxManager().showConfirmationModal({
       header: `Unassign ${entityName}`,
-      body: `Are you sure you want to unassign ${entityName}?`,
+      body: `Are you sure you want to unassign "${entityName}"?`,
       buttonConfirm: 'Confirm',
       buttonDismiss: 'Cancel',
     });
 
+  const showWarning = () =>
+    LuigiClient.uxManager().showAlert({
+      text: `Please remove the associated automatic scenario assignment.`,
+      type: 'error',
+      closeAfter: 10000,
+    });
+
   const tryDeleteScenario = async () => {
     try {
-      const scenarios = currentEntityScenarios.filter(
+      const scenarios = currentEntityLabels.scenarios.filter(
         scenario => scenario !== scenarioName,
       );
 
@@ -42,42 +50,25 @@ export default async function unassignScenarioHandler(
     }
   };
 
+  let canDelete = true;
+  if (
+    scenarioAssignment &&
+    currentEntityLabels[scenarioAssignment.selector.key]
+  ) {
+    let asaLabelKey = scenarioAssignment.selector.key;
+    let asaLabelValue = scenarioAssignment.selector.value;
+
+    canDelete =
+      !currentEntityLabels[asaLabelKey] ||
+      currentEntityLabels[asaLabelKey] != asaLabelValue;
+  }
+
+  if (!canDelete) {
+    showWarning().catch(() => {});
+    return;
+  }
+
   showConfirmation()
     .then(tryDeleteScenario)
-    .catch(() => {});
-}
-
-export async function unassignScenarioAssignmentHandler(
-  deleteScenarioAssignmentMutation,
-  scenarioName,
-  successCallback,
-) {
-  const showConfirmation = () =>
-    LuigiClient.uxManager().showConfirmationModal({
-      header: `Unassign scenario assignment`,
-      body: `Are you sure you want to delete ${scenarioName}'s automatic scenario assignment?`,
-      buttonConfirm: 'Confirm',
-      buttonDismiss: 'Cancel',
-    });
-
-  const tryDeleteScenarioAssignment = async () => {
-    try {
-      await deleteScenarioAssignmentMutation(scenarioName);
-
-      if (successCallback) {
-        successCallback();
-      }
-    } catch (error) {
-      console.warn(error);
-      LuigiClient.uxManager().showAlert({
-        text: error.message,
-        type: 'error',
-        closeAfter: 10000,
-      });
-    }
-  };
-
-  showConfirmation()
-    .then(tryDeleteScenarioAssignment)
     .catch(() => {});
 }

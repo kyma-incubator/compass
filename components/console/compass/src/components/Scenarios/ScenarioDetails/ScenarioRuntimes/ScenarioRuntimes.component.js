@@ -13,6 +13,7 @@ ScenarioRuntimes.propTypes = {
   getRuntimesForScenario: PropTypes.object.isRequired,
   setRuntimeScenarios: PropTypes.func.isRequired,
   deleteRuntimeScenarios: PropTypes.func.isRequired,
+  getScenarioAssignment: PropTypes.func.isRequired,
 };
 
 export default function ScenarioRuntimes({
@@ -20,14 +21,26 @@ export default function ScenarioRuntimes({
   getRuntimesForScenario,
   setRuntimeScenarios,
   deleteRuntimeScenarios,
+  getScenarioAssignment,
 }) {
   const [sendNotification] = useMutation(SEND_NOTIFICATION);
 
-  if (getRuntimesForScenario.loading) {
+  if (getRuntimesForScenario.loading || getScenarioAssignment.loading) {
     return <p>Loading...</p>;
   }
-  if (getRuntimesForScenario.error) {
-    return `Error! ${getRuntimesForScenario.error.message}`;
+
+  let hasScenarioAssignment = true;
+  if (getRuntimesForScenario.error || getScenarioAssignment.error) {
+    if (getRuntimesForScenario.error) {
+      return `Error! ${getRuntimesForScenario.error.message}`;
+    }
+
+    let assignmentErrorType =
+      getScenarioAssignment.error.graphQLErrors[0].extensions.error;
+    if (!assignmentErrorType.includes('NotFound')) {
+      return `Error! ${getScenarioAssignment.error.message}`;
+    }
+    hasScenarioAssignment = false;
   }
 
   const showSuccessNotification = runtimeName => {
@@ -42,6 +55,12 @@ export default function ScenarioRuntimes({
     });
   };
 
+  let scenarioAssignment = undefined;
+  if (hasScenarioAssignment) {
+    scenarioAssignment =
+      getScenarioAssignment.automaticScenarioAssignmentForScenario;
+  }
+
   const actions = [
     {
       name: 'Unassign',
@@ -49,9 +68,10 @@ export default function ScenarioRuntimes({
         await unassignScenarioHandler(
           runtime.name,
           runtime.id,
-          runtime.labels.scenarios,
+          runtime.labels,
           setRuntimeScenarios,
           deleteRuntimeScenarios,
+          scenarioAssignment,
           scenarioName,
           async () => {
             showSuccessNotification(runtime.name);

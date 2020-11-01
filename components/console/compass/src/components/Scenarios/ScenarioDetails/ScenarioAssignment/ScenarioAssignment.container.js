@@ -49,7 +49,6 @@ export default compose(
       };
     },
   }),
-
   graphql(SEND_NOTIFICATION, {
     name: 'sendNotification',
   }),
