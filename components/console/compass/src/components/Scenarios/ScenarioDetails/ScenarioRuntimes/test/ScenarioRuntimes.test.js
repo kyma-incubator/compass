@@ -19,6 +19,7 @@ describe('ScenarioRuntimes', () => {
         deleteRuntimeScenarios={() => {}}
         setRuntimeScenarios={() => {}}
         sendNotification={() => {}}
+        updateRuntimesCount={() => {}}
       />,
     );
 
