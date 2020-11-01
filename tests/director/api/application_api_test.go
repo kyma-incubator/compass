@@ -477,33 +477,32 @@ func TestQuerySpecificApplication(t *testing.T) {
 		err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
 		saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
 
-		//THEN
+		//THE
 		require.NoError(t, err)
 		assert.Equal(t, appID, actualApp.ID)
 	})
 
+	// update label definitions
+	ctx := context.Background()
+	tenantID := testTenants.GetDefaultTenantID()
+	scenarios := []string{defaultScenario, "test-scenario"}
+
+	jsonSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": scenarios,
+		},
+	}
+	var schema interface{} = jsonSchema
+
+	updateLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+
 	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
-		// update label definitions
-		ctx := context.Background()
-		tenantID := testTenants.GetDefaultTenantID()
-		scenarios := []string{defaultScenario, "test-scenario"}
-
-		jsonSchema := map[string]interface{}{
-			"type":        "array",
-			"minItems":    1,
-			"uniqueItems": true,
-			"items": map[string]interface{}{
-				"type": "string",
-				"enum": scenarios,
-			},
-		}
-		var schema interface{} = jsonSchema
-
-		updateLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
-
 		// set application scenarios label
-		var labelValue interface{} = scenarios // TODO: Check if necessary
-		setApplicationLabel(t, ctx, appID, scenariosLabel, labelValue)
+		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios)
 
 		// register runtime
 		runtimeInput := fixRuntimeInput("runtime")
@@ -534,27 +533,8 @@ func TestQuerySpecificApplication(t *testing.T) {
 	})
 
 	t.Run("Query Application With Consumer Runtime not in same scenario", func(t *testing.T) {
-		// update label definitions
-		ctx := context.Background()
-		tenantID := testTenants.GetDefaultTenantID()
-		scenarios := []string{defaultScenario, "test-scenario"}
-
-		jsonSchema := map[string]interface{}{
-			"type":        "array",
-			"minItems":    1,
-			"uniqueItems": true,
-			"items": map[string]interface{}{
-				"type": "string",
-				"enum": scenarios,
-			},
-		}
-		var schema interface{} = jsonSchema
-
-		updateLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
-
 		// set application scenarios label
-		var labelValue interface{} = scenarios[:1]                     // TODO: Check if necessary
-		setApplicationLabel(t, ctx, appID, scenariosLabel, labelValue) // leave out only DEFAULT scenario
+		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1]) // leave out only DEFAULT scenario
 
 		// register runtime
 		runtimeInput := fixRuntimeInput("runtime")
