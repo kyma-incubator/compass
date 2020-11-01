@@ -2,8 +2,9 @@ package api
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/director/pkg/jwtbuilder"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/director/pkg/jwtbuilder"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
