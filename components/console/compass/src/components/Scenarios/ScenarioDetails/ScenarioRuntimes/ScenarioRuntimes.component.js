@@ -19,6 +19,7 @@ export default function ScenarioRuntimes({
   getRuntimesForScenario,
   setRuntimeScenarios,
   deleteRuntimeScenarios,
+  updateRuntimesCount,
 }) {
   const [sendNotification] = useMutation(SEND_NOTIFICATION);
 
@@ -62,6 +63,7 @@ export default function ScenarioRuntimes({
   ];
 
   const assignedRuntimes = getRuntimesForScenario.runtimes.data;
+  updateRuntimesCount(getRuntimesForScenario.runtimes.totalCount);
 
   const extraHeaderContent = (
     <AssignEntityToScenarioModal

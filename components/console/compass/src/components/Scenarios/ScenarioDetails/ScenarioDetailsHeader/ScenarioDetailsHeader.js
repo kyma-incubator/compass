@@ -36,7 +36,10 @@ function createNewInputForDeleteScenarioMutation(
   };
 }
 
-export default function ScenarioDetailsHeader({ applicationsCount }) {
+export default function ScenarioDetailsHeader({
+  applicationsCount,
+  runtimesCount,
+}) {
   const scenarioName = useContext(ScenarioNameContext);
 
   const { data: scenariosLabelSchema, error, loading } = useQuery(
@@ -54,7 +57,8 @@ export default function ScenarioDetailsHeader({ applicationsCount }) {
   const canDelete = () => {
     return (
       nonDeletableScenarioNames.includes(scenarioName) ||
-      applicationsCount !== 0
+      applicationsCount !== 0 ||
+      runtimesCount !== 0
     );
   };
 
