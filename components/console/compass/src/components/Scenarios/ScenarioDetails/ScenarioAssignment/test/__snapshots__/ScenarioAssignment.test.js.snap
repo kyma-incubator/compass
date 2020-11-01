@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ScenarioAssignment Renders with minimal props 1`] = `
+<GenericListMocked
+  actions={
+    Array [
+      Object {
+        "handler": [Function],
+        "name": "Delete",
+      },
+    ]
+  }
+  entries={
+    Array [
+      Object {
+        "scenarioName": "test-scenario",
+        "selector": Object {
+          "key": "test-key",
+          "value": "test-value",
+        },
+      },
+    ]
+  }
+  headerRenderer={[Function]}
+  notFoundMessage="No Automatic Scenario Assignment for this Scenario"
+  rowRenderer={[Function]}
+  showSearchField={false}
+  title="Automatic Scenario Assignment"
+/>
+`;
