@@ -3,8 +3,10 @@ import PropTypes from 'prop-types';
 import LuigiClient from '@luigi-project/client';
 import RuntimeScenarioModal from './RuntimeScenarioModal.container';
 import { RuntimeQueryContext } from '../RuntimeDetails';
+import { GET_SCENARIO_ASSIGNMENTS } from '../../../Scenarios/gql';
 
 import { GenericList } from 'react-shared';
+import { useQuery } from '@apollo/react-hooks';
 
 RuntimeScenarios.propTypes = {
   runtimeId: PropTypes.string.isRequired,
@@ -21,6 +23,17 @@ export default function RuntimeScenarios({
 }) {
   const runtimeQuery = React.useContext(RuntimeQueryContext);
 
+  let { data: fetchedScenarioAssignments, error, loading } = useQuery(
+    GET_SCENARIO_ASSIGNMENTS,
+  );
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+  if (error) {
+    return <p>{`Error! ${error.message}`}</p>;
+  }
+
   const headerRenderer = () => ['Name'];
   const rowRenderer = label => [<b>{label.scenario}</b>];
   const actions = [
@@ -31,12 +44,31 @@ export default function RuntimeScenarios({
   ];
 
   async function deactivateScenario(entry) {
+    const scenarioAssignments =
+      fetchedScenarioAssignments.automaticScenarioAssignments.data;
     const scenarioName = entry.scenario;
+
+    let canDeactivate = true;
+    scenarioAssignments.forEach(function(asa) {
+      if (asa.scenarioName == scenarioName) {
+        // there's no way to break foreach loop, but the unnecessary iterations should be minimal even in production cases
+        canDeactivate = false;
+      }
+    });
+
+    if (!canDeactivate) {
+      await LuigiClient.uxManager().showAlert({
+        text: `Please remove the associated automatic scenario assignment.`,
+        type: 'error',
+        closeAfter: 5000,
+      });
+      return;
+    }
 
     LuigiClient.uxManager()
       .showConfirmationModal({
         header: 'Deactivate Scenario',
-        body: `Are you sure you want to deactivate ${scenarioName}?`,
+        body: `Are you sure you want to deactivate "${scenarioName}"?`,
         buttonConfirm: 'Confirm',
         buttonDismiss: 'Cancel',
       })
@@ -49,7 +81,7 @@ export default function RuntimeScenarios({
           runtimeQuery.refetch();
           sendNotification({
             variables: {
-              content: `${scenarioName}" deactivated in the runtime.`,
+              content: `"${scenarioName}" deactivated in the runtime.`,
               title: `${scenarioName}`,
               color: '#359c46',
               icon: 'accept',

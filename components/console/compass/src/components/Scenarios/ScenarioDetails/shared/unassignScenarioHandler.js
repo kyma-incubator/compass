@@ -18,11 +18,11 @@ export default async function unassignScenarioHandler(
       buttonDismiss: 'Cancel',
     });
 
-  const showWarning = () =>
+  const showAlert = () =>
     LuigiClient.uxManager().showAlert({
       text: `Please remove the associated automatic scenario assignment.`,
       type: 'error',
-      closeAfter: 10000,
+      closeAfter: 5000,
     });
 
   const tryDeleteScenario = async () => {
@@ -64,7 +64,7 @@ export default async function unassignScenarioHandler(
   }
 
   if (!canDelete) {
-    showWarning().catch(() => {});
+    showAlert().catch(() => {});
     return;
   }
 
