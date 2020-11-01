@@ -18,6 +18,7 @@ describe('ScenarioRuntimes', () => {
         getRuntimesForScenario={responseMock}
         deleteRuntimeScenarios={() => {}}
         setRuntimeScenarios={() => {}}
+        getScenarioAssignment={() => {}}
         sendNotification={() => {}}
       />,
     );
