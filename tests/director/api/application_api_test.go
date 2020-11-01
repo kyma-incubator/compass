@@ -24,6 +24,7 @@ const (
 	addWebhookCategory          = "add webhook"
 	updateWebhookCategory       = "update webhook"
 	webhookURL                  = "https://kyma-project.io"
+	defaultScenario             = "DEFAULT"
 )
 
 var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
@@ -465,17 +466,122 @@ func TestQuerySpecificApplication(t *testing.T) {
 	err = tc.RunOperation(context.Background(), request, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	createdID := actualApp.ID
-	defer unregisterApplication(t, actualApp.ID)
+	appID := actualApp.ID
+	defer unregisterApplication(t, appID)
 
-	// WHEN
-	queryAppReq := fixApplicationRequest(actualApp.ID)
-	err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
-	saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
+	t.Run("Query Application With Consumer User", func(t *testing.T) {
+		actualApp := graphql.Application{}
 
-	//THEN
-	require.NoError(t, err)
-	assert.Equal(t, createdID, actualApp.ID)
+		// WHEN
+		queryAppReq := fixApplicationRequest(appID)
+		err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
+		saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, appID, actualApp.ID)
+	})
+
+	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
+		// update label definitions
+		ctx := context.Background()
+		tenantID := testTenants.GetDefaultTenantID()
+		scenarios := []string{defaultScenario, "test-scenario"}
+
+		jsonSchema := map[string]interface{}{
+			"type":        "array",
+			"minItems":    1,
+			"uniqueItems": true,
+			"items": map[string]interface{}{
+				"type": "string",
+				"enum": scenarios,
+			},
+		}
+		var schema interface{} = jsonSchema
+
+		updateLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+
+		// set application scenarios label
+		var labelValue interface{} = scenarios // TODO: Check if necessary
+		setApplicationLabel(t, ctx, appID, scenariosLabel, labelValue)
+
+		// register runtime
+		runtimeInput := fixRuntimeInput("runtime")
+		(*runtimeInput.Labels)[scenariosLabel] = scenarios
+		runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+		require.NoError(t, err)
+
+		registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
+		actualRuntime := graphql.Runtime{}
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeRequest, &actualRuntime)
+		require.NoError(t, err)
+		require.NotEmpty(t, actualRuntime.ID)
+		defer unregisterRuntimeWithinTenant(t, actualRuntime.ID, tenantID)
+
+		// query application
+		actualApp := graphql.Application{}
+
+		// WHEN
+		queryAppReq := fixApplicationRequest(appID)
+		err = tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
+			ID:   actualRuntime.ID,
+			Type: jwtbuilder.RuntimeConsumer,
+		}).Run(queryAppReq, &actualApp)
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, appID, actualApp.ID)
+	})
+
+	t.Run("Query Application With Consumer Runtime not in same scenario", func(t *testing.T) {
+		// update label definitions
+		ctx := context.Background()
+		tenantID := testTenants.GetDefaultTenantID()
+		scenarios := []string{defaultScenario, "test-scenario"}
+
+		jsonSchema := map[string]interface{}{
+			"type":        "array",
+			"minItems":    1,
+			"uniqueItems": true,
+			"items": map[string]interface{}{
+				"type": "string",
+				"enum": scenarios,
+			},
+		}
+		var schema interface{} = jsonSchema
+
+		updateLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+
+		// set application scenarios label
+		var labelValue interface{} = scenarios[:1]                     // TODO: Check if necessary
+		setApplicationLabel(t, ctx, appID, scenariosLabel, labelValue) // leave out only DEFAULT scenario
+
+		// register runtime
+		runtimeInput := fixRuntimeInput("runtime")
+		(*runtimeInput.Labels)[scenariosLabel] = scenarios[1:] // remove DEFAULT scenario of which the application is part of
+		runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+		require.NoError(t, err)
+
+		registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
+		actualRuntime := graphql.Runtime{}
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeRequest, &actualRuntime)
+		require.NoError(t, err)
+		require.NotEmpty(t, actualRuntime.ID)
+		defer unregisterRuntimeWithinTenant(t, actualRuntime.ID, tenantID)
+
+		// query application
+		actualApp := graphql.Application{}
+
+		// WHEN
+		queryAppReq := fixApplicationRequest(appID)
+		err = tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
+			ID:   actualRuntime.ID,
+			Type: jwtbuilder.RuntimeConsumer,
+		}).Run(queryAppReq, &actualApp)
+
+		//THEN
+		require.Error(t, err)
+	})
 }
 
 func TestTenantSeparation(t *testing.T) {
@@ -630,11 +736,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	ctx := context.Background()
 	tenantID := testTenants.GetIDByName(t, "TestApplicationsForRuntimeWithHiddenApps")
 	expectedApplications := []*graphql.Application{}
+
 	defaultValue := "DEFAULT"
 	scenarios := []string{defaultValue, "test-scenario"}
-
-	applicationHideSelectorKey := "applicationHideSelectorKey"
-	applicationHideSelectorValue := "applicationHideSelectorValue"
 
 	jsonSchema := map[string]interface{}{
 		"type":        "array",
@@ -670,6 +774,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 			Hidden:          true,
 		},
 	}
+
+	applicationHideSelectorKey := "applicationHideSelectorKey"
+	applicationHideSelectorValue := "applicationHideSelectorValue"
 
 	for _, testApp := range applications {
 		applicationInput := fixSampleApplicationRegisterInput(testApp.ApplicationName)

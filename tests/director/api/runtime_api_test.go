@@ -152,7 +152,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	marshalledSchema := marshalJSONSchema(t, schema)
 
 	givenLabelDef := graphql.LabelDefinitionInput{
-		Key:    "scenarios",
+		Key:    scenariosLabel,
 		Schema: marshalledSchema,
 	}
 	labelDefInGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(givenLabelDef)
