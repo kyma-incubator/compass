@@ -30,7 +30,7 @@ describe('Runtimes', () => {
     expectNumberOfRows(test, [MOCK_GET_RUNTIMES]);
   });
 
-  it('Renders additional runtiems when scrolled to bottom', async () => {
+  it('Renders additional runtimes when scrolled to bottom', async () => {
     const test = render(
       <MockedProvider
         mocks={[MOCK_GET_RUNTIMES, MOCK_GET_ADDITIONAL_RUNTIMES]}
