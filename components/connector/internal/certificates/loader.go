@@ -11,6 +11,7 @@ import (
 )
 
 const interval = 1 * time.Minute
+const certLoaderCorrelationID = "cert-loader"
 
 type Loader interface {
 	Run(ctx context.Context)
@@ -36,10 +37,11 @@ func NewCertificateLoader(certsCache Cache,
 }
 
 func (cl *certLoader) Run(ctx context.Context) {
+	ctx = cl.configureLogger(ctx)
 	for {
 		select {
 		case <-ctx.Done():
-			log.C(ctx).Info("context cancelled, stopping cert loader...")
+			log.C(ctx).Info("Context cancelled, stopping cert loader...")
 			return
 		default:
 		}
@@ -62,4 +64,10 @@ func (cl *certLoader) loadSecretToCache(ctx context.Context, secret types.Namesp
 	}
 
 	cl.certsCache.Put(secret.Name, secretData)
+}
+
+func (cl *certLoader) configureLogger(ctx context.Context) context.Context {
+	entry := log.C(ctx)
+	entry = entry.WithField(log.FieldRequestID, certLoaderCorrelationID)
+	return log.ContextWithLogger(ctx, entry)
 }

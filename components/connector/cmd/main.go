@@ -62,13 +62,13 @@ func main() {
 
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
-	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication)
+	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, log.RequestLogger(), authContextMiddleware.PropagateAuthentication)
 	exitOnError(err, "Failed configuring external graphQL handler")
 
-	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, api.NewTokenResolver(internalComponents.TokenService))
+	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, api.NewTokenResolver(internalComponents.TokenService), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
-	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository)
+	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository, log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	wg := &sync.WaitGroup{}

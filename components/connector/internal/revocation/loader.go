@@ -11,6 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
+const revocationListLoaderCorrelationID = "revocation-list-loader"
+
 type Loader interface {
 	Run(ctx context.Context)
 }
@@ -36,6 +38,10 @@ func NewRevokedCertificatesLoader(revokedCertsCache Cache,
 }
 
 func (rl *revokedCertificatesLoader) Run(ctx context.Context) {
+	entry := log.C(ctx)
+	entry = entry.WithField(log.FieldRequestID, revocationListLoaderCorrelationID)
+	ctx = log.ContextWithLogger(ctx, entry)
+
 	rl.startKubeWatch(ctx)
 }
 
@@ -43,7 +49,7 @@ func (rl *revokedCertificatesLoader) startKubeWatch(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.C(ctx).Info("context cancelled, stopping revocation config map watcher...")
+			log.C(ctx).Info("Context cancelled, stopping revocation config map watcher...")
 			return
 		default:
 		}
@@ -80,7 +86,7 @@ func (rl *revokedCertificatesLoader) processEvents(ctx context.Context, events <
 			case watch.Added:
 				fallthrough
 			case watch.Modified:
-				log.C(ctx).Info("revocation list updated")
+				log.C(ctx).Info("Revocation list updated")
 				config, ok := ev.Object.(*v1.ConfigMap)
 				if !ok {
 					log.C(ctx).Error("Unexpected error: object is not configmap. Try again")
@@ -89,7 +95,7 @@ func (rl *revokedCertificatesLoader) processEvents(ctx context.Context, events <
 				rl.revokedCertsCache.Put(config.Data)
 				log.C(ctx).Debugf("New configmap is: %s", config.Data)
 			case watch.Deleted:
-				log.C(ctx).Info("revocation list deleted")
+				log.C(ctx).Info("Revocation list deleted")
 				rl.revokedCertsCache.Put(make(map[string]string))
 			case watch.Error:
 				log.C(ctx).Error("Error event is received, stop revocation list configmap watcher and try again...")
