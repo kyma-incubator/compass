@@ -507,7 +507,6 @@ func TestQuerySpecificApplication(t *testing.T) {
 		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
 		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
 
-		// query application
 		actualApp := graphql.Application{}
 
 		// WHEN
@@ -527,7 +526,6 @@ func TestQuerySpecificApplication(t *testing.T) {
 		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
 		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
 
-		// query application
 		actualApp := graphql.Application{}
 
 		// WHEN
