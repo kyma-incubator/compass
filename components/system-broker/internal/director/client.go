@@ -69,6 +69,8 @@ type GraphQLClient struct {
 }
 
 func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutput, error) {
+	// TODO: Make configurable
+	maxRequests := make(chan struct{}, 100)
 	query := fmt.Sprintf(`query {
 			result: applications(first: %%d, after: %%q) {
 					%s
@@ -87,14 +89,14 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutp
 		return nil, err
 	}
 
-	if err := c.fetchPackagesForApps(ctx, appsResult); err != nil {
+	if err := c.fetchPackagesForApps(ctx, appsResult, maxRequests); err != nil {
 		return nil, errors.Wrap(err, "while fetching packages")
 	}
 
 	return appsResult, nil
 }
 
-func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps ApplicationsOutput) error {
+func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps ApplicationsOutput, maxRequests chan struct{}) error {
 	wg := sync.WaitGroup{}
 	childContext, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -104,13 +106,15 @@ func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps Applicati
 	for i, app := range apps {
 		wg.Add(3)
 		go func(i int, app schema.ApplicationExt) {
+			maxRequests <- struct{}{}
+			defer func() {
+				<-maxRequests
+			}()
 			select {
 			case <-childContext.Done():
 				return
 			default:
 			}
-			fmt.Println(">>>>> START Packages")
-			defer fmt.Println(">>>>> End Packages")
 
 			query := fmt.Sprintf(`query {
 			result: application(id: %q) {
@@ -139,9 +143,9 @@ func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps Applicati
 				Data: packagesResult,
 			}
 
-			go c.fetchApiDefinitions(childContext, app.ID, packagesResult, &wg, errChan)
-			go c.fetchEventDefinitions(childContext, app.ID, packagesResult, &wg, errChan)
-			go c.fetchDocuments(childContext, app.ID, packagesResult, &wg, errChan)
+			go c.fetchApiDefinitions(childContext, app.ID, packagesResult, &wg, errChan, maxRequests)
+			go c.fetchEventDefinitions(childContext, app.ID, packagesResult, &wg, errChan, maxRequests)
+			go c.fetchDocuments(childContext, app.ID, packagesResult, &wg, errChan, maxRequests)
 		}(i, app)
 	}
 
@@ -161,17 +165,17 @@ func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps Applicati
 	}
 }
 
-func (c *GraphQLClient) fetchApiDefinitions(ctx context.Context, appID string, packages PackagessOutput, wg *sync.WaitGroup, errChan chan<- error) {
+func (c *GraphQLClient) fetchApiDefinitions(ctx context.Context, appID string, packages PackagessOutput, wg *sync.WaitGroup, errChan chan<- error, maxRequests chan struct{}) {
 	defer wg.Done()
-	fmt.Println(">>>>> START ApiDefinitions")
-	defer fmt.Println(">>>>> End ApiDefinitions")
-
-	innerWg := sync.WaitGroup{}
 
 	for i, packaged := range packages {
-		innerWg.Add(1)
+		wg.Add(1)
 		go func(i int, packaged *schema.PackageExt) {
-			defer innerWg.Done()
+			maxRequests <- struct{}{}
+			defer func() {
+				<-maxRequests
+			}()
+			defer wg.Done()
 			select {
 			case <-ctx.Done():
 				return
@@ -208,20 +212,19 @@ func (c *GraphQLClient) fetchApiDefinitions(ctx context.Context, appID string, p
 			}
 		}(i, packaged)
 	}
-	innerWg.Wait()
 }
 
-func (c *GraphQLClient) fetchEventDefinitions(ctx context.Context, appID string, packages PackagessOutput, wg *sync.WaitGroup, errChan chan<- error) {
+func (c *GraphQLClient) fetchEventDefinitions(ctx context.Context, appID string, packages PackagessOutput, wg *sync.WaitGroup, errChan chan<- error, maxRequests chan struct{}) {
 	defer wg.Done()
 
-	innerWg := sync.WaitGroup{}
-
-	fmt.Println(">>>>> START EventDefinitions")
-	defer fmt.Println(">>>>> End EventDefinitions")
 	for i, packaged := range packages {
-		innerWg.Add(1)
-		go func(i int, app *schema.PackageExt) {
-			defer innerWg.Done()
+		wg.Add(1)
+		go func(i int, packaged *schema.PackageExt) {
+			maxRequests <- struct{}{}
+			defer func() {
+				<-maxRequests
+			}()
+			defer wg.Done()
 			select {
 			case <-ctx.Done():
 				return
@@ -258,21 +261,20 @@ func (c *GraphQLClient) fetchEventDefinitions(ctx context.Context, appID string,
 			}
 		}(i, packaged)
 	}
-
-	innerWg.Wait()
 }
 
-func (c *GraphQLClient) fetchDocuments(ctx context.Context, appID string, packages PackagessOutput, wg *sync.WaitGroup, errChan chan<- error) {
+func (c *GraphQLClient) fetchDocuments(ctx context.Context, appID string, packages PackagessOutput, wg *sync.WaitGroup, errChan chan<- error, maxRequests chan struct{}) {
 	defer wg.Done()
-	fmt.Println(">>>>> START Documents")
-	defer fmt.Println(">>>>> End Documents")
-
-	innerWg := sync.WaitGroup{}
 
 	for i, packaged := range packages {
-		innerWg.Add(1)
+		wg.Add(1)
 		go func(i int, packaged *schema.PackageExt) {
-			defer innerWg.Done()
+			maxRequests <- struct{}{}
+			defer func() {
+				<-maxRequests
+			}()
+
+			defer wg.Done()
 			select {
 			case <-ctx.Done():
 				return
@@ -309,7 +311,6 @@ func (c *GraphQLClient) fetchDocuments(ctx context.Context, appID string, packag
 
 		}(i, packaged)
 	}
-	innerWg.Wait()
 }
 
 func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *RequestPackageInstanceCredentialsInput) (*RequestPackageInstanceCredentialsOutput, error) {

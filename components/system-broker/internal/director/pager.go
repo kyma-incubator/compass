@@ -45,27 +45,10 @@ func (p *Pager) Next(ctx context.Context, output PageItem) error {
 
 	query := p.QueryGenerator(p.PageSize, p.PageToken)
 	req := gcli.NewRequest(query)
-	// fmt.Println(">>>query", query)
-	// segments := strings.Split(p.PageInfoPath, ".")
-
-	// var response map[string]interface{}
-
-	// var pageInfo graphql.PageInfo
-
 	err := p.Client.Do(ctx, req, &output)
 	if err != nil {
 		return errors.Wrap(err, "while getting page")
 	}
-
-	// var r = response
-	// for _, s := range segments {
-	// 	r = r[s].(map[string]interface{})
-	// }
-
-	// mapstructure.Decode(r["data"], &output)
-	// mapstructure.Decode(r["pageInfo"], &pageInfo)
-
-	// fmt.Println(">>>result", output)
 
 	pageInfo := output.PageInfo()
 	if !pageInfo.HasNextPage {
@@ -103,28 +86,6 @@ func (p *Pager) ListAll(ctx context.Context, output interface{}) error {
 	reflect.ValueOf(output).Elem().Set(allItems)
 	return nil
 }
-
-// func (p *Pager) ListAll(ctx context.Context, output interface{}) error {
-// 	itemsType := reflect.TypeOf(output)
-// 	if itemsType.Kind() != reflect.Ptr || itemsType.Elem().Kind() != reflect.Slice {
-// 		return fmt.Errorf("items should be a pointer to a slice, but got %v", itemsType)
-// 	}
-
-// 	allItems := reflect.MakeSlice(itemsType.Elem(), 0, 0)
-
-// 	for p.HasNext() {
-// 		pageSlice := reflect.New(itemsType.Elem())
-// 		err := p.Next(ctx, pageSlice.Interface())
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		allItems = reflect.AppendSlice(allItems, pageSlice.Elem())
-// 	}
-
-// 	reflect.ValueOf(output).Elem().Set(allItems)
-// 	return nil
-// }
 
 type PageItem interface {
 	PageInfo() *graphql.PageInfo
