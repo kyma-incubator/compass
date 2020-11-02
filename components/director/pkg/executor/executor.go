@@ -1,16 +1,17 @@
 package executor
 
 import (
+	"context"
 	"time"
 )
 
 type periodic struct {
 	refreshPeriod time.Duration
-	executionFunc func(stopCh <-chan struct{})
+	executionFunc func(context.Context)
 }
 
 // NewPeriodic creates a periodic executor, which calls given executionFunc periodically.
-func NewPeriodic(period time.Duration, executionFunc func(stopCh <-chan struct{})) *periodic {
+func NewPeriodic(period time.Duration, executionFunc func(context.Context)) *periodic {
 	return &periodic{
 		refreshPeriod: period,
 		executionFunc: executionFunc,
@@ -18,13 +19,13 @@ func NewPeriodic(period time.Duration, executionFunc func(stopCh <-chan struct{}
 }
 
 // Run starts the periodic work
-func (e *periodic) Run(stopCh <-chan struct{}) {
+func (e *periodic) Run(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(e.refreshPeriod)
 		for {
-			e.executionFunc(stopCh)
+			e.executionFunc(ctx)
 			select {
-			case <-stopCh:
+			case <-ctx.Done():
 				ticker.Stop()
 				return
 			case <-ticker.C:

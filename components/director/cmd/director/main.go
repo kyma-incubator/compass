@@ -97,6 +97,13 @@ type config struct {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
+
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
@@ -111,8 +118,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	stopCh := signal.SetupChannel()
-	cfgProvider := createAndRunConfigProvider(stopCh, cfg)
+	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
 	log.Infof("Registering metrics collectors...")
 	metricsCollector := metrics.NewCollector()
@@ -147,13 +153,13 @@ func main() {
 
 	if cfg.JWKSSyncPeriod != 0 {
 		log.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
-		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(stopCh <-chan struct{}) {
+		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
 			err := authMiddleware.SynchronizeJWKS()
 			if err != nil {
 				log.Error(errors.Wrap(err, "while synchronizing JWKS"))
 			}
 		})
-		go periodicExecutor.Run(stopCh)
+		go periodicExecutor.Run(ctx)
 	}
 
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository(), log.New())
@@ -180,7 +186,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	log.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, stopCh, cfg.Features.DefaultScenarioEnabled)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled)
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
@@ -201,7 +207,7 @@ func main() {
 	runMainSrv, shutdownMainSrv := createServer(cfg.Address, mainRouter, "main", cfg.ServerTimeout)
 
 	go func() {
-		<-stopCh
+		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
 		shutdownMetricsSrv()
 		shutdownMainSrv()
@@ -237,17 +243,17 @@ func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
 	return out, nil
 }
 
-func createAndRunConfigProvider(stopCh <-chan struct{}, cfg config) *configprovider.Provider {
+func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
 	provider := configprovider.NewProvider(cfg.ConfigurationFile)
 	err := provider.Load()
 	exitOnError(err, "Error on loading configuration file")
-	executor.NewPeriodic(cfg.ConfigurationFileReload, func(stopCh <-chan struct{}) {
+	executor.NewPeriodic(cfg.ConfigurationFileReload, func(ctx context.Context) {
 		if err := provider.Load(); err != nil {
 			exitOnError(err, "Error from Reloader watch")
 		}
 		log.Infof("Successfully reloaded configuration file")
 
-	}).Run(stopCh)
+	}).Run(ctx)
 
 	return provider
 }
@@ -293,7 +299,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsers
 	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
 	logger := log.WithField("component", "runtime-mapping-handler").Logger
 
 	uidSvc := uid.NewService()
@@ -322,9 +328,9 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 	jwksCache := runtimemapping.NewJWKsCache(logger, jwksFetch, cachePeriod)
 	tokenVerifier := runtimemapping.NewTokenVerifier(logger, jwksCache)
 
-	executor.NewPeriodic(1*time.Minute, func(stopCh <-chan struct{}) {
+	executor.NewPeriodic(1*time.Minute, func(ctx context.Context) {
 		jwksCache.Cleanup()
-	}).Run(stopCh)
+	}).Run(ctx)
 
 	return runtimemapping.NewHandler(
 		logger,
