@@ -24,7 +24,7 @@ func TestTokenResolver_GenerateApplicationToken(t *testing.T) {
 	t.Run("should generate Application token", func(t *testing.T) {
 		// given
 		tokenSvc := &mocks.Service{}
-		tokenSvc.On("CreateToken", appAuthId, tokens.ApplicationToken).Return(token, nil)
+		tokenSvc.On("CreateToken", mock.Anything, appAuthId, tokens.ApplicationToken).Return(token, nil)
 
 		tokenResolver := NewTokenResolver(tokenSvc)
 
@@ -40,7 +40,7 @@ func TestTokenResolver_GenerateApplicationToken(t *testing.T) {
 	t.Run("should return error when failed generate Application token", func(t *testing.T) {
 		// given
 		tokenSvc := &mocks.Service{}
-		tokenSvc.On("CreateToken", appAuthId, tokens.ApplicationToken).Return("", apperrors.Internal("error"))
+		tokenSvc.On("CreateToken", mock.Anything, appAuthId, tokens.ApplicationToken).Return("", apperrors.Internal("error"))
 
 		tokenResolver := NewTokenResolver(tokenSvc)
 
@@ -60,7 +60,7 @@ func TestTokenResolver_GenerateRuntimeToken(t *testing.T) {
 	t.Run("should generate Runtime token", func(t *testing.T) {
 		// given
 		tokenSvc := &mocks.Service{}
-		tokenSvc.On("CreateToken", runtimeAuthId, tokens.RuntimeToken).Return(token, nil)
+		tokenSvc.On("CreateToken", mock.Anything, runtimeAuthId, tokens.RuntimeToken).Return(token, nil)
 
 		tokenResolver := NewTokenResolver(tokenSvc)
 
@@ -76,7 +76,7 @@ func TestTokenResolver_GenerateRuntimeToken(t *testing.T) {
 	t.Run("should return error when failed generate Runtime token", func(t *testing.T) {
 		// given
 		tokenSvc := &mocks.Service{}
-		tokenSvc.On("CreateToken", runtimeAuthId, tokens.RuntimeToken).Return("", apperrors.Internal("error"))
+		tokenSvc.On("CreateToken", mock.Anything, runtimeAuthId, tokens.RuntimeToken).Return("", apperrors.Internal("error"))
 
 		tokenResolver := NewTokenResolver(tokenSvc)
 
