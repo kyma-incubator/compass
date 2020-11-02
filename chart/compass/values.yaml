@@ -23,7 +23,7 @@ global:
       version: "PR-1595"
     director:
       dir:
-      version: "PR-1594"
+      version: "PR-1591"
     gateway:
       dir:
       version: "PR-1595"
@@ -40,14 +40,14 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1460"
+      version: "PR-1591"
     metris:
       dir:
       version: "PR-1434"
     tests:
       director:
         dir:
-        version: "PR-1588"
+        version: "PR-1591"
       connector:
         dir:
         version: "PR-1582"

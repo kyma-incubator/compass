@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/components/gateway
 go 1.13
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4
 	github.com/kyma-incubator/compass/components/director v0.0.0-20201102113127-98bfd9c66077
