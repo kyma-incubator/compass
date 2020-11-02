@@ -2,8 +2,9 @@ package httputils
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"io"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 func Close(ctx context.Context, closer io.Closer) {

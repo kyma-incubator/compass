@@ -2,8 +2,9 @@ package config
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 type Config struct {

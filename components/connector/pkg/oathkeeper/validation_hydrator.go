@@ -3,8 +3,9 @@ package oathkeeper
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/httputils"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"

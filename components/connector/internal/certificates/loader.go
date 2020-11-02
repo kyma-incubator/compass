@@ -2,8 +2,9 @@ package certificates
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
 	"k8s.io/apimachinery/pkg/types"

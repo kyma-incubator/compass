@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 

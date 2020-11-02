@@ -3,8 +3,9 @@ package httputils
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 func RespondWithBody(ctx context.Context, w http.ResponseWriter, status int, data interface{}) {

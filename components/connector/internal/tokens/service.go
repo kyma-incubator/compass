@@ -2,6 +2,7 @@ package tokens
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )

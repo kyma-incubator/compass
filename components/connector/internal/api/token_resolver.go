@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"

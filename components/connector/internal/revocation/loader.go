@@ -2,8 +2,9 @@ package revocation
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

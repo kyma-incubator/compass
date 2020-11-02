@@ -17,9 +17,10 @@
 package log
 
 import (
-	"github.com/google/uuid"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/sirupsen/logrus"
 )
