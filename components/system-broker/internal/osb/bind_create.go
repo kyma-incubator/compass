@@ -18,9 +18,7 @@ package osb
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
@@ -57,7 +55,7 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 
 	logger.Info("Fetching package instance credentials")
 	var auths []*schema.PackageInstanceAuth
-	getResp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialsByContextInput{
+	getResp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialsByContextInput{ // TODO: Use queryPackageInstanceAuth
 		ApplicationID: appID,
 		PackageID:     packageID,
 		Context: map[string]string{
@@ -79,12 +77,19 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 			}
 		}
 
-		createResp, err := b.credentialsCreator.RequestPackageInstanceCredentialsCreation(ctx, &director.RequestPackageInstanceCredentialsInput{
-			PackageID: packageID,
-			Context: director.Values{
-				"instance_id": instanceID,
-				"binding_id":  bindingID,
-			},
+		rawContext := director.Values{}
+		if details.RawContext != nil {
+			if err := json.Unmarshal(details.RawContext, &rawContext); err != nil {
+				return domain.Binding{}, errors.Wrap(err, "while unmarshaling raw context")
+			}
+		}
+
+		rawContext["instance_id"] = instanceID
+		rawContext["binding_id"] = bindingID
+
+		createResp, err := b.credentialsCreator.RequestPackageInstanceCredentialsCreation(ctx, &director.RequestPackageInstanceCredentialsInput{ // TODO: Use createPackageInstanceAuth
+			PackageID:   packageID,
+			Context:     rawContext,
 			InputSchema: rawParams,
 		})
 		if err != nil {
@@ -108,11 +113,9 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 
 	logger.Info("Successfully found package instance credentials")
 
-	op := fmt.Sprintf("%s:%s:%s:%s", BindOp, appID, packageID, auth.ID)
-	encodedOp := base64.URLEncoding.EncodeToString([]byte(op))
 	return domain.Binding{
 		IsAsync:       true,
 		AlreadyExists: exists,
-		OperationData: encodedOp,
+		OperationData: string(BindOp),
 	}, nil
 }

@@ -18,12 +18,9 @@ package osb
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
@@ -37,19 +34,10 @@ type BindLastOperationEndpoint struct {
 func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, instanceID, bindingID string, details domain.PollDetails) (domain.LastOperation, error) {
 	log.C(ctx).Infof("LastBindingOperation instanceID: %s bindingID: %s details: %+v", instanceID, bindingID, details)
 
-	opBytes, err := base64.URLEncoding.DecodeString(details.OperationData)
-	if err != nil {
-		return domain.LastOperation{}, errors.Wrapf(err, "while decoding base64 encoded op %s", details.OperationData)
-	}
-
-	args := strings.Split(string(opBytes), ":")
-	if len(args) != 4 {
-		return domain.LastOperation{}, errors.Errorf("operation must contain 4 segments separated by : but was %s", details.OperationData)
-	}
-	opType := args[0]
-	appID := args[1]
-	packageID := args[2]
-	authID := args[3]
+	opType := details.OperationData
+	appID := details.ServiceID  // may be empty per OSB spec
+	packageID := details.PlanID // may be empty per OSB spec
+	authID := bindingID
 
 	logger := log.C(ctx).WithFields(map[string]interface{}{
 		"opType":     opType,
@@ -61,7 +49,7 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 	})
 
 	logger.Info("Fetching package instance credentials")
-	resp, err := b.credentialsGetter.FindPackageInstanceCredentials(ctx, &director.FindPackageInstanceCredentialInput{
+	resp, err := b.credentialsGetter.FindPackageInstanceCredentials(ctx, &director.FindPackageInstanceCredentialInput{ // TODO: Use queryPackageInstanceAuth
 		PackageID:      packageID,
 		ApplicationID:  appID,
 		InstanceAuthID: authID,
@@ -84,7 +72,7 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 	auth := resp.InstanceAuth
 
 	if auth.Context == nil {
-		return domain.LastOperation{}, errors.New("auth context must contain service binding id but was empty")
+		return domain.LastOperation{}, errors.New("auth context must contain service instance and binding id but was empty")
 	}
 	var authContext map[string]string
 	if err := json.Unmarshal([]byte(*auth.Context), &authContext); err != nil {

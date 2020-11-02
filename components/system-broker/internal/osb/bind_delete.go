@@ -18,7 +18,6 @@ package osb
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/pkg/errors"
@@ -51,7 +50,7 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 
 	logger.Info("Fetching package instance credentials")
 
-	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialsByContextInput{
+	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialsByContextInput{ // TODO: Use queryPackageInstanceAuth + sanity check IDs
 		ApplicationID: appID,
 		PackageID:     packageID,
 		Context: map[string]string{
@@ -101,11 +100,8 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 
 	logger.Info("Successfully requested deletion of package instance credentials")
 
-	op := fmt.Sprintf("%s:%s:%s:%s", UnbindOp, appID, packageID, auth.ID)
-	encodedOp := base64.URLEncoding.EncodeToString([]byte(op))
-
 	return domain.UnbindSpec{
 		IsAsync:       true,
-		OperationData: encodedOp,
+		OperationData: string(UnbindOp),
 	}, nil
 }

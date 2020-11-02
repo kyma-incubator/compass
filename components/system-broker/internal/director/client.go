@@ -180,11 +180,8 @@ func (c *GraphQLClient) FindPackageInstanceCredentialsForContext(ctx context.Con
 		}
 
 		shouldReturn := true
-		for key, value := range in.Context {
-			authContextValue, found := authContext[key]
-			if !found || authContextValue != value {
-				shouldReturn = false
-			}
+		if authContext["instance_id"] != in.Context["instance_id"] || authContext["binding_id"] != in.Context["binding_id"] {
+			shouldReturn = false
 		}
 
 		if shouldReturn {

@@ -51,7 +51,7 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 
 	logger.Info("Fetching package instance credentials")
 
-	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialsByContextInput{
+	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialsByContextInput{ // TODO: Use queryPackageInstanceAuth + saanity check
 		ApplicationID: appID,
 		PackageID:     packageID,
 		Context: map[string]string{
