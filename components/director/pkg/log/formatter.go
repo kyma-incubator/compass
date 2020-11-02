@@ -72,11 +72,11 @@ func (f *Formatter) Format(e *logrus.Entry) ([]byte, error) {
 	}
 	delete(e.Data, fieldComponentName)
 
-	correlationID, exists := e.Data[FieldCorrelationID].(string)
+	correlationID, exists := e.Data[FieldRequestID].(string)
 	if !exists {
 		correlationID = "-"
 	}
-	delete(e.Data, FieldCorrelationID)
+	delete(e.Data, FieldRequestID)
 
 	if errorField, exists := e.Data[logrus.ErrorKey].(error); exists {
 		e.Message = e.Message + ": " + errorField.Error()

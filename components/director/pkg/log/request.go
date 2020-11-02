@@ -17,33 +17,20 @@
 package log
 
 import (
+	"github.com/google/uuid"
 	"net/http"
 	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
-// CorrelationIDHeaders are the headers whose values will be taken as a correlation id for incoming requests
-var CorrelationIDHeaders = []string{
-	"X-Correlation-ID",
-	"X-CorrelationID",
-	"X-ForRequest-ID",
-	"X-Request-ID",
-	"X-Request-Id",
-	"X-Vcap-Request-Id",
-	"X-Broker-API-Request-Identity"}
-
-type UUIDService interface {
-	Generate() string
-}
-
 //RequestLogger returns middleware that setups request scoped logging
-func RequestLogger(service UUIDService) func(next http.Handler) http.Handler {
+func RequestLogger() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			entry := C(ctx)
-			if correlationID := CorrelationIDForRequest(r, service); correlationID != "" {
+			if correlationID := CorrelationIDForRequest(r); correlationID != "" {
 				entry = entry.WithField(FieldRequestID, correlationID)
 			}
 			ctx = ContextWithLogger(ctx, entry)
@@ -79,26 +66,6 @@ func RequestLogger(service UUIDService) func(next http.Handler) http.Handler {
 	}
 }
 
-// CorrelationIDForRequest returns checks the http headers for any of the supported correlation id headers.
-// The first that matches is taken as the correlation id. If none exists a new one is generated.
-func CorrelationIDForRequest(request *http.Request, service UUIDService) string {
-	ctx := request.Context()
-	logger := C(ctx)
-	for _, header := range CorrelationIDHeaders {
-		headerValue := request.Header.Get(header)
-		if headerValue != "" && headerValue != Configuration().BootstrapCorrelationID {
-			return headerValue
-		}
-	}
-
-	//this header setting is used both for http client outbound requests and for inbound broker api requests as middlewares.AddCorrelationIDToContext will look at headers
-	correlationID, exists := logger.Data[FieldRequestID].(string)
-	if exists && correlationID != Configuration().BootstrapCorrelationID {
-		request.Header.Set(CorrelationIDHeaders[0], correlationID)
-	} else {
-		correlationID = service.Generate()
-		request.Header.Set(CorrelationIDHeaders[0], correlationID)
-	}
-
-	return correlationID
+func CorrelationIDForRequest(request *http.Request) string {
+	return uuid.New().String() // TODO: When Desi's change is in place
 }

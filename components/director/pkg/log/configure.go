@@ -63,8 +63,8 @@ var (
 func init() {
 	// Configure default logger in init so we can log even before actual logging settings are loaded
 	hook := prepareLogSourceHook()
-	defaultEntry.Logger.AddHook(hook)
-	defaultEntry.Logger.AddHook(&ErrorLocationHook{})
+	AddHook(hook)
+	AddHook(&ErrorLocationHook{})
 	defaultEntry = defaultEntry.WithField(FieldRequestID, currentSettings.BootstrapCorrelationID)
 
 	_, err := Configure(context.Background(), currentSettings)

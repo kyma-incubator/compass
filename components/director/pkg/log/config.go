@@ -16,9 +16,54 @@
 
 package log
 
+import (
+	"fmt"
+	"github.com/sirupsen/logrus"
+	"os"
+)
+
 type Config struct {
 	Level                  string `envconfig:"LOG_LEVEL,default=info"`
 	Format                 string `envconfig:"LOG_FORMAT,default=text"`
 	Output                 string `envconfig:"LOG_OUTPUT,default=/dev/stdout"`
-	BootstrapCorrelationID string `envconfig:"LOG_BOOTSTRAP_CORRELATION_ID,default=bootstrap_correlation_id"`
+	BootstrapCorrelationID string `envconfig:"LOG_BOOTSTRAP_CORRELATION_ID,default=bootstrap-correlation-id"`
+}
+
+// DefaultConfig returns default values for Log settings
+func DefaultConfig() *Config {
+	return &Config{
+		Level:                  "info",
+		Format:                 "text",
+		Output:                 os.Stdout.Name(),
+		BootstrapCorrelationID: "bootstrap-correlation-id",
+	}
+}
+
+// Validate validates the logging settings
+func (s *Config) Validate() error {
+	if _, err := logrus.ParseLevel(s.Level); err != nil {
+		return fmt.Errorf("validate Config: log level %s is invalid: %s", s.Level, err)
+	}
+
+	if len(s.Format) == 0 {
+		return fmt.Errorf("validate Config: log format missing")
+	}
+
+	if _, ok := supportedFormatters[s.Format]; !ok {
+		return fmt.Errorf("validate Config: log format %s is invalid", s.Format)
+	}
+
+	if len(s.Output) == 0 {
+		return fmt.Errorf("validate Config: log output missing")
+	}
+
+	if _, ok := supportedOutputs[s.Output]; !ok {
+		return fmt.Errorf("validate Config: log output %s is invalid", s.Output)
+	}
+
+	if s.BootstrapCorrelationID == "" {
+		return fmt.Errorf("validate Config: bootstrap correlation id cannot be empty")
+	}
+
+	return nil
 }
