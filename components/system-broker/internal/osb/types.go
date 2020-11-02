@@ -49,6 +49,8 @@ type BrokerOperationType string
 
 const (
 	ProvisionOp   BrokerOperationType = "provision_operation"
+	BindOp        BrokerOperationType = "bind_operation"
+	UnbindOp      BrokerOperationType = "unbind_operation"
 	DeprovisionOp BrokerOperationType = "deprovision_operation"
 )
 
