@@ -1,4 +1,4 @@
-package healthcheck_test
+package catalog_test
 
 import (
 	"net/http"

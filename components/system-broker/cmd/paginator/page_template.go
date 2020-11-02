@@ -16,23 +16,6 @@
 
 package main
 
-// func (ao *ApplicationResponse) PageInfo() *graphql.PageInfo {
-// 	return &ao.Result.Page
-// }
-
-// func (ao *ApplicationResponse) ListAll(ctx context.Context, pager *Pager) (ApplicationsOutput, error) {
-// 	appsResult := ApplicationsOutput{}
-
-// 	for pager.HasNext() {
-// 		apps := &ApplicationResponse{}
-// 		if err := pager.Next(ctx, apps); err != nil {
-// 			return nil, err
-// 		}
-// 		appsResult = append(appsResult, apps.Result.Apps...)
-// 	}
-// 	return appsResult, nil
-// }
-
 const PageTypeTemplate = `// GENERATED. DO NOT MODIFY!
 
 package {{.PackageName}}
@@ -48,16 +31,21 @@ func (p *{{.Type}}) PageInfo() *graphql.PageInfo {
 	return &p{{.DataPath}}.Page
 }
 
-func (p *{{.Type}}) ListAll(ctx context.Context, pager *Pager) ({{.OutputType}}, error) {
+func (p *{{.Type}}) ListAll(ctx context.Context, pager *Paginator) ({{.OutputType}}, error) {
 	pageResult := {{.OutputType}}{}
 
-	for pager.HasNext() {
+	for {
 		items := &{{.Type}}{}
-		if err := pager.Next(ctx, items); err != nil {
+
+		hasNext, err := pager.Next(ctx, items)
+		if err != nil {
 			return nil, err
 		}
+
 		pageResult = append(pageResult, items{{.DataPath}}.Data...)
+		if !hasNext {
+			return pageResult, nil
+		}
 	}
-	return pageResult, nil
 }
 `

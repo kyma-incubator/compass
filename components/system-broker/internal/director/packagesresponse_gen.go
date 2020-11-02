@@ -13,15 +13,20 @@ func (p *PackagesResponse) PageInfo() *graphql.PageInfo {
 	return &p.Result.Packages.Page
 }
 
-func (p *PackagesResponse) ListAll(ctx context.Context, pager *Pager) (PackagessOutput, error) {
+func (p *PackagesResponse) ListAll(ctx context.Context, pager *Paginator) (PackagessOutput, error) {
 	pageResult := PackagessOutput{}
 
-	for pager.HasNext() {
+	for {
 		items := &PackagesResponse{}
-		if err := pager.Next(ctx, items); err != nil {
+
+		hasNext, err := pager.Next(ctx, items)
+		if err != nil {
 			return nil, err
 		}
+
 		pageResult = append(pageResult, items.Result.Packages.Data...)
+		if !hasNext {
+			return pageResult, nil
+		}
 	}
-	return pageResult, nil
 }

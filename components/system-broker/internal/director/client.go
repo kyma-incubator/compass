@@ -36,12 +36,13 @@ type Client interface {
 
 //go:generate mockery -name=GqlFieldsProvider
 type GqlFieldsProvider interface {
-	ForApplication(ctx ...graphqlizer.FieldCtx) string
+	ForApplicationPageable(ctx ...graphqlizer.FieldCtx) string
 	ForAPIDefinition(ctx ...graphqlizer.FieldCtx) string
 	ForDocument() string
 	ForEventDefinition() string
 	ForLabel() string
 	ForPackage(ctx ...graphqlizer.FieldCtx) string
+	ForPackagePageable(ctx ...graphqlizer.FieldCtx) string
 	ForPackageInstanceAuth() string
 	Page(item string) string
 }
@@ -72,16 +73,13 @@ type GraphQLClient struct {
 
 func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutput, error) {
 	maxRequests := make(chan struct{}, c.pageConcurrency)
-	query := fmt.Sprintf(`query {
-			result: applications(first: %%d, after: %%q) {
+	query := fmt.Sprintf(`query($first: Int, $after: PageCursor) {
+			result: applications(first: $first, after: $after) {
 					%s
 			}
-	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForApplication()))
-	queryGenerator := func(pageSize int, page string) string {
-		return fmt.Sprintf(query, pageSize, page)
-	}
+	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForApplicationPageable()))
 
-	pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+	pager := NewPager(query, c.pageSize, c.gcli)
 	apps := &ApplicationResponse{}
 
 	appsResult, err := apps.ListAll(ctx, pager)
@@ -117,18 +115,15 @@ func (c *GraphQLClient) fetchPackagesForApps(ctx context.Context, apps Applicati
 			default:
 			}
 
-			query := fmt.Sprintf(`query {
+			query := fmt.Sprintf(`query($first: Int, $after: PageCursor) {
 			result: application(id: %q) {
-			  packages(first: %%d, after: %%q) {
+			  packages(first: $first, after: $after) {
 				  %s
 			  }
 			}
-		}`, app.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForPackage()))
-			queryGenerator := func(pageSize int, page string) string {
-				return fmt.Sprintf(query, pageSize, page)
-			}
+		}`, app.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForPackagePageable()))
 
-			pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+			pager := NewPager(query, c.pageSize, c.gcli)
 			packages := &PackagesResponse{}
 			packagesResult, err := packages.ListAll(childContext, pager)
 			if err != nil {
@@ -183,21 +178,17 @@ func (c *GraphQLClient) fetchApiDefinitions(ctx context.Context, appID string, p
 			default:
 			}
 
-			query := fmt.Sprintf(`query {
+			query := fmt.Sprintf(`query($first: Int, $after: PageCursor) {
 			result: application(id: %q) {
 				package(id: %q) {
-					apiDefinitions(first: %%d, after: %%q) {
+					apiDefinitions(first: $first, after: $after) {
 						%s
 					}
 			  	}
 			}
 		}`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForAPIDefinition()))
 
-			queryGenerator := func(pageSize int, page string) string {
-				return fmt.Sprintf(query, pageSize, page)
-			}
-
-			pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+			pager := NewPager(query, c.pageSize, c.gcli)
 			definitions := &ApiDefinitionsResponse{}
 			responseApiDefinitions, err := definitions.ListAll(ctx, pager)
 			if err != nil {
@@ -232,20 +223,17 @@ func (c *GraphQLClient) fetchEventDefinitions(ctx context.Context, appID string,
 			default:
 			}
 
-			query := fmt.Sprintf(`query {
+			query := fmt.Sprintf(`query($first: Int, $after: PageCursor) {
 			result: application(id: %q) {
 				package(id: %q) {
-					eventDefinitions(first: %%d, after: %%q) {
+					eventDefinitions(first: $first, after: $after) {
 						%s
 					}
 			  	}
 			}
 		}`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForEventDefinition()))
 
-			queryGenerator := func(pageSize int, page string) string {
-				return fmt.Sprintf(query, pageSize, page)
-			}
-			pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+			pager := NewPager(query, c.pageSize, c.gcli)
 			definitions := &EventDefinitionsResponse{}
 			responseEventDefinitions, err := definitions.ListAll(ctx, pager)
 			if err != nil {
@@ -281,20 +269,17 @@ func (c *GraphQLClient) fetchDocuments(ctx context.Context, appID string, packag
 				return
 			default:
 			}
-			query := fmt.Sprintf(`query {
+			query := fmt.Sprintf(`query($first: Int, $after: PageCursor) {
 			result: application(id: %q) {
 				package(id: %q) {
-					documents(first: %%d, after: %%q) {
+					documents(first: $first, after: $after) {
 						%s
 					}
 			  	}
 			}
 		}`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForDocument()))
 
-			queryGenerator := func(pageSize int, page string) string {
-				return fmt.Sprintf(query, pageSize, page)
-			}
-			pager := NewPager(queryGenerator, c.pageSize, c.gcli)
+			pager := NewPager(query, c.pageSize, c.gcli)
 			definitions := &DocumentsResponse{}
 			responseDocuments, err := definitions.ListAll(ctx, pager)
 

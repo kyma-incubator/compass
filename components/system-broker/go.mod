@@ -5,7 +5,7 @@ go 1.14
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	github.com/ajg/form v1.5.1 // indirect
-	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
+	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
 	github.com/fasthttp-contrib/websocket v0.0.0-20160511215533-1f3b11f56072 // indirect
 	github.com/fatih/structs v1.1.0
 	github.com/fsnotify/fsnotify v1.4.9
@@ -15,7 +15,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200807110214-4424c47ecd1c
+	github.com/kyma-incubator/compass/components/director v0.0.0-20201102144032-0a9e1912c192
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/onrik/logrus v0.7.0
