@@ -27,7 +27,7 @@ func CreateKey(t *testing.T) *rsa.PrivateKey {
 
 // CreateCsr creates CSR request
 func CreateCsr(t *testing.T, strSubject string, keys *rsa.PrivateKey) []byte {
-	subject := ParseSubject(strSubject)
+	subject := parseSubject(strSubject)
 
 	var csrTemplate = x509.CertificateRequest{
 		Subject: subject,
@@ -44,8 +44,8 @@ func CreateCsr(t *testing.T, strSubject string, keys *rsa.PrivateKey) []byte {
 	return csr
 }
 
-// EncodedCertChainToPemBytes decodes certificates chain and return pemBlock's bytes for client cert and ca cert
-func EncodedCertChainToPemBytes(t *testing.T, encodedChain string) []byte {
+// encodedCertChainToPemBytes decodes certificates chain and return pemBlock's bytes for client cert and ca cert
+func encodedCertChainToPemBytes(t *testing.T, encodedChain string) []byte {
 	crtBytes := decodeBase64Cert(encodedChain, t)
 
 	clientCrtPem, rest := pem.Decode(crtBytes)
@@ -60,8 +60,8 @@ func EncodedCertChainToPemBytes(t *testing.T, encodedChain string) []byte {
 	return certChainBytes
 }
 
-// EncodedCertToPemBytes decodes certificate and return pemBlock's bytes for it
-func EncodedCertToPemBytes(t *testing.T, encodedCert string) []byte {
+// encodedCertToPemBytes decodes certificate and return pemBlock's bytes for it
+func encodedCertToPemBytes(t *testing.T, encodedCert string) []byte {
 	crtBytes := decodeBase64Cert(encodedCert, t)
 
 	certificate, _ := pem.Decode(crtBytes)
@@ -72,15 +72,15 @@ func EncodedCertToPemBytes(t *testing.T, encodedCert string) []byte {
 
 // DecodeAndParseCerts decodes base64 encoded certificates chain and parses it
 func DecodeAndParseCerts(t *testing.T, crtResponse *CrtResponse) DecodedCrtResponse {
-	certChainBytes := EncodedCertChainToPemBytes(t, crtResponse.CRTChain)
+	certChainBytes := encodedCertChainToPemBytes(t, crtResponse.CRTChain)
 	certificateChain, err := x509.ParseCertificates(certChainBytes)
 	require.NoError(t, err)
 
-	clientCertBytes := EncodedCertToPemBytes(t, crtResponse.ClientCRT)
+	clientCertBytes := encodedCertToPemBytes(t, crtResponse.ClientCRT)
 	clientCertificate, err := x509.ParseCertificate(clientCertBytes)
 	require.NoError(t, err)
 
-	caCertificateBytes := EncodedCertToPemBytes(t, crtResponse.CaCRT)
+	caCertificateBytes := encodedCertToPemBytes(t, crtResponse.CaCRT)
 	caCertificate, err := x509.ParseCertificate(caCertificateBytes)
 	require.NoError(t, err)
 
@@ -118,7 +118,7 @@ func EncodeBase64(src []byte) string {
 	return base64.StdEncoding.EncodeToString(src)
 }
 
-func ParseSubject(subject string) pkix.Name {
+func parseSubject(subject string) pkix.Name {
 	subjectInfo := extractSubject(subject)
 
 	return pkix.Name{

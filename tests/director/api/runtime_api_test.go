@@ -110,6 +110,114 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
+	const (
+		labelKey     = "labelKey"
+		labelValue   = "labelValue"
+		testScenario = "test-scenario"
+	)
+	// GIVEN
+	ctx := context.Background()
+	givenInput := graphql.RuntimeInput{
+		Name:        "runtime-with-scenario-assignments",
+		Description: ptr.String("runtime-1-description"),
+		Labels:      &graphql.Labels{labelKey: []interface{}{labelValue}},
+	}
+	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
+	require.NoError(t, err)
+	actualRuntime := graphql.RuntimeExt{}
+
+	// WHEN
+	registerReq := fixRegisterRuntimeRequest(runtimeInGQL)
+	err = tc.RunOperation(ctx, registerReq, &actualRuntime)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, actualRuntime.ID)
+	assertRuntime(t, givenInput, actualRuntime)
+
+	// update label definition
+	const defaultValue = "DEFAULT"
+	enumValue := []string{defaultValue, testScenario}
+	jsonSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": enumValue,
+		},
+	}
+	var schema interface{} = jsonSchema
+	marshalledSchema := marshalJSONSchema(t, schema)
+
+	givenLabelDef := graphql.LabelDefinitionInput{
+		Key:    "scenarios",
+		Schema: marshalledSchema,
+	}
+	labelDefInGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(givenLabelDef)
+	require.NoError(t, err)
+	actualLabelDef := graphql.LabelDefinition{}
+
+	// WHEN
+	updateLabelDefReq := fixUpdateLabelDefinitionRequest(labelDefInGQL)
+	err = tc.RunOperation(ctx, updateLabelDefReq, &actualLabelDef)
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, givenLabelDef.Key, actualLabelDef.Key)
+	assertGraphQLJSONSchema(t, givenLabelDef.Schema, actualLabelDef.Schema)
+
+	// register automatic sccenario assignment
+	givenScenarioAssignment := graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: testScenario,
+		Selector: &graphql.LabelSelectorInput{
+			Key:   labelKey,
+			Value: labelValue,
+		},
+	}
+
+	scenarioAssignmentInGQL, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(givenScenarioAssignment)
+	require.NoError(t, err)
+	actualScenarioAssignment := graphql.AutomaticScenarioAssignment{}
+
+	// WHEN
+	createAutomaticScenarioAssignmentReq := fixCreateAutomaticScenarioAssignmentRequest(scenarioAssignmentInGQL)
+	err = tc.RunOperation(ctx, createAutomaticScenarioAssignmentReq, &actualScenarioAssignment)
+
+	// THEN
+	require.NoError(t, err)
+	assert.Equal(t, givenScenarioAssignment.ScenarioName, actualScenarioAssignment.ScenarioName)
+	assert.Equal(t, givenScenarioAssignment.Selector.Key, actualScenarioAssignment.Selector.Key)
+	assert.Equal(t, givenScenarioAssignment.Selector.Value, actualScenarioAssignment.Selector.Value)
+
+	// get runtime - verify it is in scenario
+	getRuntimeReq := fixRuntimeRequest(actualRuntime.ID)
+	err = tc.RunOperation(ctx, getRuntimeReq, &actualRuntime)
+
+	require.NoError(t, err)
+	scenarios, hasScenarios := actualRuntime.Labels["scenarios"]
+	assert.True(t, hasScenarios)
+	assert.Len(t, scenarios, 2)
+	assert.Contains(t, scenarios, testScenario)
+
+	// delete runtime
+
+	// WHEN
+	delReq := fixUnregisterRuntimeRequest(actualRuntime.ID)
+	err = tc.RunOperation(ctx, delReq, nil)
+
+	//THEN
+	require.NoError(t, err)
+
+	// get automatic scenario assignment - see that it's deleted
+	actualScenarioAssignments := graphql.AutomaticScenarioAssignmentPage{}
+	getScenarioAssignmentsReq := fixAutomaticScenarioAssignmentsRequest()
+	err = tc.RunOperation(ctx, getScenarioAssignmentsReq, &actualScenarioAssignments)
+	require.NoError(t, err)
+	assert.Equal(t, actualScenarioAssignments.TotalCount, 0)
+}
+
 func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
