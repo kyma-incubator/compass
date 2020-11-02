@@ -2,10 +2,10 @@ package certificates
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
-	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -38,25 +38,25 @@ func (cl *certLoader) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("context cancelled, stopping cert loader...")
+			log.C(ctx).Info("context cancelled, stopping cert loader...")
 			return
 		default:
 		}
 		if cl.caCertSecret.Name != "" {
-			cl.loadSecretToCache(cl.caCertSecret)
+			cl.loadSecretToCache(ctx, cl.caCertSecret)
 		}
 		if cl.rootCACertSecret.Name != "" {
-			cl.loadSecretToCache(cl.rootCACertSecret)
+			cl.loadSecretToCache(ctx, cl.rootCACertSecret)
 		}
 		time.Sleep(interval)
 	}
 }
 
-func (cl *certLoader) loadSecretToCache(secret types.NamespacedName) {
+func (cl *certLoader) loadSecretToCache(ctx context.Context, secret types.NamespacedName) {
 	secretData, appError := cl.secretsRepository.Get(secret)
 
 	if appError != nil {
-		log.Errorf("Failed to load secret %s to cache: %s", secret.String(), appError.Error())
+		log.C(ctx).Errorf("Failed to load secret %s to cache: %s", secret.String(), appError.Error())
 		return
 	}
 

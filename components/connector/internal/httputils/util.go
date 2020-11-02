@@ -1,14 +1,14 @@
 package httputils
 
 import (
+	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"io"
-
-	"github.com/sirupsen/logrus"
 )
 
-func Close(closer io.Closer) {
+func Close(ctx context.Context, closer io.Closer) {
 	err := closer.Close()
 	if err != nil {
-		logrus.Warnf("Warning: failed to close: %s", err.Error())
+		log.C(ctx).Warnf("Warning: failed to close: %s", err.Error())
 	}
 }

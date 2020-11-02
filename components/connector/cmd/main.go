@@ -85,9 +85,9 @@ func startServer(parentCtx context.Context, server *http.Server, wg *sync.WaitGr
 	defer cancel()
 
 	go func() {
+		defer wg.Done()
 		<-ctx.Done()
 		stopServer(server)
-		wg.Done()
 	}()
 
 	log.C(ctx).Infof("Starting and listening on %s://%s", "http", server.Addr)

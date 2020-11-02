@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/base64"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
@@ -11,7 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type CertificateResolver interface {
@@ -28,7 +28,6 @@ type certificateResolver struct {
 	directorURL                    string
 	certificateSecuredConnectorURL string
 	revokedCertsRepository         revocation.RevokedCertificatesRepository
-	log                            *logrus.Entry
 }
 
 func NewCertificateResolver(
@@ -47,24 +46,23 @@ func NewCertificateResolver(
 		directorURL:                    directorURL,
 		certificateSecuredConnectorURL: certificateSecuredConnectorURL,
 		revokedCertsRepository:         revokedCertsRepository,
-		log:                            logrus.WithField("Resolver", "Certificate"),
 	}
 }
 
 func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
-	r.log.Debug("Authenticating the call for configuration fetching.")
+	log.C(ctx).Debug("Authenticating the call for configuration fetching.")
 
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		r.log.Error("Failed authentication while fetching the configuration. ", err.Error())
+		log.C(ctx).Error("Failed authentication while fetching the configuration. ", err.Error())
 		return nil, err
 	}
-	r.log.Infof("Fetching configuration for client with id %s", clientId)
+	log.C(ctx).Infof("Fetching configuration for client with id %s", clientId)
 
-	r.log.Infof("Creating one-time token as part of fetching configuration process for client with id %s", clientId)
-	token, err := r.tokenService.CreateToken(clientId, tokens.CSRToken)
+	log.C(ctx).Infof("Creating one-time token as part of fetching configuration process for client with id %s", clientId)
+	token, err := r.tokenService.CreateToken(ctx, clientId, tokens.CSRToken)
 	if err != nil {
-		r.log.Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process: %s", clientId, err.Error())
+		log.C(ctx).Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process: %s", clientId, err.Error())
 		return nil, errors.Wrap(err, "Failed to create one-time token during fetching configuration process")
 	}
 
@@ -73,7 +71,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 		KeyAlgorithm: "rsa2048",
 	}
 
-	r.log.Infof("Configuration for client with id %s successfully fetched.", clientId)
+	log.C(ctx).Infof("Configuration for client with id %s successfully fetched.", clientId)
 
 	return &externalschema.Configuration{
 		Token:                         &externalschema.Token{Token: token},
@@ -86,19 +84,19 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 }
 
 func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context, csr string) (*externalschema.CertificationResult, error) {
-	r.log.Debug("Authenticating the call for signing the Certificate Signing Request.")
+	log.C(ctx).Debug("Authenticating the call for signing the Certificate Signing Request.")
 
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		r.log.Error("Failed authentication during the signing CSR process. ", err.Error())
+		log.C(ctx).Error("Failed authentication during the signing CSR process. ", err.Error())
 		return nil, errors.Wrap(err, "Failed to authenticate with token")
 	}
 
-	r.log.Infof("Signing Certificate Signing Request for client with id %s", clientId)
+	log.C(ctx).Infof("Signing Certificate Signing Request for client with id %s", clientId)
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
-		r.log.Errorf("Failed to decode the input CSR of client with id %s during the certificate signing process. %s", clientId, err.Error())
+		log.C(ctx).Errorf("Failed to decode the input CSR of client with id %s during the certificate signing process. %s", clientId, err.Error())
 		return nil, errors.Wrap(err, "Error while decoding Certificate Signing Request")
 	}
 
@@ -107,37 +105,37 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 		CSRSubjectConsts: r.csrSubjectConsts,
 	}
 
-	encodedCertificates, err := r.certificatesService.SignCSR(rawCSR, subject)
+	encodedCertificates, err := r.certificatesService.SignCSR(ctx, rawCSR, subject)
 	if err != nil {
-		r.log.Errorf("Error occurred while signing the CSR with Common Name %s of client with id %s : %s ", subject.CommonName, clientId, err.Error())
+		log.C(ctx).Errorf("Error occurred while signing the CSR with Common Name %s of client with id %s : %s ", subject.CommonName, clientId, err.Error())
 		return nil, errors.Wrap(err, "Error while signing Certificate Signing Request")
 	}
 
 	certificationResult := certificates.ToCertificationResult(encodedCertificates)
 
-	r.log.Infof("Certificate Signing Request with Common Name %s of client with id %s successfully signed.", subject.CommonName, clientId)
+	log.C(ctx).Infof("Certificate Signing Request with Common Name %s of client with id %s successfully signed.", subject.CommonName, clientId)
 	return &certificationResult, nil
 }
 
 func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, error) {
-	r.log.Debug("Authenticating the call for certificate revocation.")
+	log.C(ctx).Debug("Authenticating the call for certificate revocation.")
 
 	clientId, certificateHash, err := r.authenticator.AuthenticateCertificate(ctx)
 	if err != nil {
-		r.log.Error("Failed authentication while revoking the certificate. ", err.Error())
+		log.C(ctx).Error("Failed authentication while revoking the certificate. ", err.Error())
 		return false, errors.Wrap(err, "Failed to authenticate with certificate")
 	}
 
-	r.log.Infof("Revoking certificate for client with id %s", clientId)
+	log.C(ctx).Infof("Revoking certificate for client with id %s", clientId)
 
-	r.log.Debugf("Inserting certificate hash of client with id %s to revocation list", clientId)
+	log.C(ctx).Debugf("Inserting certificate hash of client with id %s to revocation list", clientId)
 	err = r.revokedCertsRepository.Insert(certificateHash)
 	if err != nil {
-		r.log.Errorf("Failed to add certificate hash of client with id %s to revocation list. %s ", clientId, err.Error())
+		log.C(ctx).Errorf("Failed to add certificate hash of client with id %s to revocation list. %s ", clientId, err.Error())
 		return false, errors.Wrap(err, "Failed to add hash to revocation list")
 	}
 
-	r.log.Infof("Certificate of client with id %s successfully revoked.", clientId)
+	log.C(ctx).Infof("Certificate of client with id %s successfully revoked.", clientId)
 	return true, nil
 }
 
