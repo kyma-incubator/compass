@@ -26,7 +26,7 @@ type ProvisionEndpoint struct {
 }
 
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
-	log.C(ctx).Infof("Provision instanceID: %s parameters: %s context: %s asyncAllowed: %t", instanceID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
+	log.C(ctx).Infof("Provision instance with instanceID: %s, serviceID: %s, planID: %s, parameters: %s context: %s asyncAllowed: %t", instanceID, details.ServiceID, details.PlanID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
 
 	return domain.ProvisionedServiceSpec{}, nil
 }

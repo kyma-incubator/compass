@@ -20,7 +20,6 @@ import (
 	"context"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/pkg/errors"
 )
 
 type InstanceLastOperationEndpoint struct {
@@ -29,5 +28,5 @@ type InstanceLastOperationEndpoint struct {
 func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, instanceID string, details domain.PollDetails) (domain.LastOperation, error) {
 	log.C(ctx).Infof("LastInstanceOperation instanceID: %s details: %+v", instanceID, details)
 
-	return domain.LastOperation{}, errors.New("not supported")
+	return domain.LastOperation{}, nil
 }
