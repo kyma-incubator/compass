@@ -58,6 +58,7 @@ func NewGraphQLClient(gqlClient Client, gqlizer GraphQLizer, gqlFieldsProvider G
 		inputGraphqlizer:  gqlizer,
 		outputGraphqlizer: gqlFieldsProvider,
 		pageSize:          c.PageSize,
+		pageConcurrency:   c.PageConcurrency,
 	}
 }
 
@@ -66,11 +67,11 @@ type GraphQLClient struct {
 	inputGraphqlizer  GraphQLizer
 	outputGraphqlizer GqlFieldsProvider
 	pageSize          int
+	pageConcurrency   int
 }
 
 func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutput, error) {
-	// TODO: Make configurable
-	maxRequests := make(chan struct{}, 100)
+	maxRequests := make(chan struct{}, c.pageConcurrency)
 	query := fmt.Sprintf(`query {
 			result: applications(first: %%d, after: %%q) {
 					%s
