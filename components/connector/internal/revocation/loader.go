@@ -42,7 +42,7 @@ func (rl *revokedCertificatesLoader) startKubeWatch(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("context cancelled, stop revocation config map watcher")
+			log.Println("context cancelled, stopping revocation config map watcher...")
 			return
 		default:
 		}
@@ -57,7 +57,6 @@ func (rl *revokedCertificatesLoader) startKubeWatch(ctx context.Context) {
 		rl.processEvents(ctx, watcher.ResultChan())
 
 		// Cleanup any allocated resources
-		log.Printf("Stopping revocation configmap watcher")
 		watcher.Stop()
 		time.Sleep(rl.reconnectInterval)
 	}

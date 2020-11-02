@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"context"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
@@ -11,7 +12,7 @@ import (
 const interval = 1 * time.Minute
 
 type Loader interface {
-	Run()
+	Run(ctx context.Context)
 }
 
 type certLoader struct {
@@ -33,8 +34,14 @@ func NewCertificateLoader(certsCache Cache,
 	}
 }
 
-func (cl *certLoader) Run() {
+func (cl *certLoader) Run(ctx context.Context) {
 	for {
+		select {
+		case <-ctx.Done():
+			log.Println("context cancelled, stopping cert loader...")
+			return
+		default:
+		}
 		if cl.caCertSecret.Name != "" {
 			cl.loadSecretToCache(cl.caCertSecret)
 		}

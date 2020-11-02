@@ -33,7 +33,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-incubator/compass"
-  branch = "master"
+  branch = "logging-interface"
 
 [[override]]
   name = "golang.org/x/text"

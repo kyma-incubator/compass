@@ -91,6 +91,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:ffe5ba52b122a56df4f9854ea2918e0d9f86e74919db63dc138f8fee3253d3d6"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0e4e31197428a347842d152773b4cace4645ca25"
+  version = "v1.1.2"
+
+[[projects]]
   digest = "1:ca4524b4855ded427c7003ec903a5c854f37e7b1e8e2a93277243462c5b753a8"
   name = "github.com/googleapis/gnostic"
   packages = [
@@ -164,16 +172,17 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:8fb2bdf3ce81f55974fed50161923c3265881ff9e7c093442d2f942b742a6558"
+  branch = "logging-interface"
+  digest = "1:fceedccf6ec4776090ac327b040958834363b84150baf87d7feeb99cbd60e82f"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/apperrors",
     "components/director/pkg/handler",
+    "components/director/pkg/log",
     "components/director/pkg/resource",
   ]
   pruneopts = "UT"
-  revision = "74d69e24ad9944f631c4dba54e55a260d09cb00c"
+  revision = "691ffaae69ecea166d0c617b280e2c9e81c4786b"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -198,6 +207,14 @@
   pruneopts = "UT"
   revision = "4b7aa43c6742a2c18fdef89dd197aaae7dac7ccd"
   version = "1.0.1"
+
+[[projects]]
+  digest = "1:7a351dc067f78454bf308a1a164d7c7656f6c9a6aa914410ec4f24678f5d52b0"
+  name = "github.com/onrik/logrus"
+  packages = ["filename"]
+  pruneopts = "UT"
+  revision = "709f97f617a3b18b7eabb84e814b5a64dfbae028"
+  version = "v0.8.0"
 
 [[projects]]
   digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
@@ -681,6 +698,7 @@
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/handler",
+    "github.com/kyma-incubator/compass/components/director/pkg/log",
     "github.com/machinebox/graphql",
     "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",
