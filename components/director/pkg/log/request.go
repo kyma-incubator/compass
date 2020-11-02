@@ -50,7 +50,7 @@ func RequestLogger() func(next http.Handler) http.Handler {
 				"remote":  remoteAddr,
 			})
 
-			beforeLogger.Info("started handling request...")
+			beforeLogger.Info("Started handling request...")
 
 			lrw := newLoggingResponseWriter(rw)
 			next.ServeHTTP(lrw, r)
@@ -62,7 +62,7 @@ func RequestLogger() func(next http.Handler) http.Handler {
 				"took":        duration,
 			})
 
-			afterLogger.Info("finished handling request...")
+			afterLogger.Info("Finished handling request...")
 		})
 	}
 }
