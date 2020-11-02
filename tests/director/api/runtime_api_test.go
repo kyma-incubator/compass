@@ -110,6 +110,114 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
+	const (
+		labelKey     = "labelKey"
+		labelValue   = "labelValue"
+		testScenario = "test-scenario"
+	)
+	// GIVEN
+	ctx := context.Background()
+	givenInput := graphql.RuntimeInput{
+		Name:        "runtime-with-scenario-assignments",
+		Description: ptr.String("runtime-1-description"),
+		Labels:      &graphql.Labels{labelKey: []interface{}{labelValue}},
+	}
+	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(givenInput)
+	require.NoError(t, err)
+	actualRuntime := graphql.RuntimeExt{}
+
+	// WHEN
+	registerReq := fixRegisterRuntimeRequest(runtimeInGQL)
+	err = tc.RunOperation(ctx, registerReq, &actualRuntime)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, actualRuntime.ID)
+	assertRuntime(t, givenInput, actualRuntime)
+
+	// update label definition
+	const defaultValue = "DEFAULT"
+	enumValue := []string{defaultValue, testScenario}
+	jsonSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": enumValue,
+		},
+	}
+	var schema interface{} = jsonSchema
+	marshalledSchema := marshalJSONSchema(t, schema)
+
+	givenLabelDef := graphql.LabelDefinitionInput{
+		Key:    "scenarios",
+		Schema: marshalledSchema,
+	}
+	labelDefInGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(givenLabelDef)
+	require.NoError(t, err)
+	actualLabelDef := graphql.LabelDefinition{}
+
+	// WHEN
+	updateLabelDefReq := fixUpdateLabelDefinitionRequest(labelDefInGQL)
+	err = tc.RunOperation(ctx, updateLabelDefReq, &actualLabelDef)
+
+	//THEN
+	require.NoError(t, err)
+	assert.Equal(t, givenLabelDef.Key, actualLabelDef.Key)
+	assertGraphQLJSONSchema(t, givenLabelDef.Schema, actualLabelDef.Schema)
+
+	// register automatic sccenario assignment
+	givenScenarioAssignment := graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: testScenario,
+		Selector: &graphql.LabelSelectorInput{
+			Key:   labelKey,
+			Value: labelValue,
+		},
+	}
+
+	scenarioAssignmentInGQL, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(givenScenarioAssignment)
+	require.NoError(t, err)
+	actualScenarioAssignment := graphql.AutomaticScenarioAssignment{}
+
+	// WHEN
+	createAutomaticScenarioAssignmentReq := fixCreateAutomaticScenarioAssignmentRequest(scenarioAssignmentInGQL)
+	err = tc.RunOperation(ctx, createAutomaticScenarioAssignmentReq, &actualScenarioAssignment)
+
+	// THEN
+	require.NoError(t, err)
+	assert.Equal(t, givenScenarioAssignment.ScenarioName, actualScenarioAssignment.ScenarioName)
+	assert.Equal(t, givenScenarioAssignment.Selector.Key, actualScenarioAssignment.Selector.Key)
+	assert.Equal(t, givenScenarioAssignment.Selector.Value, actualScenarioAssignment.Selector.Value)
+
+	// get runtime - verify it is in scenario
+	getRuntimeReq := fixRuntimeRequest(actualRuntime.ID)
+	err = tc.RunOperation(ctx, getRuntimeReq, &actualRuntime)
+
+	require.NoError(t, err)
+	scenarios, hasScenarios := actualRuntime.Labels["scenarios"]
+	assert.True(t, hasScenarios)
+	assert.Len(t, scenarios, 2)
+	assert.Contains(t, scenarios, testScenario)
+
+	// delete runtime
+
+	// WHEN
+	delReq := fixUnregisterRuntimeRequest(actualRuntime.ID)
+	err = tc.RunOperation(ctx, delReq, nil)
+
+	//THEN
+	require.NoError(t, err)
+
+	// get automatic scenario assignment - see that it's deleted
+	actualScenarioAssignments := graphql.AutomaticScenarioAssignmentPage{}
+	getScenarioAssignmentsReq := fixAutomaticScenarioAssignmentsRequest()
+	err = tc.RunOperation(ctx, getScenarioAssignmentsReq, &actualScenarioAssignments)
+	require.NoError(t, err)
+	assert.Equal(t, actualScenarioAssignments.TotalCount, 0)
+}
+
 func TestRuntimeCreateUpdateDuplicatedNames(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -279,205 +387,6 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	assert.Equal(t, createdRuntime.ID, queriedRuntime.ID)
 	assert.Equal(t, createdRuntime.Name, queriedRuntime.Name)
 	assert.Equal(t, createdRuntime.Description, queriedRuntime.Description)
-}
-
-func TestApplicationsForRuntime(t *testing.T) {
-	//GIVEN
-	ctx := context.Background()
-	tenantID := testTenants.GetIDByName(t, "Test1")
-	otherTenant := testTenants.GetIDByName(t, "Test2")
-	tenantApplications := []*graphql.Application{}
-	defaultValue := "DEFAULT"
-	scenarios := []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
-
-	jsonSchema := map[string]interface{}{
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": scenarios,
-		},
-	}
-	var schema interface{} = jsonSchema
-
-	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
-	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, otherTenant)
-
-	applications := []struct {
-		ApplicationName string
-		Tenant          string
-		WithinTenant    bool
-		Scenarios       []string
-	}{
-		{
-			Tenant:          tenantID,
-			ApplicationName: "first",
-			WithinTenant:    true,
-			Scenarios:       []string{defaultValue},
-		},
-		{
-			Tenant:          tenantID,
-			ApplicationName: "second",
-			WithinTenant:    true,
-			Scenarios:       []string{defaultValue, "black-friday-campaign"},
-		},
-		{
-			Tenant:          tenantID,
-			ApplicationName: "third",
-			WithinTenant:    true,
-			Scenarios:       []string{"black-friday-campaign", "christmas-campaign", "summer-campaign"},
-		},
-		{
-			Tenant:          tenantID,
-			ApplicationName: "allscenarios",
-			WithinTenant:    true,
-			Scenarios:       []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"},
-		},
-		{
-			Tenant:          otherTenant,
-			ApplicationName: "test",
-			WithinTenant:    false,
-			Scenarios:       []string{defaultValue, "black-friday-campaign"},
-		},
-	}
-
-	for _, testApp := range applications {
-		applicationInput := fixSampleApplicationRegisterInput(testApp.ApplicationName)
-		applicationInput.Labels = &graphql.Labels{scenariosLabel: testApp.Scenarios}
-		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
-		require.NoError(t, err)
-
-		createApplicationReq := fixRegisterApplicationRequest(appInputGQL)
-		application := graphql.Application{}
-
-		err = tc.RunOperationWithCustomTenant(ctx, testApp.Tenant, createApplicationReq, &application)
-
-		require.NoError(t, err)
-		require.NotEmpty(t, application.ID)
-
-		defer unregisterApplicationInTenant(t, application.ID, testApp.Tenant)
-		if testApp.WithinTenant {
-			tenantApplications = append(tenantApplications, &application)
-		}
-	}
-
-	//create runtime
-	runtimeInput := fixRuntimeInput("runtime")
-	(*runtimeInput.Labels)[scenariosLabel] = scenarios
-	runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
-	require.NoError(t, err)
-	registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
-	runtime := graphql.Runtime{}
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeRequest, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
-	defer unregisterRuntimeWithinTenant(t, runtime.ID, tenantID)
-
-	//WHEN
-	request := fixApplicationForRuntimeRequest(runtime.ID)
-	applicationPage := graphql.ApplicationPage{}
-
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
-	saveExample(t, request.Query(), "query applications for runtime")
-
-	//THEN
-	require.NoError(t, err)
-	require.Len(t, applicationPage.Data, len(tenantApplications))
-	assert.ElementsMatch(t, tenantApplications, applicationPage.Data)
-}
-
-func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
-	//GIVEN
-	ctx := context.Background()
-	tenantID := testTenants.GetIDByName(t, "TestApplicationsForRuntimeWithHiddenApps")
-	expectedApplications := []*graphql.Application{}
-	defaultValue := "DEFAULT"
-	scenarios := []string{defaultValue, "test-scenario"}
-
-	applicationHideSelectorKey := "applicationHideSelectorKey"
-	applicationHideSelectorValue := "applicationHideSelectorValue"
-
-	jsonSchema := map[string]interface{}{
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": scenarios,
-		},
-	}
-	var schema interface{} = jsonSchema
-
-	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
-
-	applications := []struct {
-		ApplicationName string
-		Scenarios       []string
-		Hidden          bool
-	}{
-		{
-			ApplicationName: "first",
-			Scenarios:       []string{defaultValue},
-			Hidden:          false,
-		},
-		{
-			ApplicationName: "second",
-			Scenarios:       []string{"test-scenario"},
-			Hidden:          false,
-		},
-		{
-			ApplicationName: "third",
-			Scenarios:       []string{"test-scenario"},
-			Hidden:          true,
-		},
-	}
-
-	for _, testApp := range applications {
-		applicationInput := fixSampleApplicationRegisterInput(testApp.ApplicationName)
-		applicationInput.Labels = &graphql.Labels{scenariosLabel: testApp.Scenarios}
-		if testApp.Hidden {
-			(*applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue
-		}
-		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
-		require.NoError(t, err)
-
-		createApplicationReq := fixRegisterApplicationRequest(appInputGQL)
-		application := graphql.Application{}
-
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, createApplicationReq, &application)
-
-		require.NoError(t, err)
-		require.NotEmpty(t, application.ID)
-
-		defer unregisterApplicationInTenant(t, application.ID, tenantID)
-		if !testApp.Hidden {
-			expectedApplications = append(expectedApplications, &application)
-		}
-	}
-
-	//create runtime
-	runtimeInput := fixRuntimeInput("runtime")
-	(*runtimeInput.Labels)[scenariosLabel] = scenarios
-	runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
-	require.NoError(t, err)
-	registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
-	runtime := graphql.Runtime{}
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeRequest, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
-	defer unregisterRuntimeWithinTenant(t, runtime.ID, tenantID)
-
-	//WHEN
-	request := fixApplicationForRuntimeRequest(runtime.ID)
-	applicationPage := graphql.ApplicationPage{}
-
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
-
-	//THEN
-	require.NoError(t, err)
-	require.Len(t, applicationPage.Data, len(expectedApplications))
-	assert.ElementsMatch(t, expectedApplications, applicationPage.Data)
 }
 
 func TestQueryRuntimesWithPagination(t *testing.T) {

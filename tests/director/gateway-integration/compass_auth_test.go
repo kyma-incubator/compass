@@ -18,7 +18,6 @@ import (
 )
 
 func TestCompassAuth(t *testing.T) {
-
 	ctx := context.Background()
 
 	t.Log("Get Dex id_token")

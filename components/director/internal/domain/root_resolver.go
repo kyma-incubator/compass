@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -154,7 +156,7 @@ func NewRootResolver(
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, appSvc, packageSvc, eventAPIConverter, frConverter),
 		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                 document.NewResolver(transact, docSvc, appSvc, packageSvc, frConverter),
-		runtime:             runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
+		runtime:             runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		healthCheck:         healthcheck.NewResolver(healthCheckSvc),
 		webhook:             webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:            labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
@@ -218,6 +220,16 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 }
 
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if consumerInfo.ConsumerType == consumer.Runtime {
+		log.Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
+		return r.app.ApplicationsForRuntime(ctx, consumerInfo.ConsumerID, first, after)
+	}
+
 	return r.app.Applications(ctx, filter, first, after)
 }
 
