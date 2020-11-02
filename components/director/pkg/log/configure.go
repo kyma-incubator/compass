@@ -82,7 +82,10 @@ func Configure(ctx context.Context, config *Config) (context.Context, error) {
 		return nil, err
 	}
 
-	level, _ := logrus.ParseLevel(config.Level)
+	level, err := logrus.ParseLevel(config.Level)
+	if err != nil {
+		return nil, err
+	}
 	formatter := supportedFormatters[config.Format]
 	output := supportedOutputs[config.Output]
 
