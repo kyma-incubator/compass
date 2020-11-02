@@ -37,49 +37,60 @@ data:
   global.adminPassword: ""
   global.minikubeIP: ""
 ---
-apiVersion: install.istio.io/v1alpha1
-kind: IstioOperator
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: istio-system
-spec:
-  components:
-    pilot:
-      k8s:
-        resources:
-          requests:
-            cpu: 250m
-            memory: 512Mi
-          limits:
-            cpu: 500m
-            memory: 1024Mi
-    policy:
-      k8s:
-        resources:
-          requests:
-            cpu: 300m
-            memory: 512Mi
-          limits:
-            cpu: 500m
-            memory: 2048Mi
-    telemetry:
-      k8s:
-        resources:
-          requests:
-            cpu: 300m
-            memory: 512Mi
-          limits:
-            cpu: 500m
-            memory: 2048Mi
-  values:
-    pilot:
-      autoscaleEnabled: "false"
-    mixer:
-      telemetry:
-        autoscaleEnabled: "false"
-        loadshedding:
-          mode: disabled
-      policy:
-        autoscaleEnabled: "false"
+  name: istio-overrides
+  namespace: kyma-installer
+  labels:
+    installer: overrides
+    component: istio
+    kyma-project.io/installation: ""
+data:
+  kyma_istio_operator: |-
+    apiVersion: install.istio.io/v1alpha1
+    kind: IstioOperator
+    metadata:
+      name: istio-system
+    spec:
+      components:
+        pilot:
+          k8s:
+            resources:
+              requests:
+                cpu: 250m
+                memory: 512Mi
+              limits:
+                cpu: 500m
+                memory: 1024Mi
+        policy:
+          k8s:
+            resources:
+              requests:
+                cpu: 300m
+                memory: 512Mi
+              limits:
+                cpu: 500m
+                memory: 2048Mi
+        telemetry:
+          k8s:
+            resources:
+              requests:
+                cpu: 300m
+                memory: 512Mi
+              limits:
+                cpu: 500m
+                memory: 2048Mi
+      values:
+        pilot:
+          autoscaleEnabled: false
+        mixer:
+          telemetry:
+            autoscaleEnabled: false
+            loadshedding:
+              mode: disabled
+          policy:
+            autoscaleEnabled: false
 ---
 apiVersion: v1
 kind: ConfigMap
