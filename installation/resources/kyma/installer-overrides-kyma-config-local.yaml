@@ -37,35 +37,49 @@ data:
   global.adminPassword: ""
   global.minikubeIP: ""
 ---
-apiVersion: v1
-kind: ConfigMap
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
 metadata:
-  name: istio-overrides
-  namespace: kyma-installer
-  labels:
-    installer: overrides
-    component: istio
-    kyma-project.io/installation: ""
-data:
-  pilot.resources.limits.memory: 1024Mi
-  pilot.resources.limits.cpu: 500m
-  pilot.resources.requests.memory: 512Mi
-  pilot.resources.requests.cpu: 250m
-  pilot.autoscaleEnabled: "false"
-
-  mixer.policy.resources.limits.memory: 2048Mi
-  mixer.policy.resources.limits.cpu: 500m
-  mixer.policy.resources.requests.memory: 512Mi
-  mixer.policy.resources.requests.cpu: 300m
-
-  mixer.telemetry.resources.limits.memory: 2048Mi
-  mixer.telemetry.resources.limits.cpu: 500m
-  mixer.telemetry.resources.requests.memory: 512Mi
-  mixer.telemetry.resources.requests.cpu: 300m
-  mixer.loadshedding.mode: disabled
-
-  mixer.policy.autoscaleEnabled: "false"
-  mixer.telemetry.autoscaleEnabled: "false"
+  name: istio-system
+spec:
+  components:
+    pilot:
+      k8s:
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1024Mi
+    policy:
+      k8s:
+        resources:
+          requests:
+            cpu: 300m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 2048Mi
+    telemetry:
+      k8s:
+        resources:
+          requests:
+            cpu: 300m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 2048Mi
+  values:
+    pilot:
+      autoscaleEnabled: "false"
+    mixer:
+      telemetry:
+        autoscaleEnabled: "false"
+        loadshedding:
+          mode: disabled
+      policy:
+        autoscaleEnabled: "false"
 ---
 apiVersion: v1
 kind: ConfigMap
