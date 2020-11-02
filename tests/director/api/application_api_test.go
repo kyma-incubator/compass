@@ -534,6 +534,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
+		require.Contains(t, err.Error(), "The operation is not allowed")
 	})
 }
 

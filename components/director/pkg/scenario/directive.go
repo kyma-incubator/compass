@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -91,7 +92,7 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	}
 
 	if len(commonScenarios) == 0 {
-		return nil, ErrMissingScenario
+		return nil, apperrors.NewInvalidOperationError("requesting runtime should be in same scenario as the requested application resource")
 	}
 	log.Debugf("Found the following common scenarios: %+v", commonScenarios)
 
