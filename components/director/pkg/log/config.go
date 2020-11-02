@@ -24,10 +24,10 @@ import (
 )
 
 type Config struct {
-	Level                  string `envconfig:"LOG_LEVEL,default=info"`
-	Format                 string `envconfig:"LOG_FORMAT,default=text"`
-	Output                 string `envconfig:"LOG_OUTPUT,default=/dev/stdout"`
-	BootstrapCorrelationID string `envconfig:"LOG_BOOTSTRAP_CORRELATION_ID,default=bootstrap-correlation-id"`
+	Level                  string `envconfig:"APP_LOG_LEVEL,default=info"`
+	Format                 string `envconfig:"APP_LOG_FORMAT,default=text"`
+	Output                 string `envconfig:"APP_LOG_OUTPUT,default=/dev/stdout"`
+	BootstrapCorrelationID string `envconfig:"APP_LOG_BOOTSTRAP_CORRELATION_ID,default=bootstrap"`
 }
 
 // DefaultConfig returns default values for Log settings
@@ -36,7 +36,7 @@ func DefaultConfig() *Config {
 		Level:                  "info",
 		Format:                 "text",
 		Output:                 os.Stdout.Name(),
-		BootstrapCorrelationID: "bootstrap-correlation-id",
+		BootstrapCorrelationID: "bootstrap",
 	}
 }
 

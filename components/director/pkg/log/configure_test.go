@@ -169,7 +169,7 @@ func TestConfigureFormat(t *testing.T) {
 				return config
 			},
 			ExpectedOutput: []string{
-				`"component_type":"application","correlation_id":"bootstrap-correlation-id"`,
+				`"component_type":"application","correlation_id":"bootstrap"`,
 				`"msg":"Test","type":"log"`,
 			},
 		},
