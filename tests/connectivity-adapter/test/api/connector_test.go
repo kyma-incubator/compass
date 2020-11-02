@@ -72,7 +72,6 @@ func TestConnector(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Connector Service flow for Application", func(t *testing.T) {
-
 		certificateGenerationSuite(t, client, appID, config)
 		certificateRotationSuite(t, client, appID, config)
 		certificateRevocationSuite(t, client, appID, config.Tenant, config.SkipSslVerify)
@@ -83,7 +82,6 @@ func TestConnector(t *testing.T) {
 }
 
 func certificateGenerationSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration) {
-
 	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
 	clientKey := connector.CreateKey(t)
@@ -262,7 +260,6 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 }
 
 func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string) {
-
 	t.Run("should use default values to build CSR info response", func(t *testing.T) {
 		// given
 		client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
@@ -290,7 +287,6 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 }
 
 func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string) {
-
 	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
 	clientKey := connector.CreateKey(t)
