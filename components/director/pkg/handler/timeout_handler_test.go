@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,9 +16,13 @@ import (
 )
 
 func TestHandlerWithTimeout_ReturnsTimeoutMessage(t *testing.T) {
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
 	timeout := time.Millisecond * 100
 	h := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		time.Sleep(time.Second)
+		defer wg.Done()
+		time.Sleep(time.Millisecond * 110)
 		_, err := writer.Write([]byte("test"))
 		require.Equal(t, http.ErrHandlerTimeout, err)
 	})
@@ -43,6 +48,8 @@ func TestHandlerWithTimeout_ReturnsTimeoutMessage(t *testing.T) {
 	require.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 
 	require.Contains(t, actualError, "timed out")
+
+	wg.Wait()
 }
 
 func getErrorMessage(t *testing.T, data []byte) string {

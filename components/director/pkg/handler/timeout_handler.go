@@ -75,7 +75,7 @@ func (lrw *timoutLoggingResponseWriter) Write(b []byte) (int, error) {
 
 	i, err := lrw.ResponseWriter.Write(b)
 
-	if err != nil && strings.Contains(err.Error(), http.ErrHandlerTimeout.Error()) {
+	if err != nil && strings.Contains(err.Error(), http.ErrHandlerTimeout.Error()) && time.Since(lrw.requestStart) > lrw.timeout {
 		logrus.Warnf("Finished processing %s request to %s due to exceeded timeout of %s. Request processing terminated %s after timeout.",
 			lrw.method, lrw.url, lrw.timeout, time.Since(lrw.requestStart)-lrw.timeout)
 	}
