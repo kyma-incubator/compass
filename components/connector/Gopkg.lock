@@ -173,16 +173,17 @@
 
 [[projects]]
   branch = "logging-interface"
-  digest = "1:fceedccf6ec4776090ac327b040958834363b84150baf87d7feeb99cbd60e82f"
+  digest = "1:a81de6b6d888a816a05657382799f7940d66eae3cf6411ccc57d25173dc6492d"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/apperrors",
     "components/director/pkg/handler",
     "components/director/pkg/log",
     "components/director/pkg/resource",
+    "components/director/pkg/signal",
   ]
   pruneopts = "UT"
-  revision = "691ffaae69ecea166d0c617b280e2c9e81c4786b"
+  revision = "cb354151ddad841362d3186e0ae56cda866f1c8b"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -699,10 +700,10 @@
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/handler",
     "github.com/kyma-incubator/compass/components/director/pkg/log",
+    "github.com/kyma-incubator/compass/components/director/pkg/signal",
     "github.com/machinebox/graphql",
     "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",
-    "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",

@@ -52,12 +52,12 @@ func (c *client) GetConfiguration(token string) (Configuration, error) {
 }
 
 func (c *client) GenerateAndSignCert(certConfig Configuration) (CertificationResult, *rsa.PrivateKey, error) {
-	clientKey, err := GenerateKey()
+	clientKey, err := generateKey()
 	if err != nil {
 		return CertificationResult{}, nil, err
 	}
 
-	csr, err := CreateCsr(certConfig.CertificateSigningRequestInfo.Subject, clientKey)
+	csr, err := createCsr(certConfig.CertificateSigningRequestInfo.Subject, clientKey)
 	if err != nil {
 		return CertificationResult{}, nil, err
 	}

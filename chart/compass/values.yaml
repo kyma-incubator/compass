@@ -17,16 +17,16 @@ global:
       version: "PR-1597"
     connectivity_adapter:
       dir:
-      version: "PR-1582"
+      version: "PR-1595"
     pairing_adapter:
       dir:
-      version: "PR-1582"
+      version: "PR-1595"
     director:
       dir:
       version: "PR-1597"
     gateway:
       dir:
-      version: "PR-1582"
+      version: "PR-1595"
     healthchecker:
       dir:
       version: "PR-1460"
@@ -40,20 +40,20 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1460"
+      version: "PR-1591"
     metris:
       dir:
       version: "PR-1434"
     tests:
       director:
         dir:
-        version: "PR-1587"
+        version: "PR-1591"
       connector:
         dir:
         version: "PR-1582"
       connectivity_adapter:
         dir:
-        version: "PR-1453"
+        version: "PR-1588"
   isLocalEnv: false
   oauth2:
     host: oauth2

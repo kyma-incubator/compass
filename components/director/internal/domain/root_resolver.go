@@ -156,7 +156,7 @@ func NewRootResolver(
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, appSvc, packageSvc, eventAPIConverter, frConverter),
 		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                 document.NewResolver(transact, docSvc, appSvc, packageSvc, frConverter),
-		runtime:             runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
+		runtime:             runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
 		healthCheck:         healthcheck.NewResolver(healthCheckSvc),
 		webhook:             webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:            labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),

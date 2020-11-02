@@ -19,7 +19,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/stretchr/testify/assert"

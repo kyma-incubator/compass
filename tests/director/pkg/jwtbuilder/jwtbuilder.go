@@ -3,7 +3,7 @@ package jwtbuilder
 import (
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/pkg/errors"
 )
 
@@ -29,7 +29,8 @@ type Consumer struct {
 	Type ConsumerType
 }
 
-func Do(tenant string, scopes []string, consumer *Consumer) (string, error) {
+// Build constructs a JWT signed token containing the provided tenant, scopes and consumer information as claims
+func Build(tenant string, scopes []string, consumer *Consumer) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, jwtTokenClaims{
 		Tenant:       tenant,
 		Scopes:       strings.Join(scopes, " "),
