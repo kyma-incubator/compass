@@ -167,8 +167,7 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	contextEnricher := correlation.NewContextEnrichMiddleware()
-	mainRouter.Use(contextEnricher.AttachCorrelationIDToContext)
+	mainRouter.Use(correlation.AttachCorrelationIDToContext())
 
 	presenter := error_presenter.NewPresenter(log.StandardLogger(), uid.NewService())
 

@@ -24,6 +24,7 @@ const (
 	addWebhookCategory          = "add webhook"
 	updateWebhookCategory       = "update webhook"
 	webhookURL                  = "https://kyma-project.io"
+	defaultScenario             = "DEFAULT"
 )
 
 var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
@@ -465,17 +466,76 @@ func TestQuerySpecificApplication(t *testing.T) {
 	err = tc.RunOperation(context.Background(), request, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	createdID := actualApp.ID
-	defer unregisterApplication(t, actualApp.ID)
+	appID := actualApp.ID
+	defer unregisterApplication(t, appID)
 
-	// WHEN
-	queryAppReq := fixApplicationRequest(actualApp.ID)
-	err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
-	saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
+	t.Run("Query Application With Consumer User", func(t *testing.T) {
+		actualApp := graphql.Application{}
 
-	//THEN
-	require.NoError(t, err)
-	assert.Equal(t, createdID, actualApp.ID)
+		// WHEN
+		queryAppReq := fixApplicationRequest(appID)
+		err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
+		saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
+
+		//THE
+		require.NoError(t, err)
+		assert.Equal(t, appID, actualApp.ID)
+	})
+
+	ctx := context.Background()
+
+	runtime := registerRuntime(t, ctx, "runtime-test")
+	defer unregisterRuntime(t, runtime.ID)
+
+	scenarios := []string{defaultScenario, "test-scenario"}
+
+	// update label definitions
+	updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios)
+	defer updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios[:1])
+
+	runtimeConsumer := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
+		ID:   runtime.ID,
+		Type: jwtbuilder.RuntimeConsumer,
+	})
+
+	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
+		// set application scenarios label
+		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[1:])
+		defer setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1])
+
+		// set runtime scenarios label
+		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
+		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+
+		actualApp := graphql.Application{}
+
+		// WHEN
+		queryAppReq := fixApplicationRequest(appID)
+		err = runtimeConsumer.Run(queryAppReq, &actualApp)
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, appID, actualApp.ID)
+	})
+
+	t.Run("Query Application With Consumer Runtime not in same scenario", func(t *testing.T) {
+		// set application scenarios label
+		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1])
+
+		// set runtime scenarios label
+		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
+		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+
+		actualApp := graphql.Application{}
+
+		// WHEN
+		queryAppReq := fixApplicationRequest(appID)
+		err = runtimeConsumer.Run(queryAppReq, &actualApp)
+
+		//THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "The operation is not allowed")
+	})
 }
 
 func TestTenantSeparation(t *testing.T) {
@@ -630,11 +690,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	ctx := context.Background()
 	tenantID := testTenants.GetIDByName(t, "TestApplicationsForRuntimeWithHiddenApps")
 	expectedApplications := []*graphql.Application{}
+
 	defaultValue := "DEFAULT"
 	scenarios := []string{defaultValue, "test-scenario"}
-
-	applicationHideSelectorKey := "applicationHideSelectorKey"
-	applicationHideSelectorValue := "applicationHideSelectorValue"
 
 	jsonSchema := map[string]interface{}{
 		"type":        "array",
@@ -670,6 +728,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 			Hidden:          true,
 		},
 	}
+
+	applicationHideSelectorKey := "applicationHideSelectorKey"
+	applicationHideSelectorValue := "applicationHideSelectorValue"
 
 	for _, testApp := range applications {
 		applicationInput := fixSampleApplicationRegisterInput(testApp.ApplicationName)

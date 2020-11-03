@@ -216,7 +216,41 @@ func createScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Contex
 		"uniqueItems": true,
 	}
 
-	return createLabelDefinitionWithinTenant(t, ctx, "scenarios", jsonSchema, tenantID)
+	return createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, jsonSchema, tenantID)
+}
+
+func updateLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
+	input := graphql.LabelDefinitionInput{
+		Key:    key,
+		Schema: marshalJSONSchema(t, schema),
+	}
+
+	in, err := tc.graphqlizer.LabelDefinitionInputToGQL(input)
+	if err != nil {
+		return nil
+	}
+
+	updateRequest := fixUpdateLabelDefinitionRequest(in)
+
+	output := graphql.LabelDefinition{}
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, updateRequest, &output)
+	require.NoError(t, err)
+
+	return &output
+}
+
+func updateScenariosLabelDefinitionWithinTenant(t *testing.T, ctx context.Context, tenantID string, scenarios []string) *graphql.LabelDefinition {
+	jsonSchema := map[string]interface{}{
+		"items": map[string]interface{}{
+			"enum": scenarios,
+			"type": "string",
+		},
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+	}
+
+	return updateLabelDefinitionWithinTenant(t, ctx, scenariosLabel, jsonSchema, tenantID)
 }
 
 func deleteLabelDefinition(t *testing.T, ctx context.Context, labelDefinitionKey string, deleteRelatedResources bool) {
