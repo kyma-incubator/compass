@@ -132,7 +132,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
 	}*/
 
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmCtxTenant, model.RuntimeLabelableObject, id, in.Labels)
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Runtime Context")
 	}
@@ -212,7 +212,7 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 	}
 
 	if !rtmExists {
-		return nil, fmt.Errorf("Runtime with ID %s doesn't exist", runtimeID)
+		return nil, fmt.Errorf("runtime Context with ID %s doesn't exist", runtimeID)
 	}
 
 	labels, err := s.labelRepo.ListForObject(ctx, rtmTenant, model.RuntimeContextLabelableObject, runtimeID)
