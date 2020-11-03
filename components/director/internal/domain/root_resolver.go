@@ -247,6 +247,9 @@ func (r *queryResolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelD
 func (r *queryResolver) LabelDefinition(ctx context.Context, key string) (*graphql.LabelDefinition, error) {
 	return r.labelDef.LabelDefinition(ctx, key)
 }
+func (r *queryResolver) PackageInstanceAuth(ctx context.Context, id string) (*graphql.PackageInstanceAuth, error) {
+	return r.packageInstanceAuth.PackageInstanceAuth(ctx, id)
+}
 func (r *queryResolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *graphql.PageCursor) (*graphql.HealthCheckPage, error) {
 	return r.healthCheck.HealthChecks(ctx, types, origin, first, after)
 }
