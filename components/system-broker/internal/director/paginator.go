@@ -24,7 +24,6 @@ type Paginator struct {
 	pageSize  int
 	pageToken string
 	client    Client
-	hasNext   bool
 }
 
 func NewPaginator(query string, pageSize int, client Client) *Paginator {
@@ -32,7 +31,6 @@ func NewPaginator(query string, pageSize int, client Client) *Paginator {
 		query:    query,
 		pageSize: pageSize,
 		client:   client,
-		hasNext:  true,
 	}
 }
 

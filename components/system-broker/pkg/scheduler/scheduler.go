@@ -46,10 +46,10 @@ func (s Scheduler) Schedule(f func(ctx context.Context) error) {
 
 func (s Scheduler) Wait() error {
 	success := make(chan interface{})
-	go func(wg *sync.WaitGroup) {
-		wg.Wait()
+	go func() {
+		s.wg.Wait()
 		close(success)
-	}(s.wg)
+	}()
 
 	select {
 	case <-success:

@@ -35,8 +35,8 @@ const DirectorServer = "director-server"
 
 type TestContext struct {
 	SystemBroker *httpexpect.Expect
-
-	Servers map[string]FakeServer
+	HttpClient   *http.Client
+	Servers      map[string]FakeServer
 }
 
 func (tc *TestContext) CleanUp() {
@@ -127,6 +127,7 @@ func (tcb *TestContextBuilder) Build(t *testing.T) *TestContext {
 	testContext := &TestContext{
 		SystemBroker: systemBroker,
 		Servers:      tcb.Servers,
+		HttpClient:   tcb.HttpClient,
 	}
 
 	return testContext
@@ -151,7 +152,7 @@ func (tc *TestContext) ConfigureResponse(configURL, queryType, queryName, respon
 		return err
 	}
 
-	http.DefaultClient.Post(configURL, "application/json", bytes.NewReader(jsonBody))
+	tc.HttpClient.Post(configURL, "application/json", bytes.NewReader(jsonBody))
 	return nil
 }
 

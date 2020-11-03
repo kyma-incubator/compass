@@ -3,7 +3,9 @@ package common
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/vektah/gqlparser"
@@ -50,9 +52,25 @@ func (g *GqlFakeRouter) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/config", g.configHandler)
 	mux.HandleFunc("/graphql", g.graphqlHandler)
+	mux.HandleFunc("/verify", g.verifyHandler)
 	mux.HandleFunc("/config/reset", g.resetHandler)
 
 	return mux
+}
+
+func (g *GqlFakeRouter) verifyHandler(w http.ResponseWriter, r *http.Request) {
+	g.m.Lock()
+	defer g.m.Unlock()
+
+	if len(g.ResponseConfig) != 0 {
+		sb := strings.Builder{}
+		for k, v := range g.ResponseConfig {
+			sb.WriteString(fmt.Sprintf("%s %s was expected to be called %d more times\n", k.Type, k.Name, len(v)))
+		}
+		writeError(w, http.StatusInternalServerError, errors.New(sb.String()))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (g *GqlFakeRouter) configHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,18 +117,11 @@ func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
 		Type: queryType,
 		Name: queryName,
 	}
-	var response interface{}
-	func() {
-		g.m.Lock()
-		defer g.m.Unlock()
-		if len(g.ResponseConfig[key]) == 0 {
-			writeError(w, http.StatusInternalServerError, errors.New("no GQL response configured"))
-			return
-		}
-
-		response = g.ResponseConfig[key][0]
-		g.ResponseConfig[key] = g.ResponseConfig[key][1:]
-	}()
+	response, err := g.getResponseByKey(key)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
@@ -128,4 +139,19 @@ func (g *GqlFakeRouter) resetHandler(w http.ResponseWriter, r *http.Request) {
 	defer g.m.Unlock()
 
 	g.ResponseConfig = make(map[GraphqlQueryKey][]interface{})
+}
+
+func (g *GqlFakeRouter) getResponseByKey(key GraphqlQueryKey) (interface{}, error) {
+	g.m.Lock()
+	defer g.m.Unlock()
+	if len(g.ResponseConfig[key]) == 0 {
+		return nil, errors.New("no GQL response configured")
+	}
+
+	response := g.ResponseConfig[key][0]
+	g.ResponseConfig[key] = g.ResponseConfig[key][1:]
+	if len(g.ResponseConfig[key]) == 0 {
+		delete(g.ResponseConfig, key)
+	}
+	return response, nil
 }

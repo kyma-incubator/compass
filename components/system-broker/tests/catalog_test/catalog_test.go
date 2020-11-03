@@ -1,6 +1,7 @@
 package catalog_test
 
 import (
+	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -289,11 +290,23 @@ func (suite *OSBCatalogTestSuite) SetupSuite() {
 }
 
 func (suite *OSBCatalogTestSuite) SetupTest() {
-	http.DefaultClient.Post(suite.configURL+"/reset", "application/json", nil)
+	suite.testContext.HttpClient.Post(suite.configURL+"/reset", "application/json", nil)
 }
 
 func (suite *OSBCatalogTestSuite) TearDownSuite() {
 	suite.testContext.CleanUp()
+}
+
+func (suite *OSBCatalogTestSuite) TeardownTest() {
+	resp, err := suite.testContext.HttpClient.Get(suite.configURL + "/verify")
+	assert.NoError(suite.T(), err)
+
+	if resp.StatusCode == http.StatusInternalServerError {
+		errorMsg, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(suite.T(), err)
+		suite.Fail(string(errorMsg))
+	}
+	assert.Equal(suite.T(), resp.StatusCode, http.StatusOK)
 }
 
 func (suite *OSBCatalogTestSuite) TestEmptyResponse() {
