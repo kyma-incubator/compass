@@ -18,7 +18,6 @@ type Scheduler struct {
 func NewScheduler(ctx context.Context, maxConcurrency int) *Scheduler {
 	childContext, cancel := context.WithCancel(ctx)
 	return &Scheduler{wg: &sync.WaitGroup{}, concurrency: make(chan struct{}, maxConcurrency), ctx: childContext, cancelFunc: cancel}
-
 }
 
 func (s Scheduler) Schedule(f func(ctx context.Context) error) {
