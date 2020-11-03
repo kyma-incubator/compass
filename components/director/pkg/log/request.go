@@ -17,10 +17,9 @@
 package log
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"net/http"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/sirupsen/logrus"
 )
@@ -68,5 +67,5 @@ func RequestLogger() func(next http.Handler) http.Handler {
 }
 
 func CorrelationIDForRequest(request *http.Request) string {
-	return uuid.New().String() // TODO: When Desi's change is in place
+	return correlation.HeadersForRequest(request)[correlation.RequestIDHeaderKey]
 }

@@ -49,8 +49,8 @@ func TestRequestLoggerUseCorrelationIDFromHeaderIfProvided(t *testing.T) {
 	handler(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		entry := log.C(request.Context())
 
-		_, exists := entry.Data[log.FieldRequestID]
+		correlationIDFromLogger, exists := entry.Data[log.FieldRequestID]
 		require.True(t, exists)
-		//require.Equal(t, correlationID, correlationIDFromLogger)
+		require.Equal(t, correlationID, correlationIDFromLogger)
 	})).ServeHTTP(response, request)
 }
