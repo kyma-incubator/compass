@@ -27,4 +27,6 @@ require (
 replace (
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
+
+	github.com/dgrijalva/jwt-go => github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 )
