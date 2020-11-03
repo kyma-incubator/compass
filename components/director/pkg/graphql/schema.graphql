@@ -535,6 +535,18 @@ input RuntimeInput {
 	statusCondition: RuntimeStatusCondition
 }
 
+input RuntimeContextInput {
+	"""
+	**Validation:** max=512, alphanumeric chartacters and underscore
+	"""
+	key: String!
+	value: String!
+	"""
+	**Validation:** key: required, alphanumeric with underscore
+	"""
+	labels: Labels
+}
+
 input TemplateValueInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -884,6 +896,13 @@ type Runtime {
 	eventingConfiguration: RuntimeEventingConfiguration
 }
 
+type RuntimeContext {
+	id: ID!
+	key: String!
+	value: String!
+	labels(key: String): Labels
+}
+
 type RuntimeEventingConfiguration {
 	defaultURL: String!
 }
@@ -894,6 +913,12 @@ type RuntimeMetadata {
 
 type RuntimePage implements Pageable {
 	data: [Runtime!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
+type RuntimeContextPage implements Pageable {
+	data: [RuntimeContext!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
 }
@@ -986,11 +1011,16 @@ type Query {
 	- [query runtimes](examples/query-runtimes/query-runtimes.graphql)
 	"""
 	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
+
+	runtimeContexts(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimeContextPage! @hasScopes(path: "graphql.query.runtimeContexts")
 	"""
 	**Examples**
 	- [query runtime](examples/query-runtime/query-runtime.graphql)
 	"""
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
+
+	runtimeContext(id: ID!): RuntimeContext @hasScopes(path: "graphql.query.runtimeContext")
+
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	"""
 	**Examples**
@@ -1087,6 +1117,11 @@ type Mutation {
 	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
 	"""
 	unregisterRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.unregisterRuntime")
+
+	registerRuntimeContext(in: RuntimeContextInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntimeContext")
+	updateRuntimeContext(id: ID!, in: RuntimeContextInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntimeContext")
+	unregisterRuntimeContext(id: ID!): RuntimeContext! @hasScopes(path: "graphql.mutation.unregisterRuntimeContext")
+
 	"""
 	**Examples**
 	- [register integration system](examples/register-integration-system/register-integration-system.graphql)
