@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -15,16 +16,16 @@ func TestPeriodic(t *testing.T) {
 
 	// GIVEN
 	called := 0
-	worker := func(stopCh <-chan struct{}) {
+	worker := func(ctx context.Context) {
 		called = called + 1
 	}
-	stopCh := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.TODO())
 	svc := NewPeriodic(50*time.Millisecond, worker)
 
 	// WHEN
-	svc.Run(stopCh)
+	svc.Run(ctx)
 	time.Sleep(120 * time.Millisecond)
-	close(stopCh)
+	cancel()
 
 	// THEN
 	// expecting 3 calls, first at after 0ms, second - after 10ms, third after 20ms
