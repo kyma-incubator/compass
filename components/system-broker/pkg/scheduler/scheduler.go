@@ -1,4 +1,4 @@
-package director
+package scheduler
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type Scheduler struct {
 	cancelFunc  context.CancelFunc
 }
 
-func NewScheduler(ctx context.Context, maxConcurrency int) *Scheduler {
+func New(ctx context.Context, maxConcurrency int) *Scheduler {
 	childContext, cancel := context.WithCancel(ctx)
 	return &Scheduler{wg: &sync.WaitGroup{}, concurrency: make(chan struct{}, maxConcurrency), ctx: childContext, cancelFunc: cancel}
 }

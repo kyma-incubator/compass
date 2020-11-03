@@ -27,7 +27,7 @@ type Paginator struct {
 	hasNext   bool
 }
 
-func NewPager(query string, pageSize int, client Client) *Paginator {
+func NewPaginator(query string, pageSize int, client Client) *Paginator {
 	return &Paginator{
 		query:    query,
 		pageSize: pageSize,

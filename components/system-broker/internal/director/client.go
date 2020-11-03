@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/scheduler"
+
 	"github.com/asaskevich/govalidator"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
@@ -77,7 +79,7 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutp
 			}
 	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForApplicationPageable()))
 
-	pager := NewPager(query, c.pageSize, c.gcli)
+	pager := NewPaginator(query, c.pageSize, c.gcli)
 	apps := &ApplicationResponse{}
 
 	appsResult, err := apps.ListAll(ctx, pager)
@@ -85,9 +87,9 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutp
 		return nil, errors.Wrap(err, "while listing all apps")
 	}
 
-	s := NewScheduler(ctx, c.pageConcurrency)
+	s := scheduler.New(ctx, c.pageConcurrency)
 	s.Schedule(func(ctx context.Context) error {
-		c.fetchPackagesForApps(appsResult, s)
+		c.fetchPackages(appsResult, s)
 		return nil
 	})
 
@@ -98,7 +100,14 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutp
 	return appsResult, nil
 }
 
-func (c *GraphQLClient) processPackage(i int, app schema.ApplicationExt, apps ApplicationsOutput, s *Scheduler) func(ctx context.Context) error {
+func (c *GraphQLClient) fetchPackages(apps ApplicationsOutput, s *scheduler.Scheduler) {
+	for i, app := range apps {
+		f := c.fetchPackagesForApp(i, app, apps, s)
+		s.Schedule(f)
+	}
+}
+
+func (c *GraphQLClient) fetchPackagesForApp(i int, app schema.ApplicationExt, apps ApplicationsOutput, s *scheduler.Scheduler) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
@@ -114,7 +123,7 @@ func (c *GraphQLClient) processPackage(i int, app schema.ApplicationExt, apps Ap
 				}
 			}`, app.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForPackagePageable()))
 
-		pager := NewPager(query, c.pageSize, c.gcli)
+		pager := NewPaginator(query, c.pageSize, c.gcli)
 		packages := &PackagesResponse{}
 		packagesResult, err := packages.ListAll(ctx, pager)
 		if err != nil {
@@ -146,14 +155,34 @@ func (c *GraphQLClient) processPackage(i int, app schema.ApplicationExt, apps Ap
 	}
 }
 
-func (c *GraphQLClient) fetchPackagesForApps(apps ApplicationsOutput, s *Scheduler) {
-	for i, app := range apps {
-		f := c.processPackage(i, app, apps, s)
+func (c *GraphQLClient) fetchApiDefinitions(appID string, packages PackagessOutput, s *scheduler.Scheduler) {
+	for i, packaged := range packages {
+		f := c.fetchApiDefForPackage(i, packaged, appID, packages)
 		s.Schedule(f)
 	}
 }
 
-func (c *GraphQLClient) processApiDef(i int, packaged *schema.PackageExt, appID string, packages PackagessOutput) func(ctx context.Context) error {
+func (c *GraphQLClient) fetchEventDefinitions(appID string, packages PackagessOutput, s *scheduler.Scheduler) func(ctx context.Context) error {
+	return func(ctx context.Context) error {
+		for i, packaged := range packages {
+			f := c.fetchEventDefForPackage(i, packaged, appID, packages)
+			s.Schedule(f)
+		}
+		return nil
+	}
+}
+
+func (c *GraphQLClient) fetchDocuments(appID string, packages PackagessOutput, s *scheduler.Scheduler) func(ctx context.Context) error {
+	return func(ctx context.Context) error {
+		for i, packaged := range packages {
+			f := c.fetchDocumentsForPackage(i, packaged, appID, packages)
+			s.Schedule(f)
+		}
+		return nil
+	}
+}
+
+func (c *GraphQLClient) fetchApiDefForPackage(i int, packaged *schema.PackageExt, appID string, packages PackagessOutput) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
@@ -171,7 +200,7 @@ func (c *GraphQLClient) processApiDef(i int, packaged *schema.PackageExt, appID 
 	}
 }`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForAPIDefinition()))
 
-		pager := NewPager(query, c.pageSize, c.gcli)
+		pager := NewPaginator(query, c.pageSize, c.gcli)
 		definitions := &ApiDefinitionsResponse{}
 		responseApiDefinitions, err := definitions.ListAll(ctx, pager)
 		if err != nil {
@@ -189,14 +218,7 @@ func (c *GraphQLClient) processApiDef(i int, packaged *schema.PackageExt, appID 
 	}
 }
 
-func (c *GraphQLClient) fetchApiDefinitions(appID string, packages PackagessOutput, s *Scheduler) {
-	for i, packaged := range packages {
-		f := c.processApiDef(i, packaged, appID, packages)
-		s.Schedule(f)
-	}
-}
-
-func (c *GraphQLClient) processEventDef(i int, packaged *schema.PackageExt, appID string, packages PackagessOutput) func(ctx context.Context) error {
+func (c *GraphQLClient) fetchEventDefForPackage(i int, packaged *schema.PackageExt, appID string, packages PackagessOutput) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
@@ -214,7 +236,7 @@ result: application(id: %q) {
 }
 }`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForEventDefinition()))
 
-		pager := NewPager(query, c.pageSize, c.gcli)
+		pager := NewPaginator(query, c.pageSize, c.gcli)
 		definitions := &EventDefinitionsResponse{}
 		responseEventDefinitions, err := definitions.ListAll(ctx, pager)
 		if err != nil {
@@ -233,17 +255,7 @@ result: application(id: %q) {
 	}
 }
 
-func (c *GraphQLClient) fetchEventDefinitions(appID string, packages PackagessOutput, s *Scheduler) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		for i, packaged := range packages {
-			f := c.processEventDef(i, packaged, appID, packages)
-			s.Schedule(f)
-		}
-		return nil
-	}
-}
-
-func (c *GraphQLClient) processDoc(i int, packaged *schema.PackageExt, appID string, packages PackagessOutput) func(ctx context.Context) error {
+func (c *GraphQLClient) fetchDocumentsForPackage(i int, packaged *schema.PackageExt, appID string, packages PackagessOutput) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
@@ -260,7 +272,7 @@ result: application(id: %q) {
 }
 }`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForDocument()))
 
-		pager := NewPager(query, c.pageSize, c.gcli)
+		pager := NewPaginator(query, c.pageSize, c.gcli)
 		definitions := &DocumentsResponse{}
 		responseDocuments, err := definitions.ListAll(ctx, pager)
 
@@ -274,16 +286,6 @@ result: application(id: %q) {
 		}
 		packages[i].Documents = schema.DocumentPageExt{
 			Data: responseDocuments,
-		}
-		return nil
-	}
-}
-
-func (c *GraphQLClient) fetchDocuments(appID string, packages PackagessOutput, s *Scheduler) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		for i, packaged := range packages {
-			f := c.processDoc(i, packaged, appID, packages)
-			s.Schedule(f)
 		}
 		return nil
 	}
