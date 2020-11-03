@@ -407,6 +407,7 @@ type PackageInstanceAuth struct {
 }
 
 type PackageInstanceAuthRequestInput struct {
+	ID *string `json:"id"`
 	// Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
 	Context *JSON `json:"context"`
 	// **Validation:** JSON validated against package.instanceAuthRequestInputSchema

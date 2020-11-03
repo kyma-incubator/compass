@@ -46,9 +46,10 @@ func TestPackageInstanceAuthRequestInput_ToPackageInstanceAuth(t *testing.T) {
 		Auth:        &inputAuth,
 		Status:      &inputStatus,
 	}
-	result := input.ToPackageInstanceAuth(testID, testPackageID, testTenant, &inputAuth, &inputStatus)
+	result, err := input.ToPackageInstanceAuth(testPackageID, testTenant, &inputAuth, &inputStatus)
 	// THEN
 	require.Equal(t, expected, result)
+	require.NoError(t, err)
 
 }
 

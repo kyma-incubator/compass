@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"time"
 
 	"github.com/pkg/errors"
@@ -68,20 +69,25 @@ const (
 
 // Input type for requestPackageInstanceAuthCreation
 type PackageInstanceAuthRequestInput struct {
+	ID          *string
 	Context     *string
 	InputParams *string
 }
 
-func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(id, packageID, tenant string, auth *Auth, status *PackageInstanceAuthStatus) PackageInstanceAuth {
+func (ri PackageInstanceAuthRequestInput) ToPackageInstanceAuth(packageID, tenant string, auth *Auth, status *PackageInstanceAuthStatus) (PackageInstanceAuth, error) {
+	if ri.ID == nil {
+		return PackageInstanceAuth{}, apperrors.NewInvalidDataError("missing package instance auth id")
+	}
+
 	return PackageInstanceAuth{
-		ID:          id,
+		ID:          *ri.ID,
 		PackageID:   packageID,
 		Tenant:      tenant,
 		Context:     ri.Context,
 		InputParams: ri.InputParams,
 		Auth:        auth,
 		Status:      status,
-	}
+	}, nil
 }
 
 // Input type for setPackageInstanceAuth

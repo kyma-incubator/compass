@@ -3311,6 +3311,7 @@ input PackageCreateInput {
 }
 
 input PackageInstanceAuthRequestInput {
+	id: ID
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
 	"""
@@ -19211,6 +19212,12 @@ func (ec *executionContext) unmarshalInputPackageInstanceAuthRequestInput(ctx co
 
 	for k, v := range asMap {
 		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "context":
 			var err error
 			it.Context, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)

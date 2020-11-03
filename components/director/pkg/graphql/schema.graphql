@@ -447,6 +447,7 @@ input PackageCreateInput {
 }
 
 input PackageInstanceAuthRequestInput {
+	id: ID
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
 	"""
