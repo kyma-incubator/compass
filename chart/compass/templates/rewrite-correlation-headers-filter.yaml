@@ -20,7 +20,7 @@ spec:
             local reqHeaders = request_handle:headers()
             local newRequestIDHeaderValue=''
             for key, value in pairs(reqHeaders) do
-              if (expectedHeaders[key] and newRequestIDHeaderValue=='')then
+              if (expectedHeaders[key] and newRequestIDHeaderValue=='')then -- empty value check is needed because we cannot break the loop: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/lua_filter#pairs
                 newRequestIDHeaderValue = value
               end
             end

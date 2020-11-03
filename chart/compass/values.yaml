@@ -162,6 +162,8 @@ global:
         - "x-correlation-id"
         - "x-correlationid"
         - "x-forrequest-id"
+        - "x-vcap-request-id"
+        - "x-broker-api-request-identity"
 
   database:
     manageSecrets: true
