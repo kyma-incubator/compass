@@ -23,7 +23,7 @@ global:
       version: "PR-1595"
     director:
       dir:
-      version: "PR-1593"
+      version: "PR-1579"
     gateway:
       dir:
       version: "PR-1595"
@@ -153,6 +153,17 @@ global:
       namespace: "compass-system"
     proxy:
       port: 15020
+    namespace: istio-system
+    ingressgateway:
+      workloadLabel: istio-ingressgateway
+      correlationHeaderRewriteFilter:
+        expectedHeaders:
+        - "x-request-id"
+        - "x-correlation-id"
+        - "x-correlationid"
+        - "x-forrequest-id"
+        - "x-vcap-request-id"
+        - "x-broker-api-request-identity"
 
   database:
     manageSecrets: true

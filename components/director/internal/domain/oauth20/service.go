@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/request"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -167,7 +166,7 @@ func (s *service) unregisterClient(ctx context.Context, clientID string) error {
 }
 
 func (s *service) doRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Response, func(body io.ReadCloser), error) {
-	req, err := request.NewHttpRequest(ctx, method, endpoint, body)
+	req, err := http.NewRequestWithContext(ctx, method, endpoint, body)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while creating new request")
 	}
