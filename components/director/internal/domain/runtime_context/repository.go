@@ -122,9 +122,11 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 
-	var conditions repo.Conditions
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("runtime_id", runtimeID),
+	}
 	if filterSubquery != "" {
-		conditions = append(conditions, repo.NewEqualCondition("runtime_id", runtimeID), repo.NewInConditionForSubQuery("id", filterSubquery, args))
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &runtimeCtxsCollection, conditions...)
