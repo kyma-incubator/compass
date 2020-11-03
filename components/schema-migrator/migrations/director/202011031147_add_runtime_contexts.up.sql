@@ -10,4 +10,20 @@ CREATE TABLE runtime_contexts (
     value VARCHAR(512) NOT NULL
 );
 
+ALTER TABLE labels
+    ADD COLUMN runtime_context_id UUID;
+
+ALTER TABLE labels
+    ADD CONSTRAINT runtime_context_id_fk FOREIGN KEY (runtime_context_id) REFERENCES runtime_contexts(id) ON DELETE CASCADE;
+
+ALTER TABLE labels
+    DROP CONSTRAINT valid_refs;
+
+ALTER TABLE labels
+    ADD CONSTRAINT valid_refs
+        CHECK (app_id IS NOT NULL OR runtime_id IS NOT NULL OR labels.runtime_context_id IS NOT NULL);
+
+DROP INDEX IF EXISTS labels_tenant_id_key_coalesce_coalesce1_idx;
+CREATE UNIQUE INDEX ON labels (tenant_id, coalesce(app_id, '00000000-0000-0000-0000-000000000000'), coalesce(runtime_id, '00000000-0000-0000-0000-000000000000'), coalesce(labels.runtime_context_id, '00000000-0000-0000-0000-000000000000'));
+
 COMMIT;

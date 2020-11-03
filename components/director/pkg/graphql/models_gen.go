@@ -485,6 +485,29 @@ type PlaceholderDefinitionInput struct {
 	Description *string `json:"description"`
 }
 
+type RuntimeContext struct {
+	ID     string  `json:"id"`
+	Key    string  `json:"key"`
+	Value  string  `json:"value"`
+	Labels *Labels `json:"labels"`
+}
+
+type RuntimeContextInput struct {
+	// **Validation:** max=512, alphanumeric chartacters and underscore
+	Key   string `json:"key"`
+	Value string `json:"value"`
+	// **Validation:** key: required, alphanumeric with underscore
+	Labels *Labels `json:"labels"`
+}
+
+type RuntimeContextPage struct {
+	Data       []*RuntimeContext `json:"data"`
+	PageInfo   *PageInfo         `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}
+
+func (RuntimeContextPage) IsPageable() {}
+
 type RuntimeEventingConfiguration struct {
 	DefaultURL string `json:"defaultURL"`
 }
