@@ -22,7 +22,8 @@ package {{.PackageName}}
 
 import (
 	"context"
-
+	
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/paginator"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -31,13 +32,13 @@ func (p *{{.Type}}) PageInfo() *graphql.PageInfo {
 	return &p{{.DataPath}}.Page
 }
 
-func (p *{{.Type}}) ListAll(ctx context.Context, pager *Paginator) ({{.OutputType}}, error) {
+func (p *{{.Type}}) ListAll(ctx context.Context, paginator *paginator.Paginator) ({{.OutputType}}, error) {
 	pageResult := {{.OutputType}}{}
 
 	for {
 		items := &{{.Type}}{}
 
-		hasNext, err := pager.Next(ctx, items)
+		hasNext, err := paginator.Next(ctx, items)
 		if err != nil {
 			return nil, err
 		}

@@ -4,7 +4,8 @@ package director
 
 import (
 	"context"
-
+	
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/paginator"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -13,13 +14,13 @@ func (p *PackagesResponse) PageInfo() *graphql.PageInfo {
 	return &p.Result.Packages.Page
 }
 
-func (p *PackagesResponse) ListAll(ctx context.Context, pager *Paginator) (PackagessOutput, error) {
+func (p *PackagesResponse) ListAll(ctx context.Context, paginator *paginator.Paginator) (PackagessOutput, error) {
 	pageResult := PackagessOutput{}
 
 	for {
 		items := &PackagesResponse{}
 
-		hasNext, err := pager.Next(ctx, items)
+		hasNext, err := paginator.Next(ctx, items)
 		if err != nil {
 			return nil, err
 		}

@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/paginator"
+
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/scheduler"
 
 	"github.com/asaskevich/govalidator"
@@ -29,11 +31,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
-
-//go:generate mockery -name=Client
-type Client interface {
-	Do(ctx context.Context, req *gcli.Request, res interface{}) error
-}
 
 //go:generate mockery -name=GqlFieldsProvider
 type GqlFieldsProvider interface {
@@ -53,7 +50,7 @@ type GraphQLizer interface {
 	PackageInstanceAuthRequestInputToGQL(in schema.PackageInstanceAuthRequestInput) (string, error)
 }
 
-func NewGraphQLClient(gqlClient Client, gqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider, c *Config) *GraphQLClient {
+func NewGraphQLClient(gqlClient paginator.Client, gqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider, c *Config) *GraphQLClient {
 	return &GraphQLClient{
 		gcli: gqlClient,
 		//queryProvider:     queryProvider{}, - gqlizers are better
@@ -65,7 +62,7 @@ func NewGraphQLClient(gqlClient Client, gqlizer GraphQLizer, gqlFieldsProvider G
 }
 
 type GraphQLClient struct {
-	gcli              Client
+	gcli              paginator.Client
 	inputGraphqlizer  GraphQLizer
 	outputGraphqlizer GqlFieldsProvider
 	pageSize          int
@@ -79,7 +76,7 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (ApplicationsOutp
 			}
 	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForApplicationPageable()))
 
-	pager := NewPaginator(query, c.pageSize, c.gcli)
+	pager := paginator.NewPaginator(query, c.pageSize, c.gcli)
 	apps := &ApplicationResponse{}
 
 	appsResult, err := apps.ListAll(ctx, pager)
@@ -123,7 +120,7 @@ func (c *GraphQLClient) fetchPackagesForApp(i int, app schema.ApplicationExt, ap
 				}
 			}`, app.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForPackagePageable()))
 
-		pager := NewPaginator(query, c.pageSize, c.gcli)
+		pager := paginator.NewPaginator(query, c.pageSize, c.gcli)
 		packages := &PackagesResponse{}
 		packagesResult, err := packages.ListAll(ctx, pager)
 		if err != nil {
@@ -200,7 +197,7 @@ func (c *GraphQLClient) fetchApiDefForPackage(i int, packaged *schema.PackageExt
 	}
 }`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForAPIDefinition()))
 
-		pager := NewPaginator(query, c.pageSize, c.gcli)
+		pager := paginator.NewPaginator(query, c.pageSize, c.gcli)
 		definitions := &ApiDefinitionsResponse{}
 		responseApiDefinitions, err := definitions.ListAll(ctx, pager)
 		if err != nil {
@@ -236,7 +233,7 @@ result: application(id: %q) {
 }
 }`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForEventDefinition()))
 
-		pager := NewPaginator(query, c.pageSize, c.gcli)
+		pager := paginator.NewPaginator(query, c.pageSize, c.gcli)
 		definitions := &EventDefinitionsResponse{}
 		responseEventDefinitions, err := definitions.ListAll(ctx, pager)
 		if err != nil {
@@ -272,7 +269,7 @@ result: application(id: %q) {
 }
 }`, appID, packaged.ID, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForDocument()))
 
-		pager := NewPaginator(query, c.pageSize, c.gcli)
+		pager := paginator.NewPaginator(query, c.pageSize, c.gcli)
 		definitions := &DocumentsResponse{}
 		responseDocuments, err := definitions.ListAll(ctx, pager)
 
