@@ -17,6 +17,7 @@ require (
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20201102144032-0a9e1912c192
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.2.2
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/onrik/logrus v0.7.0
 	github.com/onsi/ginkgo v1.14.0 // indirect
@@ -31,14 +32,13 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.4.0
-	github.com/tidwall/gjson v1.6.0 // indirect
 	github.com/valyala/fasthttp v1.16.0 // indirect
 	github.com/vektah/gqlparser v1.3.1
-	github.com/vektra/mockery v1.0.0 // indirect
 	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0 // indirect
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	github.com/yudai/pp v2.0.1+incompatible // indirect
+	golang.org/x/tools v0.0.0-20200323144430-8dcfad9e016e // indirect
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6

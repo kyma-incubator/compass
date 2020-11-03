@@ -25,7 +25,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate counterfeiter . TokenProvider
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . TokenProvider
 type TokenProvider interface {
 	GetAuthorizationToken(ctx context.Context) (Token, error)
 }

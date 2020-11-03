@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate counterfeiter . GraphQLClient
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . GraphQLClient
 type GraphQLClient interface {
 	Run(ctx context.Context, req *graphql.Request, resp interface{}) error
 }

@@ -1,14 +1,13 @@
-package paginator
+package paginator_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/paginator/mocks"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/paginator"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/paginator/paginatorfakes"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -119,52 +118,52 @@ func TestPaginator_Next(t *testing.T) {
 		query := "test-query-1"
 		pageSize := 1
 
-		client := &mocks.Client{}
-		client.On("Do", mock.Anything, mock.MatchedBy(func(req *gcli.Request) bool {
-			vars := req.Vars()
-			fmt.Println(">>> 1", vars["after"])
+		client := &paginatorfakes.FakeClient{}
+		client.DoCalls(func(c context.Context, r *gcli.Request, i interface{}) error {
+			vars := r.Vars()
 			matched := vars["first"] == pageSize
 			matched = matched && vars["after"] == ""
-			matched = matched && req.Query() == query
-			return matched
-		}), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-			fmt.Println(">>> RUN 1")
-			arg := args.Get(2).(*PageItem)
+			matched = matched && r.Query() == query
+			assert.True(t, matched)
+
+			arg := i.(*paginator.PageItem)
 			pagedArg := (*arg).(*PaginatorTestStruct)
 			pagedArg.Field1 = expected.Field1
 			pagedArg.Field2 = expected.Field2
 			pagedArg.Page = expected.Page
-		}).Times(1)
 
-		client.On("Do", mock.Anything, mock.MatchedBy(func(req *gcli.Request) bool {
-			vars := req.Vars()
-			fmt.Println(">>> 2", vars["after"])
-			matched := vars["first"] == pageSize
-			matched = matched && vars["after"] == expected.Page.EndCursor
-			matched = matched && req.Query() == query
-			return matched
-		}), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-			arg := args.Get(2).(*PageItem)
-			pagedArg := (*arg).(*PaginatorTestStruct)
-			pagedArg.Field1 = expected2.Field1
-			pagedArg.Field2 = expected2.Field2
-			pagedArg.Page = expected2.Page
-		}).Times(1)
+			return nil
+		})
 
-		paginator := NewPaginator(query, pageSize, client)
+		pager := paginator.NewPaginator(query, pageSize, client)
 
 		got := PaginatorTestStruct{}
 
-		hasNext, err := paginator.Next(context.Background(), &got)
+		hasNext, err := pager.Next(context.Background(), &got)
 		assert.NoError(t, err)
 		assert.True(t, hasNext)
 		assert.EqualValues(t, expected, got)
 
-		hasNext, err = paginator.Next(context.Background(), &got)
+		client.DoCalls(func(c context.Context, r *gcli.Request, i interface{}) error {
+			vars := r.Vars()
+			matched := vars["first"] == pageSize
+			matched = matched && vars["after"] == string(expected.Page.EndCursor)
+			matched = matched && r.Query() == query
+			assert.True(t, matched)
+
+			arg := i.(*paginator.PageItem)
+			pagedArg := (*arg).(*PaginatorTestStruct)
+			pagedArg.Field1 = expected2.Field1
+			pagedArg.Field2 = expected2.Field2
+			pagedArg.Page = expected2.Page
+
+			return nil
+		})
+
+		hasNext, err = pager.Next(context.Background(), &got)
 		assert.NoError(t, err)
 		assert.False(t, hasNext)
 		assert.EqualValues(t, expected2, got)
 
-		mock.AssertExpectationsForObjects(t, client)
 	})
 }
