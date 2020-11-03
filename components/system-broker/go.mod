@@ -34,6 +34,7 @@ require (
 	github.com/tidwall/gjson v1.6.0 // indirect
 	github.com/valyala/fasthttp v1.16.0 // indirect
 	github.com/vektah/gqlparser v1.3.1
+	github.com/vektra/mockery v1.0.0 // indirect
 	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0 // indirect
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
