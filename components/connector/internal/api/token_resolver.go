@@ -31,7 +31,7 @@ func (r *tokenResolver) GenerateApplicationToken(ctx context.Context, authID str
 
 	token, err := r.tokenService.CreateToken(ctx, authID, tokens.ApplicationToken)
 	if err != nil {
-		log.C(ctx).Errorf("Error occurred while creating one-time token for Application with authID %s : %s ", authID, err.Error())
+		log.C(ctx).WithError(err).Errorf("Error occurred while creating one-time token for Application with authID %s", authID)
 		return &externalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for Application")
 	}
 
@@ -44,7 +44,7 @@ func (r *tokenResolver) GenerateRuntimeToken(ctx context.Context, authID string)
 
 	token, err := r.tokenService.CreateToken(ctx, authID, tokens.RuntimeToken)
 	if err != nil {
-		log.C(ctx).Errorf("Error occurred while creating one-time token for Runtime with authID %s : %s ", authID, err.Error())
+		log.C(ctx).WithError(err).Errorf("Error occurred while creating one-time token for Runtime with authID %s", authID)
 		return &externalschema.Token{}, errors.Wrap(err, "Failed to create one-time token for Runtime")
 	}
 

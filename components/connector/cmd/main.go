@@ -129,7 +129,7 @@ func exitOnError(err error, context string) {
 func newK8SClientSet(ctx context.Context, interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
-		log.C(ctx).Warnf("Failed to read in cluster Config: %s", err.Error())
+		log.C(ctx).WithError(err).Warn("Failed to read in cluster Config")
 		log.C(ctx).Info("Trying to initialize with local Config")
 		home := homedir.HomeDir()
 		k8sConfPath := filepath.Join(home, ".kube", "Config")

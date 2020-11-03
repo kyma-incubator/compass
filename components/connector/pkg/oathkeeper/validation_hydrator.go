@@ -38,7 +38,7 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 	var authSession AuthenticationSession
 	err := json.NewDecoder(r.Body).Decode(&authSession)
 	if err != nil {
-		log.C(ctx).Error(err)
+		log.C(ctx).WithError(err).Error("Failed to decode request body")
 		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))
 		return
 	}
@@ -82,7 +82,7 @@ func (tvh *validationHydrator) ResolveIstioCertHeader(w http.ResponseWriter, r *
 	var authSession AuthenticationSession
 	err := json.NewDecoder(r.Body).Decode(&authSession)
 	if err != nil {
-		log.C(ctx).Error(err)
+		log.C(ctx).WithError(err).Error("Failed to decode request body")
 		httputils.RespondWithError(ctx, w, http.StatusBadRequest, errors.Wrap(err, "failed to decode Authentication Session from body"))
 		return
 	}

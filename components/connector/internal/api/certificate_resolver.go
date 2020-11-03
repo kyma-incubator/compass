@@ -55,7 +55,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		log.C(ctx).Error("Failed authentication while fetching the configuration. ", err.Error())
+		log.C(ctx).WithError(err).Error("Failed authentication while fetching the configuration. ")
 		return nil, err
 	}
 	log.C(ctx).Infof("Fetching configuration for client with id %s", clientId)
@@ -63,7 +63,7 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 	log.C(ctx).Infof("Creating one-time token as part of fetching configuration process for client with id %s", clientId)
 	token, err := r.tokenService.CreateToken(ctx, clientId, tokens.CSRToken)
 	if err != nil {
-		log.C(ctx).Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process: %s", clientId, err.Error())
+		log.C(ctx).WithError(err).Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process", clientId)
 		return nil, errors.Wrap(err, "Failed to create one-time token during fetching configuration process")
 	}
 
@@ -89,7 +89,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	clientId, err := r.authenticator.Authenticate(ctx)
 	if err != nil {
-		log.C(ctx).Error("Failed authentication during the signing CSR process. ", err.Error())
+		log.C(ctx).WithError(err).Error("Failed authentication during the signing CSR process.")
 		return nil, errors.Wrap(err, "Failed to authenticate with token")
 	}
 
@@ -97,7 +97,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	rawCSR, err := decodeStringFromBase64(csr)
 	if err != nil {
-		log.C(ctx).Errorf("Failed to decode the input CSR of client with id %s during the certificate signing process. %s", clientId, err.Error())
+		log.C(ctx).WithError(err).Errorf("Failed to decode the input CSR of client with id %s during the certificate signing process.", clientId)
 		return nil, errors.Wrap(err, "Error while decoding Certificate Signing Request")
 	}
 
@@ -108,7 +108,7 @@ func (r *certificateResolver) SignCertificateSigningRequest(ctx context.Context,
 
 	encodedCertificates, err := r.certificatesService.SignCSR(ctx, rawCSR, subject)
 	if err != nil {
-		log.C(ctx).Errorf("Error occurred while signing the CSR with Common Name %s of client with id %s : %s ", subject.CommonName, clientId, err.Error())
+		log.C(ctx).WithError(err).Errorf("Error occurred while signing the CSR with Common Name %s of client with id %s", subject.CommonName, clientId)
 		return nil, errors.Wrap(err, "Error while signing Certificate Signing Request")
 	}
 
@@ -123,7 +123,7 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 
 	clientId, certificateHash, err := r.authenticator.AuthenticateCertificate(ctx)
 	if err != nil {
-		log.C(ctx).Error("Failed authentication while revoking the certificate. ", err.Error())
+		log.C(ctx).WithError(err).Error("Failed authentication while revoking the certificate.")
 		return false, errors.Wrap(err, "Failed to authenticate with certificate")
 	}
 
@@ -132,7 +132,7 @@ func (r *certificateResolver) RevokeCertificate(ctx context.Context) (bool, erro
 	log.C(ctx).Debugf("Inserting certificate hash of client with id %s to revocation list", clientId)
 	err = r.revokedCertsRepository.Insert(certificateHash)
 	if err != nil {
-		log.C(ctx).Errorf("Failed to add certificate hash of client with id %s to revocation list. %s ", clientId, err.Error())
+		log.C(ctx).WithError(err).Errorf("Failed to add certificate hash of client with id %s to revocation list.", clientId)
 		return false, errors.Wrap(err, "Failed to add hash to revocation list")
 	}
 

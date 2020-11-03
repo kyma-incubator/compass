@@ -59,7 +59,7 @@ func (cl *certLoader) loadSecretToCache(ctx context.Context, secret types.Namesp
 	secretData, appError := cl.secretsRepository.Get(secret)
 
 	if appError != nil {
-		log.C(ctx).Errorf("Failed to load secret %s to cache: %s", secret.String(), appError.Error())
+		log.C(ctx).WithError(appError).Errorf("Failed to load secret %s to cache", secret.String())
 		return
 	}
 

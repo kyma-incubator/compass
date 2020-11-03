@@ -10,6 +10,6 @@ import (
 func Close(ctx context.Context, closer io.Closer) {
 	err := closer.Close()
 	if err != nil {
-		log.C(ctx).Warnf("Warning: failed to close: %s", err.Error())
+		log.C(ctx).WithError(err).Warnf("Warning: failed to close")
 	}
 }
