@@ -61,9 +61,8 @@ type FindPackageInstanceCredentialsOutput struct {
 }
 
 type FindPackageInstanceCredentialInput struct {
-	PackageID      string `valid:"required"`
-	ApplicationID  string `valid:"required"`
 	InstanceAuthID string `valid:"required"`
+	Context        map[string]string
 }
 
 type FindPackageInstanceCredentialOutput struct {

@@ -30,7 +30,7 @@ import (
 
 type BindEndpoint struct {
 	credentialsCreator packageCredentialsCreateRequester
-	credentialsGetter  packageCredentialsFetcherForInstance
+	credentialsGetter  packageCredentialsFetcher
 }
 
 // option 1 - have a storage for operations and spawn a go routine during provision that will eventually update the op status, poll last op api just fetches op from storage; benefit - no switch case in last op handler
@@ -55,9 +55,8 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 
 	logger.Info("Fetching package instance credentials")
 	var auths []*schema.PackageInstanceAuth
-	getResp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialsByContextInput{ // TODO: Use queryPackageInstanceAuth
-		ApplicationID: appID,
-		PackageID:     packageID,
+	getResp, err := b.credentialsGetter.FindPackageInstanceCredentials(ctx, &director.FindPackageInstanceCredentialInput{
+		InstanceAuthID: bindingID,
 		Context: map[string]string{
 			"instance_id": instanceID,
 			"binding_id":  bindingID,

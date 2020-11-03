@@ -56,6 +56,7 @@ func (s *service) Create(ctx context.Context, packageID string, in model.Package
 		id := s.uidService.Generate()
 		in.ID = &id
 	}
+
 	pkgInstAuth, err := in.ToPackageInstanceAuth(packageID, tnt, defaultAuth, nil)
 	if err != nil {
 		return "", err

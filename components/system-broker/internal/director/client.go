@@ -42,6 +42,7 @@ type GqlFieldsProvider interface {
 	ForLabel() string
 	ForPackage(ctx ...graphqlizer.FieldCtx) string
 	ForPackageInstanceAuth() string
+	ForPackageInstanceAuthStatus() string
 	Page(item string) string
 }
 
@@ -210,42 +211,18 @@ func (c *GraphQLClient) FindPackageInstanceCredentials(ctx context.Context, in *
 		return nil, errors.Wrap(err, "while validating input")
 	}
 
+	simplified := true
+	body := fmt.Sprintf("status {%s}", c.outputGraphqlizer.ForPackageInstanceAuthStatus())
+	if !simplified {
+		body = c.outputGraphqlizer.ForPackageInstanceAuth()
+	}
+
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
-			  result: application(id: %q) {
-						package(id: %q) {
-						  instanceAuth(id: %q) {
-							id
-							context
-							auth {
-							  additionalHeaders
-							  additionalQueryParams
-							  requestAuth {
-								csrf {
-								  tokenEndpointURL
-								}
-							  }
-							  credential {
-								... on OAuthCredentialData {
-								  clientId
-								  clientSecret
-								  url
-								}
-								... on BasicCredentialData {
-								  username
-								  password
-								}
-							  }
-							}
-							status {
-							  condition
-							  timestamp
-							  message
-							  reason
-							}
-						  }
-						}
-					  }
-					}`, in.ApplicationID, in.PackageID, in.InstanceAuthID))
+			  result: packageInstanceAuth(id: %q) {
+				%s
+			  }
+
+	}`, in.InstanceAuthID, body))
 
 	var response struct {
 		Result schema.ApplicationExt `json:"result"`

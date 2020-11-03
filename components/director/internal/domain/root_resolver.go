@@ -247,6 +247,9 @@ func (r *queryResolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelD
 func (r *queryResolver) LabelDefinition(ctx context.Context, key string) (*graphql.LabelDefinition, error) {
 	return r.labelDef.LabelDefinition(ctx, key)
 }
+func (r *queryResolver) PackageByInstanceAuth(ctx context.Context, authID string) (*graphql.Package, error) {
+	return r.PackageByInstanceAuth(ctx, authID)
+}
 func (r *queryResolver) PackageInstanceAuth(ctx context.Context, id string) (*graphql.PackageInstanceAuth, error) {
 	return r.packageInstanceAuth.PackageInstanceAuth(ctx, id)
 }

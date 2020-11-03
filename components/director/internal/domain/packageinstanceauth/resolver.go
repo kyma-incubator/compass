@@ -51,6 +51,36 @@ func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc Package
 var mockRequestTypeKey = "type"
 var mockPackageID = "db5d3b2a-cf30-498b-9a66-29e60247c66b"
 
+func (r *Resolver) PackageByInstanceAuth(ctx context.Context, authID string) (*graphql.Package, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	packageInstanceAuth, err := r.svc.Get(ctx, authID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	pkg, err := r.pkgSvc.Get(ctx, packageInstanceAuth.PackageID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(packageInstanceAuth)
+}
+
 func (r *Resolver) PackageInstanceAuth(ctx context.Context, id string) (*graphql.PackageInstanceAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
