@@ -161,18 +161,6 @@ func TestConfigureFormat(t *testing.T) {
 			},
 			ExpectedOutput: []string{"\"msg\":\"Test\""},
 		},
-		{
-			Msg: "structured",
-			ConfigProvider: func() *log.Config {
-				config := log.DefaultConfig()
-				config.Format = "structured"
-				return config
-			},
-			ExpectedOutput: []string{
-				`"component_type":"application","correlation_id":"bootstrap"`,
-				`"msg":"Test","type":"log"`,
-			},
-		},
 	}
 
 	for _, test := range tests {

@@ -17,9 +17,10 @@
 package log
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/sirupsen/logrus"
 )
