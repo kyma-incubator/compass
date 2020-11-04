@@ -4,35 +4,45 @@ metadata:
   name: {{ .Chart.Name }}-correlation-headers-rewrite
   namespace: {{ .Values.global.istio.namespace }}
 spec:
-  workloadLabels:
-    app: {{ .Values.global.istio.ingressgateway.workloadLabel }}
-  filters:
-    - filterConfig:
-        inlineCode: |
-          function expectedCorrelationHeaders()
-            local headers = {}
-            {{ range .Values.global.istio.ingressgateway.correlationHeaderRewriteFilter.expectedHeaders }}headers['{{ . }}']=true
-            {{ end }}
-            return headers
-          end
-          function envoy_on_request(request_handle)
-            local expectedHeaders = expectedCorrelationHeaders()
-            local reqHeaders = request_handle:headers()
-            local newRequestIDHeaderValue=''
-            for key, value in pairs(reqHeaders) do
-              if (expectedHeaders[key] and newRequestIDHeaderValue=='')then -- empty value check is needed because we cannot break the loop: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/lua_filter#pairs
-                newRequestIDHeaderValue = value
+  workloadSelector:
+    labels:
+      app: {{ .Values.global.istio.ingressgateway.workloadLabel }}
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.http_connection_manager"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.lua
+          {{- if .Capabilities.APIVersions.Has "security.istio.io/v1beta1/PeerAuthentication" }}
+          typed_config:
+            "@type": "type.googleapis.com/envoy.config.filter.http.lua.v2.Lua"
+          {{- else }}
+          config:
+          {{- end }}
+            inlineCode: |
+              function expectedCorrelationHeaders()
+                local headers = {}
+                {{ range .Values.global.istio.ingressgateway.correlationHeaderRewriteFilter.expectedHeaders }}headers['{{ . }}']=true
+                {{ end }}
+                return headers
               end
-            end
+              function envoy_on_request(request_handle)
+                local expectedHeaders = expectedCorrelationHeaders()
+                local reqHeaders = request_handle:headers()
+                local newRequestIDHeaderValue=''
+                for key, value in pairs(reqHeaders) do
+                  if (expectedHeaders[key] and newRequestIDHeaderValue=='')then -- empty value check is needed because we cannot break the loop: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/lua_filter#pairs
+                    newRequestIDHeaderValue = value
+                  end
+                end
 
-            if newRequestIDHeaderValue~='' then
-              request_handle:headers():replace("x-request-id", newRequestIDHeaderValue)
-            end
-          end
-      filterName: envoy.lua
-      filterType: HTTP
-      insertPosition:
-        index: FIRST
-      listenerMatch:
-        listenerType: GATEWAY
-        listenerProtocol: HTTP
+                if newRequestIDHeaderValue~='' then
+                  request_handle:headers():replace("x-request-id", newRequestIDHeaderValue)
+                end
+              end
