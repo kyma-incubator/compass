@@ -96,7 +96,6 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			Key:   key + "2",
 			Value: val + "2",
 		},
-		{},
 	}
 
 	// when
@@ -136,9 +135,11 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			},
 		},
 		{
-			Name:     "Empty",
-			Input:    graphql.RuntimeContextInput{},
-			Expected: model.RuntimeContextInput{},
+			Name:  "Empty",
+			Input: graphql.RuntimeContextInput{},
+			Expected: model.RuntimeContextInput{
+				RuntimeID: runtimeID,
+			},
 		},
 	}
 

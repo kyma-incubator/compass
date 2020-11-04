@@ -43,8 +43,9 @@ func (c *converter) InputFromGraphQL(in graphql.RuntimeContextInput, runtimeID s
 	}
 
 	return model.RuntimeContextInput{
-		Key:    in.Key,
-		Value:  in.Value,
-		Labels: labels,
+		Key:       in.Key,
+		Value:     in.Value,
+		RuntimeID: runtimeID,
+		Labels:    labels,
 	}
 }

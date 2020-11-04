@@ -2,26 +2,21 @@ package runtime_context_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
@@ -36,30 +31,47 @@ var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 
 func TestResolver_CreateRuntimeContext(t *testing.T) {
 	// given
-	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
-	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
+	id := "foo"
+	key := "key"
+	val := "value"
+	runtimeID := "runtime_id"
+	tenant := "tenant"
+
+	modelRuntimeContext := &model.RuntimeContext{
+		ID:        id,
+		RuntimeID: runtimeID,
+		Tenant:    tenant,
+		Key:       key,
+		Value:     val,
+	}
+	gqlRuntimeContext := &graphql.RuntimeContext{
+		ID:    id,
+		Key:   key,
+		Value: val,
+	}
 	testErr := errors.New("Test error")
 
-	desc := "Lorem ipsum"
-	gqlInput := graphql.RuntimeInput{
-		Name:        "Foo",
-		Description: &desc,
+	gqlInput := graphql.RuntimeContextInput{
+		Key:   key,
+		Value: val,
 	}
-	modelInput := model.RuntimeInput{
-		Name:        "Foo",
-		Description: &desc,
+	modelInput := model.RuntimeContextInput{
+		Key:       key,
+		Value:     val,
+		RuntimeID: runtimeID,
 	}
 
 	testCases := []struct {
 		Name            string
 		PersistenceFn   func() *persistenceautomock.PersistenceTx
 		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		ConverterFn     func() *automock.RuntimeConverter
+		ServiceFn       func() *automock.RuntimeContextService
+		ConverterFn     func() *automock.RuntimeContextConverter
 
-		Input           graphql.RuntimeInput
-		ExpectedRuntime *graphql.Runtime
-		ExpectedErr     error
+		Input                  graphql.RuntimeContextInput
+		ExpectedRuntimeContext *graphql.RuntimeContext
+		ExpectedErr            error
+		Consumer               *consumer.Consumer
 	}{
 		{
 			Name: "Success",
@@ -75,24 +87,68 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, nil).Once()
 				svc.On("Create", contextParam, modelInput).Return("foo", nil).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("InputFromGraphQL", gqlInput, runtimeID).Return(modelInput).Once()
+				conv.On("ToGraphQL", modelRuntimeContext).Return(gqlRuntimeContext).Once()
 				return conv
 			},
-			Input:           gqlInput,
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			Input:                  gqlInput,
+			ExpectedRuntimeContext: gqlRuntimeContext,
+			ExpectedErr:            nil,
 		},
 		{
-			Name: "Returns error when runtime creation failed",
+			Name: "Returns error when consumer type is application",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				return &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			Input:                  gqlInput,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.Application,
+			},
+		},
+		{
+			Name: "Returns error when consumer type is integration system",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				return &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			Input:                  gqlInput,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.IntegrationSystem,
+			},
+		},
+		{
+			Name: "Returns error when runtime context creation failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
@@ -104,19 +160,19 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
 				svc.On("Create", contextParam, modelInput).Return("", testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("InputFromGraphQL", gqlInput, runtimeID).Return(modelInput).Once()
 				return conv
 			},
-			Input:           gqlInput,
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			Input:                  gqlInput,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            testErr,
 		},
 		{
 			Name: "Returns error when runtime retrieval failed",
@@ -131,20 +187,20 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
 				svc.On("Create", contextParam, modelInput).Return("foo", nil).Once()
 				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("InputFromGraphQL", gqlInput, runtimeID).Return(modelInput).Once()
 				return conv
 			},
-			Input:           gqlInput,
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			Input:                  gqlInput,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            testErr,
 		},
 	}
 
@@ -155,13 +211,22 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime_context.NewResolver(transact, svc, converter)
+
+			c := testCase.Consumer
+			if c == nil {
+				c = &consumer.Consumer{
+					ConsumerID:   runtimeID,
+					ConsumerType: consumer.Runtime,
+				}
+			}
+			ctx := consumer.SaveToContext(context.TODO(), *c)
 
 			// when
-			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
+			result, err := resolver.RegisterRuntimeContext(ctx, testCase.Input)
 
 			// then
-			assert.Equal(t, testCase.ExpectedRuntime, result)
+			assert.Equal(t, testCase.ExpectedRuntimeContext, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
@@ -171,31 +236,47 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 
 func TestResolver_UpdateRuntimeContext(t *testing.T) {
 	// given
-	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
-	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
+	id := "foo"
+	key := "key"
+	val := "value"
+	runtimeID := "runtime_id"
+	tenant := "tenant"
+
+	modelRuntimeContext := &model.RuntimeContext{
+		ID:        id,
+		RuntimeID: runtimeID,
+		Tenant:    tenant,
+		Key:       key,
+		Value:     val,
+	}
+	gqlRuntimeContext := &graphql.RuntimeContext{
+		ID:    id,
+		Key:   key,
+		Value: val,
+	}
 	testErr := errors.New("Test error")
 
-	desc := "Lorem ipsum"
-	gqlInput := graphql.RuntimeInput{
-		Name:        "Foo",
-		Description: &desc,
+	gqlInput := graphql.RuntimeContextInput{
+		Key:   key,
+		Value: val,
 	}
-	modelInput := model.RuntimeInput{
-		Name:        "Foo",
-		Description: &desc,
+	modelInput := model.RuntimeContextInput{
+		Key:       key,
+		Value:     val,
+		RuntimeID: runtimeID,
 	}
-	runtimeID := "foo"
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		ConverterFn     func() *automock.RuntimeConverter
-		RuntimeID       string
-		Input           graphql.RuntimeInput
-		ExpectedRuntime *graphql.Runtime
-		ExpectedErr     error
+		Name                   string
+		PersistenceFn          func() *persistenceautomock.PersistenceTx
+		TransactionerFn        func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn              func() *automock.RuntimeContextService
+		ConverterFn            func() *automock.RuntimeContextConverter
+		RuntimeContextID       string
+		Input                  graphql.RuntimeContextInput
+		ExpectedRuntimeContext *graphql.RuntimeContext
+		ExpectedErr            error
+		Consumer               *consumer.Consumer
 	}{
 		{
 			Name: "Success",
@@ -211,22 +292,67 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("Update", contextParam, runtimeID, modelInput).Return(nil).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, nil).Once()
+				svc.On("Update", contextParam, id, modelInput).Return(nil).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("InputFromGraphQL", gqlInput, runtimeID).Return(modelInput).Once()
+				conv.On("ToGraphQL", modelRuntimeContext).Return(gqlRuntimeContext).Once()
 				return conv
 			},
-			RuntimeID:       runtimeID,
-			Input:           gqlInput,
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			RuntimeContextID:       id,
+			Input:                  gqlInput,
+			ExpectedRuntimeContext: gqlRuntimeContext,
+			ExpectedErr:            nil,
+		},
+		{
+			Name: "Returns error when consumer type is application",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				return &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			Input:                  gqlInput,
+			RuntimeContextID:       id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.Application,
+			},
+		},
+		{
+			Name: "Returns error when consumer type is integration system",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				return &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			Input:                  gqlInput,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.IntegrationSystem,
+			},
 		},
 		{
 			Name: "Returns error when runtime update failed",
@@ -241,20 +367,20 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Update", contextParam, runtimeID, modelInput).Return(testErr).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Update", contextParam, id, modelInput).Return(testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("InputFromGraphQL", gqlInput, runtimeID).Return(modelInput).Once()
 				return conv
 			},
-			RuntimeID:       runtimeID,
-			Input:           gqlInput,
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			RuntimeContextID:       id,
+			Input:                  gqlInput,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            testErr,
 		},
 		{
 			Name: "Returns error when runtime retrieval failed",
@@ -269,21 +395,21 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Update", contextParam, runtimeID, modelInput).Return(nil).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Update", contextParam, id, modelInput).Return(nil).Once()
 				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("InputFromGraphQL", gqlInput, runtimeID).Return(modelInput).Once()
 				return conv
 			},
-			RuntimeID:       runtimeID,
-			Input:           gqlInput,
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			RuntimeContextID:       id,
+			Input:                  gqlInput,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            testErr,
 		},
 	}
 
@@ -294,13 +420,22 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime_context.NewResolver(transact, svc, converter)
+
+			c := testCase.Consumer
+			if c == nil {
+				c = &consumer.Consumer{
+					ConsumerID:   runtimeID,
+					ConsumerType: consumer.Runtime,
+				}
+			}
+			ctx := consumer.SaveToContext(context.TODO(), *c)
 
 			// when
-			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
+			result, err := resolver.UpdateRuntimeContext(ctx, testCase.RuntimeContextID, testCase.Input)
 
 			// then
-			assert.Equal(t, testCase.ExpectedRuntime, result)
+			assert.Equal(t, testCase.ExpectedRuntimeContext, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
@@ -310,605 +445,160 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 
 func TestResolver_DeleteRuntimeContext(t *testing.T) {
 	// given
-	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
-	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
+	id := "foo"
+	key := "key"
+	val := "value"
+	runtimeID := "runtime_id"
+	tenant := "tenant"
+
+	modelRuntimeContext := &model.RuntimeContext{
+		ID:        id,
+		RuntimeID: runtimeID,
+		Tenant:    tenant,
+		Key:       key,
+		Value:     val,
+	}
+	gqlRuntimeContext := &graphql.RuntimeContext{
+		ID:    id,
+		Key:   key,
+		Value: val,
+	}
 	testErr := errors.New("Test error")
-	scenariosNotFoundErr := apperrors.NewNotFoundError(resource.Label, "")
-	scenarioAssignmentNotFoundErr := apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, "")
+
 	txGen := txtest.NewTransactionContextGenerator(testErr)
-	testAuths := fixOAuths()
-	emptyScenariosLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{}}
-	singleScenarioLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{"scenario-0"}}
-	multiScenariosLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{"scenario-0", "scenario-1", "scenario-2", "scenario-3"}}
 
 	testCases := []struct {
-		Name                 string
-		TransactionerFn      func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn            func() *automock.RuntimeService
-		ScenarioAssignmentFn func() *automock.ScenarioAssignmentService
-		SysAuthServiceFn     func() *automock.SystemAuthService
-		OAuth20ServiceFn     func() *automock.OAuth20Service
-		ConverterFn          func() *automock.RuntimeConverter
-		InputID              string
-		ExpectedRuntime      *graphql.Runtime
-		ExpectedErr          error
+		Name                   string
+		TransactionerFn        func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn              func() *automock.RuntimeContextService
+		ConverterFn            func() *automock.RuntimeContextConverter
+		InputID                string
+		ExpectedRuntimeContext *graphql.RuntimeContext
+		ExpectedErr            error
+		Consumer               *consumer.Consumer
 	}{
 		{
 			Name:            "Success",
 			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
 				return svc
 			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("ToGraphQL", modelRuntimeContext).Return(gqlRuntimeContext).Once()
 				return conv
 			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			InputID:                id,
+			ExpectedRuntimeContext: gqlRuntimeContext,
+			ExpectedErr:            nil,
 		},
 		{
-			Name:            "Returns error when runtime deletion failed",
+			Name: "Returns error when consumer type is application",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return &persistenceautomock.PersistenceTx{}, &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.Application,
+			},
+		},
+		{
+			Name: "Returns error when consumer type is integration system",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return &persistenceautomock.PersistenceTx{}, &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.IntegrationSystem,
+			},
+		},
+		{
+			Name:            "Returns error when runtime context deletion failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(testErr).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
 				return svc
 			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("ToGraphQL", modelRuntimeContext).Return(gqlRuntimeContext).Once()
 				return conv
 			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            testErr,
 		},
 		{
-			Name:            "Returns error when runtime retrieval failed",
+			Name:            "Returns error when runtime context retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
 				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
 				return svc
 			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
 				return conv
 			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            testErr,
 		},
 		{
 			Name:            "Returns error when transaction starting failed",
 			TransactionerFn: txGen.ThatFailsOnBegin,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
 				return svc
 			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
 				return conv
 			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            testErr,
 		},
 		{
 			Name:            "Returns error when transaction commit failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("Delete", contextParam, modelRuntime.ID).Return(nil)
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, scenariosNotFoundErr).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, nil).Once()
+				svc.On("Delete", contextParam, modelRuntimeContext.ID).Return(nil)
 				return svc
 			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("ToGraphQL", modelRuntimeContext).Return(gqlRuntimeContext).Once()
 				return conv
 			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
-		},
-		{
-			Name:            "Return error when listing all auths failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(nil, testErr)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
-		},
-		{
-			Name:            "Return error when removing oauth from hydra",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(testErr)
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
-		},
-		{
-			Name:            "Returns error when listing scenarios label",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, testErr)
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
-		},
-		{
-			Name:            "Returns empty scenarios when listing scenarios label should succeed",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(emptyScenariosLabel, nil)
-				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
-
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
-		},
-		{
-			Name:            "Returns scenario when listing scenarios label and error when listing scenario assignments should fail",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				scenarios, err := label.ValueToStringsSlice(singleScenarioLabel.Value)
-				assert.NoError(t, err)
-
-				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(model.AutomaticScenarioAssignment{}, testErr)
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
-		},
-		{
-			Name:            "Returns scenario when listing scenarios label and not found when listing scenario assignments should succeed",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
-				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				scenarios, err := label.ValueToStringsSlice(singleScenarioLabel.Value)
-				assert.NoError(t, err)
-				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(model.AutomaticScenarioAssignment{}, scenarioAssignmentNotFoundErr)
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
-		},
-		{
-			Name:            "Returns scenario when listing scenarios label and scenario assignment when listing scenario assignments but fails on deletion of scenario assignment should fail",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				scenarios, err := label.ValueToStringsSlice(singleScenarioLabel.Value)
-				assert.NoError(t, err)
-				scenarioAssignment := model.AutomaticScenarioAssignment{}
-				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment, nil)
-				svc.On("Delete", contextParam, scenarioAssignment).Return(testErr)
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
-		},
-		{
-			Name:            "Returns scenario when listing scenarios label and scenario assignment when listing scenario assignments and succeeds on deletion of scenario assignment should succeed",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
-				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				scenarios, err := label.ValueToStringsSlice(singleScenarioLabel.Value)
-				assert.NoError(t, err)
-				scenarioAssignment := model.AutomaticScenarioAssignment{}
-				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment, nil)
-				svc.On("Delete", contextParam, scenarioAssignment).Return(nil)
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
-		},
-		{
-			Name:            "Returns multiple scenarios when listing scenarios label and only some are created by a scenario assignment should succeed",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
-				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
-				assert.NoError(t, err)
-
-				emptyAssignment := model.AutomaticScenarioAssignment{}
-				scenarioAssignment1 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
-				scenarioAssignment2 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
-
-				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
-				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(scenarioAssignment1, nil)
-				svc.On("GetForScenarioName", contextParam, scenarios[2]).Return(scenarioAssignment2, nil)
-				svc.On("GetForScenarioName", contextParam, scenarios[3]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
-
-				svc.On("Delete", contextParam, scenarioAssignment1).Return(nil).Once()
-				svc.On("Delete", contextParam, scenarioAssignment2).Return(nil).Once()
-
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
-		},
-		{
-			Name:            "Returns multiple scenarios when listing scenarios label and all are created by a scenario assignment should succeed",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
-				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
-				assert.NoError(t, err)
-
-				scenarioAssignment0 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[0]}
-				scenarioAssignment1 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
-				scenarioAssignment2 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
-				scenarioAssignment3 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[3]}
-
-				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment0, nil)
-				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(scenarioAssignment1, nil)
-				svc.On("GetForScenarioName", contextParam, scenarios[2]).Return(scenarioAssignment2, nil)
-				svc.On("GetForScenarioName", contextParam, scenarios[3]).Return(scenarioAssignment3, nil)
-
-				svc.On("Delete", contextParam, scenarioAssignment0).Return(nil).Once()
-				svc.On("Delete", contextParam, scenarioAssignment1).Return(nil).Once()
-				svc.On("Delete", contextParam, scenarioAssignment2).Return(nil).Once()
-				svc.On("Delete", contextParam, scenarioAssignment3).Return(nil).Once()
-
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
-		},
-		{
-			Name:            "Returns multiple scenarios when listing scenarios label and none are created by a scenario assignment should succeed",
-			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
-				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				return svc
-			},
-			ScenarioAssignmentFn: func() *automock.ScenarioAssignmentService {
-				svc := &automock.ScenarioAssignmentService{}
-				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
-				assert.NoError(t, err)
-
-				emptyAssignment := model.AutomaticScenarioAssignment{}
-
-				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
-				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
-				svc.On("GetForScenarioName", contextParam, scenarios[2]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
-				svc.On("GetForScenarioName", contextParam, scenarios[3]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
-
-				return svc
-			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
-				return conv
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            testErr,
 		},
 	}
 
@@ -916,44 +606,67 @@ func TestResolver_DeleteRuntimeContext(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
-			scenarioAssignmentSvc := testCase.ScenarioAssignmentFn()
 			converter := testCase.ConverterFn()
-			sysAuthSvc := testCase.SysAuthServiceFn()
-			oAuth20Svc := testCase.OAuth20ServiceFn()
 
-			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil)
+			resolver := runtime_context.NewResolver(transact, svc, converter)
+
+			c := testCase.Consumer
+			if c == nil {
+				c = &consumer.Consumer{
+					ConsumerID:   runtimeID,
+					ConsumerType: consumer.Runtime,
+				}
+			}
+			ctx := consumer.SaveToContext(context.TODO(), *c)
 
 			// when
-			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
+			result, err := resolver.DeleteRuntimeContext(ctx, testCase.InputID)
 
 			// then
-			assert.Equal(t, testCase.ExpectedRuntime, result)
+			assert.Equal(t, testCase.ExpectedRuntimeContext, result)
 			if testCase.ExpectedErr != nil {
 				assert.EqualError(t, testCase.ExpectedErr, err.Error())
 			} else {
 				assert.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, svc, scenarioAssignmentSvc, converter, transact, persistTx, sysAuthSvc, oAuth20Svc)
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
 		})
 	}
 }
 
 func TestResolver_RuntimeContext(t *testing.T) {
 	// given
-	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
-	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
+	id := "foo"
+	key := "key"
+	val := "value"
+	runtimeID := "runtime_id"
+	tenant := "tenant"
+
+	modelRuntimeContext := &model.RuntimeContext{
+		ID:        id,
+		RuntimeID: runtimeID,
+		Tenant:    tenant,
+		Key:       key,
+		Value:     val,
+	}
+	gqlRuntimeContext := &graphql.RuntimeContext{
+		ID:    id,
+		Key:   key,
+		Value: val,
+	}
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		ConverterFn     func() *automock.RuntimeConverter
-		InputID         string
-		ExpectedRuntime *graphql.Runtime
-		ExpectedErr     error
+		Name                   string
+		PersistenceFn          func() *persistenceautomock.PersistenceTx
+		TransactionerFn        func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn              func() *automock.RuntimeContextService
+		ConverterFn            func() *automock.RuntimeContextConverter
+		InputID                string
+		ExpectedRuntimeContext *graphql.RuntimeContext
+		ExpectedErr            error
+		Consumer               *consumer.Consumer
 	}{
 		{
 			Name: "Success",
@@ -969,20 +682,64 @@ func TestResolver_RuntimeContext(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, nil).Once()
 
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("ToGraphQL", modelRuntimeContext).Return(gqlRuntimeContext).Once()
 				return conv
 			},
-			InputID:         "foo",
-			ExpectedRuntime: gqlRuntime,
-			ExpectedErr:     nil,
+			InputID:                id,
+			ExpectedRuntimeContext: gqlRuntimeContext,
+			ExpectedErr:            nil,
+		},
+		{
+			Name: "Returns error when consumer type is application",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				return &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.Application,
+			},
+		},
+		{
+			Name: "Returns error when consumer type is integration system",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				return &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.IntegrationSystem,
+			},
 		},
 		{
 			Name: "Success when runtime not found returns nil",
@@ -998,19 +755,19 @@ func TestResolver_RuntimeContext(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("Get", contextParam, "foo").Return(modelRuntime, apperrors.NewNotFoundError(resource.Runtime, "foo")).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, apperrors.NewNotFoundError(resource.RuntimeContext, "foo")).Once()
 
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
 				return conv
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     nil,
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            nil,
 		},
 		{
 			Name: "Returns error when runtime retrieval failed",
@@ -1025,19 +782,19 @@ func TestResolver_RuntimeContext(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
 				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
 
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
 				return conv
 			},
-			InputID:         "foo",
-			ExpectedRuntime: nil,
-			ExpectedErr:     testErr,
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            testErr,
 		},
 	}
 
@@ -1048,13 +805,22 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime_context.NewResolver(transact, svc, converter)
+
+			c := testCase.Consumer
+			if c == nil {
+				c = &consumer.Consumer{
+					ConsumerID:   runtimeID,
+					ConsumerType: consumer.Runtime,
+				}
+			}
+			ctx := consumer.SaveToContext(context.TODO(), *c)
 
 			// when
-			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
+			result, err := resolver.RuntimeContext(ctx, testCase.InputID)
 
 			// then
-			assert.Equal(t, testCase.ExpectedRuntime, result)
+			assert.Equal(t, testCase.ExpectedRuntimeContext, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
@@ -1063,15 +829,43 @@ func TestResolver_RuntimeContext(t *testing.T) {
 }
 
 func TestResolver_RuntimeContexts(t *testing.T) {
+	id := "foo"
+	key := "key"
+	val := "value"
+	runtimeID := "runtime_id"
+	tenant := "tenant"
+
+	testErr := errors.New("Test error")
+
 	// given
-	modelRuntimes := []*model.Runtime{
-		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem Ipsum"),
-		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Lorem Ipsum"),
+	modelRuntimeContexts := []*model.RuntimeContext{
+		{
+			ID:        id,
+			RuntimeID: runtimeID,
+			Tenant:    tenant,
+			Key:       key,
+			Value:     val,
+		},
+		{
+			ID:        id + "2",
+			RuntimeID: runtimeID + "2",
+			Tenant:    tenant + "2",
+			Key:       key + "2",
+			Value:     val + "2",
+		},
 	}
 
-	gqlRuntimes := []*graphql.Runtime{
-		fixGQLRuntime(t, "foo", "Foo", "Lorem Ipsum"),
-		fixGQLRuntime(t, "bar", "Bar", "Lorem Ipsum"),
+	gqlRuntimeContexts := []*graphql.RuntimeContext{
+		{
+			ID:    id,
+			Key:   key,
+			Value: val,
+		},
+		{
+			ID:    id + "2",
+			Key:   key + "2",
+			Value: val + "2",
+		},
 	}
 
 	first := 2
@@ -1079,19 +873,19 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 	after := "test"
 	filter := []*labelfilter.LabelFilter{{Key: ""}}
 	gqlFilter := []*graphql.LabelFilter{{Key: ""}}
-	testErr := errors.New("Test error")
 
 	testCases := []struct {
 		Name              string
 		PersistenceFn     func() *persistenceautomock.PersistenceTx
 		TransactionerFn   func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn         func() *automock.RuntimeService
-		ConverterFn       func() *automock.RuntimeConverter
+		ServiceFn         func() *automock.RuntimeContextService
+		ConverterFn       func() *automock.RuntimeContextConverter
 		InputLabelFilters []*graphql.LabelFilter
 		InputFirst        *int
 		InputAfter        *graphql.PageCursor
-		ExpectedResult    *graphql.RuntimePage
+		ExpectedResult    *graphql.RuntimeContextPage
 		ExpectedErr       error
+		Consumer          *consumer.Consumer
 	}{
 		{
 			Name: "Success",
@@ -1107,21 +901,85 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("List", contextParam, filter, first, after).Return(fixRuntimePage(modelRuntimes), nil).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("List", contextParam, runtimeID, filter, first, after).Return(&model.RuntimeContextPage{
+					Data: modelRuntimeContexts,
+					PageInfo: &pagination.Page{
+						StartCursor: "start",
+						EndCursor:   "end",
+						HasNextPage: false,
+					},
+					TotalCount: len(modelRuntimeContexts),
+				}, nil).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
-				conv.On("MultipleToGraphQL", modelRuntimes).Return(gqlRuntimes).Once()
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("MultipleToGraphQL", modelRuntimeContexts).Return(gqlRuntimeContexts).Once()
 				return conv
 			},
 			InputFirst:        &first,
 			InputAfter:        &gqlAfter,
 			InputLabelFilters: gqlFilter,
-			ExpectedResult:    fixGQLRuntimePage(gqlRuntimes),
-			ExpectedErr:       nil,
+			ExpectedResult: &graphql.RuntimeContextPage{
+				Data: gqlRuntimeContexts,
+				PageInfo: &graphql.PageInfo{
+					StartCursor: "start",
+					EndCursor:   "end",
+					HasNextPage: false,
+				},
+				TotalCount: len(gqlRuntimeContexts),
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "Returns error when consumer type is application",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				return &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			InputFirst:        &first,
+			InputAfter:        &gqlAfter,
+			InputLabelFilters: gqlFilter,
+			ExpectedResult:    nil,
+			ExpectedErr:       apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.Application,
+			},
+		},
+		{
+			Name: "Returns error when consumer type is integration system",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				return &persistenceautomock.Transactioner{}
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				return &automock.RuntimeContextService{}
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			InputFirst:        &first,
+			InputAfter:        &gqlAfter,
+			InputLabelFilters: gqlFilter,
+			ExpectedResult:    nil,
+			ExpectedErr:       apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   runtimeID,
+				ConsumerType: consumer.IntegrationSystem,
+			},
 		},
 		{
 			Name: "Returns error when runtime listing failed",
@@ -1136,13 +994,13 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
-				svc.On("List", contextParam, filter, first, after).Return(nil, testErr).Once()
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("List", contextParam, runtimeID, filter, first, after).Return(nil, testErr).Once()
 				return svc
 			},
-			ConverterFn: func() *automock.RuntimeConverter {
-				conv := &automock.RuntimeConverter{}
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
 				return conv
 			},
 			InputFirst:        &first,
@@ -1160,10 +1018,19 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil)
+			resolver := runtime_context.NewResolver(transact, svc, converter)
+
+			c := testCase.Consumer
+			if c == nil {
+				c = &consumer.Consumer{
+					ConsumerID:   runtimeID,
+					ConsumerType: consumer.Runtime,
+				}
+			}
+			ctx := consumer.SaveToContext(context.TODO(), *c)
 
 			// when
-			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
+			result, err := resolver.RuntimeContexts(ctx, testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1181,7 +1048,15 @@ func TestResolver_Labels(t *testing.T) {
 	labelKey := "key"
 	labelValue := "val"
 
-	gqlRuntime := fixGQLRuntime(t, id, "name", "desc")
+	key := "key"
+	val := "value"
+
+	gqlRuntimeContext := &graphql.RuntimeContext{
+		ID:    id,
+		Key:   key,
+		Value: val,
+	}
+	testErr := errors.New("Test error")
 
 	modelLabels := map[string]*model.Label{
 		"abc": {
@@ -1207,17 +1082,15 @@ func TestResolver_Labels(t *testing.T) {
 		labelKey: labelValue,
 	}
 
-	testErr := errors.New("Test error")
-
 	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.RuntimeService
-		InputRuntime    *graphql.Runtime
-		InputKey        string
-		ExpectedResult  *graphql.Labels
-		ExpectedErr     error
+		Name                string
+		PersistenceFn       func() *persistenceautomock.PersistenceTx
+		TransactionerFn     func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn           func() *automock.RuntimeContextService
+		InputRuntimeContext *graphql.RuntimeContext
+		InputKey            string
+		ExpectedResult      *graphql.Labels
+		ExpectedErr         error
 	}{
 		{
 			Name: "Success",
@@ -1232,8 +1105,8 @@ func TestResolver_Labels(t *testing.T) {
 				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
 				svc.On("ListLabels", contextParam, id).Return(modelLabels, nil).Once()
 				return svc
 			},
@@ -1254,8 +1127,8 @@ func TestResolver_Labels(t *testing.T) {
 				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
 				svc.On("ListLabels", contextParam, id).Return(nil, errors.New("doesn't exist")).Once()
 				return svc
 			},
@@ -1275,8 +1148,8 @@ func TestResolver_Labels(t *testing.T) {
 				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
 				return transact
 			},
-			ServiceFn: func() *automock.RuntimeService {
-				svc := &automock.RuntimeService{}
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
 				svc.On("ListLabels", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
@@ -1292,10 +1165,10 @@ func TestResolver_Labels(t *testing.T) {
 			svc := testCase.ServiceFn()
 			transact := testCase.TransactionerFn(persistTx)
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil)
+			resolver := runtime_context.NewResolver(transact, svc, nil)
 
 			// when
-			result, err := resolver.Labels(context.TODO(), gqlRuntime, &testCase.InputKey)
+			result, err := resolver.Labels(context.TODO(), gqlRuntimeContext, &testCase.InputKey)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -1303,42 +1176,5 @@ func TestResolver_Labels(t *testing.T) {
 
 			mock.AssertExpectationsForObjects(t, svc, transact, persistTx)
 		})
-	}
-}
-
-func fixOAuths() []model.SystemAuth {
-	return []model.SystemAuth{
-		{
-			ID:       "foo",
-			TenantID: str.Ptr("foo"),
-			Value: &model.Auth{
-				Credential: model.CredentialData{
-					Basic: nil,
-					Oauth: &model.OAuthCredentialData{
-						ClientID:     "foo",
-						ClientSecret: "foo",
-						URL:          "foo",
-					},
-				},
-			},
-		},
-		{
-			ID:       "bar",
-			TenantID: str.Ptr("bar"),
-			Value:    nil,
-		},
-		{
-			ID:       "test",
-			TenantID: str.Ptr("test"),
-			Value: &model.Auth{
-				Credential: model.CredentialData{
-					Basic: &model.BasicCredentialData{
-						Username: "test",
-						Password: "test",
-					},
-					Oauth: nil,
-				},
-			},
-		},
 	}
 }

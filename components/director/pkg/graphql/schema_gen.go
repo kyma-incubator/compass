@@ -46,6 +46,7 @@ type ResolverRoot interface {
 	Package() PackageResolver
 	Query() QueryResolver
 	Runtime() RuntimeResolver
+	RuntimeContext() RuntimeContextResolver
 }
 
 type DirectiveRoot struct {
@@ -513,8 +514,8 @@ type MutationResolver interface {
 	RegisterRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
 	UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error)
 	UnregisterRuntime(ctx context.Context, id string) (*Runtime, error)
-	RegisterRuntimeContext(ctx context.Context, in RuntimeContextInput) (*Runtime, error)
-	UpdateRuntimeContext(ctx context.Context, id string, in RuntimeContextInput) (*Runtime, error)
+	RegisterRuntimeContext(ctx context.Context, in RuntimeContextInput) (*RuntimeContext, error)
+	UpdateRuntimeContext(ctx context.Context, id string, in RuntimeContextInput) (*RuntimeContext, error)
 	UnregisterRuntimeContext(ctx context.Context, id string) (*RuntimeContext, error)
 	RegisterIntegrationSystem(ctx context.Context, in IntegrationSystemInput) (*IntegrationSystem, error)
 	UpdateIntegrationSystem(ctx context.Context, id string, in IntegrationSystemInput) (*IntegrationSystem, error)
@@ -605,6 +606,9 @@ type RuntimeResolver interface {
 
 	Auths(ctx context.Context, obj *Runtime) ([]*SystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Runtime) (*RuntimeEventingConfiguration, error)
+}
+type RuntimeContextResolver interface {
+	Labels(ctx context.Context, obj *RuntimeContext, key *string) (*Labels, error)
 }
 
 type executableSchema struct {
@@ -3510,7 +3514,7 @@ input PlaceholderDefinitionInput {
 
 input RuntimeContextInput {
 	"""
-	**Validation:** max=512, alphanumeric chartacters and underscore
+	**Validation:** required max=512, alphanumeric chartacters and underscore
 	"""
 	key: String!
 	value: String!
@@ -4103,8 +4107,8 @@ type Mutation {
 	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
 	"""
 	unregisterRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.unregisterRuntime")
-	registerRuntimeContext(in: RuntimeContextInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntimeContext")
-	updateRuntimeContext(id: ID!, in: RuntimeContextInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntimeContext")
+	registerRuntimeContext(in: RuntimeContextInput! @validate): RuntimeContext! @hasScopes(path: "graphql.mutation.registerRuntimeContext")
+	updateRuntimeContext(id: ID!, in: RuntimeContextInput! @validate): RuntimeContext! @hasScopes(path: "graphql.mutation.updateRuntimeContext")
 	unregisterRuntimeContext(id: ID!): RuntimeContext! @hasScopes(path: "graphql.mutation.unregisterRuntimeContext")
 	"""
 	**Examples**
@@ -10943,12 +10947,12 @@ func (ec *executionContext) _Mutation_registerRuntimeContext(ctx context.Context
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*Runtime); ok {
+		if data, ok := tmp.(*RuntimeContext); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Runtime`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeContext`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10960,10 +10964,10 @@ func (ec *executionContext) _Mutation_registerRuntimeContext(ctx context.Context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Runtime)
+	res := resTmp.(*RuntimeContext)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateRuntimeContext(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11007,12 +11011,12 @@ func (ec *executionContext) _Mutation_updateRuntimeContext(ctx context.Context, 
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(*Runtime); ok {
+		if data, ok := tmp.(*RuntimeContext); ok {
 			return data, nil
 		} else if tmp == nil {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Runtime`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeContext`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11024,10 +11028,10 @@ func (ec *executionContext) _Mutation_updateRuntimeContext(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Runtime)
+	res := resTmp.(*RuntimeContext)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_unregisterRuntimeContext(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -17075,7 +17079,7 @@ func (ec *executionContext) _RuntimeContext_labels(ctx context.Context, field gr
 		Object:   "RuntimeContext",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -17088,7 +17092,7 @@ func (ec *executionContext) _RuntimeContext_labels(ctx context.Context, field gr
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Labels, nil
+		return ec.resolvers.RuntimeContext().Labels(rctx, obj, args["key"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22699,20 +22703,29 @@ func (ec *executionContext) _RuntimeContext(ctx context.Context, sel ast.Selecti
 		case "id":
 			out.Values[i] = ec._RuntimeContext_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "key":
 			out.Values[i] = ec._RuntimeContext_key(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "value":
 			out.Values[i] = ec._RuntimeContext_value(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "labels":
-			out.Values[i] = ec._RuntimeContext_labels(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RuntimeContext_labels(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
