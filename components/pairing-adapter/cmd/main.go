@@ -6,13 +6,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/handler"
-
-	"golang.org/x/oauth2"
-
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/pairing-adapter/internal/adapter"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -33,6 +34,7 @@ func main() {
 
 	client := cc.Client(context.Background())
 	client.Timeout = conf.ClientTimeout
+	client.Transport = httputil.NewCorrelationIDTransport(client.Transport)
 
 	cli := adapter.NewClient(client, conf.Mapping)
 
@@ -40,8 +42,11 @@ func main() {
 	handlerWithTimeout, err := handler.WithTimeout(h, conf.ServerTimeout)
 	exitOnError(err, "Failed configuring timeout on handler")
 
-	http.Handle("/adapter", handlerWithTimeout)
-	http.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
+	router := mux.NewRouter()
+
+	router.Use(correlation.AttachCorrelationIDToContext())
+	router.Handle("/adapter", handlerWithTimeout)
+	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	})
 

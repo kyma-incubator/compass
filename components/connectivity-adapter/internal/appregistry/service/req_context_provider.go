@@ -9,7 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
-	graphqlizer "github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/pkg/errors"
 )
 

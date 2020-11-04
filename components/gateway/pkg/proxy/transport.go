@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -23,7 +24,7 @@ type RoundTrip interface {
 
 //go:generate mockery -name=AuditlogService -output=automock -outpkg=automock -case=underscore
 type AuditlogService interface {
-	Log(request, resposne string, claims Claims) error
+	Log(ctx context.Context, request, response string, claims Claims) error
 }
 
 type Transport struct {
@@ -77,7 +78,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		}
 	}
 
-	err = t.auditlogSvc.Log(string(requestBody), string(responseBody), claims)
+	err = t.auditlogSvc.Log(req.Context(), string(requestBody), string(responseBody), claims)
 	if err != nil {
 		return nil, errors.Wrap(err, "while sending to auditlog")
 	}

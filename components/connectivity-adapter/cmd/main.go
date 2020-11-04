@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 
 	"github.com/gorilla/mux"
@@ -50,6 +51,8 @@ func main() {
 func initAPIHandler(cfg config) (http.Handler, error) {
 	router := mux.NewRouter()
 	router.HandleFunc("/v1/health", health.HandleFunc).Methods(http.MethodGet)
+
+	router.Use(correlation.AttachCorrelationIDToContext())
 
 	applicationRegistryRouter := router.PathPrefix("/{app-name}/v1").Subrouter()
 	connectorRouter := router.PathPrefix("/v1/applications").Subrouter()
