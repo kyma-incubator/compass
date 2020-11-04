@@ -779,7 +779,6 @@ func TestRepository_Delete(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-
 	t.Run("Success - Label for Application", func(t *testing.T) {
 		// GIVEN
 		objType := model.ApplicationLabelableObject

@@ -3,6 +3,7 @@ package runtime_context
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -46,8 +47,8 @@ type service struct {
 	repo      RuntimeContextRepository
 	labelRepo LabelRepository
 
-	labelUpsertService       LabelUpsertService
-	uidService               UIDService
+	labelUpsertService LabelUpsertService
+	uidService         UIDService
 }
 
 func NewService(repo RuntimeContextRepository,

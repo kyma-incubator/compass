@@ -3,10 +3,11 @@ package runtime_context_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -647,7 +648,6 @@ func TestService_List(t *testing.T) {
 	key2 := "key2"
 	val2 := "value2"
 
-
 	modelRuntimeContexts := []*model.RuntimeContext{
 		{
 			ID:        id,
@@ -768,7 +768,7 @@ func TestService_List(t *testing.T) {
 		// given
 		svc := runtime_context.NewService(nil, nil, nil, nil)
 		// when
-		_, err := svc.List(context.TODO(),"", nil, 1, "")
+		_, err := svc.List(context.TODO(), "", nil, 1, "")
 		// then
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")

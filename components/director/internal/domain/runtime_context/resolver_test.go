@@ -2,6 +2,8 @@ package runtime_context_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -9,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context/automock"
 
@@ -310,6 +311,38 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			ExpectedErr:            nil,
 		},
 		{
+			Name: "Returns error when consumer id is different from owner id",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, nil).Once()
+				svc.On("Update", contextParam, id, modelInput).Return(nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				conv := &automock.RuntimeContextConverter{}
+				conv.On("InputFromGraphQL", gqlInput, "different-runtime-id").Return(modelInput).Once()
+				return conv
+			},
+			Input:                  gqlInput,
+			RuntimeContextID:       id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context not accessible"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   "different-runtime-id",
+				ConsumerType: consumer.Runtime,
+			},
+		},
+		{
 			Name: "Returns error when consumer type is application",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				return &persistenceautomock.PersistenceTx{}
@@ -494,6 +527,31 @@ func TestResolver_DeleteRuntimeContext(t *testing.T) {
 			InputID:                id,
 			ExpectedRuntimeContext: gqlRuntimeContext,
 			ExpectedErr:            nil,
+		},
+		{
+			Name: "Returns error when consumer id is different from owner id",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				return persistTx, transact
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context not accessible"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   "different-runtime-id",
+				ConsumerType: consumer.Runtime,
+			},
 		},
 		{
 			Name: "Returns error when consumer type is application",
@@ -696,6 +754,35 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			InputID:                id,
 			ExpectedRuntimeContext: gqlRuntimeContext,
 			ExpectedErr:            nil,
+		},
+		{
+			Name: "Returns error when consumer id is different from owner id",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeContextService {
+				svc := &automock.RuntimeContextService{}
+				svc.On("Get", contextParam, "foo").Return(modelRuntimeContext, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeContextConverter {
+				return &automock.RuntimeContextConverter{}
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: nil,
+			ExpectedErr:            apperrors.NewUnauthorizedError("runtime context not accessible"),
+			Consumer: &consumer.Consumer{
+				ConsumerID:   "different-runtime-id",
+				ConsumerType: consumer.Runtime,
+			},
 		},
 		{
 			Name: "Returns error when consumer type is application",

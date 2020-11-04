@@ -2,9 +2,10 @@ package domain
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 

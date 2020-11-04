@@ -23,8 +23,8 @@ func TestRuntimeContextInput_ToRuntimeContext(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: &model.RuntimeContextInput{
-				Key:   key,
-				Value: val,
+				Key:       key,
+				Value:     val,
 				RuntimeID: runtimeID,
 				Labels: map[string]interface{}{
 					"test": []string{"val", "val2"},

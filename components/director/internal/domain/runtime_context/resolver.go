@@ -2,9 +2,10 @@ package runtime_context
 
 import (
 	"context"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	log "github.com/sirupsen/logrus"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -97,7 +98,7 @@ func (r *Resolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelF
 }
 
 func (r *Resolver) RuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
-	_, err := r.getRuntimeID(ctx)
+	runtimeID, err := r.getRuntimeID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +117,11 @@ func (r *Resolver) RuntimeContext(ctx context.Context, id string) (*graphql.Runt
 			return nil, tx.Commit()
 		}
 		return nil, err
+	}
+
+	if runtimeID != runtimeContext.RuntimeID {
+		log.Errorf("Runtime context owner mismatch: runtime context is owned by runtime with id %s which is different from calling runtime id %s", runtimeContext.RuntimeID, runtimeID)
+		return nil, apperrors.NewUnauthorizedError("runtime context not accessible")
 	}
 
 	err = tx.Commit()
@@ -161,6 +167,7 @@ func (r *Resolver) RegisterRuntimeContext(ctx context.Context, in graphql.Runtim
 
 	return gqlRuntimeContext, nil
 }
+
 func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
 	runtimeID, err := r.getRuntimeID(ctx)
 	if err != nil {
@@ -187,6 +194,11 @@ func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graph
 		return nil, err
 	}
 
+	if runtimeID != runtimeContext.RuntimeID {
+		log.Errorf("Runtime context owner mismatch: runtime context is owned by runtime with id %s which is different from calling runtime id %s", runtimeContext.RuntimeID, runtimeID)
+		return nil, apperrors.NewUnauthorizedError("runtime context not accessible")
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
@@ -198,7 +210,7 @@ func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graph
 }
 
 func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
-	_, err := r.getRuntimeID(ctx)
+	runtimeID, err := r.getRuntimeID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -231,6 +243,11 @@ func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphq
 	if err != nil {
 		return nil, err
 	}*/
+
+	if runtimeID != runtimeContext.RuntimeID {
+		log.Errorf("Runtime context owner mismatch: runtime context is owned by runtime with id %s which is different from calling runtime id %s", runtimeContext.RuntimeID, runtimeID)
+		return nil, apperrors.NewUnauthorizedError("runtime context not accessible")
+	}
 
 	deletedRuntimeContext := r.converter.ToGraphQL(runtimeContext)
 
