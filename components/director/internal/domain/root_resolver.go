@@ -8,9 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-
-	"github.com/kyma-incubator/compass/components/director/internal/metrics"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -25,7 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	packageutil "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -36,10 +33,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	log "github.com/sirupsen/logrus"
@@ -65,7 +64,7 @@ type RootResolver struct {
 	intSys              *integrationsystem.Resolver
 	viewer              *viewer.Resolver
 	tenant              *tenant.Resolver
-	mpPackage           *mp_package.Resolver
+	mpPackage           *packageutil.Resolver
 	packageInstanceAuth *packageinstanceauth.Resolver
 	scenarioAssignment  *scenarioassignment.Resolver
 }
@@ -81,7 +80,8 @@ func NewRootResolver(
 	clientTimeout time.Duration,
 ) *RootResolver {
 	oAuth20HTTPClient := &http.Client{
-		Timeout: oAuth20Cfg.HTTPClientTimeout,
+		Timeout:   oAuth20Cfg.HTTPClientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
 
@@ -100,7 +100,7 @@ func NewRootResolver(
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
 	tenantConverter := tenant.NewConverter()
-	packageConverter := mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	packageConverter := packageutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, packageConverter)
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	packageInstanceAuthConv := packageinstanceauth.NewConverter(authConverter)
@@ -121,7 +121,7 @@ func NewRootResolver(
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	packageRepo := mp_package.NewRepository(packageConverter)
+	packageRepo := packageutil.NewRepository(packageConverter)
 	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageInstanceAuthConv)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 
@@ -132,7 +132,8 @@ func NewRootResolver(
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
 	httpClient := &http.Client{
-		Timeout: clientTimeout,
+		Timeout:   clientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -150,7 +151,7 @@ func NewRootResolver(
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, oAuth20HTTPClient)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
-	packageSvc := mp_package.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+	packageSvc := packageutil.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
@@ -173,7 +174,7 @@ func NewRootResolver(
 		intSys:              integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:              viewer.NewViewerResolver(),
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
-		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
+		mpPackage:           packageutil.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
 		scenarioAssignment:  scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv),
 	}
