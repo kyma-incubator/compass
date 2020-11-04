@@ -33,18 +33,18 @@ import (
 type logKey struct{}
 
 const (
-	FieldRequestID         = "x-request-id"
-	fieldComponentName     = "component"
-	jsonFormatterKey       = "json"
-	textFormatterKey       = "text"
+	FieldRequestID     = "x-request-id"
+	fieldComponentName = "component"
+	jsonFormatterKey   = "json"
+	textFormatterKey   = "text"
 )
 
 var (
 	defaultEntry = logrus.NewEntry(logrus.StandardLogger())
 
 	supportedFormatters = map[string]logrus.Formatter{
-		jsonFormatterKey:       &logrus.JSONFormatter{},
-		textFormatterKey:       &logrus.TextFormatter{},
+		jsonFormatterKey: &logrus.JSONFormatter{},
+		textFormatterKey: &logrus.TextFormatter{},
 	}
 
 	supportedOutputs = map[string]io.Writer{
