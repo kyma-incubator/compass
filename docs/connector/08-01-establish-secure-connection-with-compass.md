@@ -56,7 +56,7 @@ To establish a secure connection with Compass and generate the client certificat
 3. Generate a key and a Certificate Signing Request (CSR).
 
     Generate a CSR with the following command. `SUBJECT` is the certificate subject data returned with the CSR information as `subject`. 
-    For MacOS use a forward slash as a delimiter between the subject attributes (e.g. "/O=Org/OU=OrgUnit/L=locality/ST=province/C=DE/CN=54e99a")
+    For MacOS use a forward slash as a delimiter between the subject attributes (e.g. "/O=Org/OU=OrgUnit/L=locality/ST=province/C=DE/CN=\<value\>")
     
     ```bash
     export KEY_LENGTH=4096
