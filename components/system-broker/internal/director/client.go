@@ -52,8 +52,7 @@ type GraphQLizer interface {
 
 func NewGraphQLClient(gqlClient paginator.Client, gqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider, c *Config) *GraphQLClient {
 	return &GraphQLClient{
-		gcli: gqlClient,
-		//queryProvider:     queryProvider{}, - gqlizers are better
+		gcli:              gqlClient,
 		inputGraphqlizer:  gqlizer,
 		outputGraphqlizer: gqlFieldsProvider,
 		pageSize:          c.PageSize,
