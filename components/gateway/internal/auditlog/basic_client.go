@@ -11,7 +11,7 @@ type BasicHttpClient struct {
 
 func NewBasicAuthClient(cfg BasicAuthConfig, client http.Client) *BasicHttpClient {
 	return &BasicHttpClient{
-		cl: client,
+		cl:  client,
 		cfg: cfg,
 	}
 }
