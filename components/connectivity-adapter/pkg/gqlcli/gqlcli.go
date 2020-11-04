@@ -30,7 +30,6 @@ func newAuthorizedHTTPClient(authorizationHeaderValue string, timeout time.Durat
 		authorizationHeaderValue: authorizationHeaderValue,
 	}
 
-	// TODO check if ok here
 	return &http.Client{
 		Transport: httputil.NewCorrelationIDTransport(transport),
 		Timeout:   timeout,
