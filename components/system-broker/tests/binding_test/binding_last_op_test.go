@@ -1,10 +1,31 @@
-package binding
+package binding_test
 
 import (
+	"fmt"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
+	"github.com/pivotal-cf/brokerapi/domain"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"net/http"
 	"testing"
+)
+
+var (
+	packageInstanceAuthWithContextResponse = `{
+	  "data": {
+		"result": {
+			"status": {
+			  "condition": "%s",
+			  "timestamp": "2020-11-04T16:21:20Z",
+			  "message": "Credentials user-facing message",
+			  "reason": "CredentialsReason"
+			}
+			"context": %s,
+		}
+	  }
+	}`
 )
 
 func TestBindLastOp(t *testing.T) {
@@ -31,72 +52,166 @@ func (suite *BindLastOpTestSuite) TearDownSuite() {
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", "{}")
+	assert.NoError(suite.T(), err)
+
+	suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456/last_operation").
+		WithQuery("operation", osb.BindOp).
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+		Expect().Status(http.StatusInternalServerError)
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsNotFound() {
 	suite.Run("BindOpShouldReturnGone", func() {
+		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
+		assert.NoError(suite.T(), err)
 
+		suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456/last_operation").
+			WithQuery("operation", osb.BindOp).
+			WithHeader("X-Broker-API-Version", brokerAPIVersion).
+			WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+			Expect().Status(http.StatusNotFound)
 	})
 
 	suite.Run("UnbindOpShouldReturnSucceeded", func() {
+		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
+		assert.NoError(suite.T(), err)
 
+		suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456/last_operation").
+			WithQuery("operation", osb.UnbindOp).
+			WithHeader("X-Broker-API-Version", brokerAPIVersion).
+			WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+			Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.Succeeded))
 	})
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithMissingContextShouldReturnError() {
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending))
+	assert.NoError(suite.T(), err)
 
+	suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456/last_operation").
+		WithQuery("operation", osb.BindOp).
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+		Expect().Status(http.StatusInternalServerError)
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithUnprocessableContextShouldReturnError() {
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthWithContextResponse, schema.PackageInstanceAuthStatusConditionPending, "{malformed json}"))
+	assert.NoError(suite.T(), err)
 
+	suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456/last_operation").
+		WithQuery("operation", osb.BindOp).
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+		Expect().Status(http.StatusInternalServerError)
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithDifferentInstanceAndBindingIDsShouldReturnGone() {
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthWithContextResponse, schema.PackageInstanceAuthStatusConditionPending, `{"instance_id": "111", "binding_id": "222"}`))
+	assert.NoError(suite.T(), err)
 
+	suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456/last_operation").
+		WithQuery("operation", osb.BindOp).
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+		Expect().Status(http.StatusNotFound)
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
+	const UnknownCondition = "UNKNOWN_CONDITION"
+
+	instanceID, bindingID := "123", "456"
+	lastOpPath := fmt.Sprintf("/v2/service_instances/%s/service_bindings/%s/last_operation", instanceID, bindingID)
+	context := fmt.Sprintf(`{"instance_id": "%s", "binding_id": "%s"}`, instanceID, bindingID)
+
 	suite.Run("BindOp", func() {
 		suite.Run("Credentials succeeded condition should return succeeded state", func() {
+			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+				fmt.Sprintf(packageInstanceAuthWithContextResponse, schema.PackageInstanceAuthStatusConditionSucceeded, context))
+			assert.NoError(suite.T(), err)
 
+			suite.testContext.SystemBroker.GET(lastOpPath).
+				WithQuery("operation", osb.BindOp).
+				WithHeader("X-Broker-API-Version", brokerAPIVersion).
+				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+				Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.Succeeded))
 		})
 
 		suite.Run("Credentials pending condition should return in progress state", func() {
+			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+				fmt.Sprintf(packageInstanceAuthWithContextResponse, schema.PackageInstanceAuthStatusConditionPending, context))
+			assert.NoError(suite.T(), err)
 
+			suite.testContext.SystemBroker.GET(lastOpPath).
+				WithQuery("operation", osb.BindOp).
+				WithHeader("X-Broker-API-Version", brokerAPIVersion).
+				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+				Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.InProgress))
 		})
 
 		suite.Run("Credentials failed condition should return failed state", func() {
+			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+				fmt.Sprintf(packageInstanceAuthWithContextResponse, schema.PackageInstanceAuthStatusConditionFailed, context))
+			assert.NoError(suite.T(), err)
 
+			suite.testContext.SystemBroker.GET(lastOpPath).
+				WithQuery("operation", osb.BindOp).
+				WithHeader("X-Broker-API-Version", brokerAPIVersion).
+				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+				Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.Failed))
 		})
 
 		suite.Run("Credentials unused condition should return error", func() {
+			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+				fmt.Sprintf(packageInstanceAuthWithContextResponse, schema.PackageInstanceAuthStatusConditionUnused, context))
+			assert.NoError(suite.T(), err)
 
+			suite.testContext.SystemBroker.GET(lastOpPath).
+				WithQuery("operation", osb.BindOp).
+				WithHeader("X-Broker-API-Version", brokerAPIVersion).
+				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+				Expect().Status(http.StatusInternalServerError)
 		})
 
 		suite.Run("Credentials unknown condition should return error", func() {
+			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+				fmt.Sprintf(packageInstanceAuthWithContextResponse, UnknownCondition, context))
+			assert.NoError(suite.T(), err)
 
+			suite.testContext.SystemBroker.GET(lastOpPath).
+				WithQuery("operation", osb.BindOp).
+				WithHeader("X-Broker-API-Version", brokerAPIVersion).
+				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+				Expect().Status(http.StatusInternalServerError)
 		})
 	})
 
 	suite.Run("UnbindOp", func() {
-		suite.Run("Credentials succeeded condition should return in progress state", func() {
+		suite.Run("Any Credentials condition should return in progress state", func() {
+			conditions := []string{
+				string(schema.PackageInstanceAuthStatusConditionSucceeded),
+				string(schema.PackageInstanceAuthStatusConditionPending),
+				string(schema.PackageInstanceAuthStatusConditionFailed),
+				string(schema.PackageInstanceAuthStatusConditionUnused),
+				UnknownCondition,
+			}
 
-		})
+			for _, condition := range conditions {
+				err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+					fmt.Sprintf(packageInstanceAuthWithContextResponse, condition, context))
+				assert.NoError(suite.T(), err)
 
-		suite.Run("Credentials pending condition should return in progress state", func() {
-
-		})
-
-		suite.Run("Credentials failed condition should return in progress state", func() {
-
-		})
-
-		suite.Run("Credentials unused condition should return in progress state", func() {
-
-		})
-
-		suite.Run("Credentials unknown condition should return in progress state", func() {
-
+				suite.testContext.SystemBroker.GET(lastOpPath).
+					WithQuery("operation", osb.UnbindOp).
+					WithHeader("X-Broker-API-Version", brokerAPIVersion).
+					WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+					Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.InProgress))
+			}
 		})
 	})
 }
