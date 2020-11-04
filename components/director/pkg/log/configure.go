@@ -37,7 +37,6 @@ const (
 	fieldComponentName     = "component"
 	jsonFormatterKey       = "json"
 	textFormatterKey       = "text"
-	structuredFormatterKey = "structured"
 )
 
 var (
@@ -46,7 +45,6 @@ var (
 	supportedFormatters = map[string]logrus.Formatter{
 		jsonFormatterKey:       &logrus.JSONFormatter{},
 		textFormatterKey:       &logrus.TextFormatter{},
-		structuredFormatterKey: &Formatter{},
 	}
 
 	supportedOutputs = map[string]io.Writer{
