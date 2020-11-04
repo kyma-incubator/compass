@@ -68,30 +68,30 @@ var (
 }`, serviceID, planID)
 )
 
-func TestInstanceCreate(t *testing.T) {
-	suite.Run(t, new(InstanceCreateTestSuite))
+func TestInstanceProvision(t *testing.T) {
+	suite.Run(t, new(InstanceProvisionTestSuite))
 }
 
-type InstanceCreateTestSuite struct {
+type InstanceProvisionTestSuite struct {
 	suite.Suite
 	testContext *common.TestContext
 	configURL   string
 }
 
-func (suite *InstanceCreateTestSuite) SetupSuite() {
+func (suite *InstanceProvisionTestSuite) SetupSuite() {
 	suite.testContext = common.NewTestContextBuilder().Build(suite.T())
 	suite.configURL = suite.testContext.Servers[common.DirectorServer].URL() + "/config"
 }
 
-func (suite *InstanceCreateTestSuite) SetupTest() {
+func (suite *InstanceProvisionTestSuite) SetupTest() {
 	http.DefaultClient.Post(suite.configURL+"/reset", "application/json", nil)
 }
 
-func (suite *InstanceCreateTestSuite) TearDownSuite() {
+func (suite *InstanceProvisionTestSuite) TearDownSuite() {
 	suite.testContext.CleanUp()
 }
 
-func (suite *InstanceCreateTestSuite) TestProvision() {
+func (suite *InstanceProvisionTestSuite) TestProvision() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsMockResponse)
 	assert.NoError(suite.T(), err)
 	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "application", appMockResponse)
