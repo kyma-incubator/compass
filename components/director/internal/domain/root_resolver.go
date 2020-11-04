@@ -160,7 +160,7 @@ func NewRootResolver(
 		viewer:              viewer.NewViewerResolver(),
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
-		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
+		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv, packageConverter),
 		scenarioAssignment:  scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv),
 	}
 }
@@ -248,7 +248,7 @@ func (r *queryResolver) LabelDefinition(ctx context.Context, key string) (*graph
 	return r.labelDef.LabelDefinition(ctx, key)
 }
 func (r *queryResolver) PackageByInstanceAuth(ctx context.Context, authID string) (*graphql.Package, error) {
-	return r.PackageByInstanceAuth(ctx, authID)
+	return r.packageInstanceAuth.PackageByInstanceAuth(ctx, authID)
 }
 func (r *queryResolver) PackageInstanceAuth(ctx context.Context, id string) (*graphql.PackageInstanceAuth, error) {
 	return r.packageInstanceAuth.PackageInstanceAuth(ctx, id)

@@ -10,6 +10,7 @@ graphql:
     runtime: ["runtime:read"]
     labelDefinitions: ["label_definition:read"]
     labelDefinition: ["label_definition:read"]
+    packageByInstanceAuth: ["application:read"]
     packageInstanceAuth: ["application:read"]
     healthChecks: ["health_checks:read"]
     integrationSystem: ["integration_system:read"]

@@ -2,6 +2,7 @@ package packageinstanceauth
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -32,24 +33,28 @@ type PackageService interface {
 	GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Package, error)
 }
 
+//go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
+type PackageConverter interface {
+	ToGraphQL(in *model.Package) (*graphql.Package, error)
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 	svc      Service
 	pkgSvc   PackageService
 	conv     Converter
+	pkgConv  PackageConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc PackageService, conv Converter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc PackageService, conv Converter, pkgConv PackageConverter) *Resolver {
 	return &Resolver{
 		transact: transact,
 		svc:      svc,
 		pkgSvc:   pkgSvc,
 		conv:     conv,
+		pkgConv:  pkgConv,
 	}
 }
-
-var mockRequestTypeKey = "type"
-var mockPackageID = "db5d3b2a-cf30-498b-9a66-29e60247c66b"
 
 func (r *Resolver) PackageByInstanceAuth(ctx context.Context, authID string) (*graphql.Package, error) {
 	tx, err := r.transact.Begin()
@@ -78,7 +83,7 @@ func (r *Resolver) PackageByInstanceAuth(ctx context.Context, authID string) (*g
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(packageInstanceAuth)
+	return r.pkgConv.ToGraphQL(pkg)
 }
 
 func (r *Resolver) PackageInstanceAuth(ctx context.Context, id string) (*graphql.PackageInstanceAuth, error) {
