@@ -3873,7 +3873,7 @@ type Query {
 	"""
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	packageByInstanceAuth(authID: ID!): Package @hasScopes(path: "graphql.query.packageByInstanceAuth")
-	packageInstanceAuth(id: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.query.packageInstanceAuth")
+	packageInstanceAuth(id: ID!): PackageInstanceAuth @hasScopes(path: "graphql.query.packageInstanceAuth")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
@@ -15596,15 +15596,12 @@ func (ec *executionContext) _Query_packageInstanceAuth(ctx context.Context, fiel
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*PackageInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalOPackageInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPackageInstanceAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_healthChecks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -21686,9 +21683,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_packageInstanceAuth(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "healthChecks":

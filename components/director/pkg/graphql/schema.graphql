@@ -995,7 +995,7 @@ type Query {
 	"""
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	packageByInstanceAuth(authID: ID!): Package @hasScopes(path: "graphql.query.packageByInstanceAuth")
-	packageInstanceAuth(id: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.query.packageInstanceAuth")
+	packageInstanceAuth(id: ID!): PackageInstanceAuth @hasScopes(path: "graphql.query.packageInstanceAuth")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
 	Maximum `first` parameter value is 100
