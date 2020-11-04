@@ -24,6 +24,6 @@ ALTER TABLE labels
         CHECK (app_id IS NOT NULL OR runtime_id IS NOT NULL OR labels.runtime_context_id IS NOT NULL);
 
 DROP INDEX IF EXISTS labels_tenant_id_key_coalesce_coalesce1_idx;
-CREATE UNIQUE INDEX ON labels (tenant_id, coalesce(app_id, '00000000-0000-0000-0000-000000000000'), coalesce(runtime_id, '00000000-0000-0000-0000-000000000000'), coalesce(labels.runtime_context_id, '00000000-0000-0000-0000-000000000000'));
+CREATE UNIQUE INDEX ON labels (tenant_id, key, coalesce(app_id, '00000000-0000-0000-0000-000000000000'), coalesce(runtime_id, '00000000-0000-0000-0000-000000000000'), coalesce(labels.runtime_context_id, '00000000-0000-0000-0000-000000000000'));
 
 COMMIT;
