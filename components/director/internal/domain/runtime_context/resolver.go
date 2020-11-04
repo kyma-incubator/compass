@@ -285,41 +285,6 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key 
 	return &gqlLabels, nil
 }
 
-/*func (r *Resolver) Auths(ctx context.Context, obj *graphql.RuntimeContext) ([]*graphql.SystemAuth, error) { TODO: Revisit when system auths for runtime contexts are implemented
-	if obj == nil {
-		return nil, apperrors.NewInternalError("RuntimeContext cannot be empty")
-	}
-
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, model.RuntimeContextReference, obj.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	var out []*graphql.SystemAuth
-	for _, sa := range sysAuths {
-		c, err := r.sysAuthConv.ToGraphQL(&sa)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, c)
-	}
-
-	return out, nil
-}*/
-
 func (r *Resolver) getRuntimeID(ctx context.Context) (string, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
