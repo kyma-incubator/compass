@@ -26,16 +26,18 @@ func TestServicesReturnsErrorForInvalidApplications(t *testing.T) {
 			Data:            []*schema.ApplicationExt{&app},
 		},
 	}
+	testError := errors.New("test-error")
 
 	lister := &osbfakes.FakeApplicationsLister{}
 	lister.FetchApplicationsReturns(&output, nil)
 	converter := &osbfakes.FakeConverter{}
-	converter.ConvertReturns(nil, errors.New("test-error"))
+	converter.ConvertReturns(nil, testError)
 
 	endpoint := osb.NewCatalogEndpoint(lister, converter)
 	_, err := endpoint.Services(context.Background())
 
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), testError.Error())
 	assert.Equal(t, 1, lister.FetchApplicationsCallCount())
 	assert.Equal(t, 1, converter.ConvertCallCount())
 }
