@@ -31,14 +31,6 @@ type config struct {
 	AuditlogEnabled bool   `envconfig:"default=false"`
 }
 
-type AuditogService interface {
-	Log(ctx context.Context, request, response string, claims proxy.Claims) error
-}
-
-type HTTPTransport interface {
-	RoundTrip(req *http.Request) (resp *http.Response, err error)
-}
-
 func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
@@ -48,7 +40,7 @@ func main() {
 	router.Use(correlation.AttachCorrelationIDToContext())
 
 	done := make(chan bool)
-	var auditlogSvc AuditogService
+	var auditlogSvc auditlog.AuditlogService
 	if cfg.AuditlogEnabled {
 		log.Println("Auditlog is enabled")
 		auditlogSvc, err = initAuditLogs(done)
@@ -92,7 +84,7 @@ func main() {
 	}
 }
 
-func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string, transport HTTPTransport, middleware ...mux.MiddlewareFunc) error {
+func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, middleware ...mux.MiddlewareFunc) error {
 	log.Printf("Proxying requests on path `%s` to `%s`", path, targetOrigin)
 
 	componentProxy, err := proxy.New(targetOrigin, path, transport)
@@ -114,7 +106,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initAuditLogs(done chan bool) (AuditogService, error) {
+func initAuditLogs(done chan bool) (auditlog.AuditlogService, error) {
 	cfg := auditlog.Config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
