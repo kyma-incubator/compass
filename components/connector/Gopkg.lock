@@ -173,16 +173,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1a76ba0bb9b4fa22c78e3dc2afc998971a1ea70701547f3a33f2e273cc372e38"
+  digest = "1:ba22902084c56d6b88da123e931be3a460fa239c8f43cb0eb0b3a6ff2afd2626"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/apperrors",
     "components/director/pkg/correlation",
     "components/director/pkg/handler",
+    "components/director/pkg/http",
     "components/director/pkg/resource",
   ]
   pruneopts = "UT"
-  revision = "87b40332136b921fcbba714dc99ae51661a3cccf"
+  revision = "de2cc56446a2d01a61fde87a9ca1fb3c91968994"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -691,6 +692,7 @@
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/correlation",
     "github.com/kyma-incubator/compass/components/director/pkg/handler",
+    "github.com/kyma-incubator/compass/components/director/pkg/http",
     "github.com/machinebox/graphql",
     "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",
