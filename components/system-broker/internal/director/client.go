@@ -164,7 +164,7 @@ func (c *GraphQLClient) FetchPackageInstanceCredentials(ctx context.Context, in 
 	}
 
 	if authContext["instance_id"] != in.Context["instance_id"] || authContext["binding_id"] != in.Context["binding_id"] {
-		return nil, &NotFoundError{}
+		return nil, errors.New("found binding with mismatched context coordinates")
 	}
 
 	targetURLs := make(map[string]string, response.Package.APIDefinitions.TotalCount)
@@ -212,7 +212,7 @@ func (c *GraphQLClient) FetchPackageInstanceAuth(ctx context.Context, in *Packag
 	}
 
 	if authContext["instance_id"] != in.Context["instance_id"] || authContext["binding_id"] != in.Context["binding_id"] {
-		return nil, &NotFoundError{}
+		return nil, errors.New("found binding with mismatched context coordinates")
 	}
 
 	return &PackageInstanceAuthOutput{

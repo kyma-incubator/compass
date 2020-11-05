@@ -15,9 +15,14 @@ const (
 	serviceID        = "02d6080f-8c06-4d05-a7e0-cb15149261f8"
 	planID           = "acf316ac-c129-4440-8052-5fc69a3b1486"
 	brokerAPIVersion = "2.15"
+
+	instanceID = "1728835a-8e74-4fae-93aa-3e58a022fb85"
+	bindingID  = "6f21aca9-4506-4086-b9ba-4aa4c169d018"
 )
 
 var (
+	bindingPath = fmt.Sprintf("/v2/service_instances/%s/service_bindings/%s", instanceID, bindingID)
+
 	packageInstanceAuthResponse = `{
 	  "data": {
 		"result": {
@@ -26,19 +31,15 @@ var (
 			  "timestamp": "2020-11-04T16:21:20Z",
 			  "message": "Credentials user-facing message",
 			  "reason": "CredentialsReason"
-			}
+			},
+			"context": "{\"instance_id\": \"%s\", \"binding_id\": \"%s\"}"
 		}
 	  }
 	}`
 
 	notFoundResponse = fmt.Sprint(`{
-	  "error": {
-		"error": {
-		  "code": 404,
-		  "status": "Not Found",
-		  "request": "04497842-0836-4b1a-8595-a1b5ba0be38f",
-		  "message": "The requested resource could not be found"
-		}
+	  "data": {
+		"res": null
 	  }
 	}`)
 )
@@ -67,17 +68,29 @@ func (suite *BindCreateTestSuite) TearDownSuite() {
 }
 
 func (suite *BindCreateTestSuite) TestBindWithoutAcceptsIncompleteHeaderShouldReturnUnprocessableEntity() {
-	suite.testContext.SystemBroker.PUT("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.PUT(bindingPath).
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusUnprocessableEntity)
 }
 
 func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", "{}")
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.PUT("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.PUT(bindingPath).
+		WithQuery("accepts_incomplete", "true").
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+		Expect().Status(http.StatusInternalServerError)
+}
+
+func (suite *BindCreateTestSuite) TestBindWhenDirectorOnFindCredentialsReturnsCredentialsWithMismatchedContextShouldReturnError() {
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded, "mismatched-id", bindingID))
+	assert.NoError(suite.T(), err)
+
+	suite.testContext.SystemBroker.PUT(bindingPath).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -88,24 +101,25 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnPackageInsta
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "requestPackageInstanceAuthCreation", "{}")
+	err = suite.testContext.ConfigureResponse(suite.configURL, "mutation", "requestPackageInstanceAuthCreation", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.PUT("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.PUT(bindingPath).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusInternalServerError)
 }
 
-func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsFailedAuthOnPackageInstanceCreationShouldReturnError() {
+func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsAuthWithFailedConditionOnPackageInstanceCreationShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "requestPackageInstanceAuthCreation", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionFailed))
+	err = suite.testContext.ConfigureResponse(suite.configURL, "mutation", "requestPackageInstanceAuthCreation",
+		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.PUT("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.PUT(bindingPath).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -113,10 +127,11 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsFailedAuthOnPackage
 }
 
 func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundWithFailedAuthShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionFailed))
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.PUT("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.PUT(bindingPath).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -124,32 +139,32 @@ func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundWithFaile
 }
 
 func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundShouldReturnAccepted() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded))
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	resp := suite.testContext.SystemBroker.PUT("/v2/service_instances/123/service_bindings/456").
+	resp := suite.testContext.SystemBroker.PUT(bindingPath).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusAccepted)
 
-	resp.JSON().Path("$.operation_data").String().Equal(string(osb.BindOp))
-	resp.JSON().Path("$.already_exists").String().Equal("true")
+	resp.JSON().Path("$.operation").String().Equal(string(osb.BindOp))
 }
 
 func (suite *BindCreateTestSuite) TestBindWhenNewCredentialsAreCreatedShouldReturnAccepted() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded))
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "requestPackageInstanceAuthCreation", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending))
+	err = suite.testContext.ConfigureResponse(suite.configURL, "mutation", "requestPackageInstanceAuthCreation",
+		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	resp := suite.testContext.SystemBroker.PUT("/v2/service_instances/123/service_bindings/456").
+	resp := suite.testContext.SystemBroker.PUT(bindingPath).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusAccepted)
 
-	resp.JSON().Path("$.operation_data").String().Equal(string(osb.BindOp))
-	resp.JSON().Path("$.already_exists").String().Equal("false")
+	resp.JSON().Path("$.operation").String().Equal(string(osb.BindOp))
 }

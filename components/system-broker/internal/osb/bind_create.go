@@ -111,7 +111,6 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 
 	return domain.Binding{
 		IsAsync:       true,
-		AlreadyExists: exists,
 		OperationData: string(BindOp),
 	}, nil
 }
