@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy/automock"
@@ -40,7 +41,7 @@ func TestAuditLog(t *testing.T) {
 		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
 
 		auditlogSvc := &automock.AuditlogService{}
-		auditlogSvc.On("Log", req.Context(), string(graphqlPayload), string(graphqlPayload), fixClaims()).Return(nil)
+		auditlogSvc.On("Log", mock.Anything, string(graphqlPayload), string(graphqlPayload), fixClaims()).Return(nil)
 
 		transport := proxy.NewTransport(auditlogSvc, roundTripper)
 
