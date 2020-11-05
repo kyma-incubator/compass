@@ -26,7 +26,7 @@ spec:
                   - /bin/sh
                   args:
                   - -c
-                  - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+                  - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json -term_timeout=2s"
                   volumeMounts:
                       - name: cloudsql-instance-credentials
                         mountPath: /secrets/cloudsql-instance-credentials
