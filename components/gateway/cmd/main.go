@@ -146,9 +146,12 @@ func initAuditLogs(done chan bool) (auditlog.AuditlogService, error) {
 			}
 
 			ccCfg := fillJWTCredentials(oauthCfg)
-			client := ccCfg.Client(context.Background())
+			baseClient := &http.Client{
+				Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+			}
+			ctx := context.WithValue(context.Background(),oauth2.HTTPClient,baseClient)
+			client := ccCfg.Client(ctx)
 
-			client.Transport = httputil.NewCorrelationIDTransport(client.Transport)
 			client.Timeout = cfg.ClientTimeout
 			httpClient = client
 
