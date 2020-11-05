@@ -76,6 +76,7 @@ func searchForAuditlogByString(t *testing.T, client *http.Client, baseURL string
 
 	var auditlogs []model.ConfigurationChange
 	body, err := ioutil.ReadAll(resp.Body)
+	fmt.Printf("RESPONSE WAS: %s\n", body)
 	require.NoError(t, err)
 	err = json.Unmarshal(body, &auditlogs)
 	require.NoError(t, err)
