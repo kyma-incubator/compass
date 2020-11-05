@@ -130,9 +130,9 @@ func initAuditLogs(done chan bool) (auditlog.AuditlogService, error) {
 
 			msgFactory = auditlog.NewMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
 			tr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
-			baseHttpClient := http.Client{
-				Timeout:   cfg.ClientTimeout,
+			baseHttpClient := &http.Client{
 				Transport: tr,
+				Timeout:   cfg.ClientTimeout,
 			}
 
 			httpClient = auditlog.NewBasicAuthClient(basicCfg, baseHttpClient)

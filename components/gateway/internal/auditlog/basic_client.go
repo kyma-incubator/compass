@@ -5,11 +5,11 @@ import (
 )
 
 type BasicHttpClient struct {
-	cl  http.Client
+	cl  *http.Client
 	cfg BasicAuthConfig
 }
 
-func NewBasicAuthClient(cfg BasicAuthConfig, client http.Client) *BasicHttpClient {
+func NewBasicAuthClient(cfg BasicAuthConfig, client *http.Client) *BasicHttpClient {
 	return &BasicHttpClient{
 		cl:  client,
 		cfg: cfg,

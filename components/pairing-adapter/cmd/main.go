@@ -32,9 +32,13 @@ func main() {
 		AuthStyle:    authStyle,
 	}
 
-	client := cc.Client(context.Background())
+	baseClient := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+	}
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, baseClient)
+
+	client := cc.Client(ctx)
 	client.Timeout = conf.ClientTimeout
-	client.Transport = httputil.NewCorrelationIDTransport(client.Transport)
 
 	cli := adapter.NewClient(client, conf.Mapping)
 
