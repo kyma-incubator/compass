@@ -2,10 +2,7 @@ package binding_test
 
 import (
 	"fmt"
-	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"net/http"
 	"testing"
@@ -73,6 +70,7 @@ func (suite *BindCreateTestSuite) TestBindWithoutAcceptsIncompleteHeaderShouldRe
 		Expect().Status(http.StatusUnprocessableEntity)
 }
 
+/*
 func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", "{}")
 	assert.NoError(suite.T(), err)
@@ -98,22 +96,6 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnPackageInsta
 		Expect().Status(http.StatusInternalServerError)
 }
 
-/* TODO: Probably unnecessary
-func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsMultipleAuthsOnPackageInstanceCreationShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
-	assert.NoError(suite.T(), err)
-
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "requestPackageInstanceAuthCreation", "TODO: ...")
-	assert.NoError(suite.T(), err)
-
-	suite.testContext.SystemBroker.PUT("/v2/service_instances/123/service_bindings/456").
-		WithQuery("accepts_incomplete", "true").
-		WithHeader("X-Broker-API-Version", brokerAPIVersion).
-		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
-		Expect().Status(http.StatusInternalServerError)
-}
-*/
-
 func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsFailedAuthOnPackageInstanceCreationShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
 	assert.NoError(suite.T(), err)
@@ -127,11 +109,6 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsFailedAuthOnPackage
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusInternalServerError)
 }
-
-/* TODO: Probably unnecessary
-func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundWithMultipleAuthsShouldReturnError() {
-}
-*/
 
 func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundWithFailedAuthShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionFailed))
@@ -174,3 +151,5 @@ func (suite *BindCreateTestSuite) TestBindWhenNewCredentialsAreCreatedShouldRetu
 	resp.JSON().Path("$.operation_data").String().Equal(string(osb.BindOp))
 	resp.JSON().Path("$.already_exists").String().Equal("false")
 }
+
+*/
