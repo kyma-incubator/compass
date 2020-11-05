@@ -68,7 +68,7 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 				Description: "credentials were successfully deleted",
 			}, nil
 		}
-		return domain.LastOperation{}, apiresponses.ErrBindingDoesNotExist
+		return domain.LastOperation{}, apiresponses.ErrBindingNotFound
 	}
 
 	instanceAuth := resp.InstanceAuth
@@ -94,15 +94,6 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 			opErr = errors.Errorf("operation reached unexpected state: op %s, status %+v", opType, *instanceAuth.Status)
 		}
 	case string(UnbindOp):
-		//TODO strict condition checks vs genericly force platform to continue polling
-		//switch auth.Status.Condition {
-		//case schema.PackageInstanceAuthStatusConditionFailed: // failed
-		//case schema.PackageInstanceAuthStatusConditionUnused: // in progress
-		//case schema.PackageInstanceAuthStatusConditionSucceeded: // error/unexpected
-		//case schema.PackageInstanceAuthStatusConditionPending: // error/unexpected
-		//}
-		// this would be the more flexible approach (platform continues to poll)
-		// actual "success" return is above the switch/410 gone
 		state = domain.InProgress
 	}
 
