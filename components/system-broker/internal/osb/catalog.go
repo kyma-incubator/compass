@@ -26,13 +26,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . converter
 type converter interface {
-	Convert(app *schema.ApplicationExt) (domain.Service, error)
+	Convert(app *schema.ApplicationExt) (*domain.Service, error)
 }
 
 type CatalogEndpoint struct {
 	lister    applicationsLister
 	converter converter
+}
+
+func NewCatalogEndpoint(l applicationsLister, c converter) *CatalogEndpoint {
+	return &CatalogEndpoint{lister: l, converter: c}
 }
 
 func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error) {
@@ -57,7 +62,7 @@ func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error
 		}
 
 		if len(svc.Plans) > 0 {
-			resp = append(resp, svc)
+			resp = append(resp, *svc)
 		}
 	}
 

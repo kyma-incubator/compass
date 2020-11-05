@@ -109,6 +109,7 @@ func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, GQLerr[0])
 		return
 	}
+
 	queryField := query.Operations[0].SelectionSet[0].(*ast.Field)
 
 	queryName := queryField.Name
@@ -119,8 +120,16 @@ func (g *GqlFakeRouter) graphqlHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	response, err := g.getResponseByKey(key)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeGQLError(w, err.Error())
 		return
+	}
+
+	m, isMap := response.(map[string]interface{})
+	if isMap {
+		if errResponse, ok := m["error"]; ok {
+			writeGQLError(w, errResponse.(string))
+			return
+		}
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {

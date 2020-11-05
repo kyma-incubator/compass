@@ -15,7 +15,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20201102144032-0a9e1912c192
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200807110214-4424c47ecd1c
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.2.2
 	github.com/moul/http2curl v1.0.0 // indirect

@@ -31,10 +31,10 @@ type Converter struct {
 	baseURL string
 }
 
-func (c Converter) Convert(app *schema.ApplicationExt) (domain.Service, error) {
+func (c Converter) Convert(app *schema.ApplicationExt) (*domain.Service, error) {
 	plans, err := c.toPlans(app.ID, app.Packages.Data)
 	if err != nil {
-		return domain.Service{}, err
+		return nil, err
 	}
 
 	desc := ptrStrToStr(app.Description)
@@ -42,7 +42,7 @@ func (c Converter) Convert(app *schema.ApplicationExt) (domain.Service, error) {
 		desc = fmt.Sprintf("service generated from system with name %s", app.Name)
 	}
 
-	return domain.Service{
+	return &domain.Service{
 		ID:                   app.ID,
 		Name:                 app.Name,
 		Description:          desc,

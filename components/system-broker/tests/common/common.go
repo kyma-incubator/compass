@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -23,6 +24,24 @@ type FakeServer interface {
 func writeError(w http.ResponseWriter, status int, err error) {
 	w.WriteHeader(status)
 	w.Write([]byte(fmt.Sprintf(`{"description": %q`, err.Error())))
+}
+
+func writeGQLError(w http.ResponseWriter, errMsg string) {
+	errJson := struct {
+		Errors []struct {
+			Message string
+		}
+	}{
+		Errors: make([]struct{ Message string }, 1),
+	}
+
+	errJson.Errors[0] = struct{ Message string }{
+		Message: errMsg,
+	}
+	if err := json.NewEncoder(w).Encode(errJson); err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
 }
 
 func getFileContent(path string) (string, error) {
