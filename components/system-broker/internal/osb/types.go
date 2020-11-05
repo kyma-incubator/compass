@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . applicationsLister
 type applicationsLister interface {
 	FetchApplications(ctx context.Context) (*director.ApplicationsOutput, error)
 }

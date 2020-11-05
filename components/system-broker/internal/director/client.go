@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=Client
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Client
 type Client interface {
 	Do(ctx context.Context, req *gcli.Request, res interface{}) error
 }
@@ -52,8 +52,7 @@ type GraphQLizer interface {
 
 func NewGraphQLClient(gqlClient Client, gqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *GraphQLClient {
 	return &GraphQLClient{
-		gcli: gqlClient,
-		//queryProvider:     queryProvider{}, - gqlizers are better
+		gcli:              gqlClient,
 		inputGraphqlizer:  gqlizer,
 		outputGraphqlizer: gqlFieldsProvider,
 	}
@@ -63,34 +62,28 @@ type GraphQLClient struct {
 	gcli              Client
 	inputGraphqlizer  GraphQLizer
 	outputGraphqlizer GqlFieldsProvider
-	//queryProvider     queryProvider
 }
 
 func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOutput, error) {
-	response := ApplicationsOutput{}
-
 	query := fmt.Sprintf(`query {
 			result: applications {
 					%s
 			}
 	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForApplication()))
 
+	apps := ApplicationsOutput{}
+
 	req := gcli.NewRequest(query)
 
-	err := c.gcli.Do(ctx, req, &response)
+	err := c.gcli.Do(ctx, req, &apps)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching applications in gqlclient")
 	}
+	if apps.Result == nil {
+		return nil, errors.New("failed to fetch applications")
+	}
 
-	//There is a transport on http client that takes care of that now
-	// Nil check is necessary due to GraphQL client not checking response code
-	//if response.Result == nil {
-	//	return nil, errors.New("Failed fetch Applications for Runtime from Director: received nil response")
-	//}
-
-	//TODO paging, and dont return page details outside of the client method
-
-	return &response, nil
+	return &apps, nil
 }
 
 func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *RequestPackageInstanceCredentialsInput) (*RequestPackageInstanceCredentialsOutput, error) {

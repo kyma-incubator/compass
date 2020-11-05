@@ -1,33 +1,46 @@
 package common
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"path"
+	"runtime"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
+	gql "github.com/machinebox/graphql"
+
 	"github.com/gavv/httpexpect"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
+	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const SystemBrokerServer = "system-broker-server"
+const DirectorServer = "director-server"
 
 type TestContext struct {
 	SystemBroker *httpexpect.Expect
-
-	servers map[string]FakeServer
+	HttpClient   *http.Client
+	Servers      map[string]FakeServer
 }
 
 func (tc *TestContext) CleanUp() {
-	for _, server := range tc.servers {
+	for _, server := range tc.Servers {
 		server.Close()
 	}
 }
@@ -51,6 +64,9 @@ func NewTestContextBuilder() *TestContextBuilder {
 				port := findFreePort()
 				env.Set("server.port", port)
 				env.Set("server.self_url", "http://localhost:"+port)
+			},
+			func(env env.Environment, servers map[string]FakeServer) {
+				env.Set("graphql_client.graphql_endpoint", servers[DirectorServer].URL()+"/graphql")
 			},
 		},
 		Servers: map[string]FakeServer{},
@@ -89,6 +105,14 @@ func (tcb *TestContextBuilder) WithHttpClient(client *http.Client) *TestContextB
 }
 
 func (tcb *TestContextBuilder) Build(t *testing.T) *TestContext {
+	schemaPath := path.Join(getBasePath(), "../../../director/pkg/graphql/schema.graphql")
+	gqlMockHandler, err := NewGqlFakeRouter("director", schemaPath)
+	if err != nil {
+		panic(fmt.Errorf("could not build gql mock handler: %s", err))
+	}
+	gqlMockServer := NewGqlFakeServer(gqlMockHandler.Handler())
+	tcb.Servers[DirectorServer] = gqlMockServer
+
 	for _, envPostHook := range tcb.envHooks {
 		envPostHook(tcb.Environment, tcb.Servers)
 	}
@@ -102,10 +126,34 @@ func (tcb *TestContextBuilder) Build(t *testing.T) *TestContext {
 
 	testContext := &TestContext{
 		SystemBroker: systemBroker,
-		servers:      tcb.Servers,
+		Servers:      tcb.Servers,
+		HttpClient:   tcb.HttpClient,
 	}
 
 	return testContext
+}
+
+func (tc *TestContext) ConfigureResponse(configURL, queryType, queryName, response string) error {
+	var applicationsResponse map[string]interface{}
+
+	if err := json.Unmarshal([]byte(response), &applicationsResponse); err != nil {
+		return err
+	}
+
+	body := ConfigRequestBody{
+		GraphqlQueryKey: GraphqlQueryKey{
+			Type: queryType,
+			Name: queryName,
+		},
+		Response: applicationsResponse,
+	}
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	tc.HttpClient.Post(configURL, "application/json", bytes.NewReader(jsonBody))
+	return nil
 }
 
 func TestEnv() env.Environment {
@@ -139,7 +187,11 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 		panic(err)
 	}
 
-	sbServer := server.New(cfg.Server, uuid.NewService())
+	directorGraphQLClient, err := prepareGQLClient(cfg)
+	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
+	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter())
+	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
+	sbServer := server.New(cfg.Server, uuid.NewService(), osbApi, specsApi)
 
 	sbServer.Addr = "localhost:" + strconv.Itoa(cfg.Server.Port) // Needed to avoid annoying macOS permissions popup
 
@@ -165,6 +217,17 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 	}
 }
 
+func prepareGQLClient(cfg *config.Config) (*director.GraphQLClient, error) {
+	graphClient := gql.NewClient(cfg.GraphQLClient.GraphqlEndpoint, gql.WithHTTPClient(http.DefaultClient))
+	gqlClient := graphql.NewClient(cfg.GraphQLClient, graphClient)
+
+	inputGraphqlizer := &graphqlizer.Graphqlizer{}
+	outputGraphqlizer := &graphqlizer.GqlFieldsProvider{}
+
+	// prepare director graphql client
+	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer), nil
+}
+
 func findFreePort() string {
 	// Create a new listener without specifying a port which will result in an open port being chosen
 	listener, err := net.Listen("tcp", "localhost:0")
@@ -181,4 +244,9 @@ func findFreePort() string {
 	}
 
 	return port
+}
+
+func getBasePath() string {
+	_, b, _, _ := runtime.Caller(0)
+	return path.Dir(b)
 }

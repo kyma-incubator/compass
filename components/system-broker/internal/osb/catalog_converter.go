@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
@@ -30,7 +31,7 @@ type Converter struct {
 	baseURL string
 }
 
-func (c Converter) Convert(app *graphql.ApplicationExt) ([]domain.Service, error) {
+func (c Converter) Convert(app *schema.ApplicationExt) (*domain.Service, error) {
 	plans, err := c.toPlans(app.ID, app.Packages.Data)
 	if err != nil {
 		return nil, err
@@ -41,25 +42,22 @@ func (c Converter) Convert(app *graphql.ApplicationExt) ([]domain.Service, error
 		desc = fmt.Sprintf("service generated from system with name %s", app.Name)
 	}
 
-	return []domain.Service{
-		{
-			ID:                   app.ID,
-			Name:                 app.Name,
-			Description:          desc,
-			Bindable:             true,
-			InstancesRetrievable: false,
-			BindingsRetrievable:  false,
-			PlanUpdatable:        false,
-			Plans:                plans,
-			Metadata:             c.toServiceMetadata(app),
-		},
+	return &domain.Service{
+		ID:                   app.ID,
+		Name:                 app.Name,
+		Description:          desc,
+		Bindable:             true,
+		InstancesRetrievable: false,
+		BindingsRetrievable:  false,
+		PlanUpdatable:        false,
+		Plans:                plans,
+		Metadata:             c.toServiceMetadata(app),
 	}, nil
 }
 
 func (c *Converter) toPlans(appID string, packages []*graphql.PackageExt) ([]domain.ServicePlan, error) {
 	var plans []domain.ServicePlan
 	for _, p := range packages {
-
 		schemas, err := c.toSchemas(p)
 		if err != nil {
 			return nil, err
@@ -140,7 +138,7 @@ func (c *Converter) toPlanMetadata(appID string, pkg *graphql.PackageExt) (*doma
 	return metadata, nil
 }
 
-func (c *Converter) toServiceMetadata(app *graphql.ApplicationExt) *domain.ServiceMetadata {
+func (c *Converter) toServiceMetadata(app *schema.ApplicationExt) *domain.ServiceMetadata {
 	if app.Labels == nil {
 		app.Labels = map[string]interface{}{}
 	}

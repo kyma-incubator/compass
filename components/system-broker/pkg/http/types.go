@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-//go:generate counterfeiter . HTTPRoundTripper
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . HTTPRoundTripper
 type HTTPRoundTripper interface {
 	RoundTrip(*http.Request) (*http.Response, error)
 }

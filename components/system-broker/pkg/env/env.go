@@ -55,7 +55,7 @@ func CreatePFlagsForConfigFile(set *pflag.FlagSet) {
 }
 
 // Environment represents an abstraction over the env from which System Broker configuration will be loaded
-//go:generate counterfeiter . Environment
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Environment
 type Environment interface {
 	Get(key string) interface{}
 	Set(key string, value interface{})

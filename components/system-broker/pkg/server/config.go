@@ -34,7 +34,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Port:            8080,
-		RequestTimeout:  time.Second * 10,
+		RequestTimeout:  time.Second * 30,
 		ShutdownTimeout: time.Second * 10,
 		RootAPI:         "/broker",
 		SelfURL:         "http://localhost:8080",

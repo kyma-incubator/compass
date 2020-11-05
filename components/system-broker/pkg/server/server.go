@@ -81,7 +81,7 @@ func (s *Server) Start(parentCtx context.Context) {
 	idleConnsClosed := make(chan struct{})
 	go func() {
 		<-ctx.Done()
-		s.stop(parentCtx)
+		s.stop()
 		close(idleConnsClosed)
 	}()
 
@@ -96,21 +96,11 @@ func (s *Server) Start(parentCtx context.Context) {
 	<-idleConnsClosed
 }
 
-func (s *Server) stop(parentCtx context.Context) {
+func (s *Server) stop() {
 	atomic.StoreInt32(&s.healthy, 0)
 
-	ctx, cancel := context.WithTimeout(parentCtx, s.shutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 	defer cancel()
-
-	go func(ctx context.Context) {
-		<-ctx.Done()
-
-		if ctx.Err() == context.Canceled {
-			return
-		} else if ctx.Err() == context.DeadlineExceeded {
-			log.C(ctx).Panic("Timeout while stopping the server, killing instance!")
-		}
-	}(ctx)
 
 	s.SetKeepAlivesEnabled(false)
 
