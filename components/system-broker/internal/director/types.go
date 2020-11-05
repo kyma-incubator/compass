@@ -30,6 +30,7 @@ type ApplicationsOutput struct {
 
 type RequestPackageInstanceCredentialsInput struct {
 	PackageID   string `valid:"required"`
+	AuthID      string `valid:"required"`
 	Context     Values
 	InputSchema Values
 }
@@ -49,15 +50,9 @@ type RequestPackageInstanceCredentialsOutput struct {
 	InstanceAuth *schema.PackageInstanceAuth `json:"result"`
 }
 
-type FindPackageInstanceCredentialsByContextInput struct {
-	ApplicationID string `valid:"required"`
-	PackageID     string `valid:"required"`
-	Context       map[string]string
-}
-
 type FindPackageInstanceCredentialsOutput struct {
-	InstanceAuths []*schema.PackageInstanceAuth
-	TargetURLs    map[string]string
+	InstanceAuth *schema.PackageInstanceAuth
+	TargetURLs   map[string]string
 }
 
 type FindPackageInstanceCredentialInput struct {

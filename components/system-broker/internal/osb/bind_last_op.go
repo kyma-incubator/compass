@@ -18,7 +18,7 @@ package osb
 
 import (
 	"context"
-	"encoding/json"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
@@ -49,10 +49,12 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 	})
 
 	logger.Info("Fetching package instance credentials")
-	resp, err := b.credentialsGetter.FindPackageInstanceCredentials(ctx, &director.FindPackageInstanceCredentialInput{ // TODO: Use queryPackageInstanceAuth
-		PackageID:      packageID,
-		ApplicationID:  appID,
+	resp, err := b.credentialsGetter.FindPackageInstanceCredentials(ctx, &director.FindPackageInstanceCredentialInput{
 		InstanceAuthID: authID,
+		Context: map[string]string{
+			"instance_id": instanceID,
+			"binding_id":  bindingID,
+		},
 	})
 	if err != nil && !IsNotFoundError(err) {
 		return domain.LastOperation{}, errors.Wrapf(err, "while getting package instance credentials from director")
@@ -69,28 +71,15 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 		return domain.LastOperation{}, apiresponses.ErrBindingDoesNotExist
 	}
 
-	auth := resp.InstanceAuth
+	instanceAuth := resp.InstanceAuth
 
-	if auth.Context == nil {
-		return domain.LastOperation{}, errors.New("auth context must contain service instance and binding id but was empty")
-	}
-	var authContext map[string]string
-	if err := json.Unmarshal([]byte(*auth.Context), &authContext); err != nil {
-		return domain.LastOperation{}, errors.Wrap(err, "while unmarshaling auth context")
-	}
-
-	if authContext["instance_id"] != instanceID && authContext["binding_id"] != bindingID {
-		logger.Infof("Package instance credentials instance id in context %s and/or binding id in context %s do not match instance id and binding id from request", authContext["instance_id"], authContext["binding_id"])
-		return domain.LastOperation{}, apiresponses.ErrBindingDoesNotExist
-	}
-
-	logger.Infof("Found package credentials during poll last op with status %+v", *auth.Status)
+	logger.Infof("Found package credentials during poll last op with status %+v", *instanceAuth.Status)
 
 	var state domain.LastOperationState
 	var opErr error
 	switch opType {
 	case string(BindOp):
-		switch auth.Status.Condition {
+		switch instanceAuth.Status.Condition {
 		case schema.PackageInstanceAuthStatusConditionSucceeded: // success
 			state = domain.Succeeded
 		case schema.PackageInstanceAuthStatusConditionPending: // in progress
@@ -99,12 +88,10 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 			// this would trigger orphan mitigation
 			state = domain.Failed
 		case schema.PackageInstanceAuthStatusConditionUnused: // error
-			// pretty questionable status, may happen if deprovisioning is triggered before async provisioning succeeds
-			//TODO do we want to trigger orphan mitigation, just return error or force platform to continue polling here?
 			fallthrough
 		default:
 			// this should force platform to continue polling, should be the more flexiable approach
-			opErr = errors.Errorf("operation reached unexpected state: op %s, status %+v", opType, *auth.Status)
+			opErr = errors.Errorf("operation reached unexpected state: op %s, status %+v", opType, *instanceAuth.Status)
 		}
 	case string(UnbindOp):
 		//TODO strict condition checks vs genericly force platform to continue polling
@@ -125,6 +112,6 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 
 	return domain.LastOperation{
 		State:       state,
-		Description: auth.Status.Message,
+		Description: instanceAuth.Status.Message,
 	}, nil
 }

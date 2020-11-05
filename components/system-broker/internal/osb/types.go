@@ -34,7 +34,7 @@ type packageCredentialsFetcher interface {
 }
 
 type packageCredentialsFetcherForInstance interface {
-	FindPackageInstanceCredentialsForContext(ctx context.Context, in *director.FindPackageInstanceCredentialsByContextInput) (*director.FindPackageInstanceCredentialsOutput, error)
+	FindPackageInstanceCredentialsForContext(ctx context.Context, in *director.FindPackageInstanceCredentialInput) (*director.FindPackageInstanceCredentialsOutput, error)
 }
 
 type packageCredentialsCreateRequester interface {
@@ -250,9 +250,9 @@ func (rp *RequestParameters) unpack() (*map[string][]string, *map[string][]strin
 	return rp.Headers, rp.QueryParameters
 }
 
-func mapPackageInstanceAuthToModel(pkgAuth schema.PackageInstanceAuth, targets map[string]string) (BindingCredentials, error) {
+func mapPackageInstanceAuthToModel(instanceAuth schema.PackageInstanceAuth, targets map[string]string) (BindingCredentials, error) {
 	var (
-		auth = pkgAuth.Auth
+		auth = instanceAuth.Auth
 		cfg  = AuthDetails{}
 	)
 
@@ -304,7 +304,7 @@ func mapPackageInstanceAuthToModel(pkgAuth schema.PackageInstanceAuth, targets m
 	}
 
 	return BindingCredentials{
-		ID:          pkgAuth.ID,
+		ID:          instanceAuth.ID,
 		Type:        credType,
 		TargetURLs:  targets,
 		AuthDetails: cfg,

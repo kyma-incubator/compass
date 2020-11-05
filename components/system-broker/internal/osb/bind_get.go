@@ -18,10 +18,14 @@ package osb
 
 import (
 	"context"
+
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
 )
 
@@ -32,48 +36,46 @@ type GetBindingEndpoint struct {
 func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, bindingID string) (domain.GetBindingSpec, error) {
 	log.C(ctx).Infof("GetBindingEndpoint instanceID: %s bindingID: %s", instanceID, bindingID)
 
-	details := struct { // TODO: Missing from pivotal-cf/brokerapi library...
-		ServiceID string
-		PlanID    string
-	}{
-		ServiceID: "",
-		PlanID:    "",
-	}
-
-	appID := details.ServiceID
-	packageID := details.PlanID
 	logger := log.C(ctx).WithFields(map[string]interface{}{
-		"appID":      appID,
-		"packageID":  packageID,
 		"instanceID": instanceID,
 		"bindingID":  bindingID,
 	})
 
 	logger.Info("Fetching package instance credentials")
 
-	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialsByContextInput{ // TODO: Use queryPackageInstanceAuth + saanity check
-		ApplicationID: appID,
-		PackageID:     packageID,
+	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialInput{
+		InstanceAuthID: bindingID,
 		Context: map[string]string{
 			"instance_id": instanceID,
 			"binding_id":  bindingID,
 		},
 	})
-	if err != nil {
+
+	if err != nil && !IsNotFoundError(err) {
 		return domain.GetBindingSpec{}, errors.Wrapf(err, "while getting package instance credentials from director")
 	}
 
-	if len(resp.InstanceAuths) != 1 {
-		return domain.GetBindingSpec{}, errors.Errorf("expected 1 auth but got %d", len(resp.InstanceAuths))
+	if IsNotFoundError(err) {
+		logger.Info("Package credentials for binding were not found")
+		return domain.GetBindingSpec{}, apiresponses.ErrBindingNotFound
 	}
 
-	auth := resp.InstanceAuths[0]
+	instanceAuth := resp.InstanceAuth
 
-	if !IsSucceeded(auth.Status) {
-		return domain.GetBindingSpec{}, errors.Wrapf(err, "credentials status is not success: %+v", *auth.Status)
+	switch instanceAuth.Status.Condition {
+	case schema.PackageInstanceAuthStatusConditionPending:
+		logger.Info("Package credentials for binding are still pending")
+		return domain.GetBindingSpec{}, apiresponses.ErrBindingNotFound
+	case schema.PackageInstanceAuthStatusConditionUnused:
+		logger.Info("Package credentials for binding are unused")
+		return domain.GetBindingSpec{}, apiresponses.ErrBindingNotFound
+	case schema.PackageInstanceAuthStatusConditionFailed:
+		logger.Info("Package credentials for binding are in failed state")
+		return domain.GetBindingSpec{}, errors.Wrapf(err, "credentials status is not success: %+v", *instanceAuth.Status)
+	default:
 	}
 
-	bindingCredentials, err := mapPackageInstanceAuthToModel(*auth, resp.TargetURLs)
+	bindingCredentials, err := mapPackageInstanceAuthToModel(*instanceAuth, resp.TargetURLs)
 	if err != nil {
 		return domain.GetBindingSpec{}, errors.Wrap(err, "while mapping to binding credentials")
 	}

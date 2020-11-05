@@ -18,7 +18,7 @@ package osb
 
 import (
 	"context"
-	"fmt"
+
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/pkg/errors"
 
@@ -50,9 +50,8 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 
 	logger.Info("Fetching package instance credentials")
 
-	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialsByContextInput{ // TODO: Use queryPackageInstanceAuth + sanity check IDs
-		ApplicationID: appID,
-		PackageID:     packageID,
+	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialInput{
+		InstanceAuthID: bindingID,
 		Context: map[string]string{
 			"instance_id": instanceID,
 			"binding_id":  bindingID,
@@ -62,29 +61,25 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 		return domain.UnbindSpec{}, errors.Wrapf(err, "while getting package instance credentials from director")
 	}
 
-	exists := !IsNotFoundError(err)
-	if !exists {
+	if IsNotFoundError(err) {
 		logger.Info("Package credentials for binding are already gone")
 		return domain.UnbindSpec{}, apiresponses.ErrBindingDoesNotExist
 	}
 
-	auths := resp.InstanceAuths
-	if len(auths) != 1 {
-		return domain.UnbindSpec{}, errors.Errorf("expected 1 auth but got %d", len(auths))
-	}
-	auth := auths[0]
-	status := auth.Status
+	instanceAuth := resp.InstanceAuth
+
+	status := instanceAuth.Status
 	if IsUnused(status) {
 		logger.Info("Package credentials for binding exist and are not used. Deletion is already in progress")
 		return domain.UnbindSpec{
 			IsAsync:       true,
-			OperationData: fmt.Sprintf("%s:%s:%s:%s", UnbindOp, appID, packageID, auth.ID),
+			OperationData: string(UnbindOp),
 		}, nil
 	}
 
 	logger.Info("Package credentials for binding exist and are used. Requesting deletion")
 	deleteResp, err := b.credentialsDeleter.RequestPackageInstanceCredentialsDeletion(ctx, &director.RequestPackageInstanceAuthDeletionInput{
-		InstanceAuthID: auth.ID,
+		InstanceAuthID: instanceAuth.ID,
 	})
 	if err != nil {
 		if IsNotFoundError(err) {

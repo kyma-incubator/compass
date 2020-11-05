@@ -19,6 +19,7 @@ package osb
 import (
 	"context"
 	"encoding/json"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
@@ -54,7 +55,7 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 	})
 
 	logger.Info("Fetching package instance credentials")
-	var auths []*schema.PackageInstanceAuth
+	var instanceAuth *schema.PackageInstanceAuth
 	getResp, err := b.credentialsGetter.FindPackageInstanceCredentials(ctx, &director.FindPackageInstanceCredentialInput{
 		InstanceAuthID: bindingID,
 		Context: map[string]string{
@@ -86,28 +87,24 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 		rawContext["instance_id"] = instanceID
 		rawContext["binding_id"] = bindingID
 
-		createResp, err := b.credentialsCreator.RequestPackageInstanceCredentialsCreation(ctx, &director.RequestPackageInstanceCredentialsInput{ // TODO: Use createPackageInstanceAuth
+		createResp, err := b.credentialsCreator.RequestPackageInstanceCredentialsCreation(ctx, &director.RequestPackageInstanceCredentialsInput{
 			PackageID:   packageID,
+			AuthID:      bindingID,
 			Context:     rawContext,
 			InputSchema: rawParams,
 		})
 		if err != nil {
 			return domain.Binding{}, errors.Wrap(err, "while requesting package instance credentials creation from director")
 		}
-		auths = []*schema.PackageInstanceAuth{createResp.InstanceAuth}
+		instanceAuth = createResp.InstanceAuth
 	} else {
-		auths = getResp.InstanceAuths
+		instanceAuth = getResp.InstanceAuth
 	}
 
-	if len(auths) != 1 {
-		return domain.Binding{}, errors.Errorf("expected 1 auth but got %d", len(auths))
-	}
-	auth := auths[0]
+	logger.Infof("package instance credentials have status %s", instanceAuth.Status.Condition)
 
-	logger.Infof("package instance credentials have status %s", auth.Status.Condition)
-
-	if IsFailed(auths[0].Status) {
-		return domain.Binding{}, errors.Errorf("requesting package instance credentials from director failed, got status %+v", *auth.Status)
+	if IsFailed(instanceAuth.Status) {
+		return domain.Binding{}, errors.Errorf("requesting package instance credentials from director failed, got status %+v", *instanceAuth.Status)
 	}
 
 	logger.Info("Successfully found package instance credentials")
