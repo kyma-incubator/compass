@@ -149,7 +149,7 @@ func initAuditLogs(done chan bool) (auditlog.AuditlogService, error) {
 			baseClient := &http.Client{
 				Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 			}
-			ctx := context.WithValue(context.Background(),oauth2.HTTPClient,baseClient)
+			ctx := context.WithValue(context.Background(), oauth2.HTTPClient, baseClient)
 			client := ccCfg.Client(ctx)
 
 			client.Timeout = cfg.ClientTimeout
