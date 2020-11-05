@@ -30,19 +30,19 @@ type applicationsLister interface {
 }
 
 type packageCredentialsFetcher interface {
-	FindPackageInstanceCredentials(ctx context.Context, in *director.FindPackageInstanceCredentialInput) (*director.FindPackageInstanceCredentialOutput, error)
+	FetchPackageInstanceAuth(ctx context.Context, in *director.PackageInstanceInput) (*director.PackageInstanceAuthOutput, error)
 }
 
 type packageCredentialsFetcherForInstance interface {
-	FindPackageInstanceCredentialsForContext(ctx context.Context, in *director.FindPackageInstanceCredentialInput) (*director.FindPackageInstanceCredentialsOutput, error)
+	FetchPackageInstanceCredentials(ctx context.Context, in *director.PackageInstanceInput) (*director.PackageInstanceCredentialsOutput, error)
 }
 
 type packageCredentialsCreateRequester interface {
-	RequestPackageInstanceCredentialsCreation(ctx context.Context, in *director.RequestPackageInstanceCredentialsInput) (*director.RequestPackageInstanceCredentialsOutput, error)
+	RequestPackageInstanceCredentialsCreation(ctx context.Context, in *director.PackageInstanceCredentialsInput) (*director.PackageInstanceAuthOutput, error)
 }
 
 type packageCredentialsDeleteRequester interface {
-	RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *director.RequestPackageInstanceAuthDeletionInput) (*director.RequestPackageInstanceAuthDeletionOutput, error)
+	RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *director.PackageInstanceAuthDeletionInput) (*director.PackageInstanceAuthDeletionOutput, error)
 }
 
 type BrokerOperationType string

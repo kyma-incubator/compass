@@ -87,7 +87,7 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 	return &apps, nil
 }
 
-func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *RequestPackageInstanceCredentialsInput) (*RequestPackageInstanceCredentialsOutput, error) {
+func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *PackageInstanceCredentialsInput) (*PackageInstanceAuthOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -120,7 +120,7 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Co
 			  	 }
 				}`, in.PackageID, in.AuthID, inContext, inputParams))
 
-	var resp RequestPackageInstanceCredentialsOutput
+	var resp PackageInstanceAuthOutput
 	if err = c.gcli.Do(ctx, gqlRequest, &resp); err != nil {
 		return nil, errors.Wrap(err, "while executing GraphQL call to create package instance auth")
 	}
@@ -128,7 +128,7 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Co
 	return &resp, nil
 }
 
-func (c *GraphQLClient) FindPackageInstanceCredentialsForContext(ctx context.Context, in *FindPackageInstanceCredentialInput) (*FindPackageInstanceCredentialsOutput, error) {
+func (c *GraphQLClient) FetchPackageInstanceCredentials(ctx context.Context, in *PackageInstanceInput) (*PackageInstanceCredentialsOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -172,13 +172,13 @@ func (c *GraphQLClient) FindPackageInstanceCredentialsForContext(ctx context.Con
 		targetURLs[apiDefinition.Name] = apiDefinition.TargetURL
 	}
 
-	return &FindPackageInstanceCredentialsOutput{
+	return &PackageInstanceCredentialsOutput{
 		InstanceAuth: response.Package.InstanceAuth,
 		TargetURLs:   targetURLs,
 	}, nil
 }
 
-func (c *GraphQLClient) FindPackageInstanceCredentials(ctx context.Context, in *FindPackageInstanceCredentialInput) (*FindPackageInstanceCredentialOutput, error) {
+func (c *GraphQLClient) FetchPackageInstanceAuth(ctx context.Context, in *PackageInstanceInput) (*PackageInstanceAuthOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -215,12 +215,12 @@ func (c *GraphQLClient) FindPackageInstanceCredentials(ctx context.Context, in *
 		return nil, &NotFoundError{}
 	}
 
-	return &FindPackageInstanceCredentialOutput{
+	return &PackageInstanceAuthOutput{
 		InstanceAuth: response.PackageInstanceAuth,
 	}, nil
 }
 
-func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *RequestPackageInstanceAuthDeletionInput) (*RequestPackageInstanceAuthDeletionOutput, error) {
+func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *PackageInstanceAuthDeletionInput) (*PackageInstanceAuthDeletionOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -238,7 +238,7 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Co
 					}`, in.InstanceAuthID))
 
 	var resp struct {
-		Result RequestPackageInstanceAuthDeletionOutput `json:"result"`
+		Result PackageInstanceAuthDeletionOutput `json:"result"`
 	}
 
 	if err := c.gcli.Do(ctx, gqlRequest, &resp); err != nil {
@@ -252,7 +252,7 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Co
 	return &resp.Result, nil
 }
 
-func (c *GraphQLClient) FindSpecification(ctx context.Context, in *FindPackageSpecificationInput) (*FindPackageSpecificationOutput, error) {
+func (c *GraphQLClient) FindSpecification(ctx context.Context, in *PackageSpecificationInput) (*PackageSpecificationOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -287,7 +287,7 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *FindPackageSp
 
 	apidef := response.Result.Package.APIDefinition
 	if apidef.Spec != nil {
-		return &FindPackageSpecificationOutput{
+		return &PackageSpecificationOutput{
 			Name:        apidef.Name,
 			Description: apidef.Description,
 			Data:        apidef.Spec.Data,
@@ -299,7 +299,7 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *FindPackageSp
 
 	eventdef := response.Result.Package.EventDefinition
 	if eventdef.Spec != nil {
-		return &FindPackageSpecificationOutput{
+		return &PackageSpecificationOutput{
 			Name:        eventdef.Name,
 			Description: eventdef.Description,
 			Data:        eventdef.Spec.Data,

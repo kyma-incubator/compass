@@ -2,7 +2,10 @@ package binding_test
 
 import (
 	"fmt"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"net/http"
 	"testing"
@@ -70,7 +73,6 @@ func (suite *BindCreateTestSuite) TestBindWithoutAcceptsIncompleteHeaderShouldRe
 		Expect().Status(http.StatusUnprocessableEntity)
 }
 
-/*
 func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", "{}")
 	assert.NoError(suite.T(), err)
@@ -151,5 +153,3 @@ func (suite *BindCreateTestSuite) TestBindWhenNewCredentialsAreCreatedShouldRetu
 	resp.JSON().Path("$.operation_data").String().Equal(string(osb.BindOp))
 	resp.JSON().Path("$.already_exists").String().Equal("false")
 }
-
-*/

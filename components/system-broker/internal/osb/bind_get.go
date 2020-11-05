@@ -43,7 +43,7 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 
 	logger.Info("Fetching package instance credentials")
 
-	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialInput{
+	resp, err := b.credentialsGetter.FetchPackageInstanceCredentials(ctx, &director.PackageInstanceInput{
 		InstanceAuthID: bindingID,
 		Context: map[string]string{
 			"instance_id": instanceID,

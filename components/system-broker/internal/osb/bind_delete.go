@@ -50,7 +50,7 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 
 	logger.Info("Fetching package instance credentials")
 
-	resp, err := b.credentialsGetter.FindPackageInstanceCredentialsForContext(ctx, &director.FindPackageInstanceCredentialInput{
+	resp, err := b.credentialsGetter.FetchPackageInstanceCredentials(ctx, &director.PackageInstanceInput{
 		InstanceAuthID: bindingID,
 		Context: map[string]string{
 			"instance_id": instanceID,
@@ -78,7 +78,7 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 	}
 
 	logger.Info("Package credentials for binding exist and are used. Requesting deletion")
-	deleteResp, err := b.credentialsDeleter.RequestPackageInstanceCredentialsDeletion(ctx, &director.RequestPackageInstanceAuthDeletionInput{
+	deleteResp, err := b.credentialsDeleter.RequestPackageInstanceCredentialsDeletion(ctx, &director.PackageInstanceAuthDeletionInput{
 		InstanceAuthID: instanceAuth.ID,
 	})
 	if err != nil {

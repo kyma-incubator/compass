@@ -49,7 +49,7 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 	})
 
 	logger.Info("Fetching package instance credentials")
-	resp, err := b.credentialsGetter.FindPackageInstanceCredentials(ctx, &director.FindPackageInstanceCredentialInput{
+	resp, err := b.credentialsGetter.FetchPackageInstanceAuth(ctx, &director.PackageInstanceInput{
 		InstanceAuthID: authID,
 		Context: map[string]string{
 			"instance_id": instanceID,

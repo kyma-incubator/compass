@@ -24,8 +24,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/pkg/errors"
 )
 
@@ -56,7 +56,7 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 
 	logger.Info("Fetching package instance credentials")
 	var instanceAuth *schema.PackageInstanceAuth
-	getResp, err := b.credentialsGetter.FindPackageInstanceCredentials(ctx, &director.FindPackageInstanceCredentialInput{
+	getResp, err := b.credentialsGetter.FetchPackageInstanceAuth(ctx, &director.PackageInstanceInput{
 		InstanceAuthID: bindingID,
 		Context: map[string]string{
 			"instance_id": instanceID,
@@ -87,7 +87,7 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 		rawContext["instance_id"] = instanceID
 		rawContext["binding_id"] = bindingID
 
-		createResp, err := b.credentialsCreator.RequestPackageInstanceCredentialsCreation(ctx, &director.RequestPackageInstanceCredentialsInput{
+		createResp, err := b.credentialsCreator.RequestPackageInstanceCredentialsCreation(ctx, &director.PackageInstanceCredentialsInput{
 			PackageID:   packageID,
 			AuthID:      bindingID,
 			Context:     rawContext,
