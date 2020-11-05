@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 
 	"github.com/pkg/errors"
@@ -78,7 +79,9 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		}
 	}
 
-	err = t.auditlogSvc.Log(req.Context(), string(requestBody), string(responseBody), claims)
+	correlationHeaders := correlation.HeadersForRequest(req)
+	correlationCtx := context.WithValue(context.Background(), correlation.HeadersContextKey, correlationHeaders)
+	err = t.auditlogSvc.Log(correlationCtx, string(requestBody), string(responseBody), claims)
 	if err != nil {
 		return nil, errors.Wrap(err, "while sending to auditlog")
 	}
