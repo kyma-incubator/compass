@@ -25,7 +25,7 @@ const (
     }
   }
 }`
-	appsMockResponse = `{
+	appsEmptyPackagesMockResponse = `{
   "data": {
     "result": {
       "data": [
@@ -76,8 +76,8 @@ const (
     }
   }
 }`
-	appsExpectedCatalog = `{"services":[{"id":"3e3cecce-74b3-4881-854e-58791021b522","name":"test-app","description":"a test application","bindable":true,"plan_updateable":false,"plans":null,"metadata":{"displayName":"test-app","group":["production","experimental"],"integrationSystemID":"","name":"test-app","providerDisplayName":"test provider","scenarios":["DEFAULT"]}}]}` + "\n"
-	appsPageResponse1   = `{
+	appsExpectedEmptyCatalog = `{"services":[]}` + "\n"
+	appsPageResponse1        = `{
   "data": {
     "result": {
       "data": [
@@ -314,15 +314,15 @@ func (suite *OSBCatalogTestSuite) TestEmptyResponse() {
 	assert.NoError(suite.T(), err)
 	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
 		Status(http.StatusOK).
-		Body().Equal("{\"services\":[]}\n")
+		Body().Equal(appsExpectedEmptyCatalog)
 }
 
 func (suite *OSBCatalogTestSuite) TestResponseWithOnePage() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsMockResponse)
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsEmptyPackagesMockResponse)
 	assert.NoError(suite.T(), err)
 	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
 		Status(http.StatusOK).
-		Body().Equal(appsExpectedCatalog)
+		Body().Equal(appsExpectedEmptyCatalog)
 }
 
 func (suite *OSBCatalogTestSuite) TestResponseWithSeveralPages() {

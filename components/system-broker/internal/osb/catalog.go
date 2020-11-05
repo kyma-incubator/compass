@@ -18,7 +18,6 @@ package osb
 
 import (
 	"context"
-
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
@@ -27,7 +26,7 @@ import (
 )
 
 type converter interface {
-	Convert(app *schema.ApplicationExt) ([]domain.Service, error)
+	Convert(app *schema.ApplicationExt) (domain.Service, error)
 }
 
 type CatalogEndpoint struct {
@@ -50,11 +49,14 @@ func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error
 		// if app == nil {
 		// 	continue
 		// }
-		s, err := b.converter.Convert(&app)
+		svc, err := b.converter.Convert(&app)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting application to OSB services")
 		}
-		resp = append(resp, s...)
+
+		if len(svc.Plans) > 0 {
+			resp = append(resp, svc)
+		}
 	}
 
 	return resp, nil
