@@ -225,7 +225,7 @@ func prepareGQLClient(cfg *config.Config) (*director.GraphQLClient, error) {
 	outputGraphqlizer := &graphqlizer.GqlFieldsProvider{}
 
 	// prepare director graphql client
-	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer, cfg.DirectorGQL), nil
+	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer), nil
 }
 
 func findFreePort() string {

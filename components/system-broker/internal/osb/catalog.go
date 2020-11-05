@@ -18,6 +18,7 @@ package osb
 
 import (
 	"context"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
@@ -45,13 +46,14 @@ func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error
 		return nil, errors.New("could not build catalog")
 	}
 
-	for _, app := range applications {
-		// if app == nil {
-		// 	continue
-		// }
-		svc, err := b.converter.Convert(&app)
+	for _, app := range applications.Result.Data {
+		if app == nil {
+			continue
+		}
+
+		svc, err := b.converter.Convert(app)
 		if err != nil {
-			return nil, errors.Wrap(err, "while converting application to OSB services")
+			return nil, errors.Wrap(err, "while converting application to OSB service")
 		}
 
 		if len(svc.Plans) > 0 {

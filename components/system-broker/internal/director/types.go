@@ -19,74 +19,13 @@ package director
 import (
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"strconv"
 )
 
-type ApplicationsOutput []schema.ApplicationExt
-
-//go:generate paginator ApplicationResponse ApplicationsOutput ".Result"
-type ApplicationResponse struct {
-	Result struct {
-		Data ApplicationsOutput `json:"data"`
-		Page graphql.PageInfo   `json:"pageInfo"`
-	} `json:"result"`
-}
-
-type PackagessOutput []*schema.PackageExt
-
-//go:generate paginator PackagesResponse PackagessOutput ".Result.Packages"
-type PackagesResponse struct {
-	Result struct {
-		Packages struct {
-			Data PackagessOutput  `json:"data"`
-			Page graphql.PageInfo `json:"pageInfo"`
-		} `json:"packages"`
-	} `json:"result"`
-}
-
-type ApiDefinitionsOutput []*schema.APIDefinitionExt
-
-//go:generate paginator ApiDefinitionsResponse ApiDefinitionsOutput ".Result.Package.ApiDefinitions"
-type ApiDefinitionsResponse struct {
-	Result struct {
-		Package struct {
-			ApiDefinitions struct {
-				Data ApiDefinitionsOutput `json:"data"`
-				Page graphql.PageInfo     `json:"pageInfo"`
-			} `json:"apiDefinitions"`
-		} `json:"package"`
-	} `json:"result"`
-}
-
-type EventDefinitionsOutput []*schema.EventAPIDefinitionExt
-
-//go:generate paginator EventDefinitionsResponse EventDefinitionsOutput ".Result.Package.EventDefinitions"
-type EventDefinitionsResponse struct {
-	Result struct {
-		Package struct {
-			EventDefinitions struct {
-				Data EventDefinitionsOutput `json:"data"`
-				Page graphql.PageInfo       `json:"pageInfo"`
-			} `json:"eventDefinitions"`
-		} `json:"package"`
-	} `json:"result"`
-}
-
-type DocumentsOutput []*schema.DocumentExt
-
-//go:generate paginator DocumentsResponse DocumentsOutput ".Result.Package.Documents"
-type DocumentsResponse struct {
-	Result struct {
-		Package struct {
-			Documents struct {
-				Data DocumentsOutput  `json:"data"`
-				Page graphql.PageInfo `json:"pageInfo"`
-			} `json:"documents"`
-		} `json:"package"`
-	} `json:"result"`
+type ApplicationsOutput struct {
+	Result *schema.ApplicationPageExt `json:"result"`
 }
 
 type RequestPackageInstanceCredentialsInput struct {
