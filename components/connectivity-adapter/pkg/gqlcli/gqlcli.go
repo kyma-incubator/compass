@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	gcli "github.com/machinebox/graphql"
 )
 
@@ -30,7 +31,7 @@ func newAuthorizedHTTPClient(authorizationHeaderValue string, timeout time.Durat
 	}
 
 	return &http.Client{
-		Transport: transport,
+		Transport: httputil.NewCorrelationIDTransport(transport),
 		Timeout:   timeout,
 	}
 }

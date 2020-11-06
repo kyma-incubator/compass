@@ -7,22 +7,18 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/handler"
-
-	timeservices "github.com/kyma-incubator/compass/components/gateway/internal/time"
-
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
-
-	"github.com/kyma-incubator/compass/components/gateway/internal/uuid"
-
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
-
+	timeservices "github.com/kyma-incubator/compass/components/gateway/internal/time"
+	"github.com/kyma-incubator/compass/components/gateway/internal/uuid"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
-
-	"github.com/gorilla/mux"
 	"github.com/vrischmann/envconfig"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 type config struct {
@@ -35,23 +31,16 @@ type config struct {
 	AuditlogEnabled bool   `envconfig:"default=false"`
 }
 
-type AuditogService interface {
-	Log(request, response string, claims proxy.Claims) error
-}
-
-type HTTPTransport interface {
-	RoundTrip(req *http.Request) (resp *http.Response, err error)
-}
-
 func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
 	router := mux.NewRouter()
+	router.Use(correlation.AttachCorrelationIDToContext())
 
 	done := make(chan bool)
-	var auditlogSvc AuditogService
+	var auditlogSvc auditlog.AuditlogService
 	if cfg.AuditlogEnabled {
 		log.Println("Auditlog is enabled")
 		auditlogSvc, err = initAuditLogs(done)
@@ -61,7 +50,9 @@ func main() {
 		auditlogSvc = &auditlog.NoOpService{}
 	}
 
-	tr := proxy.NewTransport(auditlogSvc, http.DefaultTransport)
+	correlationTr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
+	tr := proxy.NewTransport(auditlogSvc, correlationTr)
+
 	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Connector")
 
@@ -93,7 +84,7 @@ func main() {
 	}
 }
 
-func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string, transport HTTPTransport, middleware ...mux.MiddlewareFunc) error {
+func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, middleware ...mux.MiddlewareFunc) error {
 	log.Printf("Proxying requests on path `%s` to `%s`", path, targetOrigin)
 
 	componentProxy, err := proxy.New(targetOrigin, path, transport)
@@ -115,7 +106,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initAuditLogs(done chan bool) (AuditogService, error) {
+func initAuditLogs(done chan bool) (auditlog.AuditlogService, error) {
 	cfg := auditlog.Config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
@@ -138,7 +129,13 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 			}
 
 			msgFactory = auditlog.NewMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
-			httpClient = auditlog.NewBasicAuthClient(basicCfg, cfg.ClientTimeout)
+			tr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
+			baseHttpClient := &http.Client{
+				Transport: tr,
+				Timeout:   cfg.ClientTimeout,
+			}
+
+			httpClient = auditlog.NewBasicAuthClient(basicCfg, baseHttpClient)
 		}
 	case auditlog.OAuth:
 		{
@@ -149,9 +146,13 @@ func initAuditLogs(done chan bool) (AuditogService, error) {
 			}
 
 			ccCfg := fillJWTCredentials(oauthCfg)
-			client := ccCfg.Client(context.Background())
+			baseClient := &http.Client{
+				Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+				Timeout:   cfg.ClientTimeout,
+			}
+			ctx := context.WithValue(context.Background(), oauth2.HTTPClient, baseClient)
+			client := ccCfg.Client(ctx)
 
-			client.Timeout = cfg.ClientTimeout
 			httpClient = client
 
 			msgFactory = auditlog.NewMessageFactory(oauthCfg.User, oauthCfg.Tenant, uuidSvc, timeSvc)

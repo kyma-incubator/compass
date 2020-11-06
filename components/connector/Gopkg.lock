@@ -10,7 +10,7 @@
   version = "v0.44.3"
 
 [[projects]]
-  digest = "1:36a35bcd0d31f5082578d975e0c23e5e14c98be262b3832fc2c30f35ca5fc776"
+  digest = "1:6f0d235b8dcf6f7c6631f2b91c9f9c9b07544d5a58c83eb1be416bda830e12c7"
   name = "github.com/99designs/gqlgen"
   packages = [
     "api",
@@ -91,6 +91,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:ffe5ba52b122a56df4f9854ea2918e0d9f86e74919db63dc138f8fee3253d3d6"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0e4e31197428a347842d152773b4cace4645ca25"
+  version = "v1.1.2"
+
+[[projects]]
   digest = "1:ca4524b4855ded427c7003ec903a5c854f37e7b1e8e2a93277243462c5b753a8"
   name = "github.com/googleapis/gnostic"
   packages = [
@@ -165,15 +173,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:582e9ead7af99d81d3fe7fe968fe10fbd6b6d7ed3148c2f0bf3a3130b11dafe5"
+  digest = "1:ba22902084c56d6b88da123e931be3a460fa239c8f43cb0eb0b3a6ff2afd2626"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/apperrors",
+    "components/director/pkg/correlation",
     "components/director/pkg/handler",
+    "components/director/pkg/http",
     "components/director/pkg/resource",
   ]
   pruneopts = "UT"
-  revision = "98bfd9c66077b2a564d8e13358bd09d304f1b203"
+  revision = "de2cc56446a2d01a61fde87a9ca1fb3c91968994"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -680,7 +690,9 @@
     "github.com/99designs/gqlgen/handler",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
+    "github.com/kyma-incubator/compass/components/director/pkg/correlation",
     "github.com/kyma-incubator/compass/components/director/pkg/handler",
+    "github.com/kyma-incubator/compass/components/director/pkg/http",
     "github.com/machinebox/graphql",
     "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",
