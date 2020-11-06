@@ -2,34 +2,17 @@ package binding_test
 
 import (
 	"fmt"
-	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"testing"
+
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
+	"github.com/stretchr/testify/suite"
 )
 
 var (
-	packagePendingAuthResp = `{
-	"data": {
-		"result": {
-			"id": "76ades8b-7a33-49db-b4h2-da061d50b922",
-			"instanceAuths": [
-				{
-					"id": "46cfe0b3-9633-4441-a639-15926df364b9",
-					"status": {
-						"condition": "PENDING",
-						"timestamp": "2020-04-20T10:54:07Z",
-						"message": "Credentials are pending.",
-						"reason": "CredentialsPending"
-					}
-				}
-			]	
-		}
-	  }
-	}`
-
 	packageWithAPIsResp = `{
 	"data": {
 		"result": {
@@ -67,11 +50,11 @@ var (
 	}
 }`
 
-	unknownAuth           = `"credential": { "a": "aa", "bb": "bb"}`
-	basicAuth             = `"credential": { "username": "asd", "password": "asd"}`
-	oAuth                 = `"credential": { "clientId": "test-id", "clientSecret": "test-secret", "url": "https://api.test.com/oauth/token" }`
-	additionalHeaders     = `"additionalHeaders": "\"key\": \"value\""`
-	additionalQueryParams = `"additionalQueryParams": "\"key\": \"value\""`
+	unknownAuth                     = `"credential": { "a": "aa", "bb": "bb"}`
+	basicAuth                       = `"credential": { "username": "asd", "password": "asd"}`
+	oAuth                           = `"credential": { "clientId": "test-id", "clientSecret": "test-secret", "url": "https://api.test.com/oauth/token" }`
+	additionalHeadersSerialized     = `"additionalHeadersSerialized": "{\"header-A\": [\"ha1\", \"ha2\"], \"header-B\": [\"hb1\", \"hb2\"]}"`
+	additionalQueryParamsSerialized = `"additionalQueryParamsSerialized": "{\"qA\": [\"qa1\", \"qa2\"], \"qB\": [\"qb1\", \"qb2\"]}"`
 )
 
 func TestBindGet(t *testing.T) {
@@ -97,6 +80,7 @@ func (suite *BindGetTestSuite) TearDownSuite() {
 	suite.testContext.CleanUp()
 }
 
+/*
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
@@ -126,7 +110,23 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsFailedConditionCred
 		Expect().Status(http.StatusInternalServerError)
 }
 
-func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnknownCredentialTypeShouldReturnError() {
+func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnknownCredentialTypeShouldReturnCredentialsWithNoAuth() {
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
+		fmt.Sprintf(packageWithAPIsResp, unknownAuth, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+	assert.NoError(suite.T(), err)
+
+	resp := suite.testContext.SystemBroker.GET(bindingPath).
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		Expect().Status(http.StatusOK)
+
+	resp.JSON().Path("$.credentials").NotNull()
+	resp.JSON().Path("$.credentials.credentials_type").Equal("no_auth")
+	resp.JSON().Path("$.credentials.auth_details").Object().Values().Length().Equal(0)
+	resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Price").Equal("https://api.cloud.com/api/InboundTestPrice")
+	resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Stock").Equal("https://api.cloud.com/InboundTestStock")
+}
+
+func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnusedCredentialShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
 		fmt.Sprintf(packageWithAPIsResp, basicAuth, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
@@ -145,7 +145,7 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnedCredentialsWithMis
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		Expect().Status(http.StatusInternalServerError)
 }
-
+*/
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsShouldReturnCredentials() {
 	suite.Run("Basic Authentication", func() {
 		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
@@ -199,6 +199,19 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsSho
 	})
 
 	suite.Run("Additional Headers, Query Params and CSRFConfig are provided", func() {
-		// TODO: ...
+		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
+			fmt.Sprintf(packageWithAPIsResp, fmt.Sprintf(`%s, %s, %s`, basicAuth, additionalHeadersSerialized, additionalQueryParamsSerialized), schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		assert.NoError(suite.T(), err)
+
+		resp := suite.testContext.SystemBroker.GET(bindingPath).
+			WithHeader("X-Broker-API-Version", brokerAPIVersion).
+			Expect().Status(http.StatusOK)
+
+		resp.JSON().Path("$.credentials").NotNull()
+		resp.JSON().Path("$.credentials.credentials_type").Equal("basic_auth")
+		resp.JSON().Path("$.credentials.auth_details.auth.username").Equal("asd")
+		resp.JSON().Path("$.credentials.auth_details.auth.password").Equal("asd")
+		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Price").Equal("https://api.cloud.com/api/InboundTestPrice")
+		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Stock").Equal("https://api.cloud.com/InboundTestStock")
 	})
 }
