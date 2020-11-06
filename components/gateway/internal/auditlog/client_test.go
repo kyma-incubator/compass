@@ -1,6 +1,7 @@
 package auditlog_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -48,7 +49,7 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogConfigurationChange(configChangeMsg)
+		err = client.LogConfigurationChange(context.TODO(), configChangeMsg)
 
 		//THEN
 		require.NoError(t, err)
@@ -70,7 +71,7 @@ func TestClient_LogConfigurationChange(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogConfigurationChange(configChangeMsg)
+		err = client.LogConfigurationChange(context.TODO(), configChangeMsg)
 
 		//THEN
 		require.Error(t, err)
@@ -98,7 +99,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogSecurityEvent(securityEventMsg)
+		err = client.LogSecurityEvent(context.TODO(), securityEventMsg)
 
 		//THEN
 		require.NoError(t, err)
@@ -120,7 +121,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogSecurityEvent(securityEventMsg)
+		err = client.LogSecurityEvent(context.TODO(), securityEventMsg)
 
 		//THEN
 		require.NoError(t, err)
@@ -143,7 +144,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogSecurityEvent(securityEventMsg)
+		err = client.LogSecurityEvent(context.TODO(), securityEventMsg)
 
 		//THEN
 		require.Error(t, err)
@@ -162,7 +163,7 @@ func TestClient_LogSecurityEvent(t *testing.T) {
 		require.NoError(t, err)
 
 		//WHEN
-		err = client.LogSecurityEvent(securityEventMsg)
+		err = client.LogSecurityEvent(context.TODO(), securityEventMsg)
 
 		//THEN
 		require.Error(t, err)

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -21,11 +22,13 @@ func newCertificateSecuredConnectorClient(endpoint string, tlsCert tls.Certifica
 		InsecureSkipVerify: true,
 	}
 
+	tr := httputil.NewCorrelationIDTransport(&http.Transport{
+		TLSClientConfig: tlsConfig,
+	})
+
 	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-		Timeout: opts.timeout,
+		Transport: tr,
+		Timeout:   opts.timeout,
 	}
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))

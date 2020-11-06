@@ -173,18 +173,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:82f7af1c0fbd04d05b4c77426e98028cd1c94843bd0d08ca9ae53013d3e138b2"
+  digest = "1:88c3cba85b5de103d95f7868525dce919f0f6db9cfec5e073aa9dd8a2484847c"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/apperrors",
     "components/director/pkg/correlation",
     "components/director/pkg/handler",
+    "components/director/pkg/http",
     "components/director/pkg/log",
     "components/director/pkg/resource",
     "components/director/pkg/signal",
   ]
   pruneopts = "UT"
-  revision = "de2cc56446a2d01a61fde87a9ca1fb3c91968994"
+  revision = "aaec80e7b175f926f859169859dddadf8f223b9e"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -699,7 +700,9 @@
     "github.com/99designs/gqlgen/handler",
     "github.com/gorilla/mux",
     "github.com/kisielk/errcheck",
+    "github.com/kyma-incubator/compass/components/director/pkg/correlation",
     "github.com/kyma-incubator/compass/components/director/pkg/handler",
+    "github.com/kyma-incubator/compass/components/director/pkg/http",
     "github.com/kyma-incubator/compass/components/director/pkg/log",
     "github.com/kyma-incubator/compass/components/director/pkg/signal",
     "github.com/machinebox/graphql",

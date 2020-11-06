@@ -11,14 +11,13 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/kyma-incubator/compass/components/connector/config"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	restclient "k8s.io/client-go/rest"
@@ -62,13 +61,13 @@ func main() {
 
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
-	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, log.RequestLogger(), authContextMiddleware.PropagateAuthentication)
+	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, correlation.AttachCorrelationIDToContext(), log.RequestLogger(), authContextMiddleware.PropagateAuthentication)
 	exitOnError(err, "Failed configuring external graphQL handler")
 
-	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, api.NewTokenResolver(internalComponents.TokenService), log.RequestLogger())
+	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, api.NewTokenResolver(internalComponents.TokenService), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
-	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository, log.RequestLogger())
+	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	wg := &sync.WaitGroup{}

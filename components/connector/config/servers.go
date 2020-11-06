@@ -78,6 +78,8 @@ func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConst
 		w.WriteHeader(http.StatusOK)
 	})
 
+	router.Use(middlewares...)
+
 	v1Router := router.PathPrefix("/v1").Subrouter()
 	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
 	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)

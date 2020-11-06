@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -20,13 +21,15 @@ type TokenSecuredClient struct {
 }
 
 func newTokenSecuredClient(endpoint string, opts *clientsetOptions) *TokenSecuredClient {
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: opts.skipTLSVerify,
-			},
+	tr := httputil.NewCorrelationIDTransport(&http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: opts.skipTLSVerify,
 		},
-		Timeout: opts.timeout,
+	})
+
+	httpClient := &http.Client{
+		Transport: tr,
+		Timeout:   opts.timeout,
 	}
 
 	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httpClient))

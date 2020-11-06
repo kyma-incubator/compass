@@ -2,6 +2,7 @@ package auditlog
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -45,13 +46,13 @@ func NewClient(cfg Config, httpClient HttpClient) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error {
+func (c *Client) LogConfigurationChange(ctx context.Context, change model.ConfigurationChange) error {
 	payload, err := json.Marshal(&change)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling auditlog payload")
 	}
 
-	req, err := http.NewRequest("POST", c.configChangeURL, bytes.NewBuffer(payload))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.configChangeURL, bytes.NewBuffer(payload))
 	if err != nil {
 		return errors.Wrap(err, "while creating request")
 	}
@@ -59,13 +60,13 @@ func (c *Client) LogConfigurationChange(change model.ConfigurationChange) error 
 	return c.sendAuditLog(req)
 }
 
-func (c *Client) LogSecurityEvent(event model.SecurityEvent) error {
+func (c *Client) LogSecurityEvent(ctx context.Context, event model.SecurityEvent) error {
 	payload, err := json.Marshal(&event)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling auditlog payload")
 	}
 
-	req, err := http.NewRequest("POST", c.securityEventURL, bytes.NewBuffer(payload))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.securityEventURL, bytes.NewBuffer(payload))
 	if err != nil {
 		return errors.Wrap(err, "while creating request")
 	}

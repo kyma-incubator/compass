@@ -1,13 +1,14 @@
 package auditlog
 
 import (
+	"context"
 	"log"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 )
 
 type AuditlogService interface {
-	Log(request, response string, claims proxy.Claims) error
+	Log(ctx context.Context, request, response string, claims proxy.Claims) error
 }
 
 type Worker struct {
@@ -33,7 +34,7 @@ func (w *Worker) Start() {
 			return
 		case msg := <-w.auditlogChannel:
 			log.Printf("Read from auditlog channel (size=%d, cap=%d)", len(w.auditlogChannel), cap(w.auditlogChannel))
-			err := w.svc.Log(msg.Request, msg.Response, msg.Claims)
+			err := w.svc.Log(msg.Context, msg.Request, msg.Response, msg.Claims)
 			if err != nil {
 				log.Printf("Error while saving auditlog message with error: %s", err.Error())
 			}
