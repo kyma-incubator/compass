@@ -8,12 +8,13 @@ Gateway is a component that exposes a service through which it forwards the inco
 
 Gateway binary allows you to override some configuration parameters. You can specify the following basic environment variables:
 
-| Name                             | Description                                                       | Default value            | 
-| ---------------------------------| ----------------------------------------------------------------- | ------------------------ | 
-| **APP_ADDRESS**                  | The address and port for the service to listen on                 | `http://127.0.0.1:3000`  | 
-| **APP_DIRECTOR_ORIGIN**          | The address and port on which the Director service is listening   | `http://127.0.0.1:3001`  | 
-| **APP_CONNECTOR_ORIGIN**         | The address and port on which the Connector service is listening  | `http://127.0.0.1:3002`  | 
-| **APP_AUDITLOG_ENABLED**         | The variable that enables the audit log feature                   | `false`                  | 
+| Name                             | Description                                                       | Default value                                             | 
+| ---------------------------------| ----------------------------------------------------------------- | --------------------------------------------------------- | 
+| **APP_ADDRESS**                  | The address and port for the service to listen on                 | `http://127.0.0.1:3000`                                   | 
+| **APP_SERVER_TIMEOUT**           | `114s`                                                            | The timeout used for incoming calls to the gateway server |
+| **APP_DIRECTOR_ORIGIN**          | The address and port on which the Director service is listening   | `http://127.0.0.1:3001`                                   | 
+| **APP_CONNECTOR_ORIGIN**         | The address and port on which the Connector service is listening  | `http://127.0.0.1:3002`                                   | 
+| **APP_AUDITLOG_ENABLED**         | The variable that enables the audit log feature                   | `false`                                                   | 
 
 ### Audit log configuration
 
@@ -21,7 +22,8 @@ If you set **APP_AUDITLOG_ENABLED** to `true`, you must specify the following en
 
 | Name                             | Description                                                                       | 
 | -------------------------------- | --------------------------------------------------------------------------------- | 
-| **APP_AUDITLOG_URL**             | The URL under which the audit log service is available                            | 
+| **APP_AUDITLOG_URL**             | The URL under which the audit log service is available                            |
+| **APP_AUDITLOG_CLIENT_TIMEOUT**  | The timeout used for calls to the audit log service                               |
 | **APP_AUDITLOG_CONFIG_PATH**     | The path for logging configuration changes                                        | 
 | **APP_AUDITLOG_SECURITY_PATH**   | The path for logging security events                                              | 
 | **APP_AUDITLOG_AUTH_MODE**       | The audit log authorization mode. The possible values are `basic` and `oauth`.    |  
