@@ -388,6 +388,13 @@ func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string) graph
 	return addDocumentToPackageWithInput(t, ctx, pkgID, fixDocumentInput(t))
 }
 
+func getPackageInstanceAuth(t *testing.T, ctx context.Context, id string) graphql.PackageInstanceAuth {
+	pkgInstanceAuthRequest := fixPackageInstanceAuthRequest(id)
+	pkgInstanceAuth := graphql.PackageInstanceAuth{}
+	require.NoError(t, tc.RunOperation(ctx, pkgInstanceAuthRequest, &pkgInstanceAuth))
+	return pkgInstanceAuth
+}
+
 func createPackageInstanceAuth(t *testing.T, ctx context.Context, pkgID string) graphql.PackageInstanceAuth {
 	authCtx, inputParams := fixPackageInstanceAuthContextAndInputParams(t)
 	in, err := tc.graphqlizer.PackageInstanceAuthRequestInputToGQL(fixPackageInstanceAuthRequestInput(authCtx, inputParams))

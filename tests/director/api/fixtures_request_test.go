@@ -825,6 +825,15 @@ func fixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
 			appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
 }
 
+func fixPackageInstanceAuthRequest(packageInstanceAuthID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: packageInstanceAuth(id: "%s") {
+					%s
+				}
+			}`, packageInstanceAuthID, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+}
+
 func fixCreateAutomaticScenarioAssignmentRequest(automaticScenarioAssignmentInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

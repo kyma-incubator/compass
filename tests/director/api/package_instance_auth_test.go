@@ -31,7 +31,7 @@ func TestRequestPackageInstanceAuthCreation(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	assertPackageInstanceAuth(t, pkgInstanceAuthRequestInput, output)
+	assertPackageInstanceAuthInput(t, pkgInstanceAuthRequestInput, output)
 
 	saveExample(t, pkgInstanceAuthCreationRequestReq.Query(), "request package instance auth creation")
 
@@ -56,6 +56,41 @@ func TestRequestPackageInstanceAuthCreation(t *testing.T) {
 	// Assert the package instance auth exist
 	require.Equal(t, instanceAuthID, pkgFromAPI.Package.InstanceAuth.ID)
 	require.Equal(t, graphql.PackageInstanceAuthStatusConditionPending, pkgFromAPI.Package.InstanceAuth.Status.Condition)
+}
+
+func TestRequestPackageInstanceAuthCreationByID(t *testing.T) {
+	var packageInstanceAuthID = "6a023596-b18a-47ca-b3f8-518d56f7e986"
+	ctx := context.Background()
+
+	application := registerApplication(t, ctx, "app-test-package")
+	defer unregisterApplication(t, application.ID)
+
+	pkg := createPackage(t, ctx, application.ID, "pkg-app-1")
+	defer deletePackage(t, ctx, pkg.ID)
+
+	authCtx, inputParams := fixPackageInstanceAuthContextAndInputParams(t)
+	pkgInstanceAuthRequestInput := fixPackageInstanceAuthRequestInput(authCtx, inputParams)
+	pkgInstanceAuthRequestInput.ID = &packageInstanceAuthID
+	pkgInstanceAuthRequestInputStr, err := tc.graphqlizer.PackageInstanceAuthRequestInputToGQL(pkgInstanceAuthRequestInput)
+	require.NoError(t, err)
+
+	pkgInstanceAuthCreationRequestReq := fixRequestPackageInstanceAuthCreationRequest(pkg.ID, pkgInstanceAuthRequestInputStr)
+	output := graphql.PackageInstanceAuth{}
+
+	// WHEN
+	t.Log("Request package instance auth creation")
+	err = tc.RunOperation(ctx, pkgInstanceAuthCreationRequestReq, &output)
+
+	// THEN
+	require.NoError(t, err)
+	assertPackageInstanceAuthInput(t, pkgInstanceAuthRequestInput, output)
+
+	// WHEN
+	t.Log("Request package instance auth by ID")
+	pkgInstanceAuth := getPackageInstanceAuth(t, ctx, packageInstanceAuthID)
+
+	// THEN
+	assertPackageInstanceAuth(t, output, pkgInstanceAuth)
 }
 
 func TestRequestPackageInstanceAuthCreationWithDefaultAuth(t *testing.T) {
