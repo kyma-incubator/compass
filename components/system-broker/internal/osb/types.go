@@ -260,18 +260,12 @@ func mapPackageInstanceAuthToModel(instanceAuth schema.PackageInstanceAuth, targ
 		cfg.CSRFConfig = &CSRFConfig{TokenURL: auth.RequestAuth.Csrf.TokenEndpointURL}
 	}
 
-	if auth.AdditionalHeaders != nil {
-		if cfg.RequestParameters == nil {
-			cfg.RequestParameters = &RequestParameters{}
-		}
-		cfg.RequestParameters.Headers = (*map[string][]string)(auth.AdditionalHeaders)
+	reqParams, err := resolveAdditionalRequestParameters(auth)
+	if err != nil {
+		return BindingCredentials{}, errors.Wrapf(err, "while resolving additional request parameters")
 	}
-
-	if auth.AdditionalQueryParams != nil {
-		if cfg.RequestParameters == nil {
-			cfg.RequestParameters = &RequestParameters{}
-		}
-		cfg.RequestParameters.QueryParameters = (*map[string][]string)(auth.AdditionalQueryParams)
+	if reqParams.QueryParameters != nil || reqParams.Headers != nil {
+		cfg.RequestParameters = reqParams
 	}
 
 	var credType AuthType
@@ -309,4 +303,34 @@ func mapPackageInstanceAuthToModel(instanceAuth schema.PackageInstanceAuth, targ
 		TargetURLs:  targets,
 		AuthDetails: cfg,
 	}, nil
+}
+
+func resolveAdditionalRequestParameters(auth *schema.Auth) (*RequestParameters, error) {
+	additionalRequestParameters := &RequestParameters{}
+
+	if auth.AdditionalHeadersSerialized != nil {
+		hed, err := auth.AdditionalHeadersSerialized.Unmarshal()
+		if err != nil {
+			return nil, err
+		}
+		additionalRequestParameters.Headers = &hed
+	} else {
+		if auth.AdditionalHeaders != nil {
+			additionalRequestParameters.Headers = (*map[string][]string)(auth.AdditionalHeaders)
+		}
+	}
+
+	if auth.AdditionalQueryParamsSerialized != nil {
+		params, err := auth.AdditionalQueryParamsSerialized.Unmarshal()
+		if err != nil {
+			return nil, err
+		}
+		additionalRequestParameters.QueryParameters = &params
+	} else {
+		if auth.AdditionalQueryParams != nil {
+			additionalRequestParameters.QueryParameters = (*map[string][]string)(auth.AdditionalQueryParams)
+		}
+	}
+
+	return additionalRequestParameters, nil
 }

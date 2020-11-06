@@ -80,7 +80,6 @@ func (suite *BindGetTestSuite) TearDownSuite() {
 	suite.testContext.CleanUp()
 }
 
-/*
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
@@ -145,7 +144,7 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnedCredentialsWithMis
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		Expect().Status(http.StatusInternalServerError)
 }
-*/
+
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsShouldReturnCredentials() {
 	suite.Run("Basic Authentication", func() {
 		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
@@ -198,6 +197,7 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsSho
 		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Stock").Equal("https://api.cloud.com/InboundTestStock")
 	})
 
+	// todo add RequestAuth
 	suite.Run("Additional Headers, Query Params and CSRFConfig are provided", func() {
 		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
 			fmt.Sprintf(packageWithAPIsResp, fmt.Sprintf(`%s, %s, %s`, basicAuth, additionalHeadersSerialized, additionalQueryParamsSerialized), schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
@@ -211,6 +211,10 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsSho
 		resp.JSON().Path("$.credentials.credentials_type").Equal("basic_auth")
 		resp.JSON().Path("$.credentials.auth_details.auth.username").Equal("asd")
 		resp.JSON().Path("$.credentials.auth_details.auth.password").Equal("asd")
+		resp.JSON().Path("$.credentials.auth_details.request_parameters.headers").Object().Value("header-A").Array().Elements("ha1", "ha2")
+		resp.JSON().Path("$.credentials.auth_details.request_parameters.headers").Object().Value("header-B").Array().Elements("hb1", "hb2")
+		resp.JSON().Path("$.credentials.auth_details.request_parameters.query_parameters").Object().Value("qA").Array().Elements("qa1", "qa2")
+		resp.JSON().Path("$.credentials.auth_details.request_parameters.query_parameters").Object().Value("qB").Array().Elements("qb1", "qb2")
 		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Price").Equal("https://api.cloud.com/api/InboundTestPrice")
 		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Stock").Equal("https://api.cloud.com/InboundTestStock")
 	})
