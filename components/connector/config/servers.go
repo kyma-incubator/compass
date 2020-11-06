@@ -29,9 +29,7 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
 	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler())
 
-	for _, middleware := range middlewares {
-		externalRouter.Use(middleware)
-	}
+	externalRouter.Use(middlewares...)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(externalRouter, cfg.ServerTimeout)
 	if err != nil {
@@ -56,9 +54,7 @@ func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver, m
 	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
 
-	for _, middleware := range middlewares {
-		internalRouter.Use(middleware)
-	}
+	internalRouter.Use(middlewares...)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(internalRouter, cfg.ServerTimeout)
 	if err != nil {
@@ -86,9 +82,7 @@ func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConst
 	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
 	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
 
-	for _, middleware := range middlewares {
-		router.Use(middleware)
-	}
+	router.Use(middlewares...)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
 	if err != nil {
