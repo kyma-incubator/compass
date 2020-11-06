@@ -2,6 +2,7 @@ package binding_test
 
 import (
 	"fmt"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -33,43 +34,44 @@ var (
 	"data": {
 		"result": {
 			"id": "76ad2c2b-7a33-49fb-b412-daz67d50b922",
-			"instanceAuths": [
+			"instanceAuth": 
 				{
 					"id": "16cfe0b3-9633-4441-a639-15126ff3z4b9",
 					"auth": {
 						%s
 					},
-					"context": %s,
 					"status": {
-						"condition": "SUCCEEDED",
+						"condition": "%s",
 						"timestamp": "2020-04-20T10:54:07Z",
 						"message": "Credentials were provided.",
 						"reason": "CredentialsProvided"
-					}
+					},
+					"context": "{\"instance_id\": \"%s\", \"binding_id\": \"%s\"}"
 				}
-			],	
+			,	
 			"apiDefinitions": {
 				"data": [
 					{
 						"id": "1a23bd57-ef6e-46fd-a59s-15632cd3c410",
 						"name": "API Cloud - Inbound Test Price",
-						"targetURL": "https://api.cloud.com/api/InboundTestPrice",
+						"targetURL": "https://api.cloud.com/api/InboundTestPrice"
 					},
 					{
 						"id": "2e635cc3-fc9b-4a8d-zb4e-iaf73cbd8846",
 						"name": "API Cloud - Inbound Test Stock",
-						"targetURL": "https://api.cloud.com/InboundTestStock",
+						"targetURL": "https://api.cloud.com/InboundTestStock"
 					}
 				]
 			}
 		}
-	  }`
+	}
+}`
 
-	unknownAuth           = `"credential": { "a": "aa", "bb": "bb"},`
-	basicAuth             = `"credential": { "username": "asd", "password": "asd"},`
+	unknownAuth           = `"credential": { "a": "aa", "bb": "bb"}`
+	basicAuth             = `"credential": { "username": "asd", "password": "asd"}`
 	oAuth                 = `"credential": { "clientId": "test-id", "clientSecret": "test-secret", "url": "https://api.test.com/oauth/token" }`
-	additionalHeaders     = `"additionalHeaders": "\"key\": \"value\"",`
-	additionalQueryParams = `"additionalQueryParams": "\"key\": \"value\"",`
+	additionalHeaders     = `"additionalHeaders": "\"key\": \"value\""`
+	additionalQueryParams = `"additionalQueryParams": "\"key\": \"value\""`
 )
 
 func TestBindGet(t *testing.T) {
@@ -96,85 +98,104 @@ func (suite *BindGetTestSuite) TearDownSuite() {
 }
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", "{}")
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.GET(bindingPath).
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		Expect().Status(http.StatusInternalServerError)
 }
 
-/* TODO: Maybe unnecessary
-func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsCredentialsWithMultipleAuthsShouldReturnError() {
-}
-*/
-
-func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnsuccessfulCredentialsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", packagePendingAuthResp)
+func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsContextWithMismatchedInstanceOnFindCredentialsShouldReturnNotFound() {
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending, "test", bindingID))
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.GET(bindingPath).
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		Expect().Status(http.StatusNotFound)
+}
+
+func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsFailedConditionCredentialsShouldReturnError() {
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
+		fmt.Sprintf(packageWithAPIsResp, basicAuth, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
+	assert.NoError(suite.T(), err)
+
+	suite.testContext.SystemBroker.GET(bindingPath).
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		Expect().Status(http.StatusInternalServerError)
 }
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnknownCredentialTypeShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", fmt.Sprintf(packageWithAPIsResp, unknownAuth, "{}"))
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
+		fmt.Sprintf(packageWithAPIsResp, basicAuth, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456").
-		WithHeader("X-Broker-API-Version", brokerAPIVersion).
-		Expect().Status(http.StatusInternalServerError)
-}
-
-func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnedCredentialsButNoneMatchInstanceAndBindingShouldReturnNotFound() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", fmt.Sprintf(packageWithAPIsResp, basicAuth, "{}"))
-	assert.NoError(suite.T(), err)
-
-	suite.testContext.SystemBroker.GET("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.GET(bindingPath).
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		Expect().Status(http.StatusNotFound)
 }
 
-func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsShouldReturnCredentials() {
-	instanceID, bindingID := "123", "456"
-	getBindingPath := fmt.Sprintf("/v2/service_instances/%s/service_bindings/%s", instanceID, bindingID)
-	context := fmt.Sprintf(`{"instance_id": "%s", "binding_id": "%s"}`, instanceID, bindingID)
+func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnedCredentialsWithMismatchedContextInstanceShouldReturnNotFound() {
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
+		fmt.Sprintf(packageWithAPIsResp, basicAuth, schema.PackageInstanceAuthStatusConditionFailed, "test", bindingID))
+	assert.NoError(suite.T(), err)
 
+	suite.testContext.SystemBroker.GET(bindingPath).
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		Expect().Status(http.StatusInternalServerError)
+}
+
+func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsShouldReturnCredentials() {
 	suite.Run("Basic Authentication", func() {
-		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", fmt.Sprintf(packageWithAPIsResp, basicAuth, context))
+		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
+			fmt.Sprintf(packageWithAPIsResp, basicAuth, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 		assert.NoError(suite.T(), err)
 
-		resp := suite.testContext.SystemBroker.GET(getBindingPath).
+		resp := suite.testContext.SystemBroker.GET(bindingPath).
 			WithHeader("X-Broker-API-Version", brokerAPIVersion).
 			Expect().Status(http.StatusOK)
 
 		resp.JSON().Path("$.credentials").NotNull()
-		// TODO: Add more concrete asserts - check if basic creds are available & target urls
+		resp.JSON().Path("$.credentials.credentials_type").Equal("basic_auth")
+		resp.JSON().Path("$.credentials.auth_details.auth.username").Equal("asd")
+		resp.JSON().Path("$.credentials.auth_details.auth.password").Equal("asd")
+		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Price").Equal("https://api.cloud.com/api/InboundTestPrice")
+		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Stock").Equal("https://api.cloud.com/InboundTestStock")
 	})
 
 	suite.Run("OAuth", func() {
-		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", fmt.Sprintf(packageWithAPIsResp, oAuth, context))
+		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
+			fmt.Sprintf(packageWithAPIsResp, oAuth, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 		assert.NoError(suite.T(), err)
 
-		resp := suite.testContext.SystemBroker.GET(getBindingPath).
+		resp := suite.testContext.SystemBroker.GET(bindingPath).
 			WithHeader("X-Broker-API-Version", brokerAPIVersion).
 			Expect().Status(http.StatusOK)
 
 		resp.JSON().Path("$.credentials").NotNull()
-		// TODO: Add more concrete asserts - check if oauth creds are available & target url
+		resp.JSON().Path("$.credentials.credentials_type").Equal("oauth")
+		resp.JSON().Path("$.credentials.auth_details.auth.clientId").Equal("test-id")
+		resp.JSON().Path("$.credentials.auth_details.auth.clientSecret").Equal("test-secret")
+		resp.JSON().Path("$.credentials.auth_details.auth.tokenUrl").Equal("https://api.test.com/oauth/token")
+		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Price").Equal("https://api.cloud.com/api/InboundTestPrice")
+		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Stock").Equal("https://api.cloud.com/InboundTestStock")
 	})
 
 	suite.Run("None", func() {
-		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth", fmt.Sprintf(packageWithAPIsResp, "", context))
+		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
+			fmt.Sprintf(packageWithAPIsResp, "", schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 		assert.NoError(suite.T(), err)
 
-		resp := suite.testContext.SystemBroker.GET(getBindingPath).
+		resp := suite.testContext.SystemBroker.GET(bindingPath).
 			WithHeader("X-Broker-API-Version", brokerAPIVersion).
 			Expect().Status(http.StatusOK)
 
-		resp.JSON().Path("$.credentials").Null()
-		// TODO: Add more concrete asserts - check that creds are null & target url exists
+		resp.JSON().Path("$.credentials").NotNull()
+		resp.JSON().Path("$.credentials.credentials_type").Equal("no_auth")
+		resp.JSON().Path("$.credentials.auth_details").Object().Values().Length().Equal(0)
+		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Price").Equal("https://api.cloud.com/api/InboundTestPrice")
+		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Stock").Equal("https://api.cloud.com/InboundTestStock")
 	})
 
 	suite.Run("Additional Headers, Query Params and CSRFConfig are provided", func() {

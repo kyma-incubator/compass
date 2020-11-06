@@ -40,7 +40,7 @@ var (
 	  }
 	}`
 
-	lastOperationPath = bindingPath + "/last_operation"
+	lastOperationBindingPath = bindingPath + "/last_operation"
 )
 
 func TestBindLastOp(t *testing.T) {
@@ -70,7 +70,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsErrorOnFindCreden
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.GET(lastOperationPath).
+	suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 		WithQuery("operation", osb.BindOp).
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -82,7 +82,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsNotFound() {
 		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
 		assert.NoError(suite.T(), err)
 
-		suite.testContext.SystemBroker.GET(lastOperationPath).
+		suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 			WithQuery("operation", osb.BindOp).
 			WithHeader("X-Broker-API-Version", brokerAPIVersion).
 			WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -93,7 +93,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsNotFound() {
 		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
 		assert.NoError(suite.T(), err)
 
-		suite.testContext.SystemBroker.GET(lastOperationPath).
+		suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 			WithQuery("operation", osb.UnbindOp).
 			WithHeader("X-Broker-API-Version", brokerAPIVersion).
 			WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -106,7 +106,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithMi
 		fmt.Sprintf(packageInstanceAuthWithoutContextResponse, schema.PackageInstanceAuthStatusConditionPending))
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.GET(lastOperationPath).
+	suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 		WithQuery("operation", osb.BindOp).
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -118,7 +118,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithDi
 		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending, "111", bindingID))
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.GET(lastOperationPath).
+	suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 		WithQuery("operation", osb.BindOp).
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -134,7 +134,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 				fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
-			suite.testContext.SystemBroker.GET(lastOperationPath).
+			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
 				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -146,7 +146,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 				fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
-			suite.testContext.SystemBroker.GET(lastOperationPath).
+			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
 				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -158,7 +158,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 				fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
-			suite.testContext.SystemBroker.GET(lastOperationPath).
+			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
 				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -170,7 +170,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 				fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
-			suite.testContext.SystemBroker.GET(lastOperationPath).
+			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
 				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -182,7 +182,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 				fmt.Sprintf(packageInstanceAuthResponse, UnknownCondition, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
-			suite.testContext.SystemBroker.GET(lastOperationPath).
+			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
 				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
@@ -205,7 +205,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 					fmt.Sprintf(packageInstanceAuthResponse, condition, instanceID, bindingID))
 				assert.NoError(suite.T(), err)
 
-				suite.testContext.SystemBroker.GET(lastOperationPath).
+				suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 					WithQuery("operation", osb.UnbindOp).
 					WithHeader("X-Broker-API-Version", brokerAPIVersion).
 					WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).

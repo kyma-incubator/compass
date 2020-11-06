@@ -71,7 +71,7 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 		return domain.GetBindingSpec{}, apiresponses.ErrBindingNotFound
 	case schema.PackageInstanceAuthStatusConditionFailed:
 		logger.Info("Package credentials for binding are in failed state")
-		return domain.GetBindingSpec{}, errors.Wrapf(err, "credentials status is not success: %+v", *instanceAuth.Status)
+		return domain.GetBindingSpec{}, errors.Errorf("credentials status is not success: %+v", *instanceAuth.Status)
 	default:
 	}
 
