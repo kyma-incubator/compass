@@ -32,9 +32,21 @@ func (i *LabelInput) ToLabel(id, tenant string) *Label {
 type LabelableObject string
 
 const (
-	RuntimeLabelableObject     LabelableObject = "Runtime"
-	ApplicationLabelableObject LabelableObject = "Application"
+	RuntimeLabelableObject        LabelableObject = "Runtime"
+	RuntimeContextLabelableObject LabelableObject = "Runtime Context"
+	ApplicationLabelableObject    LabelableObject = "Application"
 )
+
+func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value interface{}) *Label {
+	return &Label{
+		ID:         uuid.New().String(),
+		Tenant:     runtimeCtx.Tenant,
+		ObjectType: RuntimeContextLabelableObject,
+		ObjectID:   runtimeCtx.ID,
+		Key:        key,
+		Value:      value,
+	}
+}
 
 func NewLabelForRuntime(runtime Runtime, key string, value interface{}) *Label {
 	return &Label{
