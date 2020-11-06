@@ -19,7 +19,7 @@ func Test_Clientset(t *testing.T) {
 
 	// given
 	var err error
-	token, err := tokenService.CreateToken(clientId, tokens.ApplicationToken)
+	token, err := tokenService.CreateToken(context.TODO(), clientId, tokens.ApplicationToken)
 	require.NoError(t, err)
 
 	clientSet := NewConnectorClientSet(WithSkipTLSVerify(true))

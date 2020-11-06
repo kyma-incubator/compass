@@ -77,8 +77,8 @@ func TestMain(m *testing.M) {
 
 	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet)
 
-	go certsLoader.Run()
-	go revokedCertsLoader.Run(context.Background())
+	go certsLoader.Run(context.TODO())
+	go revokedCertsLoader.Run(context.TODO())
 
 	tokenService = internalComponents.TokenService
 	externalAPIUrl = fmt.Sprintf("https://%s%s", cfg.ExternalAddress, cfg.APIEndpoint)
@@ -98,7 +98,7 @@ func TestMain(m *testing.M) {
 			if connectorToken != "" {
 				tokenData, err := tokenService.Resolve(connectorToken)
 				if err != nil {
-					httputils.RespondWithError(w, http.StatusForbidden, err)
+					httputils.RespondWithError(r.Context(), w, http.StatusForbidden, err)
 					return
 				}
 				r = r.WithContext(authentication.PutIntoContext(r.Context(), authentication.ClientIdFromTokenKey, tokenData.ClientId))
@@ -107,7 +107,7 @@ func TestMain(m *testing.M) {
 			}
 
 			if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
-				httputils.RespondWithError(w, http.StatusForbidden, errors.New("Token and Certificate not provided"))
+				httputils.RespondWithError(r.Context(), w, http.StatusForbidden, errors.New("Token and Certificate not provided"))
 				return
 			}
 

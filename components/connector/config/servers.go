@@ -5,13 +5,11 @@ import (
 
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
@@ -29,7 +27,7 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	externalRouter := mux.NewRouter()
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
-	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
+	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler())
 
 	externalRouter.Use(middlewares...)
 
@@ -85,6 +83,8 @@ func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConst
 	v1Router := router.PathPrefix("/v1").Subrouter()
 	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
 	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
+
+	router.Use(middlewares...)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
 	if err != nil {

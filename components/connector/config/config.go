@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 type Config struct {
@@ -10,6 +12,8 @@ type Config struct {
 	InternalAddress       string `envconfig:"default=127.0.0.1:3001"`
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
+
+	Log log.Config
 
 	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
 

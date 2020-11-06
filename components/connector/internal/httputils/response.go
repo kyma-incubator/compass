@@ -1,28 +1,29 @@
 package httputils
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-func RespondWithBody(w http.ResponseWriter, status int, data interface{}) {
+func RespondWithBody(ctx context.Context, w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Add(HeaderContentType, ContentTypeApplicationJSON)
 	w.WriteHeader(status)
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
-		logrus.Error("Failed to decode error response")
+		log.C(ctx).WithError(err).Error("Failed to decode error response")
 	}
 }
 
-func RespondWithError(w http.ResponseWriter, status int, err error) {
-	logrus.Error(err.Error())
+func RespondWithError(ctx context.Context, w http.ResponseWriter, status int, err error) {
+	log.C(ctx).WithError(err).Error("Responding with error")
 	w.Header().Add(HeaderContentType, ContentTypeApplicationJSON)
 	w.WriteHeader(status)
 	errorResponse := ErrorResponse{[]Error{{Message: err.Error()}}}
 	encodingErr := json.NewEncoder(w).Encode(errorResponse)
 	if encodingErr != nil {
-		logrus.Error("Failed to encode error response")
+		log.C(ctx).WithError(err).Error("Failed to encode error response")
 	}
 }

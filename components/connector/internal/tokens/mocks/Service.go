@@ -3,7 +3,10 @@
 package mocks
 
 import (
+	context "context"
+
 	apperrors "github.com/kyma-incubator/compass/components/connector/internal/apperrors"
+
 	mock "github.com/stretchr/testify/mock"
 
 	tokens "github.com/kyma-incubator/compass/components/connector/internal/tokens"
@@ -14,20 +17,20 @@ type Service struct {
 	mock.Mock
 }
 
-// CreateToken provides a mock function with given fields: clientId, tokenType
-func (_m *Service) CreateToken(clientId string, tokenType tokens.TokenType) (string, apperrors.AppError) {
-	ret := _m.Called(clientId, tokenType)
+// CreateToken provides a mock function with given fields: ctx, clientId, tokenType
+func (_m *Service) CreateToken(ctx context.Context, clientId string, tokenType tokens.TokenType) (string, apperrors.AppError) {
+	ret := _m.Called(ctx, clientId, tokenType)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, tokens.TokenType) string); ok {
-		r0 = rf(clientId, tokenType)
+	if rf, ok := ret.Get(0).(func(context.Context, string, tokens.TokenType) string); ok {
+		r0 = rf(ctx, clientId, tokenType)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 apperrors.AppError
-	if rf, ok := ret.Get(1).(func(string, tokens.TokenType) apperrors.AppError); ok {
-		r1 = rf(clientId, tokenType)
+	if rf, ok := ret.Get(1).(func(context.Context, string, tokens.TokenType) apperrors.AppError); ok {
+		r1 = rf(ctx, clientId, tokenType)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(apperrors.AppError)

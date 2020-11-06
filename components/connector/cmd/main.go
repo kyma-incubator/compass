@@ -2,17 +2,20 @@ package main
 
 import (
 	"context"
-	"log"
+	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
 	"github.com/kyma-incubator/compass/components/connector/config"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -23,19 +26,29 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
+
 	cfg := config.Config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app Config")
 
-	log.Println("Starting Connector Service")
-	log.Printf("Config: %s", cfg.String())
+	ctx, err = log.Configure(ctx, &cfg.Log)
+	exitOnError(err, "Filed to configure logger")
 
-	k8sClientSet, appErr := newK8SClientSet(cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout, cfg.KubernetesClient.Timeout)
+	log.C(ctx).Info("Starting Connector Service")
+	log.C(ctx).Infof("Config: %s", cfg.String())
+
+	k8sClientSet, appErr := newK8SClientSet(ctx, cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout, cfg.KubernetesClient.Timeout)
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
 	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet)
-	go certsLoader.Run()
-	go revokedCertsLoader.Run(context.Background())
+	go certsLoader.Run(ctx)
+	go revokedCertsLoader.Run(ctx)
 
 	certificateResolver := api.NewCertificateResolver(
 		internalComponents.Authenticator,
@@ -48,54 +61,75 @@ func main() {
 
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
-	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextMiddleware.PropagateAuthentication, correlation.AttachCorrelationIDToContext())
+	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, correlation.AttachCorrelationIDToContext(), log.RequestLogger(), authContextMiddleware.PropagateAuthentication)
 	exitOnError(err, "Failed configuring external graphQL handler")
 
-	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, api.NewTokenResolver(internalComponents.TokenService), correlation.AttachCorrelationIDToContext())
+	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, api.NewTokenResolver(internalComponents.TokenService), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
-	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository, correlation.AttachCorrelationIDToContext())
+	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(3)
 
-	go func() {
-		log.Printf("External GraphQL API listening on %s...", cfg.ExternalAddress)
-		if err := externalGqlServer.ListenAndServe(); err != nil {
-			panic(err)
-		}
-	}()
-
-	go func() {
-		log.Printf("Internal GraphQL API listening on %s...", cfg.InternalAddress)
-		if err := internalGqlServer.ListenAndServe(); err != nil {
-			panic(err)
-		}
-	}()
-
-	go func() {
-		log.Printf("Hydrator API listening on %s...", cfg.HydratorAddress)
-		if err := hydratorServer.ListenAndServe(); err != nil {
-			panic(err)
-		}
-	}()
+	go startServer(ctx, externalGqlServer, wg)
+	go startServer(ctx, internalGqlServer, wg)
+	go startServer(ctx, hydratorServer, wg)
 
 	wg.Wait()
+}
+
+func startServer(parentCtx context.Context, server *http.Server, wg *sync.WaitGroup) {
+	ctx, cancel := context.WithCancel(parentCtx)
+	defer cancel()
+
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		stopServer(server)
+	}()
+
+	log.C(ctx).Infof("Starting and listening on %s://%s", "http", server.Addr)
+
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		log.C(ctx).Fatalf("Could not listen on %s://%s: %v\n", "http", server.Addr, err)
+	}
+}
+
+func stopServer(server *http.Server) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	go func(ctx context.Context) {
+		<-ctx.Done()
+
+		if ctx.Err() == context.Canceled {
+			return
+		} else if ctx.Err() == context.DeadlineExceeded {
+			log.C(ctx).Panic("Timeout while stopping the server, killing instance!")
+		}
+	}(ctx)
+
+	server.SetKeepAlivesEnabled(false)
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.C(ctx).Fatalf("Could not gracefully shutdown the server: %v\n", err)
+	}
 }
 
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.D().Fatal(wrappedError)
 	}
 }
 
-func newK8SClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
+func newK8SClientSet(ctx context.Context, interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
-		logrus.Warnf("Failed to read in cluster Config: %s", err.Error())
-		logrus.Info("Trying to initialize with local Config")
+		log.C(ctx).WithError(err).Warn("Failed to read in cluster Config")
+		log.C(ctx).Info("Trying to initialize with local Config")
 		home := homedir.HomeDir()
 		k8sConfPath := filepath.Join(home, ".kube", "Config")
 		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
@@ -112,9 +146,14 @@ func newK8SClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernet
 	}
 
 	err = wait.PollImmediate(interval, pollingTimeout, func() (bool, error) {
+		select {
+		case <-ctx.Done():
+			return true, nil
+		default:
+		}
 		_, err := k8sClientSet.ServerVersion()
 		if err != nil {
-			logrus.Debugf("Failed to access API Server: %s", err.Error())
+			log.C(ctx).Debugf("Failed to access API Server: %s", err.Error())
 			return false, nil
 		}
 		return true, nil
@@ -123,6 +162,6 @@ func newK8SClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernet
 		return nil, err
 	}
 
-	logrus.Info("Successfully initialized kubernetes client")
+	log.C(ctx).Info("Successfully initialized kubernetes client")
 	return k8sClientSet, nil
 }

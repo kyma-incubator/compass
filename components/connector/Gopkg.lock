@@ -10,7 +10,7 @@
   version = "v0.44.3"
 
 [[projects]]
-  digest = "1:6f0d235b8dcf6f7c6631f2b91c9f9c9b07544d5a58c83eb1be416bda830e12c7"
+  digest = "1:36a35bcd0d31f5082578d975e0c23e5e14c98be262b3832fc2c30f35ca5fc776"
   name = "github.com/99designs/gqlgen"
   packages = [
     "api",
@@ -173,17 +173,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ba22902084c56d6b88da123e931be3a460fa239c8f43cb0eb0b3a6ff2afd2626"
+  digest = "1:88c3cba85b5de103d95f7868525dce919f0f6db9cfec5e073aa9dd8a2484847c"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/pkg/apperrors",
     "components/director/pkg/correlation",
     "components/director/pkg/handler",
     "components/director/pkg/http",
+    "components/director/pkg/log",
     "components/director/pkg/resource",
+    "components/director/pkg/signal",
   ]
   pruneopts = "UT"
-  revision = "de2cc56446a2d01a61fde87a9ca1fb3c91968994"
+  revision = "aaec80e7b175f926f859169859dddadf8f223b9e"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -208,6 +210,14 @@
   pruneopts = "UT"
   revision = "4b7aa43c6742a2c18fdef89dd197aaae7dac7ccd"
   version = "1.0.1"
+
+[[projects]]
+  digest = "1:7a351dc067f78454bf308a1a164d7c7656f6c9a6aa914410ec4f24678f5d52b0"
+  name = "github.com/onrik/logrus"
+  packages = ["filename"]
+  pruneopts = "UT"
+  revision = "709f97f617a3b18b7eabb84e814b5a64dfbae028"
+  version = "v0.8.0"
 
 [[projects]]
   digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
@@ -693,10 +703,11 @@
     "github.com/kyma-incubator/compass/components/director/pkg/correlation",
     "github.com/kyma-incubator/compass/components/director/pkg/handler",
     "github.com/kyma-incubator/compass/components/director/pkg/http",
+    "github.com/kyma-incubator/compass/components/director/pkg/log",
+    "github.com/kyma-incubator/compass/components/director/pkg/signal",
     "github.com/machinebox/graphql",
     "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",
-    "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",

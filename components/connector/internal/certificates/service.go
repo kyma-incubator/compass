@@ -1,18 +1,20 @@
 package certificates
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/base64"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
-	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Service
 type Service interface {
 	// SignCSR takes encoded CSR, validates subject and generates Certificate based on CA stored in secret
 	// returns base64 encoded certificate chain
-	SignCSR(encodedCSR []byte, subject CSRSubject) (EncodedCertificateChain, apperrors.AppError)
+	SignCSR(ctx context.Context, encodedCSR []byte, subject CSRSubject) (EncodedCertificateChain, apperrors.AppError)
 }
 
 type certificateService struct {
@@ -42,26 +44,26 @@ func NewCertificateService(
 	}
 }
 
-func (svc *certificateService) SignCSR(encodedCSR []byte, subject CSRSubject) (EncodedCertificateChain, apperrors.AppError) {
+func (svc *certificateService) SignCSR(ctx context.Context, encodedCSR []byte, subject CSRSubject) (EncodedCertificateChain, apperrors.AppError) {
 	csr, err := svc.certUtil.LoadCSR(encodedCSR)
 	if err != nil {
-		log.Errorf("Error occurred while loading the CSR with Common Name %s", subject.CommonName)
+		log.C(ctx).WithError(err).Errorf("Error occurred while loading the CSR with Common Name %s", subject.CommonName)
 		return EncodedCertificateChain{}, err
 	}
-	log.Debugf("Successfully loaded the CSR with Common Name %s", subject.CommonName)
+	log.C(ctx).Debugf("Successfully loaded the CSR with Common Name %s", subject.CommonName)
 
 	err = svc.checkCSR(csr, subject)
 	if err != nil {
-		log.Errorf("Error occurred while checking the values of the CSR with Common Name %s", subject.CommonName)
+		log.C(ctx).WithError(err).Errorf("Error occurred while checking the values of the CSR with Common Name %s", subject.CommonName)
 		return EncodedCertificateChain{}, err
 	}
-	log.Debugf("Successfully checked the values of the CSR with Common Name %s", subject.CommonName)
+	log.C(ctx).Debugf("Successfully checked the values of the CSR with Common Name %s", subject.CommonName)
 
 	encodedCertChain, err := svc.signCSR(csr)
 	if err != nil {
 		return EncodedCertificateChain{}, err
 	}
-	log.Debugf("Successfully signed CSR with Common Name %s", subject.CommonName)
+	log.C(ctx).Debugf("Successfully signed CSR with Common Name %s", subject.CommonName)
 
 	return encodedCertChain, nil
 }
