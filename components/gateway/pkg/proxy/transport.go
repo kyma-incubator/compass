@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 
 	"github.com/pkg/errors"
@@ -23,7 +25,7 @@ type RoundTrip interface {
 
 //go:generate mockery -name=AuditlogService -output=automock -outpkg=automock -case=underscore
 type AuditlogService interface {
-	Log(request, resposne string, claims Claims) error
+	Log(ctx context.Context, request, response string, claims Claims) error
 }
 
 type Transport struct {
@@ -77,7 +79,9 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		}
 	}
 
-	err = t.auditlogSvc.Log(string(requestBody), string(responseBody), claims)
+	correlationHeaders := correlation.HeadersForRequest(req)
+	correlationCtx := context.WithValue(context.Background(), correlation.HeadersContextKey, correlationHeaders)
+	err = t.auditlogSvc.Log(correlationCtx, string(requestBody), string(responseBody), claims)
 	if err != nil {
 		return nil, errors.Wrap(err, "while sending to auditlog")
 	}

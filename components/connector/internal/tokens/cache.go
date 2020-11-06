@@ -3,8 +3,6 @@ package tokens
 import (
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 
 	"github.com/patrickmn/go-cache"
@@ -49,7 +47,6 @@ func (c *tokenCache) Put(token string, data TokenData) {
 		tokenTTL = c.csrTokenTTL
 	}
 
-	log.Debugf("Storing token for %s with id %s in the cache for %s", data.Type, data.ClientId, tokenTTL)
 	c.tokenCache.Set(token, data, tokenTTL)
 }
 

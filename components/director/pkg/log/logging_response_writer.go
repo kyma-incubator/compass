@@ -14,28 +14,23 @@
  * limitations under the License.
  */
 
-package signal
+package log
 
-import (
-	"context"
-	"os"
-	"os/signal"
-	"syscall"
+import "net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-)
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
 
-// HandleInterrupts handles process signal interrupts
-func HandleInterrupts(ctx context.Context, cancel context.CancelFunc, term chan os.Signal) {
-	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		select {
-		case <-term:
-			log.C(ctx).Error("Received OS interrupt, exiting gracefully...")
-			cancel()
-		case <-ctx.Done():
-			log.C(ctx).Error("Context canceled...")
-			return
-		}
-	}()
+func newLoggingResponseWriter(w http.ResponseWriter) *responseWriter {
+	return &responseWriter{
+		ResponseWriter: w,
+		statusCode:     http.StatusOK,
+	}
+}
+
+func (lrw *responseWriter) WriteHeader(code int) {
+	lrw.statusCode = code
+	lrw.ResponseWriter.WriteHeader(code)
 }

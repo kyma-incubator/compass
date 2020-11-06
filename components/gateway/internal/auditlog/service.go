@@ -1,6 +1,7 @@
 package auditlog
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"strings"
@@ -14,6 +15,7 @@ import (
 type Message struct {
 	Request  string
 	Response string
+	Context  context.Context
 	proxy.Claims
 }
 
@@ -29,11 +31,12 @@ func NewSink(logsChannel chan Message, timeout time.Duration) *Sink {
 	}
 }
 
-func (sink *Sink) Log(request, response string, claims proxy.Claims) error {
+func (sink *Sink) Log(ctx context.Context, request, response string, claims proxy.Claims) error {
 	msg := Message{
 		Request:  request,
 		Response: response,
 		Claims:   claims,
+		Context:  ctx,
 	}
 
 	select {
@@ -49,14 +52,14 @@ func (sink *Sink) Log(request, response string, claims proxy.Claims) error {
 type NoOpService struct {
 }
 
-func (sink *NoOpService) Log(request, response string, claims proxy.Claims) error {
+func (sink *NoOpService) Log(ctx context.Context, request, response string, claims proxy.Claims) error {
 	return nil
 }
 
 //go:generate mockery -name=AuditlogClient -output=automock -outpkg=automock -case=underscore
 type AuditlogClient interface {
-	LogConfigurationChange(change model.ConfigurationChange) error
-	LogSecurityEvent(event model.SecurityEvent) error
+	LogConfigurationChange(ctx context.Context, change model.ConfigurationChange) error
+	LogSecurityEvent(ctx context.Context, event model.SecurityEvent) error
 }
 
 //go:generate mockery -name=AuditlogMessageFactory -output=automock -outpkg=automock -case=underscore
@@ -74,7 +77,7 @@ func NewService(client AuditlogClient, msgFactory AuditlogMessageFactory) *Servi
 	return &Service{client: client, msgFactory: msgFactory}
 }
 
-func (svc *Service) Log(request, response string, claims proxy.Claims) error {
+func (svc *Service) Log(ctx context.Context, request, response string, claims proxy.Claims) error {
 	graphqlResponse, err := svc.parseResponse(response)
 	if err != nil {
 		return errors.Wrap(err, "while parsing response")
@@ -88,7 +91,7 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 			New:  "success",
 		})
 
-		err = svc.client.LogConfigurationChange(log)
+		err = svc.client.LogConfigurationChange(ctx, log)
 		return errors.Wrap(err, "while sending to auditlog")
 	}
 
@@ -101,7 +104,7 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 		}
 
 		msg.Data = string(data)
-		err = svc.client.LogSecurityEvent(msg)
+		err = svc.client.LogSecurityEvent(ctx, msg)
 		return errors.Wrap(err, "while sending security event to auditlog")
 	}
 
@@ -117,7 +120,7 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 			Old:  "",
 			New:  "success",
 		})
-		err := svc.client.LogConfigurationChange(msg)
+		err := svc.client.LogConfigurationChange(ctx, msg)
 		return errors.Wrap(err, "while sending configuration change")
 	} else {
 		msg.Attributes = append(msg.Attributes, model.Attribute{
@@ -127,7 +130,7 @@ func (svc *Service) Log(request, response string, claims proxy.Claims) error {
 		})
 	}
 
-	err = svc.client.LogConfigurationChange(msg)
+	err = svc.client.LogConfigurationChange(ctx, msg)
 	return errors.Wrap(err, "while sending configuration change")
 }
 

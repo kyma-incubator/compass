@@ -60,7 +60,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
-		certService.On("SignCSR", decodedCSR, subject).Return(encodedChain, nil)
+		certService.On("SignCSR", mock.Anything, decodedCSR, subject).Return(encodedChain, nil)
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
@@ -143,7 +143,7 @@ func TestCertificateResolver_SignCertificateSigningRequest(t *testing.T) {
 		authenticator.On("Authenticate", context.TODO()).Return(clientId, nil)
 
 		certService := &certificatesMocks.Service{}
-		certService.On("SignCSR", decodedCSR, subject).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
+		certService.On("SignCSR", mock.Anything, decodedCSR, subject).Return(certificates.EncodedCertificateChain{}, apperrors.Internal("error"))
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, certService, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
 
@@ -217,7 +217,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
-		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return(token, nil)
+		tokenService.On("CreateToken", mock.Anything, subject.CommonName, tokens.CSRToken).Return(token, nil)
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)
@@ -240,7 +240,7 @@ func TestCertificateResolver_Configuration(t *testing.T) {
 		authenticator := &authenticationMocks.Authenticator{}
 		authenticator.On("Authenticate", context.Background()).Return(clientId, nil)
 		tokenService := &tokensMocks.Service{}
-		tokenService.On("CreateToken", subject.CommonName, tokens.CSRToken).Return("", apperrors.Internal("error"))
+		tokenService.On("CreateToken", mock.Anything, subject.CommonName, tokens.CSRToken).Return("", apperrors.Internal("error"))
 		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
 
 		certificateResolver := NewCertificateResolver(authenticator, tokenService, nil, subject.CSRSubjectConsts, directorURL, certSecuredConnectorURL, revokedCertsRepository)

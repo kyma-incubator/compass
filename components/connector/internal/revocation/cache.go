@@ -1,8 +1,7 @@
 package revocation
 
 import (
-	"github.com/sirupsen/logrus"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -34,7 +33,7 @@ func (cc *revocationCache) Get() map[string]string {
 
 	revokedCertsData, ok := data.(map[string]string)
 	if !ok {
-		logrus.Error("revocation cache did not have the expected config map type")
+		log.D().Error("revocation cache did not have the expected config map type")
 		return make(map[string]string)
 	}
 
