@@ -39,7 +39,7 @@ if [[ $release == *PR-* ]] || [[ $release == *master* ]]; then
     curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
     curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/is-installed.sh -o ${ARTIFACTS_DIR}/is-kyma-installed.sh
 else
-    curl -L https://storage.googleapis.google.com/kyma-prow-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
+    curl -L https://storage.googleapis.com/kyma-prow-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
     cp ${SCRIPTS_DIR}/is-kyma-installed.sh ${ARTIFACTS_DIR}/is-kyma-installed.sh
 fi
 
