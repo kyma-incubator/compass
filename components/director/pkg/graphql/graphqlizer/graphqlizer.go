@@ -448,7 +448,7 @@ func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageIns
 	return g.genericToGQL(in, `{
 		{{- if .ID }}
 		id: "{{ .ID }}"
-		{{- end }}
+		{{- end }}		
 		{{- if .Context }}
 		context: {{ .Context }}
 		{{- end }}
