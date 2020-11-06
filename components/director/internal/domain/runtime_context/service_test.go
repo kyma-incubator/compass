@@ -568,7 +568,7 @@ func TestService_Exist(t *testing.T) {
 		ExpectedError         error
 	}{
 		{
-			Name: "RuntimeContext exits",
+			Name: "RuntimeContext exists",
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("Exists", ctx, tnt, rtmCtxID).Return(true, nil)

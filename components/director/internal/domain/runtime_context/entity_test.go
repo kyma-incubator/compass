@@ -10,7 +10,7 @@ import (
 
 func TestEntity_EntityFromRuntimeModel(t *testing.T) {
 	// given
-	modelRuntime := model.RuntimeContext{
+	modelRuntimeCtx := model.RuntimeContext{
 		ID:        "id",
 		RuntimeID: "runtime_id",
 		Tenant:    "tenant_id",
@@ -19,19 +19,19 @@ func TestEntity_EntityFromRuntimeModel(t *testing.T) {
 	}
 
 	// when
-	entityRuntime := runtime_context.EntityFromRuntimeContextModel(&modelRuntime)
+	entityRuntimeCtx := runtime_context.EntityFromRuntimeContextModel(&modelRuntimeCtx)
 
 	// then
-	assert.Equal(t, modelRuntime.ID, entityRuntime.ID)
-	assert.Equal(t, modelRuntime.RuntimeID, entityRuntime.RuntimeID)
-	assert.Equal(t, modelRuntime.Tenant, entityRuntime.TenantID)
-	assert.Equal(t, modelRuntime.Key, entityRuntime.Key)
-	assert.Equal(t, modelRuntime.Value, entityRuntime.Value)
+	assert.Equal(t, modelRuntimeCtx.ID, entityRuntimeCtx.ID)
+	assert.Equal(t, modelRuntimeCtx.RuntimeID, entityRuntimeCtx.RuntimeID)
+	assert.Equal(t, modelRuntimeCtx.Tenant, entityRuntimeCtx.TenantID)
+	assert.Equal(t, modelRuntimeCtx.Key, entityRuntimeCtx.Key)
+	assert.Equal(t, modelRuntimeCtx.Value, entityRuntimeCtx.Value)
 }
 
 func TestEntity_RuntimeContextToModel(t *testing.T) {
 	// given
-	entityRuntime := runtime_context.RuntimeContext{
+	entityRuntimeCtx := runtime_context.RuntimeContext{
 		ID:        "id",
 		RuntimeID: "runtime_id",
 		TenantID:  "tenant_id",
@@ -40,12 +40,12 @@ func TestEntity_RuntimeContextToModel(t *testing.T) {
 	}
 
 	// when
-	modelRuntime := entityRuntime.ToModel()
+	modelRuntimeCtx := entityRuntimeCtx.ToModel()
 
 	// then
-	assert.Equal(t, entityRuntime.ID, modelRuntime.ID)
-	assert.Equal(t, entityRuntime.RuntimeID, modelRuntime.RuntimeID)
-	assert.Equal(t, entityRuntime.TenantID, modelRuntime.Tenant)
-	assert.Equal(t, entityRuntime.Key, modelRuntime.Key)
-	assert.Equal(t, entityRuntime.Value, modelRuntime.Value)
+	assert.Equal(t, entityRuntimeCtx.ID, modelRuntimeCtx.ID)
+	assert.Equal(t, entityRuntimeCtx.RuntimeID, modelRuntimeCtx.RuntimeID)
+	assert.Equal(t, entityRuntimeCtx.TenantID, modelRuntimeCtx.Tenant)
+	assert.Equal(t, entityRuntimeCtx.Key, modelRuntimeCtx.Key)
+	assert.Equal(t, entityRuntimeCtx.Value, modelRuntimeCtx.Value)
 }

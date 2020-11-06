@@ -37,12 +37,12 @@ const (
 	ApplicationLabelableObject    LabelableObject = "Application"
 )
 
-func NewLabelForRuntimeContext(runtime RuntimeContext, key string, value interface{}) *Label {
+func NewLabelForRuntimeContext(runtimeCtx RuntimeContext, key string, value interface{}) *Label {
 	return &Label{
 		ID:         uuid.New().String(),
-		Tenant:     runtime.Tenant,
+		Tenant:     runtimeCtx.Tenant,
 		ObjectType: RuntimeContextLabelableObject,
-		ObjectID:   runtime.ID,
+		ObjectID:   runtimeCtx.ID,
 		Key:        key,
 		Value:      value,
 	}

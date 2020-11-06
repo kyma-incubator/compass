@@ -176,7 +176,7 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 			ExpectedErr:            testErr,
 		},
 		{
-			Name: "Returns error when runtime retrieval failed",
+			Name: "Returns error when runtime context retrieval failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
@@ -388,7 +388,7 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			},
 		},
 		{
-			Name: "Returns error when runtime update failed",
+			Name: "Returns error when runtime context update failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
@@ -416,7 +416,7 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			ExpectedErr:            testErr,
 		},
 		{
-			Name: "Returns error when runtime retrieval failed",
+			Name: "Returns error when runtime context retrieval failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
@@ -829,7 +829,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			},
 		},
 		{
-			Name: "Success when runtime not found returns nil",
+			Name: "Success when runtime context not found returns nil",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
@@ -857,7 +857,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			ExpectedErr:            nil,
 		},
 		{
-			Name: "Returns error when runtime retrieval failed",
+			Name: "Returns error when runtime context retrieval failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
@@ -1069,7 +1069,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 			},
 		},
 		{
-			Name: "Returns error when runtime listing failed",
+			Name: "Returns error when runtime context listing failed",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
@@ -1152,7 +1152,7 @@ func TestResolver_Labels(t *testing.T) {
 			Key:        labelKey,
 			Value:      labelValue,
 			ObjectID:   id,
-			ObjectType: model.ApplicationLabelableObject,
+			ObjectType: model.RuntimeContextLabelableObject,
 		},
 		"def": {
 			ID:         "def",
@@ -1160,7 +1160,7 @@ func TestResolver_Labels(t *testing.T) {
 			Key:        labelKey,
 			Value:      labelValue,
 			ObjectID:   id,
-			ObjectType: model.ApplicationLabelableObject,
+			ObjectType: model.RuntimeContextLabelableObject,
 		},
 	}
 

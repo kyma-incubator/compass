@@ -1107,9 +1107,9 @@ func TestRepository_GetRuntimeScenariosWhereRuntimesLabelsMatchSelector(t *testi
 
 	t.Run("Error, while converting entity to model", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
-		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
-			AddRow("id", tnt, selectorKey, labelValue, nil, rtmID).
-			AddRow("id", tnt, selectorKey, labelValue, nil, rtmID)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id", "runtime_context_id"}).
+			AddRow("id", tnt, selectorKey, labelValue, nil, rtmID, nil).
+			AddRow("id", tnt, selectorKey, labelValue, nil, rtmID, nil)
 
 		dbMock.ExpectQuery(query).WithArgs(selectorKey, selectorValue, tnt).WillReturnRows(mockedRows)
 		conv := &automock.Converter{}
@@ -1214,9 +1214,9 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 	query := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value FROM public.labels WHERE tenant_id = $1 AND key = $2 AND runtime_id IN ($3, $4)`)
 	t.Run("Success", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
-		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
-			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID).
-			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id", "runtime_context_id"}).
+			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID, nil).
+			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID, nil)
 
 		dbMock.ExpectQuery(query).WithArgs(tenantID, model.ScenariosKey, rtm1ID, rtm2ID).WillReturnRows(mockedRows)
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -1234,9 +1234,9 @@ func TestRepository_GetScenarioLabelsForRuntimes(t *testing.T) {
 
 	t.Run("Converter returns error", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
-		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id"}).
-			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID).
-			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID)
+		mockedRows := sqlmock.NewRows([]string{"id", "tenant_id", "key", "value", "app_id", "runtime_id", "runtime_context_id"}).
+			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm1ID, nil).
+			AddRow("id", tenantID, model.ScenariosKey, `["DEFAULT","FOO"]`, nil, rtm2ID, nil)
 
 		dbMock.ExpectQuery(query).WithArgs(tenantID, model.ScenariosKey, rtm1ID, rtm2ID).WillReturnRows(mockedRows)
 		ctx := persistence.SaveToContext(context.TODO(), db)

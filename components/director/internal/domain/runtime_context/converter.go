@@ -24,16 +24,16 @@ func (c *converter) ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext 
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.RuntimeContext {
-	var runtimes []*graphql.RuntimeContext
+	var runtimeContexts []*graphql.RuntimeContext
 	for _, r := range in {
 		if r == nil {
 			continue
 		}
 
-		runtimes = append(runtimes, c.ToGraphQL(r))
+		runtimeContexts = append(runtimeContexts, c.ToGraphQL(r))
 	}
 
-	return runtimes
+	return runtimeContexts
 }
 
 func (c *converter) InputFromGraphQL(in graphql.RuntimeContextInput, runtimeID string) model.RuntimeContextInput {

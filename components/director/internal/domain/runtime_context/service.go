@@ -147,21 +147,21 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeContext
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	rtmCtx, err := s.Get(ctx, id)
+	rtmCtx, err := s.repo.GetByID(ctx, rtmCtxTenant, id)
 	if err != nil {
-		return errors.Wrap(err, "while getting Runtime Context")
+		return errors.Wrapf(err, "while getting Runtime Context with id %s", id)
 	}
 
 	rtmCtx = in.ToRuntimeContext(id, rtmCtx.Tenant)
 
 	err = s.repo.Update(ctx, rtmCtx)
 	if err != nil {
-		return errors.Wrap(err, "while updating Runtime")
+		return errors.Wrapf(err, "while updating Runtime Context with id %s", id)
 	}
 
 	err = s.labelRepo.DeleteAll(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting all labels for Runtime Context")
+		return errors.Wrapf(err, "while deleting all labels for Runtime Context with id %s", id)
 	}
 
 	if in.Labels == nil {
@@ -179,7 +179,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeContext
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id, in.Labels)
 	if err != nil {
-		return errors.Wrapf(err, "while creating multiple labels for Runtime Context")
+		return errors.Wrapf(err, "while creating multiple labels for Runtime Context with id %s", id)
 	}
 
 	return nil
@@ -193,7 +193,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	err = s.repo.Delete(ctx, rtmTenant, id)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting Runtime Context")
+		return errors.Wrapf(err, "while deleting Runtime Context with id %s", id)
 	}
 
 	// All labels are deleted (cascade delete)
@@ -201,24 +201,24 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error) {
-	rtmTenant, err := tenant.LoadFromContext(ctx)
+func (s *service) ListLabels(ctx context.Context, runtimeCtxID string) (map[string]*model.Label, error) {
+	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	rtmExists, err := s.repo.Exists(ctx, rtmTenant, runtimeID)
+	rtmCtxExists, err := s.repo.Exists(ctx, rtmCtxTenant, runtimeCtxID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while checking Runtime existence")
+		return nil, errors.Wrapf(err, "while checking Runtime Context existence with id %s", runtimeCtxID)
 	}
 
-	if !rtmExists {
-		return nil, fmt.Errorf("runtime Context with ID %s doesn't exist", runtimeID)
+	if !rtmCtxExists {
+		return nil, fmt.Errorf("runtime Context with ID %s doesn't exist", runtimeCtxID)
 	}
 
-	labels, err := s.labelRepo.ListForObject(ctx, rtmTenant, model.RuntimeContextLabelableObject, runtimeID)
+	labels, err := s.labelRepo.ListForObject(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, runtimeCtxID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting label for Runtime Context")
+		return nil, errors.Wrapf(err, "while getting label for Runtime Context with id %s", runtimeCtxID)
 	}
 
 	return labels, nil
