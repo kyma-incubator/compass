@@ -229,3 +229,38 @@ func TestDeletePackageInstanceAuth(t *testing.T) {
 
 	saveExample(t, deletePackageInstanceAuthReq.Query(), "delete package instance auth")
 }
+
+func TestFetchPackageByInstanceAuth(t *testing.T) {
+	ctx := context.Background()
+
+	application := registerApplication(t, ctx, "app-test-package")
+	defer unregisterApplication(t, application.ID)
+
+	originalPkg := createPackage(t, ctx, application.ID, "pkg-app-1")
+	defer deletePackage(t, ctx, originalPkg.ID)
+
+	authCtx, inputParams := fixPackageInstanceAuthContextAndInputParams(t)
+	pkgInstanceAuthRequestInput := fixPackageInstanceAuthRequestInput(authCtx, inputParams)
+	pkgInstanceAuthRequestInputStr, err := tc.graphqlizer.PackageInstanceAuthRequestInputToGQL(pkgInstanceAuthRequestInput)
+	require.NoError(t, err)
+
+	pkgInstanceAuthCreationRequestReq := fixRequestPackageInstanceAuthCreationRequest(originalPkg.ID, pkgInstanceAuthRequestInputStr)
+	pkgInstanceAuth := graphql.PackageInstanceAuth{}
+
+	// WHEN
+	t.Log("Request package instance auth creation")
+	err = tc.RunOperation(ctx, pkgInstanceAuthCreationRequestReq, &pkgInstanceAuth)
+
+	// THEN
+	require.NoError(t, err)
+	assertPackageInstanceAuthInput(t, pkgInstanceAuthRequestInput, pkgInstanceAuth)
+
+	// WHEN
+	t.Log("Request package by package instance auth id")
+	pkgResp := getPackageByInstanceAuthID(t, ctx, pkgInstanceAuth.ID)
+
+	// THEN
+	require.Equal(t, originalPkg.ID, pkgResp.ID)
+	require.Equal(t, originalPkg.Name, pkgResp.Name)
+	require.Equal(t, pkgInstanceAuth.ID, pkgResp.InstanceAuths[0].ID)
+}

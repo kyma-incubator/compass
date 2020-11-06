@@ -766,6 +766,15 @@ func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
 		})))
 }
 
+func fixPackageByInstanceAuthIDRequest(packageInstanceAuthID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: packageByInstanceAuth(authID: "%s") {
+				%s
+				}
+			}`, packageInstanceAuthID, tc.gqlFieldsProvider.ForPackage()))
+}
+
 func fixAPIDefinitionRequest(applicationID string, apiID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
