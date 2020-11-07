@@ -2,31 +2,18 @@ package binding_test
 
 import (
 	"fmt"
+	"net/http"
+	"testing"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"net/http"
-	"testing"
 )
 
 var (
-	packageInstanceAuthWithContextResponse = `{
-	  "data": {
-		"result": {
-			"status": {
-			  "condition": "%s",
-			  "timestamp": "2020-11-04T16:21:20Z",
-			  "message": "Credentials user-facing message",
-			  "reason": "CredentialsReason"
-			}
-			"context": %s,
-		}
-	  }
-	}`
-
 	packageInstanceAuthWithoutContextResponse = `{
 	  "data": {
 		"result": {
@@ -85,7 +72,6 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsNotFound() {
 		suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 			WithQuery("operation", osb.BindOp).
 			WithHeader("X-Broker-API-Version", brokerAPIVersion).
-			WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 			Expect().Status(http.StatusNotFound)
 	})
 
@@ -96,7 +82,6 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsNotFound() {
 		suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 			WithQuery("operation", osb.UnbindOp).
 			WithHeader("X-Broker-API-Version", brokerAPIVersion).
-			WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 			Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.Succeeded))
 	})
 }
@@ -137,7 +122,6 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
-				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 				Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.Succeeded))
 		})
 
@@ -149,7 +133,6 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
-				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 				Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.InProgress))
 		})
 
@@ -161,7 +144,6 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
-				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 				Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.Failed))
 		})
 
@@ -173,7 +155,6 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
-				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 				Expect().Status(http.StatusInternalServerError)
 		})
 
@@ -185,7 +166,6 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 				WithQuery("operation", osb.BindOp).
 				WithHeader("X-Broker-API-Version", brokerAPIVersion).
-				WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 				Expect().Status(http.StatusInternalServerError)
 		})
 	})
@@ -208,7 +188,6 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 				suite.testContext.SystemBroker.GET(lastOperationBindingPath).
 					WithQuery("operation", osb.UnbindOp).
 					WithHeader("X-Broker-API-Version", brokerAPIVersion).
-					WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 					Expect().Status(http.StatusOK).JSON().Path("$.state").String().Equal(string(domain.InProgress))
 			}
 		})

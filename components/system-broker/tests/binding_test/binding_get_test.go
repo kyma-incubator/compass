@@ -55,6 +55,7 @@ var (
 	oAuth                           = `"credential": { "clientId": "test-id", "clientSecret": "test-secret", "url": "https://api.test.com/oauth/token" }`
 	additionalHeadersSerialized     = `"additionalHeadersSerialized": "{\"header-A\": [\"ha1\", \"ha2\"], \"header-B\": [\"hb1\", \"hb2\"]}"`
 	additionalQueryParamsSerialized = `"additionalQueryParamsSerialized": "{\"qA\": [\"qa1\", \"qa2\"], \"qB\": [\"qb1\", \"qb2\"]}"`
+	requestAuth                     = `"requestAuth": { "csrf": { "tokenEndpointURL": "https://some-url/token"}}`
 )
 
 func TestBindGet(t *testing.T) {
@@ -197,10 +198,9 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsSho
 		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Stock").Equal("https://api.cloud.com/InboundTestStock")
 	})
 
-	// todo add RequestAuth
 	suite.Run("Additional Headers, Query Params and CSRFConfig are provided", func() {
 		err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
-			fmt.Sprintf(packageWithAPIsResp, fmt.Sprintf(`%s, %s, %s`, basicAuth, additionalHeadersSerialized, additionalQueryParamsSerialized), schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+			fmt.Sprintf(packageWithAPIsResp, fmt.Sprintf(`%s, %s, %s, %s`, basicAuth, additionalHeadersSerialized, additionalQueryParamsSerialized, requestAuth), schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 		assert.NoError(suite.T(), err)
 
 		resp := suite.testContext.SystemBroker.GET(bindingPath).
@@ -211,10 +211,13 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsSho
 		resp.JSON().Path("$.credentials.credentials_type").Equal("basic_auth")
 		resp.JSON().Path("$.credentials.auth_details.auth.username").Equal("asd")
 		resp.JSON().Path("$.credentials.auth_details.auth.password").Equal("asd")
+
+		resp.JSON().Path("$.credentials.auth_details.csrf_config.token_url").Equal("https://some-url/token")
 		resp.JSON().Path("$.credentials.auth_details.request_parameters.headers").Object().Value("header-A").Array().Elements("ha1", "ha2")
 		resp.JSON().Path("$.credentials.auth_details.request_parameters.headers").Object().Value("header-B").Array().Elements("hb1", "hb2")
 		resp.JSON().Path("$.credentials.auth_details.request_parameters.query_parameters").Object().Value("qA").Array().Elements("qa1", "qa2")
 		resp.JSON().Path("$.credentials.auth_details.request_parameters.query_parameters").Object().Value("qB").Array().Elements("qb1", "qb2")
+
 		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Price").Equal("https://api.cloud.com/api/InboundTestPrice")
 		resp.JSON().Path("$.credentials.target_urls").Object().Value("API Cloud - Inbound Test Stock").Equal("https://api.cloud.com/InboundTestStock")
 	})
