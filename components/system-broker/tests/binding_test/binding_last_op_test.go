@@ -100,7 +100,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithMi
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithDifferentInstanceAndBindingIDsShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending, "111", bindingID))
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, "111", bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -116,7 +116,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 	suite.Run("BindOp", func() {
 		suite.Run("Credentials succeeded condition should return succeeded state", func() {
 			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+				fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -127,7 +127,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 
 		suite.Run("Credentials pending condition should return in progress state", func() {
 			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
+				fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -138,7 +138,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 
 		suite.Run("Credentials failed condition should return failed state", func() {
 			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
+				fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -149,7 +149,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 
 		suite.Run("Credentials unused condition should return error", func() {
 			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
+				fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -160,7 +160,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 
 		suite.Run("Credentials unknown condition should return error", func() {
 			err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, UnknownCondition, instanceID, bindingID))
+				fmt.Sprintf(packageInstanceAuthResponse, bindingID, UnknownCondition, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -182,7 +182,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 
 			for _, condition := range conditions {
 				err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-					fmt.Sprintf(packageInstanceAuthResponse, condition, instanceID, bindingID))
+					fmt.Sprintf(packageInstanceAuthResponse, bindingID, condition, instanceID, bindingID))
 				assert.NoError(suite.T(), err)
 
 				suite.testContext.SystemBroker.GET(lastOperationBindingPath).

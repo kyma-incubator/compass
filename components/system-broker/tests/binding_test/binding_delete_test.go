@@ -2,13 +2,35 @@ package binding_test
 
 import (
 	"fmt"
-	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
-	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
+
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
+	"github.com/stretchr/testify/suite"
+)
+
+var (
+	unbindPath               = fmt.Sprintf("/v2/service_instances/%s/service_bindings/%s", instanceID, bindingID)
+	notFoundMutationResponse = `{
+  "errors": [
+	{
+	  "message": "Object not found [object=PackageInstanceAuth]",
+	  "path": [
+		"result"
+	  ],
+	  "extensions": {
+		"error": "NotFound",
+		"error_code": 20
+	  }
+	}
+  ],
+  "data": null
+}`
 )
 
 func TestBindDelete(t *testing.T) {
@@ -35,20 +57,22 @@ func (suite *UnbindTestSuite) TearDownSuite() {
 }
 
 func (suite *UnbindTestSuite) TestUnbindWithoutAcceptsIncompleteHeaderShouldReturnUnprocessableEntity() {
-	suite.testContext.SystemBroker.DELETE("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.DELETE(unbindPath).
+		WithQuery("service_id", serviceID).
+		WithQuery("plan_id", planID).
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
-		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusUnprocessableEntity)
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", "{}")
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.DELETE("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.DELETE(unbindPath).
+		WithQuery("service_id", serviceID).
+		WithQuery("plan_id", planID).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
-		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusInternalServerError)
 }
 
@@ -56,68 +80,74 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundShouldReturnG
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.DELETE("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.DELETE(unbindPath).
+		WithQuery("service_id", serviceID).
+		WithQuery("plan_id", planID).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
-		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusGone)
 }
 
-/* TODO: Probably unnecessary test
-func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsCredentialsWithMultipleAuthsShouldReturnError() {
-
-}
-*/
-
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsUnusedCredentialsShouldReturnAccepted() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionUnused))
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.DELETE("/v2/service_instances/123/service_bindings/456").
+	resp := suite.testContext.SystemBroker.DELETE(unbindPath).
+		WithQuery("service_id", serviceID).
+		WithQuery("plan_id", planID).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
-		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
-		Expect().Status(http.StatusAccepted).JSON().Path("$.operation_data").String().Equal(string(osb.UnbindOp))
+		Expect()
+	resp.Status(http.StatusAccepted).JSON().Path("$.operation").String().Equal(string(osb.UnbindOp))
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnCredentialsDeletionShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded))
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "requestPackageInstanceAuthDeletion", "{}")
+	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "requestPackageInstanceAuthDeletion", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.DELETE("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.DELETE(unbindPath).
+		WithQuery("service_id", serviceID).
+		WithQuery("plan_id", planID).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
-		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusInternalServerError)
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundOnCredentialsDeletionShouldReturnGone() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded))
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "requestPackageInstanceAuthDeletion", notFoundResponse)
+	err = suite.testContext.ConfigureResponse(suite.configURL, "mutation", "requestPackageInstanceAuthDeletion", notFoundMutationResponse)
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.DELETE("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.DELETE(unbindPath).
+		WithQuery("service_id", serviceID).
+		WithQuery("plan_id", planID).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
-		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusGone)
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorAcceptsCredentialsDeletionRequestShouldReturnAccepted() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded))
+	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "requestPackageInstanceAuthDeletion", fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionUnused))
+	err = suite.testContext.ConfigureResponse(suite.configURL, "mutation", "requestPackageInstanceAuthDeletion",
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	suite.testContext.SystemBroker.DELETE("/v2/service_instances/123/service_bindings/456").
+	suite.testContext.SystemBroker.DELETE(unbindPath).
+		WithQuery("service_id", serviceID).
+		WithQuery("plan_id", planID).
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
-		Expect().Status(http.StatusAccepted).JSON().Path("$.operation_data").String().Equal(string(osb.UnbindOp))
+		Expect().Status(http.StatusAccepted).JSON().Path("$.operation").String().Equal(string(osb.UnbindOp))
 }

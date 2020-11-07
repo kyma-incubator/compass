@@ -2,13 +2,14 @@ package binding_test
 
 import (
 	"fmt"
+	"net/http"
+	"testing"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"net/http"
-	"testing"
 )
 
 const (
@@ -26,6 +27,7 @@ var (
 	packageInstanceAuthResponse = `{
 	  "data": {
 		"result": {
+			"id": "%s",
 			"status": {
 			  "condition": "%s",
 			  "timestamp": "2020-11-04T16:21:20Z",
@@ -87,7 +89,7 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnFindCredenti
 
 func (suite *BindCreateTestSuite) TestBindWhenDirectorOnFindCredentialsReturnsCredentialsWithMismatchedContextShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded, "mismatched-id", bindingID))
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, "mismatched-id", bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.PUT(bindingPath).
@@ -116,7 +118,7 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsAuthWithFailedCondi
 	assert.NoError(suite.T(), err)
 
 	err = suite.testContext.ConfigureResponse(suite.configURL, "mutation", "requestPackageInstanceAuthCreation",
-		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.PUT(bindingPath).
@@ -128,7 +130,7 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsAuthWithFailedCondi
 
 func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundWithFailedAuthShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.PUT(bindingPath).
@@ -140,7 +142,7 @@ func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundWithFaile
 
 func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundShouldReturnAccepted() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	resp := suite.testContext.SystemBroker.PUT(bindingPath).
@@ -157,7 +159,7 @@ func (suite *BindCreateTestSuite) TestBindWhenNewCredentialsAreCreatedShouldRetu
 	assert.NoError(suite.T(), err)
 
 	err = suite.testContext.ConfigureResponse(suite.configURL, "mutation", "requestPackageInstanceAuthCreation",
-		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	resp := suite.testContext.SystemBroker.PUT(bindingPath).

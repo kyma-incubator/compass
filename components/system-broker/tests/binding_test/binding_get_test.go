@@ -92,7 +92,7 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsErrorOnFindCredenti
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsContextWithMismatchedInstanceOnFindCredentialsShouldReturnNotFound() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageByInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, schema.PackageInstanceAuthStatusConditionPending, "test", bindingID))
+		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, "test", bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(bindingPath).

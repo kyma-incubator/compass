@@ -185,6 +185,7 @@ func (c *GraphQLClient) FetchPackageInstanceAuth(ctx context.Context, in *Packag
 
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
 			  result: packageInstanceAuth(id: %q) {
+				id
 				context
 				status {
 				  condition

@@ -28,7 +28,7 @@ import (
 )
 
 type UnbindEndpoint struct {
-	credentialsGetter  packageCredentialsFetcherForInstance
+	credentialsGetter  packageCredentialsFetcher
 	credentialsDeleter packageCredentialsDeleteRequester
 }
 
@@ -50,7 +50,7 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 
 	logger.Info("Fetching package instance credentials")
 
-	resp, err := b.credentialsGetter.FetchPackageInstanceCredentials(ctx, &director.PackageInstanceInput{
+	resp, err := b.credentialsGetter.FetchPackageInstanceAuth(ctx, &director.PackageInstanceInput{
 		InstanceAuthID: bindingID,
 		Context: map[string]string{
 			"instance_id": instanceID,

@@ -29,7 +29,7 @@ func IsGQLNotFoundError(err error) bool {
 		return false
 	}
 
-	return strings.Contains(err.Error(), "Object was not found")
+	return strings.Contains(err.Error(), "Object not found")
 }
 
 type NotFoundError struct {
