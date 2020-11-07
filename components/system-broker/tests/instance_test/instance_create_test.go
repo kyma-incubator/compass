@@ -46,26 +46,6 @@ var (
    }
  }
 }`, serviceID, planID)
-
-	appMockResponse = fmt.Sprintf(`{
-  "data": {
-    "result": {
-      "id": "%s",
-      "name": "varkes",
-      "providerName": "",
-      "description": "",
-      "packages": {
-        "data": [
-          {
-            "id": "%s",
-            "name": "ac",
-            "description": ""
-          }
-        ]
-      }
-    }
-  }
-}`, serviceID, planID)
 )
 
 func TestInstanceProvision(t *testing.T) {
@@ -93,14 +73,6 @@ func (suite *InstanceProvisionTestSuite) TearDownSuite() {
 
 func (suite *InstanceProvisionTestSuite) TestProvision() {
 	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "applications", appsMockResponse)
-	assert.NoError(suite.T(), err)
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "application", appMockResponse)
-	assert.NoError(suite.T(), err)
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "application", appMockResponse)
-	assert.NoError(suite.T(), err)
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "application", appMockResponse)
-	assert.NoError(suite.T(), err)
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "application", appMockResponse)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.PUT("/v2/service_instances/123").WithHeader("X-Broker-API-Version", brokerAPIVersion).
