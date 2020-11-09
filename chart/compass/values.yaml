@@ -23,7 +23,7 @@ global:
       version: "PR-1602"
     director:
       dir:
-      version: "PR-1599"
+      version: "PR-1603"
     gateway:
       dir:
       version: "PR-1602"
@@ -32,7 +32,7 @@ global:
       version: "PR-1460"
     schema_migrator:
       dir:
-      version: "PR-1521"
+      version: "PR-1603"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project

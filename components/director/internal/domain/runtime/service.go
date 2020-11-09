@@ -187,9 +187,9 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	rtm, err := s.Get(ctx, id)
+	rtm, err := s.repo.GetByID(ctx, rtmTenant, id)
 	if err != nil {
-		return errors.Wrap(err, "while getting Runtime")
+		return errors.Wrapf(err, "while getting Runtime with id %s", id)
 	}
 
 	rtm = in.ToRuntime(id, rtm.Tenant, rtm.CreationTimestamp, time.Now())
