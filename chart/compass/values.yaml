@@ -20,7 +20,7 @@ global:
       version: "PR-1612"
     pairing_adapter:
       dir:
-      version: "PR-1612"
+      version: "PR-1613"
     director:
       dir:
       version: "PR-1611"
