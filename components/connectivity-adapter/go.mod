@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3
 	github.com/kyma-incubator/compass v0.0.0-20200703104319-1c4490318bfd
-	github.com/kyma-incubator/compass/components/director v0.0.0-20201102113127-98bfd9c66077
+	github.com/kyma-incubator/compass/components/director v0.0.0-20201109133626-4876e6d3caae
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
