@@ -14,11 +14,7 @@ type Proxy struct {
 	reverseProxy *httputil.ReverseProxy
 }
 
-type HTTPTransport interface {
-	RoundTrip(req *http.Request) (resp *http.Response, err error)
-}
-
-func New(targetOrigin, proxyPath string, transport HTTPTransport) (*httputil.ReverseProxy, error) {
+func New(targetOrigin, proxyPath string, transport http.RoundTripper) (*httputil.ReverseProxy, error) {
 	targetURL, err := url.Parse(targetOrigin)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while parsing URL %s", targetOrigin)

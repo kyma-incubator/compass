@@ -2,19 +2,16 @@ package auditlog
 
 import (
 	"net/http"
-	"time"
 )
 
 type BasicHttpClient struct {
-	cl  http.Client
+	cl  *http.Client
 	cfg BasicAuthConfig
 }
 
-func NewBasicAuthClient(cfg BasicAuthConfig, timeout time.Duration) *BasicHttpClient {
+func NewBasicAuthClient(cfg BasicAuthConfig, client *http.Client) *BasicHttpClient {
 	return &BasicHttpClient{
-		cl: http.Client{
-			Timeout: timeout,
-		},
+		cl:  client,
 		cfg: cfg,
 	}
 }

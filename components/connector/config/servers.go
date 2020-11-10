@@ -5,13 +5,11 @@ import (
 
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 
-	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connector/internal/api"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/connector/internal/healthz"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
@@ -19,7 +17,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 )
 
-func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolver, authContextMiddleware mux.MiddlewareFunc) (*http.Server, error) {
+func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolver, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
 	gqlInternalCfg := externalschema.Config{
 		Resolvers: &api.ExternalResolver{CertificateResolver: certResolver},
 	}
@@ -29,9 +27,9 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	externalRouter := mux.NewRouter()
 	externalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	externalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(externalExecutableSchema))
-	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
+	externalRouter.HandleFunc("/healthz", healthz.NewHTTPHandler())
 
-	externalRouter.Use(authContextMiddleware)
+	externalRouter.Use(middlewares...)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(externalRouter, cfg.ServerTimeout)
 	if err != nil {
@@ -45,7 +43,7 @@ func PrepareExternalGraphQLServer(cfg Config, certResolver api.CertificateResolv
 	}, nil
 }
 
-func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) (*http.Server, error) {
+func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
 	gqlInternalCfg := internalschema.Config{
 		Resolvers: &api.InternalResolver{TokenResolver: tokenResolver},
 	}
@@ -55,6 +53,8 @@ func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) (
 	internalRouter := mux.NewRouter()
 	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
+
+	internalRouter.Use(middlewares...)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(internalRouter, cfg.ServerTimeout)
 	if err != nil {
@@ -68,7 +68,7 @@ func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver) (
 	}, nil
 }
 
-func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository) (*http.Server, error) {
+func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
 	certHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, subjectConsts)
 
 	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser, revokedCertsRepository)
@@ -78,9 +78,13 @@ func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConst
 		w.WriteHeader(http.StatusOK)
 	})
 
+	router.Use(middlewares...)
+
 	v1Router := router.PathPrefix("/v1").Subrouter()
 	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
 	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
+
+	router.Use(middlewares...)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
 	if err != nil {

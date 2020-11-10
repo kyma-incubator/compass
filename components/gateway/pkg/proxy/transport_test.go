@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy/automock"
@@ -21,7 +22,7 @@ func TestAuditLog(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 
 		//GIVEN
-		graphqlResp := fixGraphqResponse()
+		graphqlResp := fixGraphQLResponse()
 		graphqlPayload, err := json.Marshal(&graphqlResp)
 		require.NoError(t, err)
 
@@ -40,7 +41,7 @@ func TestAuditLog(t *testing.T) {
 		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
 
 		auditlogSvc := &automock.AuditlogService{}
-		auditlogSvc.On("Log", string(graphqlPayload), string(graphqlPayload), fixClaims()).Return(nil)
+		auditlogSvc.On("Log", mock.Anything, string(graphqlPayload), string(graphqlPayload), fixClaims()).Return(nil)
 
 		transport := proxy.NewTransport(auditlogSvc, roundTripper)
 
@@ -100,7 +101,7 @@ func fixBearerHeader(t *testing.T) string {
 	return fmt.Sprintf("Bearer %s", fmt.Sprintf("%s.%s.", tokenHeader, tokenClaims))
 }
 
-func fixGraphqResponse() model.GraphqlResponse {
+func fixGraphQLResponse() model.GraphqlResponse {
 	return model.GraphqlResponse{
 		Errors: nil,
 		Data:   "payload",

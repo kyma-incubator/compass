@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -52,6 +54,7 @@ type RootResolver struct {
 	eventing            *eventing.Resolver
 	doc                 *document.Resolver
 	runtime             *runtime.Resolver
+	runtimeContext      *runtime_context.Resolver
 	healthCheck         *healthcheck.Resolver
 	webhook             *webhook.Resolver
 	labelDef            *labeldef.Resolver
@@ -84,6 +87,7 @@ func NewRootResolver(
 
 	authConverter := auth.NewConverter()
 	runtimeConverter := runtime.NewConverter()
+	runtimeContextConverter := runtime_context.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
 	docConverter := document.NewConverter(frConverter)
@@ -104,6 +108,7 @@ func NewRootResolver(
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
+	runtimeContextRepo := runtime_context.NewRepository()
 	applicationRepo := application.NewRepository(appConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -138,6 +143,7 @@ func NewRootResolver(
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine)
+	runtimeCtxSvc := runtime_context.NewService(runtimeContextRepo, labelRepo, labelUpsertSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
@@ -158,6 +164,7 @@ func NewRootResolver(
 		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                 document.NewResolver(transact, docSvc, appSvc, packageSvc, frConverter),
 		runtime:             runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
+		runtimeContext:      runtime_context.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:         healthcheck.NewResolver(healthCheckSvc),
 		webhook:             webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:            labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
@@ -185,7 +192,9 @@ func (r *RootResolver) Application() graphql.ApplicationResolver {
 func (r *RootResolver) Runtime() graphql.RuntimeResolver {
 	return &runtimeResolver{r}
 }
-
+func (r *RootResolver) RuntimeContext() graphql.RuntimeContextResolver {
+	return &runtimeContextResolver{r}
+}
 func (r *RootResolver) APISpec() graphql.APISpecResolver {
 	return &apiSpecResolver{r}
 }
@@ -251,6 +260,12 @@ func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFil
 }
 func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.Runtime(ctx, id)
+}
+func (r *queryResolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
+	return r.runtimeContext.RuntimeContexts(ctx, filter, first, after)
+}
+func (r *queryResolver) RuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.RuntimeContext(ctx, id)
 }
 func (r *queryResolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefinition, error) {
 	return r.labelDef.LabelDefinitions(ctx)
@@ -346,6 +361,15 @@ func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in grap
 }
 func (r *mutationResolver) UnregisterRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.DeleteRuntime(ctx, id)
+}
+func (r *mutationResolver) RegisterRuntimeContext(ctx context.Context, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.RegisterRuntimeContext(ctx, in)
+}
+func (r *mutationResolver) UpdateRuntimeContext(ctx context.Context, id string, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.UpdateRuntimeContext(ctx, id, in)
+}
+func (r *mutationResolver) UnregisterRuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.DeleteRuntimeContext(ctx, id)
 }
 func (r *mutationResolver) DeleteDocument(ctx context.Context, id string) (*graphql.Document, error) {
 	return r.doc.DeleteDocument(ctx, id)
@@ -541,6 +565,14 @@ func (r *oneTimeTokenForRuntimeResolver) RawEncoded(ctx context.Context, obj *gr
 
 func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.OneTimeTokenForRuntime) (*string, error) {
 	return r.token.Raw(ctx, &obj.TokenWithURL)
+}
+
+type runtimeContextResolver struct {
+	*RootResolver
+}
+
+func (r *runtimeContextResolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key *string) (*graphql.Labels, error) {
+	return r.runtimeContext.Labels(ctx, obj, key)
 }
 
 type PackageResolver struct{ *RootResolver }

@@ -14,25 +14,25 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1595"
+      version: "PR-1612"
     connectivity_adapter:
       dir:
-      version: "PR-1595"
+      version: "PR-1612"
     pairing_adapter:
       dir:
-      version: "PR-1595"
+      version: "PR-1613"
     director:
       dir:
-      version: "PR-1599"
+      version: "PR-1611"
     gateway:
       dir:
-      version: "PR-1595"
+      version: "PR-1612"
     healthchecker:
       dir:
       version: "PR-1460"
     schema_migrator:
       dir:
-      version: "PR-1521"
+      version: "PR-1603"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project

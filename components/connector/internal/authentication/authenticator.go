@@ -3,7 +3,7 @@ package authentication
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
 )
@@ -22,20 +22,20 @@ func NewAuthenticator() Authenticator {
 type authenticator struct {
 }
 
-func (a *authenticator) Authenticate(context context.Context) (string, error) {
-	clientId, tokenAuthErr := a.AuthenticateToken(context)
+func (a *authenticator) Authenticate(ctx context.Context) (string, error) {
+	clientId, tokenAuthErr := a.AuthenticateToken(ctx)
 	if tokenAuthErr == nil {
-		log.Debugf("Client with id %s successfully authenticated with token", clientId)
+		log.C(ctx).Debugf("Client with id %s successfully authenticated with token", clientId)
 		return clientId, nil
 	}
 
-	clientId, _, certAuthErr := a.AuthenticateCertificate(context)
+	clientId, _, certAuthErr := a.AuthenticateCertificate(ctx)
 	if certAuthErr != nil {
 		return "", errors.Errorf("Failed to authenticate request. Token authentication error: %s. Certificate authentication error: %s",
 			tokenAuthErr.Error(), certAuthErr.Error())
 	}
 
-	log.Debugf("Client with id %s successfully authenticated with certificate", clientId)
+	log.C(ctx).Debugf("Client with id %s successfully authenticated with certificate", clientId)
 	return clientId, nil
 }
 

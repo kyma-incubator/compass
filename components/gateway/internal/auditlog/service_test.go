@@ -1,6 +1,7 @@
 package auditlog_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,11 +30,11 @@ func TestAuditlogService_Log(t *testing.T) {
 		log := fixSuccessConfigChangeMsg(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		err := auditlogSvc.Log(context.TODO(), request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
@@ -51,11 +52,11 @@ func TestAuditlogService_Log(t *testing.T) {
 		log := fixSuccessConfigChangeMsg(claims, request, response)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		err := auditlogSvc.Log(context.TODO(), request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
@@ -73,11 +74,11 @@ func TestAuditlogService_Log(t *testing.T) {
 		log := fixSuccessConfigChangeMsg(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		err := auditlogSvc.Log(context.TODO(), request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
@@ -95,11 +96,11 @@ func TestAuditlogService_Log(t *testing.T) {
 		log := fixSuccessConfigChangeMsg(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		err := auditlogSvc.Log(context.TODO(), request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
@@ -117,11 +118,11 @@ func TestAuditlogService_Log(t *testing.T) {
 		log := fixSuccessConfigChangeMsg(claims, request, response)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		err := auditlogSvc.Log(context.TODO(), request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
@@ -139,11 +140,11 @@ func TestAuditlogService_Log(t *testing.T) {
 		log := fixSuccessConfigChangeMsg(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		err := auditlogSvc.Log(context.TODO(), request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
@@ -161,11 +162,11 @@ func TestAuditlogService_Log(t *testing.T) {
 		log := fixSuccessConfigChangeMsg(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		err := auditlogSvc.Log(context.TODO(), request, response, claims)
 
 		//THEN
 		require.NoError(t, err)
@@ -186,11 +187,11 @@ func TestAuditlogService_Log(t *testing.T) {
 		msg := fixSecurityEventMsg(t, graphqlResponse.Errors, fixClaims())
 
 		client := &automock.AuditlogClient{}
-		client.On("LogSecurityEvent", msg).Return(nil)
+		client.On("LogSecurityEvent", context.TODO(), msg).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err = auditlogSvc.Log(request, string(response), claims)
+		err = auditlogSvc.Log(context.TODO(), request, string(response), claims)
 
 		//THEN
 		require.NoError(t, err)
@@ -209,11 +210,11 @@ func TestAuditlogService_Log(t *testing.T) {
 		log := fixSuccessConfigChangeMsg(claims, request, "success")
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(testError)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(testError)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		err := auditlogSvc.Log(context.TODO(), request, response, claims)
 
 		//THEN
 		require.Error(t, err)
@@ -229,7 +230,7 @@ func TestSink_TimeoutOnWrite(t *testing.T) {
 	sink := auditlog.NewSink(chanMsg, time.Millisecond*100)
 
 	//WHEN
-	err := sink.Log("test-request", "test-response", proxy.Claims{})
+	err := sink.Log(context.TODO(), "test-request", "test-response", proxy.Claims{})
 
 	//THEN
 	require.Error(t, err)
