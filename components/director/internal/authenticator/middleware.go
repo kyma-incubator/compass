@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"net/http"
 	"strings"
@@ -24,6 +23,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/lestrrat-go/jwx/jwk"
 )
 

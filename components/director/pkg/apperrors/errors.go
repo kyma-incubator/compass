@@ -242,10 +242,10 @@ func NewCannotReadTenantError() error {
 	}
 }
 
-func NewCannotReadClientIDError() error {
+func NewCannotReadClientUserError() error {
 	return Error{
 		errorCode: InternalError,
-		Message:   cannotReadClientIDMsg,
+		Message:   cannotReadClientUserMsg,
 		arguments: map[string]string{},
 	}
 }

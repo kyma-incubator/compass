@@ -15,7 +15,7 @@ func LoadFromContext(ctx context.Context) (string, error) {
 	clientID, ok := ctx.Value(ClientUserContextKey).(string)
 
 	if !ok {
-		return "", apperrors.NewCannotReadClientIDError()
+		return "", apperrors.NewCannotReadClientUserError()
 	}
 
 	return clientID, nil
