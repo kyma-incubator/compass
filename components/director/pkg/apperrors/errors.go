@@ -242,6 +242,14 @@ func NewCannotReadTenantError() error {
 	}
 }
 
+func NewCannotReadClientIDError() error {
+	return Error{
+		errorCode: InternalError,
+		Message:   cannotReadClientIDMsg,
+		arguments: map[string]string{},
+	}
+}
+
 func NewUnauthorizedError(msg string) error {
 	return Error{
 		errorCode: Unauthorized,

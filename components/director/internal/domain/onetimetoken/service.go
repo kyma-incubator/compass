@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"net/http"
 
 	"github.com/avast/retry-go"
@@ -108,10 +109,17 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	if err != nil {
 		return model.OneTimeToken{}, errors.Wrapf(err, "while getting external tenant for internal tenant [%s]", app.Tenant)
 	}
+
+	clientUser, err := client.LoadFromContext(ctx)
+	if err != nil {
+		return model.OneTimeToken{}, errors.Wrapf(err, "while getting client_user for internal tenant [%s] with corresponding external tenant [%s]", app.Tenant, extTenant)
+	}
+
 	graphqlApp := s.appConverter.ToGraphQL(&app)
 	data := pairing.RequestData{
 		Application: *graphqlApp,
 		Tenant:      extTenant,
+		ClientUser:  clientUser,
 	}
 
 	asJSON, err := json.Marshal(data)

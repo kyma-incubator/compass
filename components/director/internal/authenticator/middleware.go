@@ -5,6 +5,8 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"net/http"
 	"strings"
 	"sync"
@@ -26,7 +28,10 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 )
 
-const AuthorizationHeaderKey = "Authorization"
+const (
+	AuthorizationHeaderKey = "Authorization"
+	ClientUserHeader       = "client_user"
+)
 
 type Authenticator struct {
 	jwksEndpoint        string
@@ -77,6 +82,11 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			}
 
 			ctx := a.contextWithClaims(r.Context(), claims)
+
+			if clientUser := r.Header.Get(ClientUserHeader); clientUser != "" {
+				log.Infof("Found %s header in request with value: %s", ClientUserHeader, clientUser)
+				ctx = client.SaveToContext(ctx, clientUser)
+			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
