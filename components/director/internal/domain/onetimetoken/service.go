@@ -112,7 +112,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 
 	clientUser, err := client.LoadFromContext(ctx)
 	if err != nil {
-		return model.OneTimeToken{}, errors.Wrapf(err, "while getting client_user for internal tenant [%s] with corresponding external tenant [%s]", app.Tenant, extTenant)
+		logrus.Infof("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]", app.Tenant, extTenant)
 	}
 
 	graphqlApp := s.appConverter.ToGraphQL(&app)

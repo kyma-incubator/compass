@@ -11,6 +11,7 @@ require (
 	github.com/agnivade/levenshtein v1.0.3 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
 	github.com/avast/retry-go v2.4.3+incompatible
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dlmiddlecote/sqlstats v1.0.0
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
