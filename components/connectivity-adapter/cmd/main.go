@@ -30,7 +30,7 @@ func main() {
 	cfg := config{}
 
 	err := envconfig.InitWithPrefix(&cfg, "APP")
-	exitOnError(err, "while loading app config")
+	exitOnError(err, "while loading application config")
 
 	h, err := initAPIHandler(cfg)
 	exitOnError(err, "Failed to init External Connector handler")
