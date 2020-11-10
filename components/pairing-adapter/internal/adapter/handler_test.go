@@ -17,14 +17,17 @@ import (
 
 func TestHandler(t *testing.T) {
 
-	t.Run("happy path", func(t *testing.T) {
+	t.Run("happy path with no client user provided should send default client user", func(t *testing.T) {
 		// GIVEN
 		mockClient := &automock.Client{}
 		defer mockClient.AssertExpectations(t)
 		givenToken := &adapter.ExternalToken{
 			Token: "some-token",
 		}
-		mockClient.On("Do", mock.Anything, givenReqData()).Return(givenToken, nil)
+		givenRequestData := givenReqData()
+		expectedRequestData := givenReqData()
+		expectedRequestData.ClientUser = adapter.DefaultClientUser
+		mockClient.On("Do", mock.Anything, expectedRequestData).Return(givenToken, nil)
 
 		sut := adapter.NewHandler(mockClient)
 		// WHEN
@@ -32,7 +35,42 @@ func TestHandler(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		buf := new(bytes.Buffer)
-		err := json.NewEncoder(buf).Encode(givenReqData())
+		err := json.NewEncoder(buf).Encode(givenRequestData)
+		require.NoError(t, err)
+		givenReq, err := http.NewRequest(http.MethodPost, "", buf)
+		require.NoError(t, err)
+		sut.ServeHTTP(rr, givenReq)
+		assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
+
+		actualBody := rr.Result().Body
+		defer func() {
+			require.NoError(t, actualBody.Close())
+		}()
+
+		actualToken := adapter.ExternalToken{}
+		err = json.NewDecoder(actualBody).Decode(&actualToken)
+		require.NoError(t, err)
+		assert.Equal(t, *givenToken, actualToken)
+	})
+
+	t.Run("happy path with client user provided should send client user to token service", func(t *testing.T) {
+		// GIVEN
+		mockClient := &automock.Client{}
+		defer mockClient.AssertExpectations(t)
+		givenToken := &adapter.ExternalToken{
+			Token: "some-token",
+		}
+		givenRequestData := givenReqData()
+		givenRequestData.ClientUser = "P98754321"
+		mockClient.On("Do", mock.Anything, givenRequestData).Return(givenToken, nil)
+
+		sut := adapter.NewHandler(mockClient)
+		// WHEN
+		// THEN
+		rr := httptest.NewRecorder()
+
+		buf := new(bytes.Buffer)
+		err := json.NewEncoder(buf).Encode(givenRequestData)
 		require.NoError(t, err)
 		givenReq, err := http.NewRequest(http.MethodPost, "", buf)
 		require.NoError(t, err)
@@ -71,13 +109,16 @@ func TestHandler(t *testing.T) {
 		// GIVEN
 		mockClient := &automock.Client{}
 		defer mockClient.AssertExpectations(t)
-		mockClient.On("Do", mock.Anything, givenReqData()).Return(nil, errors.New("some error"))
+		givenRequestData := givenReqData()
+		expectedRequestData := givenReqData()
+		expectedRequestData.ClientUser = adapter.DefaultClientUser
+		mockClient.On("Do", mock.Anything, expectedRequestData).Return(nil, errors.New("some error"))
 
 		sut := adapter.NewHandler(mockClient)
 		rr := httptest.NewRecorder()
 
 		buf := new(bytes.Buffer)
-		err := json.NewEncoder(buf).Encode(givenReqData())
+		err := json.NewEncoder(buf).Encode(givenRequestData)
 		require.NoError(t, err)
 		givenReq, err := http.NewRequest(http.MethodPost, "", buf)
 		require.NoError(t, err)
