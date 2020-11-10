@@ -44,13 +44,13 @@ spec:
           number: {{ .Values.global.oathkeeper.port }}
     corsPolicy:
       allowOrigins:
-      - regex: ".*"
+        - regex: ".*"
       allowHeaders:
-      - "authorization"
-      - "content-type"
-      - "tenant"
+        - "authorization"
+        - "content-type"
+        - "tenant"
       allowMethods:
-      - "GET"
-      - "POST"
-      - "PUT"
-      - "DELETE"
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "DELETE"
