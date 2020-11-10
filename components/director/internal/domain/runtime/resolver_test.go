@@ -1461,7 +1461,7 @@ func TestResolver_Labels(t *testing.T) {
 			Key:        labelKey,
 			Value:      labelValue,
 			ObjectID:   id,
-			ObjectType: model.ApplicationLabelableObject,
+			ObjectType: model.RuntimeLabelableObject,
 		},
 		"def": {
 			ID:         "def",
@@ -1469,7 +1469,7 @@ func TestResolver_Labels(t *testing.T) {
 			Key:        labelKey,
 			Value:      labelValue,
 			ObjectID:   id,
-			ObjectType: model.ApplicationLabelableObject,
+			ObjectType: model.RuntimeLabelableObject,
 		},
 	}
 

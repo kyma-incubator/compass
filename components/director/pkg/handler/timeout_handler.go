@@ -69,7 +69,7 @@ type timoutLoggingResponseWriter struct {
 }
 
 func (lrw *timoutLoggingResponseWriter) Write(b []byte) (int, error) {
-	if bytes.Equal(lrw.msg, b) {
+	if bytes.Equal(lrw.msg, b) && time.Since(lrw.requestStart) > lrw.timeout {
 		logrus.Warnf("%s request to %s timed out after %s", lrw.method, lrw.url, lrw.timeout)
 	}
 
