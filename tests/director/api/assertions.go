@@ -293,9 +293,15 @@ func assertPackage(t *testing.T, in *graphql.PackageCreateInput, actual *graphql
 	assertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
 }
 
-func assertPackageInstanceAuth(t *testing.T, expectedAuth graphql.PackageInstanceAuthRequestInput, actualAuth graphql.PackageInstanceAuth) {
+func assertPackageInstanceAuthInput(t *testing.T, expectedAuth graphql.PackageInstanceAuthRequestInput, actualAuth graphql.PackageInstanceAuth) {
 	assertGraphQLJSON(t, expectedAuth.Context, actualAuth.Context)
 	assertGraphQLJSON(t, expectedAuth.InputParams, actualAuth.InputParams)
+}
+
+func assertPackageInstanceAuth(t *testing.T, expectedAuth graphql.PackageInstanceAuth, actualAuth graphql.PackageInstanceAuth) {
+	assert.Equal(t, expectedAuth.ID, actualAuth.ID)
+	assert.Equal(t, expectedAuth.Context, actualAuth.Context)
+	assert.Equal(t, expectedAuth.InputParams, actualAuth.InputParams)
 }
 
 func assertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql.JSON) {

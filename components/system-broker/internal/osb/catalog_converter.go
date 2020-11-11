@@ -48,7 +48,7 @@ func (c Converter) Convert(app *schema.ApplicationExt) (*domain.Service, error) 
 		Description:          desc,
 		Bindable:             true,
 		InstancesRetrievable: false,
-		BindingsRetrievable:  false,
+		BindingsRetrievable:  true,
 		PlanUpdatable:        false,
 		Plans:                plans,
 		Metadata:             c.toServiceMetadata(app),

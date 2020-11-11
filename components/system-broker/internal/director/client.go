@@ -42,6 +42,7 @@ type GqlFieldsProvider interface {
 	ForLabel() string
 	ForPackage(ctx ...graphqlizer.FieldCtx) string
 	ForPackageInstanceAuth() string
+	ForPackageInstanceAuthStatus() string
 	Page(item string) string
 }
 
@@ -86,12 +87,12 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 	return &apps, nil
 }
 
-func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *RequestPackageInstanceCredentialsInput) (*RequestPackageInstanceCredentialsOutput, error) {
+func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *PackageInstanceCredentialsInput) (*PackageInstanceAuthOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
 
-	input, err := in.InputSchema.MarshalToQGLJSON()
+	inputParams, err := in.InputSchema.MarshalToQGLJSON()
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshaling input schema to GQL JSON")
 	}
@@ -103,34 +104,13 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Co
 
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`mutation {
 			  result: requestPackageInstanceAuthCreation(
-				packageID: "%s"
+				packageID: %q
 				in: {
+				  id: %q
 				  context: %s
     			  inputParams: %s
 				}
 			  ) {
-					id
-					context
-					auth {
-					  additionalHeaders
-					  additionalQueryParams
-					  requestAuth {
-						csrf {
-						  tokenEndpointURL
-						}
-					  }
-					  credential {
-						... on OAuthCredentialData {
-						  clientId
-						  clientSecret
-						  url
-						}
-						... on BasicCredentialData {
-						  username
-						  password
-						}
-					  }
-					}
 					status {
 					  condition
 					  timestamp
@@ -138,9 +118,9 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Co
 					  reason
 					}
 			  	 }
-				}`, in.PackageID, inContext, input))
+				}`, in.PackageID, in.AuthID, inContext, inputParams))
 
-	var resp RequestPackageInstanceCredentialsOutput
+	var resp PackageInstanceAuthOutput
 	if err = c.gcli.Do(ctx, gqlRequest, &resp); err != nil {
 		return nil, errors.Wrap(err, "while executing GraphQL call to create package instance auth")
 	}
@@ -148,125 +128,100 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Co
 	return &resp, nil
 }
 
-func (c *GraphQLClient) FindPackageInstanceCredentialsForContext(ctx context.Context, in *FindPackageInstanceCredentialsByContextInput) (*FindPackageInstanceCredentialsOutput, error) {
+func (c *GraphQLClient) FetchPackageInstanceCredentials(ctx context.Context, in *PackageInstanceInput) (*PackageInstanceCredentialsOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
 
-	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
-			result: application(id: "%s") {
-						package(id: "%s") {
-							%s
-					 	}
-					}
-				}`, in.ApplicationID, in.PackageID, c.outputGraphqlizer.ForPackage()))
-
-	var resp struct {
-		Result schema.ApplicationExt `json:"result"`
-	}
-	err := c.gcli.Do(ctx, gqlRequest, &resp)
-	if err != nil {
-		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auths")
-	}
-	var authsResp []*schema.PackageInstanceAuth
-	for _, auth := range resp.Result.Package.InstanceAuths {
-		if auth == nil {
-			continue
-		}
-
-		var authContext map[string]string
-		if err := json.Unmarshal([]byte(*auth.Context), &authContext); err != nil {
-			return nil, errors.Wrap(err, "while unmarshaling auth context")
-		}
-
-		shouldReturn := true
-		for key, value := range in.Context {
-			authContextValue, found := authContext[key]
-			if !found || authContextValue != value {
-				shouldReturn = false
-			}
-		}
-
-		if shouldReturn {
-			authsResp = append(authsResp, auth)
-		}
-	}
-
-	if len(authsResp) == 0 {
-		return nil, &NotFoundError{}
-	}
-
-	targetURLs := make(map[string]string, resp.Result.Package.APIDefinitions.TotalCount)
-
-	for _, apiDefinition := range resp.Result.Package.APIDefinitions.Data {
-		targetURLs[apiDefinition.Name] = apiDefinition.TargetURL
-	}
-
-	return &FindPackageInstanceCredentialsOutput{
-		InstanceAuths: authsResp,
-		TargetURLs:    targetURLs,
-	}, nil
-}
-
-func (c *GraphQLClient) FindPackageInstanceCredentials(ctx context.Context, in *FindPackageInstanceCredentialInput) (*FindPackageInstanceCredentialOutput, error) {
-	if _, err := govalidator.ValidateStruct(in); err != nil {
-		return nil, errors.Wrap(err, "while validating input")
-	}
-
-	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
-			  result: application(id: %q) {
-						package(id: %q) {
-						  instanceAuth(id: %q) {
-							id
-							context
-							auth {
-							  additionalHeaders
-							  additionalQueryParams
-							  requestAuth {
-								csrf {
-								  tokenEndpointURL
-								}
-							  }
-							  credential {
-								... on OAuthCredentialData {
-								  clientId
-								  clientSecret
-								  url
-								}
-								... on BasicCredentialData {
-								  username
-								  password
-								}
-							  }
-							}
-							status {
-							  condition
-							  timestamp
-							  message
-							  reason
-							}
-						  }
-						}
-					  }
-					}`, in.ApplicationID, in.PackageID, in.InstanceAuthID))
+	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query{
+			  result:packageByInstanceAuth(authID:%q){
+				apiDefinitions{
+				  data{
+					name
+					targetURL
+				  }
+				}
+				instanceAuth(id: %q){
+				  %s
+				}
+			  }
+	}`, in.InstanceAuthID, in.InstanceAuthID, c.outputGraphqlizer.ForPackageInstanceAuth()))
 
 	var response struct {
-		Result schema.ApplicationExt `json:"result"`
+		Package *schema.PackageExt `json:"result"`
 	}
 	if err := c.gcli.Do(ctx, gqlRequest, &response); err != nil {
 		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auth")
 	}
 
-	if response.Result.Package.InstanceAuth == nil {
+	if response.Package == nil || response.Package.InstanceAuth == nil || response.Package.InstanceAuth.Context == nil {
 		return nil, &NotFoundError{}
 	}
 
-	return &FindPackageInstanceCredentialOutput{
-		InstanceAuth: response.Result.Package.InstanceAuth,
+	var authContext map[string]string
+	if err := json.Unmarshal([]byte(*response.Package.InstanceAuth.Context), &authContext); err != nil {
+		return nil, errors.Wrap(err, "while unmarshaling auth context")
+	}
+
+	if authContext["instance_id"] != in.Context["instance_id"] || authContext["binding_id"] != in.Context["binding_id"] {
+		return nil, errors.New("found binding with mismatched context coordinates")
+	}
+
+	targetURLs := make(map[string]string, response.Package.APIDefinitions.TotalCount)
+	for _, apiDefinition := range response.Package.APIDefinitions.Data {
+		targetURLs[apiDefinition.Name] = apiDefinition.TargetURL
+	}
+
+	return &PackageInstanceCredentialsOutput{
+		InstanceAuth: response.Package.InstanceAuth,
+		TargetURLs:   targetURLs,
 	}, nil
 }
 
-func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *RequestPackageInstanceAuthDeletionInput) (*RequestPackageInstanceAuthDeletionOutput, error) {
+func (c *GraphQLClient) FetchPackageInstanceAuth(ctx context.Context, in *PackageInstanceInput) (*PackageInstanceAuthOutput, error) {
+	if _, err := govalidator.ValidateStruct(in); err != nil {
+		return nil, errors.Wrap(err, "while validating input")
+	}
+
+	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
+			  result: packageInstanceAuth(id: %q) {
+				id
+				context
+				status {
+				  condition
+				  timestamp
+				  message
+				  reason
+				}
+			  }
+	}`, in.InstanceAuthID))
+
+	var response struct {
+		PackageInstanceAuth *schema.PackageInstanceAuth `json:"result"`
+	}
+	if err := c.gcli.Do(ctx, gqlRequest, &response); err != nil {
+		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auth")
+	}
+
+	if response.PackageInstanceAuth == nil || response.PackageInstanceAuth.Context == nil {
+		return nil, &NotFoundError{}
+	}
+
+	var authContext map[string]string
+	if err := json.Unmarshal([]byte(*response.PackageInstanceAuth.Context), &authContext); err != nil {
+		return nil, errors.Wrap(err, "while unmarshaling auth context")
+	}
+
+	if authContext["instance_id"] != in.Context["instance_id"] || authContext["binding_id"] != in.Context["binding_id"] {
+		return nil, errors.New("found binding with mismatched context coordinates")
+	}
+
+	return &PackageInstanceAuthOutput{
+		InstanceAuth: response.PackageInstanceAuth,
+	}, nil
+}
+
+func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *PackageInstanceAuthDeletionInput) (*PackageInstanceAuthDeletionOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -284,7 +239,7 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Co
 					}`, in.InstanceAuthID))
 
 	var resp struct {
-		Result RequestPackageInstanceAuthDeletionOutput `json:"result"`
+		Result PackageInstanceAuthDeletionOutput `json:"result"`
 	}
 
 	if err := c.gcli.Do(ctx, gqlRequest, &resp); err != nil {
@@ -298,7 +253,7 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Co
 	return &resp.Result, nil
 }
 
-func (c *GraphQLClient) FindSpecification(ctx context.Context, in *FindPackageSpecificationInput) (*FindPackageSpecificationOutput, error) {
+func (c *GraphQLClient) FindSpecification(ctx context.Context, in *PackageSpecificationInput) (*PackageSpecificationOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -333,7 +288,7 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *FindPackageSp
 
 	apidef := response.Result.Package.APIDefinition
 	if apidef.Spec != nil {
-		return &FindPackageSpecificationOutput{
+		return &PackageSpecificationOutput{
 			Name:        apidef.Name,
 			Description: apidef.Description,
 			Data:        apidef.Spec.Data,
@@ -345,7 +300,7 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *FindPackageSp
 
 	eventdef := response.Result.Package.EventDefinition
 	if eventdef.Spec != nil {
-		return &FindPackageSpecificationOutput{
+		return &PackageSpecificationOutput{
 			Name:        eventdef.Name,
 			Description: eventdef.Description,
 			Data:        eventdef.Spec.Data,

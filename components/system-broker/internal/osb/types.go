@@ -30,25 +30,27 @@ type applicationsLister interface {
 }
 
 type packageCredentialsFetcher interface {
-	FindPackageInstanceCredentials(ctx context.Context, in *director.FindPackageInstanceCredentialInput) (*director.FindPackageInstanceCredentialOutput, error)
+	FetchPackageInstanceAuth(ctx context.Context, in *director.PackageInstanceInput) (*director.PackageInstanceAuthOutput, error)
 }
 
 type packageCredentialsFetcherForInstance interface {
-	FindPackageInstanceCredentialsForContext(ctx context.Context, in *director.FindPackageInstanceCredentialsByContextInput) (*director.FindPackageInstanceCredentialsOutput, error)
+	FetchPackageInstanceCredentials(ctx context.Context, in *director.PackageInstanceInput) (*director.PackageInstanceCredentialsOutput, error)
 }
 
 type packageCredentialsCreateRequester interface {
-	RequestPackageInstanceCredentialsCreation(ctx context.Context, in *director.RequestPackageInstanceCredentialsInput) (*director.RequestPackageInstanceCredentialsOutput, error)
+	RequestPackageInstanceCredentialsCreation(ctx context.Context, in *director.PackageInstanceCredentialsInput) (*director.PackageInstanceAuthOutput, error)
 }
 
 type packageCredentialsDeleteRequester interface {
-	RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *director.RequestPackageInstanceAuthDeletionInput) (*director.RequestPackageInstanceAuthDeletionOutput, error)
+	RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *director.PackageInstanceAuthDeletionInput) (*director.PackageInstanceAuthDeletionOutput, error)
 }
 
 type BrokerOperationType string
 
 const (
 	ProvisionOp   BrokerOperationType = "provision_operation"
+	BindOp        BrokerOperationType = "bind_operation"
+	UnbindOp      BrokerOperationType = "unbind_operation"
 	DeprovisionOp BrokerOperationType = "deprovision_operation"
 )
 
@@ -248,9 +250,9 @@ func (rp *RequestParameters) unpack() (*map[string][]string, *map[string][]strin
 	return rp.Headers, rp.QueryParameters
 }
 
-func mapPackageInstanceAuthToModel(pkgAuth schema.PackageInstanceAuth, targets map[string]string) (BindingCredentials, error) {
+func mapPackageInstanceAuthToModel(instanceAuth schema.PackageInstanceAuth, targets map[string]string) (BindingCredentials, error) {
 	var (
-		auth = pkgAuth.Auth
+		auth = instanceAuth.Auth
 		cfg  = AuthDetails{}
 	)
 
@@ -258,18 +260,12 @@ func mapPackageInstanceAuthToModel(pkgAuth schema.PackageInstanceAuth, targets m
 		cfg.CSRFConfig = &CSRFConfig{TokenURL: auth.RequestAuth.Csrf.TokenEndpointURL}
 	}
 
-	if auth.AdditionalHeaders != nil {
-		if cfg.RequestParameters == nil {
-			cfg.RequestParameters = &RequestParameters{}
-		}
-		cfg.RequestParameters.Headers = (*map[string][]string)(auth.AdditionalHeaders)
+	reqParams, err := resolveAdditionalRequestParameters(auth)
+	if err != nil {
+		return BindingCredentials{}, errors.Wrapf(err, "while resolving additional request parameters")
 	}
-
-	if auth.AdditionalQueryParams != nil {
-		if cfg.RequestParameters == nil {
-			cfg.RequestParameters = &RequestParameters{}
-		}
-		cfg.RequestParameters.QueryParameters = (*map[string][]string)(auth.AdditionalQueryParams)
+	if reqParams.QueryParameters != nil || reqParams.Headers != nil {
+		cfg.RequestParameters = reqParams
 	}
 
 	var credType AuthType
@@ -302,9 +298,39 @@ func mapPackageInstanceAuthToModel(pkgAuth schema.PackageInstanceAuth, targets m
 	}
 
 	return BindingCredentials{
-		ID:          pkgAuth.ID,
+		ID:          instanceAuth.ID,
 		Type:        credType,
 		TargetURLs:  targets,
 		AuthDetails: cfg,
 	}, nil
+}
+
+func resolveAdditionalRequestParameters(auth *schema.Auth) (*RequestParameters, error) {
+	additionalRequestParameters := &RequestParameters{}
+
+	if auth.AdditionalHeadersSerialized != nil {
+		hed, err := auth.AdditionalHeadersSerialized.Unmarshal()
+		if err != nil {
+			return nil, err
+		}
+		additionalRequestParameters.Headers = &hed
+	} else {
+		if auth.AdditionalHeaders != nil {
+			additionalRequestParameters.Headers = (*map[string][]string)(auth.AdditionalHeaders)
+		}
+	}
+
+	if auth.AdditionalQueryParamsSerialized != nil {
+		params, err := auth.AdditionalQueryParamsSerialized.Unmarshal()
+		if err != nil {
+			return nil, err
+		}
+		additionalRequestParameters.QueryParameters = &params
+	} else {
+		if auth.AdditionalQueryParams != nil {
+			additionalRequestParameters.QueryParameters = (*map[string][]string)(auth.AdditionalQueryParams)
+		}
+	}
+
+	return additionalRequestParameters, nil
 }

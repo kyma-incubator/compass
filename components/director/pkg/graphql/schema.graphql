@@ -447,6 +447,7 @@ input PackageCreateInput {
 }
 
 input PackageInstanceAuthRequestInput {
+	id: ID
 	"""
 	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
 	"""
@@ -993,6 +994,8 @@ type Query {
 	- [query label definition](examples/query-label-definition/query-label-definition.graphql)
 	"""
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
+	packageByInstanceAuth(authID: ID!): Package @hasScopes(path: "graphql.query.packageByInstanceAuth")
+	packageInstanceAuth(id: ID!): PackageInstanceAuth @hasScopes(path: "graphql.query.packageInstanceAuth")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
 	Maximum `first` parameter value is 100

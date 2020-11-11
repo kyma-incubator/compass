@@ -52,8 +52,15 @@ func (s *service) Create(ctx context.Context, packageID string, in model.Package
 		return "", err
 	}
 
-	id := s.uidService.Generate()
-	pkgInstAuth := in.ToPackageInstanceAuth(id, packageID, tnt, defaultAuth, nil)
+	if in.ID == nil || *in.ID == "" {
+		id := s.uidService.Generate()
+		in.ID = &id
+	}
+
+	pkgInstAuth, err := in.ToPackageInstanceAuth(packageID, tnt, defaultAuth, nil)
+	if err != nil {
+		return "", err
+	}
 
 	err = s.setCreationStatusFromAuth(&pkgInstAuth, defaultAuth)
 	if err != nil {
@@ -65,7 +72,7 @@ func (s *service) Create(ctx context.Context, packageID string, in model.Package
 		return "", errors.Wrap(err, "while creating Package Instance Auth")
 	}
 
-	return id, nil
+	return pkgInstAuth.ID, nil
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.PackageInstanceAuth, error) {

@@ -31,7 +31,8 @@ require (
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.3.2
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.6.1
+	github.com/tidwall/gjson v1.6.3 // indirect
 	github.com/valyala/fasthttp v1.16.0 // indirect
 	github.com/vektah/gqlparser v1.3.1
 	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0 // indirect
@@ -40,6 +41,7 @@ require (
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/tools v0.0.0-20200323144430-8dcfad9e016e // indirect
 	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
 	k8s.io/client-go v0.18.6

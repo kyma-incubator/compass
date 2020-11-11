@@ -64,6 +64,7 @@ func (c *converter) MultipleToGraphQL(in []*model.PackageInstanceAuth) ([]*graph
 
 func (c *converter) RequestInputFromGraphQL(in graphql.PackageInstanceAuthRequestInput) model.PackageInstanceAuthRequestInput {
 	return model.PackageInstanceAuthRequestInput{
+		ID:          in.ID,
 		Context:     c.jsonPtrToStrPtr(in.Context),
 		InputParams: c.jsonPtrToStrPtr(in.InputParams),
 	}

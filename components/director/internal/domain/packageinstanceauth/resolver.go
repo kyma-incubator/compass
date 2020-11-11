@@ -3,6 +3,8 @@ package packageinstanceauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -31,24 +33,83 @@ type PackageService interface {
 	GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Package, error)
 }
 
+//go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
+type PackageConverter interface {
+	ToGraphQL(in *model.Package) (*graphql.Package, error)
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 	svc      Service
 	pkgSvc   PackageService
 	conv     Converter
+	pkgConv  PackageConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc PackageService, conv Converter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc Service, pkgSvc PackageService, conv Converter, pkgConv PackageConverter) *Resolver {
 	return &Resolver{
 		transact: transact,
 		svc:      svc,
 		pkgSvc:   pkgSvc,
 		conv:     conv,
+		pkgConv:  pkgConv,
 	}
 }
 
-var mockRequestTypeKey = "type"
-var mockPackageID = "db5d3b2a-cf30-498b-9a66-29e60247c66b"
+func (r *Resolver) PackageByInstanceAuth(ctx context.Context, authID string) (*graphql.Package, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	packageInstanceAuth, err := r.svc.Get(ctx, authID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	pkg, err := r.pkgSvc.Get(ctx, packageInstanceAuth.PackageID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.pkgConv.ToGraphQL(pkg)
+}
+
+func (r *Resolver) PackageInstanceAuth(ctx context.Context, id string) (*graphql.PackageInstanceAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	packageInstanceAuth, err := r.svc.Get(ctx, id)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(packageInstanceAuth)
+}
 
 func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string) (*graphql.PackageInstanceAuth, error) {
 	tx, err := r.transact.Begin()

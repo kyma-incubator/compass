@@ -32,25 +32,25 @@ func NewSystemBroker(client GqlClientForBroker, selfURL string) *SystemBroker {
 				baseURL: selfURL,
 			},
 		},
-		ProvisionEndpoint: &ProvisionEndpoint{
+		ProvisionEndpoint:             &ProvisionEndpoint{},
+		DeprovisionEndpoint:           &DeprovisionEndpoint{},
+		UpdateInstanceEndpoint:        &UpdateInstanceEndpoint{},
+		GetInstanceEndpoint:           &GetInstanceEndpoint{},
+		InstanceLastOperationEndpoint: &InstanceLastOperationEndpoint{},
+		BindEndpoint: &BindEndpoint{
 			credentialsCreator: client,
 			credentialsGetter:  client,
 		},
-		DeprovisionEndpoint: &DeprovisionEndpoint{
-			credentialsGetter:  client,
+		UnbindEndpoint: &UnbindEndpoint{
 			credentialsDeleter: client,
+			credentialsGetter:  client,
 		},
-		UpdateInstanceEndpoint: &UpdateInstanceEndpoint{},
-		GetInstanceEndpoint:    &GetInstanceEndpoint{},
-		InstanceLastOperationEndpoint: &InstanceLastOperationEndpoint{
+		GetBindingEndpoint: &GetBindingEndpoint{
 			credentialsGetter: client,
 		},
-		BindEndpoint: &BindEndpoint{
+		BindLastOperationEndpoint: &BindLastOperationEndpoint{
 			credentialsGetter: client,
 		},
-		UnbindEndpoint:            &UnbindEndpoint{},
-		GetBindingEndpoint:        &GetBindingEndpoint{},
-		BindLastOperationEndpoint: &BindLastOperationEndpoint{},
 	}
 }
 

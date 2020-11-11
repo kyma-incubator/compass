@@ -18,6 +18,9 @@ package osb
 
 import (
 	"context"
+	"errors"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
@@ -26,6 +29,7 @@ type GetInstanceEndpoint struct {
 }
 
 func (b *GetInstanceEndpoint) GetInstance(ctx context.Context, instanceID string) (domain.GetInstanceDetailsSpec, error) {
+	log.C(ctx).Infof("GetInstanceEndpoint instanceID: %s", instanceID)
 
-	return domain.GetInstanceDetailsSpec{}, nil
+	return domain.GetInstanceDetailsSpec{}, errors.New("not supported")
 }
