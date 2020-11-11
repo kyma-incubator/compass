@@ -25,9 +25,7 @@ func TestHandler(t *testing.T) {
 			Token: "some-token",
 		}
 		givenRequestData := givenReqData()
-		expectedRequestData := givenReqData()
-		expectedRequestData.ClientUser = adapter.DefaultClientUser
-		mockClient.On("Do", mock.Anything, expectedRequestData).Return(givenToken, nil)
+		mockClient.On("Do", mock.Anything, givenRequestData).Return(givenToken, nil)
 
 		sut := adapter.NewHandler(mockClient)
 		// WHEN
@@ -110,9 +108,7 @@ func TestHandler(t *testing.T) {
 		mockClient := &automock.Client{}
 		defer mockClient.AssertExpectations(t)
 		givenRequestData := givenReqData()
-		expectedRequestData := givenReqData()
-		expectedRequestData.ClientUser = adapter.DefaultClientUser
-		mockClient.On("Do", mock.Anything, expectedRequestData).Return(nil, errors.New("some error"))
+		mockClient.On("Do", mock.Anything, givenRequestData).Return(nil, errors.New("some error"))
 
 		sut := adapter.NewHandler(mockClient)
 		rr := httptest.NewRecorder()

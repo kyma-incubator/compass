@@ -8,8 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const DefaultClientUser = "P123456789"
-
 //go:generate mockery -name=Client -output=automock -outpkg=automock
 type Client interface {
 	Do(ctx context.Context, req RequestData) (*ExternalToken, error)
@@ -47,10 +45,6 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		logrus.Warnf("Got error on decoding Application Data: %v\n", err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
-	}
-
-	if reqData.ClientUser == "" {
-		reqData.ClientUser = DefaultClientUser
 	}
 
 	logrus.Infof("Got ApplicationData %v", reqData)
