@@ -2,12 +2,12 @@ package binding_test
 
 import (
 	"fmt"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
+	"io/ioutil"
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
-
-	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
@@ -39,21 +39,33 @@ func TestBindDelete(t *testing.T) {
 
 type UnbindTestSuite struct {
 	suite.Suite
-	testContext *common.TestContext
-	configURL   string
+	testContext       *common.TestContext
+	mockedDirectorURL string
 }
 
 func (suite *UnbindTestSuite) SetupSuite() {
 	suite.testContext = common.NewTestContextBuilder().Build(suite.T())
-	suite.configURL = suite.testContext.Servers[common.DirectorServer].URL() + "/config"
+	suite.mockedDirectorURL = suite.testContext.Servers[common.DirectorServer].URL()
 }
 
 func (suite *UnbindTestSuite) SetupTest() {
-	http.DefaultClient.Post(suite.configURL+"/reset", "application/json", nil)
+	http.DefaultClient.Post(suite.mockedDirectorURL+"/config/reset", "application/json", nil)
 }
 
 func (suite *UnbindTestSuite) TearDownSuite() {
 	suite.testContext.CleanUp()
+}
+
+func (suite *UnbindTestSuite) TearDownTest() {
+	resp, err := suite.testContext.HttpClient.Get(suite.mockedDirectorURL + "/verify")
+	assert.NoError(suite.T(), err)
+
+	if resp.StatusCode == http.StatusInternalServerError {
+		errorMsg, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(suite.T(), err)
+		suite.Fail(string(errorMsg))
+	}
+	assert.Equal(suite.T(), http.StatusOK, resp.StatusCode)
 }
 
 func (suite *UnbindTestSuite) TestUnbindWithoutAcceptsIncompleteHeaderShouldReturnUnprocessableEntity() {
@@ -65,7 +77,7 @@ func (suite *UnbindTestSuite) TestUnbindWithoutAcceptsIncompleteHeaderShouldRetu
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", `{"error": "Test-error"}`)
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.DELETE(unbindPath).
@@ -77,7 +89,7 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnFindCredential
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundShouldReturnGone() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth", notFoundResponse)
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", notFoundResponse)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.DELETE(unbindPath).
@@ -89,7 +101,7 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundShouldReturnG
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsUnusedCredentialsShouldReturnAccepted() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
 		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
@@ -103,11 +115,11 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsUnusedCredentialsShou
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnCredentialsDeletionShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
 		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.configURL, "query", "requestPackageInstanceAuthDeletion", `{"error": "Test-error"}`)
+	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthDeletion", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.DELETE(unbindPath).
@@ -119,11 +131,11 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnCredentialsDel
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundOnCredentialsDeletionShouldReturnGone() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
 		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.configURL, "mutation", "requestPackageInstanceAuthDeletion", notFoundMutationResponse)
+	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthDeletion", notFoundMutationResponse)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.DELETE(unbindPath).
@@ -135,11 +147,11 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundOnCredentials
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorAcceptsCredentialsDeletionRequestShouldReturnAccepted() {
-	err := suite.testContext.ConfigureResponse(suite.configURL, "query", "packageInstanceAuth",
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
 		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.configURL, "mutation", "requestPackageInstanceAuthDeletion",
+	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthDeletion",
 		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
