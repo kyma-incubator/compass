@@ -3,11 +3,12 @@ package authenticator_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/gqlerror"

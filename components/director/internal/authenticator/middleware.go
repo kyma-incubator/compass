@@ -5,10 +5,11 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/gqlerror"
