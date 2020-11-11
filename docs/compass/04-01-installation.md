@@ -144,4 +144,4 @@ To install Compass and Runtime components on Minikube, run the following command
 ./installation/cmd/run.sh --kyma-installation full
 ```
 
-> **Note:** To reduce memory and CPU usage, from the `installer-cr-kyma.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, or `kiali`.
+> **Note:** To reduce memory and CPU usage, from the `installer-cr-kyma-full.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, or `kiali`.

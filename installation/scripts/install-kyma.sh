@@ -42,11 +42,11 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
-INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma-dependencies.yaml
+INSTALLER_CR_MINIMAL_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma-minimal.yaml
 OVERRIDES_COMPASS_GATEWAY="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-compass-gateway.yaml
 API_GATEWAY_OVERRIDES="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-api-gateway.yaml
 
-INSTALLER_CR_FULL_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma.yaml
+INSTALLER_CR_FULL_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma-full.yaml
 OVERRIDES_KYMA_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-config-local.yaml
 OVERRIDES_KYMA_LEGACY_CONNECTIVITY="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-disable-legacy-connectivity.yaml
 
@@ -79,6 +79,6 @@ if [[ $KYMA_INSTALLATION == *full* ]]; then
   kyma install -c $INSTALLER_CR_FULL_PATH -o $OVERRIDES_KYMA_CFG_LOCAL -o $OVERRIDES_KYMA_LEGACY_CONNECTIVITY ${ADDITIONAL_PARAMS} --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma install -c $INSTALLER_CR_PATH -o $OVERRIDES_COMPASS_GATEWAY -o $API_GATEWAY_OVERRIDES ${ADDITIONAL_PARAMS} --source $KYMA_SOURCE
+  kyma install -c $INSTALLER_CR_MINIMAL_PATH -o $OVERRIDES_COMPASS_GATEWAY -o $API_GATEWAY_OVERRIDES ${ADDITIONAL_PARAMS} --source $KYMA_SOURCE
 fi
 set +o xtrace
