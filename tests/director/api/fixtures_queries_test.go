@@ -330,6 +330,13 @@ func createPackageWithInput(t *testing.T, ctx context.Context, appID string, inp
 	return resp
 }
 
+func getPackageByInstanceAuthID(t *testing.T, ctx context.Context, pkgInstanceAuthID string) graphql.PackageExt {
+	req := fixPackageByInstanceAuthIDRequest(pkgInstanceAuthID)
+	pkg := graphql.PackageExt{}
+	require.NoError(t, tc.RunOperation(ctx, req, &pkg))
+	return pkg
+}
+
 func getPackage(t *testing.T, ctx context.Context, appID, pkgID string) graphql.PackageExt {
 	req := fixPackageRequest(appID, pkgID)
 	pkg := graphql.ApplicationExt{}
@@ -386,6 +393,13 @@ func addDocumentToPackageWithInput(t *testing.T, ctx context.Context, pkgID stri
 
 func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.DocumentExt {
 	return addDocumentToPackageWithInput(t, ctx, pkgID, fixDocumentInput(t))
+}
+
+func getPackageInstanceAuth(t *testing.T, ctx context.Context, id string) graphql.PackageInstanceAuth {
+	pkgInstanceAuthRequest := fixPackageInstanceAuthRequest(id)
+	pkgInstanceAuth := graphql.PackageInstanceAuth{}
+	require.NoError(t, tc.RunOperation(ctx, pkgInstanceAuthRequest, &pkgInstanceAuth))
+	return pkgInstanceAuth
 }
 
 func createPackageInstanceAuth(t *testing.T, ctx context.Context, pkgID string) graphql.PackageInstanceAuth {
