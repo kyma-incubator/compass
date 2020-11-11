@@ -4,7 +4,9 @@ deployment:
     pullPolicy: IfNotPresent
   resources: {}
   resourcesCloudsqlProxy: {}
-  resourcesIstioProxy: {}
+  resourcesIstioProxy:
+    requests:
+    limits:
   args:
     containerPort: 3000
   securityContext: # Set on container level
