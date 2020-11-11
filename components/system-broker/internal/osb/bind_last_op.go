@@ -61,13 +61,13 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 	}
 
 	if IsNotFoundError(err) {
-		logger.Info("Package instance credentials not found")
 		if opType == string(UnbindOp) {
 			return domain.LastOperation{
 				State:       domain.Succeeded,
 				Description: "credentials were successfully deleted",
 			}, nil
 		}
+		logger.Error("Package instance credentials not found")
 		return domain.LastOperation{}, apiresponses.ErrBindingNotFound
 	}
 

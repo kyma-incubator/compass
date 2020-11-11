@@ -41,7 +41,7 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 		"bindingID":  bindingID,
 	})
 
-	logger.Info("Fetching package instance credentials")
+	logger.Debug("Fetching package instance credentials")
 
 	resp, err := b.credentialsGetter.FetchPackageInstanceCredentials(ctx, &director.PackageInstanceInput{
 		InstanceAuthID: bindingID,
@@ -56,7 +56,7 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 	}
 
 	if IsNotFoundError(err) {
-		logger.Info("Package credentials for binding were not found")
+		logger.Debug("Package credentials for binding were not found")
 		return domain.GetBindingSpec{}, apiresponses.ErrBindingNotFound
 	}
 
