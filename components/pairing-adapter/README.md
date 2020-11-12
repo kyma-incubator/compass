@@ -11,8 +11,8 @@ Pairing Adapter binary allows you to override some configuration parameters. You
 
 | Environment variable                    | Description                                                      |                                                                             
 | ----------------------------------------|------------------------------------------------------------------| 
-| **CLIENT_TIMEOUT**                      | The timeout used for external calls made by pairing adapter               |
-| **SERVER_TIMEOUT**                      | The timeout used for incoming calls to the pairing adapter server         |
+| **CLIENT_TIMEOUT**                      | The timeout used for outgoing calls made by pairing adapter.               |
+| **SERVER_TIMEOUT**                      | The timeout used for incoming calls to the pairing adapter server.         |
 | **MAPPING_TEMPLATE_EXTERNAL_URL**       | External Token Service URL in a form of Golang template that is executed in the context of the `RequestData`.
 | **MAPPING_TEMPLATE_HEADERS**            | Headers sent to the External Token Service in a form of Golang template that is executed in the context of the `RequestData`.      
 | **MAPPING_TEMPLATE_JSON_BODY**          | Body sent to the External Token Service in a form of Golang template that is executed in the context of the `RequestData`.
