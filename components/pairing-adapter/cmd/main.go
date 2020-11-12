@@ -56,6 +56,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%s", conf.Port),
+		Handler:           router,
 		ReadHeaderTimeout: conf.ServerTimeout,
 	}
 
