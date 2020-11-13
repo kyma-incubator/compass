@@ -1,3 +1,0 @@
-```jsx
-<InstanceStatus status="PENDING" />
-```

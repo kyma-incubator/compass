@@ -40,8 +40,8 @@ spec:
             - {{ . }}
             {{- end }}
       corsPolicy:
-        allowOrigin:
-          - "*"
+        allowOrigins:
+          - regex: ".*"
         allowHeaders:
           - "authorization"
           - "content-type"
@@ -63,8 +63,8 @@ spec:
             - {{ . }}
             {{- end }}
       corsPolicy:
-        allowOrigin:
-          - "*"
+        allowOrigins:
+          - regex: ".*"
         allowHeaders:
           - "authorization"
           - "content-type"

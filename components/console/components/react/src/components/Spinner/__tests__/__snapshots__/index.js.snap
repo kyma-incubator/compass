@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`Spinner Element renders correctly 1`] = `
-<div
-  className="sc-bdVaJa JBcwN"
-/>
-`;
