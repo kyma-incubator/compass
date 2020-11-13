@@ -1,12 +1,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: compass-overrides-istio-gateway
+  name: tracing-overrides
   namespace: kyma-installer
   labels:
     installer: overrides
+    component: tracing
     kyma-project.io/installation: ""
 data:
-  global.istio.gateway.name: "kyma-gateway"
-  global.istio.gateway.namespace: "kyma-system"
-
+  global.tracing.enabled: "true"
