@@ -10,7 +10,7 @@ deployment:
   nodeSelector: {}
 
 gateway:
-  enabled: true
+  enabled: false
   manageCerts: true
   auditlog:
     enabled: false
