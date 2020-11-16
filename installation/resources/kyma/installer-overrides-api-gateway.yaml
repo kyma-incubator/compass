@@ -8,5 +8,5 @@ metadata:
     component: api-gateway
     kyma-project.io/installation: ""
 data:
-  tests.env.gatewayName: "compass-istio-gateway"
-  tests.env.gatewayNamespace: "compass-system"
+  tests.env.gatewayName: "kyma-gateway"
+  tests.env.gatewayNamespace: "kyma-system"
