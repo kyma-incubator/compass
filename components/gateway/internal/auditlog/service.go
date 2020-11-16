@@ -43,13 +43,13 @@ func (sink *NoOpService) Log(context.Context, proxy.AuditlogMessage) error {
 	return nil
 }
 
-//go:generate mockery -name=AuditlogClient -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=AuditlogClient --output=automock --outpkg=automock --case=underscore
 type AuditlogClient interface {
 	LogConfigurationChange(ctx context.Context, change model.ConfigurationChange) error
 	LogSecurityEvent(ctx context.Context, event model.SecurityEvent) error
 }
 
-//go:generate mockery -name=AuditlogMessageFactory -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=AuditlogMessageFactory --output=automock --outpkg=automock --case=underscore
 type AuditlogMessageFactory interface {
 	CreateConfigurationChange() model.ConfigurationChange
 	CreateSecurityEvent() model.SecurityEvent

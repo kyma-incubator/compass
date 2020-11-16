@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy/automock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +15,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
-	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy/automock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,10 +40,12 @@ func TestAuditLog(t *testing.T) {
 		roundTripper := &automock.RoundTrip{}
 		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
 
-		auditlogSvc := &automock.AuditlogService{}
-		auditlogSvc.On("Log", mock.Anything, string(graphqlPayload), string(graphqlPayload), fixClaims()).Return(nil)
+		auditlogSink := &automock.AuditlogService{}
+		auditlogSvc := &automock.PreAuditlogService{}
+		auditlogSink.On("Log", mock.Anything, mock.Anything).Return(nil)
+		auditlogSvc.On("PreLog", mock.Anything, mock.Anything).Return(nil)
 
-		transport := proxy.NewTransport(auditlogSvc, roundTripper)
+		transport := proxy.NewTransport(auditlogSink, auditlogSvc, roundTripper)
 
 		//WHEN
 		output, err := transport.RoundTrip(req)
@@ -68,7 +70,7 @@ func TestAuditLog(t *testing.T) {
 		roundTripper := &automock.RoundTrip{}
 		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
 
-		transport := proxy.NewTransport(nil, roundTripper)
+		transport := proxy.NewTransport(nil, nil, roundTripper)
 
 		//WHEN
 		_, err := transport.RoundTrip(req)

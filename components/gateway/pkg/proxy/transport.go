@@ -17,16 +17,17 @@ import (
 
 var emptyQuery error = errors.New("empty graphql query")
 
-//go:generate mockery -name=RoundTrip -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RoundTrip --output=automock --outpkg=automock --case=underscore
 type RoundTrip interface {
 	RoundTrip(*http.Request) (*http.Response, error)
 }
 
-//go:generate mockery -name=AuditlogService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=AuditlogService --output=automock --outpkg=automock --case=underscore
 type AuditlogService interface {
 	Log(ctx context.Context, msg AuditlogMessage) error
 }
 
+//go:generate mockery --name=PreAuditlogService --output=automock --outpkg=automock --case=underscore
 type PreAuditlogService interface {
 	AuditlogService
 	PreLog(ctx context.Context, msg AuditlogMessage) error
@@ -80,7 +81,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 				return nil, errors.Wrap(err, "while sending pre-change auditlog message to auditlog service")
 			}
 		} else {
-			return nil, errors.Wrap(err, "while type casting PreAuditlogService")
+			return nil, errors.New("Failed to type cast PreAuditlogService")
 		}
 	} else if err != nil {
 		return nil, err

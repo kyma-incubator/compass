@@ -34,7 +34,13 @@ func TestAuditlogService_Log(t *testing.T) {
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(context.TODO(), request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request: request,
+			Response: response,
+			Claims:   claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -56,7 +62,13 @@ func TestAuditlogService_Log(t *testing.T) {
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(context.TODO(), request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request: request,
+			Response: response,
+			Claims:   claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -78,7 +90,13 @@ func TestAuditlogService_Log(t *testing.T) {
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(context.TODO(), request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request: request,
+			Response: response,
+			Claims:   claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -100,7 +118,13 @@ func TestAuditlogService_Log(t *testing.T) {
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(context.TODO(), request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request: request,
+			Response: response,
+			Claims:   claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -122,7 +146,13 @@ func TestAuditlogService_Log(t *testing.T) {
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(context.TODO(), request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request: request,
+			Response: response,
+			Claims:   claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -144,7 +174,13 @@ func TestAuditlogService_Log(t *testing.T) {
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(context.TODO(), request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request: request,
+			Response: response,
+			Claims:   claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -166,7 +202,13 @@ func TestAuditlogService_Log(t *testing.T) {
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(context.TODO(), request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request: request,
+			Response: response,
+			Claims:   claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -184,14 +226,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		require.NoError(t, err)
 
 		claims := fixClaims()
-		msg := fixSecurityEventMsg(t, graphqlResponse.Errors, fixClaims())
+		securityEventMsg := fixSecurityEventMsg(t, graphqlResponse.Errors, fixClaims())
 
 		client := &automock.AuditlogClient{}
-		client.On("LogSecurityEvent", context.TODO(), msg).Return(nil)
+		client.On("LogSecurityEvent", context.TODO(), securityEventMsg).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err = auditlogSvc.Log(context.TODO(), request, string(response), claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request: request,
+			Response: string(response),
+			Claims:   claims,
+		}
+		err = auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -214,7 +262,13 @@ func TestAuditlogService_Log(t *testing.T) {
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(context.TODO(), request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request: request,
+			Response: response,
+			Claims:   claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.Error(t, err)
@@ -225,12 +279,22 @@ func TestAuditlogService_Log(t *testing.T) {
 }
 func TestSink_TimeoutOnWrite(t *testing.T) {
 	//GIVEN
-	chanMsg := make(chan auditlog.Message)
+	request := "test-request"
+	response := "test-response"
+	claims := proxy.Claims{}
+
+	chanMsg := make(chan proxy.AuditlogMessage)
 	defer close(chanMsg)
 	sink := auditlog.NewSink(chanMsg, time.Millisecond*100)
 
 	//WHEN
-	err := sink.Log(context.TODO(), "test-request", "test-response", proxy.Claims{})
+	msg := proxy.AuditlogMessage{
+		CorrelationIDHeaders: fixCorrelationID(),
+		Request: request,
+		Response: response,
+		Claims:   claims,
+	}
+	err := sink.Log(context.TODO(), msg)
 
 	//THEN
 	require.Error(t, err)

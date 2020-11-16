@@ -2,6 +2,7 @@ package auditlog_test
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
@@ -36,7 +37,8 @@ func fixSuccessConfigChangeMsg(claims proxy.Claims, request, response string) mo
 	msg.Object = model.Object{ID: fillID(claims, "Config Change")}
 	msg.Attributes = []model.Attribute{
 		{Name: "request", Old: "", New: request},
-		{Name: "response", Old: "", New: response}}
+		{Name: "response", Old: "", New: response},
+		{Name: "correlation-id", Old: "", New: fixCorrelationID()[correlation.RequestIDHeaderKey]}}
 
 	return msg
 }
@@ -83,4 +85,10 @@ func fixFilledSecurityEventMsg() model.SecurityEvent {
 	msg.Data = "test-data"
 
 	return msg
+}
+
+func fixCorrelationID() correlation.Headers {
+	return map[string]string{
+		correlation.RequestIDHeaderKey: "d135d5f1-3dd0-45fa-8f26-55d8d6a44876",
+	}
 }
