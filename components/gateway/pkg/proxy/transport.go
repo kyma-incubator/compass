@@ -12,7 +12,6 @@ import (
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
-
 	"github.com/pkg/errors"
 )
 
@@ -25,17 +24,31 @@ type RoundTrip interface {
 
 //go:generate mockery -name=AuditlogService -output=automock -outpkg=automock -case=underscore
 type AuditlogService interface {
-	Log(ctx context.Context, request, response string, claims Claims) error
+	Log(ctx context.Context, msg AuditlogMessage) error
+}
+
+type PreAuditlogService interface {
+	AuditlogService
+	PreLog(ctx context.Context, msg AuditlogMessage) error
+}
+
+type AuditlogMessage struct {
+	CorrelationIDHeaders correlation.Headers
+	Request              string
+	Response             string
+	Claims
 }
 
 type Transport struct {
 	http.RoundTripper
-	auditlogSvc AuditlogService
+	auditlogSink AuditlogService
+	auditlogSvc  AuditlogService
 }
 
-func NewTransport(svc AuditlogService, trip RoundTrip) *Transport {
+func NewTransport(sink AuditlogService, svc AuditlogService, trip RoundTrip) *Transport {
 	return &Transport{
 		RoundTripper: trip,
+		auditlogSink: sink,
 		auditlogSvc:  svc,
 	}
 }
@@ -44,12 +57,36 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	if req.Body == nil || req.Method == http.MethodGet {
 		return t.RoundTripper.RoundTrip(req)
 	}
+
 	requestBody, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		return nil, err
 	}
-
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(requestBody))
+	defer httpcommon.CloseBody(req.Body)
+
+	correlationHeaders := correlation.HeadersForRequest(req)
+
+	isMutation, err := checkQueryType(requestBody, "mutation")
+	if (err == emptyQuery) || (err == nil && isMutation) {
+		if logService, ok := t.auditlogSvc.(PreAuditlogService); ok {
+			err := logService.PreLog(context.Background(), AuditlogMessage{
+				CorrelationIDHeaders: correlationHeaders,
+				Request:              string(requestBody),
+				Response:             "",
+				Claims:               Claims{},
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "while sending pre-change auditlog message to auditlog service")
+			}
+		} else {
+			return nil, errors.Wrap(err, "while type casting PreAuditlogService")
+		}
+	} else if err != nil {
+		return nil, err
+	} else {
+		log.Println("Will not send pre-change auditlog message for queries")
+	}
 
 	resp, err = t.RoundTripper.RoundTrip(req)
 	if err != nil {
@@ -68,22 +105,20 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	resp.Body = ioutil.NopCloser(bytes.NewReader(responseBody))
 	defer httpcommon.CloseBody(resp.Body)
 
-	isMutation, err := checkQueryType(requestBody, "mutation")
-	if err != emptyQuery {
-		if err != nil {
-			return nil, err
-		}
-		if !isMutation {
-			log.Println("Will not auditlog queries")
-			return resp, nil
-		}
+	isMutation, err = checkQueryType(requestBody, "mutation")
+	if err == nil && !isMutation {
+		log.Println("Will not send post-change auditlog message for queries")
+		return resp, nil
 	}
 
-	correlationHeaders := correlation.HeadersForRequest(req)
-	correlationCtx := context.WithValue(context.Background(), correlation.HeadersContextKey, correlationHeaders)
-	err = t.auditlogSvc.Log(correlationCtx, string(requestBody), string(responseBody), claims)
+	err = t.auditlogSink.Log(context.TODO(), AuditlogMessage{
+		CorrelationIDHeaders: correlationHeaders,
+		Request:              string(requestBody),
+		Response:             string(responseBody),
+		Claims:               claims,
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "while sending to auditlog")
+		return nil, errors.Wrap(err, "while sending post-change auditlog message to auditlog service")
 	}
 	return resp, nil
 }

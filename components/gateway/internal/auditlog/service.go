@@ -3,6 +3,7 @@ package auditlog
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"log"
 	"strings"
 	"time"
@@ -12,33 +13,19 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Message struct {
-	Request  string
-	Response string
-	Context  context.Context
-	proxy.Claims
-}
-
 type Sink struct {
-	logsChannel chan Message
+	logsChannel chan proxy.AuditlogMessage
 	timeout     time.Duration
 }
 
-func NewSink(logsChannel chan Message, timeout time.Duration) *Sink {
+func NewSink(logsChannel chan proxy.AuditlogMessage, timeout time.Duration) *Sink {
 	return &Sink{
 		logsChannel: logsChannel,
 		timeout:     timeout,
 	}
 }
 
-func (sink *Sink) Log(ctx context.Context, request, response string, claims proxy.Claims) error {
-	msg := Message{
-		Request:  request,
-		Response: response,
-		Claims:   claims,
-		Context:  ctx,
-	}
-
+func (sink *Sink) Log(_ context.Context, msg proxy.AuditlogMessage) error {
 	select {
 	case sink.logsChannel <- msg:
 		log.Printf("Successfully registered auditlog message for processing to the queue (size=%d, capacity=%d)",
@@ -52,7 +39,7 @@ func (sink *Sink) Log(ctx context.Context, request, response string, claims prox
 type NoOpService struct {
 }
 
-func (sink *NoOpService) Log(ctx context.Context, request, response string, claims proxy.Claims) error {
+func (sink *NoOpService) Log(context.Context, proxy.AuditlogMessage) error {
 	return nil
 }
 
@@ -77,60 +64,95 @@ func NewService(client AuditlogClient, msgFactory AuditlogMessageFactory) *Servi
 	return &Service{client: client, msgFactory: msgFactory}
 }
 
-func (svc *Service) Log(ctx context.Context, request, response string, claims proxy.Claims) error {
-	graphqlResponse, err := svc.parseResponse(response)
+func (svc *Service) PreLog(ctx context.Context, msg proxy.AuditlogMessage) error {
+	correlationID := msg.CorrelationIDHeaders[correlation.RequestIDHeaderKey]
+	configChangeMsg := svc.createConfigChangeMsg(msg.Claims, msg.Request)
+	configChangeMsg.Attributes = append(configChangeMsg.Attributes,
+		model.Attribute{
+			Name: "request",
+			Old:  "",
+			New:  msg.Request,
+		}, model.Attribute{
+			Name: "correlation-id",
+			Old:  "",
+			New:  correlationID,
+		})
+
+	err := svc.client.LogConfigurationChange(ctx, configChangeMsg)
+	return errors.Wrap(err, "while sending configuration pre-change")
+}
+
+func (svc *Service) Log(ctx context.Context, msg proxy.AuditlogMessage) error {
+	graphqlResponse, err := svc.parseResponse(msg.Response)
 	if err != nil {
 		return errors.Wrap(err, "while parsing response")
 	}
 
+	correlationID := msg.CorrelationIDHeaders[correlation.RequestIDHeaderKey]
+
 	if len(graphqlResponse.Errors) == 0 {
-		log := svc.createConfigChangeMsg(claims, request)
-		log.Attributes = append(log.Attributes, model.Attribute{
-			Name: "response",
-			Old:  "",
-			New:  "success",
-		})
+		log := svc.createConfigChangeMsg(msg.Claims, msg.Request)
+		log.Attributes = append(log.Attributes,
+			model.Attribute{
+				Name: "response",
+				Old:  "",
+				New:  "success",
+			}, model.Attribute{
+				Name: "correlation-id",
+				Old:  "",
+				New:  correlationID,
+			})
 
 		err = svc.client.LogConfigurationChange(ctx, log)
 		return errors.Wrap(err, "while sending to auditlog")
 	}
 
 	if svc.hasInsufficientScopeError(graphqlResponse.Errors) {
-		msg := svc.msgFactory.CreateSecurityEvent()
-		eventData := model.SecurityEventData{ID: fillID(claims, "Security Event"), Reason: graphqlResponse.Errors}
+		securityEventMsg := svc.msgFactory.CreateSecurityEvent()
+		eventData := model.SecurityEventData{ID: fillID(msg.Claims, "Security Event"), Reason: graphqlResponse.Errors}
 		data, err := json.Marshal(&eventData)
 		if err != nil {
 			return errors.Wrap(err, "while marshalling security event data")
 		}
 
-		msg.Data = string(data)
-		err = svc.client.LogSecurityEvent(ctx, msg)
+		securityEventMsg.Data = string(data)
+		err = svc.client.LogSecurityEvent(ctx, securityEventMsg)
 		return errors.Wrap(err, "while sending security event to auditlog")
 	}
 
-	isReadErr, err := isReadError(graphqlResponse, request)
+	isReadErr, err := isReadError(graphqlResponse, msg.Request)
 	if err != nil {
 		return errors.Wrap(err, "while checking if error is read error")
 	}
 
-	msg := svc.createConfigChangeMsg(claims, request)
+	configChangeMsg := svc.createConfigChangeMsg(msg.Claims, msg.Request)
 	if isReadErr {
-		msg.Attributes = append(msg.Attributes, model.Attribute{
-			Name: "response",
-			Old:  "",
-			New:  "success",
-		})
-		err := svc.client.LogConfigurationChange(ctx, msg)
+		configChangeMsg.Attributes = append(configChangeMsg.Attributes,
+			model.Attribute{
+				Name: "response",
+				Old:  "",
+				New:  "success",
+			}, model.Attribute{
+				Name: "correlation-id",
+				Old:  "",
+				New:  correlationID,
+			})
+		err := svc.client.LogConfigurationChange(ctx, configChangeMsg)
 		return errors.Wrap(err, "while sending configuration change")
 	} else {
-		msg.Attributes = append(msg.Attributes, model.Attribute{
-			Name: "response",
-			Old:  "",
-			New:  response,
-		})
+		configChangeMsg.Attributes = append(configChangeMsg.Attributes,
+			model.Attribute{
+				Name: "response",
+				Old:  "",
+				New:  msg.Response,
+			}, model.Attribute{
+				Name: "correlation-id",
+				Old:  "",
+				New:  correlationID,
+			})
 	}
 
-	err = svc.client.LogConfigurationChange(ctx, msg)
+	err = svc.client.LogConfigurationChange(ctx, configChangeMsg)
 	return errors.Wrap(err, "while sending configuration change")
 }
 
