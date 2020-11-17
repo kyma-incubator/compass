@@ -91,9 +91,13 @@ func (svc *Service) Log(ctx context.Context, msg proxy.AuditlogMessage) error {
 	correlationID := msg.CorrelationIDHeaders[correlation.RequestIDHeaderKey]
 
 	if len(graphqlResponse.Errors) == 0 {
-		log := svc.createConfigChangeMsg(msg.Claims, msg.Request)
-		log.Attributes = append(log.Attributes,
+		configChangeMsg := svc.createConfigChangeMsg(msg.Claims, msg.Request)
+		configChangeMsg.Attributes = append(configChangeMsg.Attributes,
 			model.Attribute{
+				Name: "request",
+				Old:  "",
+				New:  msg.Request,
+			}, model.Attribute{
 				Name: "response",
 				Old:  "",
 				New:  "success",
@@ -103,7 +107,7 @@ func (svc *Service) Log(ctx context.Context, msg proxy.AuditlogMessage) error {
 				New:  correlationID,
 			})
 
-		err = svc.client.LogConfigurationChange(ctx, log)
+		err = svc.client.LogConfigurationChange(ctx, configChangeMsg)
 		return errors.Wrap(err, "while sending to auditlog")
 	}
 
@@ -129,6 +133,10 @@ func (svc *Service) Log(ctx context.Context, msg proxy.AuditlogMessage) error {
 	if isReadErr {
 		configChangeMsg.Attributes = append(configChangeMsg.Attributes,
 			model.Attribute{
+				Name: "request",
+				Old:  "",
+				New:  msg.Request,
+			}, model.Attribute{
 				Name: "response",
 				Old:  "",
 				New:  "success",
@@ -142,6 +150,10 @@ func (svc *Service) Log(ctx context.Context, msg proxy.AuditlogMessage) error {
 	} else {
 		configChangeMsg.Attributes = append(configChangeMsg.Attributes,
 			model.Attribute{
+				Name: "request",
+				Old:  "",
+				New:  msg.Request,
+			}, model.Attribute{
 				Name: "response",
 				Old:  "",
 				New:  msg.Response,
@@ -168,8 +180,6 @@ func (svc *Service) parseResponse(response string) (model.GraphqlResponse, error
 func (svc *Service) createConfigChangeMsg(claims proxy.Claims, request string) model.ConfigurationChange {
 	msg := svc.msgFactory.CreateConfigurationChange()
 	msg.Object = model.Object{ID: fillID(claims, "Config Change")}
-	msg.Attributes = []model.Attribute{
-		{Name: "request", Old: "", New: request}}
 
 	return msg
 }
