@@ -49,6 +49,8 @@ type RequestData struct {
 	Application graphql.Application
 	// in: body
 	Tenant string
+	// in: body
+	ClientUser string
 }
 
 type ResponseData struct {

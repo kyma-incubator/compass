@@ -16,6 +16,7 @@ data:
     spec:
       values:
         global:
+          jwtPolicy: first-party-jwt
           proxy:
             resources:
               requests:

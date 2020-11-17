@@ -20,10 +20,10 @@ global:
       version: "PR-1612"
     pairing_adapter:
       dir:
-      version: "PR-1613"
+      version: "PR-1618"
     director:
       dir:
-      version: "PR-1611"
+      version: "PR-1618"
     gateway:
       dir:
       version: "PR-1612"
