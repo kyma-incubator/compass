@@ -36,9 +36,9 @@ func TestAuditlogService_Log(t *testing.T) {
 		//WHEN
 		msg := proxy.AuditlogMessage{
 			CorrelationIDHeaders: fixCorrelationID(),
-			Request: request,
-			Response: response,
-			Claims:   claims,
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
 		}
 		err := auditlogSvc.Log(context.TODO(), msg)
 
@@ -64,9 +64,9 @@ func TestAuditlogService_Log(t *testing.T) {
 		//WHEN
 		msg := proxy.AuditlogMessage{
 			CorrelationIDHeaders: fixCorrelationID(),
-			Request: request,
-			Response: response,
-			Claims:   claims,
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
 		}
 		err := auditlogSvc.Log(context.TODO(), msg)
 
@@ -92,9 +92,9 @@ func TestAuditlogService_Log(t *testing.T) {
 		//WHEN
 		msg := proxy.AuditlogMessage{
 			CorrelationIDHeaders: fixCorrelationID(),
-			Request: request,
-			Response: response,
-			Claims:   claims,
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
 		}
 		err := auditlogSvc.Log(context.TODO(), msg)
 
@@ -120,9 +120,9 @@ func TestAuditlogService_Log(t *testing.T) {
 		//WHEN
 		msg := proxy.AuditlogMessage{
 			CorrelationIDHeaders: fixCorrelationID(),
-			Request: request,
-			Response: response,
-			Claims:   claims,
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
 		}
 		err := auditlogSvc.Log(context.TODO(), msg)
 
@@ -148,9 +148,9 @@ func TestAuditlogService_Log(t *testing.T) {
 		//WHEN
 		msg := proxy.AuditlogMessage{
 			CorrelationIDHeaders: fixCorrelationID(),
-			Request: request,
-			Response: response,
-			Claims:   claims,
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
 		}
 		err := auditlogSvc.Log(context.TODO(), msg)
 
@@ -176,9 +176,9 @@ func TestAuditlogService_Log(t *testing.T) {
 		//WHEN
 		msg := proxy.AuditlogMessage{
 			CorrelationIDHeaders: fixCorrelationID(),
-			Request: request,
-			Response: response,
-			Claims:   claims,
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
 		}
 		err := auditlogSvc.Log(context.TODO(), msg)
 
@@ -204,9 +204,9 @@ func TestAuditlogService_Log(t *testing.T) {
 		//WHEN
 		msg := proxy.AuditlogMessage{
 			CorrelationIDHeaders: fixCorrelationID(),
-			Request: request,
-			Response: response,
-			Claims:   claims,
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
 		}
 		err := auditlogSvc.Log(context.TODO(), msg)
 
@@ -235,9 +235,9 @@ func TestAuditlogService_Log(t *testing.T) {
 		//WHEN
 		msg := proxy.AuditlogMessage{
 			CorrelationIDHeaders: fixCorrelationID(),
-			Request: request,
-			Response: string(response),
-			Claims:   claims,
+			Request:              request,
+			Response:             string(response),
+			Claims:               claims,
 		}
 		err = auditlogSvc.Log(context.TODO(), msg)
 
@@ -264,9 +264,9 @@ func TestAuditlogService_Log(t *testing.T) {
 		//WHEN
 		msg := proxy.AuditlogMessage{
 			CorrelationIDHeaders: fixCorrelationID(),
-			Request: request,
-			Response: response,
-			Claims:   claims,
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
 		}
 		err := auditlogSvc.Log(context.TODO(), msg)
 
@@ -290,9 +290,9 @@ func TestSink_TimeoutOnWrite(t *testing.T) {
 	//WHEN
 	msg := proxy.AuditlogMessage{
 		CorrelationIDHeaders: fixCorrelationID(),
-		Request: request,
-		Response: response,
-		Claims:   claims,
+		Request:              request,
+		Response:             response,
+		Claims:               claims,
 	}
 	err := sink.Log(context.TODO(), msg)
 

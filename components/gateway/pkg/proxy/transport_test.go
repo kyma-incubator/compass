@@ -5,16 +5,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy/automock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
+	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy/automock"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 

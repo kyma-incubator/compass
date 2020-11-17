@@ -2,9 +2,9 @@ package auditlog_test
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/stretchr/testify/require"
