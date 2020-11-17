@@ -31,6 +31,7 @@ const (
 	noRequiredScopesInContextMsg = "required scopes are not defined"
 	keyDoesNotExistMsg           = "the key does not exist in the source object"
 	cannotReadTenantMsg          = "cannot read tenant from context"
+	cannotReadClientUserMsg      = "cannot read client_user from context"
 	invalidOperationMsg          = "The operation is not allowed"
 	unauthorizedMsg              = "Unauthorized"
 	operationTimeoutMsg          = "operation has timed out"
