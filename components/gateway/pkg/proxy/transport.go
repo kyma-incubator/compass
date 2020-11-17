@@ -87,7 +87,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	} else if err != nil {
 		return nil, err
 	} else {
-		log.Println("Will not send pre-change auditlog message for queries")
+		log.Println("Will not send auditlog message for queries")
 	}
 
 	resp, err = t.RoundTripper.RoundTrip(req)
@@ -109,7 +109,6 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 
 	isMutation, err = checkQueryType(requestBody, "mutation")
 	if err == nil && !isMutation {
-		log.Println("Will not send post-change auditlog message for queries")
 		return resp, nil
 	}
 
