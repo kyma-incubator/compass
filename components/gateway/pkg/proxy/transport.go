@@ -71,7 +71,8 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	isMutation, err := checkQueryType(requestBody, "mutation")
 	if (err == emptyQuery) || (err == nil && isMutation) {
 		if logService, ok := t.auditlogSvc.(PreAuditlogService); ok {
-			err := logService.PreLog(context.Background(), AuditlogMessage{
+			ctx := context.WithValue(req.Context(), correlation.RequestIDHeaderKey, correlationHeaders)
+			err := logService.PreLog(ctx, AuditlogMessage{
 				CorrelationIDHeaders: correlationHeaders,
 				Request:              string(requestBody),
 				Response:             "",

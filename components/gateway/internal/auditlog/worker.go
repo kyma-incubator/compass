@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 )
 
@@ -32,6 +33,7 @@ func (w *Worker) Start() {
 			return
 		case msg := <-w.auditlogChannel:
 			log.Printf("Read from auditlog channel (size=%d, cap=%d)", len(w.auditlogChannel), cap(w.auditlogChannel))
+			ctx := context.WithValue(ctx, correlation.HeadersContextKey, msg.CorrelationIDHeaders)
 			err := w.svc.Log(ctx, msg)
 			if err != nil {
 				log.Printf("Error while saving auditlog message with error: %s", err.Error())
