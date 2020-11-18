@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"testing"
 	"time"
 
@@ -27,7 +28,7 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixNoErrorResponse(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
@@ -55,7 +56,7 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixGraphqlMutationError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, response)
+		log := fixSuccessConfigChangeMsg(claims, request, response, auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
@@ -83,7 +84,7 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequestWithInvalidQuery()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
@@ -111,7 +112,7 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixResponseMultipleError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
@@ -139,7 +140,7 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixGraphqlMultiErrorWithMutation(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, response)
+		log := fixSuccessConfigChangeMsg(claims, request, response, auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
@@ -167,7 +168,7 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequestWithQuery()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
@@ -195,7 +196,7 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixJsonRequest()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
@@ -226,7 +227,7 @@ func TestAuditlogService_Log(t *testing.T) {
 		require.NoError(t, err)
 
 		claims := fixClaims()
-		securityEventMsg := fixSecurityEventMsg(t, graphqlResponse.Errors, fixClaims())
+		securityEventMsg := fixSecurityEventMsg(t, graphqlResponse.Errors, fixClaims(), fixCorrelationID()[correlation.RequestIDHeaderKey])
 
 		client := &automock.AuditlogClient{}
 		client.On("LogSecurityEvent", context.TODO(), securityEventMsg).Return(nil)
@@ -255,7 +256,7 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixNoErrorResponse(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
 		client.On("LogConfigurationChange", context.TODO(), log).Return(testError)

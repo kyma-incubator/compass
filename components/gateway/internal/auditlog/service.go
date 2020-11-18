@@ -3,11 +3,11 @@ package auditlog
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"log"
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
@@ -43,6 +43,11 @@ func (sink *NoOpService) Log(context.Context, proxy.AuditlogMessage) error {
 	return nil
 }
 
+const (
+	PreAuditlogOperation = "pre-operation"
+	PostAuditlogOperation = "post-operation"
+)
+
 //go:generate mockery --name=AuditlogClient --output=automock --outpkg=automock --case=underscore
 type AuditlogClient interface {
 	LogConfigurationChange(ctx context.Context, change model.ConfigurationChange) error
@@ -66,18 +71,7 @@ func NewService(client AuditlogClient, msgFactory AuditlogMessageFactory) *Servi
 
 func (svc *Service) PreLog(ctx context.Context, msg proxy.AuditlogMessage) error {
 	correlationID := msg.CorrelationIDHeaders[correlation.RequestIDHeaderKey]
-	configChangeMsg := svc.createConfigChangeMsg(msg.Claims, msg.Request)
-	configChangeMsg.Attributes = append(configChangeMsg.Attributes,
-		model.Attribute{
-			Name: "request",
-			Old:  "",
-			New:  msg.Request,
-		}, model.Attribute{
-			Name: "correlation-id",
-			Old:  "",
-			New:  correlationID,
-		})
-
+	configChangeMsg := svc.createConfigChangeMsg(msg.Claims, msg.Request, correlationID, PreAuditlogOperation)
 	err := svc.client.LogConfigurationChange(ctx, configChangeMsg)
 	return errors.Wrap(err, "while sending configuration pre-change")
 }
@@ -91,20 +85,12 @@ func (svc *Service) Log(ctx context.Context, msg proxy.AuditlogMessage) error {
 	correlationID := msg.CorrelationIDHeaders[correlation.RequestIDHeaderKey]
 
 	if len(graphqlResponse.Errors) == 0 {
-		configChangeMsg := svc.createConfigChangeMsg(msg.Claims, msg.Request)
+		configChangeMsg := svc.createConfigChangeMsg(msg.Claims, msg.Request, correlationID, PostAuditlogOperation)
 		configChangeMsg.Attributes = append(configChangeMsg.Attributes,
 			model.Attribute{
-				Name: "request",
-				Old:  "",
-				New:  msg.Request,
-			}, model.Attribute{
 				Name: "response",
 				Old:  "",
 				New:  "success",
-			}, model.Attribute{
-				Name: "correlation-id",
-				Old:  "",
-				New:  correlationID,
 			})
 
 		err = svc.client.LogConfigurationChange(ctx, configChangeMsg)
@@ -113,7 +99,11 @@ func (svc *Service) Log(ctx context.Context, msg proxy.AuditlogMessage) error {
 
 	if svc.hasInsufficientScopeError(graphqlResponse.Errors) {
 		securityEventMsg := svc.msgFactory.CreateSecurityEvent()
-		eventData := model.SecurityEventData{ID: fillID(msg.Claims, "Security Event"), Reason: graphqlResponse.Errors}
+		eventData := model.SecurityEventData{
+			ID:            fillID(msg.Claims, "Security Event"),
+			CorrelationID: correlationID,
+			Reason:        graphqlResponse.Errors,
+		}
 		data, err := json.Marshal(&eventData)
 		if err != nil {
 			return errors.Wrap(err, "while marshalling security event data")
@@ -129,38 +119,22 @@ func (svc *Service) Log(ctx context.Context, msg proxy.AuditlogMessage) error {
 		return errors.Wrap(err, "while checking if error is read error")
 	}
 
-	configChangeMsg := svc.createConfigChangeMsg(msg.Claims, msg.Request)
+	configChangeMsg := svc.createConfigChangeMsg(msg.Claims, msg.Request, correlationID, PostAuditlogOperation)
 	if isReadErr {
 		configChangeMsg.Attributes = append(configChangeMsg.Attributes,
 			model.Attribute{
-				Name: "request",
-				Old:  "",
-				New:  msg.Request,
-			}, model.Attribute{
 				Name: "response",
 				Old:  "",
 				New:  "success",
-			}, model.Attribute{
-				Name: "correlation-id",
-				Old:  "",
-				New:  correlationID,
 			})
 		err := svc.client.LogConfigurationChange(ctx, configChangeMsg)
 		return errors.Wrap(err, "while sending configuration change")
 	} else {
 		configChangeMsg.Attributes = append(configChangeMsg.Attributes,
 			model.Attribute{
-				Name: "request",
-				Old:  "",
-				New:  msg.Request,
-			}, model.Attribute{
 				Name: "response",
 				Old:  "",
 				New:  msg.Response,
-			}, model.Attribute{
-				Name: "correlation-id",
-				Old:  "",
-				New:  correlationID,
 			})
 	}
 
@@ -177,9 +151,27 @@ func (svc *Service) parseResponse(response string) (model.GraphqlResponse, error
 	return graphqlResponse, nil
 }
 
-func (svc *Service) createConfigChangeMsg(claims proxy.Claims, request string) model.ConfigurationChange {
+func (svc *Service) createConfigChangeMsg(claims proxy.Claims, request string, correlationID string, auditlogOperationType string) model.ConfigurationChange {
 	msg := svc.msgFactory.CreateConfigurationChange()
 	msg.Object = model.Object{ID: fillID(claims, "Config Change")}
+
+	msg.Attributes = []model.Attribute{
+		{
+			Name: "auditlog_type",
+			Old:  "",
+			New:  auditlogOperationType,
+		},
+		{
+			Name: "request",
+			Old:  "",
+			New:  request,
+		},
+		{
+			Name: "correlation_id",
+			Old:  "",
+			New:  correlationID,
+		},
+	}
 
 	return msg
 }

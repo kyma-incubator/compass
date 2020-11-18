@@ -32,20 +32,23 @@ func fixFabricatedSecurityEventMsg() model.SecurityEvent {
 	}}
 }
 
-func fixSuccessConfigChangeMsg(claims proxy.Claims, request, response string) model.ConfigurationChange {
+func fixSuccessConfigChangeMsg(claims proxy.Claims, request, response string, auditlogType string) model.ConfigurationChange {
 	msg := fixFabricatedConfigChangeMsg()
 	msg.Object = model.Object{ID: fillID(claims, "Config Change")}
 	msg.Attributes = []model.Attribute{
+		{Name: "auditlog_type", Old: "", New: auditlogType},
 		{Name: "request", Old: "", New: request},
+		{Name: "correlation_id", Old: "", New: fixCorrelationID()[correlation.RequestIDHeaderKey]},
 		{Name: "response", Old: "", New: response},
-		{Name: "correlation-id", Old: "", New: fixCorrelationID()[correlation.RequestIDHeaderKey]}}
+	}
 
 	return msg
 }
 
-func fixSecurityEventMsg(t *testing.T, errors []model.ErrorMessage, claims proxy.Claims) model.SecurityEvent {
+func fixSecurityEventMsg(t *testing.T, errors []model.ErrorMessage, claims proxy.Claims, correlationID string) model.SecurityEvent {
 	msgData := model.SecurityEventData{
 		ID:     fillID(claims, "Security Event"),
+		CorrelationID: correlationID,
 		Reason: errors,
 	}
 	data, err := json.Marshal(&msgData)

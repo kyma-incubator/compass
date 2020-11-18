@@ -69,25 +69,29 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	correlationHeaders := correlation.HeadersForRequest(req)
 
 	isMutation, err := checkQueryType(requestBody, "mutation")
-	if (err == emptyQuery) || (err == nil && isMutation) {
-		if logService, ok := t.auditlogSvc.(PreAuditlogService); ok {
-			ctx := context.WithValue(req.Context(), correlation.RequestIDHeaderKey, correlationHeaders)
-			err := logService.PreLog(ctx, AuditlogMessage{
-				CorrelationIDHeaders: correlationHeaders,
-				Request:              string(requestBody),
-				Response:             "",
-				Claims:               Claims{},
-			})
-			if err != nil {
-				return nil, errors.Wrap(err, "while sending pre-change auditlog message to auditlog service")
-			}
-		} else {
-			return nil, errors.New("Failed to type cast PreAuditlogService")
-		}
-	} else if err != nil {
-		return nil, err
-	} else {
+	if err != nil && err != emptyQuery {
+		return nil, errors.Wrap(err, "could not check query type")
+	}
+
+	if !isMutation && err != emptyQuery {
 		log.Println("Will not send auditlog message for queries")
+		return t.RoundTripper.RoundTrip(req)
+	}
+
+	preAuditLogger, ok := t.auditlogSvc.(PreAuditlogService)
+	if !ok {
+		return nil, errors.New("Failed to type cast PreAuditlogService")
+	}
+
+	ctx := context.WithValue(req.Context(), correlation.RequestIDHeaderKey, correlationHeaders)
+	err = preAuditLogger.PreLog(ctx, AuditlogMessage{
+		CorrelationIDHeaders: correlationHeaders,
+		Request:              string(requestBody),
+		Response:             "",
+		Claims:               Claims{},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "while sending pre-change auditlog message to auditlog service")
 	}
 
 	resp, err = t.RoundTripper.RoundTrip(req)
@@ -106,11 +110,6 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	}
 	resp.Body = ioutil.NopCloser(bytes.NewReader(responseBody))
 	defer httpcommon.CloseBody(resp.Body)
-
-	isMutation, err = checkQueryType(requestBody, "mutation")
-	if err == nil && !isMutation {
-		return resp, nil
-	}
 
 	err = t.auditlogSink.Log(context.TODO(), AuditlogMessage{
 		CorrelationIDHeaders: correlationHeaders,
