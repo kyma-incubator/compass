@@ -111,7 +111,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	resp.Body = ioutil.NopCloser(bytes.NewReader(responseBody))
 	defer httpcommon.CloseBody(resp.Body)
 
-	err = t.auditlogSink.Log(context.TODO(), AuditlogMessage{
+	err = t.auditlogSink.Log(req.Context(), AuditlogMessage{
 		CorrelationIDHeaders: correlationHeaders,
 		Request:              string(requestBody),
 		Response:             string(responseBody),
