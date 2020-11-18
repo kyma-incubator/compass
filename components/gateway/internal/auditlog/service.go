@@ -3,11 +3,11 @@ package auditlog
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
@@ -44,7 +44,7 @@ func (sink *NoOpService) Log(context.Context, proxy.AuditlogMessage) error {
 }
 
 const (
-	PreAuditlogOperation = "pre-operation"
+	PreAuditlogOperation  = "pre-operation"
 	PostAuditlogOperation = "post-operation"
 )
 

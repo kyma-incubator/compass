@@ -47,9 +47,9 @@ func fixSuccessConfigChangeMsg(claims proxy.Claims, request, response string, au
 
 func fixSecurityEventMsg(t *testing.T, errors []model.ErrorMessage, claims proxy.Claims, correlationID string) model.SecurityEvent {
 	msgData := model.SecurityEventData{
-		ID:     fillID(claims, "Security Event"),
+		ID:            fillID(claims, "Security Event"),
 		CorrelationID: correlationID,
-		Reason: errors,
+		Reason:        errors,
 	}
 	data, err := json.Marshal(&msgData)
 	require.NoError(t, err)
