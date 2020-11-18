@@ -16,6 +16,19 @@ spec:
     {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
+      annotations:
+        {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.requests.memory }}
+        sidecar.istio.io/proxyMemory: {{ .Values.deployment.resourcesIstioProxy.requests.memory }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        sidecar.istio.io/proxyCPULimit: {{ .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.memory }}
+        sidecar.istio.io/proxyMemoryLimit: {{ .Values.deployment.resourcesIstioProxy.limits.memory }}
+        {{ end }}
       labels:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
@@ -35,7 +48,7 @@ spec:
               containerPort: {{ .Values.metrics.port }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
@@ -142,6 +155,8 @@ spec:
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
                     "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json",
                     "-term_timeout=2s"]
+          resources:
+          {{- toYaml .Values.deployment.resourcesCloudsqlProxy | nindent 12 }}
           volumeMounts:
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials

@@ -30,7 +30,7 @@ spec:
               containerPort: {{ .Values.deployment.args.containerPort}}
               protocol: TCP
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
