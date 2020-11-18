@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/gqlerror"
 
@@ -96,6 +98,26 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createNotSingedToken(t, defaultTenant, scopes)
 		require.NoError(t, err)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		//when
+		middleware(handler).ServeHTTP(rr, req)
+
+		//then
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
+	t.Run("Success - with client user provided", func(t *testing.T) {
+		clientUser := "foo"
+		//given
+		middleware := createMiddleware(t, false)
+		handler := testHandlerWithClientUser(t, defaultTenant, clientUser, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS.Keys[0])
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Add(authenticator.ClientUserHeader, clientUser)
 
 		//when
 		middleware(handler).ServeHTTP(rr, req)
@@ -300,15 +322,24 @@ func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Han
 }
 
 func testHandler(t *testing.T, expectedTenant string, scopes string) http.HandlerFunc {
+	return testHandlerWithClientUser(t, expectedTenant, "", scopes)
+}
+
+func testHandlerWithClientUser(t *testing.T, expectedTenant, expectedClientUser, scopes string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tenantFromContext, err := tenant.LoadFromContext(r.Context())
 		if !apperrors.IsTenantRequired(err) {
 			require.NoError(t, err)
 		}
+		clientUserFromContext, err := client.LoadFromContext(r.Context())
+		if expectedClientUser == "" {
+			require.Error(t, err)
+		}
 		scopesFromContext, err := scope.LoadFromContext(r.Context())
 		require.NoError(t, err)
 
 		require.Equal(t, expectedTenant, tenantFromContext)
+		require.Equal(t, expectedClientUser, clientUserFromContext)
 		scopesArray := strings.Split(scopes, " ")
 		require.ElementsMatch(t, scopesArray, scopesFromContext)
 

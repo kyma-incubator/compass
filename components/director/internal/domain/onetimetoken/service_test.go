@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -177,10 +179,71 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 				return false
 			}
 			tenantMatches := appData.Tenant == "external-tenant"
+			clientUserMatches := appData.ClientUser == ""
 			appIDMatches := appData.Application.ID == givenGraphQLApp.ID
 			urlMatches := req.URL.String() == "https://my-integration-service.url"
 
-			return urlMatches && appIDMatches && tenantMatches
+			return urlMatches && appIDMatches && tenantMatches && clientUserMatches
+		})).Return(response, nil)
+
+		mockExtTenants := &automock.ExternalTenantsService{}
+		mockExtTenants.On("GetExternalTenant", ctx, "internal-tenant").Return("external-tenant", nil)
+
+		svc := onetimetoken.NewTokenService(nil, mockSysAuthSvc, mockAppService, mockAppConverter, mockExtTenants, mockHttpClient, URL, adaptersMapping)
+		defer mock.AssertExpectationsForObjects(t, mockSysAuthSvc, mockAppService, mockHttpClient, mockExtTenants)
+		// WHEN
+		actualToken, err := svc.GenerateOneTimeToken(ctx, applicationID, model.ApplicationReference)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, "external-token", actualToken.Token)
+	})
+
+	t.Run("Success - token for application with integration system that registered pairing adapter and client user is provided", func(t *testing.T) {
+		const clientUser = "foo"
+
+		// GIVEN
+		ctx := context.TODO()
+		ctx = client.SaveToContext(ctx, clientUser)
+
+		mockSysAuthSvc := &automock.SystemAuthService{}
+		mockSysAuthSvc.On("Create", ctx, model.ApplicationReference, applicationID, (*model.AuthInput)(nil)).
+			Return(authID, nil)
+
+		mockAppService := &automock.ApplicationService{}
+		givenApplication := model.Application{ID: applicationID, IntegrationSystemID: &integrationSystemID, Tenant: "internal-tenant"}
+		mockAppService.On("Get", ctx, applicationID).Return(&givenApplication, nil)
+		adaptersMapping := map[string]string{integrationSystemID: "https://my-integration-service.url"}
+
+		mockAppConverter := &automock.ApplicationConverter{}
+		givenGraphQLApp := graphql.Application{
+			IntegrationSystemID: &integrationSystemID,
+			ID:                  givenApplication.ID,
+		}
+		mockAppConverter.On("ToGraphQL", &givenApplication).Return(&givenGraphQLApp)
+
+		respBody := new(bytes.Buffer)
+		respBody.WriteString(`{"token":"external-token"}`)
+		mockHttpClient := &automock.HTTPDoer{}
+		response := &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(respBody),
+		}
+		mockHttpClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
+			b, err := req.GetBody()
+			if err != nil {
+				return false
+			}
+			appData := pairing.RequestData{}
+			err = json.NewDecoder(b).Decode(&appData)
+			if err != nil {
+				return false
+			}
+			tenantMatches := appData.Tenant == "external-tenant"
+			clientUserMatches := appData.ClientUser == clientUser
+			appIDMatches := appData.Application.ID == givenGraphQLApp.ID
+			urlMatches := req.URL.String() == "https://my-integration-service.url"
+
+			return urlMatches && appIDMatches && tenantMatches && clientUserMatches
 		})).Return(response, nil)
 
 		mockExtTenants := &automock.ExternalTenantsService{}
