@@ -56,7 +56,7 @@ func TestAuditlogIntegration(t *testing.T) {
 	t.Log("Compare request to director with auditlog")
 	requestBody := prepareRegisterAppRequestBody(t, registerRequest)
 	require.True(t, len(auditlogs[0].Attributes) == 3 || len(auditlogs[0].Attributes) == 4)
-	assert.Equal(t, requestBody.String(), auditlogs[0].Attributes[0].New)
+	assert.Equal(t, requestBody.String(), auditlogs[0].Attributes[1].New)
 }
 
 func prepareRegisterAppRequestBody(t *testing.T, registerRequest *graphql2.Request) bytes.Buffer {
