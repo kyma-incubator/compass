@@ -55,7 +55,7 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	t.Log("Compare request to director with auditlog")
 	requestBody := prepareRegisterAppRequestBody(t, registerRequest)
-	require.Equal(t, 2, len(auditlogs[0].Attributes))
+	require.Equal(t, 4, len(auditlogs[0].Attributes))
 	assert.Equal(t, requestBody.String(), auditlogs[0].Attributes[0].New)
 }
 
