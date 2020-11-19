@@ -41,9 +41,9 @@ global:
     external_services_mock:
       dir:
       version: "PR-1591"
-    metris:
+    console:
       dir:
-      version: "PR-1434"
+      version: "PR-11"
     tests:
       director:
         dir:
@@ -262,9 +262,6 @@ global:
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
 
   externalServicesMock:
-    enabled: false
-
-  metris:
     enabled: false
 
 pairing-adapter:
