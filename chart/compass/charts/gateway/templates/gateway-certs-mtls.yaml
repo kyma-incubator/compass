@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .Values.global.connector.secrets.rootCA.name }}
+  name: {{ .Values.global.gateway.mtls.certSecret }}
   namespace: istio-system
 type: Opaque
 data:

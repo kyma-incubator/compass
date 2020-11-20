@@ -104,9 +104,8 @@ global:
         certificateKey: ca.crt
         keyKey: ca.key
       rootCA:
-        name: kyma-gateway-certs
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
-        cacert: kyma-gateway-certs-cacert # For cert-rotation the cacert should be in different secret
+        cacert: cmp-root-ca # For cert-rotation the cacert should be in different secret
         certificateKey: cacert
     certificateDataHeader: "Certificate-Data"
     revocation:
@@ -126,6 +125,7 @@ global:
           host: compass-gateway-auth-oauth
     mtls:
       host: compass-gateway-mtls
+      certSecret: compass-gateway-mtls-certs
     headers:
       request:
         remove:
@@ -149,7 +149,7 @@ global:
 
   istio:
     gateway:
-      name: "compass-istio-gateway"
+      name: "compass-gateway"
       namespace: "compass-system"
     proxy:
       port: 15020

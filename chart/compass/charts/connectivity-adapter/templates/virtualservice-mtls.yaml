@@ -14,7 +14,7 @@ spec:
   hosts:
     - '{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}'
   gateways:
-    - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}-compass
+    - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}-mtls
   http:
     - match:
         - uri:

@@ -42,9 +42,6 @@ data:
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
   director.deployment.allowJWTSigningNone: "true"
-  gateway.gateway.enabled: "false"
-  global.istio.gateway.name: "kyma-gateway"
-  global.istio.gateway.namespace: "kyma-system"
 ---
 apiVersion: v1
 kind: ConfigMap
