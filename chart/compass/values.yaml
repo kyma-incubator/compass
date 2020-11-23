@@ -26,7 +26,7 @@ global:
       version: "PR-1618"
     gateway:
       dir:
-      version: "PR-1612"
+      version: "PR-1626"
     healthchecker:
       dir:
       version: "PR-1460"
@@ -47,7 +47,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1593"
+        version: "PR-1626"
       connector:
         dir:
         version: "PR-1582"
