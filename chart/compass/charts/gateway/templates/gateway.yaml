@@ -1,8 +1,8 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: {{ .Values.global.istio.gateway.name }}-mtls
-  namespace: {{ .Values.global.istio.gateway.namespace }}
+  name: {{ .Values.global.istio.mtlsGateway.name }}
+  namespace: {{ .Values.global.istio.mtlsGateway.namespace }}
 spec:
   selector:
     istio: ingressgateway # use istio default ingress gateway

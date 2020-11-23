@@ -148,8 +148,11 @@ global:
     certificateDataHeader: "Certificate-Data"
 
   istio:
+    mtlsGateway:
+      name: "compass-gateway-mtls"
+      namespace: "compass-system"
     gateway:
-      name: "compass-gateway"
+      name: "kyma-gateway"
       namespace: "kyma-system"
     proxy:
       port: 15020
