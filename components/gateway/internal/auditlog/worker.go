@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/gateway/internal/metrics"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 )
 
@@ -13,13 +14,15 @@ type Worker struct {
 	client          Client
 	auditlogChannel chan proxy.AuditlogMessage
 	done            chan bool
+	collector       *metrics.AuditlogCollector
 }
 
-func NewWorker(svc proxy.AuditlogService, auditlogChannel chan proxy.AuditlogMessage, done chan bool) *Worker {
+func NewWorker(svc proxy.AuditlogService, auditlogChannel chan proxy.AuditlogMessage, done chan bool, collector *metrics.AuditlogCollector) *Worker {
 	return &Worker{
 		svc:             svc,
 		auditlogChannel: auditlogChannel,
 		done:            done,
+		collector:       collector,
 	}
 }
 
@@ -33,6 +36,7 @@ func (w *Worker) Start() {
 			return
 		case msg := <-w.auditlogChannel:
 			log.Printf("Read from auditlog channel (size=%d, cap=%d)", len(w.auditlogChannel), cap(w.auditlogChannel))
+			w.collector.SetChannelSize(len(w.auditlogChannel))
 			ctx := context.WithValue(ctx, correlation.HeadersContextKey, msg.CorrelationIDHeaders)
 			err := w.svc.Log(ctx, msg)
 			if err != nil {

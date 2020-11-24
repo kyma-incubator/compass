@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/gateway/internal/metrics"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
@@ -16,12 +17,14 @@ import (
 type Sink struct {
 	logsChannel chan proxy.AuditlogMessage
 	timeout     time.Duration
+	collector   *metrics.AuditlogCollector
 }
 
-func NewSink(logsChannel chan proxy.AuditlogMessage, timeout time.Duration) *Sink {
+func NewSink(logsChannel chan proxy.AuditlogMessage, timeout time.Duration, collector *metrics.AuditlogCollector) *Sink {
 	return &Sink{
 		logsChannel: logsChannel,
 		timeout:     timeout,
+		collector:   collector,
 	}
 }
 
@@ -30,6 +33,7 @@ func (sink *Sink) Log(_ context.Context, msg proxy.AuditlogMessage) error {
 	case sink.logsChannel <- msg:
 		log.Printf("Successfully registered auditlog message for processing to the queue (size=%d, capacity=%d)",
 			len(sink.logsChannel), cap(sink.logsChannel))
+		sink.collector.SetChannelSize(len(sink.logsChannel))
 	case <-time.After(sink.timeout):
 		return errors.New("cannot write to the channel")
 	}

@@ -5,17 +5,25 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/gateway/internal/metrics"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/handler"
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
 	timeservices "github.com/kyma-incubator/compass/components/gateway/internal/time"
 	"github.com/kyma-incubator/compass/components/gateway/internal/uuid"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
@@ -28,10 +36,17 @@ type config struct {
 
 	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3001"`
 	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3002"`
+	MetricsAddress  string `envconfig:"default=127.0.0.1:3003"`
 	AuditlogEnabled bool   `envconfig:"default=false"`
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
+
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
@@ -39,12 +54,15 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(correlation.AttachCorrelationIDToContext())
 
+	metricsCollector := metrics.NewAuditlogMetricCollector()
+	prometheus.MustRegister(metricsCollector)
+
 	done := make(chan bool)
 	var auditlogSink proxy.AuditlogService
 	var auditlogSvc proxy.AuditlogService
 	if cfg.AuditlogEnabled {
 		log.Println("Auditlog is enabled")
-		auditlogSink, auditlogSvc, err = initAuditLogs(done)
+		auditlogSink, auditlogSvc, err = initAuditLogs(done, metricsCollector)
 		exitOnError(err, "Error while initializing auditlog service")
 	} else {
 		log.Println("Auditlog is disabled")
@@ -79,6 +97,17 @@ func main() {
 		ReadHeaderTimeout: cfg.ServerTimeout,
 	}
 
+	metricsHandler := http.NewServeMux()
+	metricsHandler.Handle("/metrics", promhttp.Handler())
+
+	runMetricsSrv, shutdownMetricsSrv := createServer(cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
+	go func() {
+		<-ctx.Done()
+		// Interrupt signal received - shut down the servers
+		shutdownMetricsSrv()
+	}()
+	go runMetricsSrv()
+
 	log.Printf("Listening on %s", cfg.Address)
 	if err := server.ListenAndServe(); err != nil {
 		done <- true
@@ -101,6 +130,33 @@ func proxyRequestsForComponent(router *mux.Router, path string, targetOrigin str
 	return nil
 }
 
+func createServer(address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
+	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
+	exitOnError(err, "Error while configuring tenant mapping handler")
+
+	srv := &http.Server{
+		Addr:              address,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: timeout,
+	}
+
+	runFn := func() {
+		logrus.Infof("Running %s server on %s...", name, address)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			logrus.Errorf("%s HTTP server ListenAndServe: %v", name, err)
+		}
+	}
+
+	shutdownFn := func() {
+		logrus.Infof("Shutting down %s server...", name)
+		if err := srv.Shutdown(context.Background()); err != nil {
+			logrus.Errorf("%s HTTP server Shutdown: %v", name, err)
+		}
+	}
+
+	return runFn, shutdownFn
+}
+
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
@@ -110,7 +166,7 @@ func exitOnError(err error, context string) {
 
 // initAuditLogs creates proxy.AuditlogService instances, the first one is an asynchronous sink,
 // while the second one is a synchronous service with pre-logging functionality.
-func initAuditLogs(done chan bool) (proxy.AuditlogService, proxy.AuditlogService, error) {
+func initAuditLogs(done chan bool, collector *metrics.AuditlogCollector) (proxy.AuditlogService, proxy.AuditlogService, error) {
 	cfg := auditlog.Config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
@@ -173,10 +229,10 @@ func initAuditLogs(done chan bool) (proxy.AuditlogService, proxy.AuditlogService
 	auditlogSvc := auditlog.NewService(auditlogClient, msgFactory)
 	msgChannel := make(chan proxy.AuditlogMessage, cfg.MsgChannelSize)
 	workers := make(chan bool, cfg.WriteWorkers)
-	initWorkers(workers, auditlogSvc, done, msgChannel)
+	initWorkers(workers, auditlogSvc, done, msgChannel, collector)
 
 	log.Printf("Auditlog configured successfully, auth mode:%s", cfg.AuthMode)
-	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout), auditlogSvc, nil
+	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout, collector), auditlogSvc, nil
 }
 
 func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
@@ -188,7 +244,7 @@ func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
 	}
 }
 
-func initWorkers(workers chan bool, auditlogSvc proxy.AuditlogService, done chan bool, msgChannel chan proxy.AuditlogMessage) {
+func initWorkers(workers chan bool, auditlogSvc proxy.AuditlogService, done chan bool, msgChannel chan proxy.AuditlogMessage, collector *metrics.AuditlogCollector) {
 	go func() {
 		for {
 			select {
@@ -197,7 +253,7 @@ func initWorkers(workers chan bool, auditlogSvc proxy.AuditlogService, done chan
 				return
 			case workers <- true:
 			}
-			worker := auditlog.NewWorker(auditlogSvc, msgChannel, done)
+			worker := auditlog.NewWorker(auditlogSvc, msgChannel, done, collector)
 			go func() {
 				log.Println("Starting worker for auditlog message processing")
 				worker.Start()
