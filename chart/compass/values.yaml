@@ -226,6 +226,8 @@ global:
   tenantFetchers:
     job1:
       enabled: false
+      configMapNamespace: "compass-system"
+      configMapTimestampField: "lastConsumedTenantTimestamp"
       manageSecrets: true
       providerName: "compass"
       schedule: "*/5 * * * *"
@@ -246,6 +248,7 @@ global:
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"
+        creationTimeField: "creationTime"
       queryMapping:
         pageNumField: "pageNum"
         pageSizeField: "pageSize"

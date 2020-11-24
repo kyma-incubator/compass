@@ -1,6 +1,14 @@
 {{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
 {{if eq $config.enabled true}}
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "compass-tenant-fetcher-{{ $tenantFetcherName }}-config"
+  namespace: compass-system
+data:
+  {{ $config.configMapTimestampField }}: "1"
+---
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -25,6 +33,8 @@ spec:
             image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
             imagePullPolicy: IfNotPresent
             env:
+              - name: APP_LOCAL_RUN
+                value: "false"
               - name: APP_DB_USER
                 valueFrom:
                   secretKeyRef:
@@ -82,6 +92,12 @@ spec:
                   secretKeyRef:
                     name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-token-endpoint
+              - name: APP_CONFIGMAP_NAME
+                value: compass-tenant-fetcher-{{ $tenantFetcherName }}-config
+              - name: APP_CONFIGMAP_NAMESPACE
+                value: {{ $config.configMapNamespace }}
+              - name: APP_CONFIGMAP_TIMESTAMP_FIELD
+                value: {{ $config.configMapTimestampField }}
               - name: APP_MAPPING_FIELD_ID
                 value: {{ $config.fieldMapping.idField }}
               - name: APP_MAPPING_FIELD_NAME
@@ -92,6 +108,8 @@ spec:
                 value: {{ $config.fieldMapping.discriminatorValue }}
               - name: APP_MAPPING_FIELD_DETAILS
                 value: {{ $config.fieldMapping.detailsField}}
+              - name: APP_MAPPING_FIELD_CREATION_TIME_FIELD
+                value: {{ $config.fieldMapping.creationTimeField}}
               - name: APP_TENANT_TOTAL_PAGES_FIELD
                 value: {{ $config.fieldMapping.totalPagesField}}
               - name: APP_TENANT_TOTAL_RESULTS_FIELD

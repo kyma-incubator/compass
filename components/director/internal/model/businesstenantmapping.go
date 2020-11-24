@@ -27,9 +27,10 @@ func (t BusinessTenantMapping) WithStatus(status TenantStatus) BusinessTenantMap
 }
 
 type BusinessTenantMappingInput struct {
-	Name           string `json:"name"`
-	ExternalTenant string `json:"id"`
-	Provider       string
+	CreationTimestamp string `json:"creation_timestamp"`
+	Name              string `json:"name"`
+	ExternalTenant    string `json:"id"`
+	Provider          string
 }
 
 func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *BusinessTenantMapping {

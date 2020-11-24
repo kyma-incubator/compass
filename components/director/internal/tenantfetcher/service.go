@@ -5,15 +5,13 @@ import (
 	"strconv"
 	"time"
 
-	retry "github.com/avast/retry-go"
+	"github.com/avast/retry-go"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/pkg/errors"
 )
 
 type TenantFieldMapping struct {
@@ -24,6 +22,7 @@ type TenantFieldMapping struct {
 	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
 	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
+	CreationTimeField  string `envconfig:"default=creationTime,APP_MAPPING_FIELD_CREATION_TIME_FIELD"`
 	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
 }
@@ -57,6 +56,7 @@ const (
 type Service struct {
 	queryConfig          QueryConfig
 	transact             persistence.Transactioner
+	kubeClient           KubeClient
 	eventAPIClient       EventAPIClient
 	tenantStorageService TenantStorageService
 	providerName         string
@@ -65,9 +65,10 @@ type Service struct {
 	retryAttempts uint
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, fieldMapping TenantFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService) *Service {
+func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService) *Service {
 	return &Service{
 		transact:             transact,
+		kubeClient:           kubeClient,
 		fieldMapping:         fieldMapping,
 		providerName:         providerName,
 		eventAPIClient:       client,
@@ -79,16 +80,23 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, fie
 }
 
 func (s Service) SyncTenants() error {
-	tenantsToCreate, err := s.getTenantsToCreate()
+	lastConsumedTenantTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData()
+	if err != nil {
+		return err
+	}
+
+	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
 	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
 
-	tenantsToDelete, err := s.getTenantsToDelete()
+	tenantsToDelete, err := s.getTenantsToDelete(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
+
+	allTenants := append(tenantsToCreate, tenantsToDelete...)
 
 	deleteTenantsMap := make(map[string]model.BusinessTenantMappingInput)
 	for _, ct := range tenantsToDelete {
@@ -146,19 +154,34 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
+	latestTenantTimestamp, err := timestampOfLatestTenant(allTenants)
+	if err != nil {
+		return err
+	}
+
+	if latestTenantTimestamp == "" {
+		log.Println("No new tenants")
+		return nil
+	}
+
+	err = s.kubeClient.UpdateTenantFetcherConfigMapData(latestTenantTimestamp)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s Service) getTenantsToCreate() ([]model.BusinessTenantMappingInput, error) {
+func (s Service) getTenantsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	var tenantsToCreate []model.BusinessTenantMappingInput
 
-	createdTenants, err := s.fetchTenantsWithRetries(CreatedEventsType)
+	createdTenants, err := s.fetchTenantsWithRetries(CreatedEventsType, fromTimestamp)
 	if err != nil {
 		return nil, err
 	}
 	tenantsToCreate = append(tenantsToCreate, createdTenants...)
 
-	updatedTenants, err := s.fetchTenantsWithRetries(UpdatedEventsType)
+	updatedTenants, err := s.fetchTenantsWithRetries(UpdatedEventsType, fromTimestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -167,14 +190,14 @@ func (s Service) getTenantsToCreate() ([]model.BusinessTenantMappingInput, error
 	return tenantsToCreate, nil
 }
 
-func (s Service) getTenantsToDelete() ([]model.BusinessTenantMappingInput, error) {
-	return s.fetchTenantsWithRetries(DeletedEventsType)
+func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
+	return s.fetchTenantsWithRetries(DeletedEventsType, fromTimestamp)
 }
 
-func (s Service) fetchTenantsWithRetries(eventsType EventsType) ([]model.BusinessTenantMappingInput, error) {
+func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	var tenants []model.BusinessTenantMappingInput
 	err := retry.Do(func() error {
-		fetchedTenants, err := s.fetchTenants(eventsType)
+		fetchedTenants, err := s.fetchTenants(eventsType, fromTimestamp)
 		if err != nil {
 			return err
 		}
@@ -187,11 +210,11 @@ func (s Service) fetchTenantsWithRetries(eventsType EventsType) ([]model.Busines
 	return tenants, nil
 }
 
-func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMappingInput, error) {
+func (s Service) fetchTenants(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	params := QueryParams{
 		s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
 		s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-		s.queryConfig.TimestampField: strconv.FormatInt(1, 10),
+		s.queryConfig.TimestampField: fromTimestamp,
 	}
 	firstPage, err := s.eventAPIClient.FetchTenantEventsPage(eventsType, params)
 	if err != nil {
@@ -231,6 +254,7 @@ func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMapp
 func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) []model.BusinessTenantMappingInput {
 	bussinessTenantMappings := make([]model.BusinessTenantMappingInput, 0)
 	gjson.GetBytes(eventsJSON, s.fieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
+		createdTimestamp := event.Get(s.fieldMapping.CreationTimeField).Raw
 		detailsType := event.Get(s.fieldMapping.DetailsField).Type
 		var details []byte
 		if detailsType == gjson.String {
@@ -242,7 +266,7 @@ func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) 
 			return true
 		}
 
-		tenant, err := s.eventDataToTenant(eventType, details)
+		tenant, err := s.eventDataToTenant(eventType, createdTimestamp, details)
 		if err != nil {
 			log.Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
 			return true
@@ -253,7 +277,7 @@ func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) 
 	return bussinessTenantMappings
 }
 
-func (s Service) eventDataToTenant(eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
+func (s Service) eventDataToTenant(eventType EventsType, createdTimestamp string, eventData []byte) (*model.BusinessTenantMappingInput, error) {
 	if eventType == CreatedEventsType && s.fieldMapping.DiscriminatorField != "" {
 		discriminator, ok := gjson.GetBytes(eventData, s.fieldMapping.DiscriminatorField).Value().(string)
 		if !ok {
@@ -276,9 +300,10 @@ func (s Service) eventDataToTenant(eventType EventsType, eventData []byte) (*mod
 	}
 
 	return &model.BusinessTenantMappingInput{
-		Name:           name,
-		ExternalTenant: id,
-		Provider:       s.providerName,
+		CreationTimestamp: createdTimestamp,
+		Name:              name,
+		ExternalTenant:    id,
+		Provider:          s.providerName,
 	}, nil
 }
 
@@ -292,4 +317,31 @@ func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []mod
 		tenants = append(tenants, t)
 	}
 	return tenants
+}
+
+func timestampOfLatestTenant(tenants []model.BusinessTenantMappingInput) (string, error) {
+	if len(tenants) <= 0 {
+		return "", nil
+	}
+
+	lastTenantTimestamp := tenants[0]
+	num, err := strconv.ParseInt(lastTenantTimestamp.CreationTimestamp, 10, 64)
+	if err != nil {
+		return "", err
+	}
+	lastTenantTimestampTime := time.Unix(0, num)
+
+	for _, v := range tenants {
+		num, err := strconv.ParseInt(v.CreationTimestamp, 10, 64)
+		if err != nil {
+			return "", err
+		}
+		currentTimestamp := time.Unix(0, num)
+
+		if currentTimestamp.After(lastTenantTimestampTime) {
+			lastTenantTimestampTime = currentTimestamp
+		}
+	}
+
+	return strconv.FormatInt(lastTenantTimestampTime.UnixNano(), 10), nil
 }
