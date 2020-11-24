@@ -105,7 +105,7 @@ global:
         keyKey: ca.key
       rootCA:
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
-        cacert: cmp-root-ca # For cert-rotation the cacert should be in different secret
+        cacert: compass-gateway-mtls-certs-cacert # For cert-rotation the cacert should be in different secret
         certificateKey: cacert
     certificateDataHeader: "Certificate-Data"
     revocation:
