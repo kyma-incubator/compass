@@ -40,18 +40,20 @@ func main() {
 	router.Use(correlation.AttachCorrelationIDToContext())
 
 	done := make(chan bool)
-	var auditlogSvc auditlog.AuditlogService
+	var auditlogSink proxy.AuditlogService
+	var auditlogSvc proxy.AuditlogService
 	if cfg.AuditlogEnabled {
 		log.Println("Auditlog is enabled")
-		auditlogSvc, err = initAuditLogs(done)
+		auditlogSink, auditlogSvc, err = initAuditLogs(done)
 		exitOnError(err, "Error while initializing auditlog service")
 	} else {
 		log.Println("Auditlog is disabled")
+		auditlogSink = &auditlog.NoOpService{}
 		auditlogSvc = &auditlog.NoOpService{}
 	}
 
 	correlationTr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
-	tr := proxy.NewTransport(auditlogSvc, correlationTr)
+	tr := proxy.NewTransport(auditlogSink, auditlogSvc, correlationTr)
 
 	err = proxyRequestsForComponent(router, "/connector", cfg.ConnectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Connector")
@@ -106,11 +108,13 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initAuditLogs(done chan bool) (auditlog.AuditlogService, error) {
+// initAuditLogs creates proxy.AuditlogService instances, the first one is an asynchronous sink,
+// while the second one is a synchronous service with pre-logging functionality.
+func initAuditLogs(done chan bool) (proxy.AuditlogService, proxy.AuditlogService, error) {
 	cfg := auditlog.Config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
-		return nil, errors.Wrap(err, "while loading auditlog cfg")
+		return nil, nil, errors.Wrap(err, "while loading auditlog cfg")
 	}
 
 	uuidSvc := uuid.NewService()
@@ -125,7 +129,7 @@ func initAuditLogs(done chan bool) (auditlog.AuditlogService, error) {
 			var basicCfg auditlog.BasicAuthConfig
 			err := envconfig.InitWithPrefix(&basicCfg, "APP")
 			if err != nil {
-				return nil, errors.Wrap(err, "while loading auditlog basic auth configuration")
+				return nil, nil, errors.Wrap(err, "while loading auditlog basic auth configuration")
 			}
 
 			msgFactory = auditlog.NewMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
@@ -142,7 +146,7 @@ func initAuditLogs(done chan bool) (auditlog.AuditlogService, error) {
 			var oauthCfg auditlog.OAuthConfig
 			err := envconfig.InitWithPrefix(&oauthCfg, "APP")
 			if err != nil {
-				return nil, errors.Wrap(err, "while loading auditlog OAuth configuration")
+				return nil, nil, errors.Wrap(err, "while loading auditlog OAuth configuration")
 			}
 
 			ccCfg := fillJWTCredentials(oauthCfg)
@@ -158,21 +162,21 @@ func initAuditLogs(done chan bool) (auditlog.AuditlogService, error) {
 			msgFactory = auditlog.NewMessageFactory(oauthCfg.User, oauthCfg.Tenant, uuidSvc, timeSvc)
 		}
 	default:
-		return nil, fmt.Errorf("invalid auditlog auth mode: %s", cfg.AuthMode)
+		return nil, nil, fmt.Errorf("invalid auditlog auth mode: %s", cfg.AuthMode)
 	}
 
 	auditlogClient, err := auditlog.NewClient(cfg, httpClient)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error while creating auditlog client from cfg")
+		return nil, nil, errors.Wrap(err, "Error while creating auditlog client from cfg")
 	}
 
 	auditlogSvc := auditlog.NewService(auditlogClient, msgFactory)
-	msgChannel := make(chan auditlog.Message, cfg.MsgChannelSize)
+	msgChannel := make(chan proxy.AuditlogMessage, cfg.MsgChannelSize)
 	workers := make(chan bool, cfg.WriteWorkers)
 	initWorkers(workers, auditlogSvc, done, msgChannel)
 
 	log.Printf("Auditlog configured successfully, auth mode:%s", cfg.AuthMode)
-	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout), nil
+	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout), auditlogSvc, nil
 }
 
 func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
@@ -184,7 +188,7 @@ func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
 	}
 }
 
-func initWorkers(workers chan bool, auditlogSvc auditlog.AuditlogService, done chan bool, msgChannel chan auditlog.Message) {
+func initWorkers(workers chan bool, auditlogSvc proxy.AuditlogService, done chan bool, msgChannel chan proxy.AuditlogMessage) {
 	go func() {
 		for {
 			select {
