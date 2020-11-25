@@ -85,18 +85,16 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
-	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
+	tenantsToCreate, latestCreateTime, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
 	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
 
-	tenantsToDelete, err := s.getTenantsToDelete(lastConsumedTenantTimestamp)
+	tenantsToDelete, latestDeleteTime, err := s.getTenantsToDelete(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
-
-	allTenants := append(tenantsToCreate, tenantsToDelete...)
 
 	deleteTenantsMap := make(map[string]model.BusinessTenantMappingInput)
 	for _, ct := range tenantsToDelete {
@@ -154,17 +152,17 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
-	latestTenantTimestamp, err := timestampOfLatestTenant(allTenants)
-	if err != nil {
-		return err
+	newConsumptionTime := latestCreateTime
+	if latestDeleteTime.Before(latestCreateTime) {
+		newConsumptionTime = latestDeleteTime
 	}
 
-	if latestTenantTimestamp == "" {
+	if newConsumptionTime.IsZero() {
 		log.Println("No new tenants")
 		return nil
 	}
 
-	err = s.kubeClient.UpdateTenantFetcherConfigMapData(latestTenantTimestamp)
+	err = s.kubeClient.UpdateTenantFetcherConfigMapData(convertTimeToUnixNanoString(newConsumptionTime))
 	if err != nil {
 		return err
 	}
@@ -172,26 +170,51 @@ func (s Service) SyncTenants() error {
 	return nil
 }
 
-func (s Service) getTenantsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
+func (s Service) getTenantsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, time.Time, error) {
 	var tenantsToCreate []model.BusinessTenantMappingInput
 
 	createdTenants, err := s.fetchTenantsWithRetries(CreatedEventsType, fromTimestamp)
 	if err != nil {
-		return nil, err
+		return nil, time.Time{}, err
 	}
 	tenantsToCreate = append(tenantsToCreate, createdTenants...)
 
 	updatedTenants, err := s.fetchTenantsWithRetries(UpdatedEventsType, fromTimestamp)
 	if err != nil {
-		return nil, err
+		return nil, time.Time{}, err
 	}
 	tenantsToCreate = append(tenantsToCreate, updatedTenants...)
 
-	return tenantsToCreate, nil
+	latestCreateTenantTime, err := getLatestTenantTime(createdTenants)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+
+	latestUpdateTenantTime, err := getLatestTenantTime(updatedTenants)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+
+	olderTime := latestCreateTenantTime
+	if latestUpdateTenantTime.Before(latestCreateTenantTime) {
+		olderTime = latestUpdateTenantTime
+	}
+
+	return tenantsToCreate, olderTime, nil
 }
 
-func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
-	return s.fetchTenantsWithRetries(DeletedEventsType, fromTimestamp)
+func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, time.Time, error) {
+	deletedTenants, err := s.fetchTenantsWithRetries(DeletedEventsType, fromTimestamp)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+
+	latestDeleteTenant, err := getLatestTenantTime(deletedTenants)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+
+	return deletedTenants, latestDeleteTenant, err
 }
 
 func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
@@ -319,29 +342,31 @@ func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []mod
 	return tenants
 }
 
-func timestampOfLatestTenant(tenants []model.BusinessTenantMappingInput) (string, error) {
+func getLatestTenantTime(tenants []model.BusinessTenantMappingInput) (time.Time, error) {
 	if len(tenants) <= 0 {
-		return "", nil
+		return time.Time{}, nil
 	}
 
-	lastTenantTimestamp := tenants[0]
-	num, err := strconv.ParseInt(lastTenantTimestamp.CreationTimestamp, 10, 64)
-	if err != nil {
-		return "", err
-	}
-	lastTenantTimestampTime := time.Unix(0, num)
-
-	for _, v := range tenants {
-		num, err := strconv.ParseInt(v.CreationTimestamp, 10, 64)
+	tenantsTimes := make([]time.Time, len(tenants))
+	for _, t := range tenants {
+		num, err := strconv.ParseInt(t.CreationTimestamp, 10, 64)
 		if err != nil {
-			return "", err
+			return time.Time{}, err
 		}
-		currentTimestamp := time.Unix(0, num)
 
-		if currentTimestamp.After(lastTenantTimestampTime) {
-			lastTenantTimestampTime = currentTimestamp
+		tenantsTimes = append(tenantsTimes, time.Unix(0, num))
+	}
+
+	latestTenantTime := tenantsTimes[0]
+	for _, t := range tenantsTimes {
+		if t.After(latestTenantTime) {
+			latestTenantTime = t
 		}
 	}
 
-	return strconv.FormatInt(lastTenantTimestampTime.UnixNano(), 10), nil
+	return latestTenantTime, nil
+}
+
+func convertTimeToUnixNanoString(timestamp time.Time) string {
+	return strconv.FormatInt(timestamp.UnixNano(), 10)
 }
