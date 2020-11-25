@@ -20,10 +20,7 @@ type K8sConfig struct {
 	Timeout     time.Duration `envconfig:"default=2m"`
 }
 
-//TODO: Move this to pkg since its a generic func?
 func NewK8sClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
-	//TODO: Add context to use in logrus
-
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
 		log.Println("Failed to read in cluster Config", err)

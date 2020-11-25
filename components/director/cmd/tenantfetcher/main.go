@@ -31,8 +31,6 @@ type config struct {
 }
 
 func main() {
-	//TODO: Add context?
-
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")

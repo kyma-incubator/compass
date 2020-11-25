@@ -3,7 +3,7 @@ package tenantfetcher
 import (
 	"errors"
 
-	kube "github.com/kyma-incubator/compass/components/director/internal/kubernetes"
+	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
