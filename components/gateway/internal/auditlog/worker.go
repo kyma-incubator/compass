@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/gateway/internal/metrics"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 )
 
@@ -14,10 +13,10 @@ type Worker struct {
 	client          Client
 	auditlogChannel chan proxy.AuditlogMessage
 	done            chan bool
-	collector       *metrics.AuditlogCollector
+	collector       MetricCollector
 }
 
-func NewWorker(svc proxy.AuditlogService, auditlogChannel chan proxy.AuditlogMessage, done chan bool, collector *metrics.AuditlogCollector) *Worker {
+func NewWorker(svc proxy.AuditlogService, auditlogChannel chan proxy.AuditlogMessage, done chan bool, collector MetricCollector) *Worker {
 	return &Worker{
 		svc:             svc,
 		auditlogChannel: auditlogChannel,

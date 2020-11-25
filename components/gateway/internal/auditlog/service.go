@@ -8,19 +8,22 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/gateway/internal/metrics"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/pkg/errors"
 )
 
+type MetricCollector interface {
+	SetChannelSize(size int)
+}
+
 type Sink struct {
 	logsChannel chan proxy.AuditlogMessage
 	timeout     time.Duration
-	collector   *metrics.AuditlogCollector
+	collector   MetricCollector
 }
 
-func NewSink(logsChannel chan proxy.AuditlogMessage, timeout time.Duration, collector *metrics.AuditlogCollector) *Sink {
+func NewSink(logsChannel chan proxy.AuditlogMessage, timeout time.Duration, collector MetricCollector) *Sink {
 	return &Sink{
 		logsChannel: logsChannel,
 		timeout:     timeout,

@@ -285,7 +285,7 @@ func TestSink_TimeoutOnWrite(t *testing.T) {
 
 	chanMsg := make(chan proxy.AuditlogMessage)
 	defer close(chanMsg)
-	sink := auditlog.NewSink(chanMsg, time.Millisecond*100)
+	sink := auditlog.NewSink(chanMsg, time.Millisecond*100, &FakeMetricCollector{})
 
 	//WHEN
 	msg := proxy.AuditlogMessage{
@@ -452,3 +452,7 @@ func fixResponseMultipleError(t *testing.T) string {
 	require.NoError(t, err)
 	return string(output)
 }
+
+type FakeMetricCollector struct{}
+
+func (fm *FakeMetricCollector) SetChannelSize(int) {}
