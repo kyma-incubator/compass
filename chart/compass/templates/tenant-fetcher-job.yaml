@@ -33,8 +33,8 @@ spec:
             image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
             imagePullPolicy: IfNotPresent
             env:
-              - name: APP_LOCAL_RUN
-                value: "false"
+              - name: APP_USE_KUBERNETES
+                value: "true"
               - name: APP_DB_USER
                 valueFrom:
                   secretKeyRef:

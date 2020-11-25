@@ -15,7 +15,7 @@ import (
 )
 
 type config struct {
-	LocalRun string `envconfig:"default=false,APP_LOCAL_RUN"`
+	UseKubernetes string `envconfig:"default=true,APP_USE_KUBERNETES"`
 
 	Database         persistence.DatabaseConfig
 	KubernetesConfig tenantfetcher.KubeConfig
@@ -52,11 +52,11 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	localRun, err := strconv.ParseBool(cfg.LocalRun)
-	exitOnError(err, "Error parsing environment variable for local run")
+	shouldUseKubernetes, err := strconv.ParseBool(cfg.UseKubernetes)
+	exitOnError(err, "Error parsing environment variable for Kubernetes usage")
 
 	kubeClient := tenantfetcher.NewNoopK8sClient()
-	if !localRun {
+	if shouldUseKubernetes {
 		kubeClient, err = tenantfetcher.NewK8sClient(cfg.KubernetesConfig.ConfigMapNamespace, cfg.KubernetesConfig.ConfigMapName, cfg.KubernetesConfig.ConfigMapTimestampField)
 		exitOnError(err, "Failed to initialize Kubernetes client")
 	}
