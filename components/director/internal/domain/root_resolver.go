@@ -41,7 +41,7 @@ import (
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
@@ -135,7 +135,7 @@ func NewRootResolver(
 		Timeout:   clientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
@@ -236,7 +236,7 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.Labe
 	}
 
 	if consumerInfo.ConsumerType == consumer.Runtime {
-		log.Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
+		log.C(ctx).Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
 		return r.app.ApplicationsForRuntime(ctx, consumerInfo.ConsumerID, first, after)
 	}
 
