@@ -4,7 +4,7 @@ import (
 	"io"
 	"strconv"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
@@ -25,6 +25,6 @@ func (y *PageCursor) UnmarshalGQL(v interface{}) error {
 func (y PageCursor) MarshalGQL(w io.Writer) {
 	_, err := io.WriteString(w, strconv.Quote(string(y)))
 	if err != nil {
-		log.Errorf("while writing %T: %s", y, err)
+		log.D().Errorf("while writing %T: %s", y, err)
 	}
 }
