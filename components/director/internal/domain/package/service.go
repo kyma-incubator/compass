@@ -3,7 +3,7 @@ package mp_package
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -94,9 +94,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Pac
 	if err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Package with id %s and name %s for Application with id %s", id, pkg.Name, applicationID)
 	}
-	log.Infof("Successfully created a Package with id %s and name %s for Application with id %s", id, pkg.Name, applicationID)
+	log.C(ctx).Infof("Successfully created a Package with id %s and name %s for Application with id %s", id, pkg.Name, applicationID)
 
-	log.Infof("Creating related resources in Package with id %s and name %s for Application with id %s", id, pkg.Name, applicationID)
+	log.C(ctx).Infof("Creating related resources in Package with id %s and name %s for Application with id %s", id, pkg.Name, applicationID)
 	err = s.createRelatedResources(ctx, in, tnt, id)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", applicationID)
@@ -257,7 +257,7 @@ func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis
 		if err != nil {
 			return errors.Wrapf(err, "while creating APIDefinition with id %s within Package with id %s", apiDefID, packageID)
 		}
-		log.Infof("Successfully created APIDefinition with id %s within Package with id %s", apiDefID, packageID)
+		log.C(ctx).Infof("Successfully created APIDefinition with id %s within Package with id %s", apiDefID, packageID)
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
 			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
@@ -285,7 +285,7 @@ func (s *service) createEvents(ctx context.Context, packageID, tenant string, ev
 		if err != nil {
 			return errors.Wrapf(err, "while creating EventDefinition with id %s in Package with id %s", eventID, packageID)
 		}
-		log.Infof("Successfully created EventDefinition with id %s in Package with id %s", eventID, packageID)
+		log.C(ctx).Infof("Successfully created EventDefinition with id %s in Package with id %s", eventID, packageID)
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
 			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventID)
@@ -306,7 +306,7 @@ func (s *service) createDocuments(ctx context.Context, packageID, tenant string,
 		if err != nil {
 			return errors.Wrapf(err, "while creating Document with id %s in Package with id %s", documentID, packageID)
 		}
-		log.Infof("Successfully created Document with id %s in Package with id %s", documentID, packageID)
+		log.C(ctx).Infof("Successfully created Document with id %s in Package with id %s", documentID, packageID)
 
 		if item.FetchRequest != nil {
 			_, err = s.createFetchRequest(ctx, tenant, item.FetchRequest, model.DocumentFetchRequestReference, documentID)
@@ -330,6 +330,6 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in *mod
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating FetchRequest with id %s for %s with id %s", id, objectType, objectID)
 	}
-	log.Infof("Successfully created FetchRequest with id %s for type %s with id %s", id, objectType, objectID)
+	log.C(ctx).Infof("Successfully created FetchRequest with id %s for type %s with id %s", id, objectType, objectID)
 	return fr, nil
 }
