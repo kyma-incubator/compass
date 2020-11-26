@@ -1,6 +1,8 @@
 package authenticator
 
 import (
+	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -8,7 +10,6 @@ import (
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 /**
@@ -39,7 +40,7 @@ SOFTWARE.
 */
 
 // fetchJWK fetches a JWK resource specified by a URL
-func FetchJWK(urlstring string, options ...jwk.Option) (*jwk.Set, error) {
+func FetchJWK(ctx context.Context, urlstring string, options ...jwk.Option) (*jwk.Set, error) {
 	u, err := url.Parse(urlstring)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse url")
@@ -57,7 +58,7 @@ func FetchJWK(urlstring string, options ...jwk.Option) (*jwk.Set, error) {
 		defer func() {
 			err := f.Close()
 			if err != nil {
-				logrus.Error(err)
+				log.C(ctx).Error(err)
 			}
 		}()
 
