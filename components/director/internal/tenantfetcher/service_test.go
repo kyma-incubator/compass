@@ -23,10 +23,11 @@ func TestService_SyncTenants(t *testing.T) {
 	fieldMapping := tenantfetcher.TenantFieldMapping{
 		NameField: "name",
 		IDField:   "id",
+		CreationTimeField: "creationTime",
 	}
-	event1 := fixEvent("1", "foo", fieldMapping)
-	event2 := fixEvent("2", "bar", fieldMapping)
-	event3 := fixEvent("3", "baz", fieldMapping)
+	event1 := fixEvent("1", "foo", 1, fieldMapping)
+	event2 := fixEvent("2", "bar", 1, fieldMapping)
+	event3 := fixEvent("3", "baz", 1, fieldMapping)
 
 	tenantEvents := []byte(fmt.Sprintf(`[%s]`, bytes.Join(
 		[][]byte{
@@ -36,9 +37,9 @@ func TestService_SyncTenants(t *testing.T) {
 	)))
 
 	businessTenants := []model.BusinessTenantMappingInput{
-		fixBusinessTenantMappingInput("foo", "1", provider),
-		fixBusinessTenantMappingInput("bar", "2", provider),
-		fixBusinessTenantMappingInput("baz", "3", provider),
+		fixBusinessTenantMappingInput("foo", "1", "1", provider),
+		fixBusinessTenantMappingInput("bar", "1", "2", provider),
+		fixBusinessTenantMappingInput("baz", "1", "3", provider),
 	}
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
@@ -336,7 +337,8 @@ func TestService_SyncTenants(t *testing.T) {
 				TimestampField: "timestamp",
 				PageSizeValue:  "1",
 				PageStartValue: "1",
-			}, transact, tenantfetcher.TenantFieldMapping{
+			}, transact, tenantfetcher.NewNoopK8sClient(), tenantfetcher.TenantFieldMapping{
+				CreationTimeField: "creationTime",
 				DetailsField:       "eventData",
 				DiscriminatorField: "",
 				DiscriminatorValue: "",
@@ -386,7 +388,7 @@ func TestService_SyncTenants(t *testing.T) {
 			TimestampField: "timestamp",
 			PageSizeValue:  "1",
 			PageStartValue: "1",
-		}, transact, tenantfetcher.TenantFieldMapping{
+		}, transact, tenantfetcher.NewNoopK8sClient(), tenantfetcher.TenantFieldMapping{
 			DetailsField:       "details",
 			DiscriminatorField: "",
 			DiscriminatorValue: "",

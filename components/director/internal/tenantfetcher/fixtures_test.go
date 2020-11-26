@@ -9,13 +9,14 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 )
 
-func fixEvent(id, name string, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
+func fixEvent(id, name string, timestampUnixNano int64, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
 	eventData := fmt.Sprintf(`{"%s":"%s","%s":"%s"}`, fieldMapping.IDField, id, fieldMapping.NameField, name)
 
 	return []byte(fmt.Sprintf(`{
 		"id":        %s,
+		"creationTime": %d,
 		"eventData": %s,
-	}`, fixID(), eventData))
+	}`, fixID(), timestampUnixNano, eventData))
 }
 
 func fixEventWithDiscriminator(id, name, discriminator string, fieldMapping tenantfetcher.TenantFieldMapping) []byte {
@@ -32,9 +33,10 @@ func fixEventWithDiscriminator(id, name, discriminator string, fieldMapping tena
 	}`, fixID(), eventData))
 }
 
-func fixBusinessTenantMappingInput(name, externalTenant, provider string) model.BusinessTenantMappingInput {
+func fixBusinessTenantMappingInput(name, timestamp, externalTenant, provider string) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
+		CreationTimestamp: timestamp,
 		ExternalTenant: externalTenant,
 		Provider:       provider,
 	}
