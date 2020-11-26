@@ -43,7 +43,7 @@ type LabelUpsertService interface {
 //go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(labels *map[string]interface{})
+	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
 //go:generate mockery -name=ScenarioAssignmentEngine -output=automock -outpkg=automock -case=underscore
@@ -170,7 +170,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	if len(scenarios) > 0 {
 		in.Labels[model.ScenariosKey] = scenarios
 	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
+		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
