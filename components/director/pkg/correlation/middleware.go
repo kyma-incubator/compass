@@ -18,10 +18,10 @@ package correlation
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -84,7 +84,7 @@ func headersFromContext(ctx context.Context) Headers {
 		var ok bool
 		headersFromCtx, ok = ctx.Value(HeadersContextKey).(Headers)
 		if !ok {
-			logrus.Errorf("unexpected type of %s: %T, should be %T", HeadersContextKey, headersFromCtx, Headers{})
+			log.C(ctx).Errorf("unexpected type of %s: %T, should be %T", HeadersContextKey, headersFromCtx, Headers{})
 		}
 	}
 
