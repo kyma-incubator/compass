@@ -1,7 +1,9 @@
 package runtimemapping
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"net/url"
 	"path"
@@ -12,7 +14,6 @@ import (
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,28 +29,27 @@ const (
 	openIDConfigSubpath = ".well-known/openid-configuration"
 )
 
+//TODO add context
 type KeyGetter interface {
-	GetKey(token *jwt.Token) (interface{}, error)
+	GetKey(ctx context.Context, token *jwt.Token) (interface{}, error)
 }
 
 type tokenVerifier struct {
-	logger *logrus.Logger
 	keys   KeyGetter
 }
 
-func NewTokenVerifier(logger *logrus.Logger, keys KeyGetter) *tokenVerifier {
+func NewTokenVerifier(keys KeyGetter) *tokenVerifier {
 	return &tokenVerifier{
-		logger: logger,
 		keys:   keys,
 	}
 }
 
-func (tv *tokenVerifier) Verify(token string) (*jwt.MapClaims, error) {
+func (tv *tokenVerifier) Verify(ctx context.Context, token string) (*jwt.MapClaims, error) {
 	if token == "" {
 		return nil, apperrors.NewUnauthorizedError("token cannot be empty")
 	}
 
-	claims, err := tv.verifyToken(token)
+	claims, err := tv.verifyToken(ctx, token)
 	if err != nil {
 		return nil, errors.Wrap(err, "while veryfing the token")
 	}
@@ -57,11 +57,12 @@ func (tv *tokenVerifier) Verify(token string) (*jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func (tv *tokenVerifier) verifyToken(tokenStr string) (*jwt.MapClaims, error) {
+func (tv *tokenVerifier) verifyToken(ctx context.Context, tokenStr string) (*jwt.MapClaims, error) {
 	tokenStr = strings.TrimPrefix(tokenStr, bearerPrefix)
 	claims := new(jwt.MapClaims)
 
-	_, err := new(jwt.Parser).ParseWithClaims(tokenStr, claims, tv.keys.GetKey)
+	_, err := new(jwt.Parser).ParseWithClaims(tokenStr, claims, func(t *jwt.Token)(interface{}, error) {
+		return tv.keys.GetKey(ctx, t)})
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing the token with claims")
 	}
@@ -69,22 +70,21 @@ func (tv *tokenVerifier) verifyToken(tokenStr string) (*jwt.MapClaims, error) {
 	return claims, nil
 }
 
+
 type jwksFetch struct {
-	logger *logrus.Logger
 }
 
-func NewJWKsFetch(logger *logrus.Logger) *jwksFetch {
+func NewJWKsFetch() *jwksFetch {
 	return &jwksFetch{
-		logger: logger,
 	}
 }
 
-func (f *jwksFetch) GetKey(token *jwt.Token) (interface{}, error) {
+func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, error) {
 	if token == nil {
 		return nil, apperrors.NewInternalError("token cannot be nil")
 	}
 
-	jwksURI, err := f.getJWKsURI(*token)
+	jwksURI, err := f.getJWKsURI(ctx, *token)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting the JWKs URI")
 	}
@@ -109,7 +109,7 @@ func (f *jwksFetch) GetKey(token *jwt.Token) (interface{}, error) {
 	return nil, apperrors.NewInternalError("unable to find a proper key")
 }
 
-func (f *jwksFetch) getJWKsURI(token jwt.Token) (string, error) {
+func (f *jwksFetch) getJWKsURI(ctx context.Context, token jwt.Token) (string, error) {
 	discoveryURL, err := f.getDiscoveryURL(token)
 	if err != nil {
 		return "", errors.Wrap(err, "while getting the discovery URL")
@@ -121,7 +121,7 @@ func (f *jwksFetch) getJWKsURI(token jwt.Token) (string, error) {
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			f.logger.Error(err)
+			log.C(ctx).Error(err)
 		}
 	}()
 

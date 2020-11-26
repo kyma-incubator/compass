@@ -15,9 +15,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+//todo pass ctx
 //go:generate mockery -name=TokenVerifier -output=automock -outpkg=automock -case=underscore
 type TokenVerifier interface {
-	Verify(token string) (*jwt.MapClaims, error)
+	Verify(ctx context.Context, token string) (*jwt.MapClaims, error)
 }
 
 //go:generate mockery -name=RuntimeService -output=automock -outpkg=automock -case=underscore
@@ -100,7 +101,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) processRequest(ctx context.Context, reqData *oathkeeper.ReqData) error {
-	claims, err := h.tokenVerifier.Verify(reqData.Header.Get("Authorization"))
+	claims, err := h.tokenVerifier.Verify(ctx, reqData.Header.Get("Authorization"))
 	if err != nil {
 		return errors.Wrap(err, "while verifying the token")
 	}

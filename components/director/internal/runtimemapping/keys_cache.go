@@ -1,7 +1,9 @@
 package runtimemapping
 
 import (
+	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"sync"
 	"time"
 
@@ -9,7 +11,6 @@ import (
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type jwkCacheEntry struct {
@@ -22,24 +23,23 @@ func (e jwkCacheEntry) IsExpired() bool {
 	return time.Now().After(e.expireAt)
 }
 
+
 type jwksCache struct {
-	logger    *logrus.Logger
 	fetch     KeyGetter
 	expPeriod time.Duration
 	cache     map[string]jwkCacheEntry
 	flag      sync.RWMutex
 }
 
-func NewJWKsCache(logger *logrus.Logger, fetch KeyGetter, expPeriod time.Duration) *jwksCache {
+func NewJWKsCache(fetch KeyGetter, expPeriod time.Duration) *jwksCache {
 	return &jwksCache{
-		logger:    logger,
 		fetch:     fetch,
 		expPeriod: expPeriod,
 		cache:     make(map[string]jwkCacheEntry),
 	}
 }
 
-func (c *jwksCache) GetKey(token *jwt.Token) (interface{}, error) {
+func (c *jwksCache) GetKey(ctx context.Context, token *jwt.Token) (interface{}, error) {
 	if token == nil {
 		return nil, apperrors.NewUnauthorizedError("token cannot be nil")
 	}
@@ -54,12 +54,12 @@ func (c *jwksCache) GetKey(token *jwt.Token) (interface{}, error) {
 	c.flag.RUnlock()
 
 	if !exists || cachedKey.IsExpired() {
-		key, err := c.fetch.GetKey(token)
+		key, err := c.fetch.GetKey(ctx, token)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting the key with ID [kid=%s]", keyID)
 		}
 
-		c.logger.Info(fmt.Sprintf("adding key %s to cache", keyID))
+		log.C(ctx).Info(fmt.Sprintf("adding key %s to cache", keyID))
 
 		c.flag.Lock()
 		c.cache[keyID] = jwkCacheEntry{
@@ -72,12 +72,12 @@ func (c *jwksCache) GetKey(token *jwt.Token) (interface{}, error) {
 		return key, nil
 	}
 
-	c.logger.Info(fmt.Sprintf("using key %s from cache", keyID))
+	log.C(ctx).Info(fmt.Sprintf("using key %s from cache", keyID))
 
 	return cachedKey.key, nil
 }
 
-func (c *jwksCache) Cleanup() {
+func (c *jwksCache) Cleanup(ctx context.Context) {
 	var expiredKeys []string
 	c.flag.RLock()
 	for keyID := range c.cache {
@@ -94,7 +94,7 @@ func (c *jwksCache) Cleanup() {
 
 	c.flag.Lock()
 	for _, keyID := range expiredKeys {
-		c.logger.Info(fmt.Sprintf("removing key %s from cache", keyID))
+		log.C(ctx).Info(fmt.Sprintf("removing key %s from cache", keyID))
 
 		delete(c.cache, keyID)
 	}

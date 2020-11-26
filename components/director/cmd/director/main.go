@@ -271,13 +271,6 @@ func exitOnError(err error, context string) {
 	}
 }
 
-//func configureLogger() {
-//	log.SetFormatter(&log.TextFormatter{
-//		FullTimestamp: true,
-//	})
-//	log.SetReportCaller(true)
-//}
-
 func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
@@ -306,8 +299,6 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsers
 }
 
 func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
-	logger := log.C(ctx).WithField("component", "runtime-mapping-handler").Logger
-
 	uidSvc := uid.NewService()
 
 	labelConv := label.NewConverter()
@@ -330,12 +321,12 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	jwksFetch := runtimemapping.NewJWKsFetch(logger)
-	jwksCache := runtimemapping.NewJWKsCache(logger, jwksFetch, cachePeriod)
-	tokenVerifier := runtimemapping.NewTokenVerifier(logger, jwksCache)
+	jwksFetch := runtimemapping.NewJWKsFetch()
+	jwksCache := runtimemapping.NewJWKsCache(jwksFetch, cachePeriod)
+	tokenVerifier := runtimemapping.NewTokenVerifier(jwksCache)
 
 	executor.NewPeriodic(1*time.Minute, func(ctx context.Context) {
-		jwksCache.Cleanup()
+		jwksCache.Cleanup(ctx)
 	}).Run(ctx)
 
 	return runtimemapping.NewHandler(
