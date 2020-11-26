@@ -227,7 +227,6 @@ global:
     job1:
       enabled: false
       configMapNamespace: "compass-system"
-      configMapTimestampField: "lastConsumedTenantTimestamp"
       manageSecrets: true
       providerName: "compass"
       schedule: "*/5 * * * *"

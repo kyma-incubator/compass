@@ -7,7 +7,7 @@ metadata:
   name: "compass-tenant-fetcher-{{ $tenantFetcherName }}-config"
   namespace: compass-system
 data:
-  {{ $config.configMapTimestampField }}: "1"
+  lastConsumedTenantTimestamp: "1"
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -97,7 +97,7 @@ spec:
               - name: APP_CONFIGMAP_NAMESPACE
                 value: {{ $config.configMapNamespace }}
               - name: APP_CONFIGMAP_TIMESTAMP_FIELD
-                value: {{ $config.configMapTimestampField }}
+                value: "lastConsumedTenantTimestamp"
               - name: APP_MAPPING_FIELD_ID
                 value: {{ $config.fieldMapping.idField }}
               - name: APP_MAPPING_FIELD_NAME
