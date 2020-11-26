@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
@@ -15,7 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 const requestForRuntime = `
@@ -113,7 +113,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 
 	clientUser, err := client.LoadFromContext(ctx)
 	if err != nil {
-		logrus.Infof("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]", app.Tenant, extTenant)
+		log.C(ctx).Infof("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]", app.Tenant, extTenant)
 	}
 
 	graphqlApp := s.appConverter.ToGraphQL(&app)
@@ -144,7 +144,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		defer func() {
 			err := resp.Body.Close()
 			if err != nil {
-				logrus.Warnf("Got error on closing response body: [%v]", err)
+				log.C(ctx).Warnf("Got error on closing response body: [%v]", err)
 			}
 		}()
 
