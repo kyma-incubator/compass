@@ -2,8 +2,7 @@ package systemauth
 
 import (
 	"context"
-
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -32,14 +31,12 @@ type UIDService interface {
 type service struct {
 	repo       Repository
 	uidService UIDService
-	logger     *logrus.Logger
 }
 
 func NewService(repo Repository, uidService UIDService) *service {
 	return &service{
 		repo:       repo,
 		uidService: uidService,
-		logger:     logrus.New(),
 	}
 }
 
@@ -59,7 +56,7 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 		}
 	}
 
-	s.logger.Debugf("Tenant %s loaded while creating SystemAuth for %s with id %s", tnt, objectType, objectID)
+	log.C(ctx).Debugf("Tenant %s loaded while creating SystemAuth for %s with id %s", tnt, objectType, objectID)
 
 	systemAuth := model.SystemAuth{
 		ID:    id,
