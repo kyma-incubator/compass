@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 const clientCredentialScopesPrefix = "clientCredentialsRegistrationScopes"
@@ -36,7 +36,6 @@ type service struct {
 	scopeCfgProvider          ScopeCfgProvider
 	httpCli                   *http.Client
 	uidService                UIDService
-	logger                    *logrus.Logger
 }
 
 func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Config, httpCli *http.Client) *service {
@@ -46,7 +45,6 @@ func NewService(scopeCfgProvider ScopeCfgProvider, uidService UIDService, cfg Co
 		publicAccessTokenEndpoint: cfg.PublicAccessTokenEndpoint,
 		httpCli:                   httpCli,
 		uidService:                uidService,
-		logger:                    logrus.New(),
 	}
 }
 
@@ -57,7 +55,7 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 			return nil, err
 		}
 	}
-	s.logger.Debugf("Fetched client credential scopes: %s for %s", scopes, objectType)
+	log.C(ctx).Debugf("Fetched client credential scopes: %s for %s", scopes, objectType)
 
 	clientID := s.uidService.Generate()
 	clientSecret, err := s.registerClient(ctx, clientID, scopes)
@@ -114,7 +112,7 @@ type clientCredentialsRegistrationResponse struct {
 }
 
 func (s *service) registerClient(ctx context.Context, clientID string, scopes []string) (string, error) {
-	s.logger.Debugf("Registering client_id %s and client_secret in Hydra with scopes: %s", clientID, scopes)
+	log.C(ctx).Debugf("Registering client_id %s and client_secret in Hydra with scopes: %s", clientID, scopes)
 	reqBody := &clientCredentialsRegistrationBody{
 		GrantTypes: defaultGrantTypes,
 		ClientID:   clientID,
@@ -143,12 +141,12 @@ func (s *service) registerClient(ctx context.Context, clientID string, scopes []
 		return "", errors.Wrap(err, "while decoding response body")
 	}
 
-	s.logger.Debugf("client_id %s and client_secret successfully registered in Hydra", clientID)
+	log.C(ctx).Debugf("client_id %s and client_secret successfully registered in Hydra", clientID)
 	return registrationResp.ClientSecret, nil
 }
 
 func (s *service) unregisterClient(ctx context.Context, clientID string) error {
-	s.logger.Debugf("Unregistering client_id %s and client_secret in Hydra", clientID)
+	log.C(ctx).Debugf("Unregistering client_id %s and client_secret in Hydra", clientID)
 	endpoint := fmt.Sprintf("%s/%s", s.clientEndpoint, clientID)
 
 	resp, closeBody, err := s.doRequest(ctx, http.MethodDelete, endpoint, nil)
@@ -161,7 +159,7 @@ func (s *service) unregisterClient(ctx context.Context, clientID string) error {
 		return fmt.Errorf("invalid HTTP status code: received: %d, expected %d", resp.StatusCode, http.StatusNoContent)
 	}
 
-	s.logger.Debugf("client_id %s and client_secret successfully unregistered in Hydra", clientID)
+	log.C(ctx).Debugf("client_id %s and client_secret successfully unregistered in Hydra", clientID)
 	return nil
 }
 
@@ -185,12 +183,12 @@ func (s *service) doRequest(ctx context.Context, method string, endpoint string,
 		}
 		_, err = io.Copy(ioutil.Discard, resp.Body)
 		if err != nil {
-			s.logger.Error(err)
+			log.C(ctx).Error(err)
 		}
 
 		err := body.Close()
 		if err != nil {
-			s.logger.Error(err)
+			log.C(ctx).Error(err)
 		}
 	}
 
