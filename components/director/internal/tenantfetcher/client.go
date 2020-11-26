@@ -13,8 +13,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	pkgErrors "github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -49,6 +49,8 @@ type Client struct {
 
 	apiConfig APIConfig
 }
+
+
 
 func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, timeout time.Duration) *Client {
 	cfg := clientcredentials.Config{
@@ -92,7 +94,7 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
-			log.Warnf("Unable to close response body. Cause: %v", err)
+			log.C(context.Background()).Warnf("Unable to close response body. Cause: %v", err)
 		}
 	}()
 

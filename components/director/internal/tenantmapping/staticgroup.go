@@ -7,7 +7,7 @@ import (
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type StaticGroup struct {
@@ -19,7 +19,7 @@ type StaticGroups []StaticGroup
 
 //go:generate mockery -name=StaticGroupRepository -output=automock -outpkg=automock -case=underscore
 type StaticGroupRepository interface {
-	Get(groupnames []string) StaticGroups
+	Get(groupnames []string, logger *logrus.Entry) StaticGroups
 }
 
 type staticGroupRepository struct {
@@ -48,14 +48,14 @@ func NewStaticGroupRepository(srcPath string) (*staticGroupRepository, error) {
 	}, nil
 }
 
-func (r *staticGroupRepository) Get(groupnames []string) StaticGroups {
+func (r *staticGroupRepository) Get(groupnames []string, logger *logrus.Entry) StaticGroups {
 	result := []StaticGroup{}
 
 	for _, groupname := range groupnames {
 		if staticGroup, ok := r.data[groupname]; ok {
 			result = append(result, staticGroup)
 		} else {
-			log.Warnf("static group with name %s not found", groupname)
+			logger.Warnf("static group with name %s not found", groupname)
 		}
 	}
 

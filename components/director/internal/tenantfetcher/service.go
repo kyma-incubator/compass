@@ -2,12 +2,12 @@ package tenantfetcher
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strconv"
 	"time"
 
 	retry "github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -79,6 +79,7 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, fie
 }
 
 func (s Service) SyncTenants() error {
+	ctx := context.Background()
 	tenantsToCreate, err := s.getTenantsToCreate()
 	if err != nil {
 		return err
@@ -106,7 +107,7 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 	defer s.transact.RollbackUnlessCommitted(tx)
-	ctx := context.Background()
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	currentTenants, err := s.tenantStorageService.List(ctx)
@@ -238,13 +239,13 @@ func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) 
 		} else if detailsType == gjson.JSON {
 			details = []byte(event.Get(s.fieldMapping.DetailsField).Raw)
 		} else {
-			log.Warnf("Invalid event data format: %+v", event)
+			log.D().Warnf("Invalid event data format: %+v", event)
 			return true
 		}
 
 		tenant, err := s.eventDataToTenant(eventType, details)
 		if err != nil {
-			log.Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
+			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
 			return true
 		}
 		bussinessTenantMappings = append(bussinessTenantMappings, *tenant)

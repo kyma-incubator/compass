@@ -5,17 +5,17 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
 	"github.com/kyma-incubator/compass/components/director/internal/externaltenant"
-	log "github.com/sirupsen/logrus"
 )
 
 type jobConfig struct {
 	Database persistence.DatabaseConfig
+	Log log.Config
 }
 
 func main() {
@@ -25,9 +25,9 @@ func main() {
 	err := envconfig.Init(&cfg)
 	exitOnError(err, "error while loading app config")
 
-	configureLogger()
+	ctx, err := log.Configure(context.Background(), &cfg.Log)
 
-	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "error while establishing the connection to the database")
 
 	defer func() {
@@ -47,7 +47,7 @@ func main() {
 	exitOnError(err, "error while beginning db transaction")
 	defer transact.RollbackUnlessCommitted(tx)
 
-	ctx := persistence.SaveToContext(context.Background(), tx)
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	err = tenantSvc.CreateManyIfNotExists(ctx, tenants)
 	exitOnError(err, "error while creating tenants")
@@ -55,19 +55,19 @@ func main() {
 	err = tx.Commit()
 	exitOnError(err, "error while committing the transaction")
 
-	log.Println("Tenants were successfully synchronized.")
+	log.C(ctx).Println("Tenants were successfully synchronized.")
 }
 
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.D().Fatal(wrappedError)
 	}
 }
 
-func configureLogger() {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-	log.SetReportCaller(true)
-}
+//func configureLogger() {
+//	log.SetFormatter(&log.TextFormatter{
+//		FullTimestamp: true,
+//	})
+//	log.SetReportCaller(true)
+//}

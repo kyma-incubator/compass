@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -30,7 +31,6 @@ type mapperForSystemAuth struct {
 }
 
 func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string, authFlow oathkeeper.AuthFlow) (ObjectContext, error) {
-	log := loggerFromContextOrDefault(ctx)
 
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authID)
 	if err != nil {
@@ -41,7 +41,7 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 	if err != nil {
 		return ObjectContext{}, errors.Wrapf(err, "while getting reference object type for system auth id %s", sysAuth.ID)
 	}
-	log.Infof("Reference object type is %s", refObjType)
+	log.C(ctx).Infof("Reference object type is %s", refObjType)
 
 	var scopes string
 	var tenantCtx TenantContext
@@ -58,13 +58,13 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 	if err != nil {
 		return ObjectContext{}, errors.Wrapf(err, "while fetching the tenant and scopes for system auth with id: %s, object type: %s, using auth flow: %s", sysAuth.ID, refObjType, authFlow)
 	}
-	log.Debugf("Successfully got tenant context - external ID: %s, internal ID: %s", tenantCtx.ExternalTenantID, tenantCtx.TenantID)
+	log.C(ctx).Debugf("Successfully got tenant context - external ID: %s, internal ID: %s", tenantCtx.ExternalTenantID, tenantCtx.TenantID)
 
 	refObjID, err := sysAuth.GetReferenceObjectID()
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while getting reference object id")
 	}
-	log.Debugf("Reference object id is %s", refObjID)
+	log.C(ctx).Debugf("Reference object id is %s", refObjID)
 
 	consumerType, err := consumer.MapSystemAuthToConsumerType(refObjType)
 	if err != nil {
@@ -72,7 +72,7 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 	}
 
 	objCxt := NewObjectContext(tenantCtx, scopes, refObjID, consumerType)
-	log.Infof("Object context: %+v", objCxt)
+	log.C(ctx).Infof("Object context: %+v", objCxt)
 
 	return objCxt, nil
 }
@@ -80,32 +80,30 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper.ReqData) (TenantContext, string, error) {
 	var externalTenantID, scopes string
 
-	log := loggerFromContextOrDefault(ctx)
-
 	scopes, err := reqData.GetScopes()
 	if err != nil {
 		return TenantContext{}, scopes, errors.Wrap(err, "while fetching scopes")
 	}
-	log.Debugf("Found scopes are: %s", scopes)
+	log.C(ctx).Debugf("Found scopes are: %s", scopes)
 
 	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
 		if !apperrors.IsKeyDoesNotExist(err) {
 			return TenantContext{}, scopes, errors.Wrap(err, "while fetching tenant external id")
 		}
-		log.Warningf("Could not get tenant external id, error: %s", err.Error())
+		log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
 
-		log.Info("Could not create tenant context, returning empty context...")
+		log.C(ctx).Info("Could not create tenant context, returning empty context...")
 		return TenantContext{}, scopes, nil
 	}
 
-	log.Infof("Getting the tenant with external ID: %s", externalTenantID)
+	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			log.Warningf("Could not find external tenant with ID: %s, error: %s", externalTenantID, err.Error())
+			log.C(ctx).Warningf("Could not find external tenant with ID: %s, error: %s", externalTenantID, err.Error())
 
-			log.Info("Returning tenant context with empty internal tenant ID...")
+			log.C(ctx).Info("Returning tenant context with empty internal tenant ID...")
 			return NewTenantContext(externalTenantID, ""), scopes, nil
 		}
 		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
@@ -118,12 +116,10 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 	var externalTenantID, scopes string
 	var err error
 
-	log := loggerFromContextOrDefault(ctx)
-
 	if sysAuth.TenantID == nil {
 		return TenantContext{}, scopes, apperrors.NewInternalError("system auth tenant id cannot be nil")
 	}
-	log.Infof("Internal tenant id is %s", *sysAuth.TenantID)
+	log.C(ctx).Infof("Internal tenant id is %s", *sysAuth.TenantID)
 
 	if authFlow.IsOAuth2Flow() {
 		scopes, err = reqData.GetScopes()
@@ -140,33 +136,33 @@ func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx cont
 
 		scopes = strings.Join(declaredScopes, " ")
 	}
-	log.Debugf("Found scopes are: %s", scopes)
+	log.C(ctx).Debugf("Found scopes are: %s", scopes)
 
 	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
 		if !apperrors.IsKeyDoesNotExist(err) {
 			return TenantContext{}, scopes, errors.Wrap(err, "while fetching tenant external id")
 		}
-		log.Warningf("Could not get tenant external id, error: %s", err.Error())
+		log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
 
-		log.Infof("Returning context with empty external tenant ID and internal tenant id: %s", *sysAuth.TenantID)
+		log.C(ctx).Infof("Returning context with empty external tenant ID and internal tenant id: %s", *sysAuth.TenantID)
 		return NewTenantContext("", *sysAuth.TenantID), scopes, nil
 	}
 
-	log.Infof("Getting the tenant with external ID: %s", externalTenantID)
+	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			log.Warningf("Could not find external tenant with ID: %s, error: %s", externalTenantID, err.Error())
+			log.C(ctx).Warningf("Could not find external tenant with ID: %s, error: %s", externalTenantID, err.Error())
 
-			log.Info("Returning tenant context with empty internal tenant ID...")
+			log.C(ctx).Info("Returning tenant context with empty internal tenant ID...")
 			return NewTenantContext(externalTenantID, ""), scopes, nil
 		}
 		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
 
 	if tenantMapping.ID != *sysAuth.TenantID {
-		log.Errorf("Tenant mismatch - tenant id %s and system auth tenant id %s, for object of type %s", tenantMapping.ID, *sysAuth.TenantID, refObjType)
+		log.C(ctx).Errorf("Tenant mismatch - tenant id %s and system auth tenant id %s, for object of type %s", tenantMapping.ID, *sysAuth.TenantID, refObjType)
 		return NewTenantContext(externalTenantID, ""), scopes, nil
 	}
 

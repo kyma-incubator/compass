@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -39,14 +40,11 @@ type TenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
 }
 
-type LoggerKey = struct{}
-
 type Handler struct {
 	reqDataParser       ReqDataParser
 	transact            persistence.Transactioner
 	mapperForUser       ObjectContextForUserProvider
 	mapperForSystemAuth ObjectContextForSystemAuthProvider
-	logger              *logrus.Entry
 }
 
 func NewHandler(
@@ -59,53 +57,57 @@ func NewHandler(
 		transact:            transact,
 		mapperForUser:       mapperForUser,
 		mapperForSystemAuth: mapperForSystemAuth,
-		logger:              logrus.WithField("component", "tenant-mapping-handler"),
 	}
 }
 
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+
 	if req.Method != http.MethodPost {
 		err := fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method)
-		h.logger.Errorf(err)
+		log.C(ctx).Errorf(err)
 		http.Error(writer, err, http.StatusBadRequest)
 		return
 	}
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		h.logger.Errorf("An error occurred while parsing the request: %s", err.Error())
-		respond(writer, reqData.Body, h.logger)
+		log.C(req.Context()).Errorf("An error occurred while parsing the request: %s", err.Error())
+		respond(ctx, writer, reqData.Body)
 		return
 	}
 
-	logger := configureLogger(h.logger, reqData)
-	newCtx := saveLoggerToContext(req.Context(), logger)
+	authID, authFlow, err := reqData.GetAuthID()
+	logger := log.C(ctx).WithFields(logrus.Fields{
+		"authID":   authID,
+		"authFlow": authFlow,
+	})
+	newCtx := log.ContextWithLogger(ctx, logger)
 
 	body := h.processRequest(newCtx, reqData)
-	respond(writer, body, logger)
+	respond(newCtx, writer, body)
 }
 
 func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData) oathkeeper.ReqBody {
-	log := loggerFromContextOrDefault(ctx)
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		log.Errorf("An error occurred while opening the db transaction: %s", err.Error())
+		log.C(ctx).Errorf("An error occurred while opening the db transaction: %s", err.Error())
 		return reqData.Body
 	}
 	defer h.transact.RollbackUnlessCommitted(tx)
 
 	newCtx := persistence.SaveToContext(ctx, tx)
 
-	log.Debug("Getting object context")
+	log.C(ctx).Debug("Getting object context")
 	objCtx, err := h.getObjectContext(newCtx, reqData)
 	if err != nil {
-		log.Errorf("An error occurred while getting object context: %s", err.Error())
+		log.C(ctx).Errorf("An error occurred while getting object context: %s", err.Error())
 		return reqData.Body
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Errorf("An error occurred while committing transaction: %s", err.Error())
+		log.C(ctx).Errorf("An error occurred while committing transaction: %s", err.Error())
 		return reqData.Body
 	}
 
@@ -134,34 +136,44 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqDa
 	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)
 }
 
-func respond(writer http.ResponseWriter, body oathkeeper.ReqBody, logger *logrus.Entry) {
+//TODO delete
+//func respond(writer http.ResponseWriter, body oathkeeper.ReqBody, logger *logrus.Entry) {
+//	writer.Header().Set("Content-Type", "application/json")
+//	err := json.NewEncoder(writer).Encode(body)
+//	if err != nil {
+//		logger.Errorf("An error occurred while encoding data: %s", err.Error())
+//	}
+//}
+
+func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {
-		logger.Errorf("An error occurred while encoding data: %s", err.Error())
+		log.C(ctx).Errorf("An error occurred while encoding data: %s", err.Error())
 	}
 }
 
-func saveLoggerToContext(ctx context.Context, logger *logrus.Entry) context.Context {
-	return context.WithValue(ctx, LoggerKey{}, logger)
-}
+//TODO delete
+//func saveLoggerToContext(ctx context.Context, logger *logrus.Entry) context.Context {
+//	return context.WithValue(ctx, LoggerKey{}, logger)
+//}
 
-func loggerFromContextOrDefault(ctx context.Context) *logrus.Entry {
-	log, ok := ctx.Value(LoggerKey{}).(*logrus.Entry)
-	if !ok {
-		return logrus.WithField("component", "tenant-mapping-handler")
-	}
-	return log
-}
+//func loggerFromContextOrDefault(ctx context.Context) *logrus.Entry {
+//	log, ok := ctx.Value(LoggerKey{}).(*logrus.Entry)
+//	if !ok {
+//		return logrus.WithField("component", "tenant-mapping-handler")
+//	}
+//	return log
+//}
 
-func configureLogger(logger *logrus.Entry, reqData oathkeeper.ReqData) *logrus.Entry {
-	authID, authFlow, err := reqData.GetAuthID()
-	if err != nil {
-		return logger
-	}
-
-	return logger.WithFields(logrus.Fields{
-		"authID":   authID,
-		"authFlow": authFlow,
-	})
-}
+//func configureLogger(logger *logrus.Entry, reqData oathkeeper.ReqData) *logrus.Entry {
+//	authID, authFlow, err := reqData.GetAuthID()
+//	if err != nil {
+//		return logger
+//	}
+//
+//	return logger.WithFields(logrus.Fields{
+//		"authID":   authID,
+//		"authFlow": authFlow,
+//	})
+//}
