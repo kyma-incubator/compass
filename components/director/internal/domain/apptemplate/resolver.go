@@ -12,8 +12,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=ApplicationTemplateService -output=automock -outpkg=automock -case=underscore
@@ -39,7 +39,7 @@ type ApplicationTemplateConverter interface {
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
-	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
+	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
@@ -154,12 +154,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
-	log.Infof("Creating an Application Template with name %s", convertedIn.Name)
+	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
 	id, err := r.appTemplateSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("Successfully created an Application Template with name %s and id %s", convertedIn.Name, id)
+	log.C(ctx).Infof("Successfully created an Application Template with name %s and id %s", convertedIn.Name, id)
 
 	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
@@ -191,7 +191,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	//log.Infof("Registering an Application from Application Template with name %s", in.TemplateName)
 	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
 
-	log.Debugf("Extracting Application Template with name %s from GraphQL input", in.TemplateName)
+	log.C(ctx).Debugf("Extracting Application Template with name %s from GraphQL input", in.TemplateName)
 	appTemplate, err := r.appTemplateSvc.GetByName(ctx, convertedIn.TemplateName)
 	if err != nil {
 		return nil, err
@@ -200,36 +200,36 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("Registering an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
+	log.C(ctx).Infof("Registering an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 
-	log.Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
+	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	appCreateInputJSON, err := r.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, convertedIn.Values)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error occurred while preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	}
 
-	log.Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
+	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
 	appCreateInputGQL, err := r.appConverter.CreateInputJSONToGQL(appCreateInputJSON)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error occurred while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
 	}
 
-	log.Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %s", convertedIn.TemplateName)
+	log.C(ctx).Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %s", convertedIn.TemplateName)
 	if err := inputvalidation.Validate(appCreateInputGQL); err != nil {
 		return nil, errors.Wrapf(err, "while validating application input from Application Template with name %s", convertedIn.TemplateName)
 	}
 
-	appCreateInputModel, err := r.appConverter.CreateInputFromGraphQL(appCreateInputGQL)
+	appCreateInputModel, err := r.appConverter.CreateInputFromGraphQL(ctx, appCreateInputGQL)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting ApplicationFromTemplate input")
 	}
 
-	log.Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
+	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	id, err := r.appSvc.Create(ctx, appCreateInputModel)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error occurred while creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	}
-	log.Infof("Application with name %s and id %s successfully created from Application Template with name %s", applicationName, id, in.TemplateName)
+	log.C(ctx).Infof("Application with name %s and id %s successfully created from Application Template with name %s", applicationName, id, in.TemplateName)
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {

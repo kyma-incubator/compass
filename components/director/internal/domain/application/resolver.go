@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -41,7 +41,7 @@ type ApplicationService interface {
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
-	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
+	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
@@ -269,9 +269,9 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.Infof("Registering Application with name %s", in.Name)
+	log.C(ctx).Infof("Registering Application with name %s", in.Name)
 
-	convertedIn, err := r.appConverter.CreateInputFromGraphQL(in)
+	convertedIn, err := r.appConverter.CreateInputFromGraphQL(ctx, in)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting ApplicationRegister input")
 	}
@@ -292,7 +292,7 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 
 	gqlApp := r.appConverter.ToGraphQL(app)
 
-	log.Infof("Application with name %s and id %s successfully registered", in.Name, id)
+	log.C(ctx).Infof("Application with name %s and id %s successfully registered", in.Name, id)
 	return gqlApp, nil
 }
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
@@ -304,7 +304,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.Infof("Updating Application with id %s", id)
+	log.C(ctx).Infof("Updating Application with id %s", id)
 
 	convertedIn := r.appConverter.UpdateInputFromGraphQL(in)
 	err = r.appSvc.Update(ctx, id, convertedIn)
@@ -324,7 +324,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	gqlApp := r.appConverter.ToGraphQL(app)
 
-	log.Infof("Application with id %s successfully updated", id)
+	log.C(ctx).Infof("Application with id %s successfully updated", id)
 
 	return gqlApp, nil
 }
@@ -337,7 +337,7 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.Infof("Unregistering Application with id %s", id)
+	log.C(ctx).Infof("Unregistering Application with id %s", id)
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
@@ -374,7 +374,7 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 
 	deletedApp := r.appConverter.ToGraphQL(app)
 
-	log.Infof("Successfully unregistered Application with id %s", id)
+	log.C(ctx).Infof("Successfully unregistered Application with id %s", id)
 	return deletedApp, nil
 }
 func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
