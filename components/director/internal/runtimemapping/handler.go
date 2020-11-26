@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
@@ -36,7 +36,6 @@ type ReqDataParser interface {
 }
 
 type Handler struct {
-	logger        *logrus.Logger
 	reqDataParser ReqDataParser
 	transact      persistence.Transactioner
 	tokenVerifier TokenVerifier
@@ -45,14 +44,12 @@ type Handler struct {
 }
 
 func NewHandler(
-	logger *logrus.Logger,
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
 	tokenVerifier TokenVerifier,
 	runtimeSvc RuntimeService,
 	tenantSvc TenantService) *Handler {
 	return &Handler{
-		logger:        logger,
 		reqDataParser: reqDataParser,
 		transact:      transact,
 		tokenVerifier: tokenVerifier,
@@ -67,37 +64,39 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	ctx := req.Context()
+
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		h.logError(err, "while parsing the request")
-		h.respond(writer, oathkeeper.ReqBody{})
+		h.logError(ctx, err, "while parsing the request")
+		h.respond(ctx, writer, oathkeeper.ReqBody{})
 		return
 	}
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		h.logError(err, "while opening the db transaction")
-		h.respond(writer, reqData.Body)
+		h.logError(ctx, err, "while opening the db transaction")
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(tx)
 
-	ctx := persistence.SaveToContext(req.Context(), tx)
+	ctx = persistence.SaveToContext(req.Context(), tx)
 
 	err = h.processRequest(ctx, &reqData)
 	if err != nil {
-		h.logError(err, "while processing the request")
-		h.respond(writer, reqData.Body)
+		h.logError(ctx, err, "while processing the request")
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
-		h.logError(err, "while commiting the transaction")
-		h.respond(writer, reqData.Body)
+		h.logError(ctx, err, "while commiting the transaction")
+		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 
-	h.respond(writer, reqData.Body)
+	h.respond(ctx, writer, reqData.Body)
 }
 
 func (h *Handler) processRequest(ctx context.Context, reqData *oathkeeper.ReqData) error {
@@ -126,15 +125,15 @@ func (h *Handler) processRequest(ctx context.Context, reqData *oathkeeper.ReqDat
 	return nil
 }
 
-func (h *Handler) logError(err error, wrapperStr string) {
+func (h *Handler) logError(ctx context.Context, err error, wrapperStr string) {
 	wrappedErr := errors.Wrap(err, wrapperStr)
-	h.logger.Error(wrappedErr)
+	log.C(ctx).Error(wrappedErr)
 }
 
-func (h *Handler) respond(writer http.ResponseWriter, body oathkeeper.ReqBody) {
+func (h *Handler) respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {
-		h.logError(err, "while encoding data")
+		h.logError(ctx, err, "while encoding data")
 	}
 }
