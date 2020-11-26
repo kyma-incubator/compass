@@ -72,7 +72,7 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -110,7 +110,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -145,7 +145,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -184,7 +184,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -250,7 +250,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -287,7 +287,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

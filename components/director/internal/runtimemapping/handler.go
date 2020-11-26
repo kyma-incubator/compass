@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-//todo pass ctx
 //go:generate mockery -name=TokenVerifier -output=automock -outpkg=automock -case=underscore
 type TokenVerifier interface {
 	Verify(ctx context.Context, token string) (*jwt.MapClaims, error)
@@ -80,7 +79,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		h.respond(ctx, writer, reqData.Body)
 		return
 	}
-	defer h.transact.RollbackUnlessCommitted(tx)
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(req.Context(), tx)
 

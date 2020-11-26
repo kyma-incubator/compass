@@ -58,7 +58,7 @@ func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string)
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	instanceAuth, err := r.svc.Get(ctx, authID)
@@ -87,7 +87,7 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Infof("Setting credentials for PackageInstanceAuth with id %s", authID)
@@ -123,7 +123,7 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Infof("Requesting PackageInstanceAuth creation for Package with id %s", packageID)
@@ -160,7 +160,7 @@ func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authI
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Infof("Requesting PackageInstanceAuth deletion for PackageInstanceAuth with id %s", authID)

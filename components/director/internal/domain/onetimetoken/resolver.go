@@ -39,7 +39,7 @@ func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string)
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	token, err := r.svc.GenerateOneTimeToken(ctx, id, model.RuntimeReference)
@@ -60,7 +60,7 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	token, err := r.svc.GenerateOneTimeToken(ctx, id, model.ApplicationReference)

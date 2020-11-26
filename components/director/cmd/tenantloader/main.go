@@ -45,7 +45,7 @@ func main() {
 
 	tx, err := transact.Begin()
 	exitOnError(err, "error while beginning db transaction")
-	defer transact.RollbackUnlessCommitted(tx)
+	defer transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

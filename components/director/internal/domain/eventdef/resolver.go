@@ -74,7 +74,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	log.C(ctx).Infof("Adding EventDefinition to package with id %s", packageID)
 
@@ -120,7 +120,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	log.C(ctx).Infof("Updating EventDefinition with id %s", id)
 
@@ -157,7 +157,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	log.C(ctx).Infof("Deleting EventDefinition with id %s", id)
 
@@ -189,7 +189,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	log.C(ctx).Infof("Refetching EventDefinitionSpec for EventDefinition with id %s", eventID)
 
@@ -220,7 +220,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

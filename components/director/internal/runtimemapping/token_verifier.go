@@ -29,7 +29,6 @@ const (
 	openIDConfigSubpath = ".well-known/openid-configuration"
 )
 
-//TODO add context
 type KeyGetter interface {
 	GetKey(ctx context.Context, token *jwt.Token) (interface{}, error)
 }

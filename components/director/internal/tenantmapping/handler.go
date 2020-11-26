@@ -95,7 +95,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 		log.C(ctx).Errorf("An error occurred while opening the db transaction: %s", err.Error())
 		return reqData.Body
 	}
-	defer h.transact.RollbackUnlessCommitted(tx)
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 
 	newCtx := persistence.SaveToContext(ctx, tx)
 

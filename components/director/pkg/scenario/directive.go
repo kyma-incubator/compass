@@ -123,7 +123,7 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 		log.C(ctx).Errorf("An error occurred while opening the db transaction: %s", err.Error())
 		return nil, err
 	}
-	defer d.transact.RollbackUnlessCommitted(tx)
+	defer d.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

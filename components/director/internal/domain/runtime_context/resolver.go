@@ -66,7 +66,7 @@ func (r *Resolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelF
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -107,7 +107,7 @@ func (r *Resolver) RuntimeContext(ctx context.Context, id string) (*graphql.Runt
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -144,7 +144,7 @@ func (r *Resolver) RegisterRuntimeContext(ctx context.Context, in graphql.Runtim
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -180,7 +180,7 @@ func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graph
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -219,7 +219,7 @@ func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphq
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -273,7 +273,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key 
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

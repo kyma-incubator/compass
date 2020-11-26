@@ -69,7 +69,7 @@ func (r *Resolver) AddDocumentToPackage(ctx context.Context, packageID string, i
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -112,7 +112,7 @@ func (r *Resolver) DeleteDocument(ctx context.Context, id string) (*graphql.Docu
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -145,7 +145,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.Document) (*gr
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
