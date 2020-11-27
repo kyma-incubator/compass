@@ -13,15 +13,22 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate mockery --name=MetricCollector --output=automock --outpkg=automock --case=underscore
+type MetricCollector interface {
+	SetChannelSize(size int)
+}
+
 type Sink struct {
 	logsChannel chan proxy.AuditlogMessage
 	timeout     time.Duration
+	collector   MetricCollector
 }
 
-func NewSink(logsChannel chan proxy.AuditlogMessage, timeout time.Duration) *Sink {
+func NewSink(logsChannel chan proxy.AuditlogMessage, timeout time.Duration, collector MetricCollector) *Sink {
 	return &Sink{
 		logsChannel: logsChannel,
 		timeout:     timeout,
+		collector:   collector,
 	}
 }
 
@@ -30,6 +37,7 @@ func (sink *Sink) Log(_ context.Context, msg proxy.AuditlogMessage) error {
 	case sink.logsChannel <- msg:
 		log.Printf("Successfully registered auditlog message for processing to the queue (size=%d, capacity=%d)",
 			len(sink.logsChannel), cap(sink.logsChannel))
+		sink.collector.SetChannelSize(len(sink.logsChannel))
 	case <-time.After(sink.timeout):
 		return errors.New("cannot write to the channel")
 	}

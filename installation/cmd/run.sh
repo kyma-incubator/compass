@@ -49,7 +49,7 @@ do
         ;;
         --minikube-memory)
             checkInputParameterValue "${2}"
-            MINIKIBE_MEMORY="${2}"
+            MINIKUBE_MEMORY="${2}"
             shift # past argument
             shift # past value
         ;;
