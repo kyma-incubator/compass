@@ -153,7 +153,7 @@ func (s Service) SyncTenants() error {
 	}
 
 	newConsumptionTime := latestCreateTime
-	if latestDeleteTime.Before(latestCreateTime) {
+	if !latestDeleteTime.IsZero() && latestDeleteTime.Before(latestCreateTime) {
 		newConsumptionTime = latestDeleteTime
 	}
 
@@ -196,7 +196,7 @@ func (s Service) getTenantsToCreate(fromTimestamp string) ([]model.BusinessTenan
 	}
 
 	olderTime := latestCreateTenantTime
-	if latestUpdateTenantTime.Before(latestCreateTenantTime) {
+	if !latestUpdateTenantTime.IsZero() && latestUpdateTenantTime.Before(latestCreateTenantTime) {
 		olderTime = latestUpdateTenantTime
 	}
 
