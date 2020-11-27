@@ -3,12 +3,13 @@ package tenantfetcher_test
 import (
 	"bytes"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
-	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -221,7 +222,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.AssertNotCalled(t,"List", txtest.CtxWithDBMatcher())
+				svc.AssertNotCalled(t, "List", txtest.CtxWithDBMatcher())
 				svc.AssertNotCalled(t, "CreateManyIfNotExists", txtest.CtxWithDBMatcher(), mock.Anything)
 				svc.AssertNotCalled(t, "DeleteMany", txtest.CtxWithDBMatcher(), emptySlice)
 				return svc

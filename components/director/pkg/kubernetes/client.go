@@ -16,8 +16,8 @@ import (
 
 type K8sConfig struct {
 	PollInterval time.Duration `envconfig:"default=2s"`
-	PollTimeout time.Duration `envconfig:"default=1m"`
-	Timeout     time.Duration `envconfig:"default=2m"`
+	PollTimeout  time.Duration `envconfig:"default=1m"`
+	Timeout      time.Duration `envconfig:"default=2m"`
 }
 
 func NewK8sClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
