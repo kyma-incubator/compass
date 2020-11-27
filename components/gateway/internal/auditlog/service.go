@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate mockery --name=MetricCollector --output=automock --outpkg=automock --case=underscore
 type MetricCollector interface {
 	SetChannelSize(size int)
 }

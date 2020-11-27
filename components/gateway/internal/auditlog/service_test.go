@@ -285,7 +285,8 @@ func TestSink_TimeoutOnWrite(t *testing.T) {
 
 	chanMsg := make(chan proxy.AuditlogMessage)
 	defer close(chanMsg)
-	sink := auditlog.NewSink(chanMsg, time.Millisecond*100, &FakeMetricCollector{})
+	fakeMetric := &automock.MetricCollector{}
+	sink := auditlog.NewSink(chanMsg, time.Millisecond*100, fakeMetric)
 
 	//WHEN
 	msg := proxy.AuditlogMessage{
@@ -299,6 +300,32 @@ func TestSink_TimeoutOnWrite(t *testing.T) {
 	//THEN
 	require.Error(t, err)
 	assert.EqualError(t, err, "cannot write to the channel")
+}
+
+func TestSink_Write(t *testing.T) {
+	//GIVEN
+	request := "test-request"
+	response := "test-response"
+	claims := proxy.Claims{}
+
+	chanMsg := make(chan proxy.AuditlogMessage, 1)
+	defer close(chanMsg)
+	fakeMetric := &automock.MetricCollector{}
+	fakeMetric.On("SetChannelSize", 1).Return()
+	sink := auditlog.NewSink(chanMsg, time.Millisecond*100, fakeMetric)
+
+	//WHEN
+	msg := proxy.AuditlogMessage{
+		CorrelationIDHeaders: fixCorrelationID(),
+		Request:              request,
+		Response:             response,
+		Claims:               claims,
+	}
+	err := sink.Log(context.TODO(), msg)
+
+	//THEN
+	require.NoError(t, err)
+	fakeMetric.AssertExpectations(t)
 }
 
 func fixClaims() proxy.Claims {
@@ -452,7 +479,3 @@ func fixResponseMultipleError(t *testing.T) string {
 	require.NoError(t, err)
 	return string(output)
 }
-
-type FakeMetricCollector struct{}
-
-func (fm *FakeMetricCollector) SetChannelSize(int) {}
