@@ -7,6 +7,10 @@ kind: ConfigMap
 metadata:
   name: "compass-tenant-fetcher-{{ $tenantFetcherName }}-config"
   namespace: compass-system
+  labels:
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
 data:
   lastConsumedTenantTimestamp: "1"
 ---
@@ -14,6 +18,10 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: "compass-tenant-fetcher-{{ $tenantFetcherName }}"
+  labels:
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
 spec:
   schedule: "{{ $config.schedule }}"
   failedJobsHistoryLimit: 5
@@ -164,6 +172,10 @@ kind: ServiceAccount
 metadata:
   name: {{ $.Chart.Name }}-tenant-fetcher-job
   namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
