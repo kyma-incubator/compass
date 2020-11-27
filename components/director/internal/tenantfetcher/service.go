@@ -96,6 +96,12 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
+	newConsumptionTime := getOlderTime(latestCreateTime, latestDeleteTime)
+	if newConsumptionTime.IsZero() {
+		log.Println("No new events")
+		return nil
+	}
+
 	deleteTenantsMap := make(map[string]model.BusinessTenantMappingInput)
 	for _, ct := range tenantsToDelete {
 		deleteTenantsMap[ct.ExternalTenant] = ct
@@ -150,12 +156,6 @@ func (s Service) SyncTenants() error {
 	err = tx.Commit()
 	if err != nil {
 		return err
-	}
-
-	newConsumptionTime := getOlderTime(latestCreateTime, latestDeleteTime)
-	if newConsumptionTime.IsZero() {
-		log.Println("No new events")
-		return nil
 	}
 
 	err = s.kubeClient.UpdateTenantFetcherConfigMapData(convertTimeToUnixNanoString(newConsumptionTime))
