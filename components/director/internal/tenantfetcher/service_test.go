@@ -3,13 +3,12 @@ package tenantfetcher_test
 import (
 	"bytes"
 	"fmt"
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -21,25 +20,26 @@ func TestService_SyncTenants(t *testing.T) {
 	// GIVEN
 	provider := "default"
 	fieldMapping := tenantfetcher.TenantFieldMapping{
-		NameField: "name",
-		IDField:   "id",
+		NameField:         "name",
+		IDField:           "id",
 		CreationTimeField: "creationTime",
 	}
-	event1 := fixEvent("1", "foo", 1, fieldMapping)
-	event2 := fixEvent("2", "bar", 1, fieldMapping)
-	event3 := fixEvent("3", "baz", 1, fieldMapping)
 
-	tenantEvents := []byte(fmt.Sprintf(`[%s]`, bytes.Join(
-		[][]byte{
-			event1, event2, event3,
-		},
-		[]byte(","),
-	)))
+	event0 := fixEvent("0", "ooo", 0, fieldMapping)
+	event1 := fixEvent("1", "foo", 1, fieldMapping)
+	event2 := fixEvent("2", "bar", 15, fieldMapping)
+	event3 := fixEvent("3", "baz", 33, fieldMapping)
+
+	eventsToJsonArray := func(events ...[]byte) []byte {
+		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
+	}
+
+	tenantEvents := eventsToJsonArray(event1, event2, event3)
 
 	businessTenants := []model.BusinessTenantMappingInput{
 		fixBusinessTenantMappingInput("foo", "1", "1", provider),
-		fixBusinessTenantMappingInput("bar", "1", "2", provider),
-		fixBusinessTenantMappingInput("baz", "1", "3", provider),
+		fixBusinessTenantMappingInput("bar", "15", "2", provider),
+		fixBusinessTenantMappingInput("baz", "33", "3", provider),
 	}
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
@@ -74,6 +74,7 @@ func TestService_SyncTenants(t *testing.T) {
 		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		APIClientFn        func() *automock.EventAPIClient
 		TenantStorageSvcFn func() *automock.TenantStorageService
+		KubeClientFn       func() *automock.KubeClient
 		ExpectedError      error
 	}{
 		{
@@ -92,6 +93,12 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
+				return client
 			},
 			ExpectedError: nil,
 		},
@@ -114,6 +121,12 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc
 			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
+				return client
+			},
 			ExpectedError: nil,
 		},
 		{
@@ -132,6 +145,12 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), matchArrayWithoutOrderArgument(t, businessTenants)).Return(nil).Once()
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
+				return client
 			},
 			ExpectedError: nil,
 		},
@@ -157,6 +176,62 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), businessTenants[0:1]).Return(nil).Once()
 				return svc
 			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
+				return client
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:            "New consumption timestamp is oldest of the three latest tenant events",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event0, event1, event2), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event3), 1, 1), nil).Once()
+				return client
+			},
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", "15").Return(nil).Once()
+				return client
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:            "Do not update configmap if no new events are available",
+			TransactionerFn: txGen.ThatSucceeds,
+			APIClientFn: func() *automock.EventAPIClient {
+				client := &automock.EventAPIClient{}
+				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
+				return client
+			},
+			TenantStorageSvcFn: func() *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
+				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
+			},
 			ExpectedError: nil,
 		},
 		{
@@ -174,6 +249,12 @@ func TestService_SyncTenants(t *testing.T) {
 				svc := &automock.TenantStorageService{}
 				return svc
 			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
+			},
 			ExpectedError: errors.New("next page was expected but response was empty"),
 		},
 		{
@@ -187,6 +268,12 @@ func TestService_SyncTenants(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
 				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
 			},
 			ExpectedError: testErr,
 		},
@@ -202,6 +289,12 @@ func TestService_SyncTenants(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
 				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
 			},
 			ExpectedError: testErr,
 		},
@@ -219,6 +312,12 @@ func TestService_SyncTenants(t *testing.T) {
 				svc := &automock.TenantStorageService{}
 				return svc
 			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
+			},
 			ExpectedError: testErr,
 		},
 		{
@@ -233,6 +332,12 @@ func TestService_SyncTenants(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
 				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
 			},
 			ExpectedError: testErr,
 		},
@@ -249,6 +354,12 @@ func TestService_SyncTenants(t *testing.T) {
 				svc := &automock.TenantStorageService{}
 				return svc
 			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
+			},
 			ExpectedError: errors.New("total results number changed during fetching consecutive events pages"),
 		},
 		{
@@ -264,6 +375,12 @@ func TestService_SyncTenants(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
 				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
 			},
 			ExpectedError: testErr,
 		},
@@ -284,6 +401,12 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 				return svc
 			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
+			},
 			ExpectedError: testErr,
 		},
 		{
@@ -301,6 +424,12 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(testErr).Once()
 				return svc
+			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
 			},
 			ExpectedError: testErr,
 		},
@@ -321,6 +450,12 @@ func TestService_SyncTenants(t *testing.T) {
 				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(testErr).Once()
 				return svc
 			},
+			KubeClientFn: func() *automock.KubeClient {
+				client := &automock.KubeClient{}
+				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
+				return client
+			},
 			ExpectedError: testErr,
 		},
 	}
@@ -331,14 +466,15 @@ func TestService_SyncTenants(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			apiClient := testCase.APIClientFn()
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
+			kubeClient := testCase.KubeClientFn()
 			svc := tenantfetcher.NewService(tenantfetcher.QueryConfig{
 				PageNumField:   "pageNum",
 				PageSizeField:  "pageSize",
 				TimestampField: "timestamp",
 				PageSizeValue:  "1",
 				PageStartValue: "1",
-			}, transact, tenantfetcher.NewNoopK8sClient(), tenantfetcher.TenantFieldMapping{
-				CreationTimeField: "creationTime",
+			}, transact, kubeClient, tenantfetcher.TenantFieldMapping{
+				CreationTimeField:  "creationTime",
 				DetailsField:       "eventData",
 				DiscriminatorField: "",
 				DiscriminatorValue: "",
@@ -365,6 +501,7 @@ func TestService_SyncTenants(t *testing.T) {
 			transact.AssertExpectations(t)
 			apiClient.AssertExpectations(t)
 			tenantStorageSvc.AssertExpectations(t)
+			kubeClient.AssertExpectations(t)
 		})
 	}
 
@@ -381,6 +518,9 @@ func TestService_SyncTenants(t *testing.T) {
 		tenantStorageSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
 		tenantStorageSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
 		tenantStorageSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
+		kubeClient := &automock.KubeClient{}
+		kubeClient.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+		kubeClient.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 
 		svc := tenantfetcher.NewService(tenantfetcher.QueryConfig{
 			PageNumField:   "pageNum",
@@ -388,7 +528,7 @@ func TestService_SyncTenants(t *testing.T) {
 			TimestampField: "timestamp",
 			PageSizeValue:  "1",
 			PageStartValue: "1",
-		}, transact, tenantfetcher.NewNoopK8sClient(), tenantfetcher.TenantFieldMapping{
+		}, transact, kubeClient, tenantfetcher.TenantFieldMapping{
 			DetailsField:       "details",
 			DiscriminatorField: "",
 			DiscriminatorValue: "",
@@ -409,6 +549,7 @@ func TestService_SyncTenants(t *testing.T) {
 		transact.AssertExpectations(t)
 		apiClient.AssertExpectations(t)
 		tenantStorageSvc.AssertExpectations(t)
+		kubeClient.AssertExpectations(t)
 	})
 }
 

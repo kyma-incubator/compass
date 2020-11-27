@@ -15,7 +15,7 @@ import (
 )
 
 type K8sConfig struct {
-	PollInteval time.Duration `envconfig:"default=2s"`
+	PollInterval time.Duration `envconfig:"default=2s"`
 	PollTimeout time.Duration `envconfig:"default=1m"`
 	Timeout     time.Duration `envconfig:"default=2m"`
 }

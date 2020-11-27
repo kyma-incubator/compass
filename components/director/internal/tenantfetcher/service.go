@@ -152,13 +152,9 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
-	newConsumptionTime := latestCreateTime
-	if !latestDeleteTime.IsZero() && latestDeleteTime.Before(latestCreateTime) {
-		newConsumptionTime = latestDeleteTime
-	}
-
+	newConsumptionTime := getOlderTime(latestCreateTime, latestDeleteTime)
 	if newConsumptionTime.IsZero() {
-		log.Println("No new tenants")
+		log.Println("No new events")
 		return nil
 	}
 
@@ -195,12 +191,7 @@ func (s Service) getTenantsToCreate(fromTimestamp string) ([]model.BusinessTenan
 		return nil, time.Time{}, err
 	}
 
-	olderTime := latestCreateTenantTime
-	if !latestUpdateTenantTime.IsZero() && latestUpdateTenantTime.Before(latestCreateTenantTime) {
-		olderTime = latestUpdateTenantTime
-	}
-
-	return tenantsToCreate, olderTime, nil
+	return tenantsToCreate, getOlderTime(latestCreateTenantTime, latestUpdateTenantTime), nil
 }
 
 func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, time.Time, error) {
@@ -365,6 +356,19 @@ func getLatestTenantTime(tenants []model.BusinessTenantMappingInput) (time.Time,
 	}
 
 	return latestTenantTime, nil
+}
+
+func getOlderTime(timeOne, timeTwo time.Time) time.Time {
+	if timeOne.IsZero() {
+		return timeTwo
+	}
+
+	olderTime := timeOne
+	if !timeTwo.IsZero() && timeTwo.Before(timeOne) {
+		olderTime = timeTwo
+	}
+
+	return olderTime
 }
 
 func convertTimeToUnixNanoString(timestamp time.Time) string {

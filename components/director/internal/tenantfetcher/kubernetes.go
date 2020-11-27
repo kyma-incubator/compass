@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+//go:generate mockery --name=KubeClient --output=automock --outpkg=automock --case=underscore
 type KubeClient interface {
 	GetTenantFetcherConfigMapData() (string, error)
 	UpdateTenantFetcherConfigMapData(timestamp string) error
@@ -49,7 +50,7 @@ type k8sClient struct {
 
 func NewK8sClient(configMapNamespace, configMapName, configMapTimestampField string) (KubeClient, error) {
 	k8sClientSetConfig := kube.K8sConfig{}
-	K8sClientSet, err := kube.NewK8sClientSet(k8sClientSetConfig.PollInteval, k8sClientSetConfig.PollTimeout, k8sClientSetConfig.Timeout)
+	K8sClientSet, err := kube.NewK8sClientSet(k8sClientSetConfig.PollInterval, k8sClientSetConfig.PollTimeout, k8sClientSetConfig.Timeout)
 	if err != nil {
 		return nil, err
 	}
