@@ -50,8 +50,6 @@ type Client struct {
 	apiConfig APIConfig
 }
 
-
-
 func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, timeout time.Duration) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,

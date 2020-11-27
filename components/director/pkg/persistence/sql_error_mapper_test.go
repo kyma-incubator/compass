@@ -1,6 +1,7 @@
 package persistence_test
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"testing"
@@ -61,7 +62,7 @@ func TestMapSQLError(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//WHEN
-			err := persistence.MapSQLError(testCase.Error, resource.Application, resource.Create, "testErr")
+			err := persistence.MapSQLError(context.Background(), testCase.Error, resource.Application, resource.Create, "testErr")
 
 			//THEN
 			require.Error(t, err)
@@ -70,7 +71,7 @@ func TestMapSQLError(t *testing.T) {
 
 		t.Run(testCase.Name, func(t *testing.T) {
 			//WHEN
-			err := persistence.MapSQLError(testCase.Error, resource.Application, resource.Delete, "testErr")
+			err := persistence.MapSQLError(context.Background(), testCase.Error, resource.Application, resource.Delete, "testErr")
 
 			//THEN
 			require.Error(t, err)
@@ -80,7 +81,7 @@ func TestMapSQLError(t *testing.T) {
 
 	t.Run("Error is nil", func(t *testing.T) {
 		//WHEN
-		err := persistence.MapSQLError(nil, resource.Application, resource.Create, "test: %s", "test")
+		err := persistence.MapSQLError(context.Background(), nil, resource.Application, resource.Create, "test: %s", "test")
 
 		//THEN
 		require.NoError(t, err)

@@ -43,7 +43,7 @@ type Transactioner interface {
 }
 
 type db struct {
-	sqlDB  *sqlx.DB
+	sqlDB *sqlx.DB
 }
 
 func (db *db) PingContext(ctx context.Context) error {
@@ -75,7 +75,7 @@ func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) {
 	db.rollback(ctx, customTx)
 }
 
-func (db *db) rollback(ctx  context.Context, tx PersistenceTx) {
+func (db *db) rollback(ctx context.Context, tx PersistenceTx) {
 	err := tx.Rollback()
 	if err == nil {
 		log.C(ctx).Warn("transaction rolled back")

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,12 +23,14 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 	//given
 	errMsg := "testErr"
 	uidSvc := uid.NewService()
-	log, hook := test.NewNullLogger()
-	presenter := error_presenter.NewPresenter(log, uidSvc)
+	logger, hook := test.NewNullLogger()
+	presenter := error_presenter.NewPresenter(uidSvc)
 
 	t.Run("Unknown error", func(t *testing.T) {
+		ctx := log.ContextWithLogger(context.TODO(), logrus.NewEntry(logger))
+
 		//when
-		err := presenter.Do(context.TODO(), errors.New(errMsg))
+		err := presenter.Do(ctx, errors.New(errMsg))
 
 		//then
 		entry := hook.LastEntry()
@@ -37,11 +41,13 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 	})
 
 	t.Run("Internal Error", func(t *testing.T) {
+		ctx := log.ContextWithLogger(context.TODO(), logrus.NewEntry(logger))
+
 		//given
 		customErr := apperrors.NewInternalError(errMsg)
 
 		//when
-		err := presenter.Do(context.TODO(), customErr)
+		err := presenter.Do(ctx, customErr)
 
 		//then
 		entry := hook.LastEntry()

@@ -1,6 +1,7 @@
 package authenticator_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -44,7 +45,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 		//given
 		auth := authenticator.New(PublicJWKSURL, true)
 		//when
-		err := auth.SynchronizeJWKS()
+		err := auth.SynchronizeJWKS(context.Background())
 
 		//then
 		require.NoError(t, err)
@@ -55,7 +56,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 		authFake := authenticator.New(fakeJWKSURL, true)
 
 		//when
-		err := authFake.SynchronizeJWKS()
+		err := authFake.SynchronizeJWKS(context.Background())
 
 		//then
 		require.Error(t, err)
@@ -67,7 +68,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	//given
 	scopes := "scope-a scope-b"
 
-	privateJWKS, err := authenticator.FetchJWK(PrivateJWKSURL)
+	privateJWKS, err := authenticator.FetchJWK(context.Background(), PrivateJWKSURL)
 	require.NoError(t, err)
 
 	t.Run("Success - token with signing method", func(t *testing.T) {
@@ -150,7 +151,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		//given
 		auth := authenticator.New(PublicJWKSURL, false)
-		err := auth.SynchronizeJWKS()
+		err := auth.SynchronizeJWKS(context.Background())
 		require.NoError(t, err)
 
 		auth.SetJWKSEndpoint(PublicJWKS2URL)
@@ -161,7 +162,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		privateJWKS2, err := authenticator.FetchJWK(PrivateJWKS2URL)
+		privateJWKS2, err := authenticator.FetchJWK(context.Background(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
@@ -178,7 +179,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
 		//given
 		auth := authenticator.New(PublicJWKSURL, false)
-		err := auth.SynchronizeJWKS()
+		err := auth.SynchronizeJWKS(context.Background())
 		require.NoError(t, err)
 
 		auth.SetJWKSEndpoint("invalid.url.scheme")
@@ -189,7 +190,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := fixEmptyRequest(t)
 
-		privateJWKS2, err := authenticator.FetchJWK(PrivateJWKS2URL)
+		privateJWKS2, err := authenticator.FetchJWK(context.Background(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, privateJWKS2.Keys[0])
@@ -261,7 +262,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 		middleware := createMiddleware(t, false)
 		handler := testHandler(t, defaultTenant, scopes)
 
-		privateJWKS2, err := authenticator.FetchJWK(PrivateJWKS2URL)
+		privateJWKS2, err := authenticator.FetchJWK(context.Background(), PrivateJWKS2URL)
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
@@ -316,7 +317,7 @@ func createTokenWithSigningMethod(t *testing.T, tnt string, scopes string, key j
 
 func createMiddleware(t *testing.T, allowJWTSigningNone bool) func(next http.Handler) http.Handler {
 	auth := authenticator.New(PublicJWKSURL, allowJWTSigningNone)
-	err := auth.SynchronizeJWKS()
+	err := auth.SynchronizeJWKS(context.Background())
 	require.NoError(t, err)
 	return auth.Handler()
 }

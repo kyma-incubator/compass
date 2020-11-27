@@ -2,6 +2,8 @@ package runtimemapping
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -33,7 +35,6 @@ func TestHandler(t *testing.T) {
 		// GIVEN
 		extTenantID := uuid.New().String()
 		expectedBody := "{\"subject\":\"\",\"extra\":{\"email\":\"me@domain.local\",\"groups\":\"admin-group\",\"name\":\"John Doe\"},\"header\":{\"Tenant\":[\"" + extTenantID + "\"]}}"
-		logger, hook := logrustest.NewNullLogger()
 		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatSucceeds()
 
@@ -41,7 +42,7 @@ func TestHandler(t *testing.T) {
 		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{Tenant: tenantID}, nil)
 
 		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", authorizationHeader).Return(claimsMock, nil)
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil)
 
 		tenantSvcMock := &automock.TenantService{}
 		tenantSvcMock.On("GetExternalTenant", mock.Anything, tenantID).Return(extTenantID, nil)
@@ -50,8 +51,12 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
 		req.Header.Add("Authorization", authorizationHeader)
 
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+		req = req.WithContext(ctx)
+
 		// WHEN
-		handler := NewHandler(logger, reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -71,7 +76,7 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "http://domain.local", strings.NewReader(""))
 
 		// WHEN
-		handler := NewHandler(nil, nil, nil, nil, nil, nil)
+		handler := NewHandler(nil, nil, nil, nil, nil)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -85,14 +90,17 @@ func TestHandler(t *testing.T) {
 	t.Run("when unable to parse the request body should log the error", func(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":null,\"header\":null}"
-		logger, hook := logrustest.NewNullLogger()
 		reqDataParser := oathkeeper.NewReqDataParser()
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader(""))
 
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+		req = req.WithContext(ctx)
+
 		// WHEN
-		handler := NewHandler(logger, reqDataParser, nil, nil, nil, nil)
+		handler := NewHandler(reqDataParser, nil, nil, nil, nil)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -108,19 +116,22 @@ func TestHandler(t *testing.T) {
 	t.Run("when token verifier returns error", func(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
-		logger, hook := logrustest.NewNullLogger()
 		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", authorizationHeader).Return(nil, errors.New("some-error"))
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(nil, errors.New("some-error"))
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
 		req.Header.Add("Authorization", authorizationHeader)
 
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+		req = req.WithContext(ctx)
+
 		// WHEN
-		handler := NewHandler(logger, reqDataParser, transactMock, tokenVerifierMock, nil, nil)
+		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, nil, nil)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -139,19 +150,22 @@ func TestHandler(t *testing.T) {
 		// GIVEN
 		claimsMock := &jwt.MapClaims{"email": "me@domain.local", "groups": "admin-group", "name": "John Doe"}
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
-		logger, hook := logrustest.NewNullLogger()
 		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", authorizationHeader).Return(claimsMock, nil)
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil)
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
 		req.Header.Add("Authorization", authorizationHeader)
 
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+		req = req.WithContext(ctx)
+
 		// WHEN
-		handler := NewHandler(logger, reqDataParser, transactMock, tokenVerifierMock, nil, nil)
+		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, nil, nil)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -170,7 +184,6 @@ func TestHandler(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
 
-		logger, hook := logrustest.NewNullLogger()
 		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
@@ -178,14 +191,18 @@ func TestHandler(t *testing.T) {
 		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(nil, errors.New("some-error"))
 
 		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", authorizationHeader).Return(claimsMock, nil)
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil)
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
 		req.Header.Add("Authorization", authorizationHeader)
 
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+		req = req.WithContext(ctx)
+
 		// WHEN
-		handler := NewHandler(logger, reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, nil)
+		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, nil)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -203,7 +220,6 @@ func TestHandler(t *testing.T) {
 	t.Run("when mapping to external tenant returns error", func(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
-		logger, hook := logrustest.NewNullLogger()
 		reqDataParser := oathkeeper.NewReqDataParser()
 		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
@@ -211,7 +227,7 @@ func TestHandler(t *testing.T) {
 		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{Tenant: tenantID}, nil)
 
 		tokenVerifierMock := &automock.TokenVerifier{}
-		tokenVerifierMock.On("Verify", authorizationHeader).Return(claimsMock, nil)
+		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil)
 
 		tenantSvcMock := &automock.TenantService{}
 		tenantSvcMock.On("GetExternalTenant", mock.Anything, tenantID).Return("", errors.New("some-error"))
@@ -220,8 +236,12 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
 		req.Header.Add("Authorization", authorizationHeader)
 
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
+		req = req.WithContext(ctx)
+
 		// WHEN
-		handler := NewHandler(logger, reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 

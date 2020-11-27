@@ -23,7 +23,6 @@ func (e jwkCacheEntry) IsExpired() bool {
 	return time.Now().After(e.expireAt)
 }
 
-
 type jwksCache struct {
 	fetch     KeyGetter
 	expPeriod time.Duration

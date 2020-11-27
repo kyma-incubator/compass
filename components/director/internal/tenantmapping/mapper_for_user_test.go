@@ -49,7 +49,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
@@ -86,7 +86,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
@@ -125,7 +125,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
@@ -164,7 +164,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
@@ -200,7 +200,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
@@ -248,10 +248,10 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
-		staticGroupRepoMock.On("Get", []string{groupName}).Return(staticGroups, nil).Once()
+		staticGroupRepoMock.On("Get", []string{groupName}, mock.Anything).Return(staticGroups, nil).Once()
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
@@ -299,7 +299,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
-		staticGroupRepoMock.On("Get", []string{groupName1, groupName2}).Return(staticGroups, nil).Once()
+		staticGroupRepoMock.On("Get", []string{groupName1, groupName2}, mock.Anything).Return(staticGroups, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
@@ -340,10 +340,10 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
-		staticGroupRepoMock.On("Get", []string{groupName}).Return(staticGroups, nil).Once()
+		staticGroupRepoMock.On("Get", []string{groupName}, mock.Anything).Return(staticGroups, nil).Once()
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
@@ -380,7 +380,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, nonExistingExternalTenantID).Return(tenantMappingModel, nil).Once()
@@ -408,7 +408,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
@@ -433,7 +433,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(staticUser, nil).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)
@@ -448,7 +448,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		username := "non-existing"
 
 		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(tenantmapping.StaticUser{}, errors.New("some-error")).Once()
+		staticUserRepoMock.On("Get", username, mock.Anything).Return(tenantmapping.StaticUser{}, errors.New("some-error")).Once()
 
 		mapper := tenantmapping.NewMapperForUser(staticUserRepoMock, nil, nil)
 		_, err := mapper.GetObjectContext(context.TODO(), reqData, username)

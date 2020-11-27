@@ -17,7 +17,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,8 +38,15 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 func TestService_HandleAPISpec(t *testing.T) {
 	mockSpec := "spec"
 	timestamp := time.Now()
-	ctx := context.TODO()
 	testErr := errors.New("test")
+	ctx := context.TODO()
+	var actualLog bytes.Buffer
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.TextFormatter{
+		DisableTimestamp: true,
+	})
+	logger.SetOutput(&actualLog)
+	ctx = log.ContextWithLogger(ctx, logrus.NewEntry(logger))
 
 	modelInput := model.FetchRequest{
 		ID:   "test",
@@ -163,17 +171,18 @@ func TestService_HandleAPISpec(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			client := NewTestClient(testCase.RoundTripFn())
-
-			var actualLog bytes.Buffer
-			logger := log.New()
-			logger.SetFormatter(&log.TextFormatter{
-				DisableTimestamp: true,
-			})
-			logger.SetOutput(&actualLog)
+			actualLog.Reset()
+			//var actualLog bytes.Buffer
+			//logger := logrus.New()
+			//logger.SetFormatter(&logrus.TextFormatter{
+			//	DisableTimestamp: true,
+			//})
+			//logger.SetOutput(&actualLog)
+			//ctx := log.ContextWithLogger(ctx, logrus.NewEntry(logger))
 
 			frRepo := testCase.FetchRequestRepoFn()
 
-			svc := fetchrequest.NewService(frRepo, client, logger)
+			svc := fetchrequest.NewService(frRepo, client)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			output := svc.HandleAPISpec(ctx, &testCase.InputFr)

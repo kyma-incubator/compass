@@ -58,7 +58,7 @@ type ReqBody struct {
 type ReqData struct {
 	Body   ReqBody
 	Header http.Header
-	ctx context.Context
+	ctx    context.Context
 }
 
 func NewReqData(ctx context.Context, reqBody ReqBody, reqHeader http.Header) ReqData {
@@ -73,7 +73,7 @@ func NewReqData(ctx context.Context, reqBody ReqBody, reqHeader http.Header) Req
 	return ReqData{
 		Body:   reqBody,
 		Header: reqHeader,
-		ctx: ctx,
+		ctx:    ctx,
 	}
 }
 

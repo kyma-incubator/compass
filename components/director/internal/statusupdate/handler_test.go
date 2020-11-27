@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -198,12 +199,13 @@ func TestUpdate_Handler(t *testing.T) {
 				DisableTimestamp: true,
 			})
 			logger.SetOutput(&actualLog)
-			update := statusupdate.New(transact, repo, logger)
-
+			ctx := log.ContextWithLogger(testCase.Request.Context(), logrus.NewEntry(logger))
+			update := statusupdate.New(transact, repo)
+			req := testCase.Request.WithContext(ctx)
 			// WHEN
 			rr := httptest.NewRecorder()
 			updateHandler := update.Handler()
-			updateHandler(testCase.MockNextHandler).ServeHTTP(rr, testCase.Request)
+			updateHandler(testCase.MockNextHandler).ServeHTTP(rr, req)
 
 			// THEN
 			response := rr.Body.String()

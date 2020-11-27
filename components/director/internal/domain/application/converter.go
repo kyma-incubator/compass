@@ -96,7 +96,7 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 	return runtimes
 }
 
-func (c *converter) CreateInputFromGraphQL(ctx context.Context,in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
+func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
 	var labels map[string]interface{}
 	if in.Labels != nil {
 		labels = *in.Labels

@@ -3,6 +3,8 @@ package runtimemapping
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -31,11 +33,11 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		restoreHTTPClient := setHTTPClient(httpClient)
 		defer restoreHTTPClient()
 
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 		token := createToken()
 
 		// WHEN
-		key, err := jwksFetch.GetKey(token)
+		key, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.NoError(t, err)
@@ -44,10 +46,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 
 	t.Run("should return error when token is nil", func(t *testing.T) {
 		// GIVEN
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(nil)
+		_, err := jwksFetch.GetKey(context.Background(), nil)
 
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("token cannot be nil").Error())
@@ -56,10 +58,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when unable to cast claims to MapClaims", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: Internal Server Error: unable to cast claims to the MapClaims")
@@ -68,10 +70,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when claims have no issuer claim", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{Claims: &jwt.MapClaims{}}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while getting the issuer from claims: Internal Server Error: no issuer claim found")
@@ -80,10 +82,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when claims have non-string issuer claim", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": byte(1)}}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while getting the issuer from claims: Internal Server Error: unable to cast the issuer to a string")
@@ -92,10 +94,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when claims have issuer claim in non-URL format", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": ":///cdef://"}}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while parsing the issuer URL [issuer=:///cdef://]: parse \":///cdef://\": missing protocol scheme")
@@ -104,10 +106,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when discovery URL does not return proper response", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.Error(t, err)
@@ -128,10 +130,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		defer restoreHTTPClient()
 
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while decoding the configuration discovery response: invalid character 'A' looking for beginning of value")
@@ -156,10 +158,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		defer restoreHTTPClient()
 
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: Internal Server Error: unable to cast the JWKs URI to a string")
@@ -191,10 +193,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		defer restoreHTTPClient()
 
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while fetching JWKs: failed to fetch remote JWK (status = 404)")
@@ -211,10 +213,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		defer restoreHTTPClient()
 
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the key ID: Internal Server Error: unable to find the key ID in the token")
@@ -236,10 +238,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 				"kid": byte(0x88),
 			},
 		}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the key ID: Internal Server Error: unable to cast the key ID to a string")
@@ -261,10 +263,10 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 				"kid": "555-666-777",
 			},
 		}
-		jwksFetch := NewJWKsFetch(nil)
+		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(token)
+		_, err := jwksFetch.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("unable to find a proper key").Error())
@@ -285,15 +287,16 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		restoreHTTPClient := setHTTPClient(httpClient)
 		defer restoreHTTPClient()
 
-		logger, hook := logrustest.NewNullLogger()
-
-		jwksFetch := NewJWKsFetch(logger)
-		jwksCache := NewJWKsCache(logger, jwksFetch, cachePeriod)
-		tokenVerifier := NewTokenVerifier(logger, jwksCache)
+		jwksFetch := NewJWKsFetch()
+		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
+		tokenVerifier := NewTokenVerifier(jwksCache)
 		token := createSignedToken(t, privateKeys.Keys[0])
 
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(context.Background(), logrus.NewEntry(logger))
+
 		// WHEN
-		claims, err := tokenVerifier.Verify(token)
+		claims, err := tokenVerifier.Verify(ctx, token)
 
 		// THEN
 		require.NoError(t, err)
@@ -313,12 +316,12 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		restoreHTTPClient := setHTTPClient(httpClient)
 		defer restoreHTTPClient()
 
-		jwksFetch := NewJWKsFetch(nil)
-		tokenVerifier := NewTokenVerifier(nil, jwksFetch)
+		jwksFetch := NewJWKsFetch()
+		tokenVerifier := NewTokenVerifier(jwksFetch)
 		token := createSignedToken(t, privateKeys.Keys[0])
 
 		// WHEN
-		claims, err := tokenVerifier.Verify(token)
+		claims, err := tokenVerifier.Verify(context.Background(), token)
 
 		// THEN
 		require.NoError(t, err)
@@ -326,24 +329,24 @@ func TestTokenVerifier_Verify(t *testing.T) {
 	})
 
 	t.Run("should return error when token is empty", func(t *testing.T) {
-		jwksFetch := NewJWKsFetch(nil)
-		tokenVerifier := NewTokenVerifier(nil, jwksFetch)
+		jwksFetch := NewJWKsFetch()
+		tokenVerifier := NewTokenVerifier(jwksFetch)
 		token := ""
 
 		// WHEN
-		_, err := tokenVerifier.Verify(token)
+		_, err := tokenVerifier.Verify(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, apperrors.NewUnauthorizedError("token cannot be empty").Error())
 	})
 
 	t.Run("should return error when token is invalid", func(t *testing.T) {
-		jwksFetch := NewJWKsFetch(nil)
-		tokenVerifier := NewTokenVerifier(nil, jwksFetch)
+		jwksFetch := NewJWKsFetch()
+		tokenVerifier := NewTokenVerifier(jwksFetch)
 		token := "invalid token"
 
 		// WHEN
-		_, err := tokenVerifier.Verify(token)
+		_, err := tokenVerifier.Verify(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while veryfing the token: while parsing the token with claims: token contains an invalid number of segments")

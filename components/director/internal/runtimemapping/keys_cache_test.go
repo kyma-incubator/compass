@@ -1,6 +1,9 @@
 package runtimemapping
 
 import (
+	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"testing"
 	"time"
@@ -49,13 +52,15 @@ func TestJWKsCache_GetKey(t *testing.T) {
 		restoreHTTPClient := setHTTPClient(httpClient)
 		defer restoreHTTPClient()
 
-		logger, hook := logrustest.NewNullLogger()
-		jwksFetch := NewJWKsFetch(logger)
-		jwksCache := NewJWKsCache(logger, jwksFetch, cachePeriod)
+		jwksFetch := NewJWKsFetch()
+		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
 		token := createToken()
 
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(context.Background(), logrus.NewEntry(logger))
+
 		// WHEN
-		key, err := jwksCache.GetKey(token)
+		key, err := jwksCache.GetKey(ctx, token)
 
 		// THEN
 		require.NoError(t, err)
@@ -75,16 +80,18 @@ func TestJWKsCache_GetKey(t *testing.T) {
 		restoreHTTPClient := setHTTPClient(httpClient)
 		defer restoreHTTPClient()
 
-		logger, hook := logrustest.NewNullLogger()
-		jwksFetch := NewJWKsFetch(logger)
-		jwksCache := NewJWKsCache(logger, jwksFetch, cachePeriod)
+		jwksFetch := NewJWKsFetch()
+		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
 		token := createToken()
 
+		logger, hook := logrustest.NewNullLogger()
+		ctx := log.ContextWithLogger(context.Background(), logrus.NewEntry(logger))
+
 		// WHEN
-		_, err := jwksCache.GetKey(token)
+		_, err := jwksCache.GetKey(ctx, token)
 		require.NoError(t, err)
 
-		key, err := jwksCache.GetKey(token)
+		key, err := jwksCache.GetKey(ctx, token)
 
 		// THEN
 		require.NoError(t, err)
@@ -97,11 +104,11 @@ func TestJWKsCache_GetKey(t *testing.T) {
 
 	t.Run("should return error when token is nil", func(t *testing.T) {
 		// GIVEN
-		jwksFetch := NewJWKsFetch(nil)
-		jwksCache := NewJWKsCache(nil, jwksFetch, cachePeriod)
+		jwksFetch := NewJWKsFetch()
+		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
 
 		// WHEN
-		_, err := jwksCache.GetKey(nil)
+		_, err := jwksCache.GetKey(context.Background(), nil)
 
 		// THEN
 		require.EqualError(t, err, apperrors.NewUnauthorizedError("token cannot be nil").Error())
@@ -110,11 +117,11 @@ func TestJWKsCache_GetKey(t *testing.T) {
 	t.Run("should return error when unable to get token key ID", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{}
-		jwksFetch := NewJWKsFetch(nil)
-		jwksCache := NewJWKsCache(nil, jwksFetch, cachePeriod)
+		jwksFetch := NewJWKsFetch()
+		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
 
 		// WHEN
-		_, err := jwksCache.GetKey(token)
+		_, err := jwksCache.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the key ID: Internal Server Error: unable to find the key ID in the token")
@@ -132,12 +139,12 @@ func TestJWKsCache_GetKey(t *testing.T) {
 		restoreHTTPClient := setHTTPClient(httpClient)
 		defer restoreHTTPClient()
 
-		jwksFetch := NewJWKsFetch(nil)
-		jwksCache := NewJWKsCache(nil, jwksFetch, cachePeriod)
+		jwksFetch := NewJWKsFetch()
+		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
 		token := createToken()
 
 		// WHEN
-		_, err := jwksCache.GetKey(token)
+		_, err := jwksCache.GetKey(context.Background(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the key with ID [kid=67bf0153-a6dc-4f06-9ce4-2f203b79adc8]: while getting the JWKs URI: while decoding the configuration discovery response: EOF")
@@ -148,8 +155,8 @@ func TestJWKsCache_Cleanup(t *testing.T) {
 	t.Run("should cleanup expired cached keys", func(t *testing.T) {
 		// GIVEN
 		logger, hook := logrustest.NewNullLogger()
-		jwksFetch := NewJWKsFetch(logger)
-		jwksCache := NewJWKsCache(logger, jwksFetch, cachePeriod)
+		jwksFetch := NewJWKsFetch()
+		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
 
 		// WHEN
 		jwksCache.cache["123"] = jwkCacheEntry{
@@ -162,7 +169,7 @@ func TestJWKsCache_Cleanup(t *testing.T) {
 		}
 		require.Equal(t, 2, len(jwksCache.cache))
 
-		jwksCache.Cleanup()
+		jwksCache.Cleanup(log.ContextWithLogger(context.Background(), logrus.NewEntry(logger)))
 
 		// THEN
 		require.Equal(t, 1, len(jwksCache.cache))

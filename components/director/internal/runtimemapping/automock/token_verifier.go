@@ -3,6 +3,8 @@
 package automock
 
 import (
+	context "context"
+
 	jwt "github.com/form3tech-oss/jwt-go"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -12,13 +14,13 @@ type TokenVerifier struct {
 	mock.Mock
 }
 
-// Verify provides a mock function with given fields: token
-func (_m *TokenVerifier) Verify(token string) (*jwt.MapClaims, error) {
-	ret := _m.Called(token)
+// Verify provides a mock function with given fields: ctx, token
+func (_m *TokenVerifier) Verify(ctx context.Context, token string) (*jwt.MapClaims, error) {
+	ret := _m.Called(ctx, token)
 
 	var r0 *jwt.MapClaims
-	if rf, ok := ret.Get(0).(func(string) *jwt.MapClaims); ok {
-		r0 = rf(token)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *jwt.MapClaims); ok {
+		r0 = rf(ctx, token)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*jwt.MapClaims)
@@ -26,8 +28,8 @@ func (_m *TokenVerifier) Verify(token string) (*jwt.MapClaims, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(token)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, token)
 	} else {
 		r1 = ret.Error(1)
 	}

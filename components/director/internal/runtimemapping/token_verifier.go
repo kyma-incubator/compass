@@ -34,12 +34,12 @@ type KeyGetter interface {
 }
 
 type tokenVerifier struct {
-	keys   KeyGetter
+	keys KeyGetter
 }
 
 func NewTokenVerifier(keys KeyGetter) *tokenVerifier {
 	return &tokenVerifier{
-		keys:   keys,
+		keys: keys,
 	}
 }
 
@@ -60,8 +60,9 @@ func (tv *tokenVerifier) verifyToken(ctx context.Context, tokenStr string) (*jwt
 	tokenStr = strings.TrimPrefix(tokenStr, bearerPrefix)
 	claims := new(jwt.MapClaims)
 
-	_, err := new(jwt.Parser).ParseWithClaims(tokenStr, claims, func(t *jwt.Token)(interface{}, error) {
-		return tv.keys.GetKey(ctx, t)})
+	_, err := new(jwt.Parser).ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+		return tv.keys.GetKey(ctx, t)
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing the token with claims")
 	}
@@ -69,13 +70,11 @@ func (tv *tokenVerifier) verifyToken(ctx context.Context, tokenStr string) (*jwt
 	return claims, nil
 }
 
-
 type jwksFetch struct {
 }
 
 func NewJWKsFetch() *jwksFetch {
-	return &jwksFetch{
-	}
+	return &jwksFetch{}
 }
 
 func (f *jwksFetch) GetKey(ctx context.Context, token *jwt.Token) (interface{}, error) {

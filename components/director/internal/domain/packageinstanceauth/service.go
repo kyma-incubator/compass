@@ -187,7 +187,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return errors.Wrapf(err, "while deleting PackageInstanceAuth with id %s", id)
 }
 
-func (s *service) setUpdateAuthAndStatus(ctx context.Context,instanceAuth *model.PackageInstanceAuth, in model.PackageInstanceAuthSetInput) error {
+func (s *service) setUpdateAuthAndStatus(ctx context.Context, instanceAuth *model.PackageInstanceAuth, in model.PackageInstanceAuthSetInput) error {
 	if instanceAuth == nil {
 		return nil
 	}

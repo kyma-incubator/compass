@@ -66,7 +66,7 @@ func (s *scenariosService) GetAvailableScenarios(ctx context.Context, tenantID s
 	return sd.Items.Enum, nil
 }
 
-func (s *scenariosService) AddDefaultScenarioIfEnabled(ctx context.Context,labels *map[string]interface{}) {
+func (s *scenariosService) AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{}) {
 	if labels == nil || !s.defaultScenarioEnabled {
 		return
 	}

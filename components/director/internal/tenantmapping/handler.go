@@ -136,15 +136,6 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqDa
 	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)
 }
 
-//TODO delete
-//func respond(writer http.ResponseWriter, body oathkeeper.ReqBody, logger *logrus.Entry) {
-//	writer.Header().Set("Content-Type", "application/json")
-//	err := json.NewEncoder(writer).Encode(body)
-//	if err != nil {
-//		logger.Errorf("An error occurred while encoding data: %s", err.Error())
-//	}
-//}
-
 func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
@@ -152,28 +143,3 @@ func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.Re
 		log.C(ctx).Errorf("An error occurred while encoding data: %s", err.Error())
 	}
 }
-
-//TODO delete
-//func saveLoggerToContext(ctx context.Context, logger *logrus.Entry) context.Context {
-//	return context.WithValue(ctx, LoggerKey{}, logger)
-//}
-
-//func loggerFromContextOrDefault(ctx context.Context) *logrus.Entry {
-//	log, ok := ctx.Value(LoggerKey{}).(*logrus.Entry)
-//	if !ok {
-//		return logrus.WithField("component", "tenant-mapping-handler")
-//	}
-//	return log
-//}
-
-//func configureLogger(logger *logrus.Entry, reqData oathkeeper.ReqData) *logrus.Entry {
-//	authID, authFlow, err := reqData.GetAuthID()
-//	if err != nil {
-//		return logger
-//	}
-//
-//	return logger.WithFields(logrus.Fields{
-//		"authID":   authID,
-//		"authFlow": authFlow,
-//	})
-//}

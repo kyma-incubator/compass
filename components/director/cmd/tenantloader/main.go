@@ -15,7 +15,7 @@ import (
 
 type jobConfig struct {
 	Database persistence.DatabaseConfig
-	Log log.Config
+	Log      log.Config
 }
 
 func main() {

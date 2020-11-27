@@ -49,7 +49,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	log.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
 	defer a.mux.Unlock()
-	jwks, err := FetchJWK(ctx,a.jwksEndpoint)
+	jwks, err := FetchJWK(ctx, a.jwksEndpoint)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
@@ -65,21 +65,21 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "while getting token from header"))
-				a.writeAppError(w, err, http.StatusBadRequest,logger)
+				a.writeAppError(w, err, http.StatusBadRequest, logger)
 				return
 			}
 
 			claims, err := a.parseClaimsWithRetry(r.Context(), bearerToken)
 			if err != nil {
 				logger.Error(err)
-				a.writeAppError(w, err, http.StatusUnauthorized,logger)
+				a.writeAppError(w, err, http.StatusUnauthorized, logger)
 				return
 			}
 
 			if claims.Tenant == "" && claims.ExternalTenant != "" {
 				err := apperrors.NewTenantNotFoundError(claims.ExternalTenant)
 				logger.Error(err)
-				a.writeAppError(w, err, http.StatusBadRequest,logger)
+				a.writeAppError(w, err, http.StatusBadRequest, logger)
 				return
 			}
 
