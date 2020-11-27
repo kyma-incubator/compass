@@ -15,3 +15,6 @@ gateway:
   auditlog: # COMPASS related resources(compass gateway)
     enabled: false
     authMode: "basic"
+
+metrics:
+  port: 3001
