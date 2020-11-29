@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"net/http"
 	"os"
 	"time"
@@ -90,6 +91,8 @@ type config struct {
 	StaticGroupsSrc   string `envconfig:"default=/data/static-groups.yaml"`
 	PairingAdapterSrc string `envconfig:"optional"`
 
+	EnableAppNameNormalization bool `envconfig:"default=false"`
+
 	OneTimeToken onetimetoken.Config
 	OAuth20      oauth20.Config
 
@@ -130,6 +133,7 @@ func main() {
 
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
+			normalizer.New(cfg.EnableAppNameNormalization),
 			transact,
 			cfgProvider,
 			cfg.OneTimeToken,
