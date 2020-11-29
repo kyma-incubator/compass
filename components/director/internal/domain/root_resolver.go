@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"net/http"
 	"time"
 
@@ -47,6 +48,7 @@ import (
 var _ graphql.ResolverRoot = &RootResolver{}
 
 type RootResolver struct {
+	appNameNormalizer   normalizer.Func
 	app                 *application.Resolver
 	appTemplate         *apptemplate.Resolver
 	api                 *api.Resolver
@@ -70,6 +72,7 @@ type RootResolver struct {
 }
 
 func NewRootResolver(
+	appNameNormalizer normalizer.Func,
 	transact persistence.Transactioner,
 	cfgProvider *configprovider.Provider,
 	oneTimeTokenCfg onetimetoken.Config,
@@ -157,6 +160,7 @@ func NewRootResolver(
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
+		appNameNormalizer:   appNameNormalizer,
 		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, packageSvc, apiConverter, frConverter),
@@ -253,7 +257,16 @@ func (r *queryResolver) ApplicationTemplate(ctx context.Context, id string) (*gr
 	return r.appTemplate.ApplicationTemplate(ctx, id)
 }
 func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
-	return r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
+	apps, err := r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range apps.Data {
+		apps.Data[i].Name = r.appNameNormalizer(apps.Data[i].Name)
+	}
+
+	return apps, nil
 }
 func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	return r.runtime.Runtimes(ctx, filter, first, after)
