@@ -14,12 +14,12 @@ type KubeClient interface {
 	UpdateTenantFetcherConfigMapData(timestamp string) error
 }
 
-type noopK8sClient struct {
+type noopKubernetesClient struct {
 	cfg KubeConfig
 }
 
-func NewNoopK8sClient() KubeClient {
-	return &noopK8sClient{
+func NewNoopKubernetesClient() KubeClient {
+	return &noopKubernetesClient{
 		cfg: KubeConfig{
 			ConfigMapNamespace:      "namespace",
 			ConfigMapName:           "name",
@@ -28,11 +28,11 @@ func NewNoopK8sClient() KubeClient {
 	}
 }
 
-func (k *noopK8sClient) GetTenantFetcherConfigMapData() (string, error) {
+func (k *noopKubernetesClient) GetTenantFetcherConfigMapData() (string, error) {
 	return "1", nil
 }
 
-func (k *noopK8sClient) UpdateTenantFetcherConfigMapData(_ string) error {
+func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ string) error {
 	return nil
 }
 
@@ -42,13 +42,13 @@ type KubeConfig struct {
 	ConfigMapTimestampField string `envconfig:"default=lastConsumedTenantTimestamp,APP_CONFIGMAP_TIMESTAMP_FIELD"`
 }
 
-type k8sClient struct {
+type kubernetesClient struct {
 	client *kubernetes.Clientset
 
 	cfg KubeConfig
 }
 
-func NewK8sClient(configMapNamespace, configMapName, configMapTimestampField string) (KubeClient, error) {
+func NewKubernetesClient(configMapNamespace, configMapName, configMapTimestampField string) (KubeClient, error) {
 	k8sClientSetConfig := kube.K8sConfig{}
 	K8sClientSet, err := kube.NewK8sClientSet(k8sClientSetConfig.PollInterval, k8sClientSetConfig.PollTimeout, k8sClientSetConfig.Timeout)
 	if err != nil {
@@ -61,13 +61,13 @@ func NewK8sClient(configMapNamespace, configMapName, configMapTimestampField str
 		ConfigMapTimestampField: configMapTimestampField,
 	}
 
-	return &k8sClient{
+	return &kubernetesClient{
 		client: K8sClientSet,
 		cfg:    cfg,
 	}, nil
 }
 
-func (k *k8sClient) GetTenantFetcherConfigMapData() (string, error) {
+func (k *kubernetesClient) GetTenantFetcherConfigMapData() (string, error) {
 	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -79,7 +79,7 @@ func (k *k8sClient) GetTenantFetcherConfigMapData() (string, error) {
 	return "", errors.New("failed to find timestamp property in configMap")
 }
 
-func (k *k8sClient) UpdateTenantFetcherConfigMapData(timestamp string) error {
+func (k *kubernetesClient) UpdateTenantFetcherConfigMapData(timestamp string) error {
 	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return err

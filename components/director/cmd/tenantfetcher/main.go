@@ -53,9 +53,9 @@ func main() {
 	shouldUseKubernetes, err := strconv.ParseBool(cfg.UseKubernetes)
 	exitOnError(err, "Error parsing environment variable for Kubernetes usage")
 
-	kubeClient := tenantfetcher.NewNoopK8sClient()
+	kubeClient := tenantfetcher.NewNoopKubernetesClient()
 	if shouldUseKubernetes {
-		kubeClient, err = tenantfetcher.NewK8sClient(cfg.KubernetesConfig.ConfigMapNamespace, cfg.KubernetesConfig.ConfigMapName, cfg.KubernetesConfig.ConfigMapTimestampField)
+		kubeClient, err = tenantfetcher.NewKubernetesClient(cfg.KubernetesConfig.ConfigMapNamespace, cfg.KubernetesConfig.ConfigMapName, cfg.KubernetesConfig.ConfigMapTimestampField)
 		exitOnError(err, "Failed to initialize Kubernetes client")
 	}
 
