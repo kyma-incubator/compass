@@ -1,4 +1,3 @@
-{{ if .Values.global.agentPreconfiguration }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -52,7 +51,7 @@ rules:
   - apiGroups: [""]
     resources: [secrets]
     verbs: [get]
-  - apiGroups: [""]
+  - apiGroups: ["batch"]
     resources: [jobs]
     verbs: [get, watch, list]
 ---
@@ -70,6 +69,8 @@ spec:
   template:
     metadata:
       name: copy-cert-manager-cacert
+      annotations:
+        sidecar.istio.io/inject: “false”
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
@@ -86,6 +87,7 @@ spec:
             - bash
             - -c
             - |
+                set -o xtrace
 
                 while `kubectl get job -n {{ .Release.Namespace }} {{ .Chart.Name }}-certs-setup-job` [ \$? -ne 0 ]; do
                   echo Waiting for job {{ .Chart.Name }}-certs-setup-job to be created in namespace {{ .Release.Namespace }}...
@@ -102,9 +104,11 @@ spec:
                 echo $SECRET | jq '.data["ca.crt"]' -r | base64 -d > tls_temp/tls.crt
                 echo $SECRET | jq '.data["ca.key"]' -r | base64 -d > tls_temp/tls.key
 
+                cat tls_temp/tls.crt
+                cat tls_temp/tls.key
+
                 kubectl create secret -n {{ .Values.global.cert_manager.namespace }} tls {{ .Values.global.cert_manager.mtls_cacert }} \
                   --cert=tls_temp/tls.crt \
                   --key=tls_temp/tls.key
 
                 rm -rf tls_temp
-{{ end }}
