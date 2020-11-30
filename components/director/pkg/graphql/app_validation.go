@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-const appNormalizationEnvVar = "APP_ENABLE_APP_NAME_NORMALIZATION"
+const appNormalizationEnvVar = "APP_NAME_NORMALIZATION_ENABLED"
 
 var appNameNormalizationEnabled bool
 

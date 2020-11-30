@@ -23,7 +23,7 @@ global:
       version: "PR-1618"
     director:
       dir:
-      version: "PR-1618"
+      version: "PR-1632"
     gateway:
       dir:
       version: "PR-1630"
@@ -81,6 +81,8 @@ global:
       configMapName: "auditlog-script"
 
   enableCompassDefaultScenarioAssignment: true
+
+  enableAppNameNormalization: false
 
   tenantConfig:
     useDefaultTenants: true

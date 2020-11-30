@@ -116,6 +116,8 @@ spec:
             {{ end }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
+            - name: APP_NAME_NORMALIZATION_ENABLED
+              value: {{ .Values.global.enableAppNameNormalization | quote }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
