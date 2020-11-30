@@ -6,7 +6,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: "compass-tenant-fetcher-{{ $tenantFetcherName }}-config"
-  namespace: compass-system
+  namespace: {{ $config.configMapNamespace }}
   labels:
     app.kubernetes.io/name: {{ template "name" $outerScope }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
