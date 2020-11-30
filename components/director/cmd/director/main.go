@@ -91,8 +91,6 @@ type config struct {
 	StaticGroupsSrc   string `envconfig:"default=/data/static-groups.yaml"`
 	PairingAdapterSrc string `envconfig:"optional"`
 
-	EnableAppNameNormalization bool `envconfig:"default=false"`
-
 	OneTimeToken onetimetoken.Config
 	OAuth20      oauth20.Config
 
@@ -133,7 +131,7 @@ func main() {
 
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
-			normalizer.New(cfg.EnableAppNameNormalization),
+			normalizer.New(cfg.Features.NameNormalizationEnabled),
 			transact,
 			cfgProvider,
 			cfg.OneTimeToken,
