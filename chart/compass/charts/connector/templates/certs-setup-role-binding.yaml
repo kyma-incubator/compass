@@ -16,7 +16,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ .Chart.Name }}-certs-setup-job-ca-cert-role
-  namespace: {{ .Values.global.cert_manager.namespace | default "default" }}
+  namespace: {{ .Values.global.connector.secrets.ca.namespace | default "default" }}
   labels:
     app: {{ .Chart.Name }}-certs-setup-job
     release: {{ .Release.Name }}
@@ -33,7 +33,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ .Chart.Name }}-certs-setup-job-ca-cert-rolebinding
-  namespace: {{ .Values.global.cert_manager.namespace | default "default" }}
+  namespace: {{ .Values.global.connector.secrets.ca.namespace | default "default" }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}

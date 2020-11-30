@@ -1,0 +1,110 @@
+{{ if .Values.global.agentPreconfiguration }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: copy-cert-manager-cacert
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: copy-cert-manager-cacert
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: copy-cert-manager-cacert
+subjects:
+  - kind: ServiceAccount
+    name: copy-cert-manager-cacert
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: copy-cert-manager-cacert
+  namespace: {{ .Values.global.cert_manager.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: copy-cert-manager-cacert-create
+subjects:
+  - kind: ServiceAccount
+    name: copy-cert-manager-cacert
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: copy-cert-manager-cacert-create
+  namespace: {{ .Values.global.cert_manager.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: copy-cert-manager-cacert
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get]
+  - apiGroups: [""]
+    resources: [jobs]
+    verbs: [get, watch, list]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: copy-cert-manager-cacert
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: copy-cert-manager-cacert
+    spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
+      serviceAccountName: copy-cert-manager-cacert
+      restartPolicy: Never
+      containers:
+        - name: copy-cert-manager-cacert
+          image: "eu.gcr.io/kyma-project/test-infra/alpine-kubectl:v20200617-32c1f3ff"
+          command:
+            - bash
+            - -c
+            - |
+
+                while `kubectl get job -n {{ .Release.Namespace }} {{ .Chart.Name }}-certs-setup-job` [ \$? -ne 0 ]; do
+                  echo Waiting for job {{ .Chart.Name }}-certs-setup-job to be created in namespace {{ .Release.Namespace }}...
+                  sleep 1s
+                done
+
+                while [[ `kubectl get job {{ .Chart.Name }}-certs-setup-job -n {{ .Release.Namespace }} -o jsonpath={.status.active}` ]]; do
+                  echo "Waiting for job {{ .Chart.Name }}-certs-setup-job to complete..."
+                  sleep 5s
+                done
+
+                SECRET=$(kubectl get secret -n {{ .Values.global.connector.secrets.ca.namespace }} {{ .Values.global.connector.secrets.ca.name }}-temp -o json)
+                mkdir tls_temp
+                echo $SECRET | jq '.data["ca.crt"]' -r | base64 -d > tls_temp/tls.crt
+                echo $SECRET | jq '.data["ca.key"]' -r | base64 -d > tls_temp/tls.key
+
+                kubectl create secret -n {{ .Values.global.cert_manager.namespace }} tls {{ .Values.global.cert_manager.mtls_cacert }} \
+                  --cert=tls_temp/tls.crt \
+                  --key=tls_temp/tls.key
+
+                rm -rf tls_temp
+{{ end }}
