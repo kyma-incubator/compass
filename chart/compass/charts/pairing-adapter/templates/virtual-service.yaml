@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name }}
+spec:
+  hosts:
+    - pairing-adapter.{{ .Release.Namespace }}.svc.cluster.local
+  http:
+  {{- range $adapterName, $config := .Values.deployment.adapters -}}
+  {{if eq $config.enabled true}}
+    - name: "{{ $config.name }}-route"
+      match:
+        - uri:
+            prefix: "/{{ $config.name }}"
+      rewrite:
+        uri: "/adapter"
+      route:
+        - destination:
+            host: pairing-adapter.{{ .Release.Namespace }}.svc.cluster.local
+            subset: "{{ $config.name }}-subset"
+  {{ end }}
+  {{- end -}}

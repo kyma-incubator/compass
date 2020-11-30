@@ -16,3 +16,14 @@ deployment:
     oauthStyle: "AuthDetect"
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
+  adapters:
+    adapter1:
+      enabled: false
+      name: ""
+      oauthSecret: ""
+      envs:
+        mappingTemplateExternalURL: ""
+        mappingTemplateHeaders: ""
+        mappingTemplateJSONBody: ""
+        mappingTemplateTokenFromResponse: ""
+        oauthStyle: ""
