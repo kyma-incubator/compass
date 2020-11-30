@@ -18,8 +18,9 @@ package correlation
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 )

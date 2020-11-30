@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/sirupsen/logrus"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 

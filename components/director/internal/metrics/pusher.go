@@ -1,10 +1,11 @@
 package metrics
 
 import (
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 

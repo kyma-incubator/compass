@@ -3,8 +3,9 @@ package apptemplate_test
 import (
 	"context"
 	"errors"
-	"github.com/stretchr/testify/mock"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 

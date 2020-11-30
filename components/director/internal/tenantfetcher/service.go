@@ -2,9 +2,10 @@ package tenantfetcher
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strconv"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	retry "github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"

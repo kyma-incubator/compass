@@ -2,13 +2,14 @@ package runtimemapping
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/google/uuid"

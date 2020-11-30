@@ -2,11 +2,12 @@ package authenticator
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"

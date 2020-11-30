@@ -3,9 +3,10 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"time"
 
 	"github.com/pkg/errors"
 

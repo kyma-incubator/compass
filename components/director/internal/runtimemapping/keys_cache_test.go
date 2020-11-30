@@ -2,11 +2,12 @@ package runtimemapping
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
