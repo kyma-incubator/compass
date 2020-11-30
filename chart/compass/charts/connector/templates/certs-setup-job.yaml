@@ -25,7 +25,7 @@ spec:
         image: "{{ .Values.global.images.certs_setup_job.containerRegistry.path }}/{{ .Values.global.images.certs_setup_job.dir }}application-connectivity-certs-setup-job:{{ .Values.global.images.certs_setup_job.version }}"
         args:
           - "/appconnectivitycertssetupjob"
-          - "--connectorCertificateSecret={{ .Values.global.connector.secrets.ca.namespace }}/{{ .Values.global.connector.secrets.ca.name }}"
+          - "--connectorCertificateSecret={{ .Values.global.cert_manager.namespace }}/{{ .Values.global.cert_manager.mtls_cacert }}"
           - "--caCertificateSecret={{ .Values.global.connector.secrets.rootCA.namespace }}/{{ .Values.global.connector.secrets.rootCA.cacert }}"
           - "--caCertificate={{ .Values.global.connector.caCertificate }}"
           - "--caKey={{ .Values.global.connector.caKey }}"

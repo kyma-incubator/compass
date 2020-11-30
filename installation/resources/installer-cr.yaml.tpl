@@ -12,5 +12,9 @@ spec:
   version: "__VERSION__"
   url: "__URL__"
   components:
+  # TODO: If ?
+    - name: "cert-manager"
+      namespace: "cert-manager"
+  # END IF
     - name: "compass"
       namespace: "compass-system"

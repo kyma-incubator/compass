@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: {{ .Values.global.connector.secrets.ca.name }}
+  namespace: {{ .Values.global.connector.secrets.ca.namespace }}
+spec:
+  secretName: "{{ .Values.global.connector.secrets.ca.name }}"
+  # TODO: Use values from values.yaml
+  duration: 10m
+  # TODO: Use values from values.yaml
+  renewBefore: 5m
+  issuerRef:
+    name: cmp-root-ca-issuer
+    kind: ClusterIssuer
+  commonName: Kyma
+  isCA: true
+  keyAlgorithm: rsa
+  keySize: 4096
+  usages:
+    - "digital signature"
+    - "key encipherment"
+    - "cert sign"

@@ -1,0 +1,7 @@
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: cmp-root-ca-issuer
+spec:
+  ca:
+    secretName: "{{ .Values.global.cert_manager.mtls_cacert }}"
