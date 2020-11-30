@@ -83,12 +83,17 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		return nil, errors.New("Failed to type cast PreAuditlogService")
 	}
 
+	claims, err := t.getClaims(req.Header)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing JWT")
+	}
+
 	ctx := context.WithValue(req.Context(), correlation.RequestIDHeaderKey, correlationHeaders)
 	err = preAuditLogger.PreLog(ctx, AuditlogMessage{
 		CorrelationIDHeaders: correlationHeaders,
 		Request:              string(requestBody),
 		Response:             "",
-		Claims:               Claims{},
+		Claims:               claims,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "while sending pre-change auditlog message to auditlog service")
@@ -97,11 +102,6 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	resp, err = t.RoundTripper.RoundTrip(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "on request round trip")
-	}
-
-	claims, err := t.getClaims(req.Header)
-	if err != nil {
-		return nil, errors.Wrap(err, "while parsing JWT")
 	}
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
