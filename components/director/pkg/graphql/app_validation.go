@@ -1,10 +1,11 @@
 package graphql
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"os"
 	"strconv"
+
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
 const appNormalizationEnvVar = "APP_NAME_NORMALIZATION_ENABLED"
