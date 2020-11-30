@@ -3,12 +3,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: {{ template "fullname" . }}-{{ $config.name }}
+    name: {{ template "fullname" . }}-{{ $adapterName }}
     namespace: {{ .Release.Namespace }}
     labels:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
-        system: {{ $config.name }}
+        system: {{ $adapterName }}
 spec:
     replicas: {{ .Values.deployment.replicaCount }}
     selector:
@@ -22,7 +22,7 @@ spec:
             labels:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
-                system: {{ $config.name }}
+                system: {{ $adapterName }}
         spec:
             nodeSelector:
               {{- toYaml .Values.deployment.nodeSelector | nindent 14 }}

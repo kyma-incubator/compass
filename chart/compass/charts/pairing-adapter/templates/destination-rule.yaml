@@ -10,8 +10,8 @@ spec:
   subsets:
   {{- range $adapterName, $config := .Values.deployment.adapters -}}
   {{if eq $config.enabled true}}
-    - name: "{{ $config.name }}-subset"
+    - name: "{{ $adapterName }}-subset"
       labels:
-        system: {{ $config.name }}
+        system: {{ $adapterName }}
   {{ end }}
   {{- end -}}

@@ -11,15 +11,15 @@ spec:
   http:
   {{- range $adapterName, $config := .Values.deployment.adapters -}}
   {{if eq $config.enabled true}}
-    - name: "{{ $config.name }}-route"
+    - name: "{{ $adapterName }}-route"
       match:
         - uri:
-            prefix: "/{{ $config.name }}"
+            prefix: "/{{ $adapterName }}"
       rewrite:
         uri: "/adapter"
       route:
         - destination:
             host: pairing-adapter.{{ .Release.Namespace }}.svc.cluster.local
-            subset: "{{ $config.name }}-subset"
+            subset: "{{ $adapterName }}-subset"
   {{ end }}
   {{- end -}}

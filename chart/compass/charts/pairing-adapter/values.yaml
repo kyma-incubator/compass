@@ -12,7 +12,6 @@ deployment:
   adapters:
     adapter1:
       enabled: false
-      name: ""
       oauthSecret: ""
       envs:
         mappingTemplateExternalURL: ""
