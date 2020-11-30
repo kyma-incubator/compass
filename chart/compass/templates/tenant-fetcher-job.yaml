@@ -37,7 +37,7 @@ spec:
           labels:
             cronjob: tenant-fetcher
         spec:
-          serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job
+          serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:
           - name: fetcher
             image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
