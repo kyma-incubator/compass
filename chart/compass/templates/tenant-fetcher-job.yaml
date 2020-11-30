@@ -17,7 +17,7 @@ data:
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: "compass-tenant-fetcher-{{ $tenantFetcherName }}"
+  name: "{{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}"
   labels:
     app.kubernetes.io/name: {{ template "name" $outerScope }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
@@ -192,13 +192,13 @@ metadata:
 rules:
   - apiGroups: ["*"]
     resources: ["configmaps"]
-    resourceNames: ["compass-tenant-fetcher-{{ $tenantFetcherName }}-config"]
+    resourceNames: ["{{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}-config"]
     verbs: ["get", "update"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: compass-tenant-fetcher-{{ $tenantFetcherName }}-config
+  name: {{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}-config
   namespace: {{ $config.configMapNamespace }}
   labels:
     app: {{ $.Chart.Name }}
