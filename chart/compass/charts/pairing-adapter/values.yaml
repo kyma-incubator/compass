@@ -10,7 +10,7 @@ deployment:
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
   adapters:
-    adapter1:
+    adapter0:
       enabled: false
       oauthSecret: ""
       envs:
