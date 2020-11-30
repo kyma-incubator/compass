@@ -8,6 +8,8 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/kyma-incubator/compass/components/director v0.0.0-20201109133626-4876e6d3caae
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.6.0
+	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/vrischmann/envconfig v1.2.0

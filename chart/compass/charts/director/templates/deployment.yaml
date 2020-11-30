@@ -57,7 +57,7 @@ spec:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_METRICS_ADDRESS
-              value: "0.0.0.0:{{ .Values.metrics.port }}"              
+              value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "/director/graphql"
             - name: APP_JWKS_ENDPOINT

@@ -8,11 +8,6 @@ metadata:
     component: compass
     kyma-project.io/installation: ""
 data:
-  # Kyma installer already setup a gateway which compass can use
-  global.istio.gateway.name: "kyma-gateway"
-  global.istio.gateway.namespace: "kyma-system"
-  gateway.gateway.enabled: "false"
-
   # Kyma installer was ran with disabled legacy connectivity which resulted in creating this secret in kyma-integration
   global.connector.secrets.ca.name: "connector-service-app-ca"
   global.connector.secrets.ca.namespace: "kyma-integration"
