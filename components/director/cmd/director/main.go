@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"

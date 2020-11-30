@@ -2,9 +2,10 @@ package normalizer_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNormalizer(t *testing.T) {
