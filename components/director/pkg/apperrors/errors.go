@@ -90,6 +90,14 @@ func NewNotUniqueError(resourceType resource.Type) error {
 	}
 }
 
+func NewNotUniqueNameError(resourceType resource.Type) error {
+	return Error{
+		errorCode: NotUniqueName,
+		Message:   notUniqueNameMsg,
+		arguments: map[string]string{"object": string(resourceType)},
+	}
+}
+
 func NewNotFoundError(resourceType resource.Type, objectID string) error {
 	return Error{
 		errorCode: NotFound,
