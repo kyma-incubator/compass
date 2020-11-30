@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=HttpClient -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=HttpClient --output=automock --outpkg=automock --case=underscore
 type HttpClient interface {
 	Do(request *http.Request) (*http.Response, error)
 }

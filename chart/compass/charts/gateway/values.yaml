@@ -10,8 +10,11 @@ deployment:
   nodeSelector: {}
 
 gateway:
-  enabled: true
-  manageCerts: true
-  auditlog:
+  enabled: false # ISTIO related resources(istio gateway)
+  manageCerts: true # ISTIO related resources(istio gateway)
+  auditlog: # COMPASS related resources(compass gateway)
     enabled: false
     authMode: "basic"
+
+metrics:
+  port: 3001

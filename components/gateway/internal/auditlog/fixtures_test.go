@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/stretchr/testify/require"
@@ -31,20 +32,24 @@ func fixFabricatedSecurityEventMsg() model.SecurityEvent {
 	}}
 }
 
-func fixSuccessConfigChangeMsg(claims proxy.Claims, request, response string) model.ConfigurationChange {
+func fixSuccessConfigChangeMsg(claims proxy.Claims, request, response string, auditlogType string) model.ConfigurationChange {
 	msg := fixFabricatedConfigChangeMsg()
 	msg.Object = model.Object{ID: fillID(claims, "Config Change")}
 	msg.Attributes = []model.Attribute{
+		{Name: "auditlog_type", Old: "", New: auditlogType},
 		{Name: "request", Old: "", New: request},
-		{Name: "response", Old: "", New: response}}
+		{Name: "correlation_id", Old: "", New: fixCorrelationID()[correlation.RequestIDHeaderKey]},
+		{Name: "response", Old: "", New: response},
+	}
 
 	return msg
 }
 
-func fixSecurityEventMsg(t *testing.T, errors []model.ErrorMessage, claims proxy.Claims) model.SecurityEvent {
+func fixSecurityEventMsg(t *testing.T, errors []model.ErrorMessage, claims proxy.Claims, correlationID string) model.SecurityEvent {
 	msgData := model.SecurityEventData{
-		ID:     fillID(claims, "Security Event"),
-		Reason: errors,
+		ID:            fillID(claims, "Security Event"),
+		CorrelationID: correlationID,
+		Reason:        errors,
 	}
 	data, err := json.Marshal(&msgData)
 	require.NoError(t, err)
@@ -83,4 +88,10 @@ func fixFilledSecurityEventMsg() model.SecurityEvent {
 	msg.Data = "test-data"
 
 	return msg
+}
+
+func fixCorrelationID() correlation.Headers {
+	return map[string]string{
+		correlation.RequestIDHeaderKey: "d135d5f1-3dd0-45fa-8f26-55d8d6a44876",
+	}
 }
