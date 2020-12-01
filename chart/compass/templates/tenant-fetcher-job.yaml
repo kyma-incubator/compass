@@ -9,6 +9,9 @@ metadata:
   name: {{ $configmapName }}
   namespace: {{ $config.configMapNamespace }}
   labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     app.kubernetes.io/name: {{ template "name" $outerScope }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
@@ -26,6 +29,9 @@ kind: CronJob
 metadata:
   name: "{{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}"
   labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     app.kubernetes.io/name: {{ template "name" $outerScope }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
@@ -180,6 +186,9 @@ metadata:
   name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
   namespace: {{ $.Release.Namespace }}
   labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     app.kubernetes.io/name: {{ template "name" $outerScope }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
