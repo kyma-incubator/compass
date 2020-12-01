@@ -86,7 +86,7 @@ type ApplicationHideCfgProvider interface {
 }
 
 type service struct {
-	appNameNormalizer  normalizer.Func
+	appNameNormalizer  normalizer.Normalizator
 	appHideCfgProvider ApplicationHideCfgProvider
 
 	appRepo       ApplicationRepository
@@ -102,7 +102,7 @@ type service struct {
 	timestampGen       timestamp.Generator
 }
 
-func NewService(appNameNormalizer normalizer.Func, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
 	return &service{
 		appNameNormalizer:  appNameNormalizer,
 		appHideCfgProvider: appHideCfgProvider,
@@ -229,9 +229,9 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 		return "", err
 	}
 
-	normalizedName := s.appNameNormalizer(in.Name)
+	normalizedName := s.appNameNormalizer.Normalize(in.Name)
 	for _, app := range applications {
-		if normalizedName == s.appNameNormalizer(app.Name) {
+		if normalizedName == s.appNameNormalizer.Normalize(app.Name) {
 			return "", apperrors.NewNotUniqueNameError(resource.Application)
 		}
 	}

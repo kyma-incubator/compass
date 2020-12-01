@@ -49,7 +49,7 @@ import (
 var _ graphql.ResolverRoot = &RootResolver{}
 
 type RootResolver struct {
-	appNameNormalizer   normalizer.Func
+	appNameNormalizer   normalizer.Normalizator
 	app                 *application.Resolver
 	appTemplate         *apptemplate.Resolver
 	api                 *api.Resolver
@@ -73,7 +73,7 @@ type RootResolver struct {
 }
 
 func NewRootResolver(
-	appNameNormalizer normalizer.Func,
+	appNameNormalizer normalizer.Normalizator,
 	transact persistence.Transactioner,
 	cfgProvider *configprovider.Provider,
 	oneTimeTokenCfg onetimetoken.Config,
@@ -273,7 +273,7 @@ func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID st
 
 	if shouldNormalize {
 		for i := range apps.Data {
-			apps.Data[i].Name = r.appNameNormalizer(apps.Data[i].Name)
+			apps.Data[i].Name = r.appNameNormalizer.Normalize(apps.Data[i].Name)
 		}
 	}
 
