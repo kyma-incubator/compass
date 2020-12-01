@@ -1,5 +1,6 @@
 {{- range $adapterName, $config := .Values.deployment.adapters -}}
 {{if eq $config.enabled true}}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,6 +16,7 @@ spec:
         matchLabels:
             app: {{ $.Chart.Name }}
             release: {{ $.Release.Name }}
+            system: { { $adapterName } }
     strategy:
         {{- toYaml $.Values.deployment.strategy | nindent 8 }}
     template:
