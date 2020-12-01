@@ -16,7 +16,7 @@ spec:
         matchLabels:
             app: {{ $.Chart.Name }}
             release: {{ $.Release.Name }}
-            system: { { $adapterName } }
+            system: {{ $adapterName }}
     strategy:
         {{- toYaml $.Values.deployment.strategy | nindent 8 }}
     template:
