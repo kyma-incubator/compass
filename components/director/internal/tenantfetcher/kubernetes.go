@@ -49,8 +49,8 @@ type kubernetesClient struct {
 }
 
 func NewKubernetesClient(configMapNamespace, configMapName, configMapTimestampField string) (KubeClient, error) {
-	k8sClientSetConfig := kube.K8sConfig{}
-	K8sClientSet, err := kube.NewK8sClientSet(k8sClientSetConfig.PollInterval, k8sClientSetConfig.PollTimeout, k8sClientSetConfig.Timeout)
+	kubeClientSetConfig := kube.Config{}
+	kubeClientSet, err := kube.NewKubernetesClientSet(kubeClientSetConfig.PollInterval, kubeClientSetConfig.PollTimeout, kubeClientSetConfig.Timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func NewKubernetesClient(configMapNamespace, configMapName, configMapTimestampFi
 	}
 
 	return &kubernetesClient{
-		client: K8sClientSet,
+		client: kubeClientSet,
 		cfg:    cfg,
 	}, nil
 }

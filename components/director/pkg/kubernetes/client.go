@@ -14,34 +14,34 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-type K8sConfig struct {
+type Config struct {
 	PollInterval time.Duration `envconfig:"default=2s"`
 	PollTimeout  time.Duration `envconfig:"default=1m"`
 	Timeout      time.Duration `envconfig:"default=2m"`
 }
 
-func NewK8sClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
-	k8sConfig, err := restclient.InClusterConfig()
+func NewKubernetesClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
+	kubeConfig, err := restclient.InClusterConfig()
 	if err != nil {
 		log.Println("Failed to read in cluster Config", err)
 		log.Println("Trying to initialize with local Config")
 		home := homedir.HomeDir()
-		k8sConfPath := filepath.Join(home, ".kube", "Config")
-		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
+		kubeConfPath := filepath.Join(home, ".kube", "Config")
+		kubeConfig, err = clientcmd.BuildConfigFromFlags("", kubeConfPath)
 		if err != nil {
 			return nil, errors.Errorf("failed to read k8s in-cluster configuration, %s", err.Error())
 		}
 	}
 
-	k8sConfig.Timeout = timeout
+	kubeConfig.Timeout = timeout
 
-	k8sClientSet, err := kubernetes.NewForConfig(k8sConfig)
+	kubeClientSet, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
 	}
 
 	err = wait.PollImmediate(interval, pollingTimeout, func() (bool, error) {
-		_, err := k8sClientSet.ServerVersion()
+		_, err := kubeClientSet.ServerVersion()
 		if err != nil {
 			log.Printf("Failed to access API Server: %s", err.Error())
 			return false, nil
@@ -53,5 +53,5 @@ func NewK8sClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernet
 	}
 
 	log.Println("Successfully initialized kubernetes client")
-	return k8sClientSet, nil
+	return kubeClientSet, nil
 }
