@@ -62,18 +62,19 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
 }
 
-/* TODO: Test is commented as for now we don't have a way to trigger Director with differeent configurations from the tests
-func TestRegisterApplicationWithSameNormalizarionNameExists(t *testing.T) {
+func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	actualApp := registerApplication(t, ctx, "app@wordpress")
+	firstAppName := "app@wordpress"
+	actualApp := registerApplication(t, ctx, firstAppName)
 	//THEN
 	require.NotEmpty(t, actualApp.ID)
+	require.Equal(t, actualApp.Name, firstAppName)
 	defer unregisterApplication(t, actualApp.ID)
 
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
 
-	// SECOND APP WITH SAME NORMALIZED NAME
+	// SECOND APP WITH SAME APP NAME WHEN NORMALIZED
 	inSecond := graphql.ApplicationRegisterInput{
 		Name:           "app!wordpress",
 		ProviderName:   ptr.String("provider name"),
@@ -94,15 +95,45 @@ func TestRegisterApplicationWithSameNormalizarionNameExists(t *testing.T) {
 	require.EqualError(t, err, "graphql: Object name is not unique [object=Application]")
 	require.Empty(t, actualSecondApp.ID)
 
-	// THIRD APP WITH DIFFERENT NORMALIZED NAME
+	// THIRD APP WITH DIFFERENT APP NAME WHEN NORMALIZED
 	actualThirdApp := registerApplication(t, ctx, "appwordpress")
 	//THEN
 	require.NotEmpty(t, actualThirdApp.ID)
 	defer unregisterApplication(t, actualThirdApp.ID)
 
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualThirdApp.Status.Condition)
+
+	// FOURTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH MATCHES EXISTING APP WHEN NORMALIZED
+	inFourth := graphql.ApplicationRegisterInput{
+		Name:           "mp-appwordpress",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: &graphql.Labels{
+			"group":     []interface{}{"production", "experimental"},
+			"scenarios": []interface{}{"DEFAULT"},
+		},
+	}
+	appFourthInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(inFourth)
+	require.NoError(t, err)
+	actualFourthApp := graphql.ApplicationExt{}
+	// WHEN
+	request = fixRegisterApplicationRequest(appFourthInputGQL)
+	err = tc.RunOperation(ctx, request, &actualFourthApp)
+	//THEN
+	require.EqualError(t, err, "graphql: Object name is not unique [object=Application]")
+	require.Empty(t, actualFourthApp.ID)
+
+	// FIFTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH DOES NOT MATCH ANY EXISTING APP WHEN NORMALIZED
+	fifthAppName := "mp-application"
+	actualFifthApp := registerApplication(t, ctx, fifthAppName)
+	//THEN
+	require.NotEmpty(t, actualFifthApp.ID)
+	require.Equal(t, actualFifthApp.Name, fifthAppName)
+	defer unregisterApplication(t, actualFifthApp.ID)
+
+	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualFifthApp.Status.Condition)
 }
-*/
 
 func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 	// GIVEN
