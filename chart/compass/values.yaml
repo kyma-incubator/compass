@@ -82,8 +82,6 @@ global:
 
   enableCompassDefaultScenarioAssignment: true
 
-  enableAppNameNormalization: false
-
   tenantConfig:
     useDefaultTenants: true
     dbPool:

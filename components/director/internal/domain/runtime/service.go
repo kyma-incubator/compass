@@ -15,6 +15,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const ShouldNormalize = "shouldNormalize"
+
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
@@ -173,6 +175,10 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
 	}
 
+	if in.Labels[ShouldNormalize] == nil {
+		in.Labels[ShouldNormalize] = "true"
+	}
+
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Runtime")
@@ -197,6 +203,13 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 	err = s.repo.Update(ctx, rtm)
 	if err != nil {
 		return errors.Wrap(err, "while updating Runtime")
+	}
+
+	if in.Labels == nil || in.Labels[ShouldNormalize] == nil {
+		if in.Labels == nil {
+			in.Labels = make(map[string]interface{}, 1)
+		}
+		in.Labels[ShouldNormalize] = "true"
 	}
 
 	err = s.labelRepo.DeleteAll(ctx, rtmTenant, model.RuntimeLabelableObject, id)

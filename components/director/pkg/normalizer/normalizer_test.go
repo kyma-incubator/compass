@@ -116,16 +116,13 @@ func TestNormalizer(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
-			defaultNormalizer := normalizer.New(true)
-			noopNormalizer := normalizer.New(false)
+			defaultNormalizer := normalizer.DefaultNormalizer
 
 			// when
 			normalizedResult := defaultNormalizer(testCase.Input)
-			noopResult := noopNormalizer(testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.Expected, normalizedResult)
-			assert.Equal(t, testCase.Input, noopResult)
 		})
 	}
 }
