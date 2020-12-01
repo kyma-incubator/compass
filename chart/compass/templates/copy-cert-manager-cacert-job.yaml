@@ -1,3 +1,4 @@
+{{- if .Values.certsSetupJob.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -112,3 +113,4 @@ spec:
                   --key=tls_temp/tls.key
 
                 rm -rf tls_temp
+{{- end }}
