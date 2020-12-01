@@ -1646,7 +1646,7 @@ func TestResolver_GetLabel(t *testing.T) {
 			},
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("GetLabel", contextParam, runtimeID, labelKey).Return(nil, errors.New("doesn't exist")).Once()
+				svc.On("GetLabel", contextParam, runtimeID, labelKey).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID)).Once()
 				return svc
 			},
 			InputKey:       labelKey,
