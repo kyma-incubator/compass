@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: {{ template "fullname" $. }}-{{ $adapterName }}
+    name: {{ template "fullname" . }}-{{ $adapterName }}
     namespace: {{ $.Release.Namespace }}
     labels:
         app: {{ $.Chart.Name }}
