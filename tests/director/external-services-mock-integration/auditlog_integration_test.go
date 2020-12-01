@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 
 	graphql2 "github.com/machinebox/graphql"
 
