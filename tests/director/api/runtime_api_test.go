@@ -14,7 +14,7 @@ import (
 
 const (
 	scenariosLabel          = "scenarios"
-	shouldNormalizeLabel    = "shouldNormalize"
+	shouldNormalize         = "shouldNormalize"
 	queryRuntimesCategory   = "query runtimes"
 	registerRuntimeCategory = "register runtime"
 )
@@ -496,7 +496,7 @@ func TestRegisterUpdateRuntimeWithShouldNormalizeLabel(t *testing.T) {
 	name := "test-create-runtime-without-labels"
 	runtimeInput := graphql.RuntimeInput{
 		Name:   name,
-		Labels: &graphql.Labels{shouldNormalizeLabel: "false"},
+		Labels: &graphql.Labels{shouldNormalize: "false"},
 	}
 
 	runtime := registerRuntimeFromInput(t, ctx, &runtimeInput)
@@ -514,7 +514,7 @@ func TestRegisterUpdateRuntimeWithShouldNormalizeLabel(t *testing.T) {
 	secondInput := graphql.RuntimeInput{
 		Name:        name,
 		Description: ptr.String("runtime-1-description"),
-		Labels:      &graphql.Labels{shouldNormalizeLabel: "true", scenariosLabel: []interface{}{"DEFAULT"}},
+		Labels:      &graphql.Labels{shouldNormalize: "true", scenariosLabel: []interface{}{"DEFAULT"}},
 	}
 	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(secondInput)
 	require.NoError(t, err)
