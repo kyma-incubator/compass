@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"net/http"
 	"testing"
 
@@ -56,7 +57,25 @@ func TestAuditlogIntegration(t *testing.T) {
 	t.Log("Compare request to director with auditlog")
 	requestBody := prepareRegisterAppRequestBody(t, registerRequest)
 	require.True(t, len(auditlogs[0].Attributes) == 3 || len(auditlogs[0].Attributes) == 4)
-	assert.Equal(t, requestBody.String(), auditlogs[0].Attributes[1].New)
+	var pre, post model.ConfigurationChange
+
+	for _, v := range auditlogs {
+		for _, attr := range v.Attributes {
+			if attr.Name == "auditlog_type" && attr.New == "pre-operation" {
+				pre = v
+			}
+			if attr.Name == "auditlog_type" && attr.New == "post-operation" {
+				post = v
+			}
+		}
+	}
+
+	assert.Equal(t, requestBody.String(), pre.Attributes[1].New)
+	assert.Equal(t, 2, len(auditlogs))
+	assert.Equal(t, "admin", pre.Object.ID["consumerID"])
+	assert.Equal(t, "Static User", pre.Object.ID["apiConsumer"])
+	assert.Equal(t, "admin", post.Object.ID["consumerID"])
+	assert.Equal(t, "Static User", post.Object.ID["apiConsumer"])
 }
 
 func prepareRegisterAppRequestBody(t *testing.T, registerRequest *graphql2.Request) bytes.Buffer {
