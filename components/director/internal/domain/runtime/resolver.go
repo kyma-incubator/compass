@@ -286,7 +286,7 @@ func (r *Resolver) GetLabel(ctx context.Context, runtimeID string, key string) (
 
 	label, err := r.runtimeService.GetLabel(ctx, runtimeID, key)
 	if err != nil {
-		if strings.Contains(err.Error(), "doesn't exist") { // TODO: Use custom error and check its type
+		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
 		}
 		return nil, err

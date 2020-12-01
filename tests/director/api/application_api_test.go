@@ -640,7 +640,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	ctx := context.Background()
 	tenantID := testTenants.GetIDByName(t, "Test1")
 	otherTenant := testTenants.GetIDByName(t, "Test2")
-	tenantApplications := []*graphql.Application{}
+	tenantUnnormalizedApplications := []*graphql.Application{}
 	tenantNormalizedApplications := []*graphql.Application{}
 	defaultValue := "DEFAULT"
 	scenarios := []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
@@ -713,7 +713,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		defer unregisterApplicationInTenant(t, application.ID, testApp.Tenant)
 		if testApp.WithinTenant {
-			tenantApplications = append(tenantApplications, &application)
+			tenantUnnormalizedApplications = append(tenantUnnormalizedApplications, &application)
 
 			normalizedApp := application
 			normalizedApp.Name = defaultNormalizationPrefix + normalizedApp.Name
@@ -744,9 +744,41 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		require.Len(t, applicationPage.Data, len(tenantApplications))
-		assert.ElementsMatch(t, tenantApplications, applicationPage.Data)
+		require.Len(t, applicationPage.Data, len(tenantUnnormalizedApplications))
+		assert.ElementsMatch(t, tenantUnnormalizedApplications, applicationPage.Data)
 
+	})
+
+	t.Run("Applications For Runtime Query without normalization due to missing label", func(t *testing.T) {
+		//create runtime without normalization
+		unlabeledRuntimeInput := fixRuntimeInput("unlabeled-runtime")
+		(*unlabeledRuntimeInput.Labels)[scenariosLabel] = scenarios
+		(*unlabeledRuntimeInput.Labels)[shouldNormalize] = "false"
+		unlabeledRuntimeGQL, err := tc.graphqlizer.RuntimeInputToGQL(unlabeledRuntimeInput)
+		require.NoError(t, err)
+		registerUnlabeledRuntimeRequest := fixRegisterRuntimeRequest(unlabeledRuntimeGQL)
+
+		unlabledRuntime := graphql.Runtime{}
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerUnlabeledRuntimeRequest, &unlabledRuntime)
+		require.NoError(t, err)
+		require.NotEmpty(t, unlabledRuntime.ID)
+		defer unregisterRuntimeWithinTenant(t, unlabledRuntime.ID, tenantID)
+
+		deleteLabelRuntimeResp := graphql.Runtime{}
+		deleteLabelRequest := fixDeleteRuntimeLabelRequest(unlabledRuntime.ID, shouldNormalize)
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, deleteLabelRequest, &deleteLabelRuntimeResp)
+		require.NoError(t, err)
+
+		request := fixApplicationForRuntimeRequest(unlabledRuntime.ID)
+		applicationPage := graphql.ApplicationPage{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+		saveExample(t, request.Query(), "query applications for runtime")
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, applicationPage.Data, len(tenantNormalizedApplications))
+		assert.ElementsMatch(t, tenantNormalizedApplications, applicationPage.Data)
 	})
 
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
@@ -774,7 +806,6 @@ func TestApplicationsForRuntime(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, applicationPage.Data, len(tenantNormalizedApplications))
 		assert.ElementsMatch(t, tenantNormalizedApplications, applicationPage.Data)
-
 	})
 
 	t.Run("Applications Query With Consumer Runtime", func(t *testing.T) {
@@ -788,8 +819,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		require.Len(t, applicationPage.Data, len(tenantApplications))
-		assert.ElementsMatch(t, tenantApplications, applicationPage.Data)
+		require.Len(t, applicationPage.Data, len(tenantUnnormalizedApplications))
+		assert.ElementsMatch(t, tenantUnnormalizedApplications, applicationPage.Data)
 	})
 }
 
@@ -869,7 +900,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	}
 
 	//create runtime without normalization
-	runtimeWithoutNormalizationInput := fixRuntimeInput("runtime-unnormalized")
+	runtimeWithoutNormalizationInput := fixRuntimeInput("unnormalized-runtime")
 	(*runtimeWithoutNormalizationInput.Labels)[scenariosLabel] = scenarios
 	(*runtimeWithoutNormalizationInput.Labels)[shouldNormalize] = "false"
 	runtimeWithoutNormalizationInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeWithoutNormalizationInput)
@@ -896,7 +927,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime with normalization
-		runtimeWithNormalizationInput := fixRuntimeInput("runtime-normalized")
+		runtimeWithNormalizationInput := fixRuntimeInput("normalized-runtime")
 		(*runtimeWithNormalizationInput.Labels)[scenariosLabel] = scenarios
 		(*runtimeWithNormalizationInput.Labels)[shouldNormalize] = "true"
 		runtimeWithNormalizationInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeWithNormalizationInput)

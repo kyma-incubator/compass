@@ -268,8 +268,11 @@ func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID st
 		return nil, err
 	}
 
-	labelsMap := (map[string]interface{})(*labels)
-	shouldNormalize := labelsMap[runtime.ShouldNormalize] == nil || labelsMap[runtime.ShouldNormalize] == "true"
+	shouldNormalize := true
+	if labels != nil {
+		labelsMap := (map[string]interface{})(*labels)
+		shouldNormalize = labelsMap[runtime.ShouldNormalize] == nil || labelsMap[runtime.ShouldNormalize] == "true"
+	}
 
 	if shouldNormalize {
 		for i := range apps.Data {
