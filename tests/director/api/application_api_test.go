@@ -735,7 +735,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	require.NotEmpty(t, runtimeWithoutNormalization.ID)
 	defer unregisterRuntimeWithinTenant(t, runtimeWithoutNormalization.ID, tenantID)
 
-	t.Run("Applications For Runtime Query", func(t *testing.T) {
+	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
 		request := fixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
 		applicationPage := graphql.ApplicationPage{}
 
@@ -798,6 +798,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	ctx := context.Background()
 	tenantID := testTenants.GetIDByName(t, "TestApplicationsForRuntimeWithHiddenApps")
 	expectedApplications := []*graphql.Application{}
+	expectedNormalizedApplications := []*graphql.Application{}
 
 	defaultValue := "DEFAULT"
 	scenarios := []string{defaultValue, "test-scenario"}
@@ -860,24 +861,29 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		defer unregisterApplicationInTenant(t, application.ID, tenantID)
 		if !testApp.Hidden {
 			expectedApplications = append(expectedApplications, &application)
+
+			normalizedApp := application
+			normalizedApp.Name = defaultNormalizationPrefix + normalizedApp.Name
+			expectedNormalizedApplications = append(expectedNormalizedApplications, &normalizedApp)
 		}
 	}
 
-	//create runtime
-	runtimeInput := fixRuntimeInput("runtime")
-	(*runtimeInput.Labels)[scenariosLabel] = scenarios
-	runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+	//create runtime without normalization
+	runtimeWithoutNormalizationInput := fixRuntimeInput("runtime-unnormalized")
+	(*runtimeWithoutNormalizationInput.Labels)[scenariosLabel] = scenarios
+	(*runtimeWithoutNormalizationInput.Labels)[shouldNormalize] = "false"
+	runtimeWithoutNormalizationInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeWithoutNormalizationInput)
 	require.NoError(t, err)
-	registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
-	runtime := graphql.Runtime{}
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeRequest, &runtime)
+	registerWithoutNormalizationRuntimeRequest := fixRegisterRuntimeRequest(runtimeWithoutNormalizationInputGQL)
+	runtimeWithoutNormalization := graphql.Runtime{}
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerWithoutNormalizationRuntimeRequest, &runtimeWithoutNormalization)
 	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
-	defer unregisterRuntimeWithinTenant(t, runtime.ID, tenantID)
+	require.NotEmpty(t, runtimeWithoutNormalization.ID)
+	defer unregisterRuntimeWithinTenant(t, runtimeWithoutNormalization.ID, tenantID)
 
-	t.Run("Applications For Runtime Query", func(t *testing.T) {
+	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
 		//WHEN
-		request := fixApplicationForRuntimeRequest(runtime.ID)
+		request := fixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
 		applicationPage := graphql.ApplicationPage{}
 
 		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
@@ -888,13 +894,39 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		assert.ElementsMatch(t, expectedApplications, applicationPage.Data)
 	})
 
+	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
+		//create runtime with normalization
+		runtimeWithNormalizationInput := fixRuntimeInput("runtime-normalized")
+		(*runtimeWithNormalizationInput.Labels)[scenariosLabel] = scenarios
+		(*runtimeWithNormalizationInput.Labels)[shouldNormalize] = "true"
+		runtimeWithNormalizationInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeWithNormalizationInput)
+		require.NoError(t, err)
+		registerWithNormalizationRuntimeRequest := fixRegisterRuntimeRequest(runtimeWithNormalizationInputGQL)
+		runtimeWithNormalization := graphql.Runtime{}
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerWithNormalizationRuntimeRequest, &runtimeWithNormalization)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtimeWithNormalization.ID)
+		defer unregisterRuntimeWithinTenant(t, runtimeWithNormalization.ID, tenantID)
+
+		//WHEN
+		request := fixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
+		applicationPage := graphql.ApplicationPage{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, applicationPage.Data, len(expectedNormalizedApplications))
+		assert.ElementsMatch(t, expectedNormalizedApplications, applicationPage.Data)
+	})
+
 	t.Run("Applications Query With Consumer Runtime", func(t *testing.T) {
 		//WHEN
 		request := fixApplicationsRequest()
 		applicationPage := graphql.ApplicationPage{}
 
 		err = tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
-			ID:   runtime.ID,
+			ID:   runtimeWithoutNormalization.ID,
 			Type: jwtbuilder.RuntimeConsumer,
 		}).Run(request, &applicationPage)
 
