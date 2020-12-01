@@ -89,13 +89,13 @@ spec:
             - |
                 set -o xtrace
 
-                while `kubectl get job -n {{ .Release.Namespace }} {{ .Chart.Name }}-certs-setup-job` [ \$? -ne 0 ]; do
-                  echo Waiting for job {{ .Chart.Name }}-certs-setup-job to be created in namespace {{ .Release.Namespace }}...
+                while `kubectl get job -n {{ .Release.Namespace }} connector-certs-setup-job` [ \$? -ne 0 ]; do
+                  echo Waiting for job connector-certs-setup-job to be created in namespace {{ .Release.Namespace }}...
                   sleep 1s
                 done
 
-                while [[ `kubectl get job {{ .Chart.Name }}-certs-setup-job -n {{ .Release.Namespace }} -o jsonpath={.status.active}` ]]; do
-                  echo "Waiting for job {{ .Chart.Name }}-certs-setup-job to complete..."
+                while [[ `kubectl get job connector-certs-setup-job -n {{ .Release.Namespace }} -o jsonpath={.status.active}` ]]; do
+                  echo "Waiting for job connector-certs-setup-job to complete..."
                   sleep 5s
                 done
 

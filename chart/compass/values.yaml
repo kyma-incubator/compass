@@ -105,8 +105,8 @@ global:
       ca:
         name: compass-connector-app-ca
         namespace: compass-system
-        certificateKey: ca.crt
-        keyKey: ca.key
+        certificateKey: tls.crt
+        keyKey: tls.key
       rootCA:
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
         # In order for istio mTLS to work we should have two different secrets one containing the server certificate (let’s say X) and one used for validation of the client’s certificates.

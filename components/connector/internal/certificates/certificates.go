@@ -48,7 +48,7 @@ func (cu *certificateUtility) LoadCert(encodedData []byte) (*x509.Certificate, a
 func (cu *certificateUtility) LoadKey(encodedData []byte) (*rsa.PrivateKey, apperrors.AppError) {
 	pemBlock, _ := pem.Decode(encodedData)
 	if pemBlock == nil {
-		return nil, apperrors.Internal("Error while decoding pem block.")
+		return nil, apperrors.Internal("error while decoding pem block for key")
 	}
 
 	if caPrivateKey, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes); err == nil {
@@ -57,7 +57,7 @@ func (cu *certificateUtility) LoadKey(encodedData []byte) (*rsa.PrivateKey, appe
 
 	caPrivateKey, err := x509.ParsePKCS8PrivateKey(pemBlock.Bytes)
 	if err != nil {
-		return nil, apperrors.Internal("Error while parsing private key: %s", err)
+		return nil, apperrors.Internal("error while parsing private key: %s", err)
 	}
 
 	return caPrivateKey.(*rsa.PrivateKey), nil
@@ -66,12 +66,12 @@ func (cu *certificateUtility) LoadKey(encodedData []byte) (*rsa.PrivateKey, appe
 func (cu *certificateUtility) LoadCSR(encodedData []byte) (*x509.CertificateRequest, apperrors.AppError) {
 	pemBlock, _ := pem.Decode(encodedData)
 	if pemBlock == nil {
-		return nil, apperrors.BadRequest("Error while decoding pem block.")
+		return nil, apperrors.BadRequest("error while decoding pem block for csr")
 	}
 
 	clientCSR, err := x509.ParseCertificateRequest(pemBlock.Bytes)
 	if err != nil {
-		return nil, apperrors.BadRequest("Error while parsing CSR: %s", err)
+		return nil, apperrors.BadRequest("error while parsing CSR: %s", err)
 	}
 
 	err = clientCSR.CheckSignature()
