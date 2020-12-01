@@ -316,5 +316,5 @@ func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []mod
 }
 
 func convertTimeToUnixNanoString(timestamp time.Time) string {
-	return strconv.FormatInt(timestamp.UnixNano() / int64(time.Millisecond), 10)
+	return strconv.FormatInt(timestamp.UnixNano()/int64(time.Millisecond), 10)
 }
