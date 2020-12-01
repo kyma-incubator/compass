@@ -26,7 +26,6 @@ func TestService_SyncTenants(t *testing.T) {
 		CreationTimeField: "creationTime",
 	}
 
-	event0 := fixEvent("0", "ooo", 0, fieldMapping)
 	event1 := fixEvent("1", "foo", 1, fieldMapping)
 	event2 := fixEvent("2", "bar", 15, fieldMapping)
 	event3 := fixEvent("3", "baz", 33, fieldMapping)
@@ -98,7 +97,7 @@ func TestService_SyncTenants(t *testing.T) {
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", "33").Return(nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
 				return client
 			},
 			ExpectedError: nil,
@@ -125,7 +124,7 @@ func TestService_SyncTenants(t *testing.T) {
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", "33").Return(nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
 				return client
 			},
 			ExpectedError: nil,
@@ -150,7 +149,7 @@ func TestService_SyncTenants(t *testing.T) {
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", "33").Return(nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
 				return client
 			},
 			ExpectedError: nil,
@@ -180,32 +179,7 @@ func TestService_SyncTenants(t *testing.T) {
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", "1").Return(nil).Once()
-				return client
-			},
-			ExpectedError: nil,
-		},
-		{
-			Name:            "New consumption timestamp is oldest of the three latest tenant events",
-			TransactionerFn: txGen.ThatSucceeds,
-			APIClientFn: func() *automock.EventAPIClient {
-				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event0, event1, event2), 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedEventsType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJsonArray(event3), 1, 1), nil).Once()
-				return client
-			},
-			TenantStorageSvcFn: func() *automock.TenantStorageService {
-				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
-				svc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
-				svc.On("DeleteMany", txtest.CtxWithDBMatcher(), emptySlice).Return(nil).Once()
-				return svc
-			},
-			KubeClientFn: func() *automock.KubeClient {
-				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", "15").Return(nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
 				return client
 			},
 			ExpectedError: nil,

@@ -80,25 +80,27 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 }
 
 func (s Service) SyncTenants() error {
+	startTime := time.Now()
+
 	lastConsumedTenantTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData()
 	if err != nil {
 		return err
 	}
 
-	tenantsToCreate, latestCreateTime, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
+	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
 	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
 
-	tenantsToDelete, latestDeleteTime, err := s.getTenantsToDelete(lastConsumedTenantTimestamp)
+	tenantsToDelete, err := s.getTenantsToDelete(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
 	}
 
-	newConsumptionTime := getOlderTime(latestCreateTime, latestDeleteTime)
-	if newConsumptionTime.IsZero() {
-		log.Println("No new events")
+	totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete)
+	log.Printf("Amount of new events: %d", totalNewEvents)
+	if totalNewEvents == 0 {
 		return nil
 	}
 
@@ -158,7 +160,7 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
-	err = s.kubeClient.UpdateTenantFetcherConfigMapData(convertTimeToUnixNanoString(newConsumptionTime))
+	err = s.kubeClient.UpdateTenantFetcherConfigMapData(convertTimeToUnixNanoString(startTime))
 	if err != nil {
 		return err
 	}
@@ -166,46 +168,26 @@ func (s Service) SyncTenants() error {
 	return nil
 }
 
-func (s Service) getTenantsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, time.Time, error) {
+func (s Service) getTenantsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	var tenantsToCreate []model.BusinessTenantMappingInput
 
 	createdTenants, err := s.fetchTenantsWithRetries(CreatedEventsType, fromTimestamp)
 	if err != nil {
-		return nil, time.Time{}, err
+		return nil, err
 	}
 	tenantsToCreate = append(tenantsToCreate, createdTenants...)
 
 	updatedTenants, err := s.fetchTenantsWithRetries(UpdatedEventsType, fromTimestamp)
 	if err != nil {
-		return nil, time.Time{}, err
+		return nil, err
 	}
 	tenantsToCreate = append(tenantsToCreate, updatedTenants...)
 
-	latestCreateTenantTime, err := getLatestTenantTime(createdTenants)
-	if err != nil {
-		return nil, time.Time{}, err
-	}
-
-	latestUpdateTenantTime, err := getLatestTenantTime(updatedTenants)
-	if err != nil {
-		return nil, time.Time{}, err
-	}
-
-	return tenantsToCreate, getOlderTime(latestCreateTenantTime, latestUpdateTenantTime), nil
+	return tenantsToCreate, nil
 }
 
-func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, time.Time, error) {
-	deletedTenants, err := s.fetchTenantsWithRetries(DeletedEventsType, fromTimestamp)
-	if err != nil {
-		return nil, time.Time{}, err
-	}
-
-	latestDeleteTenant, err := getLatestTenantTime(deletedTenants)
-	if err != nil {
-		return nil, time.Time{}, err
-	}
-
-	return deletedTenants, latestDeleteTenant, err
+func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
+	return s.fetchTenantsWithRetries(DeletedEventsType, fromTimestamp)
 }
 
 func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
@@ -333,44 +315,6 @@ func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []mod
 	return tenants
 }
 
-func getLatestTenantTime(tenants []model.BusinessTenantMappingInput) (time.Time, error) {
-	if len(tenants) <= 0 {
-		return time.Time{}, nil
-	}
-
-	tenantsTimes := make([]time.Time, len(tenants))
-	for _, t := range tenants {
-		num, err := strconv.ParseInt(t.CreationTimestamp, 10, 64)
-		if err != nil {
-			return time.Time{}, err
-		}
-
-		tenantsTimes = append(tenantsTimes, time.Unix(0, num))
-	}
-
-	latestTenantTime := tenantsTimes[0]
-	for _, t := range tenantsTimes {
-		if t.After(latestTenantTime) {
-			latestTenantTime = t
-		}
-	}
-
-	return latestTenantTime, nil
-}
-
-func getOlderTime(timeOne, timeTwo time.Time) time.Time {
-	if timeOne.IsZero() {
-		return timeTwo
-	}
-
-	olderTime := timeOne
-	if !timeTwo.IsZero() && timeTwo.Before(timeOne) {
-		olderTime = timeTwo
-	}
-
-	return olderTime
-}
-
 func convertTimeToUnixNanoString(timestamp time.Time) string {
-	return strconv.FormatInt(timestamp.UnixNano(), 10)
+	return strconv.FormatInt(timestamp.UnixNano() / int64(time.Millisecond), 10)
 }
