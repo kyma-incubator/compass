@@ -110,7 +110,7 @@ spec:
                     name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-token-endpoint
               - name: APP_CONFIGMAP_NAME
-                value: compass-tenant-fetcher-{{ $tenantFetcherName }}-config
+                value: {{ $configmapName }}
               - name: APP_CONFIGMAP_NAMESPACE
                 value: {{ $config.configMapNamespace }}
               - name: APP_CONFIGMAP_TIMESTAMP_FIELD
