@@ -17,6 +17,7 @@ const (
 	OperationTimeout   ErrorType = 28
 	EmptyData          ErrorType = 29
 	InconsistentData   ErrorType = 30
+	NotUniqueName      ErrorType = 31
 )
 
 const (
@@ -37,4 +38,5 @@ const (
 	operationTimeoutMsg          = "operation has timed out"
 	emptyDataMsg                 = "Some required data was left out"
 	inconsistentDataMsg          = "Inconsistent or out-of-range data"
+	notUniqueNameMsg             = "Object name is not unique"
 )
