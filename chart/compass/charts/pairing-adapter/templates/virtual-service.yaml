@@ -19,7 +19,7 @@ spec:
         uri: "/adapter"
       route:
         - destination:
-            host: pairing-adapter.{{ .Release.Namespace }}.svc.cluster.local
+            host: pairing-adapter.{{ $.Release.Namespace }}.svc.cluster.local
             subset: "{{ $adapterName }}-subset"
   {{ end }}
   {{- end -}}

@@ -3,33 +3,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: {{ template "fullname" . }}-{{ $adapterName }}
-    namespace: {{ .Release.Namespace }}
+    name: {{ template "fullname" $. }}-{{ $adapterName }}
+    namespace: {{ $.Release.Namespace }}
     labels:
-        app: {{ .Chart.Name }}
-        release: {{ .Release.Name }}
+        app: {{ $.Chart.Name }}
+        release: {{ $.Release.Name }}
         system: {{ $adapterName }}
 spec:
-    replicas: {{ .Values.deployment.replicaCount }}
+    replicas: {{ $.Values.deployment.replicaCount }}
     selector:
         matchLabels:
-            app: {{ .Chart.Name }}
-            release: {{ .Release.Name }}
+            app: {{ $.Chart.Name }}
+            release: {{ $.Release.Name }}
     strategy:
-        {{- toYaml .Values.deployment.strategy | nindent 8 }}
+        {{- toYaml $.Values.deployment.strategy | nindent 8 }}
     template:
         metadata:
             labels:
-                app: {{ .Chart.Name }}
-                release: {{ .Release.Name }}
+                app: {{ $.Chart.Name }}
+                release: {{ $.Release.Name }}
                 system: {{ $adapterName }}
         spec:
             nodeSelector:
-              {{- toYaml .Values.deployment.nodeSelector | nindent 14 }}
+              {{- toYaml $.Values.deployment.nodeSelector | nindent 14 }}
             containers:
-            - name: {{ .Chart.Name }}
-              image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.pairing_adapter.dir }}pairing-adapter:{{ .Values.global.images.pairing_adapter.version }}
-              imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+            - name: {{ $.Chart.Name }}
+              image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.pairing_adapter.dir }}pairing-adapter:{{ $.Values.global.images.pairing_adapter.version }}
+              imagePullPolicy: {{ $.Values.deployment.image.pullPolicy }}
               env:
               - name: MAPPING_TEMPLATE_EXTERNAL_URL
                 value: {{ $config.envs.mappingTemplateExternalURL  }}
@@ -58,27 +58,27 @@ spec:
                 value: {{ $config.envs.oauthStyle | quote }}
               ports:
               - name: http
-                containerPort: {{ .Values.deployment.port }}
+                containerPort: {{ $.Values.deployment.port }}
                 protocol: TCP
               resources:
-                {{- toYaml .Values.deployment.resources | nindent 16 }}
-                    {{- with .Values.deployment.securityContext }}
+                {{- toYaml $.Values.deployment.resources | nindent 16 }}
+                    {{- with $.Values.deployment.securityContext }}
               securityContext:
 {{ toYaml . | indent 16 }}
         {{- end }}
               livenessProbe:
                   httpGet:
-                      port: {{ .Values.deployment.port }}
+                      port: {{ $.Values.deployment.port }}
                       path: "/healthz"
-                  initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
-                  timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
-                  periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+                  initialDelaySeconds: {{ $.Values.global.livenessProbe.initialDelaySeconds }}
+                  timeoutSeconds: {{ $.Values.global.livenessProbe.timeoutSeconds }}
+                  periodSeconds: {{ $.Values.global.livenessProbe.periodSeconds }}
               readinessProbe:
                   httpGet:
-                      port: {{ .Values.deployment.port }}
+                      port: {{ $.Values.deployment.port }}
                       path: "/healthz"
-                  initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
-                  timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
-                  periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
+                  initialDelaySeconds: {{ $.Values.global.readinessProbe.initialDelaySeconds }}
+                  timeoutSeconds: {{ $.Values.global.readinessProbe.timeoutSeconds }}
+                  periodSeconds: {{ $.Values.global.readinessProbe.periodSeconds }}
 {{ end }}
 {{- end -}}
