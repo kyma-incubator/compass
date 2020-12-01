@@ -172,13 +172,6 @@ func TestService_HandleAPISpec(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			client := NewTestClient(testCase.RoundTripFn())
 			actualLog.Reset()
-			//var actualLog bytes.Buffer
-			//logger := logrus.New()
-			//logger.SetFormatter(&logrus.TextFormatter{
-			//	DisableTimestamp: true,
-			//})
-			//logger.SetOutput(&actualLog)
-			//ctx := log.ContextWithLogger(ctx, logrus.NewEntry(logger))
 
 			frRepo := testCase.FetchRequestRepoFn()
 

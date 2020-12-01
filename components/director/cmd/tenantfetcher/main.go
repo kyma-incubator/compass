@@ -80,13 +80,5 @@ func createTenantFetcherSvc(ctx context.Context, cfg config, transact persistenc
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	// tenantFetcherConverter := tenantfetcher.NewConverter(cfg.TenantProvider, cfg.FieldMapping)
 	return tenantfetcher.NewService(cfg.QueryConfig, transact, cfg.FieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc)
 }
-
-//func configureLogger() {
-//	log.SetFormatter(&log.TextFormatter{
-//		FullTimestamp: true,
-//	})
-//	log.SetReportCaller(true)
-//}

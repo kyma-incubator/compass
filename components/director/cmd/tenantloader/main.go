@@ -64,10 +64,3 @@ func exitOnError(err error, context string) {
 		log.D().Fatal(wrappedError)
 	}
 }
-
-//func configureLogger() {
-//	log.SetFormatter(&log.TextFormatter{
-//		FullTimestamp: true,
-//	})
-//	log.SetReportCaller(true)
-//}
