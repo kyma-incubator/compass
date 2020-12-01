@@ -132,7 +132,7 @@ func main() {
 
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
-			normalizer.DefaultNormalizer,
+			&normalizer.DefaultNormalizator{},
 			transact,
 			cfgProvider,
 			cfg.OneTimeToken,
