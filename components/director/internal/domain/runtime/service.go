@@ -175,7 +175,10 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 		s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
 	}
 
-	if in.Labels[ShouldNormalize] == nil {
+	if in.Labels == nil || in.Labels[ShouldNormalize] == nil {
+		if in.Labels == nil {
+			in.Labels = make(map[string]interface{}, 1)
+		}
 		in.Labels[ShouldNormalize] = "true"
 	}
 
