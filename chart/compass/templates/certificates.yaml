@@ -1,3 +1,35 @@
+{{- if not .Values.certsSetupJob.enabled }}
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: compass-gateway-certs
+  namespace: istio-system
+spec:
+  secretName: compass-gateway-certs
+  issuerRef:
+    name: letsencrypt-prd
+    kind: ClusterIssuer
+  commonName: "{{ .Values.global.domain.common_name }}"
+  dnsNames:
+    - "{{ .Values.global.domain.common_name }}"
+    - "{{ .Values.global.domain.alt_common_name }}"
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: compass-gateway-mtls-certs
+  namespace: istio-system
+spec:
+  secretName: compass-gateway-mtls-certs
+  issuerRef:
+    name: letsencrypt-prd
+    kind: ClusterIssuer
+  commonName: "{{ .Values.global.domain.common_name }}"
+  dnsNames:
+    - "{{ .Values.global.domain.common_name }}"
+    - "{{ .Values.global.domain.alt_common_name }}"
+---
+{{- end }}
 apiVersion: cert-manager.io/v1alpha2
 kind: Certificate
 metadata:

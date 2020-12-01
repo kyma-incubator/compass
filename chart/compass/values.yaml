@@ -13,6 +13,14 @@ global:
     namespace: "cert-manager"
     mtls_cacert: "mtls-cacert"
 
+  domain:
+    common_name: ""
+    alt_common_name: ""
+
+  lets_encrypt:
+    email: ""
+    gcp_dns_project: ""
+
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator

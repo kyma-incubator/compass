@@ -5,3 +5,41 @@ metadata:
 spec:
   ca:
     secretName: "{{ .Values.global.cert_manager.mtls_cacert }}"
+{{- if not .Values.certsSetupJob.enabled }}
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-stg
+spec:
+  acme:
+    email: {{ .Values.global.lets_encrypt.email }}
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-stg
+    solvers:
+      - dns01:
+          clouddns:
+            project: {{ .Values.global.lets_encrypt.gcp_dns_project }}
+            serviceAccountSecretRef:
+              name: dnsadmin
+              key: dnsadmin
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prd
+spec:
+  acme:
+    email: {{ .Values.global.lets_encrypt.email }}
+    privateKeySecretRef:
+      name: letsencrypt-prd
+    server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+      - dns01:
+          clouddns:
+            project: {{ .Values.global.lets_encrypt.gcp_dns_project }}
+            serviceAccountSecretRef:
+              key: dnsadmin
+              name: dnsadmin
+{{- end }}
