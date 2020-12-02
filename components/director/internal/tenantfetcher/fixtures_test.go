@@ -34,9 +34,9 @@ func fixEventWithDiscriminator(id, name, discriminator string, fieldMapping tena
 
 func fixBusinessTenantMappingInput(name, externalTenant, provider string) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
-		Name:              name,
-		ExternalTenant:    externalTenant,
-		Provider:          provider,
+		Name:           name,
+		ExternalTenant: externalTenant,
+		Provider:       provider,
 	}
 }
 

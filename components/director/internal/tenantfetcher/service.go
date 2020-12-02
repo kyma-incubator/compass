@@ -294,9 +294,9 @@ func (s Service) eventDataToTenant(eventType EventsType, eventData []byte) (*mod
 	}
 
 	return &model.BusinessTenantMappingInput{
-		Name:              name,
-		ExternalTenant:    id,
-		Provider:          s.providerName,
+		Name:           name,
+		ExternalTenant: id,
+		Provider:       s.providerName,
 	}, nil
 }
 

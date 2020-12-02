@@ -21,8 +21,8 @@ func TestService_SyncTenants(t *testing.T) {
 	// GIVEN
 	provider := "default"
 	fieldMapping := tenantfetcher.TenantFieldMapping{
-		NameField:         "name",
-		IDField:           "id",
+		NameField: "name",
+		IDField:   "id",
 	}
 
 	event1 := fixEvent("1", "foo", fieldMapping)
