@@ -2,6 +2,7 @@ package tenantfetcher
 
 import (
 	"errors"
+	"strconv"
 
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,11 +15,23 @@ type KubeClient interface {
 	UpdateTenantFetcherConfigMapData(timestamp string) error
 }
 
+func NewKubernetesClient(cfg KubeConfig) (KubeClient, error) {
+	shouldUseKubernetes, err := strconv.ParseBool(cfg.UseKubernetes)
+	if err != nil {
+		return nil, err
+	}
+
+	if !shouldUseKubernetes {
+		return newNoopKubernetesClient(), nil
+	}
+	return newKubernetesClient(cfg)
+}
+
 type noopKubernetesClient struct {
 	cfg KubeConfig
 }
 
-func NewNoopKubernetesClient() KubeClient {
+func newNoopKubernetesClient() KubeClient {
 	return &noopKubernetesClient{
 		cfg: KubeConfig{
 			ConfigMapNamespace:      "namespace",
@@ -37,8 +50,10 @@ func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ string) error 
 }
 
 type KubeConfig struct {
+	UseKubernetes string `envconfig:"default=true,APP_USE_KUBERNETES"`
+
 	ConfigMapNamespace      string `envconfig:"default=compass-system,APP_CONFIGMAP_NAMESPACE"`
-	ConfigMapName           string `envconfig:"default=tenant-fetcher-config,APP_CONFIGMAP_NAME"`
+	ConfigMapName           string `envconfig:"default=tenant-fetcher-config,APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
 	ConfigMapTimestampField string `envconfig:"default=lastConsumedTenantTimestamp,APP_CONFIGMAP_TIMESTAMP_FIELD"`
 }
 
@@ -48,17 +63,11 @@ type kubernetesClient struct {
 	cfg KubeConfig
 }
 
-func NewKubernetesClient(configMapNamespace, configMapName, configMapTimestampField string) (KubeClient, error) {
+func newKubernetesClient(cfg KubeConfig) (KubeClient, error) {
 	kubeClientSetConfig := kube.Config{}
 	kubeClientSet, err := kube.NewKubernetesClientSet(kubeClientSetConfig.PollInterval, kubeClientSetConfig.PollTimeout, kubeClientSetConfig.Timeout)
 	if err != nil {
 		return nil, err
-	}
-
-	cfg := KubeConfig{
-		ConfigMapNamespace:      configMapNamespace,
-		ConfigMapName:           configMapName,
-		ConfigMapTimestampField: configMapTimestampField,
 	}
 
 	return &kubernetesClient{

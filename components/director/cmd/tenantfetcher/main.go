@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -15,8 +14,6 @@ import (
 )
 
 type config struct {
-	UseKubernetes string `envconfig:"default=true,APP_USE_KUBERNETES"`
-
 	Database         persistence.DatabaseConfig
 	KubernetesConfig tenantfetcher.KubeConfig
 	OAuthConfig      tenantfetcher.OAuth2Config
@@ -50,14 +47,8 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	shouldUseKubernetes, err := strconv.ParseBool(cfg.UseKubernetes)
-	exitOnError(err, "Error parsing environment variable for Kubernetes usage")
-
-	kubeClient := tenantfetcher.NewNoopKubernetesClient()
-	if shouldUseKubernetes {
-		kubeClient, err = tenantfetcher.NewKubernetesClient(cfg.KubernetesConfig.ConfigMapNamespace, cfg.KubernetesConfig.ConfigMapName, cfg.KubernetesConfig.ConfigMapTimestampField)
-		exitOnError(err, "Failed to initialize Kubernetes client")
-	}
+	kubeClient, err := tenantfetcher.NewKubernetesClient(cfg.KubernetesConfig)
+	exitOnError(err, "Failed to initialize Kubernetes client")
 
 	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, kubeClient, metricsPusher)
 	err = tenantFetcherSvc.SyncTenants()

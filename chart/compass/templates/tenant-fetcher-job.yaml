@@ -3,27 +3,6 @@
 {{if eq $config.enabled true}}
 {{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName | quote }}
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ $configmapName }}
-  namespace: {{ $config.configMapNamespace }}
-  labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" $outerScope }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
-{{- $configmap := (lookup "v1" "ConfigMap" $config.configMapNamespace $configmapName) }}
-{{- if empty $configmap }}
-data:
-  lastConsumedTenantTimestamp: "1"
-{{ else }}
-data:
-{{ toYaml $configmap.data | indent 2}}
-{{ end }}
----
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -115,7 +94,7 @@ spec:
                   secretKeyRef:
                     name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-token-endpoint
-              - name: APP_CONFIGMAP_NAME
+              - name: APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
                 value: {{ $configmapName }}
               - name: APP_CONFIGMAP_NAMESPACE
                 value: {{ $config.configMapNamespace }}
@@ -179,6 +158,27 @@ spec:
             secret:
               secretName: cloudsql-instance-credentials
           {{end}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $configmapName }}
+  namespace: {{ $config.configMapNamespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+  {{- $configmap := (lookup "v1" "ConfigMap" $config.configMapNamespace $configmapName) }}
+  {{- if empty $configmap }}
+data:
+  lastConsumedTenantTimestamp: "1"
+  {{ else }}
+data:
+  {{ toYaml $configmap.data | indent 2}}
+  {{ end }}
 ---
 apiVersion: v1
 kind: ServiceAccount
