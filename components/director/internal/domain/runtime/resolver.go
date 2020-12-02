@@ -268,6 +268,42 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	return deletedRuntime, nil
 }
 
+func (r *Resolver) GetLabel(ctx context.Context, runtimeID string, key string) (*graphql.Labels, error) {
+	if runtimeID == "" {
+		return nil, apperrors.NewInternalError("Runtime cannot be empty")
+	}
+	if key == "" {
+		return nil, apperrors.NewInternalError("Runtime label key cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	label, err := r.runtimeService.GetLabel(ctx, runtimeID, key)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	resultLabels := make(map[string]interface{})
+	resultLabels[key] = label.Value
+
+	var gqlLabels graphql.Labels = resultLabels
+	return &gqlLabels, nil
+}
+
 func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Label, error) {
 	// TODO: Use @validation directive on input type instead, after resolving https://github.com/kyma-incubator/compass/issues/515
 	gqlLabel := graphql.LabelInput{Key: key, Value: value}

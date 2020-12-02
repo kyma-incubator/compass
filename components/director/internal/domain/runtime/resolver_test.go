@@ -1577,6 +1577,125 @@ func TestResolver_Labels(t *testing.T) {
 	}
 }
 
+func TestResolver_GetLabel(t *testing.T) {
+	// given
+	runtimeID := "37e89317-9ace-441d-9dc0-badf09b035b4"
+	tenant := "tenant"
+	labelKey := runtime.ShouldNormalize
+	labelValue := "true"
+
+	modelLabel := &model.Label{
+		ID:         "abc",
+		Tenant:     tenant,
+		Key:        labelKey,
+		Value:      labelValue,
+		ObjectID:   runtimeID,
+		ObjectType: model.RuntimeLabelableObject,
+	}
+
+	gqlLabels := &graphql.Labels{
+		labelKey: labelValue,
+	}
+
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name            string
+		PersistenceFn   func() *persistenceautomock.PersistenceTx
+		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn       func() *automock.RuntimeService
+		InputRuntime    *graphql.Runtime
+		InputKey        string
+		ExpectedResult  *graphql.Labels
+		ExpectedErr     error
+	}{
+		{
+			Name: "Success",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetLabel", contextParam, runtimeID, labelKey).Return(modelLabel, nil).Once()
+				return svc
+			},
+			InputKey:       labelKey,
+			ExpectedResult: gqlLabels,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Success returns nil when label not found",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetLabel", contextParam, runtimeID, labelKey).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID)).Once()
+				return svc
+			},
+			InputKey:       labelKey,
+			ExpectedResult: nil,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Returns error when label listing fails",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				return transact
+			},
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetLabel", contextParam, runtimeID, labelKey).Return(nil, testErr).Once()
+				return svc
+			},
+			InputKey:       labelKey,
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persistTx := testCase.PersistenceFn()
+			svc := testCase.ServiceFn()
+			transact := testCase.TransactionerFn(persistTx)
+
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil)
+
+			// when
+			result, err := resolver.GetLabel(context.TODO(), runtimeID, labelKey)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			mock.AssertExpectationsForObjects(t, svc, transact, persistTx)
+		})
+	}
+}
+
 func TestResolver_Auths(t *testing.T) {
 	// GIVEN
 	tnt := "tnt"

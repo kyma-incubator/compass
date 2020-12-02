@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -31,6 +33,7 @@ type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
@@ -83,6 +86,7 @@ type ApplicationHideCfgProvider interface {
 }
 
 type service struct {
+	appNameNormalizer  normalizer.Normalizator
 	appHideCfgProvider ApplicationHideCfgProvider
 
 	appRepo       ApplicationRepository
@@ -98,8 +102,9 @@ type service struct {
 	timestampGen       timestamp.Generator
 }
 
-func NewService(appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
 	return &service{
+		appNameNormalizer:  appNameNormalizer,
 		appHideCfgProvider: appHideCfgProvider,
 		appRepo:            app,
 		webhookRepo:        webhook,
@@ -218,6 +223,18 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 		return "", err
 	}
 	log.Debugf("Loaded Application Tenant %s from context", appTenant)
+
+	applications, err := s.appRepo.ListAll(ctx, appTenant)
+	if err != nil {
+		return "", err
+	}
+
+	normalizedName := s.appNameNormalizer.Normalize(in.Name)
+	for _, app := range applications {
+		if normalizedName == s.appNameNormalizer.Normalize(app.Name) {
+			return "", apperrors.NewNotUniqueNameError(resource.Application)
+		}
+	}
 
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
