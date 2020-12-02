@@ -62,12 +62,14 @@ func fixRuntimeEventngCfgWithEmptyURL(t *testing.T) *model.RuntimeEventingConfig
 func fixRuntimes() []*model.Runtime {
 	return []*model.Runtime{
 		&model.Runtime{
-			ID:   runtimeID.String(),
-			Name: "runtime-1",
+			ID:     runtimeID.String(),
+			Name:   "runtime-1",
+			Tenant: tenantID.String(),
 		},
 		&model.Runtime{
-			ID:   uuid.New().String(),
-			Name: "runtime-2",
+			ID:     uuid.New().String(),
+			Name:   "runtime-2",
+			Tenant: tenantID.String(),
 		},
 	}
 }

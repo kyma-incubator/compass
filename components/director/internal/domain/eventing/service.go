@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
@@ -18,6 +19,7 @@ import (
 )
 
 const (
+	shouldNormalizeLabel         = "shouldNormalize"
 	RuntimeEventingURLLabel      = "runtime_eventServiceUrl"
 	EmptyEventingURL             = ""
 	RuntimeDefaultEventingLabelf = "%s_defaultEventing"
@@ -39,14 +41,16 @@ type LabelRepository interface {
 }
 
 type service struct {
-	runtimeRepo RuntimeRepository
-	labelRepo   LabelRepository
+	appNameNormalizer normalizer.Normalizator
+	runtimeRepo       RuntimeRepository
+	labelRepo         LabelRepository
 }
 
-func NewService(runtimeRepo RuntimeRepository, labelRepo LabelRepository) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, runtimeRepo RuntimeRepository, labelRepo LabelRepository) *service {
 	return &service{
-		runtimeRepo: runtimeRepo,
-		labelRepo:   labelRepo,
+		appNameNormalizer: appNameNormalizer,
+		runtimeRepo:       runtimeRepo,
+		labelRepo:         labelRepo,
 	}
 }
 
@@ -147,35 +151,35 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 	}
 
 	var defaultVerified, foundDefault, foundOldest bool
-	runtime, foundDefault, err := s.getDefaultRuntimeForAppEventing(ctx, tenantID, appID)
+	foundRuntime, foundDefault, err := s.getDefaultRuntimeForAppEventing(ctx, tenantID, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting default runtime for app eventing")
 	}
 
 	if foundDefault {
-		if defaultVerified, err = s.ensureScenariosOrDeleteLabel(ctx, tenantID, *runtime, appID); err != nil {
+		if defaultVerified, err = s.ensureScenariosOrDeleteLabel(ctx, tenantID, *foundRuntime, appID); err != nil {
 			return nil, errors.Wrap(err, "while ensuring the scenarios assigned to the runtime and application")
 		}
 	}
 
 	if !defaultVerified {
-		runtime, foundOldest, err = s.getOldestRuntime(ctx, tenantID, appID)
+		foundRuntime, foundOldest, err = s.getOldestRuntime(ctx, tenantID, appID)
 		if err != nil {
 			return nil, errors.Wrap(err, "while getting the oldest runtime for scenarios")
 		}
 
 		if foundOldest {
-			if err := s.setRuntimeForAppEventing(ctx, *runtime, appID); err != nil {
+			if err := s.setRuntimeForAppEventing(ctx, *foundRuntime, appID); err != nil {
 				return nil, errors.Wrap(err, "while setting the runtime as default for eventing for application")
 			}
 		}
 	}
 
-	if runtime == nil {
+	if foundRuntime == nil {
 		return model.NewEmptyApplicationEventingConfig()
 	}
 
-	runtimeID, err := uuid.Parse(runtime.ID)
+	runtimeID, err := uuid.Parse(foundRuntime.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing runtime ID as UUID")
 	}
@@ -185,7 +189,23 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, app.Name)
+	label, err := s.labelRepo.GetByKey(ctx, foundRuntime.Tenant, model.RuntimeLabelableObject, foundRuntime.ID, shouldNormalizeLabel)
+	notFoundErr := apperrors.IsNotFoundError(err)
+	if !notFoundErr && err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("while getting the label [key=%s] for runtime [ID=%s]", shouldNormalizeLabel, runtimeID))
+	}
+
+	shouldNormalize := false
+	if notFoundErr || label.Value == "true" {
+		shouldNormalize = true
+	}
+
+	appName := app.Name
+	if shouldNormalize {
+		appName = s.appNameNormalizer.Normalize(app.Name)
+	}
+
+	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, appName)
 }
 
 func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error) {
