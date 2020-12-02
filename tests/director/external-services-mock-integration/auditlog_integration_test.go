@@ -71,10 +71,26 @@ func TestAuditlogIntegration(t *testing.T) {
 		}
 	}
 
-	assert.Equal(t, requestBody.String(), pre.Attributes[1].New)
+	var preRequest string
+	for _, v:= range pre.Attributes{
+		if v.Name == "request"{
+			preRequest = v.New
+		}
+	}
+
+	assert.Equal(t, requestBody.String(), preRequest)
 	assert.Equal(t, 2, len(auditlogs))
 	assert.Equal(t, "admin", pre.Object.ID["consumerID"])
 	assert.Equal(t, "Static User", pre.Object.ID["apiConsumer"])
+
+	var postRequest string
+	for _, v:= range post.Attributes{
+		if v.Name == "request"{
+			postRequest = v.New
+		}
+	}
+
+	assert.Equal(t, requestBody.String(), postRequest)
 	assert.Equal(t, "admin", post.Object.ID["consumerID"])
 	assert.Equal(t, "Static User", post.Object.ID["apiConsumer"])
 }
