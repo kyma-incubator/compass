@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -47,6 +49,7 @@ import (
 var _ graphql.ResolverRoot = &RootResolver{}
 
 type RootResolver struct {
+	appNameNormalizer   normalizer.Normalizator
 	app                 *application.Resolver
 	appTemplate         *apptemplate.Resolver
 	api                 *api.Resolver
@@ -70,6 +73,7 @@ type RootResolver struct {
 }
 
 func NewRootResolver(
+	appNameNormalizer normalizer.Normalizator,
 	transact persistence.Transactioner,
 	cfgProvider *configprovider.Provider,
 	oneTimeTokenCfg onetimetoken.Config,
@@ -152,11 +156,12 @@ func NewRootResolver(
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
 	packageSvc := packageutil.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
+	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
+		appNameNormalizer:   appNameNormalizer,
 		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, packageSvc, apiConverter, frConverter),
@@ -253,7 +258,29 @@ func (r *queryResolver) ApplicationTemplate(ctx context.Context, id string) (*gr
 	return r.appTemplate.ApplicationTemplate(ctx, id)
 }
 func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
-	return r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
+	apps, err := r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
+	if err != nil {
+		return nil, err
+	}
+
+	labels, err := r.runtime.GetLabel(ctx, runtimeID, runtime.ShouldNormalize)
+	if err != nil {
+		return nil, err
+	}
+
+	shouldNormalize := true
+	if labels != nil {
+		labelsMap := (map[string]interface{})(*labels)
+		shouldNormalize = labelsMap[runtime.ShouldNormalize] == nil || labelsMap[runtime.ShouldNormalize] == "true"
+	}
+
+	if shouldNormalize {
+		for i := range apps.Data {
+			apps.Data[i].Name = r.appNameNormalizer.Normalize(apps.Data[i].Name)
+		}
+	}
+
+	return apps, nil
 }
 func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	return r.runtime.Runtimes(ctx, filter, first, after)
