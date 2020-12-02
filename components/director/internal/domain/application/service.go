@@ -8,7 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"

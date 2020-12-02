@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/sirupsen/logrus"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
