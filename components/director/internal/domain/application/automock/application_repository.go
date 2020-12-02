@@ -113,6 +113,29 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 	return r0, r1
 }
 
+// ListAll provides a mock function with given fields: ctx, tenant
+func (_m *ApplicationRepository) ListAll(ctx context.Context, tenant string) ([]*model.Application, error) {
+	ret := _m.Called(ctx, tenant)
+
+	var r0 []*model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Application); ok {
+		r0 = rf(ctx, tenant)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByScenarios provides a mock function with given fields: ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors
 func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
