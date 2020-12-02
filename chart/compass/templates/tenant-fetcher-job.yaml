@@ -1,7 +1,7 @@
 {{ $outerScope := . }}
 {{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
-{{if eq $config.enabled true}}
-{{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName | quote }}
+{{ if eq $config.enabled true }}
+{{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName }}
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -163,7 +163,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ $configmapName }}
-  namespace: {{ $config.configMapNamespace }}
+  namespace: "{{ $config.configMapNamespace }}"
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
@@ -196,7 +196,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}-config
+  name: {{ $configmapName }}
   namespace: {{ $config.configMapNamespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -229,7 +229,7 @@ subjects:
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}-config
+  name: {{ $configmapName }}
   apiGroup: rbac.authorization.k8s.io
 {{ end }}
 {{- end -}}
