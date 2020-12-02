@@ -110,8 +110,6 @@ spec:
                 value: {{ $config.fieldMapping.discriminatorValue }}
               - name: APP_MAPPING_FIELD_DETAILS
                 value: {{ $config.fieldMapping.detailsField}}
-              - name: APP_MAPPING_FIELD_CREATION_TIME_FIELD
-                value: {{ $config.fieldMapping.creationTimeField}}
               - name: APP_TENANT_TOTAL_PAGES_FIELD
                 value: {{ $config.fieldMapping.totalPagesField}}
               - name: APP_TENANT_TOTAL_RESULTS_FIELD

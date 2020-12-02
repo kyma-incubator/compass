@@ -23,12 +23,11 @@ func TestService_SyncTenants(t *testing.T) {
 	fieldMapping := tenantfetcher.TenantFieldMapping{
 		NameField:         "name",
 		IDField:           "id",
-		CreationTimeField: "creationTime",
 	}
 
-	event1 := fixEvent("1", "foo", 1, fieldMapping)
-	event2 := fixEvent("2", "bar", 15, fieldMapping)
-	event3 := fixEvent("3", "baz", 33, fieldMapping)
+	event1 := fixEvent("1", "foo", fieldMapping)
+	event2 := fixEvent("2", "bar", fieldMapping)
+	event3 := fixEvent("3", "baz", fieldMapping)
 
 	eventsToJsonArray := func(events ...[]byte) []byte {
 		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
@@ -37,9 +36,9 @@ func TestService_SyncTenants(t *testing.T) {
 	tenantEvents := eventsToJsonArray(event1, event2, event3)
 
 	businessTenants := []model.BusinessTenantMappingInput{
-		fixBusinessTenantMappingInput("foo", "1", "1", provider),
-		fixBusinessTenantMappingInput("bar", "15", "2", provider),
-		fixBusinessTenantMappingInput("baz", "33", "3", provider),
+		fixBusinessTenantMappingInput("foo", "1", provider),
+		fixBusinessTenantMappingInput("bar", "2", provider),
+		fixBusinessTenantMappingInput("baz", "3", provider),
 	}
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
@@ -450,7 +449,6 @@ func TestService_SyncTenants(t *testing.T) {
 				PageSizeValue:  "1",
 				PageStartValue: "1",
 			}, transact, kubeClient, tenantfetcher.TenantFieldMapping{
-				CreationTimeField:  "creationTime",
 				DetailsField:       "eventData",
 				DiscriminatorField: "",
 				DiscriminatorValue: "",
@@ -509,7 +507,6 @@ func TestService_SyncTenants(t *testing.T) {
 			DiscriminatorField: "",
 			DiscriminatorValue: "",
 			EventsField:        "events",
-			CreationTimeField:  "creationTime",
 			IDField:            "id",
 			NameField:          "name",
 			TotalPagesField:    "pages",

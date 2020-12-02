@@ -22,7 +22,6 @@ type TenantFieldMapping struct {
 	NameField          string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
 	IDField            string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
 	DetailsField       string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
-	CreationTimeField  string `envconfig:"default=creationTime,APP_MAPPING_FIELD_CREATION_TIME_FIELD"`
 	DiscriminatorField string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
 }
@@ -250,7 +249,6 @@ func (s Service) fetchTenants(eventsType EventsType, fromTimestamp string) ([]mo
 func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) []model.BusinessTenantMappingInput {
 	bussinessTenantMappings := make([]model.BusinessTenantMappingInput, 0)
 	gjson.GetBytes(eventsJSON, s.fieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
-		createdTimestamp := event.Get(s.fieldMapping.CreationTimeField).Raw
 		detailsType := event.Get(s.fieldMapping.DetailsField).Type
 		var details []byte
 		if detailsType == gjson.String {
@@ -262,7 +260,7 @@ func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) 
 			return true
 		}
 
-		tenant, err := s.eventDataToTenant(eventType, createdTimestamp, details)
+		tenant, err := s.eventDataToTenant(eventType, details)
 		if err != nil {
 			log.Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
 			return true
@@ -273,7 +271,7 @@ func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) 
 	return bussinessTenantMappings
 }
 
-func (s Service) eventDataToTenant(eventType EventsType, createdTimestamp string, eventData []byte) (*model.BusinessTenantMappingInput, error) {
+func (s Service) eventDataToTenant(eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
 	if eventType == CreatedEventsType && s.fieldMapping.DiscriminatorField != "" {
 		discriminator, ok := gjson.GetBytes(eventData, s.fieldMapping.DiscriminatorField).Value().(string)
 		if !ok {
@@ -296,7 +294,6 @@ func (s Service) eventDataToTenant(eventType EventsType, createdTimestamp string
 	}
 
 	return &model.BusinessTenantMappingInput{
-		CreationTimestamp: createdTimestamp,
 		Name:              name,
 		ExternalTenant:    id,
 		Provider:          s.providerName,

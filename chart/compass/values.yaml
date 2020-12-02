@@ -253,7 +253,6 @@ global:
         discriminatorField: ""
         discriminatorValue: ""
         detailsField: "details"
-        creationTimeField: "creationTime"
       queryMapping:
         pageNumField: "pageNum"
         pageSizeField: "pageSize"
