@@ -72,8 +72,8 @@ func TestAuditlogIntegration(t *testing.T) {
 	}
 
 	var preRequest string
-	for _, v:= range pre.Attributes{
-		if v.Name == "request"{
+	for _, v := range pre.Attributes {
+		if v.Name == "request" {
 			preRequest = v.New
 		}
 	}
@@ -84,8 +84,8 @@ func TestAuditlogIntegration(t *testing.T) {
 	assert.Equal(t, "Static User", pre.Object.ID["apiConsumer"])
 
 	var postRequest string
-	for _, v:= range post.Attributes{
-		if v.Name == "request"{
+	for _, v := range post.Attributes {
+		if v.Name == "request" {
 			postRequest = v.New
 		}
 	}
