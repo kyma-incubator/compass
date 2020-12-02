@@ -43,8 +43,8 @@ func TestAuditLog(t *testing.T) {
 
 		auditlogSink := &automock.AuditlogService{}
 		auditlogSvc := &automock.PreAuditlogService{}
-		auditlogSink.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.ConsumerID == ConsumerId })).Return(nil)
-		auditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.ConsumerID == ConsumerId })).Return(nil)
+		auditlogSink.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil)
+		auditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil)
 
 		transport := proxy.NewTransport(auditlogSink, auditlogSvc, roundTripper)
 
