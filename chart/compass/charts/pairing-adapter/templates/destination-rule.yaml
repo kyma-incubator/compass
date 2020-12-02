@@ -6,7 +6,7 @@ metadata:
   labels:
     release: {{ .Release.Name }}
 spec:
-  host: pairing-adapter.{{ .Release.Namespace }}.svc.cluster.local
+  host: compass-pairing-adapter.{{ .Release.Namespace }}.svc.cluster.local
   subsets:
   {{- range $adapterName, $config := .Values.deployment.adapters -}}
   {{if eq $config.enabled true}}
