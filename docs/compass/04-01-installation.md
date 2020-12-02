@@ -6,7 +6,27 @@ You can install Compass both on a cluster and on your local machine in two modes
 
 Compass as a central Management Plane cluster requires minimal Kyma installation. Steps to perform the installation vary depending on the installation environment.
 
+#### Prerequisiter (if certificate rotation is needed)
+
+In case certificate rotation is needed, one can install [cert manager](https://github.com/jetstack/cert-manager) to take care of certificates.
+
+There are 3 certificates which can be rotated:
+* Connector intermediate certificate which is used to issue certificates for App/Runtime client.
+* 2 Istio gateway certificates - one for the normal gateway and one for the MTLS gateway.
+
+##### Create issuers
+
+In order for the cert manager to be able to issue certificates, it needs a resource called issuer.
+
+
+##### Connector certificate
+
+```yaml
+```
+
+
 ### Cluster installation
+
 
 To install Compass as central Management Plane on a cluster, follow these steps:
 
