@@ -49,7 +49,7 @@ type timeoutLoggingHandler struct {
 func (h *timeoutLoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	timoutRW := &timoutLoggingResponseWriter{
 		ResponseWriter: w,
-		method:         r.Method,
+		method:         template.HTMLEscapeString(r.Method),
 		url:            template.HTMLEscapeString(r.URL.String()),
 		timeout:        h.timeout,
 		msg:            h.msg,
