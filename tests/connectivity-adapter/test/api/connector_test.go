@@ -2,10 +2,11 @@ package api
 
 import (
 	"crypto/rsa"
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 	"github.com/stretchr/testify/assert"
