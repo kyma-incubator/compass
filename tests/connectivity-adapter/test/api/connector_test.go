@@ -2,6 +2,7 @@ package api
 
 import (
 	"crypto/rsa"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"net/http"
 	"net/url"
 	"testing"
@@ -21,6 +22,8 @@ const (
 	TestApp     = "mytestapp"
 	TestRuntime = "mytestrunt"
 )
+
+var defaultAppNameNormalizer = &normalizer.DefaultNormalizator{}
 
 func TestConnector(t *testing.T) {
 	appInput := directorSchema.ApplicationRegisterInput{
@@ -260,6 +263,8 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 }
 
 func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string) {
+	normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
+
 	t.Run("should use default values to build CSR info response", func(t *testing.T) {
 		// given
 		client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
@@ -267,7 +272,7 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		expectedEventsURL := config.EventsBaseURL
 
 		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
-		expectedEventsURL += "/" + appName + "/v1/events"
+		expectedEventsURL += "/" + normalizedAppName + "/v1/events"
 
 		// when
 		tokenResponse := client.CreateToken(t)
@@ -287,6 +292,7 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 }
 
 func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string) {
+	normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
 	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
 	clientKey := connector.CreateKey(t)
@@ -297,7 +303,7 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		expectedEventsURL := config.EventsBaseURL
 
 		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
-		expectedEventsURL += "/" + appName + "/v1/events"
+		expectedEventsURL += "/" + normalizedAppName + "/v1/events"
 
 		// when
 		crtResponse, infoResponse := createCertificateChain(t, client, clientKey)
