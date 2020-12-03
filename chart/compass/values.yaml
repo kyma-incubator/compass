@@ -23,7 +23,7 @@ global:
       version: "PR-1618"
     director:
       dir:
-      version: "PR-1638"
+      version: "PR-1632"
     gateway:
       dir:
       version: "PR-1637"
@@ -232,9 +232,15 @@ global:
   tenantFetchers:
     job1:
       enabled: false
+      configMapNamespace: "compass-system"
       manageSecrets: true
       providerName: "compass"
       schedule: "*/5 * * * *"
+      kubernetes:
+        configMapNamespace: "compass-system"
+        pollInterval: 2s
+        pollTimeout: 1m
+        timeout: 2m
       oauth:
         client: ""
         secret: ""

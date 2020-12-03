@@ -82,6 +82,8 @@ data:
                 cpu: 500m
                 memory: 2048Mi
       values:
+        global:
+          jwtPolicy: first-party-jwt
         pilot:
           autoscaleEnabled: false
         mixer:

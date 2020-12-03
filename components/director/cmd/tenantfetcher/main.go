@@ -14,11 +14,12 @@ import (
 )
 
 type config struct {
-	Database     persistence.DatabaseConfig
-	OAuthConfig  tenantfetcher.OAuth2Config
-	APIConfig    tenantfetcher.APIConfig
-	QueryConfig  tenantfetcher.QueryConfig
-	FieldMapping tenantfetcher.TenantFieldMapping
+	Database         persistence.DatabaseConfig
+	KubernetesConfig tenantfetcher.KubeConfig
+	OAuthConfig      tenantfetcher.OAuth2Config
+	APIConfig        tenantfetcher.APIConfig
+	QueryConfig      tenantfetcher.QueryConfig
+	FieldMapping     tenantfetcher.TenantFieldMapping
 
 	TenantProvider      string `envconfig:"APP_TENANT_PROVIDER"`
 	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
@@ -46,7 +47,10 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, metricsPusher)
+	kubeClient, err := tenantfetcher.NewKubernetesClient(cfg.KubernetesConfig)
+	exitOnError(err, "Failed to initialize Kubernetes client")
+
+	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, kubeClient, metricsPusher)
 	err = tenantFetcherSvc.SyncTenants()
 
 	if metricsPusher != nil {
@@ -65,7 +69,8 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, metricsPusher *metrics.Pusher) *tenantfetcher.Service {
+func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kubeClient tenantfetcher.KubeClient,
+	metricsPusher *metrics.Pusher) *tenantfetcher.Service {
 	uidSvc := uid.NewService()
 
 	tenantStorageConv := tenant.NewConverter()
@@ -78,7 +83,7 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, metr
 	}
 
 	// tenantFetcherConverter := tenantfetcher.NewConverter(cfg.TenantProvider, cfg.FieldMapping)
-	return tenantfetcher.NewService(cfg.QueryConfig, transact, cfg.FieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc)
+	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.FieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc)
 }
 
 func configureLogger() {
