@@ -2,6 +2,7 @@ package runtimemapping
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -111,7 +112,8 @@ func TestHandler(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedBody, strings.TrimSpace(string(body)))
 		require.Equal(t, 1, len(hook.Entries))
-		msgErr, _ := hook.LastEntry().Data["error"].(error)
+		msgErr, ok := hook.LastEntry().Data["error"].(error)
+		assert.True(t,ok)
 		require.Equal(t, "while parsing the request: Internal Server Error: request body is empty", msgErr.Error())
 	})
 
@@ -143,7 +145,8 @@ func TestHandler(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedBody, strings.TrimSpace(string(body)))
 		require.Equal(t, 1, len(hook.Entries))
-		msgErr, _ := hook.LastEntry().Data["error"].(error)
+		msgErr, ok := hook.LastEntry().Data["error"].(error)
+		assert.True(t,ok)
 		require.Equal(t, "while processing the request: while verifying the token: some-error", msgErr.Error())
 
 		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock)
@@ -178,7 +181,8 @@ func TestHandler(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedBody, strings.TrimSpace(string(body)))
 		require.Equal(t, 1, len(hook.Entries))
-		msgErr, _ := hook.LastEntry().Data["error"].(error)
+		msgErr, ok := hook.LastEntry().Data["error"].(error)
+		assert.True(t,ok)
 		require.Equal(t, "while processing the request: unable to get the issuer: Internal Server Error: no issuer claim found", msgErr.Error())
 
 		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock)
@@ -216,7 +220,8 @@ func TestHandler(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedBody, strings.TrimSpace(string(body)))
 		require.Equal(t, 1, len(hook.Entries))
-		msgErr, _ := hook.LastEntry().Data["error"].(error)
+		msgErr, ok := hook.LastEntry().Data["error"].(error)
+		assert.True(t,ok)
 		require.Equal(t, "while processing the request: when getting the runtime: some-error", msgErr.Error())
 
 		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock, runtimeSvcMock)
@@ -256,7 +261,8 @@ func TestHandler(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedBody, strings.TrimSpace(string(body)))
 		require.Equal(t, 1, len(hook.Entries))
-		msgErr, _ := hook.LastEntry().Data["error"].(error)
+		msgErr, ok := hook.LastEntry().Data["error"].(error)
+		assert.True(t,ok)
 		require.Equal(t, "while processing the request: unable to fetch external tenant based on runtime tenant: some-error", msgErr.Error())
 
 		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
