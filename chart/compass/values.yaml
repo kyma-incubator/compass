@@ -236,6 +236,10 @@ global:
       manageSecrets: true
       providerName: "compass"
       schedule: "*/5 * * * *"
+      kubernetes:
+        pollInterval: 2s
+        pollTimeout: 1m
+        timeout: 2m
       oauth:
         client: ""
         secret: ""

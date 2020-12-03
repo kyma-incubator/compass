@@ -37,6 +37,12 @@ spec:
             env:
               - name: APP_USE_KUBERNETES
                 value: "true"
+              - name: APP_KUBERNETES_POLL_INTERVAL
+                value: {{ $config.kubernetes.pollInterval }}
+              - name: APP_KUBERNETES_POLL_TIMEOUT
+                value: {{ $config.kubernetes.pollTimeout }}
+              - name: APP_KUBERNETES_TIMEOUT
+                value: {{ $config.kubernetes.timeout }}
               - name: APP_DB_USER
                 valueFrom:
                   secretKeyRef:

@@ -15,9 +15,9 @@ import (
 )
 
 type Config struct {
-	PollInterval time.Duration `envconfig:"default=2s"`
-	PollTimeout  time.Duration `envconfig:"default=1m"`
-	Timeout      time.Duration `envconfig:"default=2m"`
+	PollInterval time.Duration `envconfig:"default=2s,APP_KUBERNETES_POLL_INTERVAL"`
+	PollTimeout  time.Duration `envconfig:"default=1m,APP_KUBERNETES_POLL_TIMEOUT"`
+	Timeout      time.Duration `envconfig:"default=2m,APP_KUBERNETES_TIMEOUT"`
 }
 
 func NewKubernetesClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
