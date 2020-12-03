@@ -26,7 +26,7 @@ func NewCSRInfoResponseProvider(connectivityAdapterBaseURL, connectivityAdapterM
 			RuntimeURLs:     makeRuntimeURLs(applicationName, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		}
 
-		return CSRInfo	Response{
+		return CSRInfoResponse{
 			CsrURL:          csrURL + tokenParam,
 			API:             api,
 			CertificateInfo: ToCertInfo(configuration.CertificateSigningRequestInfo),
