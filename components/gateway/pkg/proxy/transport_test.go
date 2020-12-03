@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const ConsumerId = "134039be-840a-47f1-a962-d13410edf311"
+
 func TestAuditLog(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 
@@ -32,7 +34,7 @@ func TestAuditLog(t *testing.T) {
 		}
 		resp := http.Response{
 			StatusCode:    http.StatusCreated,
-			Body:          ioutil.NopCloser(bytes.NewBuffer([]byte(graphqlPayload))),
+			Body:          ioutil.NopCloser(bytes.NewBuffer(graphqlPayload)),
 			ContentLength: (int64)(len(graphqlPayload)),
 		}
 
@@ -41,8 +43,8 @@ func TestAuditLog(t *testing.T) {
 
 		auditlogSink := &automock.AuditlogService{}
 		auditlogSvc := &automock.PreAuditlogService{}
-		auditlogSink.On("Log", mock.Anything, mock.Anything).Return(nil)
-		auditlogSvc.On("PreLog", mock.Anything, mock.Anything).Return(nil)
+		auditlogSink.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil)
+		auditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil)
 
 		transport := proxy.NewTransport(auditlogSink, auditlogSvc, roundTripper)
 
@@ -83,7 +85,7 @@ func fixClaims() proxy.Claims {
 	return proxy.Claims{
 		Tenant:       "e36c520b-caa2-4677-b289-8a171184192b",
 		Scopes:       "scopes",
-		ConsumerID:   "134039be-840a-47f1-a962-d13410edf311",
+		ConsumerID:   ConsumerId,
 		ConsumerType: "Application",
 	}
 }
