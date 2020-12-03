@@ -237,6 +237,7 @@ global:
       providerName: "compass"
       schedule: "*/5 * * * *"
       kubernetes:
+        configMapNamespace: "compass-system"
         pollInterval: 2s
         pollTimeout: 1m
         timeout: 2m
