@@ -127,7 +127,7 @@ func (h *Handler) processRequest(ctx context.Context, reqData *oathkeeper.ReqDat
 
 func (h *Handler) logError(ctx context.Context, err error, wrapperStr string) {
 	wrappedErr := errors.Wrap(err, wrapperStr)
-	log.C(ctx).Error(wrappedErr)
+	log.C(ctx).WithError(wrappedErr).Error()
 }
 
 func (h *Handler) respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {

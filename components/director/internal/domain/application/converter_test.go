@@ -134,7 +134,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 				testCase.WebhookConverterFn(),
 				testCase.PackageConverterFn(),
 			)
-			res, err := converter.CreateInputFromGraphQL(context.Background(), testCase.Input)
+			res, err := converter.CreateInputFromGraphQL(context.TODO(), testCase.Input)
 
 			// then
 			assert.NoError(t, err)

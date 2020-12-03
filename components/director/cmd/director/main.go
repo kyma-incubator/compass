@@ -7,10 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
@@ -19,6 +15,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 
@@ -175,8 +173,7 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(correlation.AttachCorrelationIDToContext())
-	mainRouter.Use(log.RequestLogger())
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
@@ -210,8 +207,8 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
-	runMetricsSrv, shutdownMetricsSrv := createServer(cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout, logger)
-	runMainSrv, shutdownMainSrv := createServer(cfg.Address, mainRouter, "main", cfg.ServerTimeout, logger)
+	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
 
 	go func() {
 		<-ctx.Done()
@@ -340,7 +337,7 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 		tenantSvc).ServeHTTP, nil
 }
 
-func createServer(address string, handler http.Handler, name string, timeout time.Duration, logger *logrus.Entry) (func(), func()) {
+func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
@@ -351,16 +348,16 @@ func createServer(address string, handler http.Handler, name string, timeout tim
 	}
 
 	runFn := func() {
-		logger.Infof("Running %s server on %s...", name, address)
+		log.C(ctx).Infof("Running %s server on %s...", name, address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			logger.Errorf("%s HTTP server ListenAndServe: %v", name, err)
+			log.C(ctx).WithError(err).Errorf("%s HTTP server ListenAndServe: ", name)
 		}
 	}
 
 	shutdownFn := func() {
-		logger.Infof("Shutting down %s server...", name)
+		log.C(ctx).Infof("Shutting down %s server...", name)
 		if err := srv.Shutdown(context.Background()); err != nil {
-			logger.Errorf("%s HTTP server Shutdown: %v", name, err)
+			log.C(ctx).WithError(err).Errorf("%s HTTP server Shutdown: ", name)
 		}
 	}
 

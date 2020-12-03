@@ -42,7 +42,7 @@ func (s *service) HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *st
 
 	err := s.repo.Update(ctx, fr)
 	if err != nil {
-		log.C(ctx).Errorf("While updating fetch request status: %s", err)
+		log.C(ctx).WithError(err).Errorf("While updating fetch request status: ")
 		return nil
 	}
 
@@ -53,13 +53,13 @@ func (s *service) fetchAPISpec(ctx context.Context, fr *model.FetchRequest) (*st
 
 	err := s.validateFetchRequest(fr)
 	if err != nil {
-		log.C(ctx).Error(err)
+		log.C(ctx).WithError(err).Error()
 		return nil, s.fixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()))
 	}
 
 	resp, err := s.client.Get(fr.URL)
 	if err != nil {
-		log.C(ctx).Errorf("While fetching API Spec: %s", err.Error())
+		log.C(ctx).WithError(err).Errorf("While fetching API Spec: ")
 		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec: %s", err.Error())))
 	}
 
@@ -67,19 +67,20 @@ func (s *service) fetchAPISpec(ctx context.Context, fr *model.FetchRequest) (*st
 		if resp.Body != nil {
 			err := resp.Body.Close()
 			if err != nil {
-				log.C(ctx).Errorf("While closing body: %s", err.Error())
+				log.C(ctx).WithError(err).Errorf("While closing body: ")
 			}
 		}
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		log.C(ctx).Errorf("While fetching API Spec status code: %d", resp.StatusCode)
+		errMsg := fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)
+		log.C(ctx).Errorf(errMsg)
 		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.C(ctx).Errorf("While reading API Spec: %s", err.Error())
+		log.C(ctx).WithError(err).Errorf("While reading API Spec: ")
 		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading API Spec: %s", err.Error())))
 	}
 

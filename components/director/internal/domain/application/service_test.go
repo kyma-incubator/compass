@@ -3,7 +3,6 @@ package application_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -166,7 +165,6 @@ func TestService_Create(t *testing.T) {
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
 					arg, ok := args.Get(1).(*map[string]interface{})
-					fmt.Println("++++++++++++++++++", arg)
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",

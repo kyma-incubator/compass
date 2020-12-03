@@ -38,7 +38,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		token := createToken()
 
 		// WHEN
-		key, err := jwksFetch.GetKey(context.Background(), token)
+		key, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), nil)
+		_, err := jwksFetch.GetKey(context.TODO(), nil)
 
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("token cannot be nil").Error())
@@ -62,7 +62,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: Internal Server Error: unable to cast claims to the MapClaims")
@@ -74,7 +74,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while getting the issuer from claims: Internal Server Error: no issuer claim found")
@@ -86,7 +86,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while getting the issuer from claims: Internal Server Error: unable to cast the issuer to a string")
@@ -98,7 +98,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while getting the discovery URL: while parsing the issuer URL [issuer=:///cdef://]: parse \":///cdef://\": missing protocol scheme")
@@ -110,7 +110,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.Error(t, err)
@@ -134,7 +134,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: while decoding the configuration discovery response: invalid character 'A' looking for beginning of value")
@@ -162,7 +162,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the JWKs URI: Internal Server Error: unable to cast the JWKs URI to a string")
@@ -197,7 +197,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while fetching JWKs: failed to fetch remote JWK (status = 404)")
@@ -217,7 +217,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the key ID: Internal Server Error: unable to find the key ID in the token")
@@ -242,7 +242,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while getting the key ID: Internal Server Error: unable to cast the key ID to a string")
@@ -267,7 +267,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		jwksFetch := NewJWKsFetch()
 
 		// WHEN
-		_, err := jwksFetch.GetKey(context.Background(), token)
+		_, err := jwksFetch.GetKey(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("unable to find a proper key").Error())
@@ -294,7 +294,7 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		token := createSignedToken(t, privateKeys.Keys[0])
 
 		logger, hook := logrustest.NewNullLogger()
-		ctx := log.ContextWithLogger(context.Background(), logrus.NewEntry(logger))
+		ctx := log.ContextWithLogger(context.TODO(), logrus.NewEntry(logger))
 
 		// WHEN
 		claims, err := tokenVerifier.Verify(ctx, token)
@@ -322,7 +322,7 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		token := createSignedToken(t, privateKeys.Keys[0])
 
 		// WHEN
-		claims, err := tokenVerifier.Verify(context.Background(), token)
+		claims, err := tokenVerifier.Verify(context.TODO(), token)
 
 		// THEN
 		require.NoError(t, err)
@@ -335,7 +335,7 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		token := ""
 
 		// WHEN
-		_, err := tokenVerifier.Verify(context.Background(), token)
+		_, err := tokenVerifier.Verify(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, apperrors.NewUnauthorizedError("token cannot be empty").Error())
@@ -347,7 +347,7 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		token := "invalid token"
 
 		// WHEN
-		_, err := tokenVerifier.Verify(context.Background(), token)
+		_, err := tokenVerifier.Verify(context.TODO(), token)
 
 		// THEN
 		require.EqualError(t, err, "while veryfing the token: while parsing the token with claims: token contains an invalid number of segments")

@@ -183,12 +183,12 @@ func (s *service) doRequest(ctx context.Context, method string, endpoint string,
 		}
 		_, err = io.Copy(ioutil.Discard, resp.Body)
 		if err != nil {
-			log.C(ctx).Error(err)
+			log.C(ctx).WithError(err).Error()
 		}
 
 		err := body.Close()
 		if err != nil {
-			log.C(ctx).Error(err)
+			log.C(ctx).WithError(err).Error()
 		}
 	}
 

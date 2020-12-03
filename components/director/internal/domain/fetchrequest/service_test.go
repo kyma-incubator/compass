@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	logrustest "github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest/automock"
@@ -41,7 +43,7 @@ func TestService_HandleAPISpec(t *testing.T) {
 	testErr := errors.New("test")
 	ctx := context.TODO()
 	var actualLog bytes.Buffer
-	logger := logrus.New()
+	logger, hook := logrustest.NewNullLogger()
 	logger.SetFormatter(&logrus.TextFormatter{
 		DisableTimestamp: true,
 	})
@@ -96,8 +98,10 @@ func TestService_HandleAPISpec(t *testing.T) {
 		FetchRequestRepoFn func() *automock.FetchRequestRepository
 		InputFr            model.FetchRequest
 		ExpectedOutput     *string
-		ExpectedLog        *string
+		ExpectedMessage    *string
+		ExpectedError      *string
 	}{
+
 		{
 			Name: "Success",
 			RoundTripFn: func() RoundTripFunc {
@@ -145,10 +149,11 @@ func TestService_HandleAPISpec(t *testing.T) {
 				repo.On("Update", ctx, &modelInputFailed).Return(nil).Once()
 				return repo
 			},
-			InputFr:        modelInput,
-			ExpectedLog:    str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", http.StatusInternalServerError)),
-			ExpectedOutput: nil,
-		}, {
+			InputFr:         modelInput,
+			ExpectedMessage: str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", http.StatusInternalServerError)),
+			ExpectedOutput:  nil,
+		},
+		{
 			Name: "Nil when failed to update status",
 			RoundTripFn: func() RoundTripFunc {
 				return func(req *http.Request) *http.Response {
@@ -163,11 +168,13 @@ func TestService_HandleAPISpec(t *testing.T) {
 				repo.On("Update", ctx, &modelInputSucceeded).Return(testErr).Once()
 				return repo
 			},
-			InputFr:        modelInput,
-			ExpectedLog:    str.Ptr(fmt.Sprintf("While updating fetch request status: %s", testErr.Error())),
-			ExpectedOutput: nil,
+			InputFr:         modelInput,
+			ExpectedOutput:  nil,
+			ExpectedMessage: str.Ptr(fmt.Sprintf("While updating fetch request status: ")),
+			ExpectedError:   str.Ptr(testErr.Error()),
 		},
 	}
+
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			client := NewTestClient(testCase.RoundTripFn())
@@ -180,9 +187,11 @@ func TestService_HandleAPISpec(t *testing.T) {
 
 			output := svc.HandleAPISpec(ctx, &testCase.InputFr)
 
-			if testCase.ExpectedLog != nil {
-				expectedLog := fmt.Sprintf("level=error msg=\"%s\"\n", *testCase.ExpectedLog)
-				assert.Equal(t, expectedLog, actualLog.String())
+			if testCase.ExpectedMessage != nil {
+				assert.Equal(t, *testCase.ExpectedMessage, hook.LastEntry().Message)
+			}
+			if testCase.ExpectedError != nil {
+				assert.Equal(t, *testCase.ExpectedError, hook.LastEntry().Data["error"].(error).Error())
 			}
 			if testCase.ExpectedOutput != nil {
 				assert.Equal(t, testCase.ExpectedOutput, output)

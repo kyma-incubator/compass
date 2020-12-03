@@ -92,7 +92,7 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
-			log.C(context.Background()).Warnf("Unable to close response body. Cause: %v", err)
+			log.D().Warnf("Unable to close response body. Cause: %v", err)
 		}
 	}()
 

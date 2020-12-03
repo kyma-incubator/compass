@@ -14,7 +14,7 @@ func TestScopesContext(t *testing.T) {
 	t.Run("load returns scopes previously saved in context", func(t *testing.T) {
 		// GIVEN
 		givenScopes := []string{"aaa", "bbb"}
-		ctx := scope.SaveToContext(context.Background(), givenScopes)
+		ctx := scope.SaveToContext(context.TODO(), givenScopes)
 		// WHEN
 		actual, err := scope.LoadFromContext(ctx)
 		// THEN
@@ -31,7 +31,7 @@ func TestScopesContext(t *testing.T) {
 	t.Run("cannot override scopes accidentally", func(t *testing.T) {
 		// GIVEN
 		givenScopes := []string{"aaa", "bbb"}
-		ctx := scope.SaveToContext(context.Background(), givenScopes)
+		ctx := scope.SaveToContext(context.TODO(), givenScopes)
 		ctx = context.WithValue(ctx, 0, "some random value")
 		// WHEN
 		actual, err := scope.LoadFromContext(ctx)

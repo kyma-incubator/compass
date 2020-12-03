@@ -9,8 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -62,32 +60,32 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger := log.C(r.Context())
+			ctx := r.Context()
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
-				logger.Error(errors.Wrap(err, "while getting token from header"))
-				a.writeAppError(w, err, http.StatusBadRequest, logger)
+				log.C(ctx).WithError(err).Error(" while getting token from header.")
+				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
 
 			claims, err := a.parseClaimsWithRetry(r.Context(), bearerToken)
 			if err != nil {
-				logger.Error(err)
-				a.writeAppError(w, err, http.StatusUnauthorized, logger)
+				log.C(ctx).WithError(err).Error("An error has occurred while parsing claims.")
+				a.writeAppError(ctx, w, err, http.StatusUnauthorized)
 				return
 			}
 
 			if claims.Tenant == "" && claims.ExternalTenant != "" {
 				err := apperrors.NewTenantNotFoundError(claims.ExternalTenant)
-				logger.Error(err)
-				a.writeAppError(w, err, http.StatusBadRequest, logger)
+				log.C(ctx).WithError(err).Error()
+				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
 
-			ctx := a.contextWithClaims(r.Context(), claims)
+			ctx = a.contextWithClaims(r.Context(), claims)
 
 			if clientUser := r.Header.Get(ClientUserHeader); clientUser != "" {
-				logger.Infof("Found %s header in request with value: %s", ClientUserHeader, clientUser)
+				log.C(ctx).Infof("Found %s header in request with value: %s", ClientUserHeader, clientUser)
 				ctx = client.SaveToContext(ctx, clientUser)
 			}
 
@@ -179,10 +177,10 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 	}
 }
 
-func (a *Authenticator) writeAppError(w http.ResponseWriter, appErr error, statusCode int, logger *logrus.Entry) {
+func (a *Authenticator) writeAppError(ctx context.Context, w http.ResponseWriter, appErr error, statusCode int) {
 	errCode := apperrors.ErrorCode(appErr)
 	if errCode == apperrors.UnknownError || errCode == apperrors.InternalError {
-		logger.Error(appErr.Error())
+		log.C(ctx).WithError(appErr).Error()
 		errCode = apperrors.InternalError
 	}
 
@@ -193,6 +191,6 @@ func (a *Authenticator) writeAppError(w http.ResponseWriter, appErr error, statu
 		Extensions: map[string]interface{}{"error_code": errCode, "error": errCode.String()}}}}
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
-		logger.Error(err, "while encoding data")
+		log.C(ctx).WithError(err).Error("An error occurred while encoding data. ")
 	}
 }

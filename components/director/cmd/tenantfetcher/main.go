@@ -49,7 +49,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	tenantFetcherSvc := createTenantFetcherSvc(ctx, cfg, transact, metricsPusher)
+	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, metricsPusher)
 	err = tenantFetcherSvc.SyncTenants()
 
 	if metricsPusher != nil {
@@ -68,7 +68,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createTenantFetcherSvc(ctx context.Context, cfg config, transact persistence.Transactioner, metricsPusher *metrics.Pusher) *tenantfetcher.Service {
+func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, metricsPusher *metrics.Pusher) *tenantfetcher.Service {
 	uidSvc := uid.NewService()
 
 	tenantStorageConv := tenant.NewConverter()
