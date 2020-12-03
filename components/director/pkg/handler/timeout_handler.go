@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -49,7 +50,7 @@ func (h *timeoutLoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	timoutRW := &timoutLoggingResponseWriter{
 		ResponseWriter: w,
 		method:         r.Method,
-		url:            r.URL.String(),
+		url:            template.HTMLEscapeString(r.URL.String()),
 		timeout:        h.timeout,
 		msg:            h.msg,
 		requestStart:   time.Now(),
