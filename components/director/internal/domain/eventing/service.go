@@ -379,5 +379,5 @@ func buildQueryForScenarios(scenarios []string) string {
 }
 
 func getDefaultEventingForAppLabelKey(appID uuid.UUID) string {
-	return fmt.Sprintf(RuntimeDefaultEventingLabelf, appID.String())
+	return strings.ReplaceAll(fmt.Sprintf(RuntimeDefaultEventingLabelf, appID.String()), "-", "_")
 }
