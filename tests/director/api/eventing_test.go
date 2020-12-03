@@ -94,7 +94,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 
 	setRuntimeLabel(t, ctx, runtime2.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
-	setRuntimeLabel(t, ctx, runtime1.ID, shouldNormalize, "true")
+	setRuntimeLabel(t, ctx, runtime2.ID, shouldNormalize, "true")
 
 	// WHEN
 	testApp := getApplication(t, ctx, application.ID)
