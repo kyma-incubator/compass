@@ -21,12 +21,12 @@ func NewCSRInfoResponseProvider(connectivityAdapterBaseURL, connectivityAdapterM
 		tokenParam := fmt.Sprintf(TokenFormat, configuration.Token.Token)
 
 		api := Api{
-			CertificatesURL: connectivityAdapterBaseURL + CertsEndpoint,
+			CertificatesURL: csrURL,
 			InfoURL:         connectivityAdapterMTLSBaseURL + ManagementInfoEndpoint,
 			RuntimeURLs:     makeRuntimeURLs(applicationName, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		}
 
-		return CSRInfoResponse{
+		return CSRInfo	Response{
 			CsrURL:          csrURL + tokenParam,
 			API:             api,
 			CertificateInfo: ToCertInfo(configuration.CertificateSigningRequestInfo),

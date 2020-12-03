@@ -20,6 +20,7 @@ import (
 type Client interface {
 	CreateRuntime(in schema.RuntimeInput) (string, error)
 	DeleteRuntime(runtimeID string) error
+	SetRuntimeLabel(runtimeID, key, value string) error
 	CreateApplication(in schema.ApplicationRegisterInput) (string, error)
 	DeleteApplication(appID string) error
 	SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error
@@ -170,10 +171,22 @@ func (c client) DeleteRuntime(runtimeID string) error {
 	return nil
 }
 
+func (c client) SetRuntimeLabel(runtimeID, key, value string) error {
+	query := setRuntimeLabel(runtimeID, key, value)
+	var response SetLabelResponse
+
+	err := c.executeWithRetries(query, &response)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c client) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error {
 
 	{
-		query := setEventBaseURLQuery(runtimeID, eventsBaseURL)
+		query := setRuntimeLabel(runtimeID, "runtime_eventServiceUrl", eventsBaseURL)
 		var response SetLabelResponse
 
 		err := c.executeWithRetries(query, &response)
