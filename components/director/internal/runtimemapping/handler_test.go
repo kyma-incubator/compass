@@ -2,12 +2,13 @@ package runtimemapping
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/sirupsen/logrus"
@@ -221,7 +222,7 @@ func TestHandler(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expectedBody, strings.TrimSpace(string(body)))
 		require.Equal(t, 1, len(hook.Entries))
-		require.Equal(t, "An error has occurred while processing the request.",hook.LastEntry().Message)
+		require.Equal(t, "An error has occurred while processing the request.", hook.LastEntry().Message)
 		errMsg, ok := hook.LastEntry().Data["error"].(error)
 		assert.True(t, ok)
 		require.Equal(t, "when getting the runtime: some-error", errMsg.Error())

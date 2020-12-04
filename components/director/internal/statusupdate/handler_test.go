@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	logrustest "github.com/sirupsen/logrus/hooks/test"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	logrustest "github.com/sirupsen/logrus/hooks/test"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
