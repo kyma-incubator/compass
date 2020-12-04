@@ -86,7 +86,7 @@ func TestService_Create(t *testing.T) {
 		model.ScenariosKey:    model.ScenariosDefaultValue,
 		"integrationSystemID": intSysID,
 		"label":               "value",
-		"name":                "foo.bar-not",
+		"name":                "mp-foo-bar-not",
 	}
 	defaultNormalizedLabels := map[string]interface{}{
 		model.ScenariosKey:    model.ScenariosDefaultValue,
@@ -97,11 +97,11 @@ func TestService_Create(t *testing.T) {
 	defaultLabelsWithoutIntSys := map[string]interface{}{
 		model.ScenariosKey:    model.ScenariosDefaultValue,
 		"integrationSystemID": "",
-		"name":                "test",
+		"name":                "mp-test",
 	}
 	labelsWithoutIntSys := map[string]interface{}{
 		"integrationSystemID": "",
-		"name":                "test",
+		"name":                "mp-test",
 	}
 	var nilLabels map[string]interface{}
 
@@ -915,7 +915,7 @@ func TestService_Update(t *testing.T) {
 		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, tnt, appName, initialDescrription, initialURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
 		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
 		intSysLabel = fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
-		nameLabel = fixLabelInput("name", appName, id, model.ApplicationLabelableObject)
+		nameLabel = fixLabelInput("name", "mp-"+appName, id, model.ApplicationLabelableObject)
 		updateInputStatusOnly = fixModelApplicationUpdateInputStatus(model.ApplicationStatusConditionConnected)
 		applicationModelAfterStatusUpdate = fixModelApplicationWithAllUpdatableFields(id, tnt, appName, initialDescrription, initialURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
 	}
@@ -924,6 +924,7 @@ func TestService_Update(t *testing.T) {
 
 	testCases := []struct {
 		Name               string
+		AppNameNormalizer  normalizer.Normalizator
 		AppRepoFn          func() *automock.ApplicationRepository
 		IntSysRepoFn       func() *automock.IntegrationSystemRepository
 		LabelUpsertSvcFn   func() *automock.LabelUpsertService
@@ -932,7 +933,8 @@ func TestService_Update(t *testing.T) {
 		ExpectedErrMessage string
 	}{
 		{
-			Name: "Success",
+			Name:              "Success",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
@@ -956,7 +958,8 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Success Status Condition Update",
+			Name:              "Success Status Condition Update",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
@@ -978,7 +981,8 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when application update failed",
+			Name:              "Returns error when application update failed",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
@@ -999,7 +1003,8 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when application retrieval failed",
+			Name:              "Returns error when application retrieval failed",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(nil, testErr).Once()
@@ -1019,7 +1024,8 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when Integration System does not exist",
+			Name:              "Returns error when Integration System does not exist",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				return repo
@@ -1038,7 +1044,8 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: errors.New("Object not found").Error(),
 		},
 		{
-			Name: "Returns error ensuring Integration System existance failed",
+			Name:              "Returns error ensuring Integration System existance failed",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				return repo
@@ -1057,7 +1064,8 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when setting label fails",
+			Name:              "Returns error when setting label fails",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
@@ -1080,7 +1088,8 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when app does not exist",
+			Name:              "Returns error when app does not exist",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
@@ -1102,7 +1111,8 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: "Object not found",
 		},
 		{
-			Name: "Returns error when ensuring app existence fails",
+			Name:              "Returns error when ensuring app existence fails",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
@@ -1128,10 +1138,11 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			resetModels()
+			appNameNormalizer := testCase.AppNameNormalizer
 			appRepo := testCase.AppRepoFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			lblUpsrtSvc := testCase.LabelUpsertSvcFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
 			svc.SetTimestampGen(timestampGenFunc)
 
 			// when

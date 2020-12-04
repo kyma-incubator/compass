@@ -270,7 +270,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	if in.IntegrationSystemID != nil {
 		in.Labels[intSysKey] = *in.IntegrationSystemID
 	}
-	in.Labels[nameKey] = in.Name
+	in.Labels[nameKey] = s.appNameNormalizer.Normalize(in.Name)
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
@@ -323,8 +323,8 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		log.C(ctx).Debugf("Successfully set Label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
 	}
 
-	labelName := createLabel(nameKey, app.Name, app.ID)
-	err = s.SetLabel(ctx, labelName)
+	label := createLabel(nameKey, s.appNameNormalizer.Normalize(app.Name), app.ID)
+	err = s.SetLabel(ctx, label)
 	if err != nil {
 		return errors.Wrap(err, "while setting application name label")
 	}

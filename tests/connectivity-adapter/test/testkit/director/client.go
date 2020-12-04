@@ -23,6 +23,8 @@ type Client interface {
 	SetRuntimeLabel(runtimeID, key, value string) error
 	CreateApplication(in schema.ApplicationRegisterInput) (string, error)
 	DeleteApplication(appID string) error
+	SetApplicationLabel(applicationID, key, value string) error
+	DeleteApplicationLabel(applicationID, key string) error
 	SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error
 	GetOneTimeTokenUrl(appID string) (string, string, error)
 }
@@ -136,6 +138,30 @@ func (c client) DeleteApplication(appID string) error {
 	query := deleteApplicationQuery(appID)
 
 	err := c.executeWithRetries(query, &result)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c client) SetApplicationLabel(applicationID, key, value string) error {
+	query := setApplicationLabel(applicationID, key, value)
+	var response SetLabelResponse
+
+	err := c.executeWithRetries(query, &response)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c client) DeleteApplicationLabel(applicationID, key string) error {
+	query := deleteApplicationLabel(applicationID, key)
+	var response SetLabelResponse
+
+	err := c.executeWithRetries(query, &response)
 	if err != nil {
 		return err
 	}

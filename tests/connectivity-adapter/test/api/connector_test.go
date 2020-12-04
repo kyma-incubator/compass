@@ -38,6 +38,17 @@ func TestConnector(t *testing.T) {
 		},
 	}
 
+	appWithNameLabelInput := directorSchema.ApplicationRegisterInput{
+		Name:           TestApp,
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: &directorSchema.Labels{
+			"scenarios": []interface{}{"DEFAULT"},
+			"name":      defaultAppNameNormalizer.Normalize(TestApp),
+		},
+	}
+
 	descr := "test"
 	runtimeInput := directorSchema.RuntimeInput{
 		Name:        TestRuntime,
@@ -81,12 +92,22 @@ func TestConnector(t *testing.T) {
 		certificateRotationSuite(t, client, appID, config)
 		certificateRevocationSuite(t, client, appID, config.Tenant, config.SkipSslVerify)
 
-		for _, shouldNormalize := range []bool{true, false} {
-			err := client.SetRuntimeLabel(runtimeID, "shouldNormalize", strconv.FormatBool(shouldNormalize))
+		for _, shouldNormalizeEventURL := range []bool{true, false} {
+			err := client.SetRuntimeLabel(runtimeID, "shouldNormalize", strconv.FormatBool(shouldNormalizeEventURL))
 			require.NoError(t, err)
 
-			appMgmInfoEndpointSuite(t, client, appID, config, TestApp, shouldNormalize)
-			appCsrInfoEndpointSuite(t, client, appID, config, TestApp, shouldNormalize)
+			for _, shouldNormalizeMetadataURL := range []bool{true, false} {
+				var err error
+				if shouldNormalizeMetadataURL {
+					err = client.SetApplicationLabel(appID, "name", defaultAppNameNormalizer.Normalize(TestApp))
+				} else {
+					err = client.DeleteApplicationLabel(appID, "name")
+				}
+				require.NoError(t, err)
+
+				appMgmInfoEndpointSuite(t, client, appID, config, TestApp, shouldNormalizeMetadataURL, shouldNormalizeEventURL)
+				appCsrInfoEndpointSuite(t, client, appID, config, TestApp, shouldNormalizeMetadataURL, shouldNormalizeEventURL)
+			}
 		}
 	})
 }
@@ -269,18 +290,21 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 
 }
 
-func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, shouldNormalize bool) {
-
+func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, shouldNormalizeMetadataURL, shouldNormalizeEventURL bool) {
 	t.Run("should use default values to build CSR info response", func(t *testing.T) {
 		// given
 		client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := config.EventsBaseURL
 
-		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
+		normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
+		if shouldNormalizeMetadataURL {
+			expectedMetadataURL += "/" + normalizedAppName + "/v1/metadata/services"
+		} else {
+			expectedMetadataURL += "/" + appName + "/v1/metadata/services"
+		}
 
-		if shouldNormalize {
-			normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
+		if shouldNormalizeEventURL {
 			expectedEventsURL += "/" + normalizedAppName + "/v1/events"
 		} else {
 			expectedEventsURL += "/" + appName + "/v1/events"
@@ -303,7 +327,7 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 	})
 }
 
-func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, shouldNormalize bool) {
+func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, shouldNormalizeMetadataURL, shouldNormalizeEventURL bool) {
 	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
 	clientKey := connector.CreateKey(t)
@@ -313,9 +337,14 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := config.EventsBaseURL
 
-		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
-		if shouldNormalize {
-			normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
+		normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
+		if shouldNormalizeMetadataURL {
+			expectedMetadataURL += "/" + normalizedAppName + "/v1/metadata/services"
+		} else {
+			expectedMetadataURL += "/" + appName + "/v1/metadata/services"
+		}
+
+		if shouldNormalizeEventURL {
 			expectedEventsURL += "/" + normalizedAppName + "/v1/events"
 		} else {
 			expectedEventsURL += "/" + appName + "/v1/events"

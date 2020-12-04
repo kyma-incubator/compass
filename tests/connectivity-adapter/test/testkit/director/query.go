@@ -24,7 +24,25 @@ func createRuntimeQuery(in string) string {
 	}`, in)
 }
 
-func setRuntimeLabel(runtimeID string, key, value string) string {
+func setApplicationLabel(applicationID, key, value string) string {
+	return fmt.Sprintf(`mutation {
+  	result: setApplicationLabel(applicationID: "%s", key: "%s", value: "%s") {
+    key
+    value
+  }
+}`, applicationID, key, value)
+}
+
+func deleteApplicationLabel(applicationID, key string) string {
+	return fmt.Sprintf(`mutation {
+  	result: deleteApplicationLabel(applicationID: "%s", key: "%s") {
+    key
+    value
+  }
+}`, applicationID, key)
+}
+
+func setRuntimeLabel(runtimeID, key, value string) string {
 	return fmt.Sprintf(`mutation {
   	result: setRuntimeLabel(runtimeID: "%s", key: "%s", value: "%s") {
     key
@@ -33,7 +51,7 @@ func setRuntimeLabel(runtimeID string, key, value string) string {
 }`, runtimeID, key, value)
 }
 
-func setDefaultEventingQuery(runtimeID string, appID string) string {
+func setDefaultEventingQuery(runtimeID, appID string) string {
 	return fmt.Sprintf(`mutation {
   	result: setDefaultEventingForApplication(appID: "%s",runtimeID: "%s") {
      defaultURL
