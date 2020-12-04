@@ -85,17 +85,17 @@ func TestConnector(t *testing.T) {
 			err := client.SetRuntimeLabel(runtimeID, "isNormalized", strconv.FormatBool(shouldNormalizeEventURL))
 			require.NoError(t, err)
 
-			for _, shouldNormalizeMetadataURL := range []bool{true, false} {
+			for _, appNameLabelExists := range []bool{true, false} {
 				var err error
-				if shouldNormalizeMetadataURL {
+				if appNameLabelExists {
 					err = client.SetApplicationLabel(appID, "name", defaultAppNameNormalizer.Normalize(TestApp))
 				} else {
 					err = client.DeleteApplicationLabel(appID, "name")
 				}
 				require.NoError(t, err)
 
-				appMgmInfoEndpointSuite(t, client, appID, config, TestApp, shouldNormalizeMetadataURL, shouldNormalizeEventURL)
-				appCsrInfoEndpointSuite(t, client, appID, config, TestApp, shouldNormalizeMetadataURL, shouldNormalizeEventURL)
+				appMgmInfoEndpointSuite(t, client, appID, config, TestApp, appNameLabelExists, shouldNormalizeEventURL)
+				appCsrInfoEndpointSuite(t, client, appID, config, TestApp, appNameLabelExists, shouldNormalizeEventURL)
 			}
 		}
 	})
@@ -279,7 +279,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 
 }
 
-func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, shouldNormalizeMetadataURL, shouldNormalizeEventURL bool) {
+func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
 	t.Run("should use default values to build CSR info response", func(t *testing.T) {
 		// given
 		client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
@@ -287,7 +287,7 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		expectedEventsURL := config.EventsBaseURL
 
 		normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
-		if shouldNormalizeMetadataURL {
+		if appNameLabelExists {
 			expectedMetadataURL += "/" + normalizedAppName + "/v1/metadata/services"
 		} else {
 			expectedMetadataURL += "/" + appName + "/v1/metadata/services"
@@ -316,7 +316,7 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 	})
 }
 
-func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, shouldNormalizeMetadataURL, shouldNormalizeEventURL bool) {
+func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
 	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
 	clientKey := connector.CreateKey(t)
@@ -327,7 +327,7 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		expectedEventsURL := config.EventsBaseURL
 
 		normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
-		if shouldNormalizeMetadataURL {
+		if appNameLabelExists {
 			expectedMetadataURL += "/" + normalizedAppName + "/v1/metadata/services"
 		} else {
 			expectedMetadataURL += "/" + appName + "/v1/metadata/services"
@@ -356,7 +356,13 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		// then
 		assert.Equal(t, expectedMetadataURL, mgmInfoResponse.URLs.MetadataURL)
 		assert.Equal(t, expectedEventsURL, mgmInfoResponse.URLs.EventsURL)
-		assert.Equal(t, appName, mgmInfoResponse.ClientIdentity.Application)
+
+		if appNameLabelExists {
+			assert.Equal(t, normalizedAppName, mgmInfoResponse.ClientIdentity.Application)
+		} else {
+			assert.Equal(t, appName, mgmInfoResponse.ClientIdentity.Application)
+		}
+
 		assert.NotEmpty(t, mgmInfoResponse.Certificate.Subject)
 		assert.Equal(t, connector.Extensions, mgmInfoResponse.Certificate.Extensions)
 		assert.Equal(t, connector.KeyAlgorithm, mgmInfoResponse.Certificate.KeyAlgorithm)
