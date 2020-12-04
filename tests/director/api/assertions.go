@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,6 +27,7 @@ func assertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 
 //TODO: After fixing the 'Labels' scalar turn this back into regular assertion
 func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
+	appNameNormalizier := normalizer.DefaultNormalizator{}
 	for key, value := range actual {
 		if key == "integrationSystemID" {
 			if app.IntegrationSystemID == nil {
@@ -33,7 +36,7 @@ func assertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app gr
 			assert.Equal(t, value, app.IntegrationSystemID)
 			continue
 		} else if key == "name" {
-			assert.Equal(t, value, app.Name)
+			assert.Equal(t, value, appNameNormalizier.Normalize(app.Name))
 			continue
 		}
 		assert.Equal(t, value, in[key])

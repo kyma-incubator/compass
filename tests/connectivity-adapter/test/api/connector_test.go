@@ -38,17 +38,6 @@ func TestConnector(t *testing.T) {
 		},
 	}
 
-	appWithNameLabelInput := directorSchema.ApplicationRegisterInput{
-		Name:           TestApp,
-		ProviderName:   ptr.String("provider name"),
-		Description:    ptr.String("my application"),
-		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
-		Labels: &directorSchema.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
-			"name":      defaultAppNameNormalizer.Normalize(TestApp),
-		},
-	}
-
 	descr := "test"
 	runtimeInput := directorSchema.RuntimeInput{
 		Name:        TestRuntime,
