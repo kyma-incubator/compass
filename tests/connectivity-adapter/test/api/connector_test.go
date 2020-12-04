@@ -82,7 +82,7 @@ func TestConnector(t *testing.T) {
 		certificateRevocationSuite(t, client, appID, config.Tenant, config.SkipSslVerify)
 
 		for _, shouldNormalizeEventURL := range []bool{true, false} {
-			err := client.SetRuntimeLabel(runtimeID, "shouldNormalize", strconv.FormatBool(shouldNormalizeEventURL))
+			err := client.SetRuntimeLabel(runtimeID, "isNormalized", strconv.FormatBool(shouldNormalizeEventURL))
 			require.NoError(t, err)
 
 			for _, shouldNormalizeMetadataURL := range []bool{true, false} {

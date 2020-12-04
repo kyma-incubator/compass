@@ -263,7 +263,7 @@ func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID st
 		return nil, err
 	}
 
-	labels, err := r.runtime.GetLabel(ctx, runtimeID, runtime.ShouldNormalize)
+	labels, err := r.runtime.GetLabel(ctx, runtimeID, runtime.IsNormalizedLabel)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +271,7 @@ func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID st
 	shouldNormalize := true
 	if labels != nil {
 		labelsMap := (map[string]interface{})(*labels)
-		shouldNormalize = labelsMap[runtime.ShouldNormalize] == nil || labelsMap[runtime.ShouldNormalize] == "true"
+		shouldNormalize = labelsMap[runtime.IsNormalizedLabel] == nil || labelsMap[runtime.IsNormalizedLabel] == "true"
 	}
 
 	if shouldNormalize {

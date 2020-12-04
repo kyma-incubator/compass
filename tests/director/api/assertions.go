@@ -233,13 +233,13 @@ func assertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.
 
 func assertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {
 	const (
-		scenariosKey       = "scenarios"
-		shouldNormalizeKey = "shouldNormalize"
+		scenariosKey    = "scenarios"
+		isNormalizedKey = "isNormalized"
 	)
 
 	if inLabels == nil {
 		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
-		assertLabel(t, actualLabels, shouldNormalizeKey, "true")
+		assertLabel(t, actualLabels, isNormalizedKey, "true")
 		assert.Equal(t, 2, len(actualLabels))
 		return
 	}
@@ -249,9 +249,9 @@ func assertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels gr
 		assertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
 	}
 
-	_, inHasShouldNomalizeKey := (*inLabels)[shouldNormalizeKey]
+	_, inHasShouldNomalizeKey := (*inLabels)[isNormalizedKey]
 	if !inHasShouldNomalizeKey {
-		assertLabel(t, actualLabels, shouldNormalizeKey, "true")
+		assertLabel(t, actualLabels, isNormalizedKey, "true")
 	}
 
 	for labelKey, labelValues := range *inLabels {

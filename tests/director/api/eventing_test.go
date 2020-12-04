@@ -35,7 +35,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 
 	setRuntimeLabel(t, ctx, runtime1.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
-	setRuntimeLabel(t, ctx, runtime1.ID, shouldNormalize, "false")
+	setRuntimeLabel(t, ctx, runtime1.ID, isNormalizedLabel, "false")
 
 	runtime2 := registerRuntime(t, ctx, "runtime-2-eventing")
 	defer unregisterRuntimeWithinTenant(t, runtime2.ID, testTenants.GetDefaultTenantID())
@@ -87,14 +87,14 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 
 	setRuntimeLabel(t, ctx, runtime1.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
-	setRuntimeLabel(t, ctx, runtime1.ID, shouldNormalize, "false")
+	setRuntimeLabel(t, ctx, runtime1.ID, isNormalizedLabel, "false")
 
 	runtime2 := registerRuntime(t, ctx, "runtime-2-eventing")
 	defer unregisterRuntimeWithinTenant(t, runtime2.ID, testTenants.GetDefaultTenantID())
 
 	setRuntimeLabel(t, ctx, runtime2.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
-	setRuntimeLabel(t, ctx, runtime2.ID, shouldNormalize, "true")
+	setRuntimeLabel(t, ctx, runtime2.ID, isNormalizedLabel, "true")
 
 	// WHEN
 	testApp := getApplication(t, ctx, application.ID)
@@ -150,14 +150,14 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 
 	setRuntimeLabel(t, ctx, runtime1.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
-	setRuntimeLabel(t, ctx, runtime1.ID, shouldNormalize, "false")
+	setRuntimeLabel(t, ctx, runtime1.ID, isNormalizedLabel, "false")
 
 	runtime2 := registerRuntime(t, ctx, "runtime-2-eventing")
 	defer unregisterRuntimeWithinTenant(t, runtime2.ID, testTenants.GetDefaultTenantID())
 
 	setRuntimeLabel(t, ctx, runtime2.ID, scenariosLabel, defaultScenarios)
 	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
-	setRuntimeLabel(t, ctx, runtime2.ID, shouldNormalize, "false")
+	setRuntimeLabel(t, ctx, runtime2.ID, isNormalizedLabel, "false")
 
 	testApp := getApplication(t, ctx, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)

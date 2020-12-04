@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	shouldNormalizeLabel         = "shouldNormalize"
+	isNormalizedLabel            = "isNormalized"
 	RuntimeEventingURLLabel      = "runtime_eventServiceUrl"
 	EmptyEventingURL             = ""
 	RuntimeDefaultEventingLabelf = "%s_defaultEventing"
@@ -250,10 +250,10 @@ func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*mode
 }
 
 func (s *service) shouldNormalizeApplicationName(ctx context.Context, runtime *model.Runtime) (bool, error) {
-	label, err := s.labelRepo.GetByKey(ctx, runtime.Tenant, model.RuntimeLabelableObject, runtime.ID, shouldNormalizeLabel)
+	label, err := s.labelRepo.GetByKey(ctx, runtime.Tenant, model.RuntimeLabelableObject, runtime.ID, isNormalizedLabel)
 	notFoundErr := apperrors.IsNotFoundError(err)
 	if !notFoundErr && err != nil {
-		return false, errors.Wrap(err, fmt.Sprintf("while getting the label [key=%s] for runtime [ID=%s]", shouldNormalizeLabel, runtime.ID))
+		return false, errors.Wrap(err, fmt.Sprintf("while getting the label [key=%s] for runtime [ID=%s]", isNormalizedLabel, runtime.ID))
 	}
 
 	return notFoundErr || label.Value == "true", nil

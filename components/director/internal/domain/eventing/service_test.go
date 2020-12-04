@@ -95,7 +95,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -126,7 +126,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -156,7 +156,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(&model.Label{Value: "true"}, nil)
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "true"}, nil)
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -186,7 +186,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(&model.Label{Value: "false"}, nil)
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "false"}, nil)
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -432,7 +432,7 @@ func Test_SetForApplication(t *testing.T) {
 
 	t.Run("Error when getting runtime normalization label", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, shouldNormalizeLabel, runtimeID)
+		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, isNormalizedLabel, runtimeID)
 		ctx := fixCtxWithTenant()
 		app := fixApplicationModel("test-app")
 		runtimeRepo := &automock.RuntimeRepository{}
@@ -447,7 +447,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(nil, errors.New("some error"))
+			runtimeID.String(), isNormalizedLabel).Return(nil, errors.New("some error"))
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -497,7 +497,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -523,7 +523,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(&model.Label{Value: "true"}, nil)
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "true"}, nil)
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -549,7 +549,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(&model.Label{Value: "false"}, nil)
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "false"}, nil)
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -661,7 +661,7 @@ func Test_UnsetForApplication(t *testing.T) {
 
 	t.Run("Success when there is runtime labeled for application eventing and is labeled not for normalization", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, shouldNormalizeLabel, runtimeID)
+		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, isNormalizedLabel, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
@@ -672,7 +672,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(nil, errors.New("some error"))
+			runtimeID.String(), isNormalizedLabel).Return(nil, errors.New("some error"))
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -704,7 +704,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -733,7 +733,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
 		// WHEN
@@ -760,7 +760,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(&model.Label{Value: "true"}, nil)
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "true"}, nil)
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -788,7 +788,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(&model.Label{Value: "false"}, nil)
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "false"}, nil)
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
@@ -1140,7 +1140,7 @@ func Test_GetForApplication(t *testing.T) {
 
 	t.Run("Error when getting runtime normalization label", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, shouldNormalizeLabel, runtimeID)
+		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, isNormalizedLabel, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
@@ -1153,7 +1153,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
-			runtimeID.String(), shouldNormalizeLabel).Return(nil, errors.New("some error"))
+			runtimeID.String(), isNormalizedLabel).Return(nil, errors.New("some error"))
 
 		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
