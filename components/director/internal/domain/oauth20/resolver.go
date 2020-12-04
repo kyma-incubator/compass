@@ -86,7 +86,7 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 
 	exists, err := r.checkObjectExist(ctx, objType, objID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error occurred while checking if %s with ID '%s' exists", objType, objID)
+		return nil, errors.Wrapf(err, "while checking if %s with ID '%s' exists", objType, objID)
 	}
 	if !exists {
 		return nil, fmt.Errorf("%s with ID '%s' not found", objType, objID)
@@ -95,7 +95,7 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType model.
 	log.C(ctx).Debugf("Generating client credentials for %s with id %s by Director", objType, objID)
 	clientCreds, err := r.svc.CreateClientCredentials(ctx, objType)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error occurred while creating client credentials for %s with id %s", objType, objID)
+		return nil, errors.Wrapf(err, "while creating client credentials for %s with id %s", objType, objID)
 	}
 	if clientCreds == nil {
 		return nil, apperrors.NewInvalidDataError("client credentials cannot be empty")

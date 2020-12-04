@@ -252,7 +252,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 
 	err = s.appRepo.Create(ctx, app)
 	if err != nil {
-		return "", errors.Wrapf(err, "Error occurred while creating Application with name %s", in.Name)
+		return "", errors.Wrapf(err, "while creating Application with name %s", in.Name)
 	}
 
 	log.C(ctx).Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)

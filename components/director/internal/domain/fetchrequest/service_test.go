@@ -170,7 +170,7 @@ func TestService_HandleAPISpec(t *testing.T) {
 			},
 			InputFr:         modelInput,
 			ExpectedOutput:  nil,
-			ExpectedMessage: str.Ptr(fmt.Sprintf("While updating fetch request status: ")),
+			ExpectedMessage: str.Ptr(fmt.Sprintf("An error has occurred while updating fetch request status.")),
 			ExpectedError:   str.Ptr(testErr.Error()),
 		},
 	}

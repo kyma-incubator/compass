@@ -304,7 +304,7 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		require.Equal(t, 1, len(jwksCache.cache))
 		require.NotNil(t, claims)
 		require.Equal(t, 1, len(hook.Entries))
-		require.Equal(t, "adding key 67bf0153-a6dc-4f06-9ce4-2f203b79adc8 to cache", hook.LastEntry().Message)
+		require.Equal(t, "Adding key 67bf0153-a6dc-4f06-9ce4-2f203b79adc8 to cache", hook.LastEntry().Message)
 	})
 
 	t.Run("should validate token using keys", func(t *testing.T) {

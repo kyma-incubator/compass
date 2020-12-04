@@ -43,7 +43,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			logger := log.C(r.Context())
 
 			if err != nil {
-				logger.WithError(err).Error("An error has occurred while fetching consumer info from from context.")
+				logger.WithError(err).Error("An error has occurred while fetching consumer info from context.")
 				next.ServeHTTP(w, r)
 				return
 			}

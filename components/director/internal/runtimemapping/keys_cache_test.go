@@ -68,7 +68,7 @@ func TestJWKsCache_GetKey(t *testing.T) {
 		require.Equal(t, 1, len(jwksCache.cache))
 		require.NotNil(t, key)
 		require.Equal(t, 1, len(hook.Entries))
-		require.Equal(t, "adding key 67bf0153-a6dc-4f06-9ce4-2f203b79adc8 to cache", hook.LastEntry().Message)
+		require.Equal(t, "Adding key 67bf0153-a6dc-4f06-9ce4-2f203b79adc8 to cache", hook.LastEntry().Message)
 	})
 
 	t.Run("should fetch, cache and return valid key, second call should return from cache", func(t *testing.T) {
@@ -99,8 +99,8 @@ func TestJWKsCache_GetKey(t *testing.T) {
 		require.Equal(t, 1, len(jwksCache.cache))
 		require.NotNil(t, key)
 		require.Equal(t, 2, len(hook.Entries))
-		require.Equal(t, "adding key 67bf0153-a6dc-4f06-9ce4-2f203b79adc8 to cache", hook.Entries[0].Message)
-		require.Equal(t, "using key 67bf0153-a6dc-4f06-9ce4-2f203b79adc8 from cache", hook.Entries[1].Message)
+		require.Equal(t, "Adding key 67bf0153-a6dc-4f06-9ce4-2f203b79adc8 to cache", hook.Entries[0].Message)
+		require.Equal(t, "Using key 67bf0153-a6dc-4f06-9ce4-2f203b79adc8 from cache", hook.Entries[1].Message)
 	})
 
 	t.Run("should return error when token is nil", func(t *testing.T) {
@@ -175,6 +175,6 @@ func TestJWKsCache_Cleanup(t *testing.T) {
 		// THEN
 		require.Equal(t, 1, len(jwksCache.cache))
 		require.Equal(t, 1, len(hook.Entries))
-		require.Equal(t, "removing key 123 from cache", hook.LastEntry().Message)
+		require.Equal(t, "Removing key 123 from cache", hook.LastEntry().Message)
 	})
 }

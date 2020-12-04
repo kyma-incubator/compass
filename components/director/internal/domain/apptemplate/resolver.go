@@ -173,7 +173,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	gqlAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error occurred while converting Application Template with id %s to GraphQL", id)
+		return nil, errors.Wrapf(err, "while converting Application Template with id %s to GraphQL", id)
 	}
 
 	return gqlAppTemplate, nil
@@ -205,13 +205,13 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	appCreateInputJSON, err := r.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, convertedIn.Values)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error occurred while preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
+		return nil, errors.Wrapf(err, "while preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	}
 
 	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
 	appCreateInputGQL, err := r.appConverter.CreateInputJSONToGQL(appCreateInputJSON)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error occurred while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
+		return nil, errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
 	}
 
 	log.C(ctx).Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %s", convertedIn.TemplateName)
@@ -227,7 +227,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	id, err := r.appSvc.Create(ctx, appCreateInputModel)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error occurred while creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
+		return nil, errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	}
 	log.C(ctx).Infof("Application with name %s and id %s successfully created from Application Template with name %s", applicationName, id, in.TemplateName)
 
