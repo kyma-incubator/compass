@@ -215,9 +215,25 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		in.Labels[ShouldNormalize] = "true"
 	}
 
+	currentLabels, err := s.labelRepo.ListForObject(ctx, rtmTenant, model.RuntimeLabelableObject, id)
+	if err != nil {
+		return errors.Wrapf(err, "while listing all labels for Runtime")
+	}
+
 	err = s.labelRepo.DeleteAll(ctx, rtmTenant, model.RuntimeLabelableObject, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
+	}
+
+	protectedLabels := s.getProtectedLabels(currentLabels)
+	if len(protectedLabels) > 0 {
+		if in.Labels == nil {
+			in.Labels = make(map[string]interface{})
+		}
+
+		for protectedLabelKey, protectedLabel := range protectedLabels {
+			in.Labels[protectedLabelKey] = protectedLabel.Value
+		}
 	}
 
 	if in.Labels == nil {
@@ -337,7 +353,29 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 		return nil, errors.Wrap(err, "while getting label for Runtime")
 	}
 
+	labels = s.extractNotProtectedLabels(labels)
+
 	return labels, nil
+}
+
+func (s *service) extractNotProtectedLabels(labels map[string]*model.Label) map[string]*model.Label {
+	result := make(map[string]*model.Label)
+	for labelKey, label := range labels {
+		if !strings.HasSuffix(labelKey, "_defaultEventing") {
+			result[labelKey] = label
+		}
+	}
+	return result
+}
+
+func (s *service) getProtectedLabels(labels map[string]*model.Label) map[string]*model.Label {
+	result := make(map[string]*model.Label)
+	for labelKey, label := range labels {
+		if strings.HasSuffix(labelKey, "_defaultEventing") {
+			result[labelKey] = label
+		}
+	}
+	return result
 }
 
 func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string) error {

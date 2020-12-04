@@ -307,6 +307,18 @@ func TestService_Update(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
+	protectedModelLabel := &model.Label{
+		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c12",
+		Tenant:     tnt,
+		Key:        "protected_defaultEventing",
+		Value:      "value",
+		ObjectID:   "foo",
+		ObjectType: model.RuntimeLabelableObject,
+	}
+
+	dbLabels := map[string]*model.Label{"protected_defaultEventing": protectedModelLabel}
+	labels[protectedModelLabel.Key] = protectedModelLabel.Value
+
 	testCases := []struct {
 		Name                 string
 		RepositoryFn         func() *automock.RuntimeRepository
@@ -327,6 +339,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
 				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
 				return repo
 			},
@@ -354,6 +367,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
 				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
 				return repo
 			},
@@ -381,6 +395,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil, nil).Once()
 				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
 				return repo
 			},
@@ -457,6 +472,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
 				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(testErr).Once()
 				return repo
 			},
@@ -482,6 +498,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
 				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
 				return repo
 			},
@@ -508,6 +525,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
 				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
 				return repo
 			},
@@ -1169,7 +1187,17 @@ func TestService_ListLabel(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 	}
 
-	labels := map[string]*model.Label{"first": modelLabel, "second": modelLabel}
+	protectedModelLabel := &model.Label{
+		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c12",
+		Tenant:     tnt,
+		Key:        "protected_defaultEventing",
+		Value:      labelValue,
+		ObjectID:   runtimeID,
+		ObjectType: model.RuntimeLabelableObject,
+	}
+
+	labels := map[string]*model.Label{"protected_defaultEventing": protectedModelLabel, "first": modelLabel, "second": modelLabel}
+	expectedLabelWithoutProtected := map[string]*model.Label{"first": modelLabel, "second": modelLabel}
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.RuntimeRepository
@@ -1193,7 +1221,7 @@ func TestService_ListLabel(t *testing.T) {
 			},
 			InputRuntimeID:     runtimeID,
 			InputLabel:         label,
-			ExpectedOutput:     labels,
+			ExpectedOutput:     expectedLabelWithoutProtected,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -1260,7 +1288,7 @@ func TestService_ListLabel(t *testing.T) {
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, l, testCase.ExpectedOutput)
+				assert.Equal(t, testCase.ExpectedOutput, l)
 			} else {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
