@@ -63,21 +63,21 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
-				log.C(ctx).WithError(err).Error(" while getting token from header.")
+				log.C(ctx).WithError(err).Error("An error has occurred while getting token from header. Error code: %d", http.StatusBadRequest)
 				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
 
 			claims, err := a.parseClaimsWithRetry(r.Context(), bearerToken)
 			if err != nil {
-				log.C(ctx).WithError(err).Error("An error has occurred while parsing claims.")
+				log.C(ctx).WithError(err).Error("An error has occurred while parsing claims. Error code: %d", http.StatusUnauthorized)
 				a.writeAppError(ctx, w, err, http.StatusUnauthorized)
 				return
 			}
 
 			if claims.Tenant == "" && claims.ExternalTenant != "" {
 				err := apperrors.NewTenantNotFoundError(claims.ExternalTenant)
-				log.C(ctx).WithError(err).Error()
+				log.C(ctx).WithError(err).Error("Tenant not found. Error code: %d", http.StatusBadRequest)
 				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
@@ -180,7 +180,6 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 func (a *Authenticator) writeAppError(ctx context.Context, w http.ResponseWriter, appErr error, statusCode int) {
 	errCode := apperrors.ErrorCode(appErr)
 	if errCode == apperrors.UnknownError || errCode == apperrors.InternalError {
-		log.C(ctx).WithError(appErr).Error()
 		errCode = apperrors.InternalError
 	}
 

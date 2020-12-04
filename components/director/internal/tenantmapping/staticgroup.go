@@ -57,7 +57,7 @@ func (r *staticGroupRepository) Get(ctx context.Context, groupnames []string) St
 		if staticGroup, ok := r.data[groupname]; ok {
 			result = append(result, staticGroup)
 		} else {
-			log.C(ctx).Warnf("static group with name %s not found", groupname)
+			log.C(ctx).Warnf("Static group with name %s not found", groupname)
 		}
 	}
 

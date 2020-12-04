@@ -68,14 +68,14 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		h.logError(ctx, err, "while parsing the request")
+		h.logError(ctx, err, "An error has occurred while parsing the request.")
 		h.respond(ctx, writer, oathkeeper.ReqBody{})
 		return
 	}
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		h.logError(ctx, err, "while opening the db transaction")
+		h.logError(ctx, err, "An error has occurred while opening the db transaction.")
 		h.respond(ctx, writer, reqData.Body)
 		return
 	}
@@ -85,13 +85,13 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	err = h.processRequest(ctx, &reqData)
 	if err != nil {
-		h.logError(ctx, err, "while processing the request")
+		h.logError(ctx, err, "An error has occurred while processing the request.")
 		h.respond(ctx, writer, reqData.Body)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
-		h.logError(ctx, err, "while commiting the transaction")
+		h.logError(ctx, err, "An error has occurred while committing the transaction.")
 		h.respond(ctx, writer, reqData.Body)
 		return
 	}
@@ -125,15 +125,14 @@ func (h *Handler) processRequest(ctx context.Context, reqData *oathkeeper.ReqDat
 	return nil
 }
 
-func (h *Handler) logError(ctx context.Context, err error, wrapperStr string) {
-	wrappedErr := errors.Wrap(err, wrapperStr)
-	log.C(ctx).WithError(wrappedErr).Error()
+func (h *Handler) logError(ctx context.Context, err error, message string) {
+	log.C(ctx).WithError(err).Error(message)
 }
 
 func (h *Handler) respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {
-		h.logError(ctx, err, "while encoding data")
+		h.logError(ctx, err, "An error has occurred while encoding data.")
 	}
 }

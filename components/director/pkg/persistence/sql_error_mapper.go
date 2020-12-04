@@ -25,7 +25,7 @@ func MapSQLError(ctx context.Context, err error, resourceType resource.Type, sql
 
 	pgErr, ok := err.(*pq.Error)
 	if !ok {
-		log.C(ctx).WithError(err).Errorf("Error while casting to postgres error. Actual error: ")
+		log.C(ctx).WithError(err).Errorf("Error while casting to postgres error.")
 		return apperrors.NewInternalError("Unexpected error while executing SQL query")
 	}
 

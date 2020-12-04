@@ -183,12 +183,12 @@ func (s *service) doRequest(ctx context.Context, method string, endpoint string,
 		}
 		_, err = io.Copy(ioutil.Discard, resp.Body)
 		if err != nil {
-			log.C(ctx).WithError(err).Error()
+			log.C(ctx).WithError(err).Error("An error has occurred while copying response body.")
 		}
 
 		err := body.Close()
 		if err != nil {
-			log.C(ctx).WithError(err).Error()
+			log.C(ctx).WithError(err).Error("An error has occurred while closing body.")
 		}
 	}
 

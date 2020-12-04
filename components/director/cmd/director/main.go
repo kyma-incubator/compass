@@ -162,7 +162,7 @@ func main() {
 		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
 			err := authMiddleware.SynchronizeJWKS(ctx)
 			if err != nil {
-				logger.Error(errors.Wrap(err, "while synchronizing JWKS"))
+				logger.WithError(err).Error( "An error has occurred while synchronizing JWKS")
 			}
 		})
 		go periodicExecutor.Run(ctx)
@@ -257,7 +257,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 		if err := provider.Load(); err != nil {
 			exitOnError(err, "Error from Reloader watch")
 		}
-		log.C(ctx).Infof("Successfully reloaded configuration file")
+		log.C(ctx).Infof("Successfully reloaded configuration file.")
 
 	}).Run(ctx)
 
@@ -350,14 +350,14 @@ func createServer(ctx context.Context, address string, handler http.Handler, nam
 	runFn := func() {
 		log.C(ctx).Infof("Running %s server on %s...", name, address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.C(ctx).WithError(err).Errorf("%s HTTP server ListenAndServe: ", name)
+			log.C(ctx).WithError(err).Errorf("An error has occurred with %s HTTP server when ListenAndServe.", name)
 		}
 	}
 
 	shutdownFn := func() {
 		log.C(ctx).Infof("Shutting down %s server...", name)
 		if err := srv.Shutdown(context.Background()); err != nil {
-			log.C(ctx).WithError(err).Errorf("%s HTTP server Shutdown: ", name)
+			log.C(ctx).WithError(err).Errorf("An error has occurred while shutting down HTTP server %s.", name)
 		}
 	}
 

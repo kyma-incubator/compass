@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -45,7 +43,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			logger := log.C(r.Context())
 
 			if err != nil {
-				logger.Error(errors.Wrap(err, "while fetching consumer info from from context").Error())
+				logger.WithError(err).Error("An error has occurred while fetching consumer info from from context.")
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -62,7 +60,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			tx, err := u.transact.Begin()
 			if err != nil {
-				logger.Error(errors.Wrap(err, "while opening transaction").Error())
+				logger.WithError(err).Error("An error has occurred while opening transaction.")
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -72,7 +70,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, object)
 			if err != nil {
-				logger.Error(errors.Wrap(err, "while checking status").Error())
+				logger.WithError(err).Error("An error has occurred while checking repository status.")
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -80,14 +78,14 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			if !isConnected {
 				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, object)
 				if err != nil {
-					logger.Error(errors.Wrap(err, "while updating status").Error())
+					logger.WithError(err).Error("An error has occurred while updating repository status.")
 					next.ServeHTTP(w, r)
 					return
 				}
 			}
 
 			if err := tx.Commit(); err != nil {
-				logger.Error(errors.Wrap(err, "while committing").Error())
+				logger.WithError(err).Error("An error has occurred while committing transaction.")
 				next.ServeHTTP(w, r)
 				return
 			}

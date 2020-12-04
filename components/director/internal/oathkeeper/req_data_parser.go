@@ -32,7 +32,7 @@ func (p *reqDataParser) Parse(req *http.Request) (ReqData, error) {
 	defer func() {
 		err := req.Body.Close()
 		if err != nil {
-			log.C(req.Context()).Error(err)
+			log.C(req.Context()).WithError(err).Error("An error has occurred while closing request body.")
 		}
 	}()
 

@@ -187,7 +187,7 @@ func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authI
 		}
 	}
 
-	log.C(ctx).Infof("PackageInstanceAuth with id %s successfully deleted", authID)
+	log.C(ctx).Infof("PackageInstanceAuth with id %s successfully deleted.", authID)
 
 	err = tx.Commit()
 	if err != nil {

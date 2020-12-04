@@ -120,7 +120,7 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 
 	tx, err := d.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while opening the db transaction: ")
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening the db transaction.")
 		return nil, err
 	}
 	defer d.transact.RollbackUnlessCommitted(ctx, tx)
@@ -146,7 +146,7 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 	log.C(ctx).Debugf("Found the following runtime scenarios: %s", runtimeScenarios)
 
 	if err := tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction: ")
+		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction.")
 		return nil, err
 	}
 

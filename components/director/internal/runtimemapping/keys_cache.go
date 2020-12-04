@@ -59,7 +59,7 @@ func (c *jwksCache) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 			return nil, errors.Wrapf(err, "while getting the key with ID [kid=%s]", keyID)
 		}
 
-		log.C(ctx).Info(fmt.Sprintf("adding key %s to cache", keyID))
+		log.C(ctx).Info(fmt.Sprintf("Adding key %s to cache", keyID))
 
 		c.flag.Lock()
 		c.cache[keyID] = jwkCacheEntry{
@@ -72,7 +72,7 @@ func (c *jwksCache) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 		return key, nil
 	}
 
-	log.C(ctx).Info(fmt.Sprintf("using key %s from cache", keyID))
+	log.C(ctx).Info(fmt.Sprintf("Using key %s from cache", keyID))
 
 	return cachedKey.key, nil
 }
@@ -94,7 +94,7 @@ func (c *jwksCache) Cleanup(ctx context.Context) {
 
 	c.flag.Lock()
 	for _, keyID := range expiredKeys {
-		log.C(ctx).Info(fmt.Sprintf("removing key %s from cache", keyID))
+		log.C(ctx).Info(fmt.Sprintf("Removing key %s from cache", keyID))
 
 		delete(c.cache, keyID)
 	}

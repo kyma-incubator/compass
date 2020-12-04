@@ -73,7 +73,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while parsing the request: ")
+		log.C(ctx).WithError(err).Errorf("An error occurred while parsing request.")
 		respond(ctx, writer, reqData.Body)
 		return
 	}
@@ -93,7 +93,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while opening the db transaction: ")
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction.")
 		return reqData.Body
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
@@ -103,12 +103,12 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	log.C(ctx).Debug("Getting object context")
 	objCtx, err := h.getObjectContext(newCtx, reqData)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context: ")
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context.")
 		return reqData.Body
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction: ")
+		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction.")
 		return reqData.Body
 	}
 
@@ -141,6 +141,6 @@ func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.Re
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data: ")
+		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data.")
 	}
 }

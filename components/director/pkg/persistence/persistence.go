@@ -67,7 +67,7 @@ func (db *db) Begin() (PersistenceTx, error) {
 func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) {
 	customTx, ok := tx.(*Transaction)
 	if !ok {
-		log.C(ctx).Warn("state aware transaction is not in use")
+		log.C(ctx).Warn("State aware transaction is not in use")
 		db.rollback(ctx, tx)
 	}
 	if customTx.committed {
@@ -79,7 +79,7 @@ func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) {
 func (db *db) rollback(ctx context.Context, tx PersistenceTx) {
 	err := tx.Rollback()
 	if err == nil {
-		log.C(ctx).Warn("transaction rolled back")
+		log.C(ctx).Warn("Transaction rolled back")
 	} else if err != sql.ErrTxDone {
 		log.C(ctx).Warn(err)
 	}

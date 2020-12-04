@@ -5,8 +5,6 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=Pinger -output=automock -outpkg=automock -case=underscore
@@ -27,7 +25,7 @@ func NewLivenessHandler(p Pinger) func(writer http.ResponseWriter, request *http
 		writer.WriteHeader(http.StatusOK)
 		_, err = writer.Write([]byte("ok"))
 		if err != nil {
-			logger.Errorf(errors.Wrapf(err, "while writing to response body").Error())
+			logger.WithError(err).Error("An error has occurred while writing to response body")
 		}
 	}
 }
