@@ -33,6 +33,7 @@ type Converter interface {
 type repository struct {
 	upserter repo.Upserter
 	lister   repo.Lister
+	deleter  repo.Deleter
 	conv     Converter
 }
 
@@ -40,6 +41,7 @@ func NewRepository(conv Converter) *repository {
 	return &repository{
 		upserter: repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
 		lister:   repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
+		deleter:  repo.NewDeleter(resource.Label, tableName, tenantColumn),
 		conv:     conv,
 	}
 }
@@ -163,6 +165,14 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 	_, err = persist.Exec(stmt, objectID, tenant)
 
 	return errors.Wrapf(err, "while deleting all Label entities from database for %s %s", objectType, objectID)
+}
+
+func (r *repository) DeleteByKeyNotPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{
+		repo.NewEqualCondition(labelableObjectField(objectType), objectID),
+		repo.NewEqualCondition(tenantColumn, tenant),
+		repo.NewNotRegexConditionString("key", labelKeyPattern),
+	})
 }
 
 func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string) error {

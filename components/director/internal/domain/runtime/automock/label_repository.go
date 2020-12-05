@@ -42,6 +42,20 @@ func (_m *LabelRepository) DeleteAll(ctx context.Context, tenant string, objectT
 	return r0
 }
 
+// DeleteByKeyNotPattern provides a mock function with given fields: ctx, tenant, objectType, objectID, labelKeyPattern
+func (_m *LabelRepository) DeleteByKeyNotPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
+	ret := _m.Called(ctx, tenant, objectType, objectID, labelKeyPattern)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
+		r0 = rf(ctx, tenant, objectType, objectID, labelKeyPattern)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetByKey provides a mock function with given fields: ctx, tenant, objectType, objectID, key
 func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)

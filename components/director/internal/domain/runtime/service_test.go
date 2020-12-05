@@ -245,7 +245,7 @@ func TestService_Create(t *testing.T) {
 			labelSvc := testCase.LabelUpsertServiceFn()
 			scenariosSvc := testCase.ScenariosServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc)
+			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc, ".*_defaultEventing$")
 
 			// when
 			result, err := svc.Create(ctx, testCase.Input)
@@ -269,7 +269,7 @@ func TestService_Create(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		_, err := svc.Create(context.TODO(), model.RuntimeInput{})
 		// then
@@ -316,7 +316,6 @@ func TestService_Update(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 	}
 
-	dbLabels := map[string]*model.Label{"protected_defaultEventing": protectedModelLabel}
 	labels[protectedModelLabel.Key] = protectedModelLabel.Value
 
 	testCases := []struct {
@@ -339,8 +338,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
+				repo.On("DeleteByKeyNotPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(nil).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -367,8 +365,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
+				repo.On("DeleteByKeyNotPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(nil).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -395,8 +392,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil, nil).Once()
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
+				repo.On("DeleteByKeyNotPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(nil).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -472,8 +468,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(testErr).Once()
+				repo.On("DeleteByKeyNotPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(testErr).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -498,8 +493,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
+				repo.On("DeleteByKeyNotPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(nil).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -525,8 +519,7 @@ func TestService_Update(t *testing.T) {
 			},
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(dbLabels, nil).Once()
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID).Return(nil).Once()
+				repo.On("DeleteByKeyNotPattern", ctx, tnt, model.RuntimeLabelableObject, runtimeModel.ID, mock.AnythingOfType("string")).Return(nil).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
@@ -551,7 +544,7 @@ func TestService_Update(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			labelSvc := testCase.LabelUpsertServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc)
+			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc, ".*_defaultEventing$")
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -572,7 +565,7 @@ func TestService_Update(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		err := svc.Update(context.TODO(), "id", model.RuntimeInput{})
 		// then
@@ -632,7 +625,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil)
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -650,7 +643,7 @@ func TestService_Delete(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		err := svc.Delete(context.TODO(), "id")
 		// then
@@ -713,7 +706,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil)
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 
 			// when
 			rtm, err := svc.Get(ctx, testCase.InputID)
@@ -732,7 +725,7 @@ func TestService_Get(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		_, err := svc.Get(context.TODO(), "id")
 		// then
@@ -794,7 +787,7 @@ func TestService_GetByTokenIssuer(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil)
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 
 			// when
 			rtm, err := svc.GetByTokenIssuer(ctx, tokenIssuer)
@@ -867,7 +860,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			rtmRepo := testCase.RepositoryFn()
-			svc := runtime.NewService(rtmRepo, nil, nil, nil, nil, nil)
+			svc := runtime.NewService(rtmRepo, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputRuntimeID)
@@ -886,7 +879,7 @@ func TestService_Exist(t *testing.T) {
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		_, err := svc.Exist(context.TODO(), "id")
 		// then
@@ -988,7 +981,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil)
+			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 
 			// when
 			rtm, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -1007,7 +1000,7 @@ func TestService_List(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		_, err := svc.List(context.TODO(), nil, 1, "")
 		// then
@@ -1128,7 +1121,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil)
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, ".*_defaultEventing$")
 
 			// when
 			l, err := svc.GetLabel(ctx, testCase.InputRuntimeID, testCase.InputLabel.Key)
@@ -1148,7 +1141,7 @@ func TestService_GetLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		_, err := svc.GetLabel(context.TODO(), "id", "key")
 		// then
@@ -1280,7 +1273,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil)
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, ".*_defaultEventing$")
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputRuntimeID)
@@ -1300,7 +1293,7 @@ func TestService_ListLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		_, err := svc.ListLabels(context.TODO(), "id")
 		// then
@@ -1322,9 +1315,17 @@ func TestService_SetLabel(t *testing.T) {
 	runtimeID := "foo"
 
 	labelKey := "key"
+	protectedLabelKey := "protected_defaultEventing"
 
 	modelLabelInput := model.LabelInput{
 		Key:        labelKey,
+		Value:      []string{"value1"},
+		ObjectID:   runtimeID,
+		ObjectType: model.RuntimeLabelableObject,
+	}
+
+	modelProtectedLabelInput := model.LabelInput{
+		Key:        protectedLabelKey,
 		Value:      []string{"value1"},
 		ObjectID:   runtimeID,
 		ObjectType: model.RuntimeLabelableObject,
@@ -1700,6 +1701,37 @@ func TestService_SetLabel(t *testing.T) {
 			InputLabel:         &modelLabelInput,
 			ExpectedErrMessage: "value for scenarios label must be []interface{}",
 		},
+		{
+			Name: "Returns an error when trying to set protected label",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				// svc.On("UpsertLabel", ctx, tnt, &modelLabelInput).Return(nil).Once()
+				return svc
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMap, nil).Once()
+				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(nil).Once()
+				return repo
+			},
+			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+				var nilInterface []interface{}
+
+				svc := &automock.ScenarioAssignmentEngine{}
+				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
+				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
+				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
+				return svc
+			},
+			InputRuntimeID:     runtimeID,
+			InputLabel:         &modelProtectedLabelInput,
+			ExpectedErrMessage: "could not set protected label key protected_defaultEventing",
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -1708,7 +1740,7 @@ func TestService_SetLabel(t *testing.T) {
 			labelSvc := testCase.LabelUpsertServiceFn()
 			labelRepo := testCase.LabelRepositoryFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc)
+			svc := runtime.NewService(repo, labelRepo, nil, labelSvc, nil, engineSvc, ".*_defaultEventing$")
 
 			// when
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -1729,7 +1761,7 @@ func TestService_SetLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		err := svc.SetLabel(context.TODO(), &model.LabelInput{})
 		// then
@@ -1751,6 +1783,7 @@ func TestService_DeleteLabel(t *testing.T) {
 	runtimeID := "foo"
 
 	labelKey := "key"
+	protectedLabelKey := "protected_defaultEventing"
 	labelValue := "val"
 	labelKey2 := "key2"
 	scenario := "SCENARIO"
@@ -2200,6 +2233,37 @@ func TestService_DeleteLabel(t *testing.T) {
 			InputKey:           model.ScenariosKey,
 			ExpectedErrMessage: testErr.Error(),
 		},
+		{
+			Name: "Returns an error when trying to delete protected label",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tnt, model.RuntimeLabelableObject, runtimeID).Return(labelMap, nil).Once()
+				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(nil).Once()
+				// repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimeID, labelKey).Return(nil).Once()
+				return repo
+			},
+			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				return svc
+			},
+			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
+				var nilInterface []interface{}
+
+				svc := &automock.ScenarioAssignmentEngine{}
+				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
+				svc.On("GetScenariosForSelectorLabels", ctx, map[string]string{}).Return([]string{}, nil).Once()
+				svc.On("MergeScenarios", nilInterface, []interface{}{}, []interface{}{}).Return([]interface{}{}, nil).Once()
+				return svc
+			},
+			InputRuntimeID:     runtimeID,
+			InputKey:           protectedLabelKey,
+			ExpectedErrMessage: "could not delete protected label key protected_defaultEventing",
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -2208,7 +2272,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			labelUpsertSvc := testCase.LabelUpsertServiceFn()
 			engineSvc := testCase.EngineServiceFn()
-			svc := runtime.NewService(repo, labelRepo, nil, labelUpsertSvc, nil, engineSvc)
+			svc := runtime.NewService(repo, labelRepo, nil, labelUpsertSvc, nil, engineSvc, ".*_defaultEventing$")
 
 			// when
 			err := svc.DeleteLabel(ctx, testCase.InputRuntimeID, testCase.InputKey)
@@ -2230,7 +2294,7 @@ func TestService_DeleteLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// given
-		svc := runtime.NewService(nil, nil, nil, nil, nil, nil)
+		svc := runtime.NewService(nil, nil, nil, nil, nil, nil, ".*_defaultEventing$")
 		// when
 		err := svc.DeleteLabel(context.TODO(), "id", "key")
 		// then

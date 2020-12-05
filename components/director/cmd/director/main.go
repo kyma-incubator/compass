@@ -96,6 +96,8 @@ type config struct {
 	OAuth20      oauth20.Config
 
 	Features features.Config
+
+	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
 }
 
 func main() {
@@ -141,6 +143,7 @@ func main() {
 			cfg.Features,
 			metricsCollector,
 			cfg.ClientTimeout,
+			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultPackageRepo(), defaultPackageInstanceAuthRepo()).HasScenario,
@@ -318,7 +321,7 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
 
 	tenantConv := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConv)
