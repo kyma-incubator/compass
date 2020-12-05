@@ -72,7 +72,7 @@ func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
 
 func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error) {
 	endpoint, err := c.getEndpointForEventsType(eventsType)
-	if err != nil {
+	if err != nil { //test comment
 		return nil, err
 	}
 

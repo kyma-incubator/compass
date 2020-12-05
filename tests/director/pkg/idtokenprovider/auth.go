@@ -6,7 +6,7 @@ import (
 )
 
 func GetDexToken() (string, error) {
-	config, err := NewConfigFromEnv() //comment
+	config, err := NewConfigFromEnv()
 	if err != nil {
 		return "", err
 	}
