@@ -4,7 +4,10 @@ import (
 	"crypto/rsa"
 	"net/http"
 	"net/url"
+	"strconv"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +24,8 @@ const (
 	TestApp     = "mytestapp"
 	TestRuntime = "mytestrunt"
 )
+
+var defaultAppNameNormalizer = &normalizer.DefaultNormalizator{}
 
 func TestConnector(t *testing.T) {
 	appInput := directorSchema.ApplicationRegisterInput{
@@ -76,8 +81,23 @@ func TestConnector(t *testing.T) {
 		certificateRotationSuite(t, client, appID, config)
 		certificateRevocationSuite(t, client, appID, config.Tenant, config.SkipSslVerify)
 
-		appMgmInfoEndpointSuite(t, client, appID, config, TestApp)
-		appCsrInfoEndpointSuite(t, client, appID, config, TestApp)
+		for _, shouldNormalizeEventURL := range []bool{true, false} {
+			err := client.SetRuntimeLabel(runtimeID, "isNormalized", strconv.FormatBool(shouldNormalizeEventURL))
+			require.NoError(t, err)
+
+			for _, appNameLabelExists := range []bool{true, false} {
+				var err error
+				if appNameLabelExists {
+					err = client.SetApplicationLabel(appID, "name", defaultAppNameNormalizer.Normalize(TestApp))
+				} else {
+					err = client.DeleteApplicationLabel(appID, "name")
+				}
+				require.NoError(t, err)
+
+				appMgmInfoEndpointSuite(t, client, appID, config, TestApp, appNameLabelExists, shouldNormalizeEventURL)
+				appCsrInfoEndpointSuite(t, client, appID, config, TestApp, appNameLabelExists, shouldNormalizeEventURL)
+			}
+		}
 	})
 }
 
@@ -161,7 +181,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 
 		// then
 		require.Nil(t, errorResponse)
-		require.NotEmpty(t, infoResponse.CertUrl)
+		require.NotEmpty(t, infoResponse.CertURL)
 		require.Equal(t, "rsa2048", infoResponse.Certificate.KeyAlgorithm)
 
 		// given
@@ -170,7 +190,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		csrBase64 := connector.EncodeBase64(csr)
 
 		// when
-		_, err := client.CreateCertChain(t, csrBase64, infoResponse.CertUrl)
+		_, err := client.CreateCertChain(t, csrBase64, infoResponse.CertURL)
 
 		// then
 		require.NotNil(t, err)
@@ -212,13 +232,13 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 
 		// then
 		require.Nil(t, errorResponse)
-		require.NotEmpty(t, infoResponse.CertUrl)
+		require.NotEmpty(t, infoResponse.CertURL)
 
-		wrongUrl := replaceToken(t, infoResponse.CertUrl, "incorrect-token")
+		wrongUrl := replaceToken(t, infoResponse.CertURL, "incorrect-token")
 
 		// then
 		require.Nil(t, errorResponse)
-		require.NotEmpty(t, infoResponse.CertUrl)
+		require.NotEmpty(t, infoResponse.CertURL)
 		require.Equal(t, "rsa2048", infoResponse.Certificate.KeyAlgorithm)
 
 		// when
@@ -244,11 +264,11 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 
 		// then
 		require.Nil(t, errorResponse)
-		require.NotEmpty(t, infoResponse.CertUrl)
+		require.NotEmpty(t, infoResponse.CertURL)
 		require.Equal(t, "rsa2048", infoResponse.Certificate.KeyAlgorithm)
 
 		// when
-		_, err := client.CreateCertChain(t, "wrong-csr", infoResponse.CertUrl)
+		_, err := client.CreateCertChain(t, "wrong-csr", infoResponse.CertURL)
 
 		// then
 		require.NotNil(t, err)
@@ -259,15 +279,25 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 
 }
 
-func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string) {
+func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
 	t.Run("should use default values to build CSR info response", func(t *testing.T) {
 		// given
 		client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := config.EventsBaseURL
 
-		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
-		expectedEventsURL += "/" + appName + "/v1/events"
+		normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
+		if appNameLabelExists {
+			expectedMetadataURL += "/" + normalizedAppName + "/v1/metadata/services"
+		} else {
+			expectedMetadataURL += "/" + appName + "/v1/metadata/services"
+		}
+
+		if shouldNormalizeEventURL {
+			expectedEventsURL += "/" + normalizedAppName + "/v1/events"
+		} else {
+			expectedEventsURL += "/" + appName + "/v1/events"
+		}
 
 		// when
 		tokenResponse := client.CreateToken(t)
@@ -281,12 +311,12 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 
 		// then
 		require.Nil(t, errorResponse)
-		assert.Equal(t, expectedEventsURL, infoResponse.Api.RuntimeURLs.EventsUrl)
-		assert.Equal(t, expectedMetadataURL, infoResponse.Api.RuntimeURLs.MetadataUrl)
+		assert.Equal(t, expectedEventsURL, infoResponse.Api.RuntimeURLs.EventsURL)
+		assert.Equal(t, expectedMetadataURL, infoResponse.Api.RuntimeURLs.MetadataURL)
 	})
 }
 
-func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string) {
+func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
 	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
 	clientKey := connector.CreateKey(t)
@@ -296,8 +326,18 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := config.EventsBaseURL
 
-		expectedMetadataURL += "/" + appName + "/v1/metadata/services"
-		expectedEventsURL += "/" + appName + "/v1/events"
+		normalizedAppName := defaultAppNameNormalizer.Normalize(appName)
+		if appNameLabelExists {
+			expectedMetadataURL += "/" + normalizedAppName + "/v1/metadata/services"
+		} else {
+			expectedMetadataURL += "/" + appName + "/v1/metadata/services"
+		}
+
+		if shouldNormalizeEventURL {
+			expectedEventsURL += "/" + normalizedAppName + "/v1/events"
+		} else {
+			expectedEventsURL += "/" + appName + "/v1/events"
+		}
 
 		// when
 		crtResponse, infoResponse := createCertificateChain(t, client, clientKey)
@@ -314,9 +354,15 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		require.Nil(t, errorResponse)
 
 		// then
-		assert.Equal(t, expectedMetadataURL, mgmInfoResponse.URLs.MetadataUrl)
-		assert.Equal(t, expectedEventsURL, mgmInfoResponse.URLs.EventsUrl)
-		assert.Equal(t, appName, mgmInfoResponse.ClientIdentity.Application)
+		assert.Equal(t, expectedMetadataURL, mgmInfoResponse.URLs.MetadataURL)
+		assert.Equal(t, expectedEventsURL, mgmInfoResponse.URLs.EventsURL)
+
+		if appNameLabelExists {
+			assert.Equal(t, normalizedAppName, mgmInfoResponse.ClientIdentity.Application)
+		} else {
+			assert.Equal(t, appName, mgmInfoResponse.ClientIdentity.Application)
+		}
+
 		assert.NotEmpty(t, mgmInfoResponse.Certificate.Subject)
 		assert.Equal(t, connector.Extensions, mgmInfoResponse.Certificate.Extensions)
 		assert.Equal(t, connector.KeyAlgorithm, mgmInfoResponse.Certificate.KeyAlgorithm)
@@ -330,7 +376,6 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 
 func certificateRotationSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration) {
 	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
-
 	clientKey := connector.CreateKey(t)
 
 	t.Run("should renew client certificate", func(t *testing.T) {
@@ -345,14 +390,14 @@ func certificateRotationSuite(t *testing.T, directorClient director.Client, appI
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)
-		require.NotEmpty(t, mgmInfoResponse.URLs.RenewCertUrl)
+		require.NotEmpty(t, mgmInfoResponse.URLs.RenewCertURL)
 		require.NotEmpty(t, mgmInfoResponse.Certificate)
 		require.Equal(t, infoResponse.Certificate, mgmInfoResponse.Certificate)
 
 		csr := connector.CreateCsr(t, mgmInfoResponse.Certificate.Subject, clientKey)
 		csrBase64 := connector.EncodeBase64(csr)
 
-		certificateResponse, errorResponse := client.RenewCertificate(t, mgmInfoResponse.URLs.RenewCertUrl, csrBase64)
+		certificateResponse, errorResponse := client.RenewCertificate(t, mgmInfoResponse.URLs.RenewCertURL, csrBase64)
 
 		// then
 		require.Nil(t, errorResponse)
@@ -398,7 +443,7 @@ func certificateRevocationSuite(t *testing.T, directorClient director.Client, ap
 		csr := connector.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
 		csrBase64 := connector.EncodeBase64(csr)
 
-		_, errorResponse = client.RenewCertificate(t, mgmInfoResponse.URLs.RenewCertUrl, csrBase64)
+		_, errorResponse = client.RenewCertificate(t, mgmInfoResponse.URLs.RenewCertURL, csrBase64)
 
 		// then
 		require.NotNil(t, errorResponse)
@@ -419,7 +464,7 @@ func createCertificateChain(t *testing.T, connectorClient connector.ConnectorCli
 
 	// then
 	require.Nil(t, errorResponse)
-	require.NotEmpty(t, infoResponse.CertUrl)
+	require.NotEmpty(t, infoResponse.CertURL)
 	require.Equal(t, "rsa2048", infoResponse.Certificate.KeyAlgorithm)
 
 	// given
@@ -427,7 +472,7 @@ func createCertificateChain(t *testing.T, connectorClient connector.ConnectorCli
 	csrBase64 := connector.EncodeBase64(csr)
 
 	// when
-	crtResponse, errorResponse := connectorClient.CreateCertChain(t, csrBase64, infoResponse.CertUrl)
+	crtResponse, errorResponse := connectorClient.CreateCertChain(t, csrBase64, infoResponse.CertURL)
 
 	// then
 	require.Nil(t, errorResponse)

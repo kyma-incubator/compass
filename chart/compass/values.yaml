@@ -17,13 +17,13 @@ global:
       version: "PR-1612"
     connectivity_adapter:
       dir:
-      version: "PR-1612"
+      version: "PR-1641"
     pairing_adapter:
       dir:
       version: "PR-1618"
     director:
       dir:
-      version: "PR-1636"
+      version: "PR-1641"
     gateway:
       dir:
       version: "PR-1637"
@@ -47,13 +47,13 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1637"
+        version: "PR-1641"
       connector:
         dir:
         version: "PR-1582"
       connectivity_adapter:
         dir:
-        version: "PR-1588"
+        version: "PR-1641"
   isLocalEnv: false
   oauth2:
     host: oauth2

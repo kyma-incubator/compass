@@ -154,7 +154,7 @@ func NewRootResolver(
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, oAuth20HTTPClient)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
-	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
+	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	packageSvc := packageutil.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
@@ -263,7 +263,7 @@ func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID st
 		return nil, err
 	}
 
-	labels, err := r.runtime.GetLabel(ctx, runtimeID, runtime.ShouldNormalize)
+	labels, err := r.runtime.GetLabel(ctx, runtimeID, runtime.IsNormalizedLabel)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +271,7 @@ func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID st
 	shouldNormalize := true
 	if labels != nil {
 		labelsMap := (map[string]interface{})(*labels)
-		shouldNormalize = labelsMap[runtime.ShouldNormalize] == nil || labelsMap[runtime.ShouldNormalize] == "true"
+		shouldNormalize = labelsMap[runtime.IsNormalizedLabel] == nil || labelsMap[runtime.IsNormalizedLabel] == "true"
 	}
 
 	if shouldNormalize {
