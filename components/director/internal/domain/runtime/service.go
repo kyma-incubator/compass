@@ -36,7 +36,7 @@ type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
-	DeleteByKeyNotPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error
+	DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error
 }
 
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
@@ -191,11 +191,11 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	in.Labels, err = s.unsafeExtractNotProtectedLabels(in.Labels, s.protectedLabelPattern)
+	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern)
 	if err != nil {
 		return "", err
 	}
-	log.C(ctx).Debugf("After removed protected labels: %+v", in.Labels)
+	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {
@@ -230,8 +230,16 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		in.Labels[ShouldNormalize] = "true"
 	}
 
+	// TODO: Filter protected labels
+	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
+	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern)
+	if err != nil {
+		return err
+	}
+	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
+
 	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
-	err = s.labelRepo.DeleteByKeyNotPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, s.protectedLabelPattern)
+	err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, s.protectedLabelPattern)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
@@ -301,14 +309,14 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return err
 	}
 
-	protected, err := s.isProtected(labelInput.Key, s.protectedLabelPattern)
+	protected, err := isProtected(labelInput.Key, s.protectedLabelPattern)
 	if err != nil {
 		return err
 	}
 	if protected {
 		return apperrors.NewInvalidDataError("could not set protected label key %s", labelInput.Key)
 	}
-	if labelInput.Key != model.ScenariosKey && !protected {
+	if labelInput.Key != model.ScenariosKey {
 		err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput)
 		if err != nil {
 			return errors.Wrapf(err, "while creating label for Runtime")
@@ -360,39 +368,7 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 		return nil, errors.Wrap(err, "while getting label for Runtime")
 	}
 
-	return s.extractNotProtectedLabels(labels, s.protectedLabelPattern)
-}
-
-func (s *service) extractNotProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
-	result := make(map[string]*model.Label)
-	for labelKey, label := range labels {
-		if protected, err := s.isProtected(labelKey, protectedLabelsKeyPattern); err != nil {
-			return nil, err
-		} else if !protected {
-			result[labelKey] = label
-		}
-	}
-	return result, nil
-}
-
-func (s *service) unsafeExtractNotProtectedLabels(labels map[string]interface{}, protectedLabelsKeyPattern string) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
-	for labelKey, label := range labels {
-		if protected, err := s.isProtected(labelKey, protectedLabelsKeyPattern); err != nil {
-			return nil, err
-		} else if !protected {
-			result[labelKey] = label
-		}
-	}
-	return result, nil
-}
-
-func (s *service) isProtected(labelKey string, labelKeyPattern string) (bool, error) {
-	matched, err := regexp.MatchString(labelKeyPattern, labelKey)
-	if err != nil {
-		return false, err
-	}
-	return matched, nil
+	return extractUnProtectedLabels(labels, s.protectedLabelPattern)
 }
 
 func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string) error {
@@ -423,14 +399,14 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return err
 	}
 
-	protected, err := s.isProtected(key, s.protectedLabelPattern)
+	protected, err := isProtected(key, s.protectedLabelPattern)
 	if err != nil {
 		return err
 	}
 	if protected {
 		return apperrors.NewInvalidDataError("could not delete protected label key %s", key)
 	}
-	if key != model.ScenariosKey && !protected {
+	if key != model.ScenariosKey {
 		err = s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key)
 		if err != nil {
 			return errors.Wrapf(err, "while deleting Runtime label")
@@ -523,6 +499,42 @@ func (s *service) getCurrentLabelsForRuntime(ctx context.Context, tenantID, runt
 		currentLabels[v.Key] = v.Value
 	}
 	return currentLabels, nil
+}
+
+func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
+	result := make(map[string]*model.Label)
+	for labelKey, label := range labels {
+		protected, err := isProtected(labelKey, protectedLabelsKeyPattern)
+		if err != nil {
+			return nil, err
+		}
+		if !protected {
+			result[labelKey] = label
+		}
+	}
+	return result, nil
+}
+
+func unsafeExtractUnProtectedLabels(labels map[string]interface{}, protectedLabelsKeyPattern string) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	for labelKey, label := range labels {
+		protected, err := isProtected(labelKey, protectedLabelsKeyPattern)
+		if err != nil {
+			return nil, err
+		}
+		if !protected {
+			result[labelKey] = label
+		}
+	}
+	return result, nil
+}
+
+func isProtected(labelKey string, labelKeyPattern string) (bool, error) {
+	matched, err := regexp.MatchString(labelKeyPattern, labelKey)
+	if err != nil {
+		return false, err
+	}
+	return matched, nil
 }
 
 func getScenariosLabel(currentRuntimeLabels map[string]interface{}) ([]interface{}, error) {

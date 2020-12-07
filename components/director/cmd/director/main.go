@@ -191,7 +191,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	log.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.ProtectedLabelPattern)
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
@@ -304,7 +304,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsers
 	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {
 	logger := log.WithField("component", "runtime-mapping-handler").Logger
 
 	uidSvc := uid.NewService()
@@ -321,7 +321,7 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, ".*_defaultEventing$")
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 
 	tenantConv := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConv)

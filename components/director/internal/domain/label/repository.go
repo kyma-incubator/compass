@@ -167,7 +167,7 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 	return errors.Wrapf(err, "while deleting all Label entities from database for %s %s", objectType, objectID)
 }
 
-func (r *repository) DeleteByKeyNotPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
+func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
 	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{
 		repo.NewEqualCondition(labelableObjectField(objectType), objectID),
 		repo.NewEqualCondition(tenantColumn, tenant),

@@ -42,8 +42,8 @@ func (_m *LabelRepository) DeleteAll(ctx context.Context, tenant string, objectT
 	return r0
 }
 
-// DeleteByKeyNotPattern provides a mock function with given fields: ctx, tenant, objectType, objectID, labelKeyPattern
-func (_m *LabelRepository) DeleteByKeyNotPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
+// DeleteByKeyNegationPattern provides a mock function with given fields: ctx, tenant, objectType, objectID, labelKeyPattern
+func (_m *LabelRepository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
 	ret := _m.Called(ctx, tenant, objectType, objectID, labelKeyPattern)
 
 	var r0 error
