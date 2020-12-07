@@ -50,7 +50,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	kubeClient, err := tenantfetcher.NewKubernetesClient(cfg.KubernetesConfig)
+	kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, cfg.KubernetesConfig)
 	exitOnError(err, "Failed to initialize Kubernetes client")
 
 	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, kubeClient, metricsPusher)

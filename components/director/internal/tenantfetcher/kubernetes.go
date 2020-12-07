@@ -1,6 +1,7 @@
 package tenantfetcher
 
 import (
+	"context"
 	"errors"
 	"strconv"
 
@@ -15,7 +16,7 @@ type KubeClient interface {
 	UpdateTenantFetcherConfigMapData(timestamp string) error
 }
 
-func NewKubernetesClient(cfg KubeConfig) (KubeClient, error) {
+func NewKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error) {
 	shouldUseKubernetes, err := strconv.ParseBool(cfg.UseKubernetes)
 	if err != nil {
 		return nil, err
@@ -24,7 +25,7 @@ func NewKubernetesClient(cfg KubeConfig) (KubeClient, error) {
 	if !shouldUseKubernetes {
 		return newNoopKubernetesClient(), nil
 	}
-	return newKubernetesClient(cfg)
+	return newKubernetesClient(ctx, cfg)
 }
 
 type noopKubernetesClient struct {
@@ -63,9 +64,9 @@ type kubernetesClient struct {
 	cfg KubeConfig
 }
 
-func newKubernetesClient(cfg KubeConfig) (KubeClient, error) {
+func newKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error) {
 	kubeClientSetConfig := kube.Config{}
-	kubeClientSet, err := kube.NewKubernetesClientSet(kubeClientSetConfig.PollInterval, kubeClientSetConfig.PollTimeout, kubeClientSetConfig.Timeout)
+	kubeClientSet, err := kube.NewKubernetesClientSet(ctx, kubeClientSetConfig.PollInterval, kubeClientSetConfig.PollTimeout, kubeClientSetConfig.Timeout)
 	if err != nil {
 		return nil, err
 	}
