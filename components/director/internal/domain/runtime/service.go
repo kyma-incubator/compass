@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const ShouldNormalize = "shouldNormalize"
+const IsNormalizedLabel = "isNormalized"
 
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
 type RuntimeRepository interface {
@@ -48,7 +48,7 @@ type LabelUpsertService interface {
 //go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(labels *map[string]interface{})
+	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
 //go:generate mockery -name=ScenarioAssignmentEngine -output=automock -outpkg=automock -case=underscore
@@ -180,14 +180,14 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	if len(scenarios) > 0 {
 		in.Labels[model.ScenariosKey] = scenarios
 	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
+		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
 	}
 
-	if in.Labels == nil || in.Labels[ShouldNormalize] == nil {
+	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {
 		if in.Labels == nil {
 			in.Labels = make(map[string]interface{}, 1)
 		}
-		in.Labels[ShouldNormalize] = "true"
+		in.Labels[IsNormalizedLabel] = "true"
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
@@ -223,11 +223,11 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrap(err, "while updating Runtime")
 	}
 
-	if in.Labels == nil || in.Labels[ShouldNormalize] == nil {
+	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {
 		if in.Labels == nil {
 			in.Labels = make(map[string]interface{}, 1)
 		}
-		in.Labels[ShouldNormalize] = "true"
+		in.Labels[IsNormalizedLabel] = "true"
 	}
 
 	// TODO: Filter protected labels

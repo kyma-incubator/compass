@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
@@ -20,6 +21,8 @@ type config struct {
 	APIConfig        tenantfetcher.APIConfig
 	QueryConfig      tenantfetcher.QueryConfig
 	FieldMapping     tenantfetcher.TenantFieldMapping
+
+	Log log.Config
 
 	TenantProvider      string `envconfig:"APP_TENANT_PROVIDER"`
 	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
@@ -32,14 +35,14 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
-	configureLogger()
+	ctx, err := log.Configure(context.Background(), &cfg.Log)
 
 	var metricsPusher *metrics.Pusher
 	if cfg.MetricsPushEndpoint != "" {
 		metricsPusher = metrics.NewPusher(cfg.MetricsPushEndpoint, cfg.ClientTimeout)
 	}
 
-	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
@@ -47,7 +50,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	kubeClient, err := tenantfetcher.NewKubernetesClient(cfg.KubernetesConfig)
+	kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, cfg.KubernetesConfig)
 	exitOnError(err, "Failed to initialize Kubernetes client")
 
 	tenantFetcherSvc := createTenantFetcherSvc(cfg, transact, kubeClient, metricsPusher)
@@ -59,13 +62,13 @@ func main() {
 
 	exitOnError(err, "Error while synchronizing tenants in database with tenant changes from events")
 
-	log.Info("Successfully synchronized tenants")
+	log.C(ctx).Info("Successfully synchronized tenants")
 }
 
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.D().Fatal(wrappedError)
 	}
 }
 
@@ -82,13 +85,5 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 		eventAPIClient.SetMetricsPusher(metricsPusher)
 	}
 
-	// tenantFetcherConverter := tenantfetcher.NewConverter(cfg.TenantProvider, cfg.FieldMapping)
 	return tenantfetcher.NewService(cfg.QueryConfig, transact, kubeClient, cfg.FieldMapping, cfg.TenantProvider, eventAPIClient, tenantStorageSvc)
-}
-
-func configureLogger() {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-	log.SetReportCaller(true)
 }

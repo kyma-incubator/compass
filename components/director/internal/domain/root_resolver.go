@@ -43,7 +43,7 @@ import (
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
@@ -140,7 +140,7 @@ func NewRootResolver(
 		Timeout:   clientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
@@ -155,7 +155,7 @@ func NewRootResolver(
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, oAuth20HTTPClient)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
-	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
+	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	packageSvc := packageutil.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
@@ -242,7 +242,7 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.Labe
 	}
 
 	if consumerInfo.ConsumerType == consumer.Runtime {
-		log.Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
+		log.C(ctx).Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
 		return r.app.ApplicationsForRuntime(ctx, consumerInfo.ConsumerID, first, after)
 	}
 
@@ -264,7 +264,7 @@ func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID st
 		return nil, err
 	}
 
-	labels, err := r.runtime.GetLabel(ctx, runtimeID, runtime.ShouldNormalize)
+	labels, err := r.runtime.GetLabel(ctx, runtimeID, runtime.IsNormalizedLabel)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +272,7 @@ func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID st
 	shouldNormalize := true
 	if labels != nil {
 		labelsMap := (map[string]interface{})(*labels)
-		shouldNormalize = labelsMap[runtime.ShouldNormalize] == nil || labelsMap[runtime.ShouldNormalize] == "true"
+		shouldNormalize = labelsMap[runtime.IsNormalizedLabel] == nil || labelsMap[runtime.IsNormalizedLabel] == "true"
 	}
 
 	if shouldNormalize {

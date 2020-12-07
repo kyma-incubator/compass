@@ -3,7 +3,7 @@ package eventdef
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -138,7 +138,7 @@ func (r *pgRepository) Create(ctx context.Context, item *model.EventDefinition) 
 		return errors.Wrap(err, "while creating EventDefinition model to entity")
 	}
 
-	log.Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
+	log.C(ctx).Debugf("Persisting Event-Definition entity with id %s to db", item.ID)
 	err = r.creator.Create(ctx, entity)
 	if err != nil {
 		return errors.Wrap(err, "while saving entity to db")

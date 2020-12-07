@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -18,6 +20,7 @@ import (
 )
 
 const (
+	isNormalizedLabel            = "isNormalized"
 	RuntimeEventingURLLabel      = "runtime_eventServiceUrl"
 	EmptyEventingURL             = ""
 	RuntimeDefaultEventingLabelf = "%s_defaultEventing"
@@ -39,14 +42,16 @@ type LabelRepository interface {
 }
 
 type service struct {
-	runtimeRepo RuntimeRepository
-	labelRepo   LabelRepository
+	appNameNormalizer normalizer.Normalizator
+	runtimeRepo       RuntimeRepository
+	labelRepo         LabelRepository
 }
 
-func NewService(runtimeRepo RuntimeRepository, labelRepo LabelRepository) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, runtimeRepo RuntimeRepository, labelRepo LabelRepository) *service {
 	return &service{
-		runtimeRepo: runtimeRepo,
-		labelRepo:   labelRepo,
+		appNameNormalizer: appNameNormalizer,
+		runtimeRepo:       runtimeRepo,
+		labelRepo:         labelRepo,
 	}
 }
 
@@ -91,7 +96,7 @@ func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, ap
 	}
 
 	if err := s.setRuntimeForAppEventing(ctx, *runtime, appID); err != nil {
-		return nil, errors.Wrap(err, "while setting the runtime as default for eveting for application")
+		return nil, errors.Wrap(err, "while setting the runtime as default for eventing for application")
 	}
 
 	runtimeEventingCfg, err := s.GetForRuntime(ctx, runtimeID)
@@ -99,7 +104,17 @@ func (s *service) SetForApplication(ctx context.Context, runtimeID uuid.UUID, ap
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, app.Name)
+	shouldNormalize, err := s.shouldNormalizeApplicationName(ctx, runtime)
+	if err != nil {
+		return nil, errors.Wrap(err, "while determining whether application name should be normalized in runtime eventing URL")
+	}
+
+	appName := app.Name
+	if shouldNormalize {
+		appName = s.appNameNormalizer.Normalize(app.Name)
+	}
+
+	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, appName)
 }
 
 func (s *service) UnsetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error) {
@@ -132,7 +147,17 @@ func (s *service) UnsetForApplication(ctx context.Context, app model.Application
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, app.Name)
+	shouldNormalize, err := s.shouldNormalizeApplicationName(ctx, runtime)
+	if err != nil {
+		return nil, errors.Wrap(err, "while determining whether application name should be normalized in runtime eventing URL")
+	}
+
+	appName := app.Name
+	if shouldNormalize {
+		appName = s.appNameNormalizer.Normalize(app.Name)
+	}
+
+	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, appName)
 }
 
 func (s *service) GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error) {
@@ -185,7 +210,17 @@ func (s *service) GetForApplication(ctx context.Context, app model.Application) 
 		return nil, errors.Wrap(err, "while fetching eventing configuration for runtime")
 	}
 
-	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, app.Name)
+	shouldNormalize, err := s.shouldNormalizeApplicationName(ctx, runtime)
+	if err != nil {
+		return nil, errors.Wrap(err, "while determining whether application name should be normalized in runtime eventing URL")
+	}
+
+	appName := app.Name
+	if shouldNormalize {
+		appName = s.appNameNormalizer.Normalize(app.Name)
+	}
+
+	return model.NewApplicationEventingConfiguration(runtimeEventingCfg.DefaultURL, appName)
 }
 
 func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error) {
@@ -212,6 +247,16 @@ func (s *service) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*mode
 	}
 
 	return model.NewRuntimeEventingConfiguration(eventingURL)
+}
+
+func (s *service) shouldNormalizeApplicationName(ctx context.Context, runtime *model.Runtime) (bool, error) {
+	label, err := s.labelRepo.GetByKey(ctx, runtime.Tenant, model.RuntimeLabelableObject, runtime.ID, isNormalizedLabel)
+	notFoundErr := apperrors.IsNotFoundError(err)
+	if !notFoundErr && err != nil {
+		return false, errors.Wrap(err, fmt.Sprintf("while getting the label [key=%s] for runtime [ID=%s]", isNormalizedLabel, runtime.ID))
+	}
+
+	return notFoundErr || label.Value == "true", nil
 }
 
 func (s *service) unsetForApplication(ctx context.Context, tenantID string, appID uuid.UUID) (*model.Runtime, bool, error) {

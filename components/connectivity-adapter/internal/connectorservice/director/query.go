@@ -16,6 +16,7 @@ func applicationQuery(appID string) string {
  		result: application(id: "%s")
         {
  			 name
+			 labels
 			 eventingConfiguration {
   				defaultURL
 			}

@@ -7,8 +7,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 func NewReqDataParser() *reqDataParser {
@@ -32,9 +32,9 @@ func (p *reqDataParser) Parse(req *http.Request) (ReqData, error) {
 	defer func() {
 		err := req.Body.Close()
 		if err != nil {
-			log.Error(err)
+			log.C(req.Context()).WithError(err).Error("An error has occurred while closing request body.")
 		}
 	}()
 
-	return NewReqData(reqBody, req.Header), nil
+	return NewReqData(req.Context(), reqBody, req.Header), nil
 }

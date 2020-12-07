@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var labelsWithNormalization = map[string]interface{}{runtime.ShouldNormalize: "true"}
+var labelsWithNormalization = map[string]interface{}{runtime.IsNormalizedLabel: "true"}
 
 func TestService_Create(t *testing.T) {
 	// given
@@ -106,7 +106,7 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &nilLabels).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
 				return repo
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {

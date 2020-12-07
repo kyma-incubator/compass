@@ -52,7 +52,7 @@ func TestRepository_Create(t *testing.T) {
 		repo := packageinstanceauth.NewRepository(nil)
 
 		// when
-		err := repo.Create(context.Background(), nil)
+		err := repo.Create(context.TODO(), nil)
 
 		// then
 		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
@@ -389,7 +389,7 @@ func TestRepository_Update(t *testing.T) {
 		repo := packageinstanceauth.NewRepository(nil)
 
 		// when
-		err := repo.Update(context.Background(), nil)
+		err := repo.Update(context.TODO(), nil)
 
 		// then
 		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())

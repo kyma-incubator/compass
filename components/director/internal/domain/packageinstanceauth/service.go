@@ -3,7 +3,7 @@ package packageinstanceauth
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -49,17 +49,17 @@ func (s *service) Create(ctx context.Context, packageID string, in model.Package
 		return "", err
 	}
 
-	log.Debugf("Validating PackageInstanceAuth request input for Package with id %s", packageID)
+	log.C(ctx).Debugf("Validating PackageInstanceAuth request input for Package with id %s", packageID)
 	err = s.validateInputParamsAgainstSchema(in.InputParams, requestInputSchema)
 	if err != nil {
 		return "", errors.Wrapf(err, "while validating PackageInstanceAuth request input for Package with id %s", packageID)
 	}
 
 	id := s.uidService.Generate()
-	log.Debugf("ID %s generated for PackageInstanceAuth for Package with id %s", id, packageID)
+	log.C(ctx).Debugf("ID %s generated for PackageInstanceAuth for Package with id %s", id, packageID)
 	pkgInstAuth := in.ToPackageInstanceAuth(id, packageID, tnt, defaultAuth, nil)
 
-	err = s.setCreationStatusFromAuth(&pkgInstAuth, defaultAuth)
+	err = s.setCreationStatusFromAuth(ctx, &pkgInstAuth, defaultAuth)
 	if err != nil {
 		return "", errors.Wrapf(err, "while setting creation status for PackageInstanceAuth with id %s", id)
 	}
@@ -132,7 +132,7 @@ func (s *service) SetAuth(ctx context.Context, id string, in model.PackageInstan
 		return apperrors.NewInvalidOperationError("auth can be set only on PackageInstanceAuths in PENDING state")
 	}
 
-	err = s.setUpdateAuthAndStatus(instanceAuth, in)
+	err = s.setUpdateAuthAndStatus(ctx, instanceAuth, in)
 	if err != nil {
 		return err
 	}
@@ -150,13 +150,13 @@ func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.Packa
 	}
 
 	if defaultPackageInstanceAuth == nil {
-		log.Debugf("Default credentials for PackageInstanceAuth with id %s are not provided.", instanceAuth.ID)
+		log.C(ctx).Debugf("Default credentials for PackageInstanceAuth with id %s are not provided.", instanceAuth.ID)
 
 		err := instanceAuth.SetDefaultStatus(model.PackageInstanceAuthStatusConditionUnused, s.timestampGen())
 		if err != nil {
 			return false, errors.Wrapf(err, "while setting status of PackageInstanceAuth with id %s to '%s'", instanceAuth.ID, model.PackageInstanceAuthStatusConditionUnused)
 		}
-		log.Infof("Status for PackageInstanceAuth with id %s set to '%s'. Credentials are ready for being deleted by Application or Integration System.", instanceAuth.ID, model.PackageInstanceAuthStatusConditionUnused)
+		log.C(ctx).Infof("Status for PackageInstanceAuth with id %s set to '%s'. Credentials are ready for being deleted by Application or Integration System.", instanceAuth.ID, model.PackageInstanceAuthStatusConditionUnused)
 
 		err = s.repo.Update(ctx, instanceAuth)
 		if err != nil {
@@ -166,7 +166,7 @@ func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.Packa
 		return false, nil
 	}
 
-	log.Debugf("Default credentials for PackageInstanceAuth with id %s are provided.", instanceAuth.ID)
+	log.C(ctx).Debugf("Default credentials for PackageInstanceAuth with id %s are provided.", instanceAuth.ID)
 	err := s.Delete(ctx, instanceAuth.ID)
 	if err != nil {
 		return false, err
@@ -181,13 +181,13 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	log.Debugf("Deleting PackageInstanceAuth entity with id %s in db", id)
+	log.C(ctx).Debugf("Deleting PackageInstanceAuth entity with id %s in db", id)
 	err = s.repo.Delete(ctx, tnt, id)
 
 	return errors.Wrapf(err, "while deleting PackageInstanceAuth with id %s", id)
 }
 
-func (s *service) setUpdateAuthAndStatus(instanceAuth *model.PackageInstanceAuth, in model.PackageInstanceAuthSetInput) error {
+func (s *service) setUpdateAuthAndStatus(ctx context.Context, instanceAuth *model.PackageInstanceAuth, in model.PackageInstanceAuthSetInput) error {
 	if instanceAuth == nil {
 		return nil
 	}
@@ -199,7 +199,7 @@ func (s *service) setUpdateAuthAndStatus(instanceAuth *model.PackageInstanceAuth
 
 	// Input validation ensures that status can be nil only when auth was provided, so we can assume SUCCEEDED status
 	if instanceAuth.Status == nil {
-		log.Infof("Updating the status of PackageInstanceAuth with id %s to '%s'", instanceAuth.ID, model.PackageInstanceAuthStatusConditionSucceeded)
+		log.C(ctx).Infof("Updating the status of PackageInstanceAuth with id %s to '%s'", instanceAuth.ID, model.PackageInstanceAuthStatusConditionSucceeded)
 		err := instanceAuth.SetDefaultStatus(model.PackageInstanceAuthStatusConditionSucceeded, ts)
 		if err != nil {
 			return errors.Wrapf(err, "while setting status '%s' to PackageInstanceAuth with id %s", model.PackageInstanceAuthStatusConditionSucceeded, instanceAuth.ID)
@@ -209,17 +209,17 @@ func (s *service) setUpdateAuthAndStatus(instanceAuth *model.PackageInstanceAuth
 	return nil
 }
 
-func (s *service) setCreationStatusFromAuth(instanceAuth *model.PackageInstanceAuth, defaultAuth *model.Auth) error {
+func (s *service) setCreationStatusFromAuth(ctx context.Context, instanceAuth *model.PackageInstanceAuth, defaultAuth *model.Auth) error {
 	if instanceAuth == nil {
 		return nil
 	}
 
 	var condition model.PackageInstanceAuthStatusCondition
 	if defaultAuth != nil {
-		log.Infof("Default credentials for PackageInstanceAuth with id %s from Package with id %s are provided. Setting creation status to '%s'", instanceAuth.ID, instanceAuth.PackageID, model.PackageInstanceAuthStatusConditionSucceeded)
+		log.C(ctx).Infof("Default credentials for PackageInstanceAuth with id %s from Package with id %s are provided. Setting creation status to '%s'", instanceAuth.ID, instanceAuth.PackageID, model.PackageInstanceAuthStatusConditionSucceeded)
 		condition = model.PackageInstanceAuthStatusConditionSucceeded
 	} else {
-		log.Infof("Default credentials for PackageInstanceAuth with id %s from Package with id %s are not provided. Setting creation status to '%s'", instanceAuth.ID, instanceAuth.PackageID, model.PackageInstanceAuthStatusConditionPending)
+		log.C(ctx).Infof("Default credentials for PackageInstanceAuth with id %s from Package with id %s are not provided. Setting creation status to '%s'", instanceAuth.ID, instanceAuth.PackageID, model.PackageInstanceAuthStatusConditionPending)
 		condition = model.PackageInstanceAuthStatusConditionPending
 	}
 

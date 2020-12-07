@@ -53,9 +53,9 @@ func (_m *Transactioner) PingContext(ctx context.Context) error {
 	return r0
 }
 
-// RollbackUnlessCommitted provides a mock function with given fields: tx
-func (_m *Transactioner) RollbackUnlessCommitted(tx persistence.PersistenceTx) {
-	_m.Called(tx)
+// RollbackUnlessCommitted provides a mock function with given fields: ctx, tx
+func (_m *Transactioner) RollbackUnlessCommitted(ctx context.Context, tx persistence.PersistenceTx) {
+	_m.Called(ctx, tx)
 }
 
 // Stats provides a mock function with given fields:

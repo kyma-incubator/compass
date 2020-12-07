@@ -13,9 +13,9 @@ type ScenariosService struct {
 	mock.Mock
 }
 
-// AddDefaultScenarioIfEnabled provides a mock function with given fields: labels
-func (_m *ScenariosService) AddDefaultScenarioIfEnabled(labels *map[string]interface{}) {
-	_m.Called(labels)
+// AddDefaultScenarioIfEnabled provides a mock function with given fields: ctx, labels
+func (_m *ScenariosService) AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{}) {
+	_m.Called(ctx, labels)
 }
 
 // EnsureScenariosLabelDefinitionExists provides a mock function with given fields: ctx, tenant

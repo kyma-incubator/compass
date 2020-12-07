@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -72,7 +72,7 @@ type LabelUpsertService interface {
 //go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(labels *map[string]interface{})
+	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -222,7 +222,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	if err != nil {
 		return "", err
 	}
-	log.Debugf("Loaded Application Tenant %s from context", appTenant)
+	log.C(ctx).Debugf("Loaded Application Tenant %s from context", appTenant)
 
 	applications, err := s.appRepo.ListAll(ctx, appTenant)
 	if err != nil {
@@ -246,22 +246,22 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	}
 
 	id := s.uidService.Generate()
-	log.Debugf("ID %s generated for Application with name %s", id, in.Name)
+	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
 
 	app := in.ToApplication(s.timestampGen(), id, appTenant)
 
 	err = s.appRepo.Create(ctx, app)
 	if err != nil {
-		return "", errors.Wrapf(err, "Error occurred while creating Application with name %s", in.Name)
+		return "", errors.Wrapf(err, "while creating Application with name %s", in.Name)
 	}
 
-	log.Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)
+	log.C(ctx).Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)
 	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
 	if err != nil {
 		return "", err
 	}
 
-	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
+	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
 
 	if in.Labels == nil {
 		in.Labels = map[string]interface{}{}
@@ -270,7 +270,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	if in.IntegrationSystemID != nil {
 		in.Labels[intSysKey] = *in.IntegrationSystemID
 	}
-	in.Labels[nameKey] = in.Name
+	in.Labels[nameKey] = s.appNameNormalizer.Normalize(in.Name)
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
@@ -320,15 +320,15 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		if err != nil {
 			return errors.Wrapf(err, "while setting the integration system label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
 		}
-		log.Debugf("Successfully set Label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
+		log.C(ctx).Debugf("Successfully set Label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
 	}
 
-	labelName := createLabel(nameKey, app.Name, app.ID)
-	err = s.SetLabel(ctx, labelName)
+	label := createLabel(nameKey, s.appNameNormalizer.Normalize(app.Name), app.ID)
+	err = s.SetLabel(ctx, label)
 	if err != nil {
 		return errors.Wrap(err, "while setting application name label")
 	}
-	log.Debugf("Successfully set Label for Application with id %s", app.ID)
+	log.C(ctx).Debugf("Successfully set Label for Application with id %s", app.ID)
 	return nil
 }
 
@@ -462,16 +462,16 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 		return true, nil
 	}
 
-	log.Infof("Ensuring Integration System with id %s exists", *id)
+	log.C(ctx).Infof("Ensuring Integration System with id %s exists", *id)
 	exists, err := s.intSystemRepo.Exists(ctx, *id)
 	if err != nil {
 		return false, err
 	}
 
 	if !exists {
-		log.Infof("Integration System with id %s does not exist", *id)
+		log.C(ctx).Infof("Integration System with id %s does not exist", *id)
 		return false, nil
 	}
-	log.Infof("Integration System with id %s exists", *id)
+	log.C(ctx).Infof("Integration System with id %s exists", *id)
 	return true, nil
 }

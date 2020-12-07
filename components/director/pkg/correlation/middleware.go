@@ -20,8 +20,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+
+	"github.com/google/uuid"
 )
 
 const (

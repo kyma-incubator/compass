@@ -8,9 +8,9 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 )
 
@@ -79,6 +79,7 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kub
 }
 
 func (s Service) SyncTenants() error {
+	ctx := context.Background()
 	startTime := time.Now()
 
 	lastConsumedTenantTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData()
@@ -87,6 +88,7 @@ func (s Service) SyncTenants() error {
 	}
 
 	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
+
 	if err != nil {
 		return err
 	}
@@ -98,7 +100,7 @@ func (s Service) SyncTenants() error {
 	}
 
 	totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete)
-	log.Printf("Amount of new events: %d", totalNewEvents)
+	log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
 	if totalNewEvents == 0 {
 		return nil
 	}
@@ -118,8 +120,8 @@ func (s Service) SyncTenants() error {
 	if err != nil {
 		return err
 	}
-	defer s.transact.RollbackUnlessCommitted(tx)
-	ctx := context.Background()
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	currentTenants, err := s.tenantStorageService.List(ctx)
@@ -256,13 +258,13 @@ func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) 
 		} else if detailsType == gjson.JSON {
 			details = []byte(event.Get(s.fieldMapping.DetailsField).Raw)
 		} else {
-			log.Warnf("Invalid event data format: %+v", event)
+			log.D().Warnf("Invalid event data format: %+v", event)
 			return true
 		}
 
 		tenant, err := s.eventDataToTenant(eventType, details)
 		if err != nil {
-			log.Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
+			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
 			return true
 		}
 		bussinessTenantMappings = append(bussinessTenantMappings, *tenant)
