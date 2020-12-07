@@ -84,7 +84,7 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -157,7 +157,7 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -184,7 +184,7 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -289,7 +289,7 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -318,7 +318,7 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -396,7 +396,7 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -424,7 +424,7 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -534,7 +534,7 @@ func TestResolver_DeleteRuntimeContext(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 				return persistTx, transact
 			},
 			ServiceFn: func() *automock.RuntimeContextService {
@@ -736,7 +736,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -763,7 +763,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -838,7 +838,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -865,7 +865,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -984,7 +984,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -1077,7 +1077,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 
 				return transact
 			},
@@ -1189,7 +1189,7 @@ func TestResolver_Labels(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 				return transact
 			},
 			ServiceFn: func() *automock.RuntimeContextService {
@@ -1211,7 +1211,7 @@ func TestResolver_Labels(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 				return transact
 			},
 			ServiceFn: func() *automock.RuntimeContextService {
@@ -1232,7 +1232,7 @@ func TestResolver_Labels(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return().Once()
 				return transact
 			},
 			ServiceFn: func() *automock.RuntimeContextService {

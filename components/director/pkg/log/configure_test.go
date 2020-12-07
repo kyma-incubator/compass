@@ -31,7 +31,7 @@ func TestMultipleGoroutinesDefaultLog(t *testing.T) {
 
 // TestMultipleGoroutinesContextLog validates that no race conditions occur when two go routines log using the context log
 func TestMultipleGoroutinesContextLog(t *testing.T) {
-	ctx, err := log.Configure(context.Background(), log.DefaultConfig())
+	ctx, err := log.Configure(context.TODO(), log.DefaultConfig())
 	require.NoError(t, err)
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -132,7 +132,7 @@ func TestConfigureReturnsErrorWhenConfigIsInvalid(t *testing.T) {
 func TestDefaultLoggerConfiguration(t *testing.T) {
 	config := log.DefaultConfig()
 	config.Level = "trace"
-	ctx, err := log.Configure(context.Background(), config)
+	ctx, err := log.Configure(context.TODO(), config)
 	require.NoError(t, err)
 	require.Equal(t, log.C(ctx).Level, log.D().Level)
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -179,13 +179,13 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	log.Debugf("Converting Application model with id %s to entity", model.ID)
+	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
 	appEnt, err := r.conv.ToEntity(model)
 	if err != nil {
 		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	log.Debugf("Persisting Application entity with id %s to db", model.ID)
+	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)
 	return r.creator.Create(ctx, appEnt)
 }
 
@@ -194,14 +194,14 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Application) err
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	log.Debugf("Converting Application model with id %s to entity", model.ID)
+	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
 	appEnt, err := r.conv.ToEntity(model)
 
 	if err != nil {
 		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	log.Debugf("Persisting updated Application entity with id %s to db", model.ID)
+	log.C(ctx).Debugf("Persisting updated Application entity with id %s to db", model.ID)
 	return r.updater.UpdateSingle(ctx, appEnt)
 }
 

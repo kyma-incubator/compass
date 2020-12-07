@@ -3,7 +3,7 @@ package webhook
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -69,7 +69,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Web
 	if err = s.repo.Create(ctx, webhook); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", id, webhook.Type, applicationID)
 	}
-	log.Infof("Successfully created Webhook with type %s and id %s for Application with id %s", id, webhook.Type, applicationID)
+	log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for Application with id %s", id, webhook.Type, applicationID)
 
 	return webhook.ID, nil
 }

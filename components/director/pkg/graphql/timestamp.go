@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
@@ -31,7 +31,7 @@ func (y *Timestamp) UnmarshalGQL(v interface{}) error {
 func (y Timestamp) MarshalGQL(w io.Writer) {
 	_, err := w.Write([]byte(strconv.Quote(time.Time(y).Format(time.RFC3339))))
 	if err != nil {
-		log.Errorf("while writing %T: %s", y, err)
+		log.D().Errorf("while writing %T: %s", y, err)
 	}
 }
 

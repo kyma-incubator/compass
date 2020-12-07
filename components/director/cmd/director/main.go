@@ -7,8 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
@@ -17,6 +15,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 
@@ -62,7 +62,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
@@ -79,6 +78,8 @@ type config struct {
 	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+
+	Log log.Config
 
 	MetricsAddress string `envconfig:"default=127.0.0.1:3001"`
 
@@ -110,9 +111,11 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
-	configureLogger()
+	ctx, err = log.Configure(ctx, &cfg.Log)
+	exitOnError(err, "Failed to configure Logger")
+	logger := log.C(ctx)
 
-	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
@@ -122,12 +125,12 @@ func main() {
 
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
-	log.Infof("Registering metrics collectors...")
+	logger.Infof("Registering metrics collectors...")
 	metricsCollector := metrics.NewCollector()
 	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
 	prometheus.MustRegister(metricsCollector, dbStatsCollector)
 
-	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
+	pairingAdapters, err := getPairingAdaptersMapping(ctx, cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
 
 	gqlCfg := graphql.Config{
@@ -151,28 +154,27 @@ func main() {
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
-	log.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
+	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
 
 	if cfg.JWKSSyncPeriod != 0 {
-		log.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
+		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
 		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
-			err := authMiddleware.SynchronizeJWKS()
+			err := authMiddleware.SynchronizeJWKS(ctx)
 			if err != nil {
-				log.Error(errors.Wrap(err, "while synchronizing JWKS"))
+				logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
 			}
 		})
 		go periodicExecutor.Run(ctx)
 	}
 
-	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository(), log.New())
+	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(correlation.AttachCorrelationIDToContext())
-
-	presenter := error_presenter.NewPresenter(log.StandardLogger(), uid.NewService())
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	presenter := error_presenter.NewPresenter(uid.NewService())
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
@@ -181,23 +183,23 @@ func main() {
 		handler.ErrorPresenter(presenter.Do),
 		handler.RecoverFunc(panic_handler.RecoverFn))))
 
-	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
+	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
 	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
-	log.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
+	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
 	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled)
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
-	log.Infof("Registering readiness endpoint...")
+	logger.Infof("Registering readiness endpoint...")
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
 
-	log.Infof("Registering liveness endpoint...")
-	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler(transact, log.StandardLogger()))
+	logger.Infof("Registering liveness endpoint...")
+	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler(transact))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
@@ -205,8 +207,8 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
-	runMetricsSrv, shutdownMetricsSrv := createServer(cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
-	runMainSrv, shutdownMainSrv := createServer(cfg.Address, mainRouter, "main", cfg.ServerTimeout)
+	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
 
 	go func() {
 		<-ctx.Done()
@@ -219,9 +221,11 @@ func main() {
 	runMainSrv()
 }
 
-func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
+func getPairingAdaptersMapping(ctx context.Context, filePath string) (map[string]string, error) {
+	logger := log.C(ctx)
+
 	if filePath == "" {
-		log.Infof("No configuration for pairing adapters")
+		logger.Infof("No configuration for pairing adapters")
 		return nil, nil
 	}
 
@@ -231,7 +235,7 @@ func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Warnf("Got error on closing file with pairing adapters configuration: %v", err)
+			logger.Warnf("Got error on closing file with pairing adapters configuration: %v", err)
 		}
 	}()
 
@@ -241,7 +245,7 @@ func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "while decoding file [%s] to map[string]string", filePath)
 	}
-	log.Infof("Successfully read pairing adapters configuration")
+	logger.Infof("Successfully read pairing adapters configuration")
 	return out, nil
 }
 
@@ -253,7 +257,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 		if err := provider.Load(); err != nil {
 			exitOnError(err, "Error from Reloader watch")
 		}
-		log.Infof("Successfully reloaded configuration file")
+		log.C(ctx).Infof("Successfully reloaded configuration file.")
 
 	}).Run(ctx)
 
@@ -263,15 +267,8 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.D().Fatal(wrappedError)
 	}
-}
-
-func configureLogger() {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-	log.SetReportCaller(true)
 }
 
 func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
@@ -302,8 +299,6 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsers
 }
 
 func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
-	logger := log.WithField("component", "runtime-mapping-handler").Logger
-
 	uidSvc := uid.NewService()
 
 	labelConv := label.NewConverter()
@@ -326,16 +321,15 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	jwksFetch := runtimemapping.NewJWKsFetch(logger)
-	jwksCache := runtimemapping.NewJWKsCache(logger, jwksFetch, cachePeriod)
-	tokenVerifier := runtimemapping.NewTokenVerifier(logger, jwksCache)
+	jwksFetch := runtimemapping.NewJWKsFetch()
+	jwksCache := runtimemapping.NewJWKsCache(jwksFetch, cachePeriod)
+	tokenVerifier := runtimemapping.NewTokenVerifier(jwksCache)
 
 	executor.NewPeriodic(1*time.Minute, func(ctx context.Context) {
-		jwksCache.Cleanup()
+		jwksCache.Cleanup(ctx)
 	}).Run(ctx)
 
 	return runtimemapping.NewHandler(
-		logger,
 		reqDataParser,
 		transact,
 		tokenVerifier,
@@ -343,7 +337,7 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 		tenantSvc).ServeHTTP, nil
 }
 
-func createServer(address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
+func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
@@ -354,16 +348,16 @@ func createServer(address string, handler http.Handler, name string, timeout tim
 	}
 
 	runFn := func() {
-		log.Infof("Running %s server on %s...", name, address)
+		log.C(ctx).Infof("Running %s server on %s...", name, address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Errorf("%s HTTP server ListenAndServe: %v", name, err)
+			log.C(ctx).WithError(err).Errorf("An error has occurred with %s HTTP server when ListenAndServe.", name)
 		}
 	}
 
 	shutdownFn := func() {
-		log.Infof("Shutting down %s server...", name)
+		log.C(ctx).Infof("Shutting down %s server...", name)
 		if err := srv.Shutdown(context.Background()); err != nil {
-			log.Errorf("%s HTTP server Shutdown: %v", name, err)
+			log.C(ctx).WithError(err).Errorf("An error has occurred while shutting down HTTP server %s.", name)
 		}
 	}
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 
@@ -79,13 +79,13 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	}
 
 	if consumerInfo.ConsumerType != consumer.Runtime {
-		log.Debugf("Consumer type %v is not of type %v. Skipping verification directive...", consumerInfo.ConsumerType, consumer.Runtime)
+		log.C(ctx).Debugf("Consumer type %v is not of type %v. Skipping verification directive...", consumerInfo.ConsumerType, consumer.Runtime)
 		return next(ctx)
 	}
-	log.Infof("Attempting to verify that the requesting runtime is in scenario with the owning application entity")
+	log.C(ctx).Infof("Attempting to verify that the requesting runtime is in scenario with the owning application entity")
 
 	runtimeID := consumerInfo.ConsumerID
-	log.Debugf("Found Runtime ID for the requesting runtime: %v", runtimeID)
+	log.C(ctx).Debugf("Found Runtime ID for the requesting runtime: %v", runtimeID)
 
 	commonScenarios, err := d.extractCommonScenarios(ctx, runtimeID, applicationProvider, idField)
 	if err != nil {
@@ -95,9 +95,9 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 	if len(commonScenarios) == 0 {
 		return nil, apperrors.NewInvalidOperationError("requesting runtime should be in same scenario as the requested application resource")
 	}
-	log.Debugf("Found the following common scenarios: %+v", commonScenarios)
+	log.C(ctx).Debugf("Found the following common scenarios: %+v", commonScenarios)
 
-	log.Infof("Runtime with ID %s is in scenario with the owning application entity", runtimeID)
+	log.C(ctx).Infof("Runtime with ID %s is in scenario with the owning application entity", runtimeID)
 	return next(ctx)
 }
 
@@ -120,10 +120,10 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 
 	tx, err := d.transact.Begin()
 	if err != nil {
-		log.Errorf("An error occurred while opening the db transaction: %s", err.Error())
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening the db transaction.")
 		return nil, err
 	}
-	defer d.transact.RollbackUnlessCommitted(tx)
+	defer d.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -131,22 +131,22 @@ func (d *directive) extractCommonScenarios(ctx context.Context, runtimeID, appli
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not derive app id, an error occurred")
 	}
-	log.Infof("Found owning Application ID based on the request parameter %s: %s", idField, appID)
+	log.C(ctx).Infof("Found owning Application ID based on the request parameter %s: %s", idField, appID)
 
 	appScenarios, err := d.getObjectScenarios(ctx, tenantID, model.ApplicationLabelableObject, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching scenarios for application")
 	}
-	log.Debugf("Found the following application scenarios: %s", appScenarios)
+	log.C(ctx).Debugf("Found the following application scenarios: %s", appScenarios)
 
 	runtimeScenarios, err := d.getObjectScenarios(ctx, tenantID, model.RuntimeLabelableObject, runtimeID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching scenarios for runtime")
 	}
-	log.Debugf("Found the following runtime scenarios: %s", runtimeScenarios)
+	log.C(ctx).Debugf("Found the following runtime scenarios: %s", runtimeScenarios)
 
 	if err := tx.Commit(); err != nil {
-		log.Errorf("An error occurred while committing transaction: %s", err.Error())
+		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction.")
 		return nil, err
 	}
 

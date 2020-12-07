@@ -9,8 +9,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -129,9 +129,9 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.Infof("Adding package to Application with id %s", applicationID)
+	log.C(ctx).Infof("Adding package to Application with id %s", applicationID)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -160,7 +160,7 @@ func (r *Resolver) AddPackage(ctx context.Context, applicationID string, in grap
 		return nil, errors.Wrapf(err, "while converting Package with id %s to GraphQL", id)
 	}
 
-	log.Infof("Package with id %s successfully added to Application with id %s", id, applicationID)
+	log.C(ctx).Infof("Package with id %s successfully added to Application with id %s", id, applicationID)
 	return gqlPackage, nil
 }
 
@@ -169,9 +169,9 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.Infof("Updating Package with id %s", id)
+	log.C(ctx).Infof("Updating Package with id %s", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -200,7 +200,7 @@ func (r *Resolver) UpdatePackage(ctx context.Context, id string, in graphql.Pack
 		return nil, errors.Wrapf(err, "while converting Package with id %s to GraphQL", id)
 	}
 
-	log.Infof("Package with id %s successfully updated.", id)
+	log.C(ctx).Infof("Package with id %s successfully updated.", id)
 	return gqlPkg, nil
 }
 
@@ -209,9 +209,9 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.Infof("Deleting Package with id %s", id)
+	log.C(ctx).Infof("Deleting Package with id %s", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -235,7 +235,7 @@ func (r *Resolver) DeletePackage(ctx context.Context, id string) (*graphql.Packa
 		return nil, errors.Wrapf(err, "while converting Package with id %s to GraphQL", id)
 	}
 
-	log.Infof("Package with id %s successfully deleted.", id)
+	log.C(ctx).Infof("Package with id %s successfully deleted.", id)
 	return deletedPkg, nil
 }
 
@@ -248,7 +248,7 @@ func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Package, id st
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -278,7 +278,7 @@ func (r *Resolver) InstanceAuths(ctx context.Context, obj *graphql.Package) ([]*
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	pkgInstanceAuths, err := r.packageInstanceAuthSvc.List(ctx, obj.ID)
@@ -299,7 +299,7 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Package, id s
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -324,7 +324,7 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Package, gro
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -365,7 +365,7 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Package, id
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -390,7 +390,7 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Package, g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	var cursor string
@@ -430,7 +430,7 @@ func (r *Resolver) Document(ctx context.Context, obj *graphql.Package, id string
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -455,7 +455,7 @@ func (r *Resolver) Documents(ctx context.Context, obj *graphql.Package, first *i
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

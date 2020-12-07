@@ -304,7 +304,7 @@ func Test_SetForApplication(t *testing.T) {
 
 	t.Run("Error when assigning new default runtime", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while setting the runtime as default for eveting for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some-error`, runtimeID, applicationID)
+		expectedError := fmt.Sprintf(`while setting the runtime as default for eventing for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some-error`, runtimeID, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),

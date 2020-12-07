@@ -3,7 +3,7 @@ package systemauth
 import (
 	"context"
 
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -35,7 +35,6 @@ type repository struct {
 	listerGlobal       repo.ListerGlobal
 	deleter            repo.Deleter
 	deleterGlobal      repo.DeleterGlobal
-	logger             *logrus.Logger
 
 	conv Converter
 }
@@ -49,7 +48,6 @@ func NewRepository(conv Converter) *repository {
 		listerGlobal:       repo.NewListerGlobal(resource.SystemAuth, tableName, tableColumns),
 		deleter:            repo.NewDeleter(resource.SystemAuth, tableName, tenantColumn),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.SystemAuth, tableName),
-		logger:             logrus.New(),
 		conv:               conv,
 	}
 }
@@ -60,7 +58,7 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
-	r.logger.Debugf("Persisting SystemAuth entity with id %s to db", item.ID)
+	log.C(ctx).Debugf("Persisting SystemAuth entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
 }
 

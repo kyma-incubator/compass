@@ -15,7 +15,7 @@ func TestConsumerContext(t *testing.T) {
 		// GIVEN
 		id := "223da628-3756-4bef-ab48-fb0061a4eae4"
 		givenConsumer := consumer.Consumer{ConsumerID: id, ConsumerType: consumer.Runtime}
-		ctx := consumer.SaveToContext(context.Background(), givenConsumer)
+		ctx := consumer.SaveToContext(context.TODO(), givenConsumer)
 
 		// WHEN
 		actual, err := consumer.LoadFromContext(ctx)
@@ -35,7 +35,7 @@ func TestConsumerContext(t *testing.T) {
 		// GIVEN
 		id := "223da628-3756-4bef-ab48-fb0061a4eae4"
 		givenConsumer := consumer.Consumer{ConsumerID: id, ConsumerType: consumer.Runtime}
-		ctx := consumer.SaveToContext(context.Background(), givenConsumer)
+		ctx := consumer.SaveToContext(context.TODO(), givenConsumer)
 		ctx = context.WithValue(ctx, 0, "some random value")
 
 		// WHEN

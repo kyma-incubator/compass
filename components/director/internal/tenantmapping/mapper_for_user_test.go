@@ -248,7 +248,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
-		staticGroupRepoMock.On("Get", []string{groupName}).Return(staticGroups, nil).Once()
+		staticGroupRepoMock.On("Get", mock.Anything, []string{groupName}).Return(staticGroups, nil).Once()
 
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
@@ -299,7 +299,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
-		staticGroupRepoMock.On("Get", []string{groupName1, groupName2}).Return(staticGroups, nil).Once()
+		staticGroupRepoMock.On("Get", mock.Anything, []string{groupName1, groupName2}).Return(staticGroups, nil).Once()
 
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
@@ -340,7 +340,7 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
-		staticGroupRepoMock.On("Get", []string{groupName}).Return(staticGroups, nil).Once()
+		staticGroupRepoMock.On("Get", mock.Anything, []string{groupName}).Return(staticGroups, nil).Once()
 
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()

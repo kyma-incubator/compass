@@ -163,8 +163,8 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(0).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(1).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -217,8 +217,8 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(0).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(1).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -271,8 +271,8 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(0).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(1).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -364,8 +364,8 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(0).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &normalizedModelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(1).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",
@@ -456,7 +456,7 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &nilLabels).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -502,8 +502,8 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &nilLabels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(0).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &nilLabels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(1).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						model.ScenariosKey: model.ScenariosDefaultValue,
@@ -554,7 +554,7 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &defaultLabelsWithoutIntSys).Once()
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &defaultLabelsWithoutIntSys).Once()
 				return repo
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
@@ -810,8 +810,8 @@ func TestService_Create(t *testing.T) {
 			ScenariosServiceFn: func() *automock.ScenariosService {
 				repo := &automock.ScenariosService{}
 				repo.On("EnsureScenariosLabelDefinitionExists", contextThatHasTenant(tnt), tnt).Return(nil).Once()
-				repo.On("AddDefaultScenarioIfEnabled", &modelInput.Labels).Run(func(args mock.Arguments) {
-					arg, ok := args.Get(0).(*map[string]interface{})
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, &modelInput.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(1).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
 						"label":            "value",

@@ -1,10 +1,11 @@
 package kubernetes
 
 import (
+	"context"
 	"path/filepath"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -20,11 +21,11 @@ type Config struct {
 	Timeout      time.Duration `envconfig:"default=2m,APP_KUBERNETES_TIMEOUT"`
 }
 
-func NewKubernetesClientSet(interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
+func NewKubernetesClientSet(ctx context.Context, interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
 	kubeConfig, err := restclient.InClusterConfig()
 	if err != nil {
-		log.Println("Failed to read in cluster Config", err)
-		log.Println("Trying to initialize with local Config")
+		log.C(ctx).WithError(err).Error("An error has occurred while trying to read in cluster Config")
+		log.C(ctx).Debug("Trying to initialize Kubernetes Client with local Config")
 		home := homedir.HomeDir()
 		kubeConfPath := filepath.Join(home, ".kube", "Config")
 		kubeConfig, err = clientcmd.BuildConfigFromFlags("", kubeConfPath)
@@ -43,7 +44,7 @@ func NewKubernetesClientSet(interval, pollingTimeout, timeout time.Duration) (*k
 	err = wait.PollImmediate(interval, pollingTimeout, func() (bool, error) {
 		_, err := kubeClientSet.ServerVersion()
 		if err != nil {
-			log.Printf("Failed to access API Server: %s", err.Error())
+			log.C(ctx).WithError(err).Error("An error has occurred while trying to access API Server")
 			return false, nil
 		}
 		return true, nil
@@ -52,6 +53,6 @@ func NewKubernetesClientSet(interval, pollingTimeout, timeout time.Duration) (*k
 		return nil, err
 	}
 
-	log.Println("Successfully initialized kubernetes client")
+	log.C(ctx).Info("Successfully initialized kubernetes client")
 	return kubeClientSet, nil
 }

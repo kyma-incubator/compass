@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -49,8 +49,8 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 
 	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
-	log.Debugf("Executing DB query: %s", stmt)
+	log.C(ctx).Debugf("Executing DB query: %s", stmt)
 	_, err = persist.NamedExec(stmt, dbEntity)
 
-	return persistence.MapSQLError(err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
+	return persistence.MapSQLError(ctx, err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
 }

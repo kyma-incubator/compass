@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -66,7 +66,7 @@ func (r *Resolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelF
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -107,7 +107,7 @@ func (r *Resolver) RuntimeContext(ctx context.Context, id string) (*graphql.Runt
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -120,7 +120,7 @@ func (r *Resolver) RuntimeContext(ctx context.Context, id string) (*graphql.Runt
 	}
 
 	if runtimeID != runtimeContext.RuntimeID {
-		log.Errorf("Runtime context owner mismatch: runtime context is owned by runtime with id %s which is different from calling runtime id %s", runtimeContext.RuntimeID, runtimeID)
+		log.C(ctx).Errorf("Runtime context owner mismatch: runtime context is owned by runtime with id %s which is different from calling runtime id %s", runtimeContext.RuntimeID, runtimeID)
 		return nil, apperrors.NewUnauthorizedError("runtime context not accessible")
 	}
 
@@ -144,7 +144,7 @@ func (r *Resolver) RegisterRuntimeContext(ctx context.Context, in graphql.Runtim
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -180,7 +180,7 @@ func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graph
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -195,7 +195,7 @@ func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graph
 	}
 
 	if runtimeID != runtimeContext.RuntimeID {
-		log.Errorf("Runtime context owner mismatch: runtime context is owned by runtime with id %s which is different from calling runtime id %s", runtimeContext.RuntimeID, runtimeID)
+		log.C(ctx).Errorf("Runtime context owner mismatch: runtime context is owned by runtime with id %s which is different from calling runtime id %s", runtimeContext.RuntimeID, runtimeID)
 		return nil, apperrors.NewUnauthorizedError("runtime context not accessible")
 	}
 
@@ -219,7 +219,7 @@ func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphq
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -245,7 +245,7 @@ func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphq
 	}*/
 
 	if runtimeID != runtimeContext.RuntimeID {
-		log.Errorf("Runtime context owner mismatch: runtime context is owned by runtime with id %s which is different from calling runtime id %s", runtimeContext.RuntimeID, runtimeID)
+		log.C(ctx).Errorf("Runtime context owner mismatch: runtime context is owned by runtime with id %s which is different from calling runtime id %s", runtimeContext.RuntimeID, runtimeID)
 		return nil, apperrors.NewUnauthorizedError("runtime context not accessible")
 	}
 
@@ -273,7 +273,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key 
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -309,7 +309,7 @@ func (r *Resolver) getRuntimeID(ctx context.Context) (string, error) {
 	}
 
 	if consumerInfo.ConsumerType != consumer.Runtime {
-		log.Errorf("Consumer type is of type %v. Runtime Contexts can be consumed only by runtimes...", consumerInfo.ConsumerType)
+		log.C(ctx).Errorf("Consumer type is of type %v. Runtime Contexts can be consumed only by runtimes...", consumerInfo.ConsumerType)
 		return "", apperrors.NewUnauthorizedError("runtime context access is restricted to runtimes only")
 	}
 

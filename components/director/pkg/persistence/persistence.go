@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
-
-	"github.com/sirupsen/logrus"
 
 	// Importing the database driver (postgresql)
 	_ "github.com/lib/pq"
@@ -26,7 +25,7 @@ func SaveToContext(ctx context.Context, persistOp PersistenceOp) context.Context
 
 // FromCtx extracts DatabaseOp interface from context
 func FromCtx(ctx context.Context) (PersistenceOp, error) {
-	logrus.Debug("Extracting DB from context...")
+	log.C(ctx).Debug("Extracting DB from context...")
 	dbCtx := ctx.Value(PersistenceCtxKey)
 
 	if db, ok := dbCtx.(PersistenceOp); ok {
@@ -39,14 +38,13 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 //go:generate mockery -name=Transactioner -output=automock -outpkg=automock -case=underscore
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
-	RollbackUnlessCommitted(tx PersistenceTx)
+	RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx)
 	PingContext(ctx context.Context) error
 	Stats() sql.DBStats
 }
 
 type db struct {
-	sqlDB  *sqlx.DB
-	logger *logrus.Logger
+	sqlDB *sqlx.DB
 }
 
 func (db *db) PingContext(ctx context.Context) error {
@@ -66,24 +64,24 @@ func (db *db) Begin() (PersistenceTx, error) {
 	return PersistenceTx(customTx), err
 }
 
-func (db *db) RollbackUnlessCommitted(tx PersistenceTx) {
+func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) {
 	customTx, ok := tx.(*Transaction)
 	if !ok {
-		db.logger.Warn("state aware transaction is not in use")
-		db.rollback(tx)
+		log.C(ctx).Warn("State aware transaction is not in use")
+		db.rollback(ctx, tx)
 	}
 	if customTx.committed {
 		return
 	}
-	db.rollback(customTx)
+	db.rollback(ctx, customTx)
 }
 
-func (db *db) rollback(tx PersistenceTx) {
+func (db *db) rollback(ctx context.Context, tx PersistenceTx) {
 	err := tx.Rollback()
 	if err == nil {
-		db.logger.Warn("transaction rolled back")
+		log.C(ctx).Warn("Transaction rolled back")
 	} else if err != sql.ErrTxDone {
-		db.logger.Warn(err)
+		log.C(ctx).Warn(err)
 	}
 }
 
@@ -121,38 +119,39 @@ type PersistenceOp interface {
 }
 
 // Configure returns the instance of the database
-func Configure(logger *logrus.Logger, conf DatabaseConfig) (Transactioner, func() error, error) {
-	db, closeFunc, err := waitForPersistance(logger, conf, RetryCount)
+func Configure(context context.Context, conf DatabaseConfig) (Transactioner, func() error, error) {
+	db, closeFunc, err := waitForPersistance(context, conf, RetryCount)
 
 	return db, closeFunc, err
 }
 
-func waitForPersistance(logger *logrus.Logger, conf DatabaseConfig, retryCount int) (Transactioner, func() error, error) {
+func waitForPersistance(ctx context.Context, conf DatabaseConfig, retryCount int) (Transactioner, func() error, error) {
 	var sqlxDB *sqlx.DB
 	var err error
+
 	for i := 0; i < retryCount; i++ {
 		if i > 0 {
 			time.Sleep(5 * time.Second)
 		}
-		logger.Info("Trying to connect to DB...")
+		log.C(ctx).Info("Trying to connect to DB...")
 
 		sqlxDB, err = sqlx.Open("postgres", conf.GetConnString())
 		if err != nil {
 			return nil, nil, err
 		}
-		ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second)
-		err = sqlxDB.PingContext(ctx)
+		ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, time.Second)
+		err = sqlxDB.PingContext(ctxWithTimeout)
 		cancelFunc()
 		if err != nil {
-			logger.Infof("Got error on pinging DB: %v", err)
+			log.C(ctx).Infof("Got error on pinging DB: %v", err)
 			continue
 		}
 
-		logger.Infof("Configuring MaxOpenConnections: [%d], MaxIdleConnections: [%d], ConnectionMaxLifetime: [%s]", conf.MaxOpenConnections, conf.MaxIdleConnections, conf.ConnMaxLifetime.String())
+		log.C(ctx).Infof("Configuring MaxOpenConnections: [%d], MaxIdleConnections: [%d], ConnectionMaxLifetime: [%s]", conf.MaxOpenConnections, conf.MaxIdleConnections, conf.ConnMaxLifetime.String())
 		sqlxDB.SetMaxOpenConns(conf.MaxOpenConnections)
 		sqlxDB.SetMaxIdleConns(conf.MaxIdleConnections)
 		sqlxDB.SetConnMaxLifetime(conf.ConnMaxLifetime)
-		return &db{sqlDB: sqlxDB, logger: logger}, sqlxDB.Close, nil
+		return &db{sqlDB: sqlxDB}, sqlxDB.Close, nil
 
 	}
 

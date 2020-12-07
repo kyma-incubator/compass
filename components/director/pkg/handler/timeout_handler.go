@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
@@ -66,18 +66,18 @@ type timoutLoggingResponseWriter struct {
 	timeout      time.Duration
 	msg          []byte
 	requestStart time.Time
-	ctx          context.Context // TODO: Use logger from context once we have that in place
+	ctx          context.Context
 }
 
 func (lrw *timoutLoggingResponseWriter) Write(b []byte) (int, error) {
 	if bytes.Equal(lrw.msg, b) && time.Since(lrw.requestStart) > lrw.timeout {
-		logrus.Warnf("%s request to %s timed out after %s", lrw.method, lrw.url, lrw.timeout)
+		log.C(lrw.ctx).Warnf("%s request to %s timed out after %s", lrw.method, lrw.url, lrw.timeout)
 	}
 
 	i, err := lrw.ResponseWriter.Write(b)
 
 	if err != nil && strings.Contains(err.Error(), http.ErrHandlerTimeout.Error()) && time.Since(lrw.requestStart) > lrw.timeout {
-		logrus.Warnf("Finished processing %s request to %s due to exceeded timeout of %s. Request processing terminated %s after timeout.",
+		log.C(lrw.ctx).Warnf("Finished processing %s request to %s due to exceeded timeout of %s. Request processing terminated %s after timeout.",
 			lrw.method, lrw.url, lrw.timeout, time.Since(lrw.requestStart)-lrw.timeout)
 	}
 	return i, err

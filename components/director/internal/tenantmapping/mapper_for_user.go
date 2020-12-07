@@ -7,6 +7,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -32,16 +34,18 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 	var staticUser *StaticUser
 	var err error
 
-	log := loggerFromContextOrDefault(ctx).WithFields(logrus.Fields{
+	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumer.User,
 	})
 
-	log.Info("Getting scopes from groups")
-	scopes = m.getScopesForUserGroups(reqData, log)
-	if !hasScopes(scopes) {
-		log.Info("No scopes found from groups, getting user data")
+	ctx = log.ContextWithLogger(ctx, logger)
 
-		staticUser, scopes, err = m.getUserData(reqData, username, log)
+	log.C(ctx).Info("Getting scopes from groups")
+	scopes = m.getScopesForUserGroups(ctx, reqData)
+	if !hasScopes(scopes) {
+		log.C(ctx).Info("No scopes found from groups, getting user data")
+
+		staticUser, scopes, err = m.getUserData(ctx, reqData, username)
 		if err != nil {
 			return ObjectContext{}, errors.Wrapf(err, "while getting user data for user: %s", username)
 		}
@@ -52,19 +56,19 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 		if !apperrors.IsKeyDoesNotExist(err) {
 			return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", username)
 		}
-		log.Warningf("Could not get tenant external id, error: %s", err.Error())
+		log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
 
-		log.Info("Could not create tenant context, returning empty context...")
+		log.C(ctx).Info("Could not create tenant context, returning empty context...")
 		return NewObjectContext(TenantContext{}, scopes, username, consumer.User), nil
 	}
 
-	log.Infof("Getting the tenant with external ID: %s", externalTenantID)
+	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
 	tenantMapping, err := m.tenantRepo.GetByExternalTenant(ctx, externalTenantID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			log.Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
+			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
-			log.Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
+			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
 			return NewObjectContext(NewTenantContext(externalTenantID, ""), scopes, username, consumer.User), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
@@ -75,35 +79,35 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 	}
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, username, consumer.User)
-	log.Infof("Successfully got object context: %+v", objCtx)
+	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
 }
 
-func (m *mapperForUser) getScopesForUserGroups(reqData oathkeeper.ReqData, log *logrus.Entry) string {
+func (m *mapperForUser) getScopesForUserGroups(ctx context.Context, reqData oathkeeper.ReqData) string {
 	userGroups := reqData.GetUserGroups()
 	if len(userGroups) == 0 {
 		return ""
 	}
-	log.Debugf("Found user groups: %s", strings.Join(userGroups, " "))
+	log.C(ctx).Debugf("Found user groups: %s", strings.Join(userGroups, " "))
 
-	staticGroups := m.staticGroupRepo.Get(userGroups)
+	staticGroups := m.staticGroupRepo.Get(ctx, userGroups)
 	if len(staticGroups) == 0 {
 		return ""
 	}
 
 	scopes := staticGroups.GetGroupScopes()
-	log.Debugf("Found scopes: %s", scopes)
+	log.C(ctx).Debugf("Found scopes: %s", scopes)
 
 	return scopes
 }
 
-func (m *mapperForUser) getUserData(reqData oathkeeper.ReqData, username string, log *logrus.Entry) (*StaticUser, string, error) {
+func (m *mapperForUser) getUserData(ctx context.Context, reqData oathkeeper.ReqData, username string) (*StaticUser, string, error) {
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "while searching for a static user with username %s", username)
 	}
-	log.Debugf("Found static user with name %s and tenants: %s", staticUser.Username, staticUser.Tenants)
+	log.C(ctx).Debugf("Found static user with name %s and tenants: %s", staticUser.Username, staticUser.Tenants)
 
 	scopes, err := reqData.GetScopes()
 	if err != nil {
@@ -112,7 +116,7 @@ func (m *mapperForUser) getUserData(reqData oathkeeper.ReqData, username string,
 		}
 		scopes = strings.Join(staticUser.Scopes, " ")
 	}
-	log.Debugf("Found scopes: %s", scopes)
+	log.C(ctx).Debugf("Found scopes: %s", scopes)
 
 	return &staticUser, scopes, nil
 }

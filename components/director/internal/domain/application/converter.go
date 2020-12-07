@@ -1,10 +1,11 @@
 package application
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -95,19 +96,19 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 	return runtimes
 }
 
-func (c *converter) CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
+func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
 	var labels map[string]interface{}
 	if in.Labels != nil {
 		labels = *in.Labels
 	}
 
-	log.Debugf("Converting Webhooks from Application registration GraphQL input with name %s", in.Name)
+	log.C(ctx).Debugf("Converting Webhooks from Application registration GraphQL input with name %s", in.Name)
 	webhooks, err := c.webhook.MultipleInputFromGraphQL(in.Webhooks)
 	if err != nil {
 		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Webhooks")
 	}
 
-	log.Debugf("Converting Packages from Application registration GraphQL input with name %s", in.Name)
+	log.C(ctx).Debugf("Converting Packages from Application registration GraphQL input with name %s", in.Name)
 	packages, err := c.pkg.MultipleCreateInputFromGraphQL(in.Packages)
 	if err != nil {
 		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Packages")

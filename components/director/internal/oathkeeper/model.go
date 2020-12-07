@@ -1,9 +1,10 @@
 package oathkeeper
 
 import (
+	"context"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -57,9 +58,10 @@ type ReqBody struct {
 type ReqData struct {
 	Body   ReqBody
 	Header http.Header
+	ctx    context.Context
 }
 
-func NewReqData(reqBody ReqBody, reqHeader http.Header) ReqData {
+func NewReqData(ctx context.Context, reqBody ReqBody, reqHeader http.Header) ReqData {
 	if reqBody.Extra == nil {
 		reqBody.Extra = make(map[string]interface{})
 	}
@@ -71,6 +73,7 @@ func NewReqData(reqBody ReqBody, reqHeader http.Header) ReqData {
 	return ReqData{
 		Body:   reqBody,
 		Header: reqHeader,
+		ctx:    ctx,
 	}
 }
 
@@ -152,7 +155,7 @@ func (d *ReqData) GetUserGroups() []string {
 		for _, group := range groupsArray {
 			groupString, err := str.Cast(group)
 			if err != nil {
-				log.Infof("%+v skipped because string conversion failed", group)
+				log.C(d.ctx).Infof("%+v skipped because string conversion failed", group)
 				continue
 			}
 
