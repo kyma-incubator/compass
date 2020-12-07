@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var labelsWithNormalization = map[string]interface{}{runtime.ShouldNormalize: "true"}
+var labelsWithNormalization = map[string]interface{}{runtime.IsNormalizedLabel: "true"}
 
 func TestService_Create(t *testing.T) {
 	// given

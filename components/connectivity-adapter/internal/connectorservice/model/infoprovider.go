@@ -10,18 +10,16 @@ import (
 type InfoProviderFunc func(applicationName string, eventServiceBaseURL, tenant string, configuration schema.Configuration) (interface{}, error)
 
 func NewCSRInfoResponseProvider(connectivityAdapterBaseURL, connectivityAdapterMTLSBaseURL string) InfoProviderFunc {
-
 	return func(applicationName, eventServiceBaseURL, tenant string, configuration schema.Configuration) (interface{}, error) {
 		if configuration.Token == nil {
 			return nil, errors.New("empty token returned from Connector")
 		}
 
 		csrURL := connectivityAdapterBaseURL + CertsEndpoint
-
 		tokenParam := fmt.Sprintf(TokenFormat, configuration.Token.Token)
 
 		api := Api{
-			CertificatesURL: connectivityAdapterBaseURL + CertsEndpoint,
+			CertificatesURL: csrURL,
 			InfoURL:         connectivityAdapterMTLSBaseURL + ManagementInfoEndpoint,
 			RuntimeURLs:     makeRuntimeURLs(applicationName, connectivityAdapterMTLSBaseURL, eventServiceBaseURL),
 		}
@@ -35,9 +33,7 @@ func NewCSRInfoResponseProvider(connectivityAdapterBaseURL, connectivityAdapterM
 }
 
 func NewManagementInfoResponseProvider(connectivityAdapterMTLSBaseURL string) InfoProviderFunc {
-
 	return func(applicationName, eventServiceBaseURL, tenant string, configuration schema.Configuration) (interface{}, error) {
-
 		clientIdentity := ClientIdentity{
 			Application: applicationName,
 			Tenant:      tenant,
@@ -58,9 +54,9 @@ func NewManagementInfoResponseProvider(connectivityAdapterMTLSBaseURL string) In
 	}
 }
 
-func makeRuntimeURLs(application, connectivityAdapterMTLSBaseURL string, eventServiceBaseURL string) *RuntimeURLs {
+func makeRuntimeURLs(appName, connectivityAdapterMTLSBaseURL, eventServiceBaseURL string) *RuntimeURLs {
 	return &RuntimeURLs{
-		MetadataURL:   connectivityAdapterMTLSBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, application),
+		MetadataURL:   connectivityAdapterMTLSBaseURL + fmt.Sprintf(ApplicationRegistryEndpointFormat, appName),
 		EventsURL:     eventServiceBaseURL,
 		EventsInfoURL: eventServiceBaseURL + EventsInfoEndpoint,
 	}

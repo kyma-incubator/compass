@@ -1581,7 +1581,7 @@ func TestResolver_GetLabel(t *testing.T) {
 	// given
 	runtimeID := "37e89317-9ace-441d-9dc0-badf09b035b4"
 	tenant := "tenant"
-	labelKey := runtime.ShouldNormalize
+	labelKey := runtime.IsNormalizedLabel
 	labelValue := "true"
 
 	modelLabel := &model.Label{
