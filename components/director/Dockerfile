@@ -1,4 +1,4 @@
-FROM golang:1.14.4-alpine3.12 as builder
+FROM golang:1.15.5-alpine3.12 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/director
 WORKDIR ${BASE_APP_DIR}
@@ -19,7 +19,6 @@ RUN go build -v -o director ./cmd/director/main.go \
 RUN mkdir /app && mv ./director /app/director \
   && mv ./tenantfetcher /app/tenantfetcher \
   && mv ./tenantloader /app/tenantloader \
-  && mv ./licenses /app/licenses
 
 FROM alpine:edge
 LABEL source = git@github.com:kyma-incubator/compass.git
