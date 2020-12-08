@@ -112,3 +112,23 @@ func NewInConditionForStringValues(field string, values []string) Condition {
 		parenthesis: strings.Join(parenthesisParams, ", "),
 	}
 }
+
+type notRegexCondition struct {
+	field string
+	value string
+}
+
+func (c *notRegexCondition) GetQueryPart() string {
+	return fmt.Sprintf("NOT %s ~ ?", c.field)
+}
+
+func (c *notRegexCondition) GetQueryArgs() ([]interface{}, bool) {
+	return []interface{}{c.value}, true
+}
+
+func NewNotRegexConditionString(field string, value string) Condition {
+	return &notRegexCondition{
+		field: field,
+		value: value,
+	}
+}

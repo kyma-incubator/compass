@@ -97,6 +97,8 @@ type config struct {
 	OAuth20      oauth20.Config
 
 	Features features.Config
+
+	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
 }
 
 func main() {
@@ -144,6 +146,7 @@ func main() {
 			cfg.Features,
 			metricsCollector,
 			cfg.ClientTimeout,
+			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultPackageRepo(), defaultPackageInstanceAuthRepo()).HasScenario,
@@ -190,7 +193,8 @@ func main() {
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.ProtectedLabelPattern)
+
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
@@ -298,7 +302,7 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsers
 	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 
 	labelConv := label.NewConverter()
@@ -313,7 +317,7 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 
 	tenantConv := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConv)
