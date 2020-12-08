@@ -19,6 +19,7 @@ RUN go build -v -o director ./cmd/director/main.go \
 RUN mkdir /app && mv ./director /app/director \
   && mv ./tenantfetcher /app/tenantfetcher \
   && mv ./tenantloader /app/tenantloader \
+  && mv ./licenses /app/licenses
 
 FROM alpine:edge
 LABEL source = git@github.com:kyma-incubator/compass.git
