@@ -1,0 +1,33 @@
+logging:
+  level:
+    org:
+      springframework: INFO
+odata:
+  jpa:
+    punit_name: "com.sap.cloud.cmp.od.service" # used in persistance.xml for Java EE, but in Spring (like here) only used as namespace of the OData service
+    request_mapping_path: "open-discovery"
+    root_packages: "com.sap.cloud.cmp.od.service"
+server:
+  port: 8080
+spring:
+  autoconfigure:
+    exclude:
+    - org.springframework.boot.actuate.autoconfigure.metrics.orm.jpa.HibernateMetricsAutoConfiguration
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    password: pgsql@12345
+    url: jdbc:postgresql://${spring.datasource.host}:${spring.datasource.port}/${spring.datasource.db_name}
+    port: 5432
+    host: localhost
+    db_name: compass
+    username: postgres
+  servlet:
+    multipart:
+      enabled: false
+management:
+  endpoints:
+    enabled-by-default: false
+  endpoint:
+    health:
+      enabled: true
+
