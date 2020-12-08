@@ -25,8 +25,8 @@ mvn clean install -DskipTests
 
 cd "$COMPONENT_DIR"
 
-log_section "Installing Open Discovery Service..."
+log_section "Installing Open Resource Discovery Service..."
 mvn clean install -DskipTests
 
 ARTIFACT_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -DforceStdout -q)
-log_section "Installed Open Discovery Service version: $ARTIFACT_VERSION"
+log_section "Installed Open Resource Discovery Service version: $ARTIFACT_VERSION"

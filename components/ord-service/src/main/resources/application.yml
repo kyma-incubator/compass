@@ -4,9 +4,9 @@ logging:
       springframework: INFO
 odata:
   jpa:
-    punit_name: "com.sap.cloud.cmp.od.service" # used in persistance.xml for Java EE, but in Spring (like here) only used as namespace of the OData service
+    punit_name: "com.sap.cloud.cmp.ord.service" # used in persistance.xml for Java EE, but in Spring (like here) only used as namespace of the OData service
     request_mapping_path: "open-discovery"
-    root_packages: "com.sap.cloud.cmp.od.service"
+    root_packages: "com.sap.cloud.cmp.ord.service"
 server:
   port: 8080
 spring:

@@ -1,4 +1,4 @@
-package com.sap.cloud.cmp.od.service.storage.model;
+package com.sap.cloud.cmp.ord.service.storage.model;
 
 import org.eclipse.persistence.annotations.Convert;
 import org.eclipse.persistence.annotations.TypeConverter;
@@ -17,7 +17,7 @@ public class BundleEntity {
     @TypeConverter(name = "uuidConverter", dataType = Object.class, objectType = UUID.class)
     private UUID Id;
 
-    @Column(name = "od_id", length = 256)
+    @Column(name = "ord_id", length = 256)
     @NotNull
     private String openDiscoveryId;
 

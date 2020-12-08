@@ -1,4 +1,4 @@
-# definitions for color logging in Open Discovery Service scripts
+# definitions for color logging in Open Resource Discovery Service scripts
 
 export CYAN='\033[0;36m'
 export GREEN='\033[0;32m'

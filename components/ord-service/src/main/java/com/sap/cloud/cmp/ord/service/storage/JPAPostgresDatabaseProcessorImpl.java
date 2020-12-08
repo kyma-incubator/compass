@@ -1,4 +1,4 @@
-package com.sap.cloud.cmp.od.service.storage;
+package com.sap.cloud.cmp.ord.service.storage;
 
 import static com.sap.olingo.jpa.processor.core.exception.ODataJPAProcessorException.MessageKeys.NOT_SUPPORTED_FUNC_WITH_NAVI;
 

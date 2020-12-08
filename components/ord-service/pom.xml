@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.sap.cloud.cmp</groupId>
-    <artifactId>od-service</artifactId>
+    <artifactId>ord-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>od-service</name>
-    <description>Open Discovery Service</description>
+    <name>ord-service</name>
+    <description>Open Resource Discovery Service</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

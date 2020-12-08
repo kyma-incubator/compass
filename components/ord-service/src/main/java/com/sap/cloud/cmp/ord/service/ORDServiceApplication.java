@@ -1,13 +1,13 @@
-package com.sap.cloud.cmp.od.service;
+package com.sap.cloud.cmp.ord.service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ODServiceApplication {
+public class ORDServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ODServiceApplication.class, args);
+        SpringApplication.run(ORDServiceApplication.class, args);
     }
 
 }

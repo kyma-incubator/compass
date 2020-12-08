@@ -1,4 +1,4 @@
-package com.sap.cloud.cmp.od.service.config;
+package com.sap.cloud.cmp.ord.service.config;
 
 import com.sap.olingo.jpa.processor.core.api.JPAODataCRUDContextAccess;
 import com.sap.olingo.jpa.processor.core.api.JPAODataServiceContext;

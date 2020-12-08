@@ -1,4 +1,4 @@
-package com.sap.cloud.cmp.od.service.storage.model;
+package com.sap.cloud.cmp.ord.service.storage.model;
 
 import org.eclipse.persistence.annotations.Convert;
 import org.eclipse.persistence.annotations.TypeConverter;
@@ -8,16 +8,16 @@ import javax.validation.constraints.NotNull;
 import java.util.Set;
 import java.util.UUID;
 
-@Entity(name = "Api")
-@Table(name="api_definitions")
-public class APIEntity {
+@Entity(name = "Event")
+@Table(name="event_api_definitions")
+public class EventEntity {
     @javax.persistence.Id
     @Column(name = "id")
     @Convert("uuidConverter")
     @TypeConverter(name = "uuidConverter", dataType = Object.class, objectType = UUID.class)
     private UUID Id;
 
-    @Column(name = "od_id", length = 256)
+    @Column(name = "ord_id", length = 256)
     @NotNull
     private String openDiscoveryId;
 
@@ -38,11 +38,7 @@ public class APIEntity {
     @Column(name = "description", length = Integer.MAX_VALUE)
     private String description;
 
-    @Column(name = "entry_point", length = 256)
-    @NotNull
-    private String entryPoint;
-
-    @Column(name = "api_definitions", length = Integer.MAX_VALUE)
+    @Column(name = "event_definitions", length = Integer.MAX_VALUE)
     @NotNull
     private String apiDefinitions;
 
@@ -69,15 +65,8 @@ public class APIEntity {
     @NotNull
     private String releaseStatus;
 
-    @Column(name = "api_protocol")
-    @NotNull
-    private String apiProtocol;
-
     @Column(name = "tags", length = Integer.MAX_VALUE)
     private String tags;
-
-    @Column(name = "actions", length = Integer.MAX_VALUE)
-    private String actions;
 
     @Column(name = "extensions", length = Integer.MAX_VALUE)
     private String extensions;
@@ -86,6 +75,6 @@ public class APIEntity {
     @JoinColumn(name = "bundle_id", insertable = false, updatable = false)
     private BundleEntity bundle;
 
-    @OneToMany(mappedBy = "api", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
     private Set<SpecificationEntity> specifications;
 }

@@ -1,4 +1,4 @@
-package com.sap.cloud.cmp.od.service.storage.model;
+package com.sap.cloud.cmp.ord.service.storage.model;
 
 import org.eclipse.persistence.annotations.Convert;
 import org.eclipse.persistence.annotations.TypeConverter;

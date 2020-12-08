@@ -1,4 +1,4 @@
-package com.sap.cloud.cmp.od.service.config;
+package com.sap.cloud.cmp.ord.service.config;
 
 import org.eclipse.persistence.config.PersistenceUnitProperties;
 import org.eclipse.persistence.logging.SessionLog;
