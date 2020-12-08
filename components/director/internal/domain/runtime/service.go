@@ -230,7 +230,6 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		in.Labels[IsNormalizedLabel] = "true"
 	}
 
-	// TODO: Filter protected labels
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
 	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern)
 	if err != nil {
