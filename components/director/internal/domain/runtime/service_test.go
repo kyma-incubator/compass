@@ -30,8 +30,8 @@ func TestService_Create(t *testing.T) {
 		"protected_defaultEventing": "true",
 	}
 	labelsForDbMock := map[string]interface{}{
-		model.ScenariosKey: []interface{}{"DEFAULT"},
-		"shouldNormalize":  "true",
+		model.ScenariosKey:        []interface{}{"DEFAULT"},
+		runtime.IsNormalizedLabel: "true",
 	}
 
 	modelInput := model.RuntimeInput{
@@ -290,9 +290,9 @@ func TestService_Update(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	labelsDbMock := map[string]interface{}{
-		"label1":          "val1",
-		"scenarios":       []interface{}{"SCENARIO"},
-		"shouldNormalize": "true",
+		"label1":                  "val1",
+		"scenarios":               []interface{}{"SCENARIO"},
+		runtime.IsNormalizedLabel: "true",
 	}
 	labels := map[string]interface{}{
 		"label1": "val1",
@@ -1312,7 +1312,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, "")
+			svc := runtime.NewService(repo, labelRepo, nil, nil, nil, nil, ".*_defaultEventing$")
 
 			// when
 			l, err := svc.ListLabels(ctx, testCase.InputRuntimeID)
