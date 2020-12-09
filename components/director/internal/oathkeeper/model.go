@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -79,6 +81,11 @@ func NewReqData(ctx context.Context, reqBody ReqBody, reqHeader http.Header) Req
 
 // GetAuthID looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct
 func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
+	return d.GetAuthIDWithAuthenticators([]authenticator.Config{})
+}
+
+// GetAuthIDWithAuthenticators looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct while taking into account existing preconfigured authenticators
+func (d *ReqData) GetAuthIDWithAuthenticators(authenticators []authenticator.Config) (string, AuthFlow, error) {
 	if idVal, ok := d.Body.Extra[ClientIDKey]; ok {
 		authID, err := str.Cast(idVal)
 		if err != nil {
@@ -102,6 +109,16 @@ func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
 			return "", "", errors.Wrapf(err, "while parsing the value for %s", UsernameKey)
 		}
 		return username, JWTAuthFlow, nil
+	}
+
+	for _, authn := range authenticators {
+		if identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]; ok {
+			identity, err := str.Cast(identity)
+			if err != nil {
+				return "", "", errors.Wrapf(err, "while parsing the value for %s", identity)
+			}
+			return identity, JWTAuthFlow, nil
+		}
 	}
 
 	return "", "", apperrors.NewInternalError("unable to find valid auth ID")
@@ -141,6 +158,28 @@ func (d *ReqData) GetScopes() (string, error) {
 	}
 
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
+}
+
+// GetUserScopes returns scopes as string array from the parsed request input if defined
+func (d *ReqData) GetUserScopes() []string {
+	userScopes := make([]string, 0)
+	scopesVal, ok := d.Body.Extra[ScopesKey]
+	if !ok {
+		return userScopes
+	}
+
+	if scopesArray, ok := scopesVal.([]interface{}); ok {
+		for _, scope := range scopesArray {
+			scopeString, err := str.Cast(scope)
+			if err != nil {
+				log.D().Infof("%+v skipped because string conversion failed", scope)
+				continue
+			}
+			userScopes = append(userScopes, scopeString)
+		}
+	}
+
+	return userScopes
 }
 
 // GetUserGroups returns group name or empty string if there's no group

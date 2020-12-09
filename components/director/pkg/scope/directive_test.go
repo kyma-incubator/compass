@@ -17,7 +17,7 @@ func TestHasScope(t *testing.T) {
 		// GIVEN
 		mockRequiredScopesGetter := &automock.ScopesGetter{}
 		defer mockRequiredScopesGetter.AssertExpectations(t)
-		sut := scope.NewDirective(mockRequiredScopesGetter)
+		sut := scope.NewDirective(nil, mockRequiredScopesGetter)
 		mockRequiredScopesGetter.On("GetRequiredScopes", fixScopesDefinition()).Return([]string{readScope, writeScope}, nil).Once()
 
 		next := dummyResolver{}
@@ -34,7 +34,7 @@ func TestHasScope(t *testing.T) {
 		// GIVEN
 		mockRequiredScopesGetter := &automock.ScopesGetter{}
 		defer mockRequiredScopesGetter.AssertExpectations(t)
-		sut := scope.NewDirective(mockRequiredScopesGetter)
+		sut := scope.NewDirective(nil, mockRequiredScopesGetter)
 		mockRequiredScopesGetter.On("GetRequiredScopes", fixScopesDefinition()).Return([]string{readScope, writeScope}, nil).Once()
 		ctx := scope.SaveToContext(context.TODO(), []string{deleteScope})
 		// WHEN
@@ -47,7 +47,7 @@ func TestHasScope(t *testing.T) {
 
 	t.Run("returns error on getting scopes from context", func(t *testing.T) {
 		// GIVEN
-		sut := scope.NewDirective(nil)
+		sut := scope.NewDirective(nil, nil)
 		// WHEN
 		_, err := sut.VerifyScopes(context.TODO(), nil, nil, fixScopesDefinition())
 		// THEN
@@ -60,7 +60,7 @@ func TestHasScope(t *testing.T) {
 		mockRequiredScopesGetter := &automock.ScopesGetter{}
 		defer mockRequiredScopesGetter.AssertExpectations(t)
 		mockRequiredScopesGetter.On("GetRequiredScopes", fixScopesDefinition()).Return(nil, fixGivenError()).Once()
-		sut := scope.NewDirective(mockRequiredScopesGetter)
+		sut := scope.NewDirective(nil, mockRequiredScopesGetter)
 		ctx := scope.SaveToContext(context.TODO(), []string{readScope, writeScope, deleteScope})
 		// WHEN
 		_, err := sut.VerifyScopes(ctx, nil, nil, fixScopesDefinition())
@@ -83,7 +83,7 @@ type dummyResolver struct {
 	called bool
 }
 
-func (d *dummyResolver) SuccessResolve(ctx context.Context) (res interface{}, err error) {
+func (d *dummyResolver) SuccessResolve(_ context.Context) (res interface{}, err error) {
 	d.called = true
 	return fixNextOutput(), nil
 }

@@ -1,0 +1,60 @@
+{{- range $authenticatorName, $config := .Values.global.authenticators -}}
+{{if eq $config.enabled true}}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ template "fullname" . }}-{{ $authenticatorName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    heritage: {{ $.Release.Service }}
+    release: {{ $.Release.Name }}
+spec:
+  hosts:
+    - '{{ $.Values.global.gateway.tls.host }}-{{ $authenticatorName }}.{{ $.Values.global.ingress.domainName }}'
+  gateways:
+    - {{ $.Values.global.istio.gateway.namespace }}/{{ $.Values.global.istio.gateway.name }}
+  http:
+    - match:
+      - uri:
+          exact: /director
+      redirect:
+        uri: /director/
+      headers:
+        request:
+          remove:
+            {{- range $.Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+            {{- end }}
+      corsPolicy:
+        allowOrigins:
+          - regex: ".*"
+        allowHeaders:
+          - "authorization"
+          - "content-type"
+          - "tenant"
+        allowMethods:
+          - "GET"
+    - match:
+      - uri:
+          regex: /.*
+      route:
+        - destination:
+            host: {{ $.Values.global.oathkeeper.host }}
+            port:
+              number: {{ $.Values.global.oathkeeper.port }}
+      corsPolicy:
+        allowOrigins:
+          - regex: ".*"
+        allowHeaders:
+          - "authorization"
+          - "content-type"
+          - "tenant"
+        allowMethods:
+          - "GET"
+          - "POST"
+          - "PUT"
+          - "DELETE"
+{{ end }}
+{{- end -}}

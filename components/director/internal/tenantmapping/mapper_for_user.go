@@ -2,8 +2,12 @@ package tenantmapping
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/tidwall/gjson"
 
 	"github.com/sirupsen/logrus"
 
@@ -15,8 +19,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewMapperForUser(staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *mapperForUser {
+func NewMapperForUser(authenticators []authenticator.Config, staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *mapperForUser {
 	return &mapperForUser{
+		authenticators:  authenticators,
 		staticUserRepo:  staticUserRepo,
 		staticGroupRepo: staticGroupRepo,
 		tenantRepo:      tenantRepo,
@@ -24,6 +29,7 @@ func NewMapperForUser(staticUserRepo StaticUserRepository, staticGroupRepo Stati
 }
 
 type mapperForUser struct {
+	authenticators  []authenticator.Config
 	staticUserRepo  StaticUserRepository
 	staticGroupRepo StaticGroupRepository
 	tenantRepo      TenantRepository
@@ -40,26 +46,54 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 
 	ctx = log.ContextWithLogger(ctx, logger)
 
-	log.C(ctx).Info("Getting scopes from groups")
-	scopes = m.getScopesForUserGroups(ctx, reqData)
-	if !hasScopes(scopes) {
-		log.C(ctx).Info("No scopes found from groups, getting user data")
-
-		staticUser, scopes, err = m.getUserData(ctx, reqData, username)
-		if err != nil {
-			return ObjectContext{}, errors.Wrapf(err, "while getting user data for user: %s", username)
-		}
+	extra, err := json.Marshal(reqData.Body.Extra)
+	if err != nil {
+		return ObjectContext{}, err
 	}
 
-	externalTenantID, err = reqData.GetExternalTenantID()
-	if err != nil {
-		if !apperrors.IsKeyDoesNotExist(err) {
-			return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", username)
+	tknAttributes := string(extra)
+	authenticatorMatched := false
+	for _, authn := range m.authenticators {
+		uniqueAttribute := gjson.Get(tknAttributes, authn.Attributes.UniqueAttribute.Key).String()
+		if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
+			log.C(ctx).Debugf("Request token does not match %q authenticator", authn.Name)
+			continue
 		}
-		log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
 
-		log.C(ctx).Info("Could not create tenant context, returning empty context...")
-		return NewObjectContext(TenantContext{}, scopes, username, consumer.User), nil
+		scopes = strings.Join(reqData.GetUserScopes(), " ")
+
+		externalTenantID = gjson.Get(tknAttributes, authn.Attributes.TenantAttribute.Key).String()
+		if externalTenantID == "" {
+			return ObjectContext{}, errors.Errorf("tenant attribute %q missing from %s authenticator token", authn.Attributes.TenantAttribute.Key, authn.Name)
+		}
+
+		log.C(ctx).Infof("Matched %q authenticator with the incoming request data", authn.Name)
+		authenticatorMatched = true
+		break
+	}
+
+	if !authenticatorMatched {
+		log.C(ctx).Info("Getting scopes from groups")
+		scopes = m.getScopesForUserGroups(ctx, reqData)
+		if !hasScopes(scopes) {
+			log.C(ctx).Info("No scopes found from groups, getting user data")
+
+			staticUser, scopes, err = m.getUserData(ctx, reqData, username)
+			if err != nil {
+				return ObjectContext{}, errors.Wrapf(err, "while getting user data for user: %s", username)
+			}
+		}
+
+		externalTenantID, err = reqData.GetExternalTenantID()
+		if err != nil {
+			if !apperrors.IsKeyDoesNotExist(err) {
+				return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", username)
+			}
+			log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
+
+			log.C(ctx).Info("Could not create tenant context, returning empty context...")
+			return NewObjectContext(TenantContext{}, scopes, username, consumer.User), nil
+		}
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)

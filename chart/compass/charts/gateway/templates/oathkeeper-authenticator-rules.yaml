@@ -1,0 +1,30 @@
+{{- range $authenticatorName, $config := .Values.global.authenticators -}}
+{{if eq $config.enabled true}}
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-gateway-{{ $authenticatorName }}
+spec:
+  description: Configuration of oathkeeper for secure endpoint of compass {{ $authenticatorName }} gateway
+  upstream:
+    url: "http://compass-gateway.{{ $.Release.Namespace }}.svc.cluster.local:{{ .$Values.global.gateway.port }}"
+  match:
+    methods: ["GET", "POST", "OPTIONS"]
+    url: <http|https>://compass-gateway-{{ $authenticatorName }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>/director/graphql
+  authenticators:
+    - handler: jwt
+      config:
+        trusted_issuers: [{{ $config.tokenURL }}]
+        jwks_urls:
+          - {{ $config.jwksURL }}
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: hydrator
+  {{ toYaml $.Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: id_token
+    config:
+      claims: {{ $.Values.global.oathkeeper.idTokenConfig.claims | quote }}
+---
+{{ end }}
+{{- end -}}
