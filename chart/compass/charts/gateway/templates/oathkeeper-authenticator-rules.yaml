@@ -7,7 +7,7 @@ metadata:
 spec:
   description: Configuration of oathkeeper for secure endpoint of compass {{ $authenticatorName }} gateway
   upstream:
-    url: "http://compass-gateway.{{ $.Release.Namespace }}.svc.cluster.local:{{ .$Values.global.gateway.port }}"
+    url: "http://compass-gateway.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.global.gateway.port }}"
   match:
     methods: ["GET", "POST", "OPTIONS"]
     url: <http|https>://compass-gateway-{{ $authenticatorName }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>/director/graphql
