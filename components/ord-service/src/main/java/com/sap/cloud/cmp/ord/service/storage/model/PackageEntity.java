@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 import java.util.Set;
 import java.util.UUID;
 
-@Entity(name = "Package")
+@Entity(name = "package")
 @Table(name="packages")
 public class PackageEntity {
     @javax.persistence.Id
@@ -19,38 +19,32 @@ public class PackageEntity {
 
     @Column(name = "ord_id", length = 256)
     @NotNull
-    private String openDiscoveryId;
+    private String ordId;
 
-    @Column(name = "title", length = 256)
+    @Column(name = "name", length = 256)
     @NotNull
     private String title;
 
-    @Column(name = "short_description", length = 256)
-    @NotNull
+    @Column(name = "short_description", length = 255)
     private String shortDescription;
 
     @Column(name = "description", length = Integer.MAX_VALUE)
-    @NotNull
     private String description;
 
     @Column(name = "version")
-    @NotNull
     private String version;
 
-    @Column(name = "licence", length = 512)
-    private String licence;
+    @Column(name = "links", length = Integer.MAX_VALUE)
+    private String links;
+
+    @Column(name = "terms_of_service", length = 512)
+    private String termsOfService;
 
     @Column(name = "licence_type", length = 256)
     private String licenceType;
 
-    @Column(name = "terms_of_service", length = 256)
-    private String termsOfService;
-
-    @Column(name = "logo", length = 512)
-    private String logo;
-
-    @Column(name = "image", length = 512)
-    private String image;
+    @Column(name = "licence", length = 512)
+    private String licence;
 
     @Column(name = "provider", length = Integer.MAX_VALUE)
     private String provider;
@@ -64,6 +58,9 @@ public class PackageEntity {
     @Column(name = "extensions", length = Integer.MAX_VALUE)
     private String extensions;
 
-    @ManyToMany(mappedBy = "packages")
-    Set<BundleEntity> bundles;
+    @OneToMany(mappedBy = "packageEntity", fetch = FetchType.LAZY)
+    private Set<APIEntity> apis;
+
+    @OneToMany(mappedBy = "packageEntity", fetch = FetchType.LAZY)
+    private Set<EventEntity> events;
 }

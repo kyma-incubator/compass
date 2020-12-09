@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 import java.util.Set;
 import java.util.UUID;
 
-@Entity(name = "Event")
+@Entity(name = "event")
 @Table(name="event_api_definitions")
 public class EventEntity {
     @javax.persistence.Id
@@ -18,63 +18,50 @@ public class EventEntity {
     private UUID Id;
 
     @Column(name = "ord_id", length = 256)
-    @NotNull
-    private String openDiscoveryId;
+    private String ordId;
 
-    @Column(name = "bundle_id")
-    @Convert("uuidConverter")
-    @TypeConverter(name = "uuidConverter", dataType = Object.class, objectType = UUID.class)
-    @NotNull
-    private UUID bundleId;
-
-    @Column(name = "title", length = 256)
+    @Column(name = "name", length = 256)
     @NotNull
     private String title;
 
-    @Column(name = "short_description", length = 256)
-    @NotNull
+    @Column(name = "short_description", length = 255)
     private String shortDescription;
 
     @Column(name = "description", length = Integer.MAX_VALUE)
     private String description;
 
-    @Column(name = "event_definitions", length = Integer.MAX_VALUE)
-    @NotNull
-    private String apiDefinitions;
-
-    @Column(name = "version")
-    @NotNull
+    @Column(name = "version_value")
     private String version;
 
-    @Column(name = "documentation", length = 512)
-    private String documentation;
+    @Column(name = "system_instance_aware")
+    private boolean systemInstanceAware;
 
     @Column(name = "changelog_entries", length = Integer.MAX_VALUE)
     private String changelogEntries;
 
-    @Column(name = "logo", length = 512)
-    private String logo;
+    @Column(name = "package_id")
+    @Convert("uuidConverter")
+    @TypeConverter(name = "uuidConverter", dataType = Object.class, objectType = UUID.class)
+    @NotNull
+    private UUID partOfPackage;
 
-    @Column(name = "image", length = 512)
-    private String image;
+    @Column(name = "links", length = Integer.MAX_VALUE)
+    private String links;
 
-    @Column(name = "url", length = 512)
-    private String url;
+    @Column(name = "tags", length = Integer.MAX_VALUE)
+    private String tags;
 
     @Column(name = "release_status")
     @NotNull
     private String releaseStatus;
 
-    @Column(name = "tags", length = Integer.MAX_VALUE)
-    private String tags;
+    @Column(name = "event_definitions", length = Integer.MAX_VALUE)
+    private String eventDefinitions;
 
     @Column(name = "extensions", length = Integer.MAX_VALUE)
     private String extensions;
 
-    @ManyToOne(optional = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "bundle_id", insertable = false, updatable = false)
-    private BundleEntity bundle;
-
-    @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
-    private Set<SpecificationEntity> specifications;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "package_id", insertable = false, updatable = false)
+    private PackageEntity packageEntity;
 }
