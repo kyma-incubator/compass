@@ -71,17 +71,16 @@ func (fp *GqlFieldsProvider) OmitForApplication(omit []string) string {
 	packagesOmit := extractOmitFor(omit, "packages")
 
 	return buildProperties(map[string]string{
-		"id":                  "id",
-		"name":                "name",
-		"providerName":        "providerName",
-		"description":         "description",
-		"integrationSystemID": "integrationSystemID",
-		"labels":              "labels",
-		"status":              "status { condition timestamp }",
-		"webhooks":            fmt.Sprintf("webhooks {%s}", fp.ForWebhooks()),
-		"healthCheckURL":      "healthCheckURL",
-		"packages":            fmt.Sprintf("packages {%s}", fp.Page(fp.OmitForPackage(packagesOmit))),
-		// TODO: Allow for inner omit
+		"id":                    "id",
+		"name":                  "name",
+		"providerName":          "providerName",
+		"description":           "description",
+		"integrationSystemID":   "integrationSystemID",
+		"labels":                "labels",
+		"status":                "status { condition timestamp }",
+		"webhooks":              fmt.Sprintf("webhooks {%s}", fp.ForWebhooks()),
+		"healthCheckURL":        "healthCheckURL",
+		"packages":              fmt.Sprintf("packages {%s}", fp.Page(fp.OmitForPackage(packagesOmit))),
 		"auths":                 fmt.Sprintf("auths {%s}", fp.ForSystemAuth()),
 		"eventingConfiguration": "eventingConfiguration { defaultURL }",
 	}, omit)
