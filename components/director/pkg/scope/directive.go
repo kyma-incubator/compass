@@ -2,6 +2,9 @@ package scope
 
 import (
 	"context"
+	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -15,16 +18,18 @@ type ScopesGetter interface {
 }
 
 type directive struct {
-	scopesGetter ScopesGetter
+	authenticators []authenticator.Config
+	scopesGetter   ScopesGetter
 }
 
-func NewDirective(getter ScopesGetter) *directive {
+func NewDirective(authenticators []authenticator.Config, getter ScopesGetter) *directive {
 	return &directive{
-		scopesGetter: getter,
+		authenticators: authenticators,
+		scopesGetter:   getter,
 	}
 }
 
-func (d *directive) VerifyScopes(ctx context.Context, obj interface{}, next graphql.Resolver, scopesDefinition string) (interface{}, error) {
+func (d *directive) VerifyScopes(ctx context.Context, _ interface{}, next graphql.Resolver, scopesDefinition string) (interface{}, error) {
 	actualScopes, err := LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -44,6 +49,9 @@ func (d *directive) matches(actual []string, required []string) bool {
 	actMap := make(map[string]interface{})
 
 	for _, a := range actual {
+		for _, authn := range d.authenticators {
+			a = strings.TrimPrefix(a, authn.ScopePrefix)
+		}
 		actMap[a] = struct{}{}
 	}
 	for _, r := range required {

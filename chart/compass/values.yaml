@@ -273,6 +273,14 @@ global:
     enabled: true
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
 
+  authenticators:
+    authenticator0:
+      enabled: false
+      tokenURL: ""
+      jwksURL: ""
+      scopePrefix: ""
+      attributes: ""
+
   externalServicesMock:
     enabled: false
 

@@ -63,7 +63,7 @@ func TestHandler(t *testing.T) {
 		mapperForUserMock := getMapperForUserMock()
 		mapperForUserMock.On("GetObjectContext", mock.Anything, reqDataMock, username).Return(objCtxMock, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, mapperForUserMock, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, mapperForUserMock, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -107,7 +107,7 @@ func TestHandler(t *testing.T) {
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
 		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.OAuth2Flow).Return(objCtx, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, mapperForSystemAuthMock)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -152,7 +152,7 @@ func TestHandler(t *testing.T) {
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
 		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.CertificateFlow).Return(objCtx, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, mapperForSystemAuthMock)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -197,7 +197,7 @@ func TestHandler(t *testing.T) {
 		mapperForSystemAuthMock := getMapperForSystemAuthMock()
 		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.OneTimeTokenFlow).Return(objCtx, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, mapperForSystemAuthMock)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, nil, mapperForSystemAuthMock)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -214,7 +214,7 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
-		handler := tenantmapping.NewHandler(nil, nil, nil, nil)
+		handler := tenantmapping.NewHandler(nil, nil, nil, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -232,7 +232,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, errors.New("some error")).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, nil, nil, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, nil, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -278,7 +278,7 @@ func TestHandler(t *testing.T) {
 		mapperForUserMock := getMapperForUserMock()
 		mapperForUserMock.On("GetObjectContext", mock.Anything, reqData, username).Return(objCtxMock, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, mapperForUserMock, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, mapperForUserMock, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -310,7 +310,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatFailsOnBegin()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -334,7 +334,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatDoesntExpectCommit()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()

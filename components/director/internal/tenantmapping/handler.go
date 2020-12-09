@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/sirupsen/logrus"
@@ -42,6 +44,7 @@ type TenantRepository interface {
 }
 
 type Handler struct {
+	authenticators      []authenticator.Config
 	reqDataParser       ReqDataParser
 	transact            persistence.Transactioner
 	mapperForUser       ObjectContextForUserProvider
@@ -49,11 +52,13 @@ type Handler struct {
 }
 
 func NewHandler(
+	authenticators []authenticator.Config,
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
 	mapperForUser ObjectContextForUserProvider,
 	mapperForSystemAuth ObjectContextForSystemAuthProvider) *Handler {
 	return &Handler{
+		authenticators:      authenticators,
 		reqDataParser:       reqDataParser,
 		transact:            transact,
 		mapperForUser:       mapperForUser,
@@ -90,7 +95,6 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 }
 
 func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData) oathkeeper.ReqBody {
-
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction.")
@@ -122,11 +126,12 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 }
 
 func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData) (ObjectContext, error) {
-	authID, authFlow, err := reqData.GetAuthID()
+	authID, authFlow, err := reqData.GetAuthIDWithAuthenticators(h.authenticators)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while determining the auth ID from the request")
 	}
 
+	log.C(ctx).Debugf("Attempting to get object context for %s flow and authID=%s", authFlow, authID)
 	switch authFlow {
 	case oathkeeper.JWTAuthFlow:
 		return h.mapperForUser.GetObjectContext(ctx, reqData, authID)
