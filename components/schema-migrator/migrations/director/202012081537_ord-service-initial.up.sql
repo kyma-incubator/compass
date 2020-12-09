@@ -22,10 +22,18 @@ AS
 $$
 BEGIN
     NEW.release_status := CASE
+                              WHEN NEW.release_status IS NOT NULL THEN NEW.release_status
                               WHEN NEW.version_for_removal THEN 'decommissioned'
                               WHEN NEW.version_deprecated THEN 'deprecated'
                               ELSE 'active' END;
 
+    NEW.version_for_removal := CASE
+                                   WHEN NEW.version_for_removal IS NULL AND NEW.release_status = 'decommissioned' THEN TRUE
+                                   ELSE NEW.version_for_removal END;
+
+    NEW.version_deprecated := CASE
+                                  WHEN NEW.version_deprecated IS NULL AND NEW.release_status = 'deprecated' THEN TRUE
+                                  ELSE NEW.version_deprecated END;
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
@@ -53,7 +61,7 @@ ALTER TABLE api_definitions
     ADD COLUMN api_definitions       JSONB, /* Array of URLs pointing to API specs */
     ADD COLUMN links                 JSONB,
     ADD COLUMN actions               JSONB,
-    ADD COLUMN release_status        release_status NOT NULL DEFAULT 'active',
+    ADD COLUMN release_status        release_status, /* ORD Required, nullable due to backwards compatibility */
     ADD COLUMN changelog_entries     JSONB,
     ADD COLUMN extensions            JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
 
@@ -66,7 +74,7 @@ ALTER TABLE event_api_definitions
     ADD COLUMN changelog_entries     JSONB,
     ADD COLUMN links                 JSONB,
     ADD COLUMN tags                  JSONB,
-    ADD COLUMN release_status        release_status NOT NULL DEFAULT 'active',
+    ADD COLUMN release_status        release_status, /* ORD Required, nullable due to backwards compatibility */
     ADD COLUMN event_definitions     JSONB, /* Array of URLs pointing to Event specs */
     ADD COLUMN extensions            JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
 
