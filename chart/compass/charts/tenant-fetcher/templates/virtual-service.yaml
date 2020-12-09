@@ -11,13 +11,13 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   hosts:
-    - connector.{{ .Values.global.ingress.domainName }}
+    - tenant-fetcher.{{ .Values.global.ingress.domainName }}
   gateways:
     - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
   http:
       - match:
         - uri:
-            exact: /.*
+            regex: /.*
         route:
           - destination:
               host: {{ template "fullname" . }}
