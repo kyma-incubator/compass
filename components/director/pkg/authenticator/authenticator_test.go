@@ -31,6 +31,7 @@ const envPrefix = "APP"
 func TestInitFromEnv(t *testing.T) {
 	t.Run("When environment contains authenticator configuration", func(t *testing.T) {
 		os.Clearenv()
+		defer os.Clearenv()
 
 		expectedAuthenticator := authenticator.Config{
 			Name:        "TEST_AUTHN",
@@ -53,9 +54,7 @@ func TestInitFromEnv(t *testing.T) {
 		require.NoError(t, err)
 
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_ATTRIBUTES")
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_SCOPE_PREFIX")
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
 
@@ -66,6 +65,7 @@ func TestInitFromEnv(t *testing.T) {
 
 	t.Run("When environment contains multiple authenticator configurations", func(t *testing.T) {
 		os.Clearenv()
+		defer os.Clearenv()
 
 		expectedAuthenticator1 := authenticator.Config{
 			Name:        "TEST_AUTHN1",
@@ -110,14 +110,10 @@ func TestInitFromEnv(t *testing.T) {
 		require.NoError(t, err)
 
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator1.Name), string(attributesJSON1))
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_ATTRIBUTES")
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator1.Name), expectedAuthenticator1.ScopePrefix)
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_SCOPE_PREFIX")
 
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator2.Name), string(attributesJSON2))
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_ATTRIBUTES")
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator2.Name), expectedAuthenticator2.ScopePrefix)
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_SCOPE_PREFIX")
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
 
@@ -137,6 +133,7 @@ func TestInitFromEnv(t *testing.T) {
 
 	t.Run("When environment contains authenticator configuration with invalid attribute", func(t *testing.T) {
 		os.Clearenv()
+		defer os.Clearenv()
 
 		expectedAuthenticator := authenticator.Config{
 			Name:        "TEST_AUTHN",
@@ -159,9 +156,7 @@ func TestInitFromEnv(t *testing.T) {
 		require.NoError(t, err)
 
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_ATTRIBUTES")
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_SCOPE_PREFIX")
 
 		_, err = authenticator.InitFromEnv(envPrefix)
 
@@ -170,6 +165,7 @@ func TestInitFromEnv(t *testing.T) {
 
 	t.Run("When environment contains authenticator configuration with missing unique attribute value", func(t *testing.T) {
 		os.Clearenv()
+		defer os.Clearenv()
 
 		expectedAuthenticator := authenticator.Config{
 			Name:        "TEST_AUTHN",
@@ -192,9 +188,7 @@ func TestInitFromEnv(t *testing.T) {
 		require.NoError(t, err)
 
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_ATTRIBUTES")
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_SCOPE_PREFIX")
 
 		_, err = authenticator.InitFromEnv(envPrefix)
 
@@ -203,6 +197,7 @@ func TestInitFromEnv(t *testing.T) {
 
 	t.Run("When environment contains authenticator configuration with missing prefix should be okay", func(t *testing.T) {
 		os.Clearenv()
+		defer os.Clearenv()
 
 		expectedAuthenticator := authenticator.Config{
 			Name: "TEST_AUTHN",
@@ -224,9 +219,7 @@ func TestInitFromEnv(t *testing.T) {
 		require.NoError(t, err)
 
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_ATTRIBUTES")
 		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
-		defer os.Unsetenv("APP_TEST_AUTH_AUTHENTICATOR_SCOPE_PREFIX")
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
 
