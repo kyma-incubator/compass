@@ -102,9 +102,9 @@ func TestGqlFieldsProvider_OmitForApplication(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := tt.fp.OmitForApplication(tt.omit)
 			for expectedProp, expectedCount := range tt.expectedProperties {
-				aORb := regexp.MustCompile(`\b` + expectedProp + `\b`)
+				fieldRegex := regexp.MustCompile(`\b` + expectedProp + `\b`)
 
-				matches := aORb.FindAllStringIndex(actual, -1)
+				matches := fieldRegex.FindAllStringIndex(actual, -1)
 				actualCount := len(matches)
 
 				assert.Equal(t, expectedCount, actualCount, expectedProp)
