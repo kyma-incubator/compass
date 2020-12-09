@@ -279,7 +279,7 @@ global:
       tokenURL: ""
       jwksURL: ""
       scopePrefix: ""
-      attributes: ""
+      attributes: '{"uniqueAttribute": { "key": "", "value": "" }, "tenant": { "key": "" }, "identity": { "key": "" } }'
 
   externalServicesMock:
     enabled: false
