@@ -71,7 +71,7 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 		}
 	}
 
-	result := make([]Config, len(authenticators))
+	result := make([]Config, 0, len(authenticators))
 	for _, config := range authenticators {
 		if err := config.Attributes.Validate(); err != nil {
 			return nil, errors.New(fmt.Sprintf("insufficient configuration provided for authenticator %q: %s", config.Name, err.Error()))
