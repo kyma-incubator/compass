@@ -53,8 +53,11 @@ func TestInitFromEnv(t *testing.T) {
 		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
 		require.NoError(t, err)
 
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		require.NoError(t, err)
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
 
@@ -109,11 +112,17 @@ func TestInitFromEnv(t *testing.T) {
 		attributesJSON2, err := json.Marshal(expectedAuthenticator2.Attributes)
 		require.NoError(t, err)
 
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator1.Name), string(attributesJSON1))
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator1.Name), expectedAuthenticator1.ScopePrefix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator1.Name), string(attributesJSON1))
+		require.NoError(t, err)
 
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator2.Name), string(attributesJSON2))
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator2.Name), expectedAuthenticator2.ScopePrefix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator1.Name), expectedAuthenticator1.ScopePrefix)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator2.Name), string(attributesJSON2))
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator2.Name), expectedAuthenticator2.ScopePrefix)
+		require.NoError(t, err)
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
 
@@ -155,8 +164,11 @@ func TestInitFromEnv(t *testing.T) {
 		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
 		require.NoError(t, err)
 
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		require.NoError(t, err)
 
 		_, err = authenticator.InitFromEnv(envPrefix)
 
@@ -187,8 +199,11 @@ func TestInitFromEnv(t *testing.T) {
 		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
 		require.NoError(t, err)
 
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		require.NoError(t, err)
 
 		_, err = authenticator.InitFromEnv(envPrefix)
 
@@ -218,8 +233,11 @@ func TestInitFromEnv(t *testing.T) {
 		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
 		require.NoError(t, err)
 
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-		os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		require.NoError(t, err)
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
 
