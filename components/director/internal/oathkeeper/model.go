@@ -161,25 +161,24 @@ func (d *ReqData) GetScopes() (string, error) {
 }
 
 // GetUserScopes returns scopes as string array from the parsed request input if defined
-func (d *ReqData) GetUserScopes() []string {
+func (d *ReqData) GetUserScopes() ([]string, error) {
 	userScopes := make([]string, 0)
 	scopesVal, ok := d.Body.Extra[ScopesKey]
 	if !ok {
-		return userScopes
+		return userScopes, nil
 	}
 
 	if scopesArray, ok := scopesVal.([]interface{}); ok {
 		for _, scope := range scopesArray {
 			scopeString, err := str.Cast(scope)
 			if err != nil {
-				log.D().Infof("%+v skipped because string conversion failed", scope)
-				continue
+				return []string{}, errors.Wrapf(err, "while parsing the value for %s", ScopesKey)
 			}
 			userScopes = append(userScopes, scopeString)
 		}
 	}
 
-	return userScopes
+	return userScopes, nil
 }
 
 // GetUserGroups returns group name or empty string if there's no group

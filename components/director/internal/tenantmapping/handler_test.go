@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	"github.com/stretchr/testify/assert"
@@ -64,6 +66,120 @@ func TestHandler(t *testing.T) {
 		mapperForUserMock.On("GetObjectContext", mock.Anything, reqDataMock, username).Return(objCtxMock, nil).Once()
 
 		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, mapperForUserMock, nil)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForUserMock)
+	})
+
+	t.Run("success for the request parsed as JWT flow with custom authenticator", func(t *testing.T) {
+		identityAttributeKey := "identity"
+		username := "admin"
+		scopes := "application:read"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					identityAttributeKey: username,
+				},
+			},
+		}
+		objCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			Scopes:       scopes,
+			ConsumerID:   username,
+			ConsumerType: "Static User",
+		}
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		mapperForUserMock := getMapperForUserMock()
+		mapperForUserMock.On("GetObjectContext", mock.Anything, reqDataMock, username).Return(objCtxMock, nil).Once()
+
+		authn := []authenticator.Config{
+			{
+				Attributes: authenticator.Attributes{
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+
+		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, mapperForUserMock, nil)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForUserMock)
+	})
+
+	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present", func(t *testing.T) {
+		identityAttributeKey := "identity"
+		identityUsername := "identityAdmin"
+		username := "admin"
+		scopes := "application:read"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.UsernameKey: username,
+					identityAttributeKey:   identityUsername,
+				},
+			},
+		}
+		objCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			Scopes:       scopes,
+			ConsumerID:   username,
+			ConsumerType: "Static User",
+		}
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + identityUsername + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		mapperForUserMock := getMapperForUserMock()
+		mapperForUserMock.On("GetObjectContext", mock.Anything, reqDataMock, username).Return(objCtxMock, nil).Once()
+
+		authn := []authenticator.Config{
+			{
+				Attributes: authenticator.Attributes{
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+
+		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, mapperForUserMock, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()

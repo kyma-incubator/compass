@@ -60,7 +60,11 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 			continue
 		}
 
-		scopes = strings.Join(reqData.GetUserScopes(), " ")
+		userScopes, err := reqData.GetUserScopes()
+		if err != nil {
+			return ObjectContext{}, err
+		}
+		scopes = strings.Join(userScopes, " ")
 
 		externalTenantID = gjson.Get(tknAttributes, authn.Attributes.TenantAttribute.Key).String()
 		if externalTenantID == "" {
