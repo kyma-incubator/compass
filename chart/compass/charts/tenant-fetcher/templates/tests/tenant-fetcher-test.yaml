@@ -1,0 +1,40 @@
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    app: {{ .Chart.Name }}-tests
+    app.kubernetes.io/name: {{ .Chart.Name }}-tenant-fetcher-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-tests
+    spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
+      containers:
+        - name: tenant-fetcher-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.tenant_fetcher.dir }}compass-tenant-fetcher-tests:{{ .Values.global.images.tests.tenant_fetcher.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "./wait-for-tenant-fetcher.sh && /tenant-fetcher.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          env:
+            - name: TENANT_FETCHER_URL
+              value: "http://compass-tenant-fetcher.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.tenantFetcher.port }}"
+            - name: TENANT_FETCHER_HEALTHZ_URL
+              value: "http://compass-tenant-fetcher.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.tenantFetcher.port }}/healthz"
+            - name: HANDLER_ENDPOINT
+              value: "{{ .Values.handlerEndpoint }}"
+            - name: TENANT_PATH_PARAM
+              value: "{{ .Values.tenantPathParam }}"
+      restartPolicy: Never
