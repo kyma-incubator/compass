@@ -27,6 +27,9 @@ global:
     gateway:
       dir:
       version: "PR-1637"
+    tenant_fetcher:
+      dir:
+      version: "PR-1652"
     healthchecker:
       dir:
       version: "PR-1460"
@@ -228,6 +231,9 @@ global:
             retry:
               give_up_after: 3s
               max_delay: 2000ms
+
+  tenantFetcher:
+    port: 3000
 
   tenantFetchers:
     job1:

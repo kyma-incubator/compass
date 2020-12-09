@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Compass Tenant Fetcher
+name: tenant-fetcher
+version: 0.1.0
