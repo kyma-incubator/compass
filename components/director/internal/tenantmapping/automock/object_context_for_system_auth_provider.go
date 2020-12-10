@@ -15,20 +15,20 @@ type ObjectContextForSystemAuthProvider struct {
 	mock.Mock
 }
 
-// GetObjectContext provides a mock function with given fields: ctx, reqData, authID, authFlow
-func (_m *ObjectContextForSystemAuthProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string, authFlow oathkeeper.AuthFlow) (tenantmapping.ObjectContext, error) {
-	ret := _m.Called(ctx, reqData, authID, authFlow)
+// GetObjectContext provides a mock function with given fields: ctx, reqData, authDetails
+func (_m *ObjectContextForSystemAuthProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (tenantmapping.ObjectContext, error) {
+	ret := _m.Called(ctx, reqData, authDetails)
 
 	var r0 tenantmapping.ObjectContext
-	if rf, ok := ret.Get(0).(func(context.Context, oathkeeper.ReqData, string, oathkeeper.AuthFlow) tenantmapping.ObjectContext); ok {
-		r0 = rf(ctx, reqData, authID, authFlow)
+	if rf, ok := ret.Get(0).(func(context.Context, oathkeeper.ReqData, oathkeeper.AuthDetails) tenantmapping.ObjectContext); ok {
+		r0 = rf(ctx, reqData, authDetails)
 	} else {
 		r0 = ret.Get(0).(tenantmapping.ObjectContext)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, oathkeeper.ReqData, string, oathkeeper.AuthFlow) error); ok {
-		r1 = rf(ctx, reqData, authID, authFlow)
+	if rf, ok := ret.Get(1).(func(context.Context, oathkeeper.ReqData, oathkeeper.AuthDetails) error); ok {
+		r1 = rf(ctx, reqData, authDetails)
 	} else {
 		r1 = ret.Error(1)
 	}

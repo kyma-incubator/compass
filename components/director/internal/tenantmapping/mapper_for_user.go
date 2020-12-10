@@ -35,7 +35,7 @@ type mapperForUser struct {
 	tenantRepo      TenantRepository
 }
 
-func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, username string) (ObjectContext, error) {
+func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	var externalTenantID, scopes string
 	var staticUser *StaticUser
 	var err error
@@ -46,20 +46,45 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 
 	ctx = log.ContextWithLogger(ctx, logger)
 
-	extra, err := json.Marshal(reqData.Body.Extra)
-	if err != nil {
-		return ObjectContext{}, err
-	}
+	if authDetails.Authenticator == nil {
+		log.C(ctx).Info("Getting scopes from groups")
+		scopes = m.getScopesForUserGroups(ctx, reqData)
+		if !hasScopes(scopes) {
+			log.C(ctx).Info("No scopes found from groups, getting user data")
 
-	tknAttributes := string(extra)
-	authenticatorMatched := false
-	for _, authn := range m.authenticators {
+			staticUser, scopes, err = m.getUserData(ctx, reqData, authDetails.AuthID)
+			if err != nil {
+				return ObjectContext{}, errors.Wrapf(err, "while getting user data for user: %s", authDetails.AuthID)
+			}
+		}
+
+		externalTenantID, err = reqData.GetExternalTenantID()
+		if err != nil {
+			if !apperrors.IsKeyDoesNotExist(err) {
+				return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", authDetails.AuthID)
+			}
+			log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
+
+			log.C(ctx).Info("Could not create tenant context, returning empty context...")
+			return NewObjectContext(TenantContext{}, scopes, authDetails.AuthID, consumer.User), nil
+		}
+	} else {
+		extra, err := json.Marshal(reqData.Body.Extra)
+		if err != nil {
+			return ObjectContext{}, err
+		}
+
+		tknAttributes := string(extra)
+
+		authn := authDetails.Authenticator
 		uniqueAttribute := gjson.Get(tknAttributes, authn.Attributes.UniqueAttribute.Key).String()
 		if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
 			log.C(ctx).Debugf("Request token does not match %q authenticator", authn.Name)
-			continue
+			return ObjectContext{}, errors.Errorf("unique attribute %q missing or invalid from %s authenticator token - expected [%s], actual [%s]",
+				authn.Attributes.UniqueAttribute.Key, authn.Name, authn.Attributes.UniqueAttribute.Value, uniqueAttribute)
 		}
 
+		log.C(ctx).Info("Getting scopes from token attribute")
 		userScopes, err := reqData.GetUserScopes()
 		if err != nil {
 			return ObjectContext{}, err
@@ -72,32 +97,6 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 		}
 
 		log.C(ctx).Infof("Matched %q authenticator with the incoming request data", authn.Name)
-		authenticatorMatched = true
-		break
-	}
-
-	if !authenticatorMatched {
-		log.C(ctx).Info("Getting scopes from groups")
-		scopes = m.getScopesForUserGroups(ctx, reqData)
-		if !hasScopes(scopes) {
-			log.C(ctx).Info("No scopes found from groups, getting user data")
-
-			staticUser, scopes, err = m.getUserData(ctx, reqData, username)
-			if err != nil {
-				return ObjectContext{}, errors.Wrapf(err, "while getting user data for user: %s", username)
-			}
-		}
-
-		externalTenantID, err = reqData.GetExternalTenantID()
-		if err != nil {
-			if !apperrors.IsKeyDoesNotExist(err) {
-				return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", username)
-			}
-			log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
-
-			log.C(ctx).Info("Could not create tenant context, returning empty context...")
-			return NewObjectContext(TenantContext{}, scopes, username, consumer.User), nil
-		}
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
@@ -107,7 +106,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), scopes, username, consumer.User), nil
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), scopes, authDetails.AuthID, consumer.User), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
@@ -116,7 +115,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: %s missmatch external tenant: %s", staticUser.Username, tenantMapping.ExternalTenant))
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, username, consumer.User)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, authDetails.AuthID, consumer.User)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil

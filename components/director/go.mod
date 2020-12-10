@@ -41,14 +41,13 @@ require (
 	github.com/tidwall/gjson v1.6.0
 	github.com/tidwall/pretty v1.0.1 // indirect
 	github.com/vektah/gqlparser v1.3.1
+	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/vrischmann/envconfig v1.2.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.1.1-0.20190912152152-6a016cf16650
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
-	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/text v0.3.3 // indirect
-	golang.org/x/tools v0.0.0-20191118222007-07fc4c7f2b98 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v0.17.3

@@ -30,6 +30,13 @@ const (
 	ScopesKey         = "scope"
 )
 
+// AuthDetails contains information about the currently authenticated client - AuthID, AuthFlow and Authenticator to use for further processing
+type AuthDetails struct {
+	AuthID        string
+	AuthFlow      AuthFlow
+	Authenticator *authenticator.Config
+}
+
 // AuthFlow wraps possible flows of auth like OAuth2, JWT and certificate
 type AuthFlow string
 
@@ -80,48 +87,48 @@ func NewReqData(ctx context.Context, reqBody ReqBody, reqHeader http.Header) Req
 }
 
 // GetAuthID looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct
-func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
+func (d *ReqData) GetAuthID() (*AuthDetails, error) {
 	return d.GetAuthIDWithAuthenticators([]authenticator.Config{})
 }
 
 // GetAuthIDWithAuthenticators looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct while taking into account existing preconfigured authenticators
-func (d *ReqData) GetAuthIDWithAuthenticators(authenticators []authenticator.Config) (string, AuthFlow, error) {
+func (d *ReqData) GetAuthIDWithAuthenticators(authenticators []authenticator.Config) (*AuthDetails, error) {
 	if idVal, ok := d.Body.Extra[ClientIDKey]; ok {
 		authID, err := str.Cast(idVal)
 		if err != nil {
-			return "", "", errors.Wrapf(err, "while parsing the value for %s", ClientIDKey)
+			return nil, errors.Wrapf(err, "while parsing the value for %s", ClientIDKey)
 		}
 
-		return authID, OAuth2Flow, nil
+		return &AuthDetails{AuthID: authID, AuthFlow: OAuth2Flow}, nil
 	}
 
 	if idVal := d.Body.Header.Get(ClientIDCertKey); idVal != "" {
-		return idVal, CertificateFlow, nil
+		return &AuthDetails{AuthID: idVal, AuthFlow: CertificateFlow}, nil
 	}
 
 	if idVal := d.Body.Header.Get(ClientIDTokenKey); idVal != "" {
-		return idVal, OneTimeTokenFlow, nil
+		return &AuthDetails{AuthID: idVal, AuthFlow: OneTimeTokenFlow}, nil
 	}
 
 	if usernameVal, ok := d.Body.Extra[UsernameKey]; ok {
 		username, err := str.Cast(usernameVal)
 		if err != nil {
-			return "", "", errors.Wrapf(err, "while parsing the value for %s", UsernameKey)
+			return nil, errors.Wrapf(err, "while parsing the value for %s", UsernameKey)
 		}
-		return username, JWTAuthFlow, nil
+		return &AuthDetails{AuthID: username, AuthFlow: JWTAuthFlow}, nil
 	}
 
 	for _, authn := range authenticators {
 		if identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]; ok {
 			identity, err := str.Cast(identity)
 			if err != nil {
-				return "", "", errors.Wrapf(err, "while parsing the value for %s", identity)
+				return nil, errors.Wrapf(err, "while parsing the value for %s", identity)
 			}
-			return identity, JWTAuthFlow, nil
+			return &AuthDetails{AuthID: identity, AuthFlow: JWTAuthFlow, Authenticator: &authn}, nil
 		}
 	}
 
-	return "", "", apperrors.NewInternalError("unable to find valid auth ID")
+	return nil, apperrors.NewInternalError("unable to find valid auth ID")
 }
 
 // GetExternalTenantID returns external tenant ID from the parsed request input if it is defined
