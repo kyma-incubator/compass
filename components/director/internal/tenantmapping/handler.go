@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
@@ -30,12 +29,12 @@ type ReqDataParser interface {
 
 //go:generate mockery -name=ObjectContextForUserProvider -output=automock -outpkg=automock -case=underscore
 type ObjectContextForUserProvider interface {
-	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string) (ObjectContext, error)
+	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
 }
 
 //go:generate mockery -name=ObjectContextForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
 type ObjectContextForSystemAuthProvider interface {
-	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string, authFlow oathkeeper.AuthFlow) (ObjectContext, error)
+	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
 }
 
 //go:generate mockery -name=TenantRepository -output=automock -outpkg=automock -case=underscore
@@ -83,18 +82,26 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	authID, authFlow, err := reqData.GetAuthID()
+	authDetails, err := reqData.GetAuthIDWithAuthenticators(h.authenticators)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while determining the auth details for the request.")
+		respond(ctx, writer, reqData.Body)
+		return
+	}
+
 	logger := log.C(ctx).WithFields(logrus.Fields{
-		"authID":   authID,
-		"authFlow": authFlow,
+		"authID":        authDetails.AuthID,
+		"authFlow":      authDetails.AuthFlow,
+		"authenticator": authDetails.Authenticator,
 	})
+
 	newCtx := log.ContextWithLogger(ctx, logger)
 
-	body := h.processRequest(newCtx, reqData)
+	body := h.processRequest(newCtx, reqData, *authDetails)
 	respond(newCtx, writer, body)
 }
 
-func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData) oathkeeper.ReqBody {
+func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) oathkeeper.ReqBody {
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction.")
@@ -105,7 +112,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	newCtx := persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Debug("Getting object context")
-	objCtx, err := h.getObjectContext(newCtx, reqData)
+	objCtx, err := h.getObjectContext(newCtx, reqData, authDetails)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context.")
 		return reqData.Body
@@ -125,21 +132,16 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	return reqData.Body
 }
 
-func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData) (ObjectContext, error) {
-	authID, authFlow, err := reqData.GetAuthIDWithAuthenticators(h.authenticators)
-	if err != nil {
-		return ObjectContext{}, errors.Wrap(err, "while determining the auth ID from the request")
-	}
-
-	log.C(ctx).Debugf("Attempting to get object context for %s flow and authID=%s", authFlow, authID)
-	switch authFlow {
+func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+	log.C(ctx).Debugf("Attempting to get object context for %s flow and authID=%s", authDetails.AuthFlow, authDetails.AuthID)
+	switch authDetails.AuthFlow {
 	case oathkeeper.JWTAuthFlow:
-		return h.mapperForUser.GetObjectContext(ctx, reqData, authID)
+		return h.mapperForUser.GetObjectContext(ctx, reqData, authDetails)
 	case oathkeeper.OAuth2Flow, oathkeeper.CertificateFlow, oathkeeper.OneTimeTokenFlow:
-		return h.mapperForSystemAuth.GetObjectContext(ctx, reqData, authID, authFlow)
+		return h.mapperForSystemAuth.GetObjectContext(ctx, reqData, authDetails)
 	}
 
-	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)
+	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authDetails.AuthFlow)
 }
 
 func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {

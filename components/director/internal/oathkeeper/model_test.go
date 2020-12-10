@@ -49,11 +49,11 @@ func TestReqData_GetAuthID(t *testing.T) {
 			},
 		}
 
-		authID, authFlow, err := reqData.GetAuthID()
+		authDetails, err := reqData.GetAuthID()
 
 		require.NoError(t, err)
-		require.Equal(t, JWTAuthFlow, authFlow)
-		require.Equal(t, authID, username)
+		require.Equal(t, JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, username, authDetails.AuthID)
 	})
 
 	t.Run("returns ID string and OAuth2Flow when a client_id is specified in the Extra map of request body", func(t *testing.T) {
@@ -66,11 +66,11 @@ func TestReqData_GetAuthID(t *testing.T) {
 			},
 		}
 
-		authID, authFlow, err := reqData.GetAuthID()
+		authDetails, err := reqData.GetAuthID()
 
 		require.NoError(t, err)
-		require.Equal(t, OAuth2Flow, authFlow)
-		require.Equal(t, clientID, authID)
+		require.Equal(t, OAuth2Flow, authDetails.AuthFlow)
+		require.Equal(t, clientID, authDetails.AuthID)
 	})
 
 	t.Run("returns ID string and CertificateFlow when a client-id-from-certificate is specified in the Header map of request body", func(t *testing.T) {
@@ -83,17 +83,17 @@ func TestReqData_GetAuthID(t *testing.T) {
 			},
 		}
 
-		authID, authFlow, err := reqData.GetAuthID()
+		authDetails, err := reqData.GetAuthID()
 
 		require.NoError(t, err)
-		require.Equal(t, CertificateFlow, authFlow)
-		require.Equal(t, clientID, authID)
+		require.Equal(t, CertificateFlow, authDetails.AuthFlow)
+		require.Equal(t, clientID, authDetails.AuthID)
 	})
 
 	t.Run("returns error when no ID string is specified in one of known fields", func(t *testing.T) {
 		reqData := ReqData{}
 
-		_, _, err := reqData.GetAuthID()
+		_, err := reqData.GetAuthID()
 
 		require.EqualError(t, err, apperrors.NewInternalError("unable to find valid auth ID").Error())
 	})
@@ -107,7 +107,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 			},
 		}
 
-		_, _, err := reqData.GetAuthID()
+		_, err := reqData.GetAuthID()
 
 		require.EqualError(t, err, "while parsing the value for client_id: Internal Server Error: unable to cast the value to a string type")
 	})
@@ -121,7 +121,7 @@ func TestReqData_GetAuthID(t *testing.T) {
 			},
 		}
 
-		_, _, err := reqData.GetAuthID()
+		_, err := reqData.GetAuthID()
 
 		require.EqualError(t, err, "while parsing the value for name: Internal Server Error: unable to cast the value to a string type")
 	})
@@ -149,11 +149,11 @@ func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
 			},
 		}
 
-		authID, authFlow, err := reqData.GetAuthIDWithAuthenticators(authn)
+		authDetails, err := reqData.GetAuthIDWithAuthenticators(authn)
 
 		require.NoError(t, err)
-		require.Equal(t, JWTAuthFlow, authFlow)
-		require.Equal(t, authID, username)
+		require.Equal(t, JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, username, authDetails.AuthID)
 	})
 
 	t.Run("returns ID string and JWTAuthFlow when authenticator identity and also default username attribute is specified in the Extra map of request body", func(t *testing.T) {
@@ -179,11 +179,11 @@ func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
 			},
 		}
 
-		authID, authFlow, err := reqData.GetAuthIDWithAuthenticators(authn)
+		authDetails, err := reqData.GetAuthIDWithAuthenticators(authn)
 
 		require.NoError(t, err)
-		require.Equal(t, JWTAuthFlow, authFlow)
-		require.Equal(t, authID, username)
+		require.Equal(t, JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, username, authDetails.AuthID)
 	})
 
 	t.Run("returns error when no ID string is specified in one of known fields", func(t *testing.T) {
@@ -200,7 +200,7 @@ func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
 			},
 		}
 
-		_, _, err := reqData.GetAuthIDWithAuthenticators(authn)
+		_, err := reqData.GetAuthIDWithAuthenticators(authn)
 
 		require.EqualError(t, err, apperrors.NewInternalError("unable to find valid auth ID").Error())
 	})

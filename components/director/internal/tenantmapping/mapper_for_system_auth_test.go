@@ -40,8 +40,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return(expectedScopes, nil).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.CertificateFlow)
+		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -83,8 +84,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID).Return(tenantMappingModel, nil).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, tenantRepoMock)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -118,8 +120,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -140,8 +143,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(&model.SystemAuth{}, errors.New("some-error")).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, "while retrieving system auth from database: some-error")
 
@@ -159,8 +163,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, "while getting reference object type for system auth id 42: Internal Server Error: unknown reference object type")
 
@@ -181,8 +186,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Integration System, using auth flow: OAuth2: while fetching scopes: the key does not exist in the source object [key=scope]", sysAuth.ID))
 
@@ -211,8 +217,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: OAuth2: while fetching tenant external id: while parsing the value for key=tenant: Internal Server Error: unable to cast the value to a string type", sysAuth.ID))
 
@@ -250,8 +257,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, externalTenantID).Return(tenantMappingModel, nil).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, tenantRepoMock)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.Equal(t, objCtx.TenantID, "")
 		require.Nil(t, err)
@@ -279,8 +287,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: OAuth2: Internal Server Error: system auth tenant id cannot be nil", sysAuth.ID))
 
@@ -302,8 +311,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		systemAuthSvcMock.On("GetGlobal", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, nil, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.OAuth2Flow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: OAuth2: while fetching scopes: the key does not exist in the source object [key=scope]", sysAuth.ID))
 
@@ -328,8 +338,9 @@ func TestMapperForSystemAuthGetObjectContext(t *testing.T) {
 		scopesGetterMock.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.application").Return([]string{}, errors.New("some-error")).Once()
 
 		mapper := tenantmapping.NewMapperForSystemAuth(systemAuthSvcMock, scopesGetterMock, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, authID.String(), oathkeeper.CertificateFlow)
+		_, err := mapper.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.EqualError(t, err, fmt.Sprintf("while fetching the tenant and scopes for system auth with id: %s, object type: Application, using auth flow: Certificate: while fetching scopes: some-error", sysAuth.ID))
 
