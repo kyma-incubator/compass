@@ -116,14 +116,14 @@ spec:
             {{ end }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
-            {{- range $authenticatorName, $config := .Values.global.authenticators -}}
+            {{ range $authenticatorName, $config := .Values.global.authenticators }}
             {{if eq $config.enabled true}}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_SCOPE_PREFIX
               value: {{ $config.scopePrefix }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.attributes }}
             {{ end }}
-            {{- end -}}
+            {{ end }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
