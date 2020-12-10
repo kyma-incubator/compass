@@ -110,20 +110,20 @@ spec:
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
             - name: APP_LEGACY_CONNECTOR_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}/v1/applications/signingRequests/info"
-            {{ if .Values.deployment.pairingAdapterConfigMap }}
+            {{- if .Values.deployment.pairingAdapterConfigMap }}
             - name: APP_PAIRING_ADAPTER_SRC
               value: /pairing-adapters/config.json
-            {{ end }}
+            {{- end }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
-            {{ range $authenticatorName, $config := .Values.global.authenticators }}
-            {{if eq $config.enabled true}}
+            {{- range $authenticatorName, $config := .Values.global.authenticators }}
+            {{- if eq $config.enabled true }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_SCOPE_PREFIX
               value: {{ $config.scopePrefix }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.attributes }}
-            {{ end }}
-            {{ end }}
+            {{- end }}
+            {{- end }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
