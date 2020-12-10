@@ -6,24 +6,81 @@ You can install Compass both on a cluster and on your local machine in two modes
 
 Compass as a central Management Plane cluster requires minimal Kyma installation. Steps to perform the installation vary depending on the installation environment.
 
-#### Prerequisiter (if certificate rotation is needed)
+#### Prerequisites (if certificate rotation is needed)
 
 In case certificate rotation is needed, one can install [cert manager](https://github.com/jetstack/cert-manager) to take care of certificates.
 
 There are 3 certificates which can be rotated:
-* Connector intermediate certificate which is used to issue certificates for App/Runtime client.
+* Connector intermediate certificate which is used to issue Application and Runtime client certificates.
 * 2 Istio gateway certificates - one for the normal gateway and one for the MTLS gateway.
 
 ##### Create issuers
 
 In order for the cert manager to be able to issue certificates, it needs a resource called issuer.
 
+Example with self provided CA certificate:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: <name>
+spec:
+  ca:
+    secretName: "<secret-name-containing-the-ca-cert>"
+```
+
+Example with Let's encrypt issuer:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: <name>
+spec:
+  acme:
+    email: <lets_encrypt_email>
+    server: <lets_encrypt_server_url>
+    privateKeySecretRef:
+      name: <lets_encrypt_secret>
+    solvers:
+      - dns01:
+          clouddns:
+            project: <project_name>
+            serviceAccountSecretRef:
+              name: <secret_name>
+              key: <secret_key>
+```
+
+You can read more on the different cluster issuer configurations [here](https://cert-manager.io/docs/configuration/acme/)
 
 ##### Connector certificate
 
 ```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: <name>
+  namespace: <namespace>
+spec:
+  secretName: "<secret-to-put-the-generated-certificate>"
+  duration: 3d
+  renewBefore: 1d
+  issuerRef:
+    name: <name-of-issuer-to-issue-certificates-from>
+    kind: ClusterIssuer
+  commonName: Kyma
+  isCA: true
+  keyAlgorithm: rsa
+  keySize: 4096
+  usages:
+    - "digital signature"
+    - "key encipherment"
+    - "cert sign"
+
 ```
 
+Cert manager will take care to rotate certificates as defined in the resources.
 
 ### Cluster installation
 
