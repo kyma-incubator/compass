@@ -27,13 +27,8 @@ type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
-//go:generate mockery -name=ObjectContextForUserProvider -output=automock -outpkg=automock -case=underscore
-type ObjectContextForUserProvider interface {
-	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
-}
-
-//go:generate mockery -name=ObjectContextForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
-type ObjectContextForSystemAuthProvider interface {
+//go:generate mockery -name=ObjectContextProvider -output=automock -outpkg=automock -case=underscore
+type ObjectContextProvider interface {
 	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
 }
 
@@ -46,16 +41,15 @@ type Handler struct {
 	authenticators      []authenticator.Config
 	reqDataParser       ReqDataParser
 	transact            persistence.Transactioner
-	mapperForUser       ObjectContextForUserProvider
-	mapperForSystemAuth ObjectContextForSystemAuthProvider
+	mapperForUser       ObjectContextProvider
+	mapperForSystemAuth ObjectContextProvider
 }
 
 func NewHandler(
 	authenticators []authenticator.Config,
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
-	mapperForUser ObjectContextForUserProvider,
-	mapperForSystemAuth ObjectContextForSystemAuthProvider) *Handler {
+	mapperForUser, mapperForSystemAuth ObjectContextProvider) *Handler {
 	return &Handler{
 		authenticators:      authenticators,
 		reqDataParser:       reqDataParser,
