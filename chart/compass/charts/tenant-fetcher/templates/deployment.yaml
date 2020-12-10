@@ -52,21 +52,23 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+            - name: APP_ROOT_API
+              value: "{{ .Values.global.tenantFetcher.prefix }}"
             - name: APP_HANDLER_ENDPOINT
-              value: "{{ .Values.handlerEndpoint }}"
+              value: "{{ .Values.server.handlerEndpoint }}"
             - name: APP_TENANT_PATH_PARAM
-              value: "{{ .Values.tenantPathParam }}"
+              value: "{{ .Values.server.tenantPathParam }}"
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
-              path: "/healthz"
+              path: "{{ .Values.global.tenantFetcher.prefix }}/healthz"
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
           readinessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
-              path: "/readyz"
+              path: "{{ .Values.global.tenantFetcher.prefix }}/readyz"
             initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}

@@ -43,8 +43,10 @@ type config struct {
 
 	Log log.Config
 
-	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT"`
-	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM"`
+	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
+
+	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
+	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 }
 
 func main() {
@@ -68,20 +70,21 @@ func main() {
 	logger := log.C(ctx)
 
 	mainRouter := mux.NewRouter()
+	subrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
 	logger.Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
-	mainRouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(cfg.TenantPathParam)).Methods(http.MethodPut)
+	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(cfg.TenantPathParam)).Methods(http.MethodPut)
 
 	logger.Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
-	mainRouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(cfg.TenantPathParam)).Methods(http.MethodDelete)
+	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(cfg.TenantPathParam)).Methods(http.MethodDelete)
 
 	logger.Infof("Registering readiness endpoint...")
-	mainRouter.HandleFunc("/readyz", newReadinessHandler())
+	subrouter.HandleFunc("/readyz", newReadinessHandler())
 
 	logger.Infof("Registering liveness endpoint...")
-	mainRouter.HandleFunc("/healthz", newReadinessHandler())
+	subrouter.HandleFunc("/healthz", newReadinessHandler())
 
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, subrouter, "main", cfg.ServerTimeout)
 
 	go func() {
 		<-ctx.Done()

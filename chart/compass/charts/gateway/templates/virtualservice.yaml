@@ -30,6 +30,14 @@ spec:
             {{- end }}
     - match:
       - uri:
+          prefix: {{ .Values.global.tenantFetcher.prefix }}
+        route:
+        - destination:
+            host: {{ .Values.global.tenantFetcher.host }}
+            port:
+              number: {{ .Values.global.tenantFetcher.port }}
+    - match:
+      - uri:
           exact: /director
       redirect:
         uri: /director/

@@ -28,24 +28,26 @@ import (
 
 const (
 	tenantFetcherURL = "TENANT_FETCHER_URL"
+	rootAPI          = "ROOT_API"
 	handlerEndpoint  = "HANDLER_ENDPOINT"
 	tenantPathParam  = "TENANT_PATH_PARAM"
 )
 
+type config struct {
+	TenantFetcherURL string
+	RootAPI          string
+	HandlerEndpoint  string
+	TenantPathParam  string
+}
+
 func TestOnboardingHandler(t *testing.T) {
 	// GIVEN
-	tenantFetcherURL := os.Getenv(tenantFetcherURL)
-	handlerEndpoint := os.Getenv(handlerEndpoint)
-	tenantPathParam := os.Getenv(tenantPathParam)
-
-	require.NotEmpty(t, tenantFetcherURL)
-	require.NotEmpty(t, handlerEndpoint)
-	require.NotEmpty(t, tenantPathParam)
+	config := loadConfig(t)
 
 	// WHEN
 	tenantID := "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72"
-	endpoint := strings.Replace(handlerEndpoint, fmt.Sprintf("{%s}", tenantPathParam), tenantID, 1)
-	url := tenantFetcherURL + endpoint
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantID, 1)
+	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 	request, err := http.NewRequest(http.MethodPut, url, nil)
 	require.NoError(t, err)
@@ -59,18 +61,12 @@ func TestOnboardingHandler(t *testing.T) {
 
 func TestDecommissioningHandler(t *testing.T) {
 	// GIVEN
-	tenantFetcherURL := os.Getenv(tenantFetcherURL)
-	handlerEndpoint := os.Getenv(handlerEndpoint)
-	tenantPathParam := os.Getenv(tenantPathParam)
-
-	require.NotEmpty(t, tenantFetcherURL)
-	require.NotEmpty(t, handlerEndpoint)
-	require.NotEmpty(t, tenantPathParam)
+	config := loadConfig(t)
 
 	// WHEN
 	tenantID := "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72"
-	endpoint := strings.Replace(handlerEndpoint, fmt.Sprintf("{%s}", tenantPathParam), tenantID, 1)
-	url := tenantFetcherURL + endpoint
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantID, 1)
+	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
@@ -80,4 +76,20 @@ func TestDecommissioningHandler(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 	require.Equal(t, response.StatusCode, http.StatusOK)
+}
+
+func loadConfig(t *testing.T) config {
+	config := config{
+		TenantFetcherURL: os.Getenv(tenantFetcherURL),
+		RootAPI:          os.Getenv(rootAPI),
+		HandlerEndpoint:  os.Getenv(handlerEndpoint),
+		TenantPathParam:  os.Getenv(tenantPathParam),
+	}
+
+	require.NotEmpty(t, config.TenantFetcherURL)
+	require.NotEmpty(t, config.RootAPI)
+	require.NotEmpty(t, config.HandlerEndpoint)
+	require.NotEmpty(t, config.TenantPathParam)
+
+	return config
 }

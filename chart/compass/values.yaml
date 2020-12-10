@@ -236,6 +236,8 @@ global:
               max_delay: 2000ms
 
   tenantFetcher:
+    host: compass-tenant-fetcher.compass-system.svc.cluster.local
+    prefix: /tenants
     port: 3000
 
   tenantFetchers:

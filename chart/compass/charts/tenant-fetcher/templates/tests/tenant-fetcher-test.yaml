@@ -33,8 +33,10 @@ spec:
               value: "http://compass-tenant-fetcher.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.tenantFetcher.port }}"
             - name: TENANT_FETCHER_HEALTHZ_URL
               value: "http://compass-tenant-fetcher.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.tenantFetcher.port }}/healthz"
+            - name: ROOT_API
+              value: "{{ .Values.global.tenantFetcher.prefix }}"
             - name: HANDLER_ENDPOINT
-              value: "{{ .Values.handlerEndpoint }}"
+              value: "{{ .Values.server.handlerEndpoint }}"
             - name: TENANT_PATH_PARAM
-              value: "{{ .Values.tenantPathParam }}"
+              value: "{{ .Values.server.tenantPathParam }}"
       restartPolicy: Never
