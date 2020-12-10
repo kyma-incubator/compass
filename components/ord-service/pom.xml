@@ -12,7 +12,7 @@
     <artifactId>ord-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>ord-service</name>
-    <description>Open Resource Discovery Service</description>
+    <description>Open Discovery Service</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -90,6 +90,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.2.18</version>
         </dependency>
     </dependencies>
 

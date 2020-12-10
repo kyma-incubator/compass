@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity(name = "event")
-@Table(name="event_api_definitions")
+@Table(name = "event_api_definitions")
 public class EventEntity {
     @javax.persistence.Id
     @Column(name = "id")
@@ -60,6 +60,9 @@ public class EventEntity {
 
     @Column(name = "extensions", length = Integer.MAX_VALUE)
     private String extensions;
+
+    @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
+    private Set<EventSpecificationEntity> specifications;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "package_id", insertable = false, updatable = false)

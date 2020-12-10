@@ -5,11 +5,10 @@ import org.eclipse.persistence.annotations.TypeConverter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity(name = "package")
-@Table(name="packages")
+@Table(name = "packages")
 public class PackageEntity {
     @javax.persistence.Id
     @Column(name = "id")
