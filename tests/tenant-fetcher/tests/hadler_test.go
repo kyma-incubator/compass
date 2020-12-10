@@ -56,7 +56,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	require.Equal(t, response.StatusCode, http.StatusOK)
+	require.Equal(t, http.StatusOK, response.StatusCode)
 }
 
 func TestDecommissioningHandler(t *testing.T) {
@@ -75,7 +75,7 @@ func TestDecommissioningHandler(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	require.Equal(t, response.StatusCode, http.StatusOK)
+	require.Equal(t, http.StatusOK, response.StatusCode)
 }
 
 func loadConfig(t *testing.T) config {
