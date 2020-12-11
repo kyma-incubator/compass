@@ -1,5 +1,6 @@
 {{- range $authenticatorName, $config := .Values.global.authenticators -}}
 {{if eq $config.enabled true}}
+---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
