@@ -45,4 +45,13 @@ ALTER TABLE event_api_definitions
 DROP TYPE api_protocol;
 DROP TYPE release_status;
 
+DROP VIEW links;
+DROP VIEW providers;
+DROP VIEW tags;
+DROP VIEW package_actions;
+DROP VIEW api_resource_definitions;
+DROP VIEW api_actions;
+DROP VIEW changelog_entries;
+DROP VIEW event_resource_definitions;
+
 COMMIT;

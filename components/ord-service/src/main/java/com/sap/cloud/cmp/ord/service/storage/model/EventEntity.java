@@ -5,6 +5,7 @@ import org.eclipse.persistence.annotations.TypeConverter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -45,11 +46,13 @@ public class EventEntity {
     @NotNull
     private UUID partOfPackage;
 
-    @Column(name = "links", length = Integer.MAX_VALUE)
-    private String links;
+    @ElementCollection
+    @CollectionTable(name="links", joinColumns=@JoinColumn(name="event_definition_id"))
+    private List<Link> links;
 
-    @Column(name = "tags", length = Integer.MAX_VALUE)
-    private String tags;
+    @ElementCollection
+    @CollectionTable(name = "tags", joinColumns = @JoinColumn(name = "event_definition_id"))
+    private List<Tag> tags;
 
     @Column(name = "release_status")
     @NotNull

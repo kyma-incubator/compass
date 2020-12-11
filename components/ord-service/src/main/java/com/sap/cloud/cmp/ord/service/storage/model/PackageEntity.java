@@ -9,6 +9,7 @@ import java.util.*;
 
 @Entity(name = "package")
 @Table(name = "packages")
+@SecondaryTable(name = "providers", pkJoinColumns = @PrimaryKeyJoinColumn(name = "package_id", referencedColumnName = "id"))
 public class PackageEntity {
     @javax.persistence.Id
     @Column(name = "id")
@@ -34,8 +35,8 @@ public class PackageEntity {
     private String version;
 
     @ElementCollection
-    @CollectionTable(name="links", joinColumns=@JoinColumn(name="package_id"))
-    private  List<Link> links;
+    @CollectionTable(name = "links", joinColumns = @JoinColumn(name = "package_id"))
+    private List<Link> links;
 
     @Column(name = "terms_of_service", length = 512)
     private String termsOfService;
@@ -46,11 +47,17 @@ public class PackageEntity {
     @Column(name = "licence", length = 512)
     private String licence;
 
-    @Column(name = "provider", length = Integer.MAX_VALUE)
-    private String provider;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "name", column = @Column(name = "name", table = "providers")),
+            @AttributeOverride(name = "department", column = @Column(name = "department", table = "providers")),
+            @AttributeOverride(name = "extensions", column = @Column(name = "extensions", table = "providers")),
+    })
+    private Provider provider;
 
-    @Column(name = "tags", length = Integer.MAX_VALUE)
-    private String tags;
+    @ElementCollection
+    @CollectionTable(name = "tags", joinColumns = @JoinColumn(name = "package_id"))
+    private List<Tag> tags;
 
     @Column(name = "actions", length = Integer.MAX_VALUE)
     private String actions;

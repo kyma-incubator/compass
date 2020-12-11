@@ -5,6 +5,7 @@ import org.eclipse.persistence.annotations.TypeConverter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -48,14 +49,16 @@ public class APIEntity {
     @Column(name = "api_protocol")
     private String apiProtocol;
 
-    @Column(name = "tags", length = Integer.MAX_VALUE)
-    private String tags;
+    @ElementCollection
+    @CollectionTable(name = "tags", joinColumns = @JoinColumn(name = "api_definition_id"))
+    private List<Tag> tags;
 
     @Column(name = "api_definitions", length = Integer.MAX_VALUE)
     private String apiDefinitions;
 
-    @Column(name = "links", length = Integer.MAX_VALUE)
-    private String links;
+    @ElementCollection
+    @CollectionTable(name="links", joinColumns=@JoinColumn(name="api_definition_id"))
+    private List<Link> links;
 
     @Column(name = "actions", length = Integer.MAX_VALUE)
     private String actions;
