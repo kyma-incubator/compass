@@ -1,5 +1,6 @@
 {{- range $authenticatorName, $config := .Values.global.authenticators -}}
 {{if eq $config.enabled true}}
+---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
@@ -25,6 +26,5 @@ spec:
   - handler: id_token
     config:
       claims: {{ $.Values.global.oathkeeper.idTokenConfig.claims | quote }}
----
 {{ end }}
 {{- end -}}
