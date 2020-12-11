@@ -2,7 +2,7 @@
 
 COMPONENT_DIR="$(pwd)/$(dirname $0)"
 OLINGO_JPA_LIB_DIR="$COMPONENT_DIR/olingo-jpa-processor-v4"
-OLINGO_VERSION_TAG="0.3.7-a"
+OLINGO_VERSION_TAG="0.3.8"
 
 source "$COMPONENT_DIR/commons.sh"
 

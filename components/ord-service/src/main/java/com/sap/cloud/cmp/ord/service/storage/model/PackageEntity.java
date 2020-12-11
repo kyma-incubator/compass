@@ -33,8 +33,9 @@ public class PackageEntity {
     @Column(name = "version")
     private String version;
 
-    @Column(name = "links", length = Integer.MAX_VALUE)
-    private String links;
+    @ElementCollection
+    @CollectionTable(name="links", joinColumns=@JoinColumn(name="package_id"))
+    private  List<Link> links;
 
     @Column(name = "terms_of_service", length = 512)
     private String termsOfService;
