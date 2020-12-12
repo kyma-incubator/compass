@@ -12,7 +12,7 @@ spec:
     stripPath: {{ $config.pathPrefix }}
   match:
     methods: ["GET", "POST", "OPTIONS"]
-    url: <http|https>://{{ .Values.global.gateway.tls.host }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>{{ $config.pathPrefix }}/director/graphql
+    url: <http|https>://{{ $.Values.global.gateway.tls.host }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>{{ $config.pathPrefix }}/director/graphql
   authenticators:
   - handler: jwt
     config:
