@@ -1,3 +1,4 @@
+{{ $outerScope := . }}
 {{- range $authenticatorName, $config := .Values.global.authenticators -}}
 {{if eq $config.enabled true}}
 ---
@@ -7,7 +8,7 @@ metadata:
   name: "compass-gateway-{{ $authenticatorName }}"
   namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ template "name" . }}
+    app: {{ template "name" $outerScope }}
     chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     heritage: {{ $.Release.Service }}
     release: {{ $.Release.Name }}

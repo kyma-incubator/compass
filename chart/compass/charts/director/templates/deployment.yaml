@@ -121,7 +121,7 @@ spec:
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_SCOPE_PREFIX
               value: {{ $config.scopePrefix }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
-              value: {{ $config.attributes }}
+              value: {{ $config.attributes | quote }}
             {{- end }}
             {{- end }}
           livenessProbe:
