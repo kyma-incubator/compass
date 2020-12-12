@@ -17,21 +17,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewMapperForSystemAuth(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter, tenantRepo TenantRepository) *mapperForSystemAuth {
-	return &mapperForSystemAuth{
+func NewSystemAuthContextProvider(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter, tenantRepo TenantRepository) *systemAuthContextProvider {
+	return &systemAuthContextProvider{
 		systemAuthSvc: systemAuthSvc,
 		scopesGetter:  scopesGetter,
 		tenantRepo:    tenantRepo,
 	}
 }
 
-type mapperForSystemAuth struct {
+type systemAuthContextProvider struct {
 	systemAuthSvc systemauth.SystemAuthService
 	scopesGetter  ScopesGetter
 	tenantRepo    TenantRepository
 }
 
-func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authDetails.AuthID)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
@@ -77,7 +77,7 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 	return objCxt, nil
 }
 
-func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper.ReqData) (TenantContext, string, error) {
+func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper.ReqData) (TenantContext, string, error) {
 	var externalTenantID, scopes string
 
 	scopes, err := reqData.GetScopes()
@@ -112,7 +112,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context
 	return NewTenantContext(externalTenantID, tenantMapping.ID), scopes, nil
 }
 
-func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData oathkeeper.ReqData, authFlow oathkeeper.AuthFlow) (TenantContext, string, error) {
+func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData oathkeeper.ReqData, authFlow oathkeeper.AuthFlow) (TenantContext, string, error) {
 	var externalTenantID, scopes string
 	var err error
 
