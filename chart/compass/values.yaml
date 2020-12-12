@@ -276,7 +276,7 @@ global:
   authenticators:
     authenticator0:
       enabled: false
-      gatewayHost: "compass-gateway-authenticator0"
+      pathPrefix: "/authenticator0"
       tokenURL: ""
       jwksURL: ""
       scopePrefix: ""

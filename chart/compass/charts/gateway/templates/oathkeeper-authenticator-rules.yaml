@@ -9,9 +9,10 @@ spec:
   description: Configuration of oathkeeper for secure endpoint of compass {{ $authenticatorName }} gateway
   upstream:
     url: "http://compass-gateway.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.global.gateway.port }}"
+    stripPath: {{ $config.pathPrefix }}
   match:
     methods: ["GET", "POST", "OPTIONS"]
-    url: <http|https>://{{ $config.gatewayHost }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>/director/graphql
+    url: <http|https>://{{ .Values.global.gateway.tls.host }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>{{ $config.pathPrefix }}/director/graphql
   authenticators:
   - handler: jwt
     config:
