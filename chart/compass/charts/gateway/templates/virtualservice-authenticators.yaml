@@ -14,7 +14,7 @@ metadata:
     release: {{ $.Release.Name }}
 spec:
   hosts:
-    - '{{ $.Values.global.gateway.tls.host }}-{{ $authenticatorName }}.{{ $.Values.global.ingress.domainName }}'
+    - '{{ $config.gatewayHost }}.{{ $.Values.global.ingress.domainName }}'
   gateways:
     - {{ $.Values.global.istio.gateway.namespace }}/{{ $.Values.global.istio.gateway.name }}
   http:
