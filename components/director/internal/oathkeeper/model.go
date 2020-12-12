@@ -2,7 +2,10 @@ package oathkeeper
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
@@ -93,6 +96,30 @@ func (d *ReqData) GetAuthID() (*AuthDetails, error) {
 
 // GetAuthIDWithAuthenticators looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct while taking into account existing preconfigured authenticators
 func (d *ReqData) GetAuthIDWithAuthenticators(authenticators []authenticator.Config) (*AuthDetails, error) {
+	extra, err := d.MarshalExtra()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, authn := range authenticators {
+		uniqueAttribute := gjson.Get(extra, authn.Attributes.UniqueAttribute.Key).String()
+		if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
+			continue
+		}
+
+		log.D().Infof("Request token matches %q authenticator", authn.Name)
+		identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]
+		if !ok {
+			return nil, apperrors.NewInvalidDataError("missing identity attribute from %q authenticator token", authn.Name)
+		}
+
+		authID, err := str.Cast(identity)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while parsing the value for %s", identity)
+		}
+		return &AuthDetails{AuthID: authID, AuthFlow: JWTAuthFlow, Authenticator: &authn}, nil
+	}
+
 	if idVal, ok := d.Body.Extra[ClientIDKey]; ok {
 		authID, err := str.Cast(idVal)
 		if err != nil {
@@ -118,17 +145,17 @@ func (d *ReqData) GetAuthIDWithAuthenticators(authenticators []authenticator.Con
 		return &AuthDetails{AuthID: username, AuthFlow: JWTAuthFlow}, nil
 	}
 
-	for _, authn := range authenticators {
-		if identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]; ok {
-			identity, err := str.Cast(identity)
-			if err != nil {
-				return nil, errors.Wrapf(err, "while parsing the value for %s", identity)
-			}
-			return &AuthDetails{AuthID: identity, AuthFlow: JWTAuthFlow, Authenticator: &authn}, nil
-		}
+	return nil, apperrors.NewInternalError("unable to find valid auth ID")
+}
+
+// MarshalExtra marshals the request data extra content
+func (d *ReqData) MarshalExtra() (string, error) {
+	extra, err := json.Marshal(d.Body.Extra)
+	if err != nil {
+		return "", err
 	}
 
-	return nil, apperrors.NewInternalError("unable to find valid auth ID")
+	return string(extra), nil
 }
 
 // GetExternalTenantID returns external tenant ID from the parsed request input if it is defined

@@ -1,6 +1,7 @@
 package oathkeeper
 
 import (
+	"fmt"
 	"net/http"
 	"net/textproto"
 	"testing"
@@ -129,11 +130,14 @@ func TestReqData_GetAuthID(t *testing.T) {
 
 func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
 	t.Run("returns ID string and JWTAuthFlow when authenticator identity is specified in the Extra map of request body", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
 		identityAttributeKey := "identity"
 		username := "some-username"
 		reqData := ReqData{
 			Body: ReqBody{
 				Extra: map[string]interface{}{
+					uniqueAttributeKey:   uniqueAttributeValue,
 					identityAttributeKey: username,
 				},
 			},
@@ -142,6 +146,10 @@ func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
 		authn := []authenticator.Config{
 			{
 				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
 					IdentityAttribute: authenticator.Attribute{
 						Key: identityAttributeKey,
 					},
@@ -157,6 +165,8 @@ func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
 	})
 
 	t.Run("returns ID string and JWTAuthFlow when authenticator identity and also default username attribute is specified in the Extra map of request body", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
 		identityAttributeKey := "identity"
 		username := "some-username"
 		identityUsername := "some-identity"
@@ -164,6 +174,7 @@ func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
 			Body: ReqBody{
 				Extra: map[string]interface{}{
 					UsernameKey:          username,
+					uniqueAttributeKey:   uniqueAttributeValue,
 					identityAttributeKey: identityUsername,
 				},
 			},
@@ -172,6 +183,44 @@ func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
 		authn := []authenticator.Config{
 			{
 				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+
+		authDetails, err := reqData.GetAuthIDWithAuthenticators(authn)
+
+		require.NoError(t, err)
+		require.Equal(t, JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, identityUsername, authDetails.AuthID)
+	})
+
+	t.Run("returns ID string and JWTAuthFlow when username attribute is specified in the Extra map of request body and no authenticators match", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		username := "some-username"
+		reqData := ReqData{
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					UsernameKey: username,
+				},
+			},
+		}
+
+		authn := []authenticator.Config{
+			{
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
 					IdentityAttribute: authenticator.Attribute{
 						Key: identityAttributeKey,
 					},
@@ -184,6 +233,38 @@ func TestReqData_GetAuthIDWithAuthenticators(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
+	})
+
+	t.Run("returns error during JWTAuthFlow when authenticator unique attribute is present but identity attribute is not specified in the Extra map of request body", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		reqData := ReqData{
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					uniqueAttributeKey: uniqueAttributeValue,
+				},
+			},
+		}
+
+		authn := []authenticator.Config{
+			{
+				Name: "test-authn",
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+
+		_, err := reqData.GetAuthIDWithAuthenticators(authn)
+
+		require.EqualError(t, err, apperrors.NewInvalidDataError(fmt.Sprintf("missing identity attribute from %q authenticator token", authn[0].Name)).Error())
 	})
 
 	t.Run("returns error when no ID string is specified in one of known fields", func(t *testing.T) {

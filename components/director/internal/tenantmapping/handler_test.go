@@ -84,11 +84,14 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("success for the request parsed as JWT flow with custom authenticator", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
 		identityAttributeKey := "identity"
 		scopes := "application:read"
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
+					uniqueAttributeKey:   uniqueAttributeValue,
 					identityAttributeKey: username,
 				},
 			},
@@ -105,6 +108,10 @@ func TestHandler(t *testing.T) {
 		authn := []authenticator.Config{
 			{
 				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
 					IdentityAttribute: authenticator.Attribute{
 						Key: identityAttributeKey,
 					},
@@ -113,7 +120,7 @@ func TestHandler(t *testing.T) {
 		}
 
 		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0]}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -140,6 +147,8 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
 		identityAttributeKey := "identity"
 		identityUsername := "identityAdmin"
 		scopes := "application:read"
@@ -147,6 +156,7 @@ func TestHandler(t *testing.T) {
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					oathkeeper.UsernameKey: username,
+					uniqueAttributeKey:     uniqueAttributeValue,
 					identityAttributeKey:   identityUsername,
 				},
 			},
@@ -163,13 +173,80 @@ func TestHandler(t *testing.T) {
 		authn := []authenticator.Config{
 			{
 				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
 					IdentityAttribute: authenticator.Attribute{
 						Key: identityAttributeKey,
 					},
 				},
 			},
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + identityUsername + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: identityUsername, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0]}
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + identityUsername + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		mapperForUserMock := getMapperForUserMock()
+		mapperForUserMock.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(objCtxMock, nil).Once()
+
+		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, mapperForUserMock, nil)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForUserMock)
+	})
+
+	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present but no authenticator matches", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		scopes := "application:read"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.UsernameKey: username,
+				},
+			},
+		}
+		objCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			Scopes:       scopes,
+			ConsumerID:   username,
+			ConsumerType: "Static User",
+		}
+		authn := []authenticator.Config{
+			{
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()

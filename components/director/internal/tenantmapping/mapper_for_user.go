@@ -2,7 +2,6 @@ package tenantmapping
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -69,20 +68,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 			return NewObjectContext(TenantContext{}, scopes, authDetails.AuthID, consumer.User), nil
 		}
 	} else {
-		extra, err := json.Marshal(reqData.Body.Extra)
-		if err != nil {
-			return ObjectContext{}, err
-		}
-
-		tknAttributes := string(extra)
-
 		authn := authDetails.Authenticator
-		uniqueAttribute := gjson.Get(tknAttributes, authn.Attributes.UniqueAttribute.Key).String()
-		if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
-			log.C(ctx).Debugf("Request token does not match %q authenticator", authn.Name)
-			return ObjectContext{}, errors.Errorf("unique attribute %q missing or invalid from %s authenticator token - expected [%s], actual [%s]",
-				authn.Attributes.UniqueAttribute.Key, authn.Name, authn.Attributes.UniqueAttribute.Value, uniqueAttribute)
-		}
 
 		log.C(ctx).Info("Getting scopes from token attribute")
 		userScopes, err := reqData.GetUserScopes()
@@ -91,7 +77,12 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 		}
 		scopes = strings.Join(userScopes, " ")
 
-		externalTenantID = gjson.Get(tknAttributes, authn.Attributes.TenantAttribute.Key).String()
+		extra, err := reqData.MarshalExtra()
+		if err != nil {
+			return ObjectContext{}, err
+		}
+
+		externalTenantID = gjson.Get(extra, authn.Attributes.TenantAttribute.Key).String()
 		if externalTenantID == "" {
 			return ObjectContext{}, errors.Errorf("tenant attribute %q missing from %s authenticator token", authn.Attributes.TenantAttribute.Key, authn.Name)
 		}
