@@ -157,7 +157,7 @@ func main() {
 		),
 		Directives: graphql.DirectiveRoot{
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultPackageRepo(), defaultPackageInstanceAuthRepo()).HasScenario,
-			HasScopes:   scope.NewDirective(authenticators, cfgProvider).VerifyScopes,
+			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},
 	}

@@ -400,17 +400,20 @@ func TestReqData_GetScopes(t *testing.T) {
 }
 
 func TestReqData_GetUserScopes(t *testing.T) {
+	const scopePrefix = "test-compass@b12345."
+
 	t.Run("returns scopes string array when it is specified in the Extra map", func(t *testing.T) {
+		scopes := []interface{}{scopePrefix + "applications:write", scopePrefix + "runtimes:write"}
 		expectedScopes := []interface{}{"applications:write", "runtimes:write"}
 		reqData := ReqData{
 			Body: ReqBody{
 				Extra: map[string]interface{}{
-					ScopesKey: expectedScopes,
+					ScopesKey: scopes,
 				},
 			},
 		}
 
-		actualScopes, err := reqData.GetUserScopes()
+		actualScopes, err := reqData.GetUserScopes(scopePrefix)
 
 		require.NoError(t, err)
 		require.ElementsMatch(t, expectedScopes, actualScopes)
@@ -419,7 +422,7 @@ func TestReqData_GetUserScopes(t *testing.T) {
 	t.Run("returns empty scopes string array when it is not specified in the Extra map", func(t *testing.T) {
 		reqData := ReqData{}
 
-		actualScopes, err := reqData.GetUserScopes()
+		actualScopes, err := reqData.GetUserScopes(scopePrefix)
 
 		require.NoError(t, err)
 		require.Empty(t, actualScopes)
@@ -434,23 +437,23 @@ func TestReqData_GetUserScopes(t *testing.T) {
 			},
 		}
 
-		actualScopes, err := reqData.GetUserScopes()
+		actualScopes, err := reqData.GetUserScopes(scopePrefix)
 
 		require.NoError(t, err)
 		require.Empty(t, actualScopes)
 	})
 
 	t.Run("returns error when scopes are specified in the Extra map but some elements/scopes are not strings", func(t *testing.T) {
-		expectedScopes := []interface{}{"applications:write", "runtimes:write", 24}
+		scopes := []interface{}{"applications:write", "runtimes:write", 24}
 		reqData := ReqData{
 			Body: ReqBody{
 				Extra: map[string]interface{}{
-					ScopesKey: expectedScopes,
+					ScopesKey: scopes,
 				},
 			},
 		}
 
-		_, err := reqData.GetUserScopes()
+		_, err := reqData.GetUserScopes(scopePrefix)
 
 		require.EqualError(t, err, "while parsing the value for scope: Internal Server Error: unable to cast the value to a string type")
 	})
