@@ -301,12 +301,14 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticat
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
-	mapperForUser := tenantmapping.NewMapperForUser(authenticators, staticUsersRepo, staticGroupsRepo, tenantRepo)
-	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, cfgProvider, tenantRepo)
-
+	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+		tenantmapping.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(authenticators, staticUsersRepo, staticGroupsRepo, tenantRepo),
+		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(systemAuthSvc, cfgProvider, tenantRepo),
+		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(authenticators, tenantRepo),
+	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
+	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders).ServeHTTP, nil
 }
 
 func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {

@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"net/textproto"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"strings"
@@ -23,12 +21,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMapperForUserGetObjectContext(t *testing.T) {
+func TestUserContextProvider(t *testing.T) {
 	username := "some-user"
 	expectedTenantID := uuid.New()
 	expectedExternalTenantID := uuid.New()
 	expectedScopes := []string{"application:read", "application:write"}
-	expectedScopesInterfaceArray := []interface{}{"application:read", "application:write"}
 	userObjCtxType := "Static User"
 
 	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow}
@@ -59,121 +56,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
-
-		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
-		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
-		require.Equal(t, username, objCtx.ConsumerID)
-		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
-
-		mock.AssertExpectationsForObjects(t, staticUserRepoMock, tenantRepoMock)
-	})
-
-	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData in accordance with custom authenticator", func(t *testing.T) {
-		uniqueAttributeKey := "extra.unique"
-		uniqueAttributeValue := "value"
-		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Extra: map[string]interface{}{
-					tenantAttributeKey:   expectedExternalTenantID.String(),
-					oathkeeper.ScopesKey: expectedScopesInterfaceArray,
-					"extra": map[string]interface{}{
-						"unique": uniqueAttributeValue,
-					},
-				},
-			},
-		}
-
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
-		}
-
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
-
-		authn := []authenticator.Config{
-			{
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
-				},
-			},
-		}
-
-		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
-
-		mapper := tenantmapping.NewMapperForUser(authn, nil, nil, tenantRepoMock)
-
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
-
-		require.NoError(t, err)
-		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
-		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
-		require.Equal(t, username, objCtx.ConsumerID)
-		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
-	})
-
-	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData not in accordance with custom authenticator", func(t *testing.T) {
-		uniqueAttributeKey := "extra.unique"
-		uniqueAttributeValue := "value"
-		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Extra: map[string]interface{}{
-					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
-					oathkeeper.ScopesKey:         strings.Join(expectedScopes, " "),
-					tenantAttributeKey:           expectedExternalTenantID.String(),
-					"extra": map[string]interface{}{
-						"unique": "something-different",
-					},
-				},
-			},
-		}
-		staticUser := tenantmapping.StaticUser{
-			Username: username,
-			Tenants:  []string{expectedExternalTenantID.String()},
-			Scopes:   expectedScopes,
-		}
-
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
-		}
-
-		staticUserRepoMock := getStaticUserRepoMock()
-		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
-
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
-
-		authn := []authenticator.Config{
-			{
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
-				},
-			},
-		}
-
-		mapper := tenantmapping.NewMapperForUser(authn, staticUserRepoMock, nil, tenantRepoMock)
-
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -209,9 +94,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -249,9 +134,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -289,9 +174,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -326,9 +211,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -378,9 +263,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -427,9 +312,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, nil, staticGroupRepoMock, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, nil, staticGroupRepoMock, tenantRepoMock)
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -472,9 +357,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
 
-		objCtx, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
@@ -510,109 +395,13 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, nonExistingExternalTenantID).Return(tenantMappingModel, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.EqualError(t, err, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: some-user missmatch external tenant: %s", nonExistingExternalTenantID)).Error())
 
 		mock.AssertExpectationsForObjects(t, staticUserRepoMock, tenantRepoMock)
-	})
-
-	t.Run("returns error when some scopes that are defined in the Extra map of ReqData are not strings when custom authenticator is activated", func(t *testing.T) {
-		uniqueAttributeKey := "extra.unique"
-		uniqueAttributeValue := "value"
-		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Extra: map[string]interface{}{
-					tenantAttributeKey:   expectedExternalTenantID.String(),
-					oathkeeper.ScopesKey: []interface{}{"application:read", 1},
-					"extra": map[string]interface{}{
-						"unique": uniqueAttributeValue,
-					},
-				},
-			},
-		}
-
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
-		}
-
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
-
-		authn := []authenticator.Config{
-			{
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
-				},
-			},
-		}
-
-		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
-
-		mapper := tenantmapping.NewMapperForUser(authn, nil, nil, tenantRepoMock)
-
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
-
-		require.EqualError(t, err, "while parsing the value for scope: Internal Server Error: unable to cast the value to a string type")
-	})
-
-	t.Run("returns error when some tenant that is defined in the Extra map of ReqData is empty when custom authenticator is activated", func(t *testing.T) {
-		uniqueAttributeKey := "extra.unique"
-		uniqueAttributeValue := "value"
-		tenantAttributeKey := "tenant"
-		reqData := oathkeeper.ReqData{
-			Body: oathkeeper.ReqBody{
-				Extra: map[string]interface{}{
-					oathkeeper.ScopesKey: expectedScopesInterfaceArray,
-					"extra": map[string]interface{}{
-						"unique": uniqueAttributeValue,
-					},
-				},
-			},
-		}
-
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
-		}
-
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
-
-		authn := []authenticator.Config{
-			{
-				Name: "test-authenticator",
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
-				},
-			},
-		}
-
-		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
-
-		mapper := tenantmapping.NewMapperForUser(authn, nil, nil, tenantRepoMock)
-
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
-
-		require.EqualError(t, err, fmt.Sprintf("tenant attribute %q missing from %s authenticator token", authn[0].Attributes.TenantAttribute.Key, authn[0].Name))
 	})
 
 	t.Run("returns error when tenant is specified in Extra map in a non-string format", func(t *testing.T) {
@@ -632,9 +421,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, nil, nil)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, nil)
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.EqualError(t, err, "could not parse external ID for user: some-user: while parsing the value for key=tenant: Internal Server Error: unable to cast the value to a string type")
 
@@ -658,9 +447,9 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, nil, nil)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, nil)
 
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.EqualError(t, err, "while getting user data for user: some-user: while fetching scopes: while parsing the value for scope: Internal Server Error: unable to cast the value to a string type")
 
@@ -674,11 +463,11 @@ func TestMapperForUserGetObjectContext(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(tenantmapping.StaticUser{}, errors.New("some-error")).Once()
 
-		mapper := tenantmapping.NewMapperForUser(nil, staticUserRepoMock, nil, nil)
+		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, nil)
 
 		jwtAuthDetailsWithMissingUser := jwtAuthDetails
 		jwtAuthDetailsWithMissingUser.AuthID = username
-		_, err := mapper.GetObjectContext(context.TODO(), reqData, jwtAuthDetailsWithMissingUser)
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetailsWithMissingUser)
 
 		require.EqualError(t, err, "while getting user data for user: non-existing: while searching for a static user with username non-existing: some-error")
 

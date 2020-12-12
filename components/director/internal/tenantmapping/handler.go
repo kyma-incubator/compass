@@ -17,6 +17,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
+const (
+	UserObjectContextProvider          = "UserObjectContextProvider"
+	SystemAuthObjectContextProvider    = "SystemAuthObjectContextProvider"
+	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
+)
+
 //go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
 type ScopesGetter interface {
 	GetRequiredScopes(scopesDefinition string) ([]string, error)
@@ -38,24 +44,22 @@ type TenantRepository interface {
 }
 
 type Handler struct {
-	authenticators      []authenticator.Config
-	reqDataParser       ReqDataParser
-	transact            persistence.Transactioner
-	mapperForUser       ObjectContextProvider
-	mapperForSystemAuth ObjectContextProvider
+	authenticators         []authenticator.Config
+	reqDataParser          ReqDataParser
+	transact               persistence.Transactioner
+	objectContextProviders map[string]ObjectContextProvider
 }
 
 func NewHandler(
 	authenticators []authenticator.Config,
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
-	mapperForUser, mapperForSystemAuth ObjectContextProvider) *Handler {
+	objectContextProviders map[string]ObjectContextProvider) *Handler {
 	return &Handler{
-		authenticators:      authenticators,
-		reqDataParser:       reqDataParser,
-		transact:            transact,
-		mapperForUser:       mapperForUser,
-		mapperForSystemAuth: mapperForSystemAuth,
+		authenticators:         authenticators,
+		reqDataParser:          reqDataParser,
+		transact:               transact,
+		objectContextProviders: objectContextProviders,
 	}
 }
 
@@ -128,14 +132,21 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData,
 
 func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	log.C(ctx).Debugf("Attempting to get object context for %s flow and authID=%s", authDetails.AuthFlow, authDetails.AuthID)
+
+	var provider ObjectContextProvider
 	switch authDetails.AuthFlow {
 	case oathkeeper.JWTAuthFlow:
-		return h.mapperForUser.GetObjectContext(ctx, reqData, authDetails)
+		if authDetails.Authenticator != nil {
+			provider = h.objectContextProviders[AuthenticatorObjectContextProvider]
+		}
+		provider = h.objectContextProviders[UserObjectContextProvider]
 	case oathkeeper.OAuth2Flow, oathkeeper.CertificateFlow, oathkeeper.OneTimeTokenFlow:
-		return h.mapperForSystemAuth.GetObjectContext(ctx, reqData, authDetails)
+		provider = h.objectContextProviders[SystemAuthObjectContextProvider]
+	default:
+		return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authDetails.AuthFlow)
 	}
 
-	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authDetails.AuthFlow)
+	return provider.GetObjectContext(ctx, reqData, authDetails)
 }
 
 func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {
