@@ -71,7 +71,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 		authn := authDetails.Authenticator
 
 		log.C(ctx).Info("Getting scopes from token attribute")
-		userScopes, err := reqData.GetUserScopes()
+		userScopes, err := reqData.GetUserScopes(authn.ScopePrefix)
 		if err != nil {
 			return ObjectContext{}, err
 		}
