@@ -11,7 +11,7 @@ spec:
     url: "http://compass-gateway.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.global.gateway.port }}"
   match:
     methods: ["GET", "POST", "OPTIONS"]
-    url: <http|https>://compass-gateway-{{ $authenticatorName }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>/director/graphql
+    url: <http|https>://{{ $config.gatewayHost }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>/director/graphql
   authenticators:
   - handler: jwt
     config:
