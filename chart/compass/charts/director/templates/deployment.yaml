@@ -59,7 +59,7 @@ spec:
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
-              value: "/director/graphql"
+              value: "{{ .Values.global.director.prefix }}/graphql"
             - name: APP_JWKS_ENDPOINT
               value: http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json
             - name: APP_DB_USER
@@ -99,7 +99,7 @@ spec:
             - name: APP_ONE_TIME_TOKEN_URL
               value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.internal.port }}/graphql"
             - name: APP_CONNECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql"
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_CONFIGURATION_FILE
               value: /config/config.yaml
             - name: APP_ALLOW_JWT_SIGNING_NONE

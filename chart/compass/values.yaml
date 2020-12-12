@@ -75,6 +75,7 @@ global:
   agentPreconfiguration: false
 
   director:
+    prefix: /director
     port: 3000
 
     tests:
@@ -95,6 +96,7 @@ global:
       maxIdleConnections: 1
 
   connector:
+    prefix: /connector
     graphql:
       external:
         port: 3000
