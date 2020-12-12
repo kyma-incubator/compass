@@ -38,8 +38,8 @@ const compassURL = "https://github.com/kyma-incubator/compass"
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
 
-	ClientTimeout time.Duration `envconfig:"default=105s"`
-	ServerTimeout time.Duration `envconfig:"default=110s"`
+	ServerTimeout   time.Duration `envconfig:"default=110s"`
+	ShutdownTimeout time.Duration `envconfig:"default=10s"`
 
 	Log log.Config
 
@@ -84,7 +84,7 @@ func main() {
 	logger.Infof("Registering liveness endpoint...")
 	subrouter.HandleFunc("/healthz", newReadinessHandler())
 
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, subrouter, "main", cfg.ServerTimeout)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, subrouter, "main")
 
 	go func() {
 		<-ctx.Done()
@@ -102,28 +102,31 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
+func createServer(ctx context.Context, cfg config, handler http.Handler, name string) (func(), func()) {
 	logger := log.C(ctx)
 
-	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
+	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, cfg.ServerTimeout)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	srv := &http.Server{
-		Addr:              address,
+		Addr:              cfg.Address,
 		Handler:           handlerWithTimeout,
-		ReadHeaderTimeout: timeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
 	}
 
 	runFn := func() {
-		logger.Infof("Running %s server on %s...", name, address)
+		logger.Infof("Running %s server on %s...", name, cfg.Address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			logger.Errorf("%s HTTP server ListenAndServe: %v", name, err)
 		}
 	}
 
 	shutdownFn := func() {
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		defer cancel()
+
 		logger.Infof("Shutting down %s server...", name)
-		if err := srv.Shutdown(context.Background()); err != nil {
+		if err := srv.Shutdown(ctx); err != nil {
 			logger.Errorf("%s HTTP server Shutdown: %v", name, err)
 		}
 	}

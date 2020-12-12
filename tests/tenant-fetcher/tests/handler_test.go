@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +53,10 @@ func TestOnboardingHandler(t *testing.T) {
 	request, err := http.NewRequest(http.MethodPut, url, nil)
 	require.NoError(t, err)
 
-	response, err := http.DefaultClient.Do(request)
+	httpClient := http.DefaultClient
+	httpClient.Timeout = 10 * time.Second
+
+	response, err := httpClient.Do(request)
 
 	// THEN
 	require.NoError(t, err)
@@ -71,7 +75,10 @@ func TestDecommissioningHandler(t *testing.T) {
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
-	response, err := http.DefaultClient.Do(request)
+	httpClient := http.DefaultClient
+	httpClient.Timeout = 10 * time.Second
+
+	response, err := httpClient.Do(request)
 
 	// THEN
 	require.NoError(t, err)
