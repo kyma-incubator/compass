@@ -72,25 +72,23 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		authn := []authenticator.Config{
-			{
-				ScopePrefix: scopePrefix,
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
+		authn := &authenticator.Config{
+			ScopePrefix: scopePrefix,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   uniqueAttributeKey,
+					Value: uniqueAttributeValue,
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: tenantAttributeKey,
 				},
 			},
 		}
 
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
+		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(authn, tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -124,25 +122,23 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		authn := []authenticator.Config{
-			{
-				ScopePrefix: scopePrefix,
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
+		authn := &authenticator.Config{
+			ScopePrefix: scopePrefix,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   uniqueAttributeKey,
+					Value: uniqueAttributeValue,
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: tenantAttributeKey,
 				},
 			},
 		}
 
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
+		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(authn, tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -177,25 +173,23 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		authn := []authenticator.Config{
-			{
-				ScopePrefix: scopePrefix,
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
+		authn := &authenticator.Config{
+			ScopePrefix: scopePrefix,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   uniqueAttributeKey,
+					Value: uniqueAttributeValue,
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: tenantAttributeKey,
 				},
 			},
 		}
 
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
+		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(authn, tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -227,25 +221,23 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(nil, missingTenantErr).Once()
 
-		authn := []authenticator.Config{
-			{
-				ScopePrefix: scopePrefix,
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
+		authn := &authenticator.Config{
+			ScopePrefix: scopePrefix,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   uniqueAttributeKey,
+					Value: uniqueAttributeValue,
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: tenantAttributeKey,
 				},
 			},
 		}
 
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
+		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(authn, tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -280,25 +272,23 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		authn := []authenticator.Config{
-			{
-				ScopePrefix: scopePrefix,
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
+		authn := &authenticator.Config{
+			ScopePrefix: scopePrefix,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   uniqueAttributeKey,
+					Value: uniqueAttributeValue,
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: tenantAttributeKey,
 				},
 			},
 		}
 
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
+		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(authn, tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -328,30 +318,28 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		authn := []authenticator.Config{
-			{
-				Name:        "test-authenticator",
-				ScopePrefix: scopePrefix,
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
+		authn := &authenticator.Config{
+			Name:        "test-authenticator",
+			ScopePrefix: scopePrefix,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   uniqueAttributeKey,
+					Value: uniqueAttributeValue,
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: tenantAttributeKey,
 				},
 			},
 		}
 
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
+		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(authn, tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
-		require.EqualError(t, err, fmt.Sprintf("tenant attribute %q missing from %s authenticator token", tenantAttributeKey, authn[0].Name))
+		require.EqualError(t, err, fmt.Sprintf("tenant attribute %q missing from %s authenticator token", tenantAttributeKey, authn.Name))
 	})
 
 	t.Run("returns error when external tenant id that is defined in the Extra map of ReqData cannot be resolved", func(t *testing.T) {
@@ -374,25 +362,23 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(nil, mockErr).Once()
 
-		authn := []authenticator.Config{
-			{
-				ScopePrefix: scopePrefix,
-				Attributes: authenticator.Attributes{
-					UniqueAttribute: authenticator.Attribute{
-						Key:   uniqueAttributeKey,
-						Value: uniqueAttributeValue,
-					},
-					TenantAttribute: authenticator.Attribute{
-						Key: tenantAttributeKey,
-					},
+		authn := &authenticator.Config{
+			ScopePrefix: scopePrefix,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   uniqueAttributeKey,
+					Value: uniqueAttributeValue,
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: tenantAttributeKey,
 				},
 			},
 		}
 
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
-		userAuthDetailsWithAuthenticator.Authenticator = &authn[0]
+		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(authn, tenantRepoMock)
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 

@@ -56,7 +56,7 @@ func TestUserContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -94,7 +94,7 @@ func TestUserContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -134,7 +134,7 @@ func TestUserContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -174,7 +174,7 @@ func TestUserContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -211,7 +211,7 @@ func TestUserContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -263,7 +263,7 @@ func TestUserContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -312,7 +312,7 @@ func TestUserContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, nil, staticGroupRepoMock, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(nil, staticGroupRepoMock, tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -357,7 +357,7 @@ func TestUserContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -395,7 +395,7 @@ func TestUserContextProvider(t *testing.T) {
 		tenantRepoMock := getTenantRepositoryMock()
 		tenantRepoMock.On("GetByExternalTenant", mock.Anything, nonExistingExternalTenantID).Return(tenantMappingModel, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -421,7 +421,7 @@ func TestUserContextProvider(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, nil)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -447,7 +447,7 @@ func TestUserContextProvider(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, nil)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -463,7 +463,7 @@ func TestUserContextProvider(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(tenantmapping.StaticUser{}, errors.New("some-error")).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticUserRepoMock, nil, nil)
+		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
 
 		jwtAuthDetailsWithMissingUser := jwtAuthDetails
 		jwtAuthDetailsWithMissingUser.AuthID = username

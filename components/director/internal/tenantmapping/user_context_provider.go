@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -16,9 +15,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewUserContextProvider(authenticators []authenticator.Config, staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *userContextProvider {
+func NewUserContextProvider(staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *userContextProvider {
 	return &userContextProvider{
-		authenticators:  authenticators,
 		staticUserRepo:  staticUserRepo,
 		staticGroupRepo: staticGroupRepo,
 		tenantRepo:      tenantRepo,
@@ -26,7 +24,6 @@ func NewUserContextProvider(authenticators []authenticator.Config, staticUserRep
 }
 
 type userContextProvider struct {
-	authenticators  []authenticator.Config
 	staticUserRepo  StaticUserRepository
 	staticGroupRepo StaticGroupRepository
 	tenantRepo      TenantRepository

@@ -20,7 +20,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/tidwall/gjson"
 
 	"github.com/sirupsen/logrus"
@@ -35,16 +34,14 @@ import (
 
 // NewAuthenticatorContextProvider implements the ObjectContextProvider interface by looking for user scopes in the 'scope' token attribute
 // and also extracts the tenant information from the token by using a dedicated TenantAttribute defined for the specified authenticator.
-func NewAuthenticatorContextProvider(authenticators []authenticator.Config, tenantRepo TenantRepository) *authenticatorContextProvider {
+func NewAuthenticatorContextProvider(tenantRepo TenantRepository) *authenticatorContextProvider {
 	return &authenticatorContextProvider{
-		authenticators: authenticators,
-		tenantRepo:     tenantRepo,
+		tenantRepo: tenantRepo,
 	}
 }
 
 type authenticatorContextProvider struct {
-	authenticators []authenticator.Config
-	tenantRepo     TenantRepository
+	tenantRepo TenantRepository
 }
 
 // GetObjectContext is the authenticatorContextProvider implementation of the ObjectContextProvider interface
