@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ template "fullname" . }}
+      nodeSelector:
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "eu.gcr.io/sap-cp-cmp-dev/od-service:0.0.1-SNAPSHOT"
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.deployment.args.containerPort }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          env:
+            - name: SERVER_PORT
+              value: "{{ .Values.deployment.args.containerPort }}"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: SPRING_DATASOURCE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: SPRING_DATASOURCE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: SPRING_DATASOURCE_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+          livenessProbe:
+            httpGet:
+              port: {{.Values.deployment.args.containerPort }}
+              path: "/actuator/health"
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          volumeMounts:
+        {{if eq .Values.global.database.embedded.enabled false}}
+            - name: cloudsql-instance-viewer-credentials
+              mountPath: /secrets/cloudsql-instance-viewer-credentials
+              readOnly: true
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.16
+          command: ["/cloud_sql_proxy",
+                    "-instances=sap-cp-cmp-dev:europe-west1:cmp-dev-testing-56b5=tcp:5432",
+                    "-credential_file=/secrets/cloudsql-instance-viewer-credentials/credentials.json"]
+          volumeMounts:
+            - name: cloudsql-instance-viewer-credentials
+              mountPath: /secrets/cloudsql-instance-viewer-credentials
+              readOnly: true
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{end}}
+      volumes:
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-instance-viewer-credentials
+          secret:
+            secretName: cloudsql-instance-viewer-credentials
+        {{end}}
