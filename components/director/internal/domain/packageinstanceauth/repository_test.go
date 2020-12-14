@@ -52,7 +52,7 @@ func TestRepository_Create(t *testing.T) {
 		repo := packageinstanceauth.NewRepository(nil)
 
 		// when
-		err := repo.Create(context.Background(), nil)
+		err := repo.Create(context.TODO(), nil)
 
 		// then
 		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
@@ -79,7 +79,7 @@ func TestRepository_Create(t *testing.T) {
 		err := repo.Create(ctx, piaModel)
 
 		// then
-		expectedError := fmt.Sprintf("while saving entity with id %s to db: Internal Server Error: while inserting row to 'public.package_instance_auths' table: test", testID)
+		expectedError := fmt.Sprintf("while saving entity with id %s to db: Internal Server Error: Unexpected error while executing SQL query", testID)
 		require.EqualError(t, err, expectedError)
 	})
 
@@ -175,7 +175,7 @@ func TestRepository_GetByID(t *testing.T) {
 		_, err := repo.GetByID(ctx, testTenant, testID)
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.package_instance_auths: test")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -226,7 +226,7 @@ func TestRepository_GetForPackage(t *testing.T) {
 		_, err := repo.GetForPackage(ctx, testTenant, testID, testPackageID)
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.package_instance_auths: test")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {
@@ -348,7 +348,7 @@ func TestRepository_ListByPackageID(t *testing.T) {
 		result, err := pgRepository.ListByPackageID(ctx, testTenant, testPackageID)
 
 		//THEN
-		require.EqualError(t, err, "Internal Server Error: while fetching list of objects from DB: test")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		require.Nil(t, result)
 		dbMock.AssertExpectations(t)
 	})
@@ -389,7 +389,7 @@ func TestRepository_Update(t *testing.T) {
 		repo := packageinstanceauth.NewRepository(nil)
 
 		// when
-		err := repo.Update(context.Background(), nil)
+		err := repo.Update(context.TODO(), nil)
 
 		// then
 		require.EqualError(t, err, apperrors.NewInternalError("item cannot be nil").Error())
@@ -417,7 +417,7 @@ func TestRepository_Update(t *testing.T) {
 		err := repo.Update(ctx, piaModel)
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while updating single entity: test")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -471,6 +471,6 @@ func TestRepository_Delete(t *testing.T) {
 		err := repo.Delete(ctx, testTenant, testID)
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while deleting object from database: test")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }

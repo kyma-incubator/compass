@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
@@ -26,7 +26,7 @@ func (y *HttpHeaders) UnmarshalGQL(v interface{}) error {
 func (y HttpHeaders) MarshalGQL(w io.Writer) {
 	err := scalar.WriteMarshalled(y, w)
 	if err != nil {
-		log.Printf("while writing %T: %s", y, err)
+		log.D().Printf("while writing %T: %s", y, err)
 		return
 	}
 }

@@ -1,6 +1,6 @@
 {{ if .Values.istio.rbac.enabled  }}
-apiVersion: "rbac.istio.io/v1alpha1"
-kind: ServiceRole
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
 metadata:
   name: {{ template "fullname" . }}-internal
   namespace: {{ .Release.Namespace }}
@@ -11,27 +11,20 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  action: ALLOW
   rules:
-    - services: ["{{ template "fullname" . }}-internal.{{ .Release.Namespace }}.svc.cluster.local"]
-      paths: ["*"]
-      methods: ["*"]
----
-apiVersion: "rbac.istio.io/v1alpha1"
-kind: ServiceRoleBinding
-metadata:
-  name: {{ template "fullname" . }}-internal
-  namespace: {{ .Release.Namespace }}
-  labels:
-    release: {{ .Release.Name }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-spec:
-  subjects:
-{{ tpl (toYaml .Values.istio.rbac.connectorInternalApi.subjects | indent 4) . }}
-  roleRef:
-    kind: ServiceRole
-    name: {{ template "fullname" . }}-internal
----
-{{ end }}
+    - from:
+      - source:
+          principals:
+          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassDirector . }}
+          - {{ tpl .Values.istio.rbac.connectorInternalApi.compassConnectorTests . }}
+    - to:
+      - operation:
+          ports:
+          - "{{ .Values.global.connector.validator.port }}"
+          - "{{ .Values.global.connector.graphql.external.port }}"
+  {{ end }}

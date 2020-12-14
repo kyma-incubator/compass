@@ -45,9 +45,11 @@ $ PGPASSWORD=pgsql@12345 psql -U postgres -W -h 127.0.0.1 -f <(cat components/sc
 
 The Director binary allows to override some configuration parameters. You can specify following environment variables.
 
-| Environment variable                         | Default                         | Description                                                        |
+| Environment variable                         | Default value                   | Description                                                        |
 | -------------------------------------------- | ------------------------------- | ------------------------------------------------------------------ |
 | **APP_ADDRESS**                              | `127.0.0.1:3000`                | The address and port for the service to listen on                  |
+| **APP_CLIENT_TIMEOUT**                       | `105s`                          | The timeout used for outgoing calls made by director               |
+| **APP_SERVER_TIMEOUT**                       | `110s`                          | The timeout used for incoming calls to the director server         |
 | **APP_METRICS_ADDRESS**                      | `127.0.0.1:3001`                | The address and port for the metrics server to listen on           |
 | **APP_DB_USER**                              | `postgres`                      | Database username                                                  |
 | **APP_DB_PASSWORD**                          | `pgsql@12345`                   | Database password                                                  |

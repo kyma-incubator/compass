@@ -1,6 +1,7 @@
 package application_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
@@ -133,7 +134,7 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 				testCase.WebhookConverterFn(),
 				testCase.PackageConverterFn(),
 			)
-			res, err := converter.CreateInputFromGraphQL(testCase.Input)
+			res, err := converter.CreateInputFromGraphQL(context.TODO(), testCase.Input)
 
 			// then
 			assert.NoError(t, err)

@@ -34,7 +34,6 @@ func newDexIdTokenProvider(httpClient *http.Client, config Config) idTokenProvid
 }
 
 func (p *dexIdTokenProvider) fetchIdToken() (string, error) {
-
 	flowResult, err := p.implicitFlow()
 	if err != nil {
 		return "", err
@@ -43,7 +42,6 @@ func (p *dexIdTokenProvider) fetchIdToken() (string, error) {
 }
 
 func (p *dexIdTokenProvider) implicitFlow() (map[string]string, error) {
-
 	var result map[string]string = nil
 
 	happyRun := true
@@ -90,7 +88,6 @@ func (p *dexIdTokenProvider) implicitFlow() (map[string]string, error) {
 
 //Performs call to the <authorize> endpoint.
 func (p *dexIdTokenProvider) initializeImplicitFlow() (string, error) {
-
 	authorizeResp, err := p.httpClient.PostForm(p.config.DexConfig.AuthorizeEndpoint, url.Values{
 		"response_type": {"id_token token"},
 		"client_id":     {p.config.ClientConfig.ID},
@@ -130,7 +127,6 @@ func (p *dexIdTokenProvider) initializeImplicitFlow() (string, error) {
 
 //Handles redirect to login endpoint
 func (p *dexIdTokenProvider) login(loginEndpoint string) (string, error) {
-
 	if _, err := p.httpClient.Get(p.config.DexConfig.BaseUrl + loginEndpoint); err != nil {
 		return "", errors.Wrap(err, "while performing HTTP GET on login endpoint")
 	}
@@ -159,7 +155,6 @@ func (p *dexIdTokenProvider) login(loginEndpoint string) (string, error) {
 
 //Handles redirect to approval endpoint to get the token (end of flow)
 func (p *dexIdTokenProvider) receiveToken(approvalEndpoint string) (*url.URL, error) {
-
 	approvalResp, err := p.httpClient.Get(p.config.DexConfig.BaseUrl + approvalEndpoint)
 	if err != nil {
 		return nil, err
@@ -185,7 +180,6 @@ func (p *dexIdTokenProvider) receiveToken(approvalEndpoint string) (*url.URL, er
 }
 
 func (p *dexIdTokenProvider) parseTokenResponse(parsedUrl *url.URL) map[string]string {
-
 	result := make(map[string]string)
 	fragmentParams := strings.Split(parsedUrl.Fragment, "&")
 	for _, param := range fragmentParams {
@@ -197,7 +191,6 @@ func (p *dexIdTokenProvider) parseTokenResponse(parsedUrl *url.URL) map[string]s
 }
 
 func readRespBody(resp *http.Response) string {
-
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("WARNING: Unable to read response body (status: '%s'). Root cause: %v", resp.Status, err)

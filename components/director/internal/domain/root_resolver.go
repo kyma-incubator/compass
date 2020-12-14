@@ -5,8 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/metrics"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -21,7 +24,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	packageutil "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -32,18 +35,21 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/graphql_client"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
 
 type RootResolver struct {
+	appNameNormalizer   normalizer.Normalizator
 	app                 *application.Resolver
 	appTemplate         *apptemplate.Resolver
 	api                 *api.Resolver
@@ -51,6 +57,7 @@ type RootResolver struct {
 	eventing            *eventing.Resolver
 	doc                 *document.Resolver
 	runtime             *runtime.Resolver
+	runtimeContext      *runtime_context.Resolver
 	healthCheck         *healthcheck.Resolver
 	webhook             *webhook.Resolver
 	labelDef            *labeldef.Resolver
@@ -60,12 +67,13 @@ type RootResolver struct {
 	intSys              *integrationsystem.Resolver
 	viewer              *viewer.Resolver
 	tenant              *tenant.Resolver
-	mpPackage           *mp_package.Resolver
+	mpPackage           *packageutil.Resolver
 	packageInstanceAuth *packageinstanceauth.Resolver
 	scenarioAssignment  *scenarioassignment.Resolver
 }
 
 func NewRootResolver(
+	appNameNormalizer normalizer.Normalizator,
 	transact persistence.Transactioner,
 	cfgProvider *configprovider.Provider,
 	oneTimeTokenCfg onetimetoken.Config,
@@ -73,12 +81,18 @@ func NewRootResolver(
 	pairingAdaptersMapping map[string]string,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
+	clientTimeout time.Duration,
+	protectedLabelPattern string,
 ) *RootResolver {
-	oAuth20HTTPClient := &http.Client{Timeout: oAuth20Cfg.HTTPClientTimeout}
+	oAuth20HTTPClient := &http.Client{
+		Timeout:   oAuth20Cfg.HTTPClientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+	}
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
 
 	authConverter := auth.NewConverter()
 	runtimeConverter := runtime.NewConverter()
+	runtimeContextConverter := runtime_context.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
 	docConverter := document.NewConverter(frConverter)
@@ -91,7 +105,7 @@ func NewRootResolver(
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	intSysConverter := integrationsystem.NewConverter()
 	tenantConverter := tenant.NewConverter()
-	packageConverter := mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	packageConverter := packageutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, packageConverter)
 	appTemplateConverter := apptemplate.NewConverter(appConverter)
 	packageInstanceAuthConv := packageinstanceauth.NewConverter(authConverter)
@@ -99,6 +113,7 @@ func NewRootResolver(
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository()
+	runtimeContextRepo := runtime_context.NewRepository()
 	applicationRepo := application.NewRepository(appConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -111,45 +126,51 @@ func NewRootResolver(
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	packageRepo := mp_package.NewRepository(packageConverter)
+	packageRepo := packageutil.NewRepository(packageConverter)
 	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageInstanceAuthConv)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 
-	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL)
+	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL, clientTimeout)
 
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
-	httpClient := getHttpClient()
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
+	httpClient := &http.Client{
+		Timeout:   clientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+	}
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
+	runtimeCtxSvc := runtime_context.NewService(runtimeContextRepo, labelRepo, labelUpsertSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, oAuth20HTTPClient)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
-	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
-	packageSvc := mp_package.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
+	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
+	packageSvc := packageutil.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
+		appNameNormalizer:   appNameNormalizer,
 		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, packageSvc, apiConverter, frConverter),
 		eventAPI:            eventdef.NewResolver(transact, eventAPISvc, appSvc, packageSvc, eventAPIConverter, frConverter),
 		eventing:            eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                 document.NewResolver(transact, docSvc, appSvc, packageSvc, frConverter),
-		runtime:             runtime.NewResolver(transact, runtimeSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
+		runtime:             runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),
+		runtimeContext:      runtime_context.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:         healthcheck.NewResolver(healthCheckSvc),
 		webhook:             webhook.NewResolver(transact, webhookSvc, appSvc, webhookConverter),
 		labelDef:            labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
@@ -159,17 +180,10 @@ func NewRootResolver(
 		intSys:              integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:              viewer.NewViewerResolver(),
 		tenant:              tenant.NewResolver(transact, tenantSvc, tenantConverter),
-		mpPackage:           mp_package.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
+		mpPackage:           packageutil.NewResolver(transact, packageSvc, packageInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, packageConverter, packageInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
 		packageInstanceAuth: packageinstanceauth.NewResolver(transact, packageInstanceAuthSvc, packageSvc, packageInstanceAuthConv),
 		scenarioAssignment:  scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv),
 	}
-}
-
-func getHttpClient() *http.Client {
-	out := &http.Client{
-		Timeout: time.Second * 3,
-	}
-	return out
 }
 
 func (r *RootResolver) Mutation() graphql.MutationResolver {
@@ -184,7 +198,9 @@ func (r *RootResolver) Application() graphql.ApplicationResolver {
 func (r *RootResolver) Runtime() graphql.RuntimeResolver {
 	return &runtimeResolver{r}
 }
-
+func (r *RootResolver) RuntimeContext() graphql.RuntimeContextResolver {
+	return &runtimeContextResolver{r}
+}
 func (r *RootResolver) APISpec() graphql.APISpecResolver {
 	return &apiSpecResolver{r}
 }
@@ -220,6 +236,16 @@ func (r *queryResolver) Viewer(ctx context.Context) (*graphql.Viewer, error) {
 }
 
 func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if consumerInfo.ConsumerType == consumer.Runtime {
+		log.C(ctx).Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
+		return r.app.ApplicationsForRuntime(ctx, consumerInfo.ConsumerID, first, after)
+	}
+
 	return r.app.Applications(ctx, filter, first, after)
 }
 
@@ -233,13 +259,41 @@ func (r *queryResolver) ApplicationTemplate(ctx context.Context, id string) (*gr
 	return r.appTemplate.ApplicationTemplate(ctx, id)
 }
 func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
-	return r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
+	apps, err := r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
+	if err != nil {
+		return nil, err
+	}
+
+	labels, err := r.runtime.GetLabel(ctx, runtimeID, runtime.IsNormalizedLabel)
+	if err != nil {
+		return nil, err
+	}
+
+	shouldNormalize := true
+	if labels != nil {
+		labelsMap := (map[string]interface{})(*labels)
+		shouldNormalize = labelsMap[runtime.IsNormalizedLabel] == nil || labelsMap[runtime.IsNormalizedLabel] == "true"
+	}
+
+	if shouldNormalize {
+		for i := range apps.Data {
+			apps.Data[i].Name = r.appNameNormalizer.Normalize(apps.Data[i].Name)
+		}
+	}
+
+	return apps, nil
 }
 func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	return r.runtime.Runtimes(ctx, filter, first, after)
 }
 func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.Runtime(ctx, id)
+}
+func (r *queryResolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
+	return r.runtimeContext.RuntimeContexts(ctx, filter, first, after)
+}
+func (r *queryResolver) RuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.RuntimeContext(ctx, id)
 }
 func (r *queryResolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefinition, error) {
 	return r.labelDef.LabelDefinitions(ctx)
@@ -335,6 +389,15 @@ func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in grap
 }
 func (r *mutationResolver) UnregisterRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.DeleteRuntime(ctx, id)
+}
+func (r *mutationResolver) RegisterRuntimeContext(ctx context.Context, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.RegisterRuntimeContext(ctx, in)
+}
+func (r *mutationResolver) UpdateRuntimeContext(ctx context.Context, id string, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.UpdateRuntimeContext(ctx, id, in)
+}
+func (r *mutationResolver) UnregisterRuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.DeleteRuntimeContext(ctx, id)
 }
 func (r *mutationResolver) DeleteDocument(ctx context.Context, id string) (*graphql.Document, error) {
 	return r.doc.DeleteDocument(ctx, id)
@@ -530,6 +593,14 @@ func (r *oneTimeTokenForRuntimeResolver) RawEncoded(ctx context.Context, obj *gr
 
 func (r *oneTimeTokenForRuntimeResolver) Raw(ctx context.Context, obj *graphql.OneTimeTokenForRuntime) (*string, error) {
 	return r.token.Raw(ctx, &obj.TokenWithURL)
+}
+
+type runtimeContextResolver struct {
+	*RootResolver
+}
+
+func (r *runtimeContextResolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key *string) (*graphql.Labels, error) {
+	return r.runtimeContext.Labels(ctx, obj, key)
 }
 
 type PackageResolver struct{ *RootResolver }

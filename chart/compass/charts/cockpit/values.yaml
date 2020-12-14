@@ -4,12 +4,6 @@ deployment:
   resources: {}
   strategy: {}
   nodeSelector: {}
-images:
-  containerRegistry:
-    path: eu.gcr.io/kyma-project
-  ui:
-    dir:
-    version: 199b2fcb
 mf:
   host: compass-mf
 service:

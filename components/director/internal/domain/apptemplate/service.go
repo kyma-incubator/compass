@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -45,7 +45,7 @@ func NewService(appTemplateRepo ApplicationTemplateRepository, uidService UIDSer
 
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
 	id := s.uidService.Generate()
-	log.Debugf("ID %s generated for Application Template with name %s", id, in.Name)
+	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", id, in.Name)
 
 	appTemplate := in.ToApplicationTemplate(id)
 

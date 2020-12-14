@@ -3,10 +3,12 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -14,6 +16,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
 )
+
+const IsNormalizedLabel = "isNormalized"
 
 //go:generate mockery -name=RuntimeRepository -output=automock -outpkg=automock -case=underscore
 type RuntimeRepository interface {
@@ -32,6 +36,7 @@ type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
+	DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error
 }
 
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
@@ -43,7 +48,7 @@ type LabelUpsertService interface {
 //go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(labels *map[string]interface{})
+	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
 //go:generate mockery -name=ScenarioAssignmentEngine -output=automock -outpkg=automock -case=underscore
@@ -66,6 +71,8 @@ type service struct {
 	uidService               UIDService
 	scenariosService         ScenariosService
 	scenarioAssignmentEngine ScenarioAssignmentEngine
+
+	protectedLabelPattern string
 }
 
 func NewService(repo RuntimeRepository,
@@ -73,14 +80,17 @@ func NewService(repo RuntimeRepository,
 	scenariosService ScenariosService,
 	labelUpsertService LabelUpsertService,
 	uidService UIDService,
-	scenarioAssignmentEngine ScenarioAssignmentEngine) *service {
+	scenarioAssignmentEngine ScenarioAssignmentEngine,
+	protectedLabelPattern string) *service {
 	return &service{
 		repo:                     repo,
 		labelRepo:                labelRepo,
 		scenariosService:         scenariosService,
 		labelUpsertService:       labelUpsertService,
 		uidService:               uidService,
-		scenarioAssignmentEngine: scenarioAssignmentEngine}
+		scenarioAssignmentEngine: scenarioAssignmentEngine,
+		protectedLabelPattern:    protectedLabelPattern,
+	}
 }
 
 func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
@@ -170,8 +180,22 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 	if len(scenarios) > 0 {
 		in.Labels[model.ScenariosKey] = scenarios
 	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
+		s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
 	}
+
+	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {
+		if in.Labels == nil {
+			in.Labels = make(map[string]interface{}, 1)
+		}
+		in.Labels[IsNormalizedLabel] = "true"
+	}
+
+	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
+	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern)
+	if err != nil {
+		return "", err
+	}
+	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
 	if err != nil {
@@ -187,9 +211,9 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	rtm, err := s.Get(ctx, id)
+	rtm, err := s.repo.GetByID(ctx, rtmTenant, id)
 	if err != nil {
-		return errors.Wrap(err, "while getting Runtime")
+		return errors.Wrapf(err, "while getting Runtime with id %s", id)
 	}
 
 	rtm = in.ToRuntime(id, rtm.Tenant, rtm.CreationTimestamp, time.Now())
@@ -199,7 +223,22 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) 
 		return errors.Wrap(err, "while updating Runtime")
 	}
 
-	err = s.labelRepo.DeleteAll(ctx, rtmTenant, model.RuntimeLabelableObject, id)
+	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {
+		if in.Labels == nil {
+			in.Labels = make(map[string]interface{}, 1)
+		}
+		in.Labels[IsNormalizedLabel] = "true"
+	}
+
+	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
+	in.Labels, err = unsafeExtractUnProtectedLabels(in.Labels, s.protectedLabelPattern)
+	if err != nil {
+		return err
+	}
+	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
+
+	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
+	err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, s.protectedLabelPattern)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
@@ -269,6 +308,13 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return err
 	}
 
+	protected, err := isProtected(labelInput.Key, s.protectedLabelPattern)
+	if err != nil {
+		return err
+	}
+	if protected {
+		return apperrors.NewInvalidDataError("could not set protected label key %s", labelInput.Key)
+	}
 	if labelInput.Key != model.ScenariosKey {
 		err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput)
 		if err != nil {
@@ -321,7 +367,7 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 		return nil, errors.Wrap(err, "while getting label for Runtime")
 	}
 
-	return labels, nil
+	return extractUnProtectedLabels(labels, s.protectedLabelPattern)
 }
 
 func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string) error {
@@ -352,6 +398,13 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return err
 	}
 
+	protected, err := isProtected(key, s.protectedLabelPattern)
+	if err != nil {
+		return err
+	}
+	if protected {
+		return apperrors.NewInvalidDataError("could not delete protected label key %s", key)
+	}
 	if key != model.ScenariosKey {
 		err = s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key)
 		if err != nil {
@@ -445,6 +498,42 @@ func (s *service) getCurrentLabelsForRuntime(ctx context.Context, tenantID, runt
 		currentLabels[v.Key] = v.Value
 	}
 	return currentLabels, nil
+}
+
+func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {
+	result := make(map[string]*model.Label)
+	for labelKey, label := range labels {
+		protected, err := isProtected(labelKey, protectedLabelsKeyPattern)
+		if err != nil {
+			return nil, err
+		}
+		if !protected {
+			result[labelKey] = label
+		}
+	}
+	return result, nil
+}
+
+func unsafeExtractUnProtectedLabels(labels map[string]interface{}, protectedLabelsKeyPattern string) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	for labelKey, label := range labels {
+		protected, err := isProtected(labelKey, protectedLabelsKeyPattern)
+		if err != nil {
+			return nil, err
+		}
+		if !protected {
+			result[labelKey] = label
+		}
+	}
+	return result, nil
+}
+
+func isProtected(labelKey string, labelKeyPattern string) (bool, error) {
+	matched, err := regexp.MatchString(labelKeyPattern, labelKey)
+	if err != nil {
+		return false, err
+	}
+	return matched, nil
 }
 
 func getScenariosLabel(currentRuntimeLabels map[string]interface{}) ([]interface{}, error) {

@@ -13,22 +13,6 @@ type ScenarioAssignmentEngine struct {
 	mock.Mock
 }
 
-// MergeScenarios provides a mock function with given fields: oldScenariosLabel, previousScenarios, newScenarios
-func (_m *ScenarioAssignmentEngine) MergeScenarios(oldScenariosLabel []interface{}, previousScenarios []interface{}, newScenarios []interface{}) []interface{} {
-	ret := _m.Called(oldScenariosLabel, previousScenarios, newScenarios)
-
-	var r0 []interface{}
-	if rf, ok := ret.Get(0).(func([]interface{}, []interface{}, []interface{}) []interface{}); ok {
-		r0 = rf(oldScenariosLabel, previousScenarios, newScenarios)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]interface{})
-		}
-	}
-
-	return r0
-}
-
 // GetScenariosForSelectorLabels provides a mock function with given fields: ctx, inputLabels
 func (_m *ScenarioAssignmentEngine) GetScenariosForSelectorLabels(ctx context.Context, inputLabels map[string]string) ([]string, error) {
 	ret := _m.Called(ctx, inputLabels)
@@ -50,6 +34,22 @@ func (_m *ScenarioAssignmentEngine) GetScenariosForSelectorLabels(ctx context.Co
 	}
 
 	return r0, r1
+}
+
+// MergeScenarios provides a mock function with given fields: baseScenarios, scenariosToDelete, scenariosToAdd
+func (_m *ScenarioAssignmentEngine) MergeScenarios(baseScenarios []interface{}, scenariosToDelete []interface{}, scenariosToAdd []interface{}) []interface{} {
+	ret := _m.Called(baseScenarios, scenariosToDelete, scenariosToAdd)
+
+	var r0 []interface{}
+	if rf, ok := ret.Get(0).(func([]interface{}, []interface{}, []interface{}) []interface{}); ok {
+		r0 = rf(baseScenarios, scenariosToDelete, scenariosToAdd)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]interface{})
+		}
+	}
+
+	return r0
 }
 
 // MergeScenariosFromInputLabelsAndAssignments provides a mock function with given fields: ctx, inputLabels

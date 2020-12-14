@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -66,6 +68,8 @@ func (l *universalLister) unsafeList(ctx context.Context, dest Collection, condi
 		return errors.Wrap(err, "while building list query")
 	}
 
+	log.C(ctx).Debugf("Executing DB query: %s", query)
 	err = persist.Select(dest, query, args...)
-	return persistence.MapSQLError(err, l.resourceType, "while fetching list of objects from DB")
+
+	return persistence.MapSQLError(ctx, err, l.resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)
 }

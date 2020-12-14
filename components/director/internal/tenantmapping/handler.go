@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -34,11 +36,6 @@ type ObjectContextForSystemAuthProvider interface {
 	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string, authFlow oathkeeper.AuthFlow) (ObjectContext, error)
 }
 
-//go:generate mockery -name=Logger -output=automock -outpkg=automock -case=underscore
-type Logger interface {
-	Error(args ...interface{})
-}
-
 //go:generate mockery -name=TenantRepository -output=automock -outpkg=automock -case=underscore
 type TenantRepository interface {
 	GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error)
@@ -49,7 +46,6 @@ type Handler struct {
 	transact            persistence.Transactioner
 	mapperForUser       ObjectContextForUserProvider
 	mapperForSystemAuth ObjectContextForSystemAuthProvider
-	logger              Logger
 }
 
 func NewHandler(
@@ -62,44 +58,58 @@ func NewHandler(
 		transact:            transact,
 		mapperForUser:       mapperForUser,
 		mapperForSystemAuth: mapperForSystemAuth,
-		logger:              logrus.WithField("component", "tenant-mapping-handler"),
 	}
 }
 
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+
 	if req.Method != http.MethodPost {
-		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusBadRequest)
+		err := fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method)
+		log.C(ctx).Errorf(err)
+		http.Error(writer, err, http.StatusBadRequest)
 		return
 	}
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		h.logError(err, "while parsing the request")
-		h.respond(writer, reqData.Body)
+		log.C(ctx).WithError(err).Errorf("An error occurred while parsing request.")
+		respond(ctx, writer, reqData.Body)
 		return
 	}
+
+	authID, authFlow, err := reqData.GetAuthID()
+	logger := log.C(ctx).WithFields(logrus.Fields{
+		"authID":   authID,
+		"authFlow": authFlow,
+	})
+	newCtx := log.ContextWithLogger(ctx, logger)
+
+	body := h.processRequest(newCtx, reqData)
+	respond(newCtx, writer, body)
+}
+
+func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData) oathkeeper.ReqBody {
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		h.logError(err, "while opening the db transaction")
-		h.respond(writer, reqData.Body)
-		return
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction.")
+		return reqData.Body
 	}
-	defer h.transact.RollbackUnlessCommitted(tx)
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 
-	ctx := persistence.SaveToContext(req.Context(), tx)
+	newCtx := persistence.SaveToContext(ctx, tx)
 
-	objCtx, err := h.getObjectContext(ctx, reqData)
+	log.C(ctx).Debug("Getting object context")
+	objCtx, err := h.getObjectContext(newCtx, reqData)
 	if err != nil {
-		h.logError(err, "while getting object context")
-		h.respond(writer, reqData.Body)
-		return
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context.")
+		return reqData.Body
 	}
 
 	if err := tx.Commit(); err != nil {
-		h.logError(err, "while committing transaction")
-		h.respond(writer, reqData.Body)
-		return
+		log.C(ctx).WithError(err).Errorf("An error occurred while committing transaction.")
+		return reqData.Body
 	}
 
 	reqData.Body.Extra["tenant"] = objCtx.TenantID
@@ -108,7 +118,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData.Body.Extra["consumerID"] = objCtx.ConsumerID
 	reqData.Body.Extra["consumerType"] = objCtx.ConsumerType
 
-	h.respond(writer, reqData.Body)
+	return reqData.Body
 }
 
 func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData) (ObjectContext, error) {
@@ -127,15 +137,10 @@ func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqDa
 	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)
 }
 
-func (h *Handler) logError(err error, wrapperStr string) {
-	wrappedErr := errors.Wrap(err, wrapperStr)
-	h.logger.Error(wrappedErr)
-}
-
-func (h *Handler) respond(writer http.ResponseWriter, body oathkeeper.ReqBody) {
+func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {
-		h.logError(err, "while encoding data")
+		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data.")
 	}
 }

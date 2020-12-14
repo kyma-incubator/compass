@@ -1,6 +1,7 @@
 package tenantmapping
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -86,7 +87,7 @@ func TestStaticGroupRepository(t *testing.T) {
 			},
 		}
 		groupnames := []string{"developer", "admin"}
-		staticGroup := repo.Get(groupnames)
+		staticGroup := repo.Get(context.TODO(), groupnames)
 
 		require.Equal(t, int(1), len(staticGroup))
 		require.Equal(t, "developer", staticGroup[0].GroupName)
@@ -107,7 +108,7 @@ func TestStaticGroupRepository(t *testing.T) {
 			},
 		}
 		groupnames := []string{"developer", "admin"}
-		staticGroup := repo.Get(groupnames)
+		staticGroup := repo.Get(context.TODO(), groupnames)
 
 		require.Equal(t, int(2), len(staticGroup))
 
@@ -121,7 +122,7 @@ func TestStaticGroupRepository(t *testing.T) {
 	t.Run("returns empty array when staticGroup does not exist", func(t *testing.T) {
 		repo := staticGroupRepository{}
 
-		staticGroup := repo.Get([]string{"non-existing"})
+		staticGroup := repo.Get(context.TODO(), []string{"non-existing"})
 
 		require.Equal(t, int(0), len(staticGroup))
 	})

@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -31,16 +32,26 @@ func TestHandler_Info(t *testing.T) {
 		oathkeeper.ClientIdFromTokenHeader: "myapp",
 	}
 
+	appName := "myappname"
+	normalizedAppName := "mp-myappname"
 	application := graphql.ApplicationExt{
-		Application:           graphql.Application{Name: "myappname"},
+		Application:           graphql.Application{Name: appName},
 		EventingConfiguration: graphql.ApplicationEventingConfiguration{DefaultURL: "https://default-events-url.com"},
+	}
+
+	applicationWithLabels := graphql.ApplicationExt{
+		Application:           application.Application,
+		EventingConfiguration: application.EventingConfiguration,
+		Labels: graphql.Labels{
+			appNameLabel: normalizedAppName,
+		},
 	}
 
 	emptyResFunction := func(applicationName string, eventServiceBaseURL, tenant string, configuration connectorSchema.Configuration) (i interface{}, e error) {
 		return connectorSchema.Configuration{}, nil
 	}
 
-	t.Run("Should get Signing Request Info", func(t *testing.T) {
+	t.Run("Should get Signing Request Info for application without name label", func(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
 
@@ -49,7 +60,7 @@ func TestHandler_Info(t *testing.T) {
 
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
-		directorClientMock.On("GetApplication", "myapp").Return(application, nil)
+		directorClientMock.On("GetApplication", mock.Anything, "myapp").Return(application, nil)
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		newToken := "new_token"
@@ -70,7 +81,7 @@ func TestHandler_Info(t *testing.T) {
 			},
 		}
 
-		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -83,7 +94,7 @@ func TestHandler_Info(t *testing.T) {
 				RuntimeURLs: &model.RuntimeURLs{
 					EventsURL:     "https://default-events-url.com",
 					EventsInfoURL: "https://default-events-url.com/subscribed",
-					MetadataURL:   "www.connectivity-adapter-mtls.com/myappname/v1/metadata/services",
+					MetadataURL:   fmt.Sprintf("www.connectivity-adapter-mtls.com/%s/v1/metadata/services", appName),
 				},
 				InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
 				CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",
@@ -111,7 +122,78 @@ func TestHandler_Info(t *testing.T) {
 		assert.EqualValues(t, expectedInfoResponse, infoResponse)
 	})
 
-	t.Run("Should get Management Info", func(t *testing.T) {
+	t.Run("Should get Signing Request Info for application with name label", func(t *testing.T) {
+		// given
+		connectorClientMock := &connectorMock.Client{}
+
+		connectorClientProviderMock := &connectorMock.ClientProvider{}
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
+
+		directorClientProviderMock := &directorMock.ClientProvider{}
+		directorClientMock := &directorMock.Client{}
+		directorClientMock.On("GetApplication", mock.Anything, "myapp").Return(applicationWithLabels, nil)
+		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
+
+		newToken := "new_token"
+		directorUrl := "www.director.com"
+		certificateSecuredConnectorUrl := "www.connector.com"
+
+		configurationResponse := connectorSchema.Configuration{
+			Token: &connectorSchema.Token{
+				Token: newToken,
+			},
+			CertificateSigningRequestInfo: &connectorSchema.CertificateSigningRequestInfo{
+				Subject:      "O=Org,OU=OrgUnit,L=Gliwice,ST=Province,C=PL,CN=CommonName",
+				KeyAlgorithm: "rsa2048",
+			},
+			ManagementPlaneInfo: &connectorSchema.ManagementPlaneInfo{
+				DirectorURL:                    &directorUrl,
+				CertificateSecuredConnectorURL: &certificateSecuredConnectorUrl,
+			},
+		}
+
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
+		csrInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewCSRInfoResponseProvider("www.connectivity-adapter.com", "www.connectivity-adapter-mtls.com"))
+
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
+
+		r := httptest.NewRecorder()
+
+		expectedInfoResponse := model.CSRInfoResponse{
+			CsrURL: "www.connectivity-adapter.com/v1/applications/certificates?token=new_token",
+			API: model.Api{
+				RuntimeURLs: &model.RuntimeURLs{
+					EventsURL:     "https://default-events-url.com",
+					EventsInfoURL: "https://default-events-url.com/subscribed",
+					MetadataURL:   fmt.Sprintf("www.connectivity-adapter-mtls.com/%s/v1/metadata/services", normalizedAppName),
+				},
+				InfoURL:         "www.connectivity-adapter-mtls.com/v1/applications/management/info",
+				CertificatesURL: "www.connectivity-adapter.com/v1/applications/certificates",
+			},
+			CertificateInfo: model.CertInfo{
+				Subject:      "O=Org,OU=OrgUnit,L=Gliwice,ST=Province,C=PL,CN=CommonName",
+				Extensions:   "",
+				KeyAlgorithm: "rsa2048",
+			},
+		}
+
+		// when
+		csrInfoHandler.GetInfo(r, req)
+		defer closeResponseBody(t, r.Result())
+
+		// then
+		responseBody, err := ioutil.ReadAll(r.Body)
+		require.NoError(t, err)
+
+		var infoResponse model.CSRInfoResponse
+		err = json.Unmarshal(responseBody, &infoResponse)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, r.Code)
+		assert.EqualValues(t, expectedInfoResponse, infoResponse)
+	})
+
+	t.Run("Should get Management Info for application without name label", func(t *testing.T) {
 		// given
 		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		directorClientProviderMock := &directorMock.ClientProvider{}
@@ -136,21 +218,22 @@ func TestHandler_Info(t *testing.T) {
 			},
 		}
 
+		appName := "myApp"
 		directorApp := directorSchema.ApplicationExt{
 			Application: directorSchema.Application{
-				Name: "myApp",
+				Name: appName,
 			},
 			EventingConfiguration: directorSchema.ApplicationEventingConfiguration{
 				DefaultURL: "www.event-service.com/myApp/v1/events",
 			},
 		}
 
-		directorClientMock.On("GetApplication", "myapp").Return(directorApp, nil)
+		directorClientMock.On("GetApplication", mock.Anything, "myapp").Return(directorApp, nil)
 
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
-		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -159,13 +242,100 @@ func TestHandler_Info(t *testing.T) {
 
 		expectedManagementInfoResponse := model.MgmtInfoReponse{
 			ClientIdentity: model.ClientIdentity{
-				Application: "myApp",
+				Application: appName,
 			},
 			URLs: model.MgmtURLs{
 				RuntimeURLs: &model.RuntimeURLs{
 					EventsURL:     "www.event-service.com/myApp/v1/events",
 					EventsInfoURL: "www.event-service.com/myApp/v1/events/subscribed",
-					MetadataURL:   "www.connectivity-adapter-mtls.com/myApp/v1/metadata/services",
+					MetadataURL:   fmt.Sprintf("www.connectivity-adapter-mtls.com/%s/v1/metadata/services", appName),
+				},
+				RenewCertURL:  "www.connectivity-adapter-mtls.com/v1/applications/certificates/renewals",
+				RevokeCertURL: "www.connectivity-adapter-mtls.com/v1/applications/certificates/revocations",
+			},
+			CertificateInfo: model.CertInfo{
+				Subject:      "O=Org,OU=OrgUnit,L=Gliwice,ST=Province,C=PL,CN=CommonName",
+				Extensions:   "",
+				KeyAlgorithm: "rsa2048",
+			},
+		}
+
+		// when
+		mgmtInfoHandler.GetInfo(r, req)
+		defer closeResponseBody(t, r.Result())
+
+		// then
+		responseBody, err := ioutil.ReadAll(r.Body)
+		require.NoError(t, err)
+
+		var managementInfoResponse model.MgmtInfoReponse
+		err = json.Unmarshal(responseBody, &managementInfoResponse)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, r.Code)
+		assert.Equal(t, expectedManagementInfoResponse, managementInfoResponse)
+	})
+
+	t.Run("Should get Management Info for application with name label", func(t *testing.T) {
+		// given
+		connectorClientProviderMock := &connectorMock.ClientProvider{}
+		directorClientProviderMock := &directorMock.ClientProvider{}
+		connectorClientMock := &connectorMock.Client{}
+		directorClientMock := &directorMock.Client{}
+
+		newToken := "new_token"
+		directorUrl := "www.director.com"
+		certificateSecuredConnectorUrl := "www.connector.com"
+
+		configurationResponse := connectorSchema.Configuration{
+			Token: &connectorSchema.Token{
+				Token: newToken,
+			},
+			CertificateSigningRequestInfo: &connectorSchema.CertificateSigningRequestInfo{
+				Subject:      "O=Org,OU=OrgUnit,L=Gliwice,ST=Province,C=PL,CN=CommonName",
+				KeyAlgorithm: "rsa2048",
+			},
+			ManagementPlaneInfo: &connectorSchema.ManagementPlaneInfo{
+				DirectorURL:                    &directorUrl,
+				CertificateSecuredConnectorURL: &certificateSecuredConnectorUrl,
+			},
+		}
+
+		appName := "myApp"
+		normalizedAppName := "mp-myapp"
+		directorApp := directorSchema.ApplicationExt{
+			Application: directorSchema.Application{
+				Name: appName,
+			},
+			EventingConfiguration: directorSchema.ApplicationEventingConfiguration{
+				DefaultURL: "www.event-service.com/myApp/v1/events",
+			},
+			Labels: graphql.Labels{
+				appNameLabel: normalizedAppName,
+			},
+		}
+
+		directorClientMock.On("GetApplication", mock.Anything, "myapp").Return(directorApp, nil)
+
+		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
+		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
+
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
+		mgmtInfoHandler := NewInfoHandler(connectorClientProviderMock, directorClientProviderMock, logrus.New(), model.NewManagementInfoResponseProvider("www.connectivity-adapter-mtls.com"))
+
+		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
+
+		r := httptest.NewRecorder()
+
+		expectedManagementInfoResponse := model.MgmtInfoReponse{
+			ClientIdentity: model.ClientIdentity{
+				Application: normalizedAppName,
+			},
+			URLs: model.MgmtURLs{
+				RuntimeURLs: &model.RuntimeURLs{
+					EventsURL:     "www.event-service.com/myApp/v1/events",
+					EventsInfoURL: "www.event-service.com/myApp/v1/events/subscribed",
+					MetadataURL:   fmt.Sprintf("www.connectivity-adapter-mtls.com/%s/v1/metadata/services", normalizedAppName),
 				},
 				RenewCertURL:  "www.connectivity-adapter-mtls.com/v1/applications/certificates/renewals",
 				RevokeCertURL: "www.connectivity-adapter-mtls.com/v1/applications/certificates/revocations",
@@ -198,7 +368,7 @@ func TestHandler_Info(t *testing.T) {
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
-		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, apperrors.Internal("error"))
+		directorClientMock.On("GetApplication", mock.Anything, mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, apperrors.Internal("error"))
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		connectorClientMock := &connectorMock.Client{}
@@ -220,7 +390,7 @@ func TestHandler_Info(t *testing.T) {
 				CertificateSecuredConnectorURL: &certificateSecuredConnectorUrl,
 			},
 		}
-		connectorClientMock.On("Configuration", headersFromToken).Return(configurationResponse, nil)
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(configurationResponse, nil)
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
 		r := httptest.NewRecorder()
@@ -238,13 +408,13 @@ func TestHandler_Info(t *testing.T) {
 	t.Run("Should return error when failed to call Compass Connector", func(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
-		connectorClientMock.On("Configuration", headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
 		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
-		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
+		directorClientMock.On("GetApplication", mock.Anything, mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)
@@ -283,13 +453,13 @@ func TestHandler_Info(t *testing.T) {
 	t.Run("Should return error when failed to build response", func(t *testing.T) {
 		// given
 		connectorClientMock := &connectorMock.Client{}
-		connectorClientMock.On("Configuration", headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
+		connectorClientMock.On("Configuration", mock.Anything, headersFromToken).Return(connectorSchema.Configuration{}, apperrors.Internal("error"))
 		connectorClientProviderMock := &connectorMock.ClientProvider{}
 		connectorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(connectorClientMock)
 
 		directorClientProviderMock := &directorMock.ClientProvider{}
 		directorClientMock := &directorMock.Client{}
-		directorClientMock.On("GetApplication", mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
+		directorClientMock.On("GetApplication", mock.Anything, mock.AnythingOfType("string")).Return(graphql.ApplicationExt{}, nil)
 		directorClientProviderMock.On("Client", mock.AnythingOfType("*http.Request")).Return(directorClientMock)
 
 		req := newRequestWithContext(strings.NewReader(""), headersFromToken)

@@ -10,17 +10,14 @@ import (
 	"strings"
 )
 
-const (
-	RSAKeySize = 2048
-	RSAKey     = "rsa2048"
-)
+const RSAKeySize = 2048
 
-func GenerateKey() (*rsa.PrivateKey, error) {
+func generateKey() (*rsa.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, RSAKeySize)
 }
 
-func CreateCsr(strSubject string, keys *rsa.PrivateKey) (string, error) {
-	subject := ParseSubject(strSubject)
+func createCsr(strSubject string, keys *rsa.PrivateKey) (string, error) {
+	subject := parseSubject(strSubject)
 
 	var csrTemplate = x509.CertificateRequest{
 		Subject: subject,
@@ -41,7 +38,7 @@ func CreateCsr(strSubject string, keys *rsa.PrivateKey) (string, error) {
 	return encodedCsr, nil
 }
 
-func ParseSubject(subject string) pkix.Name {
+func parseSubject(subject string) pkix.Name {
 	subjectInfo := extractSubject(subject)
 
 	return pkix.Name{

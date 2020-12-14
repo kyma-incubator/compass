@@ -1,13 +1,15 @@
 package tenantmapping
 
 import (
+	"context"
 	"io/ioutil"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 type StaticGroup struct {
@@ -19,7 +21,7 @@ type StaticGroups []StaticGroup
 
 //go:generate mockery -name=StaticGroupRepository -output=automock -outpkg=automock -case=underscore
 type StaticGroupRepository interface {
-	Get(groupnames []string) StaticGroups
+	Get(ctx context.Context, groupnames []string) StaticGroups
 }
 
 type staticGroupRepository struct {
@@ -48,14 +50,14 @@ func NewStaticGroupRepository(srcPath string) (*staticGroupRepository, error) {
 	}, nil
 }
 
-func (r *staticGroupRepository) Get(groupnames []string) StaticGroups {
+func (r *staticGroupRepository) Get(ctx context.Context, groupnames []string) StaticGroups {
 	result := []StaticGroup{}
 
 	for _, groupname := range groupnames {
 		if staticGroup, ok := r.data[groupname]; ok {
 			result = append(result, staticGroup)
 		} else {
-			log.Warnf("static group with name %s not found", groupname)
+			log.C(ctx).Warnf("Static group with name %s not found", groupname)
 		}
 	}
 

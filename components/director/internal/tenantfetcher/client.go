@@ -9,11 +9,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	pkgErrors "github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -49,7 +50,7 @@ type Client struct {
 	apiConfig APIConfig
 }
 
-func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
+func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig, timeout time.Duration) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
 		ClientSecret: oAuth2Config.ClientSecret,
@@ -57,6 +58,7 @@ func NewClient(oAuth2Config OAuth2Config, apiConfig APIConfig) *Client {
 	}
 
 	httpClient := cfg.Client(context.Background())
+	httpClient.Timeout = timeout
 
 	return &Client{
 		httpClient: httpClient,
@@ -90,7 +92,7 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
-			log.Warnf("Unable to close response body. Cause: %v", err)
+			log.D().Warnf("Unable to close response body. Cause: %v", err)
 		}
 	}()
 

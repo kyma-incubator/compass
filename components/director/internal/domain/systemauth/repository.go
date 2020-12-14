@@ -3,6 +3,8 @@ package systemauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -56,6 +58,7 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
+	log.C(ctx).Debugf("Persisting SystemAuth entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
 }
 

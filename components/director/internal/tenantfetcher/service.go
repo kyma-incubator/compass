@@ -5,15 +5,13 @@ import (
 	"strconv"
 	"time"
 
-	retry "github.com/avast/retry-go"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	log "github.com/sirupsen/logrus"
-	"github.com/tidwall/gjson"
-
+	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 )
 
 type TenantFieldMapping struct {
@@ -57,6 +55,7 @@ const (
 type Service struct {
 	queryConfig          QueryConfig
 	transact             persistence.Transactioner
+	kubeClient           KubeClient
 	eventAPIClient       EventAPIClient
 	tenantStorageService TenantStorageService
 	providerName         string
@@ -65,9 +64,10 @@ type Service struct {
 	retryAttempts uint
 }
 
-func NewService(queryConfig QueryConfig, transact persistence.Transactioner, fieldMapping TenantFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService) *Service {
+func NewService(queryConfig QueryConfig, transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, providerName string, client EventAPIClient, tenantStorageService TenantStorageService) *Service {
 	return &Service{
 		transact:             transact,
+		kubeClient:           kubeClient,
 		fieldMapping:         fieldMapping,
 		providerName:         providerName,
 		eventAPIClient:       client,
@@ -79,15 +79,30 @@ func NewService(queryConfig QueryConfig, transact persistence.Transactioner, fie
 }
 
 func (s Service) SyncTenants() error {
-	tenantsToCreate, err := s.getTenantsToCreate()
+	ctx := context.Background()
+	startTime := time.Now()
+
+	lastConsumedTenantTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData()
+	if err != nil {
+		return err
+	}
+
+	tenantsToCreate, err := s.getTenantsToCreate(lastConsumedTenantTimestamp)
+
 	if err != nil {
 		return err
 	}
 	tenantsToCreate = s.dedupeTenants(tenantsToCreate)
 
-	tenantsToDelete, err := s.getTenantsToDelete()
+	tenantsToDelete, err := s.getTenantsToDelete(lastConsumedTenantTimestamp)
 	if err != nil {
 		return err
+	}
+
+	totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete)
+	log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
+	if totalNewEvents == 0 {
+		return nil
 	}
 
 	deleteTenantsMap := make(map[string]model.BusinessTenantMappingInput)
@@ -105,8 +120,8 @@ func (s Service) SyncTenants() error {
 	if err != nil {
 		return err
 	}
-	defer s.transact.RollbackUnlessCommitted(tx)
-	ctx := context.Background()
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	currentTenants, err := s.tenantStorageService.List(ctx)
@@ -146,19 +161,24 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
+	err = s.kubeClient.UpdateTenantFetcherConfigMapData(convertTimeToUnixNanoString(startTime))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s Service) getTenantsToCreate() ([]model.BusinessTenantMappingInput, error) {
+func (s Service) getTenantsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	var tenantsToCreate []model.BusinessTenantMappingInput
 
-	createdTenants, err := s.fetchTenantsWithRetries(CreatedEventsType)
+	createdTenants, err := s.fetchTenantsWithRetries(CreatedEventsType, fromTimestamp)
 	if err != nil {
 		return nil, err
 	}
 	tenantsToCreate = append(tenantsToCreate, createdTenants...)
 
-	updatedTenants, err := s.fetchTenantsWithRetries(UpdatedEventsType)
+	updatedTenants, err := s.fetchTenantsWithRetries(UpdatedEventsType, fromTimestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -167,14 +187,14 @@ func (s Service) getTenantsToCreate() ([]model.BusinessTenantMappingInput, error
 	return tenantsToCreate, nil
 }
 
-func (s Service) getTenantsToDelete() ([]model.BusinessTenantMappingInput, error) {
-	return s.fetchTenantsWithRetries(DeletedEventsType)
+func (s Service) getTenantsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
+	return s.fetchTenantsWithRetries(DeletedEventsType, fromTimestamp)
 }
 
-func (s Service) fetchTenantsWithRetries(eventsType EventsType) ([]model.BusinessTenantMappingInput, error) {
+func (s Service) fetchTenantsWithRetries(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	var tenants []model.BusinessTenantMappingInput
 	err := retry.Do(func() error {
-		fetchedTenants, err := s.fetchTenants(eventsType)
+		fetchedTenants, err := s.fetchTenants(eventsType, fromTimestamp)
 		if err != nil {
 			return err
 		}
@@ -187,11 +207,11 @@ func (s Service) fetchTenantsWithRetries(eventsType EventsType) ([]model.Busines
 	return tenants, nil
 }
 
-func (s Service) fetchTenants(eventsType EventsType) ([]model.BusinessTenantMappingInput, error) {
+func (s Service) fetchTenants(eventsType EventsType, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	params := QueryParams{
 		s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
 		s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-		s.queryConfig.TimestampField: strconv.FormatInt(1, 10),
+		s.queryConfig.TimestampField: fromTimestamp,
 	}
 	firstPage, err := s.eventAPIClient.FetchTenantEventsPage(eventsType, params)
 	if err != nil {
@@ -238,13 +258,13 @@ func (s Service) extractTenantMappings(eventType EventsType, eventsJSON []byte) 
 		} else if detailsType == gjson.JSON {
 			details = []byte(event.Get(s.fieldMapping.DetailsField).Raw)
 		} else {
-			log.Warnf("Invalid event data format: %+v", event)
+			log.D().Warnf("Invalid event data format: %+v", event)
 			return true
 		}
 
 		tenant, err := s.eventDataToTenant(eventType, details)
 		if err != nil {
-			log.Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
+			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(details))
 			return true
 		}
 		bussinessTenantMappings = append(bussinessTenantMappings, *tenant)
@@ -292,4 +312,8 @@ func (s Service) dedupeTenants(tenants []model.BusinessTenantMappingInput) []mod
 		tenants = append(tenants, t)
 	}
 	return tenants
+}
+
+func convertTimeToUnixNanoString(timestamp time.Time) string {
+	return strconv.FormatInt(timestamp.UnixNano()/int64(time.Millisecond), 10)
 }

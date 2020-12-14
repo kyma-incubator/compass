@@ -22,7 +22,7 @@ const (
 	tenantColumn string = "tenant_id"
 )
 
-var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "key", "value"}
+var tableColumns = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "key", "value"}
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
@@ -33,13 +33,15 @@ type Converter interface {
 type repository struct {
 	upserter repo.Upserter
 	lister   repo.Lister
+	deleter  repo.Deleter
 	conv     Converter
 }
 
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		upserter: repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
+		upserter: repo.NewUpserter(resource.Label, tableName, tableColumns, []string{tenantColumn, "coalesce(app_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_id, '00000000-0000-0000-0000-000000000000')", "coalesce(runtime_context_id, '00000000-0000-0000-0000-000000000000')", "key"}, []string{"value"}),
 		lister:   repo.NewLister(resource.Label, tableName, tenantColumn, tableColumns),
+		deleter:  repo.NewDeleter(resource.Label, tableName, tenantColumn),
 		conv:     conv,
 	}
 }
@@ -165,6 +167,14 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 	return errors.Wrapf(err, "while deleting all Label entities from database for %s %s", objectType, objectID)
 }
 
+func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
+	return r.deleter.DeleteMany(ctx, tenant, repo.Conditions{
+		repo.NewEqualCondition(labelableObjectField(objectType), objectID),
+		repo.NewEqualCondition(tenantColumn, tenant),
+		repo.NewNotRegexConditionString("key", labelKeyPattern),
+	})
+}
+
 func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
@@ -258,6 +268,8 @@ func labelableObjectField(objectType model.LabelableObject) string {
 		return "app_id"
 	case model.RuntimeLabelableObject:
 		return "runtime_id"
+	case model.RuntimeContextLabelableObject:
+		return "runtime_context_id"
 	}
 
 	return ""

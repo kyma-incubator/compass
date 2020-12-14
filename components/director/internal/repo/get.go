@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -72,9 +72,8 @@ func (g *universalSingleGetter) unsafeGet(ctx context.Context, conditions Condit
 		return errors.Wrap(err, "while building list query")
 	}
 
-	log.Debugf("Executing query: %s", query)
-
+	log.C(ctx).Debugf("Executing DB query: %s", query)
 	err = persist.Get(dest, query, args...)
 
-	return persistence.MapSQLError(err, g.resourceType, "while getting object from table %s", g.tableName)
+	return persistence.MapSQLError(ctx, err, g.resourceType, resource.Get, "while getting object from '%s' table", g.tableName)
 }

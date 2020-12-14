@@ -12,7 +12,7 @@ spec:
   hosts:
     - '{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}'
   gateways:
-    - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}-compass
+    - {{ .Values.global.istio.mtlsGateway.namespace }}/{{ .Values.global.istio.mtlsGateway.name }}
   http:
     - match:
       - uri:
@@ -26,8 +26,8 @@ spec:
             - {{ . }}
             {{- end }}
       corsPolicy:
-        allowOrigin:
-          - "*"
+        allowOrigins:
+          - regex: ".*"
         allowHeaders:
           - "authorization"
           - "content-type"

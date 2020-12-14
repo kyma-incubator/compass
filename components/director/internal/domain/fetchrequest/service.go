@@ -12,7 +12,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
@@ -20,7 +20,6 @@ import (
 type service struct {
 	repo         FetchRequestRepository
 	client       *http.Client
-	logger       *log.Logger
 	timestampGen timestamp.Generator
 }
 
@@ -29,39 +28,38 @@ type FetchRequestRepository interface {
 	Update(ctx context.Context, item *model.FetchRequest) error
 }
 
-func NewService(repo FetchRequestRepository, client *http.Client, logger *log.Logger) *service {
+func NewService(repo FetchRequestRepository, client *http.Client) *service {
 	return &service{
 		repo:         repo,
 		client:       client,
-		logger:       logger,
 		timestampGen: timestamp.DefaultGenerator(),
 	}
 }
 
 func (s *service) HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string {
 	var data *string
-	data, fr.Status = s.fetchAPISpec(fr)
+	data, fr.Status = s.fetchAPISpec(ctx, fr)
 
 	err := s.repo.Update(ctx, fr)
 	if err != nil {
-		s.logger.Errorf("While updating fetch request status: %s", err)
+		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request status.")
 		return nil
 	}
 
 	return data
 }
 
-func (s *service) fetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
+func (s *service) fetchAPISpec(ctx context.Context, fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
 
 	err := s.validateFetchRequest(fr)
 	if err != nil {
-		s.logger.Error(err)
+		log.C(ctx).WithError(err).Error()
 		return nil, s.fixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()))
 	}
 
 	resp, err := s.client.Get(fr.URL)
 	if err != nil {
-		s.logger.Errorf("While fetching API Spec: %s", err.Error())
+		log.C(ctx).WithError(err).Errorf("An error has occurred while fetching API Spec.")
 		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec: %s", err.Error())))
 	}
 
@@ -69,19 +67,20 @@ func (s *service) fetchAPISpec(fr *model.FetchRequest) (*string, *model.FetchReq
 		if resp.Body != nil {
 			err := resp.Body.Close()
 			if err != nil {
-				s.logger.Errorf("While closing body: %s", err.Error())
+				log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body.")
 			}
 		}
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		s.logger.Errorf("While fetching API Spec status code: %d", resp.StatusCode)
+		errMsg := fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)
+		log.C(ctx).Errorf(errMsg)
 		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		s.logger.Errorf("While reading API Spec: %s", err.Error())
+		log.C(ctx).WithError(err).Errorf("An error has occurred while reading API Spec.")
 		return nil, s.fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading API Spec: %s", err.Error())))
 	}
 

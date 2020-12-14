@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -124,7 +125,7 @@ func TestService_CreateClient(t *testing.T) {
 		},
 		{
 			Name:          "Error - Client Credential Scopes",
-			ExpectedError: errors.New("while getting scopes for registering Client Credentials: test err"),
+			ExpectedError: errors.New(fmt.Sprintf("while getting scopes for registering Client Credentials for %s: test err", objType)),
 			ScopeCfgProviderFn: func() *automock.ScopeCfgProvider {
 				scopeCfgProvider := &automock.ScopeCfgProvider{}
 				scopeCfgProvider.On("GetRequiredScopes", "clientCredentialsRegistrationScopes.integration_system").Return(nil, testErr).Once()

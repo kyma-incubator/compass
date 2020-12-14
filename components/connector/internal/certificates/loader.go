@@ -1,57 +1,73 @@
 package certificates
 
 import (
+	"context"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
-	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 const interval = 1 * time.Minute
+const certLoaderCorrelationID = "cert-loader"
 
 type Loader interface {
-	Run()
+	Run(ctx context.Context)
 }
 
 type certLoader struct {
-	certificatesCache           Cache
-	repository                  secrets.Repository
-	caSecretName                types.NamespacedName
-	rootCACertificateSecretName types.NamespacedName
+	certsCache        Cache
+	secretsRepository secrets.Repository
+	caCertSecret      types.NamespacedName
+	rootCACertSecret  types.NamespacedName
 }
 
-func NewCertificateLoader(certificatesCache Cache,
-	repository secrets.Repository,
-	caSecretName types.NamespacedName,
-	rootCACertificateSecretName types.NamespacedName) Loader {
+func NewCertificateLoader(certsCache Cache,
+	secretsRepository secrets.Repository,
+	caCertSecret types.NamespacedName,
+	rootCACertSecretName types.NamespacedName) Loader {
 	return &certLoader{
-		certificatesCache:           certificatesCache,
-		repository:                  repository,
-		caSecretName:                caSecretName,
-		rootCACertificateSecretName: rootCACertificateSecretName,
+		certsCache:        certsCache,
+		secretsRepository: secretsRepository,
+		caCertSecret:      caCertSecret,
+		rootCACertSecret:  rootCACertSecretName,
 	}
 }
 
-func (cl *certLoader) Run() {
+func (cl *certLoader) Run(ctx context.Context) {
+	ctx = cl.configureLogger(ctx)
 	for {
-		if cl.caSecretName.Name != "" {
-			cl.loadSecretToCache(cl.caSecretName)
+		select {
+		case <-ctx.Done():
+			log.C(ctx).Info("Context cancelled, stopping cert loader...")
+			return
+		default:
 		}
-		if cl.rootCACertificateSecretName.Name != "" {
-			cl.loadSecretToCache(cl.rootCACertificateSecretName)
+		if cl.caCertSecret.Name != "" {
+			cl.loadSecretToCache(ctx, cl.caCertSecret)
+		}
+		if cl.rootCACertSecret.Name != "" {
+			cl.loadSecretToCache(ctx, cl.rootCACertSecret)
 		}
 		time.Sleep(interval)
 	}
 }
 
-func (cl *certLoader) loadSecretToCache(name types.NamespacedName) {
-	secretData, appError := cl.repository.Get(name)
+func (cl *certLoader) loadSecretToCache(ctx context.Context, secret types.NamespacedName) {
+	secretData, appError := cl.secretsRepository.Get(secret)
 
 	if appError != nil {
-		log.Errorf("Failed to load secret %s to cache: %s", name.String(), appError.Error())
+		log.C(ctx).WithError(appError).Errorf("Failed to load secret %s to cache", secret.String())
 		return
 	}
 
-	cl.certificatesCache.Put(name.Name, secretData)
+	cl.certsCache.Put(secret.Name, secretData)
+}
+
+func (cl *certLoader) configureLogger(ctx context.Context) context.Context {
+	entry := log.C(ctx)
+	entry = entry.WithField(log.FieldRequestID, certLoaderCorrelationID)
+	return log.ContextWithLogger(ctx, entry)
 }

@@ -11,7 +11,6 @@ type ContextKey string
 const (
 	ConnectorTokenKey          ContextKey = "ConnectorToken"
 	ClientIdFromTokenKey       ContextKey = "ClientIdFromToken"
-	TokenTypeKey               ContextKey = "TokenType"
 	ClientIdFromCertificateKey ContextKey = "ClientIdFromCertificate"
 	ClientCertificateHashKey   ContextKey = "ClientCertificateHash"
 )

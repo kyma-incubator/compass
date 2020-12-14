@@ -14,6 +14,10 @@ const (
 	TenantNotFound     ErrorType = 25
 	Unauthorized       ErrorType = 26
 	InvalidOperation   ErrorType = 27
+	OperationTimeout   ErrorType = 28
+	EmptyData          ErrorType = 29
+	InconsistentData   ErrorType = 30
+	NotUniqueName      ErrorType = 31
 )
 
 const (
@@ -28,6 +32,11 @@ const (
 	noRequiredScopesInContextMsg = "required scopes are not defined"
 	keyDoesNotExistMsg           = "the key does not exist in the source object"
 	cannotReadTenantMsg          = "cannot read tenant from context"
-	invalidOperationMsg          = "the operation is not allowed"
+	cannotReadClientUserMsg      = "cannot read client_user from context"
+	invalidOperationMsg          = "The operation is not allowed"
 	unauthorizedMsg              = "Unauthorized"
+	operationTimeoutMsg          = "operation has timed out"
+	emptyDataMsg                 = "Some required data was left out"
+	inconsistentDataMsg          = "Inconsistent or out-of-range data"
+	notUniqueNameMsg             = "Object name is not unique"
 )

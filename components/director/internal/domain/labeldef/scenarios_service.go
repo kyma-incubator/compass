@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
@@ -67,7 +66,7 @@ func (s *scenariosService) GetAvailableScenarios(ctx context.Context, tenantID s
 	return sd.Items.Enum, nil
 }
 
-func (s *scenariosService) AddDefaultScenarioIfEnabled(labels *map[string]interface{}) {
+func (s *scenariosService) AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{}) {
 	if labels == nil || !s.defaultScenarioEnabled {
 		return
 	}
@@ -77,7 +76,7 @@ func (s *scenariosService) AddDefaultScenarioIfEnabled(labels *map[string]interf
 			*labels = map[string]interface{}{}
 		}
 		(*labels)[model.ScenariosKey] = model.ScenariosDefaultValue
-		log.Debug("Successfully added Default scenario")
+		log.C(ctx).Debug("Successfully added Default scenario")
 	}
 }
 

@@ -57,20 +57,6 @@ func (_m *EventAPIRepository) Delete(ctx context.Context, tenantID string, id st
 	return r0
 }
 
-// DeleteAllByApplicationID provides a mock function with given fields: ctx, tenantID, appID
-func (_m *EventAPIRepository) DeleteAllByApplicationID(ctx context.Context, tenantID string, appID string) error {
-	ret := _m.Called(ctx, tenantID, appID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, tenantID, appID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Exists provides a mock function with given fields: ctx, tenantID, id
 func (_m *EventAPIRepository) Exists(ctx context.Context, tenantID string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenantID, id)
@@ -115,29 +101,6 @@ func (_m *EventAPIRepository) GetByID(ctx context.Context, tenantID string, id s
 	return r0, r1
 }
 
-// GetForApplication provides a mock function with given fields: ctx, tenant, id, applicationID
-func (_m *EventAPIRepository) GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.EventDefinition, error) {
-	ret := _m.Called(ctx, tenant, id, applicationID)
-
-	var r0 *model.EventDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.EventDefinition); ok {
-		r0 = rf(ctx, tenant, id, applicationID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.EventDefinition)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, tenant, id, applicationID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetForPackage provides a mock function with given fields: ctx, tenant, id, packageID
 func (_m *EventAPIRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.EventDefinition, error) {
 	ret := _m.Called(ctx, tenant, id, packageID)
@@ -154,29 +117,6 @@ func (_m *EventAPIRepository) GetForPackage(ctx context.Context, tenant string, 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, id, packageID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListForApplication provides a mock function with given fields: ctx, tenantID, applicationID, pageSize, cursor
-func (_m *EventAPIRepository) ListForApplication(ctx context.Context, tenantID string, applicationID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
-	ret := _m.Called(ctx, tenantID, applicationID, pageSize, cursor)
-
-	var r0 *model.EventDefinitionPage
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, string) *model.EventDefinitionPage); ok {
-		r0 = rf(ctx, tenantID, applicationID, pageSize, cursor)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.EventDefinitionPage)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, int, string) error); ok {
-		r1 = rf(ctx, tenantID, applicationID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

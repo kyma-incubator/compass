@@ -1,19 +1,20 @@
 package auditlog_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog"
 	"github.com/kyma-incubator/compass/components/gateway/internal/auditlog/automock"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,14 +27,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixNoErrorResponse(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -48,14 +55,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixGraphqlMutationError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, response)
+		log := fixSuccessConfigChangeMsg(claims, request, response, auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -70,14 +83,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequestWithInvalidQuery()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -92,14 +111,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixResponseMultipleError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -114,14 +139,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixGraphqlMultiErrorWithMutation(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, response)
+		log := fixSuccessConfigChangeMsg(claims, request, response, auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -136,14 +167,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequestWithQuery()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -158,14 +195,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixJsonRequest()
 		response := fixResponseReadError(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(nil)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -183,14 +226,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		require.NoError(t, err)
 
 		claims := fixClaims()
-		msg := fixSecurityEventMsg(t, graphqlResponse.Errors, fixClaims())
+		securityEventMsg := fixSecurityEventMsg(t, graphqlResponse.Errors, fixClaims(), fixCorrelationID()[correlation.RequestIDHeaderKey])
 
 		client := &automock.AuditlogClient{}
-		client.On("LogSecurityEvent", msg).Return(nil)
+		client.On("LogSecurityEvent", context.TODO(), securityEventMsg).Return(nil)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err = auditlogSvc.Log(request, string(response), claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request:              request,
+			Response:             string(response),
+			Claims:               claims,
+		}
+		err = auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.NoError(t, err)
@@ -206,14 +255,20 @@ func TestAuditlogService_Log(t *testing.T) {
 		request := fixRequest()
 		response := fixNoErrorResponse(t)
 		claims := fixClaims()
-		log := fixSuccessConfigChangeMsg(claims, request, "success")
+		log := fixSuccessConfigChangeMsg(claims, request, "success", auditlog.PostAuditlogOperation)
 
 		client := &automock.AuditlogClient{}
-		client.On("LogConfigurationChange", log).Return(testError)
+		client.On("LogConfigurationChange", context.TODO(), log).Return(testError)
 		auditlogSvc := auditlog.NewService(client, factory)
 
 		//WHEN
-		err := auditlogSvc.Log(request, response, claims)
+		msg := proxy.AuditlogMessage{
+			CorrelationIDHeaders: fixCorrelationID(),
+			Request:              request,
+			Response:             response,
+			Claims:               claims,
+		}
+		err := auditlogSvc.Log(context.TODO(), msg)
 
 		//THEN
 		require.Error(t, err)
@@ -224,16 +279,53 @@ func TestAuditlogService_Log(t *testing.T) {
 }
 func TestSink_TimeoutOnWrite(t *testing.T) {
 	//GIVEN
-	chanMsg := make(chan auditlog.Message)
+	request := "test-request"
+	response := "test-response"
+	claims := proxy.Claims{}
+
+	chanMsg := make(chan proxy.AuditlogMessage)
 	defer close(chanMsg)
-	sink := auditlog.NewSink(chanMsg, time.Millisecond*100)
+	fakeMetric := &automock.MetricCollector{}
+	sink := auditlog.NewSink(chanMsg, time.Millisecond*100, fakeMetric)
 
 	//WHEN
-	err := sink.Log("test-request", "test-response", proxy.Claims{})
+	msg := proxy.AuditlogMessage{
+		CorrelationIDHeaders: fixCorrelationID(),
+		Request:              request,
+		Response:             response,
+		Claims:               claims,
+	}
+	err := sink.Log(context.TODO(), msg)
 
 	//THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "Cannot write to the channel")
+	assert.EqualError(t, err, "cannot write to the channel")
+}
+
+func TestSink_Write(t *testing.T) {
+	//GIVEN
+	request := "test-request"
+	response := "test-response"
+	claims := proxy.Claims{}
+
+	chanMsg := make(chan proxy.AuditlogMessage, 1)
+	defer close(chanMsg)
+	fakeMetric := &automock.MetricCollector{}
+	fakeMetric.On("SetChannelSize", 1).Return()
+	sink := auditlog.NewSink(chanMsg, time.Millisecond*100, fakeMetric)
+
+	//WHEN
+	msg := proxy.AuditlogMessage{
+		CorrelationIDHeaders: fixCorrelationID(),
+		Request:              request,
+		Response:             response,
+		Claims:               claims,
+	}
+	err := sink.Log(context.TODO(), msg)
+
+	//THEN
+	require.NoError(t, err)
+	fakeMetric.AssertExpectations(t)
 }
 
 func fixClaims() proxy.Claims {

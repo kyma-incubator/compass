@@ -57,7 +57,7 @@ type CreatePackageResult struct {
 	Result graphql.PackageExt `json:"result"`
 }
 
-func (c *directorClient) CreatePackage(appID string, in graphql.PackageCreateInput) (string, error) {
+func (c *directorClient) CreatePackage(ctx context.Context, appID string, in graphql.PackageCreateInput) (string, error) {
 	inStr, err := c.graphqlizer.PackageCreateInputToGQL(in)
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing GraphQL input")
@@ -71,7 +71,7 @@ func (c *directorClient) CreatePackage(appID string, in graphql.PackageCreateInp
 
 	var resp CreatePackageResult
 
-	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
+	err = retry.GQLRun(c.cli.Run, ctx, gqlRequest, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -79,7 +79,7 @@ func (c *directorClient) CreatePackage(appID string, in graphql.PackageCreateInp
 	return resp.Result.ID, nil
 }
 
-func (c *directorClient) UpdatePackage(packageID string, in graphql.PackageUpdateInput) error {
+func (c *directorClient) UpdatePackage(ctx context.Context, packageID string, in graphql.PackageUpdateInput) error {
 	inStr, err := c.graphqlizer.PackageUpdateInputToGQL(in)
 	if err != nil {
 		return errors.Wrap(err, "while preparing GraphQL input")
@@ -92,7 +92,7 @@ func (c *directorClient) UpdatePackage(packageID string, in graphql.PackageUpdat
 			}
 		}`, packageID, inStr))
 
-	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
+	err = retry.GQLRun(c.cli.Run, ctx, gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -104,7 +104,7 @@ type GetPackageResult struct {
 	Result graphql.ApplicationExt `json:"result"`
 }
 
-func (c *directorClient) GetPackage(appID string, packageID string) (graphql.PackageExt, error) {
+func (c *directorClient) GetPackage(ctx context.Context, appID string, packageID string) (graphql.PackageExt, error) {
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
@@ -116,7 +116,7 @@ func (c *directorClient) GetPackage(appID string, packageID string) (graphql.Pac
 
 	var resp GetPackageResult
 
-	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
+	err := retry.GQLRun(c.cli.Run, ctx, gqlRequest, &resp)
 	if err != nil {
 		return graphql.PackageExt{}, errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -128,7 +128,7 @@ type ListPackagesResult struct {
 	Result graphql.ApplicationExt `json:"result"`
 }
 
-func (c *directorClient) ListPackages(appID string) ([]*graphql.PackageExt, error) {
+func (c *directorClient) ListPackages(ctx context.Context, appID string) ([]*graphql.PackageExt, error) {
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
@@ -139,7 +139,7 @@ func (c *directorClient) ListPackages(appID string) ([]*graphql.PackageExt, erro
 
 	var resp ListPackagesResult
 
-	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
+	err := retry.GQLRun(c.cli.Run, ctx, gqlRequest, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -149,7 +149,7 @@ func (c *directorClient) ListPackages(appID string) ([]*graphql.PackageExt, erro
 	return resp.Result.Packages.Data, nil
 }
 
-func (c *directorClient) DeletePackage(packageID string) error {
+func (c *directorClient) DeletePackage(ctx context.Context, packageID string) error {
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		deletePackage(id: "%s") {
@@ -157,7 +157,7 @@ func (c *directorClient) DeletePackage(packageID string) error {
 		}	
 	}`, packageID))
 
-	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
+	err := retry.GQLRun(c.cli.Run, ctx, gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -168,7 +168,7 @@ type CreateAPIDefinitionResult struct {
 	Result graphql.APIDefinition `json:"result"`
 }
 
-func (c *directorClient) CreateAPIDefinition(packageID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error) {
+func (c *directorClient) CreateAPIDefinition(ctx context.Context, packageID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error) {
 	inStr, err := c.graphqlizer.APIDefinitionInputToGQL(apiDefinitionInput)
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing GraphQL input")
@@ -183,7 +183,7 @@ func (c *directorClient) CreateAPIDefinition(packageID string, apiDefinitionInpu
 
 	var resp CreateAPIDefinitionResult
 
-	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
+	err = retry.GQLRun(c.cli.Run, ctx, gqlRequest, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -191,7 +191,7 @@ func (c *directorClient) CreateAPIDefinition(packageID string, apiDefinitionInpu
 	return resp.Result.ID, nil
 }
 
-func (c *directorClient) DeleteAPIDefinition(apiID string) error {
+func (c *directorClient) DeleteAPIDefinition(ctx context.Context, apiID string) error {
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		deleteAPIDefinition(id: "%s") {
@@ -199,7 +199,7 @@ func (c *directorClient) DeleteAPIDefinition(apiID string) error {
 		}	
 	}`, apiID))
 
-	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
+	err := retry.GQLRun(c.cli.Run, ctx, gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -210,7 +210,7 @@ type CreateEventDefinitionResult struct {
 	Result graphql.EventDefinition `json:"result"`
 }
 
-func (c *directorClient) CreateEventDefinition(packageID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error) {
+func (c *directorClient) CreateEventDefinition(ctx context.Context, packageID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error) {
 	inStr, err := c.graphqlizer.EventDefinitionInputToGQL(eventDefinitionInput)
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing GraphQL input")
@@ -225,7 +225,7 @@ func (c *directorClient) CreateEventDefinition(packageID string, eventDefinition
 
 	var resp CreateEventDefinitionResult
 
-	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
+	err = retry.GQLRun(c.cli.Run, ctx, gqlRequest, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -233,7 +233,7 @@ func (c *directorClient) CreateEventDefinition(packageID string, eventDefinition
 	return resp.Result.ID, nil
 }
 
-func (c *directorClient) DeleteEventDefinition(eventID string) error {
+func (c *directorClient) DeleteEventDefinition(ctx context.Context, eventID string) error {
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		deleteEventDefinition(id: "%s") {
@@ -241,7 +241,7 @@ func (c *directorClient) DeleteEventDefinition(eventID string) error {
 		}	
 	}`, eventID))
 
-	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
+	err := retry.GQLRun(c.cli.Run, ctx, gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -252,7 +252,7 @@ type CreateDocumentResult struct {
 	Result graphql.Document `json:"result"`
 }
 
-func (c *directorClient) CreateDocument(packageID string, documentInput graphql.DocumentInput) (string, error) {
+func (c *directorClient) CreateDocument(ctx context.Context, packageID string, documentInput graphql.DocumentInput) (string, error) {
 	inStr, err := c.graphqlizer.DocumentInputToGQL(&documentInput)
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing GraphQL input")
@@ -267,7 +267,7 @@ func (c *directorClient) CreateDocument(packageID string, documentInput graphql.
 
 	var resp CreateDocumentResult
 
-	err = retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, &resp)
+	err = retry.GQLRun(c.cli.Run, ctx, gqlRequest, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "while doing GraphQL request")
 	}
@@ -275,7 +275,7 @@ func (c *directorClient) CreateDocument(packageID string, documentInput graphql.
 	return resp.Result.ID, nil
 }
 
-func (c *directorClient) DeleteDocument(documentID string) error {
+func (c *directorClient) DeleteDocument(ctx context.Context, documentID string) error {
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 		deleteDocument(id: "%s") {
@@ -283,14 +283,14 @@ func (c *directorClient) DeleteDocument(documentID string) error {
 		}	
 	}`, documentID))
 
-	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
+	err := retry.GQLRun(c.cli.Run, ctx, gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}
 	return nil
 }
 
-func (c *directorClient) SetApplicationLabel(appID string, label graphql.LabelInput) error {
+func (c *directorClient) SetApplicationLabel(ctx context.Context, appID string, label graphql.LabelInput) error {
 	gqlRequest := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: setApplicationLabel(applicationID: "%s", key: "%s", value: %s) {
@@ -299,7 +299,7 @@ func (c *directorClient) SetApplicationLabel(appID string, label graphql.LabelIn
 			}`,
 			appID, label.Key, label.Value, c.gqlFieldsProvider.ForLabel()))
 
-	err := retry.GQLRun(c.cli.Run, context.Background(), gqlRequest, nil)
+	err := retry.GQLRun(c.cli.Run, ctx, gqlRequest, nil)
 	if err != nil {
 		return errors.Wrap(err, "while doing GraphQL request")
 	}

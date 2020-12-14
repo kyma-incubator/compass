@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -41,7 +41,7 @@ type ApplicationService interface {
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
-	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
+	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
 }
@@ -162,7 +162,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -194,7 +194,7 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -224,7 +224,7 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -265,13 +265,13 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.Infof("Registering Application with name %s", in.Name)
+	log.C(ctx).Infof("Registering Application with name %s", in.Name)
 
-	convertedIn, err := r.appConverter.CreateInputFromGraphQL(in)
+	convertedIn, err := r.appConverter.CreateInputFromGraphQL(ctx, in)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting ApplicationRegister input")
 	}
@@ -292,7 +292,7 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 
 	gqlApp := r.appConverter.ToGraphQL(app)
 
-	log.Infof("Application with name %s and id %s successfully registered", in.Name, id)
+	log.C(ctx).Infof("Application with name %s and id %s successfully registered", in.Name, id)
 	return gqlApp, nil
 }
 func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
@@ -300,11 +300,11 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.Infof("Updating Application with id %s", id)
+	log.C(ctx).Infof("Updating Application with id %s", id)
 
 	convertedIn := r.appConverter.UpdateInputFromGraphQL(in)
 	err = r.appSvc.Update(ctx, id, convertedIn)
@@ -324,7 +324,7 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 
 	gqlApp := r.appConverter.ToGraphQL(app)
 
-	log.Infof("Application with id %s successfully updated", id)
+	log.C(ctx).Infof("Application with id %s successfully updated", id)
 
 	return gqlApp, nil
 }
@@ -333,11 +333,11 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.Infof("Unregistering Application with id %s", id)
+	log.C(ctx).Infof("Unregistering Application with id %s", id)
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
@@ -374,7 +374,7 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 
 	deletedApp := r.appConverter.ToGraphQL(app)
 
-	log.Infof("Successfully unregistered Application with id %s", id)
+	log.C(ctx).Infof("Successfully unregistered Application with id %s", id)
 	return deletedApp, nil
 }
 func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
@@ -388,7 +388,7 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -418,7 +418,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -449,7 +449,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Application) ([]*g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -474,7 +474,7 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -512,7 +512,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, obj.ID)
@@ -556,7 +556,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening the transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -581,7 +581,7 @@ func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -629,7 +629,7 @@ func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id str
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

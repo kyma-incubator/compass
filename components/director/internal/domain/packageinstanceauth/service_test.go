@@ -241,7 +241,7 @@ func TestService_Delete(t *testing.T) {
 
 func TestService_SetAuth(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.Background(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	modelInstanceAuthFn := func() *model.PackageInstanceAuth {
 		return fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
@@ -382,7 +382,7 @@ func TestService_SetAuth(t *testing.T) {
 		svc := packageinstanceauth.NewService(nil, nil)
 
 		// WHEN
-		err := svc.SetAuth(context.Background(), testID, model.PackageInstanceAuthSetInput{})
+		err := svc.SetAuth(context.TODO(), testID, model.PackageInstanceAuthSetInput{})
 
 		// THEN
 		require.Error(t, err)
@@ -392,7 +392,7 @@ func TestService_SetAuth(t *testing.T) {
 
 func TestService_Create(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.Background(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	modelAuth := fixModelAuth()
 	modelExpectedInstanceAuth := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, modelAuth, fixModelStatusSucceeded())
@@ -578,7 +578,7 @@ func TestService_Create(t *testing.T) {
 		svc := packageinstanceauth.NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.Create(context.Background(), testPackageID, model.PackageInstanceAuthRequestInput{}, nil, nil)
+		_, err := svc.Create(context.TODO(), testPackageID, model.PackageInstanceAuthRequestInput{}, nil, nil)
 
 		// THEN
 		require.Error(t, err)

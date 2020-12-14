@@ -8,8 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/healthz/automock"
 	"github.com/pkg/errors"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +21,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		mockPinger.On("PingContext", req.Context()).Return(nil)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(NewLivenessHandler(mockPinger, logrus.StandardLogger()))
+		handler := http.HandlerFunc(NewLivenessHandler(mockPinger))
 		// WHEN
 		handler.ServeHTTP(rr, req)
 		// THEN
@@ -40,7 +38,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		mockPinger.On("PingContext", req.Context()).Return(errors.New("some error"))
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(NewLivenessHandler(mockPinger, logrus.StandardLogger()))
+		handler := http.HandlerFunc(NewLivenessHandler(mockPinger))
 		// WHEN
 		handler.ServeHTTP(rr, req)
 		// THEN

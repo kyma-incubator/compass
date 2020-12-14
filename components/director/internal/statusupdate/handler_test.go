@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	logrustest "github.com/sirupsen/logrus/hooks/test"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/sirupsen/logrus"
 
@@ -27,25 +31,21 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 )
 
-const (
-	applicationsTable = "applications"
-	runtimesTable     = "runtimes"
-)
-
 func TestUpdate_Handler(t *testing.T) {
 	//given
 	testErr := errors.New("test")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name             string
-		TxFn             func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		RepoFn           func() *automock.StatusUpdateRepository
-		Request          *http.Request
-		ExpectedStatus   int
-		ExpectedResponse string
-		ExpectedLog      bytes.Buffer
-		MockNextHandler  http.Handler
+		Name                 string
+		TxFn                 func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		RepoFn               func() *automock.StatusUpdateRepository
+		Request              *http.Request
+		ExpectedStatus       int
+		ExpectedResponse     string
+		ExpectedErrorMessage *string
+		ExpectedError        *string
+		MockNextHandler      http.Handler
 	}{
 		{
 			Name: "In case of Integration System do nothing and execute next handler",
@@ -53,10 +53,10 @@ func TestUpdate_Handler(t *testing.T) {
 			RepoFn: func() *automock.StatusUpdateRepository {
 				return nil
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.IntegrationSystem),
+			Request:          createRequestWithClaims(testID, consumer.IntegrationSystem),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockNextHandler:  fixNextHandler(t, testID, consumer.IntegrationSystem),
+			MockNextHandler:  fixNextHandler(t),
 		},
 		{
 			Name: "In case of Static User do nothing and execute next handler",
@@ -64,10 +64,10 @@ func TestUpdate_Handler(t *testing.T) {
 			RepoFn: func() *automock.StatusUpdateRepository {
 				return nil
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.User),
+			Request:          createRequestWithClaims(testID, consumer.User),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockNextHandler:  fixNextHandler(t, testID, consumer.User),
+			MockNextHandler:  fixNextHandler(t),
 		},
 		{
 			Name: "In case of Application update status and execute next handler",
@@ -78,10 +78,10 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(nil)
 				return &repo
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.Application),
+			Request:          createRequestWithClaims(testID, consumer.Application),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockNextHandler:  fixNextHandler(t, testID, consumer.Application),
+			MockNextHandler:  fixNextHandler(t),
 		},
 		{
 			Name: "In case of Runtime update status and execute next handler",
@@ -92,10 +92,10 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.Runtimes).Return(nil)
 				return &repo
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.Runtime),
+			Request:          createRequestWithClaims(testID, consumer.Runtime),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockNextHandler:  fixNextHandler(t, testID, consumer.Runtime),
+			MockNextHandler:  fixNextHandler(t),
 		},
 		{
 			Name: "In case of application already connected do nothing and execute next handler",
@@ -105,10 +105,10 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("IsConnected", mock.Anything, testID, statusupdate.Applications).Return(true, nil)
 				return &repo
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.Application),
+			Request:          createRequestWithClaims(testID, consumer.Application),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockNextHandler:  fixNextHandler(t, testID, consumer.Application),
+			MockNextHandler:  fixNextHandler(t),
 		},
 		{
 			Name: "In case of runtime already connected do nothing and execute next handler",
@@ -118,10 +118,10 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Runtimes).Return(true, nil)
 				return &repo
 			},
-			Request:          createRequestWithClaims(t, testID, consumer.Runtime),
+			Request:          createRequestWithClaims(testID, consumer.Runtime),
 			ExpectedStatus:   http.StatusOK,
 			ExpectedResponse: "OK",
-			MockNextHandler:  fixNextHandler(t, testID, consumer.Runtime),
+			MockNextHandler:  fixNextHandler(t),
 		},
 		{
 			Name: "Error when no consumer info in context",
@@ -130,10 +130,11 @@ func TestUpdate_Handler(t *testing.T) {
 				repo := automock.StatusUpdateRepository{}
 				return &repo
 			},
-			Request:         &http.Request{},
-			ExpectedStatus:  http.StatusOK,
-			ExpectedLog:     *bytes.NewBufferString("while fetching consumer info from from context: Internal Server Error: cannot read consumer from context"),
-			MockNextHandler: fixNextHandler(t, testID, consumer.IntegrationSystem),
+			Request:              &http.Request{},
+			ExpectedStatus:       http.StatusOK,
+			ExpectedErrorMessage: str.Ptr("An error has occurred while fetching consumer info from context."),
+			ExpectedError:        str.Ptr("Internal Server Error: cannot read consumer from context"),
+			MockNextHandler:      fixNextHandler(t),
 		},
 		{
 			Name: "Error when starting transaction",
@@ -142,10 +143,11 @@ func TestUpdate_Handler(t *testing.T) {
 				repo := automock.StatusUpdateRepository{}
 				return &repo
 			},
-			Request:         createRequestWithClaims(t, testID, consumer.Application),
-			ExpectedStatus:  http.StatusOK,
-			ExpectedLog:     *bytes.NewBufferString("while opening transaction: test"),
-			MockNextHandler: fixNextHandler(t, testID, consumer.Application),
+			Request:              createRequestWithClaims(testID, consumer.Application),
+			ExpectedStatus:       http.StatusOK,
+			ExpectedErrorMessage: str.Ptr("An error has occurred while opening transaction."),
+			ExpectedError:        str.Ptr("test"),
+			MockNextHandler:      fixNextHandler(t),
 		},
 		{
 			Name: "Error when checking if already connected",
@@ -155,10 +157,11 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(false, testErr)
 				return &repo
 			},
-			Request:         createRequestWithClaims(t, testID, consumer.Application),
-			ExpectedStatus:  http.StatusOK,
-			ExpectedLog:     *bytes.NewBufferString("while checking status: test"),
-			MockNextHandler: fixNextHandler(t, testID, consumer.Application),
+			Request:              createRequestWithClaims(testID, consumer.Application),
+			ExpectedStatus:       http.StatusOK,
+			ExpectedErrorMessage: str.Ptr("An error has occurred while checking repository status."),
+			ExpectedError:        str.Ptr("test"),
+			MockNextHandler:      fixNextHandler(t),
 		},
 		{
 			Name: "Error when failing on commit",
@@ -168,10 +171,11 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("IsConnected", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(true, nil)
 				return &repo
 			},
-			Request:         createRequestWithClaims(t, testID, consumer.Application),
-			ExpectedStatus:  http.StatusOK,
-			ExpectedLog:     *bytes.NewBufferString("while committing: test"),
-			MockNextHandler: fixNextHandler(t, testID, consumer.Application),
+			Request:              createRequestWithClaims(testID, consumer.Application),
+			ExpectedStatus:       http.StatusOK,
+			ExpectedErrorMessage: str.Ptr("An error has occurred while committing transaction."),
+			ExpectedError:        str.Ptr("test"),
+			MockNextHandler:      fixNextHandler(t),
 		},
 		{
 			Name: "Error when updating status",
@@ -182,10 +186,11 @@ func TestUpdate_Handler(t *testing.T) {
 				repo.On("UpdateStatus", txtest.CtxWithDBMatcher(), testID, statusupdate.Applications).Return(testErr)
 				return &repo
 			},
-			Request:         createRequestWithClaims(t, testID, consumer.Application),
-			ExpectedStatus:  http.StatusOK,
-			ExpectedLog:     *bytes.NewBufferString("while updating status: test"),
-			MockNextHandler: fixNextHandler(t, testID, consumer.Application),
+			Request:              createRequestWithClaims(testID, consumer.Application),
+			ExpectedStatus:       http.StatusOK,
+			ExpectedErrorMessage: str.Ptr("An error has occurred while updating repository status."),
+			ExpectedError:        str.Ptr("test"),
+			MockNextHandler:      fixNextHandler(t),
 		},
 	}
 	for _, testCase := range testCases {
@@ -193,17 +198,18 @@ func TestUpdate_Handler(t *testing.T) {
 			repo := testCase.RepoFn()
 			persist, transact := testCase.TxFn()
 			var actualLog bytes.Buffer
-			logger := logrus.New()
+			logger, hook := logrustest.NewNullLogger()
 			logger.SetFormatter(&logrus.TextFormatter{
 				DisableTimestamp: true,
 			})
 			logger.SetOutput(&actualLog)
-			update := statusupdate.New(transact, repo, logger)
-
+			ctx := log.ContextWithLogger(testCase.Request.Context(), logrus.NewEntry(logger))
+			update := statusupdate.New(transact, repo)
+			req := testCase.Request.WithContext(ctx)
 			// WHEN
 			rr := httptest.NewRecorder()
 			updateHandler := update.Handler()
-			updateHandler(testCase.MockNextHandler).ServeHTTP(rr, testCase.Request)
+			updateHandler(testCase.MockNextHandler).ServeHTTP(rr, req)
 
 			// THEN
 			response := rr.Body.String()
@@ -211,9 +217,11 @@ func TestUpdate_Handler(t *testing.T) {
 			if testCase.ExpectedResponse == "OK" {
 				assert.Equal(t, testCase.ExpectedResponse, response)
 			}
-			if testCase.ExpectedLog.String() != "" {
-				expectedLog := fmt.Sprintf("level=error msg=\"%s\"\n", testCase.ExpectedLog.String())
-				assert.Equal(t, expectedLog, actualLog.String())
+			if testCase.ExpectedErrorMessage != nil {
+				assert.Equal(t, *testCase.ExpectedErrorMessage, hook.LastEntry().Message)
+			}
+			if testCase.ExpectedError != nil {
+				assert.Equal(t, *testCase.ExpectedError, hook.LastEntry().Data["error"].(error).Error())
 			}
 			persist.AssertExpectations(t)
 			transact.AssertExpectations(t)
@@ -222,14 +230,14 @@ func TestUpdate_Handler(t *testing.T) {
 
 }
 
-func createRequestWithClaims(t *testing.T, id string, consumerType consumer.ConsumerType) *http.Request {
+func createRequestWithClaims(id string, consumerType consumer.ConsumerType) *http.Request {
 	req := http.Request{}
 	apiConsumer := consumer.Consumer{ConsumerID: id, ConsumerType: consumerType}
 	ctxWithConsumerInfo := consumer.SaveToContext(context.TODO(), apiConsumer)
 	return req.WithContext(ctxWithConsumerInfo)
 }
 
-func fixNextHandler(t *testing.T, consumerID string, consumerType consumer.ConsumerType) http.HandlerFunc {
+func fixNextHandler(t *testing.T) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		_, err := w.Write([]byte("OK"))
