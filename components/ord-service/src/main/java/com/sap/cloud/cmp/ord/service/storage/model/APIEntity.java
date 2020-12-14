@@ -53,22 +53,25 @@ public class APIEntity {
     @CollectionTable(name = "tags", joinColumns = @JoinColumn(name = "api_definition_id"))
     private List<Tag> tags;
 
-    @Column(name = "api_definitions", length = Integer.MAX_VALUE)
-    private String apiDefinitions;
+    @ElementCollection
+    @CollectionTable(name="api_resource_definitions", joinColumns=@JoinColumn(name="api_definition_id"))
+    private List<APIDefinition> apiDefinitions;
 
     @ElementCollection
     @CollectionTable(name="links", joinColumns=@JoinColumn(name="api_definition_id"))
     private List<Link> links;
 
-    @Column(name = "actions", length = Integer.MAX_VALUE)
-    private String actions;
+    @ElementCollection
+    @CollectionTable(name="api_actions", joinColumns=@JoinColumn(name="api_definition_id"))
+    private List<APIAction> actions;
 
     @Column(name = "release_status")
     @NotNull
     private String releaseStatus;
 
-    @Column(name = "changelog_entries", length = Integer.MAX_VALUE)
-    private String changelogEntries;
+    @ElementCollection
+    @CollectionTable(name="changelog_entries", joinColumns=@JoinColumn(name="api_definition_id"))
+    private List<ChangelogEntry> changelogEntries;
 
     @Column(name = "target_url", length = 256)
     @NotNull

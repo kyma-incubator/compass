@@ -59,8 +59,9 @@ public class PackageEntity {
     @CollectionTable(name = "tags", joinColumns = @JoinColumn(name = "package_id"))
     private List<Tag> tags;
 
-    @Column(name = "actions", length = Integer.MAX_VALUE)
-    private String actions;
+    @ElementCollection
+    @CollectionTable(name = "package_actions", joinColumns = @JoinColumn(name = "package_id"))
+    private List<PackageAction> actions;
 
     @Column(name = "extensions", length = Integer.MAX_VALUE)
     private String extensions;

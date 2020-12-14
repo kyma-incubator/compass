@@ -37,8 +37,9 @@ public class EventEntity {
     @Column(name = "system_instance_aware")
     private boolean systemInstanceAware;
 
-    @Column(name = "changelog_entries", length = Integer.MAX_VALUE)
-    private String changelogEntries;
+    @ElementCollection
+    @CollectionTable(name="changelog_entries", joinColumns=@JoinColumn(name="event_definition_id"))
+    private List<ChangelogEntry> changelogEntries;
 
     @Column(name = "package_id")
     @Convert("uuidConverter")
@@ -58,8 +59,9 @@ public class EventEntity {
     @NotNull
     private String releaseStatus;
 
-    @Column(name = "event_definitions", length = Integer.MAX_VALUE)
-    private String eventDefinitions;
+    @ElementCollection
+    @CollectionTable(name="event_resource_definitions", joinColumns=@JoinColumn(name="event_definition_id"))
+    private List<EventDefinition> eventDefinitions;
 
     @Column(name = "extensions", length = Integer.MAX_VALUE)
     private String extensions;
