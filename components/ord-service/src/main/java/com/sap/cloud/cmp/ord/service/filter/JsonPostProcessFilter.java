@@ -16,13 +16,13 @@ public class JsonPostProcessFilter implements Filter {
 
         filterChain.doFilter(request, capturingResponseWrapper);
 
+        String content = capturingResponseWrapper.getCaptureAsString();
+
         if (response.getContentType() != null && response.getContentType().contains("application/json")) {
-            String content = capturingResponseWrapper.getCaptureAsString();
-
             content = content.replaceAll("\\\\\"","\"").replaceAll("\"\\{","{").replaceAll("}\"", "}");
-
-            response.setContentLength(content.length());
-            response.getWriter().write(content);
         }
+
+        response.setContentLength(content.length());
+        response.getWriter().write(content);
     }
 }
