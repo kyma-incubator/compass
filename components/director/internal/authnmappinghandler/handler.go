@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+
 	goidc "github.com/coreos/go-oidc"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -36,15 +38,24 @@ import (
 )
 
 // TokenData represents the authentication token
+//go:generate mockery -name=TokenData -output=automock -outpkg=automock -case=underscore
 type TokenData interface {
 	// Claims reads the claims from the token into the specified struct
 	Claims(v interface{}) error
 }
 
 // TokenVerifier attempts to verify a token and returns it or an error if the verification was not successful
+//go:generate mockery -name=TokenVerifier -output=automock -outpkg=automock -case=underscore
 type TokenVerifier interface {
 	// Verify verifies that the token is valid and returns a token if so, otherwise returns an error
 	Verify(ctx context.Context, token string) (TokenData, error)
+}
+
+type Handler struct {
+	reqDataParser  tenantmapping.ReqDataParser
+	httpClient     *http.Client
+	verifiers      map[string]TokenVerifier
+	verifiersMutex sync.RWMutex
 }
 
 type oidcVerifier struct {
@@ -56,30 +67,44 @@ func (v *oidcVerifier) Verify(ctx context.Context, idToken string) (TokenData, e
 	return v.IDTokenVerifier.Verify(ctx, idToken)
 }
 
-type providerJSON struct {
-	Issuer  string `json:"issuer"`
-	JWKSURL string `json:"jwks_uri"`
-}
-
-//go:generate mockery -name=ReqDataParser -output=automock -outpkg=automock -case=underscore
-type ReqDataParser interface {
-	Parse(req *http.Request) (oathkeeper.ReqData, error)
-}
-
-type Handler struct {
-	reqDataParser  ReqDataParser
-	httpClient     *http.Client
-	verifiers      map[string]TokenVerifier
-	verifiersMutex sync.RWMutex
-}
-
-func NewHandler(reqDataParser ReqDataParser, httpClient *http.Client) *Handler {
+func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Client) *Handler {
 	return &Handler{
 		reqDataParser:  reqDataParser,
 		httpClient:     httpClient,
 		verifiers:      make(map[string]TokenVerifier),
 		verifiersMutex: sync.RWMutex{},
 	}
+}
+
+func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusBadRequest)
+		return
+	}
+
+	ctx := req.Context()
+
+	reqData, err := h.reqDataParser.Parse(req)
+	if err != nil {
+		h.logError(ctx, err, "An error has occurred while parsing the request.")
+		h.respond(ctx, writer, oathkeeper.ReqBody{})
+		return
+	}
+
+	claims, err := h.verifyToken(ctx, reqData)
+	if err != nil {
+		h.logError(ctx, err, "An error has occurred while processing the request.")
+		h.respond(ctx, writer, reqData.Body)
+		return
+	}
+
+	if err := claims.Claims(&reqData.Body.Extra); err != nil {
+		h.logError(ctx, err, "An error has occurred while extracting claims from body.extra.")
+		h.respond(ctx, writer, reqData.Body)
+		return
+	}
+
+	h.respond(ctx, writer, reqData.Body)
 }
 
 func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (TokenData, error) {
@@ -119,7 +144,10 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 			return nil, errors.Wrap(err, "failed read content from response")
 		}
 
-		var p providerJSON
+		var p struct {
+			Issuer  string `json:"issuer"`
+			JWKSURL string `json:"jwks_uri"`
+		}
 		if err := json.Unmarshal(buf, &p); err != nil {
 			return nil, fmt.Errorf("error decoding body of response with status %s: %s", resp.Status, err.Error())
 		}
@@ -148,37 +176,6 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 	}
 
 	return claims, nil
-}
-
-func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodPost {
-		http.Error(writer, fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method), http.StatusBadRequest)
-		return
-	}
-
-	ctx := req.Context()
-
-	reqData, err := h.reqDataParser.Parse(req)
-	if err != nil {
-		h.logError(ctx, err, "An error has occurred while parsing the request.")
-		h.respond(ctx, writer, oathkeeper.ReqBody{})
-		return
-	}
-
-	claims, err := h.verifyToken(ctx, reqData)
-	if err != nil {
-		h.logError(ctx, err, "An error has occurred while processing the request.")
-		h.respond(ctx, writer, reqData.Body)
-		return
-	}
-
-	if err := claims.Claims(&reqData.Body.Extra); err != nil {
-		h.logError(ctx, err, "An error has occurred while extracting claims from body.extra.")
-		h.respond(ctx, writer, reqData.Body)
-		return
-	}
-
-	h.respond(ctx, writer, reqData.Body)
 }
 
 func (h *Handler) logError(ctx context.Context, err error, message string) {
