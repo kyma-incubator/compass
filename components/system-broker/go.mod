@@ -47,6 +47,3 @@ require (
 	k8s.io/client-go v0.18.6
 	sigs.k8s.io/controller-runtime v0.6.2
 )
-
-
-replace github.com/kyma-incubator/compass/components/director => ../director

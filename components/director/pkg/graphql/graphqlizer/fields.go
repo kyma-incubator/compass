@@ -30,23 +30,6 @@ func addFieldsFromContext(oldFields string, ctx []FieldCtx, keys []string) strin
 	return fmt.Sprintf("%s\n%s", oldFields, strings.Join(newFields, "\n"))
 }
 
-func buildProperties(props map[string]string, omit []string) string {
-	arrayProps := make([]string, 0, len(props))
-	for key, prop := range props {
-		omitted := false
-		for _, om := range omit {
-			if strings.HasPrefix(key, om) {
-				omitted = true
-				break
-			}
-		}
-		if !omitted {
-			arrayProps = append(arrayProps, prop)
-		}
-	}
-	return strings.Join(arrayProps, "\n")
-}
-
 func (fp *GqlFieldsProvider) Page(item string) string {
 	return fmt.Sprintf(`data {
 		%s
@@ -54,36 +37,6 @@ func (fp *GqlFieldsProvider) Page(item string) string {
 	pageInfo {%s}
 	totalCount
 	`, item, fp.ForPageInfo())
-}
-
-func extractOmitFor(omit []string, name string) []string {
-	result := make([]string, 0)
-	for _, om := range omit {
-		if strings.HasPrefix(om, name+".") {
-			result = append(result, strings.TrimPrefix(om, name+"."))
-		}
-	}
-
-	return result
-}
-
-func (fp *GqlFieldsProvider) OmitForApplication(omit []string) string {
-	packagesOmit := extractOmitFor(omit, "packages")
-
-	return buildProperties(map[string]string{
-		"id":                    "id",
-		"name":                  "name",
-		"providerName":          "providerName",
-		"description":           "description",
-		"integrationSystemID":   "integrationSystemID",
-		"labels":                "labels",
-		"status":                "status { condition timestamp }",
-		"webhooks":              fmt.Sprintf("webhooks {%s}", fp.ForWebhooks()),
-		"healthCheckURL":        "healthCheckURL",
-		"packages":              fmt.Sprintf("packages {%s}", fp.Page(fp.OmitForPackage(packagesOmit))),
-		"auths":                 fmt.Sprintf("auths {%s}", fp.ForSystemAuth()),
-		"eventingConfiguration": "eventingConfiguration { defaultURL }",
-	}, omit)
 }
 
 func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
@@ -125,18 +78,6 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 		}`, fp.ForAuth())
 }
 
-func (fp *GqlFieldsProvider) OmitForAPIDefinition(omit []string) string {
-	omitForSpec := extractOmitFor(omit, "spec")
-	return buildProperties(map[string]string{
-		"name":        "name",
-		"description": "description",
-		"spec":        fmt.Sprintf("spec {%s}", fp.OmitForApiSpec(omitForSpec)),
-		"targetURL":   "targetURL",
-		"group":       "group",
-		"version":     fmt.Sprintf("version {%s}", fp.ForVersion()),
-	}, omit)
-}
-
 func (fp *GqlFieldsProvider) ForAPIDefinition(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`id
 		name
@@ -154,18 +95,8 @@ func (fp *GqlFieldsProvider) ForSystemAuth() string {
 		auth {%s}`, fp.ForAuth())
 }
 
-func (fp *GqlFieldsProvider) OmitForApiSpec(omit []string) string {
-	return buildProperties(map[string]string{
-		"data":         "data",
-		"format":       "format",
-		"type":         "type",
-		"fetchRequest": fmt.Sprintf("fetchRequest {%s}", fp.ForFetchRequest()),
-	}, omit)
-}
-
 func (fp *GqlFieldsProvider) ForApiSpec() string {
-	return fmt.Sprintf(`
-		data
+	return fmt.Sprintf(`data
 		format
 		type
 		fetchRequest {%s}`, fp.ForFetchRequest())
@@ -197,58 +128,22 @@ func (fp *GqlFieldsProvider) ForPageInfo() string {
 		hasNextPage`
 }
 
-func (fp *GqlFieldsProvider) OmitForEventDefinition(omit []string) string {
-	omitForSpec := extractOmitFor(omit, "spec")
-	return buildProperties(map[string]string{
-		"id":          "id",
-		"name":        "name",
-		"description": "description",
-		"group":       "group",
-		"spec":        fmt.Sprintf("spec {%s}", fp.OmitForEventSpec(omitForSpec)),
-		"version":     fmt.Sprintf("version {%s}", fp.ForVersion()),
-	}, omit)
-
-}
-
 func (fp *GqlFieldsProvider) ForEventDefinition() string {
 	return fmt.Sprintf(`
 			id
 			name
 			description
-			group
+			group 
 			spec {%s}
 			version {%s}
 		`, fp.ForEventSpec(), fp.ForVersion())
 }
 
-func (fp *GqlFieldsProvider) OmitForEventSpec(omit []string) string {
-	return buildProperties(map[string]string{
-		"data":         "data",
-		"format":       "format",
-		"type":         "type",
-		"fetchRequest": fmt.Sprintf("fetchRequest {%s}", fp.ForFetchRequest()),
-	}, omit)
-}
-
 func (fp *GqlFieldsProvider) ForEventSpec() string {
-	return fmt.Sprintf(`
-		data
+	return fmt.Sprintf(`data
 		type
 		format
 		fetchRequest {%s}`, fp.ForFetchRequest())
-}
-
-func (fp *GqlFieldsProvider) OmitForDocument(omit []string) string {
-	return buildProperties(map[string]string{
-		"id":           "id",
-		"title":        "title",
-		"displayName":  "displayName",
-		"description":  "description",
-		"format":       "format",
-		"kind":         "kind",
-		"data":         "data",
-		"fetchRequest": fmt.Sprintf("fetchRequest {%s}", fp.ForFetchRequest()),
-	}, omit)
 }
 
 func (fp *GqlFieldsProvider) ForDocument() string {
@@ -391,24 +286,6 @@ func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
 		eventDefinitions {%s}
 		documents {%s}`, fp.ForPackageInstanceAuth(), fp.ForAuth(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument())),
 		ctx, []string{"Package.instanceAuth"})
-}
-
-func (fp *GqlFieldsProvider) OmitForPackage(omit []string) string {
-	apiDefinitionOmit := extractOmitFor(omit, "apiDefinitions")
-	eventDefinitionOmit := extractOmitFor(omit, "eventDefinitions")
-	documentsOmit := extractOmitFor(omit, "documents")
-
-	return buildProperties(map[string]string{
-		"id":                             "id",
-		"name":                           "name",
-		"description":                    "description",
-		"instanceAuthRequestInputSchema": "instanceAuthRequestInputSchema",
-		"instanceAuths":                  fmt.Sprintf("instanceAuths {%s}", fp.ForPackageInstanceAuth()),
-		"defaultInstanceAuth":            fmt.Sprintf("defaultInstanceAuth {%s}", fp.ForAuth()),
-		"apiDefinitions":                 fmt.Sprintf("apiDefinitions {%s}", fp.Page(fp.OmitForAPIDefinition(apiDefinitionOmit))),
-		"eventDefinitions":               fmt.Sprintf("eventDefinitions {%s}", fp.Page(fp.OmitForEventDefinition(eventDefinitionOmit))),
-		"documents":                      fmt.Sprintf("documents {%s}", fp.Page(fp.OmitForDocument(documentsOmit))),
-	}, omit)
 }
 
 func (fp *GqlFieldsProvider) ForPackageInstanceAuth() string {
