@@ -27,6 +27,9 @@ global:
     gateway:
       dir:
       version: "PR-1637"
+    tenant_fetcher:
+      dir:
+      version: "PR-1652"
     healthchecker:
       dir:
       version: "PR-1460"
@@ -54,6 +57,9 @@ global:
       connectivity_adapter:
         dir:
         version: "PR-1641"
+      tenant_fetcher:
+        dir:
+        version: "PR-1652"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -69,6 +75,7 @@ global:
   agentPreconfiguration: false
 
   director:
+    prefix: /director
     port: 3000
 
     tests:
@@ -89,6 +96,7 @@ global:
       maxIdleConnections: 1
 
   connector:
+    prefix: /connector
     graphql:
       external:
         port: 3000
@@ -228,6 +236,11 @@ global:
             retry:
               give_up_after: 3s
               max_delay: 2000ms
+
+  tenantFetcher:
+    host: compass-tenant-fetcher.compass-system.svc.cluster.local
+    prefix: /tenants
+    port: 3000
 
   tenantFetchers:
     job1:
