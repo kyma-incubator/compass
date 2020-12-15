@@ -16,7 +16,5 @@ deployment:
   nodeSelector: {}
 
 server:
-  rootAPI: "/tenants"
   handlerEndpoint: "/v1/callback/{tenantId}"
   tenantPathParam: "tenantId"
-
