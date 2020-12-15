@@ -40,7 +40,7 @@ import (
 // TokenData represents the authentication token
 //go:generate mockery -name=TokenData -output=automock -outpkg=automock -case=underscore
 type TokenData interface {
-	// Claims reads the claims from the token into the specified struct
+	// Claims reads the Claims from the token into the specified struct
 	Claims(v interface{}) error
 }
 
@@ -51,13 +51,25 @@ type TokenVerifier interface {
 	Verify(ctx context.Context, token string) (TokenData, error)
 }
 
+// TokenVerifierProvider defines different ways by which one can provide a TokenVerifier
+type TokenVerifierProvider func(ctx context.Context, claims Claims) TokenVerifier
+
+// Handler is the base struct definition of the AuthenticationMappingHandler
 type Handler struct {
-	reqDataParser  tenantmapping.ReqDataParser
-	httpClient     *http.Client
-	verifiers      map[string]TokenVerifier
-	verifiersMutex sync.RWMutex
+	reqDataParser         tenantmapping.ReqDataParser
+	httpClient            *http.Client
+	tokenVerifierProvider TokenVerifierProvider
+	verifiers             map[string]TokenVerifier
+	verifiersMutex        sync.RWMutex
 }
 
+// Claims contains basic Claims needed during request authenticcation
+type Claims struct {
+	Issuer  string `json:"issuer"`
+	JWKSURL string `json:"jwks_uri"`
+}
+
+// oidcVerifier wraps the default goidc.IDTokenVerifier
 type oidcVerifier struct {
 	*goidc.IDTokenVerifier
 }
@@ -67,12 +79,24 @@ func (v *oidcVerifier) Verify(ctx context.Context, idToken string) (TokenData, e
 	return v.IDTokenVerifier.Verify(ctx, idToken)
 }
 
-func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Client) *Handler {
+// DefaultTokenVerifierProvider is the default TokenVerifierProvider which leverages goidc liberay
+func DefaultTokenVerifierProvider(ctx context.Context, claims Claims) TokenVerifier {
+	keySet := goidc.NewRemoteKeySet(ctx, claims.JWKSURL)
+	verifier := &oidcVerifier{
+		IDTokenVerifier: goidc.NewVerifier(claims.Issuer, keySet, &goidc.Config{SkipClientIDCheck: true}),
+	}
+
+	return verifier
+}
+
+// NewHandler constructs the AuthenticationMappingHandler
+func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Client, tokenVerifierProvider TokenVerifierProvider) *Handler {
 	return &Handler{
-		reqDataParser:  reqDataParser,
-		httpClient:     httpClient,
-		verifiers:      make(map[string]TokenVerifier),
-		verifiersMutex: sync.RWMutex{},
+		reqDataParser:         reqDataParser,
+		httpClient:            httpClient,
+		tokenVerifierProvider: tokenVerifierProvider,
+		verifiers:             make(map[string]TokenVerifier),
+		verifiersMutex:        sync.RWMutex{},
 	}
 }
 
@@ -144,22 +168,16 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 			return nil, errors.Wrap(err, "failed read content from response")
 		}
 
-		var p struct {
-			Issuer  string `json:"issuer"`
-			JWKSURL string `json:"jwks_uri"`
-		}
-		if err := json.Unmarshal(buf, &p); err != nil {
+		var c Claims
+		if err := json.Unmarshal(buf, &c); err != nil {
 			return nil, fmt.Errorf("error decoding body of response with status %s: %s", resp.Status, err.Error())
 		}
 
-		if issuerURL != p.Issuer {
-			return nil, errors.New(fmt.Sprintf("token issuer from token %q does not mismatch token issuer from well-known endpoint %q", issuerURL, p.Issuer))
+		if issuerURL != c.Issuer {
+			return nil, errors.New(fmt.Sprintf("token issuer from token %q does not mismatch token issuer from well-known endpoint %q", issuerURL, c.Issuer))
 		}
 
-		keySet := goidc.NewRemoteKeySet(ctx, p.JWKSURL)
-		verifier = &oidcVerifier{
-			IDTokenVerifier: goidc.NewVerifier(p.Issuer, keySet, &goidc.Config{SkipClientIDCheck: true}),
-		}
+		verifier = h.tokenVerifierProvider(ctx, c)
 
 		h.verifiersMutex.Lock()
 		h.verifiers[issuerURL] = verifier
