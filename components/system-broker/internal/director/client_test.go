@@ -222,7 +222,7 @@ func TestGraphQLClient_FetchPackageInstanceCredentials(t *testing.T) {
 				&graphqlizer.GqlFieldsProvider{},
 			)
 			_, err := c.FetchPackageInstanceCredentials(context.TODO(), tt.credentialsInput)
-			testPackageInstance(t, tt, err)
+			testCommonLogic(t, tt, err)
 		})
 	}
 }
@@ -318,7 +318,7 @@ func TestGraphQLClient_FetchPackageInstanceAuth(t *testing.T) {
 				&graphqlizer.GqlFieldsProvider{},
 			)
 			_, err := c.FetchPackageInstanceAuth(context.TODO(), tt.credentialsInput)
-			testPackageInstance(t, tt, err)
+			testCommonLogic(t, tt, err)
 		})
 	}
 }
@@ -508,7 +508,7 @@ type testCase struct {
 	expectedQuery    string
 }
 
-func testPackageInstance(t *testing.T, tt testCase, err error) {
+func testCommonLogic(t *testing.T, tt testCase, err error) {
 	gcli := tt.GQLClient
 
 	if tt.expectedErr != "" {
