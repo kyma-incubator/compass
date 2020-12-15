@@ -22,12 +22,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	authnMock "github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler/automock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	authnMock "github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler/automock"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
