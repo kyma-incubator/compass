@@ -131,15 +131,16 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData,
 }
 
 func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	log.C(ctx).Debugf("Attempting to get object context for %s flow and authID=%s", authDetails.AuthFlow, authDetails.AuthID)
+	log.C(ctx).Infof("Attempting to get object context for %s flow and authID=%s", authDetails.AuthFlow, authDetails.AuthID)
 
 	var provider ObjectContextProvider
 	switch authDetails.AuthFlow {
 	case oathkeeper.JWTAuthFlow:
 		if authDetails.Authenticator != nil {
 			provider = h.objectContextProviders[AuthenticatorObjectContextProvider]
+		} else {
+			provider = h.objectContextProviders[UserObjectContextProvider]
 		}
-		provider = h.objectContextProviders[UserObjectContextProvider]
 	case oathkeeper.OAuth2Flow, oathkeeper.CertificateFlow, oathkeeper.OneTimeTokenFlow:
 		provider = h.objectContextProviders[SystemAuthObjectContextProvider]
 	default:

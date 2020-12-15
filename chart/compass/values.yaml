@@ -215,6 +215,13 @@ global:
             retry:
               give_up_after: 3s
               max_delay: 2000ms
+      authenticationMappingService:
+        config:
+          api:
+            url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping
+            retry:
+              give_up_after: 3s
+              max_delay: 2000ms
       tenantMappingService:
         config:
           api:
@@ -290,8 +297,6 @@ global:
     authenticator0:
       enabled: false
       gatewayHost: "compass-gateway-authenticator0"
-      tokenURL: ""
-      jwksURL: ""
       scopePrefix: ""
       attributes: '{"uniqueAttribute": { "key": "", "value": "" }, "tenant": { "key": "" }, "identity": { "key": "" } }'
 

@@ -13,15 +13,12 @@ spec:
     methods: ["GET", "POST", "OPTIONS"]
     url: <http|https>://{{ $config.gatewayHost }}.{{ $.Values.global.ingress.domainName }}<(:(80|443))?>/director/graphql
   authenticators:
-  - handler: jwt
-    config:
-      trusted_issuers:
-      - {{ $config.tokenURL }}
-      jwks_urls:
-      - {{ $config.jwksURL }}
+  - handler: noop
   authorizer:
     handler: allow
   mutators:
+  - handler: hydrator
+{{ toYaml $.Values.global.oathkeeper.mutators.authenticationMappingService | indent 4 }}
   - handler: hydrator
 {{ toYaml $.Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token

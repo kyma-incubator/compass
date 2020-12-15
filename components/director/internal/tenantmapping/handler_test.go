@@ -67,7 +67,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		userMockContextProvider := getUserMockContextProvider()
+		userMockContextProvider := getMockContextProvider()
 		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetails).Return(objCtxMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
@@ -134,11 +134,11 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		userMockContextProvider := getUserMockContextProvider()
-		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(objCtxMock, nil).Once()
+		authenticatorMockContextProvider := getMockContextProvider()
+		authenticatorMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(objCtxMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.UserObjectContextProvider: userMockContextProvider,
+			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
 		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders)
@@ -151,7 +151,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, authenticatorMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present", func(t *testing.T) {
@@ -203,11 +203,11 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		userMockContextProvider := getUserMockContextProvider()
+		userMockContextProvider := getMockContextProvider()
 		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(objCtxMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.UserObjectContextProvider: userMockContextProvider,
+			tenantmapping.AuthenticatorObjectContextProvider: userMockContextProvider,
 		}
 
 		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders)
@@ -268,7 +268,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		userMockContextProvider := getUserMockContextProvider()
+		userMockContextProvider := getMockContextProvider()
 		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetails).Return(objCtxMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
@@ -316,7 +316,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		systemAuthMockContextProvider := getSystemAuthMockContextProvider()
+		systemAuthMockContextProvider := getMockContextProvider()
 		systemAuthMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, oAuthAuthDetails).Return(objCtx, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
@@ -365,7 +365,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		systemAuthMockContextProvider := getSystemAuthMockContextProvider()
+		systemAuthMockContextProvider := getMockContextProvider()
 		systemAuthMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, certAuthDetails).Return(objCtx, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
@@ -414,7 +414,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		systemAuthMockContextProvider := getSystemAuthMockContextProvider()
+		systemAuthMockContextProvider := getMockContextProvider()
 		systemAuthMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, oneTimeTokenAuthDetails).Return(objCtx, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
@@ -499,7 +499,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatFailsOnCommit()
 
-		userMockContextProvider := getUserMockContextProvider()
+		userMockContextProvider := getMockContextProvider()
 		userMockContextProvider.On("GetObjectContext", mock.Anything, reqData, jwtAuthDetails).Return(objCtxMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
@@ -576,12 +576,7 @@ func TestHandler(t *testing.T) {
 	})
 }
 
-func getUserMockContextProvider() *automock.ObjectContextForUserProvider {
-	provider := &automock.ObjectContextForUserProvider{}
-	return provider
-}
-
-func getSystemAuthMockContextProvider() *automock.ObjectContextForSystemAuthProvider {
-	provider := &automock.ObjectContextForSystemAuthProvider{}
+func getMockContextProvider() *automock.ObjectContextProvider {
+	provider := &automock.ObjectContextProvider{}
 	return provider
 }

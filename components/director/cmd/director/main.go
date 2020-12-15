@@ -7,6 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/vrischmann/envconfig"
 
@@ -75,13 +78,14 @@ type config struct {
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
 
-	Database                persistence.DatabaseConfig
-	APIEndpoint             string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint   string `envconfig:"default=/tenant-mapping"`
-	RuntimeMappingEndpoint  string `envconfig:"default=/runtime-mapping"`
-	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
-	ConfigurationFile       string
-	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	Database                      persistence.DatabaseConfig
+	APIEndpoint                   string `envconfig:"default=/graphql"`
+	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
+	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
+	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
+	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
+	ConfigurationFile             string
+	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
 
 	Log log.Config
 
@@ -142,6 +146,11 @@ func main() {
 	pairingAdapters, err := getPairingAdaptersMapping(ctx, cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
 
+	httpClient := &http.Client{
+		Timeout:   cfg.ClientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+	}
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -152,7 +161,7 @@ func main() {
 			pairingAdapters,
 			cfg.Features,
 			metricsCollector,
-			cfg.ClientTimeout,
+			httpClient,
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
@@ -205,6 +214,11 @@ func main() {
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
+
+	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.AuthenticationMappingEndpoint)
+	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient)
+
+	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
