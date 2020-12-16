@@ -53,25 +53,20 @@ func TestHandler(t *testing.T) {
 	issuer := "http://tenant.localhost:8080/oauth/token"
 	jwksURL := "http://tenant.localhost:8080/keys"
 
+	wellKnownResp := fmt.Sprintf(wellKnownRespPattern, issuer, jwksURL)
+
+	mockedWellKnownConfigClient := &http.Client{
+		Transport: RoundTripFunc(func(req *http.Request) *http.Response {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewBufferString(wellKnownResp)),
+			}
+		}),
+	}
+
+	mockedToken := generateToken(t, issuer)
+
 	t.Run("success when new verifier succeeds in verifying token", func(t *testing.T) {
-		wellKnownResp := fmt.Sprintf(wellKnownRespPattern, issuer, jwksURL)
-
-		httpClient := &http.Client{
-			Transport: RoundTripFunc(func(req *http.Request) *http.Response {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString(wellKnownResp)),
-				}
-			}),
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.StandardClaims{
-			Issuer: issuer,
-		})
-
-		signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
-		require.NoError(t, err)
-
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
@@ -79,7 +74,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + signedToken},
+				"Authorization": {"Bearer " + mockedToken},
 			},
 		}
 
@@ -89,12 +84,13 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
-		verifierMock := &authnMock.TokenVerifier{}
 		tokenDataMock := &authnMock.TokenData{}
 		tokenDataMock.On("Claims", &reqDataMock.Body.Extra).Return(nil).Once()
 
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, httpClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
-			verifierMock.On("Verify", mock.Anything, signedToken).Return(tokenDataMock, nil).Once()
+		verifierMock := &authnMock.TokenVerifier{}
+		verifierMock.On("Verify", mock.Anything, mockedToken).Return(tokenDataMock, nil).Once()
+
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		})
 		handler.ServeHTTP(w, req)
@@ -113,24 +109,6 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("success when cached verifier succeeds in verifying token", func(t *testing.T) {
-		wellKnownResp := fmt.Sprintf(wellKnownRespPattern, issuer, jwksURL)
-
-		httpClient := &http.Client{
-			Transport: RoundTripFunc(func(req *http.Request) *http.Response {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString(wellKnownResp)),
-				}
-			}),
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.StandardClaims{
-			Issuer: issuer,
-		})
-
-		signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
-		require.NoError(t, err)
-
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
@@ -138,7 +116,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + signedToken},
+				"Authorization": {"Bearer " + mockedToken},
 			},
 		}
 
@@ -148,12 +126,13 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
-		verifierMock := &authnMock.TokenVerifier{}
 		tokenDataMock := &authnMock.TokenData{}
 		tokenDataMock.On("Claims", &reqDataMock.Body.Extra).Return(nil).Twice()
 
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, httpClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
-			verifierMock.On("Verify", mock.Anything, signedToken).Return(tokenDataMock, nil).Twice()
+		verifierMock := &authnMock.TokenVerifier{}
+		verifierMock.On("Verify", mock.Anything, mockedToken).Return(tokenDataMock, nil).Twice()
+
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		})
 		handler.ServeHTTP(w, req)
@@ -186,24 +165,6 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("error when new verifier fails to verify token", func(t *testing.T) {
-		wellKnownResp := fmt.Sprintf(wellKnownRespPattern, issuer, jwksURL)
-
-		httpClient := &http.Client{
-			Transport: RoundTripFunc(func(req *http.Request) *http.Response {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString(wellKnownResp)),
-				}
-			}),
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.StandardClaims{
-			Issuer: issuer,
-		})
-
-		signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
-		require.NoError(t, err)
-
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
@@ -211,7 +172,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + signedToken},
+				"Authorization": {"Bearer " + mockedToken},
 			},
 		}
 
@@ -227,11 +188,12 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 
-		verifierMock := &authnMock.TokenVerifier{}
-
 		mockErr := errors.New("some-error")
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, httpClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
-			verifierMock.On("Verify", mock.Anything, signedToken).Return(nil, mockErr).Once()
+
+		verifierMock := &authnMock.TokenVerifier{}
+		verifierMock.On("Verify", mock.Anything, mockedToken).Return(nil, mockErr).Once()
+
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		})
 		handler.ServeHTTP(w, req)
@@ -244,25 +206,8 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("error when cached verifier fails to verify token", func(t *testing.T) {
-		wellKnownResp := fmt.Sprintf(wellKnownRespPattern, issuer, jwksURL)
-
-		httpClient := &http.Client{
-			Transport: RoundTripFunc(func(req *http.Request) *http.Response {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString(wellKnownResp)),
-				}
-			}),
-		}
-
-		token1 := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.StandardClaims{Issuer: issuer})
-		token2 := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.StandardClaims{Issuer: issuer})
-
-		signedToken1, err := token1.SignedString(jwt.UnsafeAllowNoneSignatureType)
-		require.NoError(t, err)
-
-		signedToken2, err := token2.SignedString(jwt.UnsafeAllowNoneSignatureType)
-		require.NoError(t, err)
+		mockedToken1 := generateToken(t, issuer)
+		mockedToken2 := generateToken(t, issuer)
 
 		reqDataMock1 := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
@@ -271,7 +216,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + signedToken1},
+				"Authorization": {"Bearer " + mockedToken1},
 			},
 		}
 
@@ -282,7 +227,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + signedToken2},
+				"Authorization": {"Bearer " + mockedToken2},
 			},
 		}
 
@@ -302,14 +247,16 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", req1).Return(reqDataMock1, nil).Once()
 		reqDataParserMock.On("Parse", req2).Return(reqDataMock2, nil).Once()
 
-		verifierMock := &authnMock.TokenVerifier{}
 		tokenDataMock := &authnMock.TokenData{}
 		tokenDataMock.On("Claims", &reqDataMock1.Body.Extra).Return(nil).Once()
 
 		mockErr := errors.New("some-error")
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, httpClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
-			verifierMock.On("Verify", mock.Anything, signedToken1).Return(tokenDataMock, nil).Once()
-			verifierMock.On("Verify", mock.Anything, signedToken2).Return(nil, mockErr).Once()
+
+		verifierMock := &authnMock.TokenVerifier{}
+		verifierMock.On("Verify", mock.Anything, mockedToken1).Return(tokenDataMock, nil).Once()
+		verifierMock.On("Verify", mock.Anything, mockedToken2).Return(nil, mockErr).Once()
+
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		})
 		handler.ServeHTTP(w1, req1)
@@ -349,7 +296,7 @@ func TestHandler(t *testing.T) {
 
 		wellKnownResp := fmt.Sprintf(wellKnownRespPattern, wellKnownIssuer, jwksURL)
 
-		httpClient := &http.Client{
+		mockedWellKnownClient := &http.Client{
 			Transport: RoundTripFunc(func(req *http.Request) *http.Response {
 				return &http.Response{
 					StatusCode: http.StatusOK,
@@ -358,12 +305,7 @@ func TestHandler(t *testing.T) {
 			}),
 		}
 
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.StandardClaims{
-			Issuer: tokenIssuer,
-		})
-
-		signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
-		require.NoError(t, err)
+		signedToken := generateToken(t, tokenIssuer)
 
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
@@ -377,7 +319,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, httpClient, nil)
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownClient, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -396,7 +338,7 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 
-		httpClient := &http.Client{
+		mockedWellKnownClient := &http.Client{
 			Transport: RoundTripFunc(func(req *http.Request) *http.Response {
 				return &http.Response{
 					StatusCode: http.StatusInternalServerError,
@@ -405,26 +347,19 @@ func TestHandler(t *testing.T) {
 			}),
 		}
 
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.StandardClaims{
-			Issuer: issuer,
-		})
-
-		signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
-		require.NoError(t, err)
-
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{},
 			},
 			Header: map[string][]string{
-				"Authorization": {"Bearer " + signedToken},
+				"Authorization": {"Bearer " + mockedToken},
 			},
 		}
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, httpClient, nil)
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownClient, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -443,12 +378,7 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.StandardClaims{
-			Issuer: "abc",
-		})
-
-		signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
-		require.NoError(t, err)
+		signedToken := generateToken(t, "abc")
 
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
@@ -481,10 +411,7 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.StandardClaims{})
-
-		signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
-		require.NoError(t, err)
+		signedToken := generateToken(t, "")
 
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
@@ -662,4 +589,18 @@ func TestHandler(t *testing.T) {
 		resp := w.Result()
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
+}
+
+func generateToken(t *testing.T, issuer string) string {
+	claims := jwt.StandardClaims{}
+	if issuer != "" {
+		claims.Issuer = issuer
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodNone, claims)
+
+	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
+	require.NoError(t, err)
+
+	return signedToken
 }
