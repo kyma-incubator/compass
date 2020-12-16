@@ -23,5 +23,3 @@ require (
 	k8s.io/client-go v0.17.3
 	k8s.io/kube-openapi v0.0.0-20200410163147-594e756bea31 // indirect
 )
-
-//replace github.com/kyma-incubator/compass v0.0.0-20201109133626-4876e6d3caae => ./
