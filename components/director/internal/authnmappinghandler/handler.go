@@ -118,13 +118,13 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	claims, err := h.verifyToken(ctx, reqData)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while processing the request.")
-		http.Error(writer, "Token validation failed", http.StatusBadRequest)
+		http.Error(writer, "Token validation failed", http.StatusUnauthorized)
 		return
 	}
 
 	if err := claims.Claims(&reqData.Body.Extra); err != nil {
 		h.logError(ctx, err, "An error has occurred while extracting claims from body.extra.")
-		http.Error(writer, "Token claims extraction failed", http.StatusBadRequest)
+		http.Error(writer, "Token claims extraction failed", http.StatusUnauthorized)
 		return
 	}
 
