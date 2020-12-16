@@ -23,7 +23,7 @@ global:
       version: "PR-1618"
     director:
       dir:
-      version: "PR-1654"
+      version: "PR-1651"
     gateway:
       dir:
       version: "PR-1637"
@@ -215,6 +215,13 @@ global:
             retry:
               give_up_after: 3s
               max_delay: 2000ms
+      authenticationMappingService:
+        config:
+          api:
+            url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping
+            retry:
+              give_up_after: 3s
+              max_delay: 2000ms
       tenantMappingService:
         config:
           api:
@@ -285,6 +292,13 @@ global:
   metrics:
     enabled: true
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
+
+  authenticators:
+    authenticator0:
+      enabled: false
+      gatewayHost: "compass-gateway-authenticator0"
+      scopePrefix: ""
+      attributes: '{"uniqueAttribute": { "key": "", "value": "" }, "tenant": { "key": "" }, "identity": { "key": "" } }'
 
   externalServicesMock:
     enabled: false

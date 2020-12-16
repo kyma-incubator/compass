@@ -2,7 +2,13 @@ package oathkeeper
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"strings"
+
+	"github.com/tidwall/gjson"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -27,6 +33,13 @@ const (
 	ExternalTenantKey = "tenant"
 	ScopesKey         = "scope"
 )
+
+// AuthDetails contains information about the currently authenticated client - AuthID, AuthFlow and Authenticator to use for further processing
+type AuthDetails struct {
+	AuthID        string
+	AuthFlow      AuthFlow
+	Authenticator *authenticator.Config
+}
 
 // AuthFlow wraps possible flows of auth like OAuth2, JWT and certificate
 type AuthFlow string
@@ -78,33 +91,72 @@ func NewReqData(ctx context.Context, reqBody ReqBody, reqHeader http.Header) Req
 }
 
 // GetAuthID looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct
-func (d *ReqData) GetAuthID() (string, AuthFlow, error) {
+func (d *ReqData) GetAuthID() (*AuthDetails, error) {
+	return d.GetAuthIDWithAuthenticators([]authenticator.Config{})
+}
+
+// GetAuthIDWithAuthenticators looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct while taking into account existing preconfigured authenticators
+func (d *ReqData) GetAuthIDWithAuthenticators(authenticators []authenticator.Config) (*AuthDetails, error) {
+	extra, err := d.MarshalExtra()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, authn := range authenticators {
+		uniqueAttribute := gjson.Get(extra, authn.Attributes.UniqueAttribute.Key).String()
+		if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
+			continue
+		}
+
+		log.D().Infof("Request token matches %q authenticator", authn.Name)
+		identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]
+		if !ok {
+			return nil, apperrors.NewInvalidDataError("missing identity attribute from %q authenticator token", authn.Name)
+		}
+
+		authID, err := str.Cast(identity)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while parsing the value for %s", identity)
+		}
+		return &AuthDetails{AuthID: authID, AuthFlow: JWTAuthFlow, Authenticator: &authn}, nil
+	}
+
 	if idVal, ok := d.Body.Extra[ClientIDKey]; ok {
 		authID, err := str.Cast(idVal)
 		if err != nil {
-			return "", "", errors.Wrapf(err, "while parsing the value for %s", ClientIDKey)
+			return nil, errors.Wrapf(err, "while parsing the value for %s", ClientIDKey)
 		}
 
-		return authID, OAuth2Flow, nil
+		return &AuthDetails{AuthID: authID, AuthFlow: OAuth2Flow}, nil
 	}
 
 	if idVal := d.Body.Header.Get(ClientIDCertKey); idVal != "" {
-		return idVal, CertificateFlow, nil
+		return &AuthDetails{AuthID: idVal, AuthFlow: CertificateFlow}, nil
 	}
 
 	if idVal := d.Body.Header.Get(ClientIDTokenKey); idVal != "" {
-		return idVal, OneTimeTokenFlow, nil
+		return &AuthDetails{AuthID: idVal, AuthFlow: OneTimeTokenFlow}, nil
 	}
 
 	if usernameVal, ok := d.Body.Extra[UsernameKey]; ok {
 		username, err := str.Cast(usernameVal)
 		if err != nil {
-			return "", "", errors.Wrapf(err, "while parsing the value for %s", UsernameKey)
+			return nil, errors.Wrapf(err, "while parsing the value for %s", UsernameKey)
 		}
-		return username, JWTAuthFlow, nil
+		return &AuthDetails{AuthID: username, AuthFlow: JWTAuthFlow}, nil
 	}
 
-	return "", "", apperrors.NewInternalError("unable to find valid auth ID")
+	return nil, apperrors.NewInternalError("unable to find valid auth ID")
+}
+
+// MarshalExtra marshals the request data extra content
+func (d *ReqData) MarshalExtra() (string, error) {
+	extra, err := json.Marshal(d.Body.Extra)
+	if err != nil {
+		return "", err
+	}
+
+	return string(extra), nil
 }
 
 // GetExternalTenantID returns external tenant ID from the parsed request input if it is defined
@@ -141,6 +193,29 @@ func (d *ReqData) GetScopes() (string, error) {
 	}
 
 	return "", apperrors.NewKeyDoesNotExistError(ScopesKey)
+}
+
+// GetUserScopes returns scopes as string array from the parsed request input if defined;
+// also it strips the scopes from any potential authenticator prefixes
+func (d *ReqData) GetUserScopes(scopePrefix string) ([]string, error) {
+	userScopes := make([]string, 0)
+	scopesVal, ok := d.Body.Extra[ScopesKey]
+	if !ok {
+		return userScopes, nil
+	}
+
+	if scopesArray, ok := scopesVal.([]interface{}); ok {
+		for _, scope := range scopesArray {
+			scopeString, err := str.Cast(scope)
+			if err != nil {
+				return []string{}, errors.Wrapf(err, "while parsing the value for %s", ScopesKey)
+			}
+			actualScope := strings.TrimPrefix(scopeString, scopePrefix)
+			userScopes = append(userScopes, actualScope)
+		}
+	}
+
+	return userScopes, nil
 }
 
 // GetUserGroups returns group name or empty string if there's no group

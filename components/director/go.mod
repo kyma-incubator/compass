@@ -11,6 +11,7 @@ require (
 	github.com/agnivade/levenshtein v1.0.3 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
 	github.com/avast/retry-go v2.4.3+incompatible
+	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/dlmiddlecote/sqlstats v1.0.0
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
@@ -35,9 +36,10 @@ require (
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/onrik/logrus v0.8.0
 	github.com/pkg/errors v0.9.1
+	github.com/pquerna/cachecontrol v0.0.0-20201205024021-ac21108117ac // indirect
 	github.com/prometheus/client_golang v1.6.0
 	github.com/sirupsen/logrus v1.4.2
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.6.1
 	github.com/tidwall/gjson v1.6.0
 	github.com/tidwall/pretty v1.0.1 // indirect
 	github.com/vektah/gqlparser v1.3.1
@@ -45,11 +47,11 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.1.1-0.20190912152152-6a016cf16650
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
-	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/text v0.3.3 // indirect
-	golang.org/x/tools v0.0.0-20191118222007-07fc4c7f2b98 // indirect
+	golang.org/x/tools v0.0.0-20200323144430-8dcfad9e016e // indirect
 	google.golang.org/appengine v1.6.5 // indirect
+	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v0.17.3
 )
