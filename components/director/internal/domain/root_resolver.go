@@ -48,7 +48,6 @@ import (
 var _ graphql.ResolverRoot = &RootResolver{}
 
 type RootResolver struct {
-	httpClient          *http.Client
 	appNameNormalizer   normalizer.Normalizator
 	app                 *application.Resolver
 	appTemplate         *apptemplate.Resolver
