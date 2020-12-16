@@ -7,6 +7,7 @@ import com.sap.cloud.cmp.ord.service.filter.wrappers.JsonResponseWrapper;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
@@ -32,9 +33,11 @@ public class JsonPostProcessFilter implements Filter {
             content = content.replaceAll("\\\\\"","\"").replaceAll("\"\\{","{").replaceAll("}\"", "}");
 
             // Aggreagate Array Elements
-            JsonNode jsonTree = mapper.readTree(content);
-            aggregateArrayElements(jsonTree);
-            content = mapper.writeValueAsString(jsonTree);
+            if (Boolean.TRUE.toString().equals(request.getParameter("compact"))) {
+                JsonNode jsonTree = mapper.readTree(content);
+                aggregateArrayElements(jsonTree);
+                content = mapper.writeValueAsString(jsonTree);
+            }
         }
 
         response.setContentLength(content.length());
