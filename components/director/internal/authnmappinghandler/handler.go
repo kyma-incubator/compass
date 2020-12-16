@@ -111,20 +111,20 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while parsing the request.")
-		h.respond(ctx, writer, oathkeeper.ReqBody{})
+		http.Error(writer, "Unable to parse request data", http.StatusBadRequest)
 		return
 	}
 
 	claims, err := h.verifyToken(ctx, reqData)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while processing the request.")
-		h.respond(ctx, writer, reqData.Body)
+		http.Error(writer, "Token validation failed", http.StatusBadRequest)
 		return
 	}
 
 	if err := claims.Claims(&reqData.Body.Extra); err != nil {
 		h.logError(ctx, err, "An error has occurred while extracting claims from body.extra.")
-		h.respond(ctx, writer, reqData.Body)
+		http.Error(writer, "Token claims extraction failed", http.StatusBadRequest)
 		return
 	}
 

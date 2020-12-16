@@ -199,7 +199,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		require.Contains(t, logsBuffer.String(), mockErr.Error())
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, verifierMock)
@@ -275,7 +275,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w2, req2)
 
 		resp2 := w2.Result()
-		require.Equal(t, http.StatusOK, resp2.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp2.StatusCode)
 		require.Contains(t, logsBuffer.String(), mockErr.Error())
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, verifierMock, tokenDataMock)
@@ -323,7 +323,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "does not mismatch token issuer from well-known endpoint")
 	})
@@ -363,7 +363,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "request failed: StatusCode: 500 Body: Server error")
 	})
@@ -396,7 +396,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "invalid URI for request")
 	})
@@ -429,7 +429,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "invalid token: missing issuer URL")
 	})
@@ -460,7 +460,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "error while extracting token properties: illegal base64 data")
 	})
@@ -491,7 +491,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "invalid token format")
 	})
@@ -522,7 +522,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "unexpected or empty authorization header with length")
 	})
@@ -550,7 +550,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "unexpected or empty authorization header with length")
 	})
@@ -574,7 +574,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "An error has occurred while parsing the request")
 	})
