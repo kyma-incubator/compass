@@ -4,6 +4,7 @@ import org.eclipse.persistence.annotations.Convert;
 import org.eclipse.persistence.annotations.TypeConverter;
 
 import javax.persistence.*;
+import java.sql.Clob;
 import java.util.UUID;
 
 /**
@@ -21,15 +22,6 @@ public class EventSpecificationEntity {
     private UUID eventDefinitionId;
 
     @Column(name = "spec_data", length = Integer.MAX_VALUE)
-    private String specData;
-
-    @Column(name = "spec_format")
-    private String specFormat;
-
-    @Column(name = "spec_type")
-    private String specType;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", insertable = false, updatable = false)
-    private EventEntity event;
+    @Lob
+    private Clob specData;
 }

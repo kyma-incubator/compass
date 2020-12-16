@@ -29,7 +29,7 @@ public class JsonPostProcessFilter implements Filter {
 
         if (response.getContentType() != null && response.getContentType().contains("application/json")) {
             // Make JSON returned as String to look like real JSON
-            // content = content.replaceAll("\\\\\"","\"").replaceAll("\"\\{","{").replaceAll("}\"", "}");
+            content = content.replaceAll("\\\\\"","\"").replaceAll("\"\\{","{").replaceAll("}\"", "}");
 
             // Aggreagate Array Elements
             if (Boolean.TRUE.toString().equals(request.getParameter("compact"))) {

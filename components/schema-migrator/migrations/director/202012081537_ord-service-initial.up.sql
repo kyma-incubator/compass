@@ -210,15 +210,25 @@ SELECT id                   AS package_id,
 FROM packages,
      jsonb_to_recordset(packages.package_links) AS actions(type TEXT, "customType" TEXT, url TEXT);
 
+/*TODO: Currently each API has only a single API Definition, once we implement the aggregator this view should be fully represented in a separate specifications table which will have the data as well*/
 CREATE VIEW api_resource_definitions AS
-SELECT id                        AS api_definition_id,
-       api_res_defs.type         AS type,
-       api_res_defs."customType" AS custom_type,
-       api_res_defs.url          AS url,
-       api_res_defs."mediaType"  AS media_type
-FROM api_definitions,
-     jsonb_to_recordset(api_definitions.api_definitions) AS api_res_defs(type TEXT, "customType" TEXT, "mediaType" TEXT,
-                                                                         url TEXT);
+SELECT *
+FROM (SELECT id                                   AS api_definition_id,
+             api_res_defs.type                    AS type,
+             api_res_defs."customType"            AS custom_type,
+             format('/apiSpecifications(%s)', id) AS url,
+             api_res_defs."mediaType"             AS media_type
+      FROM api_definitions,
+           jsonb_to_recordset(api_definitions.api_definitions) AS api_res_defs(type TEXT, "customType" TEXT,
+                                                                               "mediaType" TEXT,
+                                                                               url TEXT)) as api_defs
+UNION ALL
+(SELECT id                                   AS api_definition_id,
+        spec_type::text                      AS type,
+        NULL                                 AS custom_type,
+        format('/apiSpecifications(%s)', id) AS url,
+        spec_format::text                    AS media_type
+ FROM api_definitions);
 
 CREATE VIEW api_resource_links AS
 SELECT id                   AS api_definition_id,
@@ -253,16 +263,24 @@ UNION ALL
       jsonb_to_recordset(event_api_definitions.changelog_entries) AS entries(version TEXT, "releaseStatus" TEXT,
                                                                              date TEXT,
                                                                              description TEXT, url TEXT));
-
+/*TODO: Currently each Event has only a single Event Definition, once we implement the aggregator this view should be fully represented in a separate specifications table which will have the data as well*/
 CREATE VIEW event_resource_definitions AS
-SELECT id                          AS event_definition_id,
-       event_res_defs.type         AS type,
-       event_res_defs."customType" AS custom_type,
-       event_res_defs.url          AS url,
-       event_res_defs."mediaType"  AS media_type
-FROM event_api_definitions,
-     jsonb_to_recordset(event_api_definitions.event_definitions) AS event_res_defs(type TEXT, "customType" TEXT,
-                                                                                   "mediaType" TEXT,
-                                                                                   url TEXT);
+SELECT *
+FROM (SELECT id                                     AS event_definition_id,
+             event_res_defs.type                    AS type,
+             event_res_defs."customType"            AS custom_type,
+             format('/eventSpecifications(%s)', id) AS url,
+             event_res_defs."mediaType"             AS media_type
+      FROM event_api_definitions,
+           jsonb_to_recordset(event_api_definitions.event_definitions) AS event_res_defs(type TEXT, "customType" TEXT,
+                                                                                         "mediaType" TEXT,
+                                                                                         url TEXT)) as event_defs
+UNION ALL
+(SELECT id                                     AS event_definition_id,
+        spec_type::text                        AS type,
+        NULL                                   AS custom_type,
+        format('/eventSpecifications(%s)', id) AS url,
+        spec_format::text                      AS media_type
+ FROM event_api_definitions);
 
 COMMIT;

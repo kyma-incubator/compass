@@ -77,9 +77,6 @@ public class EventEntity {
     @CollectionTable(name = "ord_labels", joinColumns = @JoinColumn(name = "event_definition_id"))
     private List<Label> labels;
 
-    @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
-    private Set<EventSpecificationEntity> specifications;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "package_id", insertable = false, updatable = false)
     private PackageEntity packageEntity;

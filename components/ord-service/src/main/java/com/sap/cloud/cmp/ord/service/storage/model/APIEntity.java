@@ -6,7 +6,6 @@ import org.eclipse.persistence.annotations.TypeConverter;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity(name = "api")
@@ -88,9 +87,6 @@ public class APIEntity {
     @ElementCollection
     @CollectionTable(name = "ord_labels", joinColumns = @JoinColumn(name = "api_definition_id"))
     private List<Label> labels;
-
-    @OneToMany(mappedBy = "api", fetch = FetchType.LAZY)
-    private Set<APISpecificationEntity> specifications;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "package_id", insertable = false, updatable = false)
