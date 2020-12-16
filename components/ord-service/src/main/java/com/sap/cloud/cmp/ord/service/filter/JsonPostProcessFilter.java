@@ -7,7 +7,6 @@ import com.sap.cloud.cmp.ord.service.filter.wrappers.JsonResponseWrapper;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
@@ -30,7 +29,7 @@ public class JsonPostProcessFilter implements Filter {
 
         if (response.getContentType() != null && response.getContentType().contains("application/json")) {
             // Make JSON returned as String to look like real JSON
-            content = content.replaceAll("\\\\\"","\"").replaceAll("\"\\{","{").replaceAll("}\"", "}");
+            // content = content.replaceAll("\\\\\"","\"").replaceAll("\"\\{","{").replaceAll("}\"", "}");
 
             // Aggreagate Array Elements
             if (Boolean.TRUE.toString().equals(request.getParameter("compact"))) {
