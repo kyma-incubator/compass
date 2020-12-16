@@ -5,7 +5,6 @@ import (
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
-	"reflect"
 	"testing"
 )
 
@@ -13,14 +12,12 @@ func TestConverter_Convert(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		baseURL          string
 		app              *schema.ApplicationExt
 		expectedServices *domain.Service
 		expectedErr      string
 	}{
 		{
-			name:    "Success",
-			baseURL: "http://specification.com",
+			name: "Success",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -52,8 +49,103 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name:    "when description is not provided",
-			baseURL: "http://specification.com",
+			name: "Success with multiple entities",
+			app: &schema.ApplicationExt{
+				Application: schema.Application{
+					ID:           "id",
+					Name:         "app1",
+					ProviderName: strToPtrStr("provider"),
+					Description:  strToPtrStr("description"),
+				},
+				Labels: schema.Labels{"key": "value"},
+				Packages: schema.PackagePageExt{
+					Data: generatePackages(2, 3, 4),
+				},
+				EventingConfiguration: schema.ApplicationEventingConfiguration{},
+			},
+			expectedServices: &domain.Service{
+				ID:                   "id",
+				Name:                 "app1",
+				Description:          "description",
+				Bindable:             true,
+				InstancesRetrievable: false,
+				BindingsRetrievable:  true,
+				PlanUpdatable:        false,
+				Plans:                generateExpectations(2, 3, 4),
+				Metadata: &domain.ServiceMetadata{
+					DisplayName:         "app1",
+					ProviderDisplayName: "provider",
+					AdditionalMetadata:  schema.Labels{"key": "value"},
+				},
+			},
+			expectedErr: "",
+		},
+		{
+			name: "Application with no packages",
+			app: &schema.ApplicationExt{
+				Application: schema.Application{
+					ID:           "id",
+					Name:         "app1",
+					ProviderName: strToPtrStr("provider"),
+					Description:  strToPtrStr("description"),
+				},
+				Labels: schema.Labels{"key": "value"},
+				Packages: schema.PackagePageExt{
+					Data: generatePackages(0, 0, 0),
+				},
+				EventingConfiguration: schema.ApplicationEventingConfiguration{},
+			},
+			expectedServices: &domain.Service{
+				ID:                   "id",
+				Name:                 "app1",
+				Description:          "description",
+				Bindable:             true,
+				InstancesRetrievable: false,
+				BindingsRetrievable:  true,
+				PlanUpdatable:        false,
+				Plans:                generateExpectations(0, 0, 0),
+				Metadata: &domain.ServiceMetadata{
+					DisplayName:         "app1",
+					ProviderDisplayName: "provider",
+					AdditionalMetadata:  schema.Labels{"key": "value"},
+				},
+			},
+			expectedErr: "",
+		},
+		{
+			name: "Application with one package without definitions",
+			app: &schema.ApplicationExt{
+				Application: schema.Application{
+					ID:           "id",
+					Name:         "app1",
+					ProviderName: strToPtrStr("provider"),
+					Description:  strToPtrStr("description"),
+				},
+				Labels: schema.Labels{"key": "value"},
+				Packages: schema.PackagePageExt{
+					Data: generatePackages(1, 0, 0),
+				},
+				EventingConfiguration: schema.ApplicationEventingConfiguration{},
+			},
+			expectedServices: &domain.Service{
+				ID:                   "id",
+				Name:                 "app1",
+				Description:          "description",
+				Bindable:             true,
+				InstancesRetrievable: false,
+				BindingsRetrievable:  true,
+				PlanUpdatable:        false,
+				Plans:                generateExpectations(1, 0, 0),
+				Metadata: &domain.ServiceMetadata{
+					DisplayName:         "app1",
+					ProviderDisplayName: "provider",
+					AdditionalMetadata:  schema.Labels{"key": "value"},
+				},
+			},
+			expectedErr: "",
+		},
+		{
+			name: "when description is not provided",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -85,8 +177,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name:    "when error is returned",
-			baseURL: "http://specification.com",
+			name: "when error is returned",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -96,20 +187,172 @@ func TestConverter_Convert(t *testing.T) {
 				},
 				Labels: schema.Labels{"key": "value"},
 				Packages: schema.PackagePageExt{
-					Data: []*schema.PackageExt{
-						generateFaultyPackage(),
-					},
+					Data: generatePackageWithModification(func(s *schema.PackageExt) *schema.PackageExt {
+						faultySchema := schema.JSONSchema(`NOT A JSON`)
+						s.InstanceAuthRequestInputSchema = &faultySchema
+						return s
+					}),
 				},
 				EventingConfiguration: schema.ApplicationEventingConfiguration{},
 			},
 			expectedServices: nil,
 			expectedErr:      "while unmarshaling JSON schema: NOT A JSON",
 		},
+		{
+			name: "when plan description is not provided",
+			app: &schema.ApplicationExt{
+				Application: schema.Application{
+					ID:           "id",
+					Name:         "app1",
+					ProviderName: strToPtrStr("provider"),
+					Description:  nil,
+				},
+				Labels: schema.Labels{"key": "value"},
+				Packages: schema.PackagePageExt{
+					Data: generatePackageWithModification(func(ext *schema.PackageExt) *schema.PackageExt {
+						ext.Description = nil
+						return ext
+					}),
+				},
+				EventingConfiguration: schema.ApplicationEventingConfiguration{},
+			},
+			expectedServices: &domain.Service{
+				ID:                   "id",
+				Name:                 "app1",
+				Description:          "service generated from system with name app1",
+				Bindable:             true,
+				InstancesRetrievable: false,
+				BindingsRetrievable:  true,
+				PlanUpdatable:        false,
+				Plans: generatePlansWithModification(func(s domain.ServicePlan) domain.ServicePlan {
+					s.Description = fmt.Sprintf("plan generated from package with name %s", s.Name)
+					return s
+				}),
+				Metadata: &domain.ServiceMetadata{
+					DisplayName:         "app1",
+					ProviderDisplayName: "provider",
+					AdditionalMetadata:  schema.Labels{"key": "value"},
+				},
+			},
+			expectedErr: "",
+		},
+		{
+			name: "when apiDef spec format is invalid",
+			app: &schema.ApplicationExt{
+				Application: schema.Application{
+					ID:           "id",
+					Name:         "app1",
+					ProviderName: strToPtrStr("provider"),
+					Description:  nil,
+				},
+				Labels: schema.Labels{"key": "value"},
+				Packages: schema.PackagePageExt{
+					Data: generatePackageWithModification(func(ext *schema.PackageExt) *schema.PackageExt {
+						ext.APIDefinitions.Data[0].Spec.Format = "application/I_AM_NOT_A_JSON"
+						return ext
+					}),
+				},
+				EventingConfiguration: schema.ApplicationEventingConfiguration{},
+			},
+			expectedServices: nil,
+			expectedErr:      "unknown spec format application/I_AM_NOT_A_JSON",
+		},
+		{
+			name: "when eventDef spec format is invalid",
+			app: &schema.ApplicationExt{
+				Application: schema.Application{
+					ID:           "id",
+					Name:         "app1",
+					ProviderName: strToPtrStr("provider"),
+					Description:  nil,
+				},
+				Labels: schema.Labels{"key": "value"},
+				Packages: schema.PackagePageExt{
+					Data: generatePackageWithModification(func(ext *schema.PackageExt) *schema.PackageExt {
+						ext.EventDefinitions.Data[0].Spec.Format = "application/I_AM_NOT_A_JSON"
+						return ext
+					}),
+				},
+				EventingConfiguration: schema.ApplicationEventingConfiguration{},
+			},
+			expectedServices: nil,
+			expectedErr:      "unknown spec format application/I_AM_NOT_A_JSON",
+		},
+		{
+			name: "when application labels are nil",
+			app: &schema.ApplicationExt{
+				Application: schema.Application{
+					ID:           "id",
+					Name:         "app1",
+					ProviderName: strToPtrStr("provider"),
+					Description:  nil,
+				},
+				Labels: nil,
+				Packages: schema.PackagePageExt{
+					Data: generatePackages(1, 1, 1),
+				},
+				EventingConfiguration: schema.ApplicationEventingConfiguration{},
+			},
+			expectedServices: &domain.Service{
+				ID:                   "id",
+				Name:                 "app1",
+				Description:          "service generated from system with name app1",
+				Bindable:             true,
+				InstancesRetrievable: false,
+				BindingsRetrievable:  true,
+				PlanUpdatable:        false,
+				Plans:                generateExpectations(1, 1, 1),
+				Metadata: &domain.ServiceMetadata{
+					DisplayName:         "app1",
+					ProviderDisplayName: "provider",
+					AdditionalMetadata:  map[string]interface{}{},
+				},
+			},
+			expectedErr: "",
+		},
+		{
+			name: "when package_instance_auth_request_input_schema is nil",
+			app: &schema.ApplicationExt{
+				Application: schema.Application{
+					ID:           "id",
+					Name:         "app1",
+					ProviderName: strToPtrStr("provider"),
+					Description:  strToPtrStr("description"),
+				},
+				Labels: schema.Labels{"key": "value"},
+				Packages: schema.PackagePageExt{
+					Data: generatePackageWithModification(func(ext *schema.PackageExt) *schema.PackageExt {
+						ext.InstanceAuthRequestInputSchema = nil
+						return ext
+					}),
+				},
+				EventingConfiguration: schema.ApplicationEventingConfiguration{},
+			},
+			expectedServices: &domain.Service{
+				ID:                   "id",
+				Name:                 "app1",
+				Description:          "description",
+				Bindable:             true,
+				InstancesRetrievable: false,
+				BindingsRetrievable:  true,
+				PlanUpdatable:        false,
+				Plans: generatePlansWithModification(func(s domain.ServicePlan) domain.ServicePlan {
+					s.Schemas = nil
+					return s
+				}),
+				Metadata: &domain.ServiceMetadata{
+					DisplayName:         "app1",
+					ProviderDisplayName: "provider",
+					AdditionalMetadata:  schema.Labels{"key": "value"},
+				},
+			},
+			expectedErr: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := Converter{
-				baseURL: tt.baseURL,
+				baseURL: "http://specification.com",
 			}
 			service, err := c.Convert(tt.app)
 			if tt.expectedErr != "" {
@@ -117,174 +360,6 @@ func TestConverter_Convert(t *testing.T) {
 				assert.Contains(t, err.Error(), tt.expectedErr)
 			} else {
 				assert.Equal(t, tt.expectedServices, service)
-			}
-		})
-	}
-}
-
-func TestConverter_toPlanMetadata(t *testing.T) {
-	type fields struct {
-		baseURL string
-	}
-	type args struct {
-		appID string
-		pkg   *schema.PackageExt
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *domain.ServicePlanMetadata
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &Converter{
-				baseURL: tt.fields.baseURL,
-			}
-			got, err := c.toPlanMetadata(tt.args.appID, tt.args.pkg)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("toPlanMetadata() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("toPlanMetadata() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestConverter_toPlans(t *testing.T) {
-	type fields struct {
-		baseURL string
-	}
-	type args struct {
-		appID    string
-		packages []*schema.PackageExt
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []domain.ServicePlan
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &Converter{
-				baseURL: tt.fields.baseURL,
-			}
-			got, err := c.toPlans(tt.args.appID, tt.args.packages)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("toPlans() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("toPlans() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestConverter_toSchemas(t *testing.T) {
-	type fields struct {
-		baseURL string
-	}
-	type args struct {
-		pkg *schema.PackageExt
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *domain.ServiceSchemas
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &Converter{
-				baseURL: tt.fields.baseURL,
-			}
-			got, err := c.toSchemas(tt.args.pkg)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("toSchemas() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("toSchemas() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestConverter_toServiceMetadata(t *testing.T) {
-	type fields struct {
-		baseURL string
-	}
-	type args struct {
-		app *schema.ApplicationExt
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *domain.ServiceMetadata
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &Converter{
-				baseURL: tt.fields.baseURL,
-			}
-			if got := c.toServiceMetadata(tt.args.app); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("toServiceMetadata() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_boolPtr(t *testing.T) {
-	type args struct {
-		in bool
-	}
-	tests := []struct {
-		name string
-		args args
-		want *bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := boolPtr(tt.args.in); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("boolPtr() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_ptrStrToStr(t *testing.T) {
-	type args struct {
-		s *string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ptrStrToStr(tt.args.s); got != tt.want {
-				t.Errorf("ptrStrToStr() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -324,8 +399,8 @@ func generateExpectations(packagesCount, apiDefCount, eventDefCount int) []domai
 
 		for j := 0; j < eventDefCount; j++ {
 			eventDefSpec := map[string]interface{}{
-				"definition_id":          fmt.Sprintf("id%d", i),
-				"definition_name":        fmt.Sprintf("eventDef%d", i),
+				"definition_id":          fmt.Sprintf("id%d", j),
+				"definition_name":        fmt.Sprintf("eventDef%d", j),
 				"specification_category": "event_definition",
 				"specification_type":     schema.EventSpecTypeAsyncAPI,
 				"specification_format":   "application/json",
@@ -338,6 +413,9 @@ func generateExpectations(packagesCount, apiDefCount, eventDefCount int) []domai
 			"specifications": specifications,
 		}
 		plans = append(plans, plan)
+	}
+	if len(plans) == 0 {
+		return nil
 	}
 	return plans
 }
@@ -406,13 +484,18 @@ func generateEventDefinitions(count int) schema.EventAPIDefinitionPageExt {
 	}
 }
 
-func generateFaultyPackage() *schema.PackageExt {
-	faultySchema := schema.JSONSchema(`NOT A JSON`)
-	ext := generatePackages(1, 0, 0)
-	ext[0].InstanceAuthRequestInputSchema = &faultySchema
-	return ext[0]
-}
-
 func strToPtrStr(s string) *string {
 	return &s
+}
+
+func generatePlansWithModification(f func(plan domain.ServicePlan) domain.ServicePlan) []domain.ServicePlan {
+	expectations := generateExpectations(1, 1, 1)
+	expectations[0] = f(expectations[0])
+	return expectations
+}
+
+func generatePackageWithModification(f func(*schema.PackageExt) *schema.PackageExt) []*schema.PackageExt {
+	pkg := generatePackages(1, 1, 1)
+	pkg[0] = f(pkg[0])
+	return pkg
 }
