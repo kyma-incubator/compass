@@ -10,7 +10,4 @@ public class Provider {
 
     @Column(name = "department", length = Integer.MAX_VALUE)
     private String department;
-
-    @Column(name = "extensions", length = Integer.MAX_VALUE)
-    private String extensions;
 }

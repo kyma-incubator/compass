@@ -53,18 +53,29 @@ public class EventEntity {
 
     @ElementCollection
     @CollectionTable(name = "tags", joinColumns = @JoinColumn(name = "event_definition_id"))
-    private List<Tag> tags;
+    private List<ArrayElement> tags;
+
+    @ElementCollection
+    @CollectionTable(name = "countries", joinColumns = @JoinColumn(name = "event_definition_id"))
+    private List<ArrayElement> countries;
 
     @Column(name = "release_status")
     @NotNull
     private String releaseStatus;
 
+    @Column(name = "sunset_date")
+    private String sunsetDate;
+
+    @Column(name = "successor")
+    private String successor;
+
     @ElementCollection
     @CollectionTable(name="event_resource_definitions", joinColumns=@JoinColumn(name="event_definition_id"))
     private List<EventDefinition> eventDefinitions;
 
-    @Column(name = "extensions", length = Integer.MAX_VALUE)
-    private String extensions;
+    @ElementCollection
+    @CollectionTable(name = "ord_labels", joinColumns = @JoinColumn(name = "event_definition_id"))
+    private List<Label> labels;
 
     @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
     private Set<EventSpecificationEntity> specifications;

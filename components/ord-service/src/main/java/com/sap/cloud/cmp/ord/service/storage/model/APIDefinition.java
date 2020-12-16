@@ -16,7 +16,4 @@ public class APIDefinition {
 
     @Column(name = "url", length = Integer.MAX_VALUE)
     private String url;
-
-    @Column(name = "extensions", length = Integer.MAX_VALUE)
-    private String extensions;
 }

@@ -4,14 +4,13 @@ ALTER TABLE packages
     ADD COLUMN ord_id            VARCHAR(256), /* ORD Required, nullable due to backwards compatibility */
     ADD COLUMN short_description VARCHAR(255), /* ORD Required, nullable due to backwards compatibility */
     ADD COLUMN version           VARCHAR(256), /* ORD Required, nullable due to backwards compatibility */
+    ADD COLUMN package_links     JSONB,
     ADD COLUMN links             JSONB,
-    ADD COLUMN terms_of_service  VARCHAR(512),
     ADD COLUMN licence_type      VARCHAR(256),
-    ADD COLUMN licence           VARCHAR(512),
     ADD COLUMN provider          JSONB,
     ADD COLUMN tags              JSONB,
-    ADD COLUMN actions           JSONB,
-    ADD COLUMN extensions        JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
+    ADD COLUMN countries         JSONB,
+    ADD COLUMN labels            JSONB;
 
 CREATE TYPE api_protocol AS ENUM ('odata-v2', 'odata-v4','soap-inbound','soap-outbound','rest');
 CREATE TYPE release_status AS ENUM ('beta', 'active', 'deprecated', 'decommissioned');
@@ -55,19 +54,22 @@ EXECUTE PROCEDURE set_release_status();
 ALTER TABLE api_definitions
     ADD COLUMN ord_id                VARCHAR(256), /* ORD Required, nullable due to backwards compatibility */
     ADD COLUMN short_description     VARCHAR(255), /* ORD Required, nullable due to backwards compatibility */
-    ADD COLUMN documentation         VARCHAR(512),
     ADD COLUMN system_instance_aware BOOLEAN,
     ADD COLUMN api_protocol          api_protocol, /* ORD Required, nullable due to backwards compatibility */
     ADD COLUMN tags                  JSONB,
+    ADD COLUMN countries             JSONB,
     ADD COLUMN api_definitions       JSONB, /* Array of URLs pointing to API specs */
     ADD COLUMN links                 JSONB,
-    ADD COLUMN actions               JSONB,
+    ADD COLUMN api_resource_links    JSONB,
     ADD COLUMN release_status        release_status, /* ORD Required, nullable due to backwards compatibility */
+    ADD COLUMN sunset_date           VARCHAR(256),
+    ADD COLUMN successor             VARCHAR(256),
     ADD COLUMN changelog_entries     JSONB,
-    ADD COLUMN extensions            JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
+    ADD COLUMN labels                JSONB;
 
+/* Dummy update in order to apply the trigger logic above */
 UPDATE api_definitions
-SET name = name; /* Dummy update in order to apply the trigger logic above */
+SET name = name;
 
 ALTER TABLE event_api_definitions
     ADD COLUMN ord_id                VARCHAR(256), /* ORD Required, nullable due to backwards compatibility */
@@ -76,12 +78,17 @@ ALTER TABLE event_api_definitions
     ADD COLUMN changelog_entries     JSONB,
     ADD COLUMN links                 JSONB,
     ADD COLUMN tags                  JSONB,
+    ADD COLUMN countries             JSONB,
     ADD COLUMN release_status        release_status, /* ORD Required, nullable due to backwards compatibility */
+    ADD COLUMN sunset_date           VARCHAR(256),
+    ADD COLUMN successor             VARCHAR(256),
     ADD COLUMN event_definitions     JSONB, /* Array of URLs pointing to Event specs */
-    ADD COLUMN extensions            JSONB; /* The spec MAY be extended with custom properties. Their property names MUST start with "x-"  */
+    ADD COLUMN labels                JSONB;
 
+/* Dummy update in order to apply the trigger logic above */
 UPDATE event_api_definitions
-SET name = name; /* Dummy update in order to apply the trigger logic above */
+SET name = name;
+
 
 /* Views exposing JSON columns structured */
 
@@ -91,40 +98,36 @@ FROM (SELECT id                AS package_id,
              NULL::uuid        AS api_definition_id,
              NULL::uuid        AS event_definition_id,
              links.title       AS title,
-             links.description AS description,
              links.url         AS url,
-             links.extensions  AS extensions
+             links.description AS description
       FROM packages,
-           jsonb_to_recordset(packages.links) AS links(title TEXT, description TEXT, url TEXT, extensions JSONB)) AS package_links
+           jsonb_to_recordset(packages.links) AS links(title TEXT, description TEXT, url TEXT)) AS package_links
 UNION ALL
 (SELECT NULL::uuid        AS package_id,
         id                AS api_definition_id,
         NULL::uuid        AS event_definition_id,
         links.title       AS title,
-        links.description AS description,
         links.url         AS url,
-        links.extensions  AS extensions
+        links.description AS description
  FROM api_definitions,
-      jsonb_to_recordset(api_definitions.links) AS links(title TEXT, description TEXT, url TEXT, extensions JSONB))
+      jsonb_to_recordset(api_definitions.links) AS links(title TEXT, description TEXT, url TEXT))
 UNION ALL
 (SELECT NULL::uuid        AS package_id,
         NULL::uuid        AS api_definition_id,
         id                AS event_definition_id,
         links.title       AS title,
-        links.description AS description,
         links.url         AS url,
-        links.extensions  AS extensions
+        links.description AS description
  FROM event_api_definitions,
-      jsonb_to_recordset(event_api_definitions.links) AS links(title TEXT, description TEXT, url TEXT, extensions JSONB));
+      jsonb_to_recordset(event_api_definitions.links) AS links(title TEXT, description TEXT, url TEXT));
 
 CREATE VIEW providers AS
 SELECT packages.id                        AS package_id,
        packages.provider ->> 'name'       AS name,
-       packages.provider ->> 'department' AS department,
-       packages.links ->> 'extensions'    AS extensions
+       packages.provider ->> 'department' AS department
 FROM packages;
 
-CREATE VIEW tags AS
+CREATE VIEW ord_labels AS
 SELECT *
 FROM (SELECT packages.id    AS package_id,
              NULL::uuid     AS api_definition_id,
@@ -132,7 +135,7 @@ FROM (SELECT packages.id    AS package_id,
              expand.key     AS key,
              elements.value AS value
       FROM packages,
-           jsonb_each(packages.tags) AS expand,
+           jsonb_each(packages.labels) AS expand,
            jsonb_array_elements_text(expand.value) AS elements) AS package_tags
 UNION ALL
 (SELECT NULL::uuid         AS package_id,
@@ -141,7 +144,7 @@ UNION ALL
         expand.key         AS key,
         elements.value     AS value
  FROM api_definitions,
-      jsonb_each(api_definitions.tags) AS expand,
+      jsonb_each(api_definitions.labels) AS expand,
       jsonb_array_elements_text(expand.value) AS elements)
 UNION ALL
 (SELECT NULL::uuid     AS package_id,
@@ -150,41 +153,80 @@ UNION ALL
         expand.key     AS key,
         elements.value AS value
  FROM event_api_definitions,
-      jsonb_each(event_api_definitions.tags) AS expand,
+      jsonb_each(event_api_definitions.labels) AS expand,
       jsonb_array_elements_text(expand.value) AS elements);
 
-CREATE VIEW package_actions AS
+CREATE VIEW tags AS
+SELECT *
+FROM (SELECT packages.id    AS package_id,
+             NULL::uuid     AS api_definition_id,
+             NULL::uuid     AS event_definition_id,
+             elements.value AS value
+      FROM packages,
+           jsonb_array_elements_text(packages.tags) AS elements) AS package_tags
+UNION ALL
+(SELECT NULL::uuid         AS package_id,
+        api_definitions.id AS api_definition_id,
+        NULL::uuid         AS event_definition_id,
+        elements.value     AS value
+ FROM api_definitions,
+      jsonb_array_elements_text(api_definitions.tags) AS elements)
+UNION ALL
+(SELECT NULL::uuid     AS package_id,
+        NULL::uuid     AS api_definition_id,
+        id             AS event_definition_id,
+        elements.value AS value
+ FROM event_api_definitions,
+      jsonb_array_elements_text(event_api_definitions.tags) AS elements);
+
+CREATE VIEW countries AS
+SELECT *
+FROM (SELECT packages.id    AS package_id,
+             NULL::uuid     AS api_definition_id,
+             NULL::uuid     AS event_definition_id,
+             elements.value AS value
+      FROM packages,
+           jsonb_array_elements_text(packages.countries) AS elements) AS package_tags
+UNION ALL
+(SELECT NULL::uuid         AS package_id,
+        api_definitions.id AS api_definition_id,
+        NULL::uuid         AS event_definition_id,
+        elements.value     AS value
+ FROM api_definitions,
+      jsonb_array_elements_text(api_definitions.countries) AS elements)
+UNION ALL
+(SELECT NULL::uuid     AS package_id,
+        NULL::uuid     AS api_definition_id,
+        id             AS event_definition_id,
+        elements.value AS value
+ FROM event_api_definitions,
+      jsonb_array_elements_text(event_api_definitions.countries) AS elements);
+
+CREATE VIEW package_links AS
 SELECT id                   AS package_id,
-       actions.target       AS target,
        actions.type         AS type,
        actions."customType" AS custom_type,
-       actions.description  AS description,
-       actions.extensions   AS extensions
+       actions.url          AS url
 FROM packages,
-     jsonb_to_recordset(packages.actions) AS actions(target TEXT, type TEXT, "customType" TEXT, description TEXT,
-                                                     extensions JSONB);
+     jsonb_to_recordset(packages.package_links) AS actions(type TEXT, "customType" TEXT, url TEXT);
 
 CREATE VIEW api_resource_definitions AS
 SELECT id                        AS api_definition_id,
        api_res_defs.type         AS type,
        api_res_defs."customType" AS custom_type,
        api_res_defs.url          AS url,
-       api_res_defs."mediaType"  AS media_type,
-       api_res_defs.extensions   AS extensions
+       api_res_defs."mediaType"  AS media_type
 FROM api_definitions,
      jsonb_to_recordset(api_definitions.api_definitions) AS api_res_defs(type TEXT, "customType" TEXT, "mediaType" TEXT,
-                                                                         url TEXT, extensions JSONB);
+                                                                         url TEXT);
 
-CREATE VIEW api_actions AS
+CREATE VIEW api_resource_links AS
 SELECT id                   AS api_definition_id,
-       actions.target       AS target,
-       actions.description  AS description,
        actions.type         AS type,
        actions."customType" AS custom_type,
-       actions.extensions   AS extensions
+       actions.url          AS url
 FROM api_definitions,
-     jsonb_to_recordset(api_definitions.actions) AS actions(target TEXT, description TEXT, type TEXT, "customType" TEXT,
-                                                            extensions JSONB);
+     jsonb_to_recordset(api_definitions.api_resource_links) AS actions(type TEXT, "customType" TEXT, url TEXT);
 
 CREATE VIEW changelog_entries AS
 SELECT *
@@ -217,11 +259,10 @@ SELECT id                          AS event_definition_id,
        event_res_defs.type         AS type,
        event_res_defs."customType" AS custom_type,
        event_res_defs.url          AS url,
-       event_res_defs."mediaType"  AS media_type,
-       event_res_defs.extensions   AS extensions
+       event_res_defs."mediaType"  AS media_type
 FROM event_api_definitions,
      jsonb_to_recordset(event_api_definitions.event_definitions) AS event_res_defs(type TEXT, "customType" TEXT,
                                                                                    "mediaType" TEXT,
-                                                                                   url TEXT, extensions JSONB);
+                                                                                   url TEXT);
 
 COMMIT;

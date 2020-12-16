@@ -31,9 +31,6 @@ public class APIEntity {
     @Column(name = "description", length = Integer.MAX_VALUE)
     private String description;
 
-    @Column(name = "documentation", length = 512)
-    private String documentation;
-
     @Column(name = "version_value")
     private String version;
 
@@ -51,7 +48,12 @@ public class APIEntity {
 
     @ElementCollection
     @CollectionTable(name = "tags", joinColumns = @JoinColumn(name = "api_definition_id"))
-    private List<Tag> tags;
+    private List<ArrayElement> tags;
+
+    @ElementCollection
+    @CollectionTable(name = "countries", joinColumns = @JoinColumn(name = "api_definition_id"))
+    private List<ArrayElement> countries;
+
 
     @ElementCollection
     @CollectionTable(name="api_resource_definitions", joinColumns=@JoinColumn(name="api_definition_id"))
@@ -62,12 +64,18 @@ public class APIEntity {
     private List<Link> links;
 
     @ElementCollection
-    @CollectionTable(name="api_actions", joinColumns=@JoinColumn(name="api_definition_id"))
-    private List<APIAction> actions;
+    @CollectionTable(name="api_resource_links", joinColumns=@JoinColumn(name="api_definition_id"))
+    private List<APIResourceLink> apiResourceLinks;
 
     @Column(name = "release_status")
     @NotNull
     private String releaseStatus;
+
+    @Column(name = "sunset_date")
+    private String sunsetDate;
+
+    @Column(name = "successor")
+    private String successor;
 
     @ElementCollection
     @CollectionTable(name="changelog_entries", joinColumns=@JoinColumn(name="api_definition_id"))
@@ -77,8 +85,9 @@ public class APIEntity {
     @NotNull
     private String entryPoint;
 
-    @Column(name = "extensions", length = Integer.MAX_VALUE)
-    private String extensions;
+    @ElementCollection
+    @CollectionTable(name = "ord_labels", joinColumns = @JoinColumn(name = "api_definition_id"))
+    private List<Label> labels;
 
     @OneToMany(mappedBy = "api", fetch = FetchType.LAZY)
     private Set<APISpecificationEntity> specifications;

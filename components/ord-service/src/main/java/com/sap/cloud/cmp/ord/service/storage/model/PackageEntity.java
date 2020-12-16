@@ -35,36 +35,34 @@ public class PackageEntity {
     private String version;
 
     @ElementCollection
+    @CollectionTable(name = "package_links", joinColumns = @JoinColumn(name = "package_id"))
+    private List<PackageLink> packageLinks;
+
+    @ElementCollection
     @CollectionTable(name = "links", joinColumns = @JoinColumn(name = "package_id"))
     private List<Link> links;
 
-    @Column(name = "terms_of_service", length = 512)
-    private String termsOfService;
-
     @Column(name = "licence_type", length = 256)
     private String licenceType;
-
-    @Column(name = "licence", length = 512)
-    private String licence;
 
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "name", column = @Column(name = "name", table = "providers")),
             @AttributeOverride(name = "department", column = @Column(name = "department", table = "providers")),
-            @AttributeOverride(name = "extensions", column = @Column(name = "extensions", table = "providers")),
     })
     private Provider provider;
 
     @ElementCollection
     @CollectionTable(name = "tags", joinColumns = @JoinColumn(name = "package_id"))
-    private List<Tag> tags;
+    private List<ArrayElement> tags;
 
     @ElementCollection
-    @CollectionTable(name = "package_actions", joinColumns = @JoinColumn(name = "package_id"))
-    private List<PackageAction> actions;
+    @CollectionTable(name = "countries", joinColumns = @JoinColumn(name = "package_id"))
+    private List<ArrayElement> countries;
 
-    @Column(name = "extensions", length = Integer.MAX_VALUE)
-    private String extensions;
+    @ElementCollection
+    @CollectionTable(name = "ord_labels", joinColumns = @JoinColumn(name = "package_id"))
+    private List<Label> labels;
 
     @OneToMany(mappedBy = "packageEntity", fetch = FetchType.LAZY)
     private Set<APIEntity> apis;
