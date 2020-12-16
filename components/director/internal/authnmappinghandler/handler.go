@@ -111,7 +111,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while parsing the request.")
-		http.Error(writer, "Unable to parse request data", http.StatusBadRequest)
+		http.Error(writer, "Unable to parse request data", http.StatusUnauthorized)
 		return
 	}
 

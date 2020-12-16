@@ -574,7 +574,7 @@ func TestHandler(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
 		require.Contains(t, logsBuffer.String(), "An error has occurred while parsing the request")
 	})
