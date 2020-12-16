@@ -154,7 +154,7 @@ func TestBindCreate(t *testing.T) {
 		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceAuthCallCount())
 	})
 
-	t.Run("When package instance credential requester returns an error", func(t *testing.T) {
+	t.Run("When package instance auth status is failed", func(t *testing.T) {
 		setup()
 		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionFailed
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(

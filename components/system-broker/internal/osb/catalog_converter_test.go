@@ -145,7 +145,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "when description is not provided",
+			name: "Application description is nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -177,7 +177,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "when error is returned",
+			name: "Error is returned when package has invalid schema",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -199,7 +199,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr:      "while unmarshaling JSON schema: NOT A JSON",
 		},
 		{
-			name: "when plan description is not provided",
+			name: "Plan description is nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -237,7 +237,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "when apiDef spec format is invalid",
+			name: "ApiDef spec format is invalid",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -258,7 +258,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr:      "unknown spec format application/I_AM_NOT_A_JSON",
 		},
 		{
-			name: "when eventDef spec format is invalid",
+			name: "EventDef spec format is invalid",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -279,7 +279,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr:      "unknown spec format application/I_AM_NOT_A_JSON",
 		},
 		{
-			name: "when application labels are nil",
+			name: "Application labels are nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -311,7 +311,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "when package_instance_auth_request_input_schema is nil",
+			name: "Package_instance_auth_request_input_schema is nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
