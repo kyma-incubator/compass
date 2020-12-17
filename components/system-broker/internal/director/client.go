@@ -35,6 +35,7 @@ type Client interface {
 
 //go:generate mockery -name=GqlFieldsProvider
 type GqlFieldsProvider interface {
+	OmitForApplication(omit []string) string
 	ForApplication(ctx ...graphqlizer.FieldCtx) string
 	ForAPIDefinition(ctx ...graphqlizer.FieldCtx) string
 	ForDocument() string
@@ -70,7 +71,15 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 			result: applications {
 					%s
 			}
-	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.ForApplication()))
+	}`, c.outputGraphqlizer.Page(c.outputGraphqlizer.OmitForApplication([]string{
+		"auths",
+		"webhooks",
+		"status",
+		"packages.instanceAuths",
+		"packages.documents",
+		"packages.apiDefinitions.spec.fetchRequest",
+		"packages.eventDefinitions.spec.fetchRequest",
+	})))
 
 	apps := ApplicationsOutput{}
 

@@ -29,18 +29,22 @@ type applicationsLister interface {
 	FetchApplications(ctx context.Context) (*director.ApplicationsOutput, error)
 }
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsFetcher
 type packageCredentialsFetcher interface {
 	FetchPackageInstanceAuth(ctx context.Context, in *director.PackageInstanceInput) (*director.PackageInstanceAuthOutput, error)
 }
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsFetcherForInstance
 type packageCredentialsFetcherForInstance interface {
 	FetchPackageInstanceCredentials(ctx context.Context, in *director.PackageInstanceInput) (*director.PackageInstanceCredentialsOutput, error)
 }
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsCreateRequester
 type packageCredentialsCreateRequester interface {
 	RequestPackageInstanceCredentialsCreation(ctx context.Context, in *director.PackageInstanceCredentialsInput) (*director.PackageInstanceAuthOutput, error)
 }
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsDeleteRequester
 type packageCredentialsDeleteRequester interface {
 	RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *director.PackageInstanceAuthDeletionInput) (*director.PackageInstanceAuthDeletionOutput, error)
 }
