@@ -6,9 +6,9 @@ WORKDIR ${BASE_APP_DIR}
 COPY ./internal/ ${BASE_APP_DIR}/internal/
 COPY ./config/ ${BASE_APP_DIR}/config/
 COPY ./pkg/ ${BASE_APP_DIR}/pkg/
-COPY ./vendor/ ${BASE_APP_DIR}/vendor/
 COPY ./cmd/main.go ${BASE_APP_DIR}/
 COPY ./licenses ${BASE_APP_DIR}/licenses
+COPY go.mod go.sum ${BASE_APP_DIR}/
 
 RUN go build -v -o main .
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
