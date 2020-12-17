@@ -8,11 +8,12 @@ odata:
     request_mapping_path: "open-resource-discovery"
     root_packages: "com.sap.cloud.cmp.ord.service"
 server:
+  self_url: http://localhost:8080
   port: 8080
 spring:
   autoconfigure:
     exclude:
-    - org.springframework.boot.actuate.autoconfigure.metrics.orm.jpa.HibernateMetricsAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.metrics.orm.jpa.HibernateMetricsAutoConfiguration
   datasource:
     driver-class-name: org.postgresql.Driver
     password: pgsql@12345

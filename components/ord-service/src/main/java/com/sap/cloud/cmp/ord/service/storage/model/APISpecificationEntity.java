@@ -22,6 +22,13 @@ public class APISpecificationEntity {
     private UUID apiDefinitionId;
 
     @Column(name = "spec_data", length = Integer.MAX_VALUE)
-    @Lob
-    private Clob specData;
+    private String specData;
+
+    public UUID getApiDefinitionId() {
+        return apiDefinitionId;
+    }
+
+    public String getSpecData() {
+        return specData;
+    }
 }

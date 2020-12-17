@@ -213,21 +213,21 @@ FROM packages,
 /*TODO: Currently each API has only a single API Definition, once we implement the aggregator this view should be fully represented in a separate specifications table which will have the data as well*/
 CREATE VIEW api_resource_definitions AS
 SELECT *
-FROM (SELECT id                                   AS api_definition_id,
-             api_res_defs.type                    AS type,
-             api_res_defs."customType"            AS custom_type,
-             format('/apiSpecifications(%s)', id) AS url,
-             api_res_defs."mediaType"             AS media_type
+FROM (SELECT id                                  AS api_definition_id,
+             api_res_defs.type                   AS type,
+             api_res_defs."customType"           AS custom_type,
+             format('/api/%s/specification', id) AS url,
+             api_res_defs."mediaType"            AS media_type
       FROM api_definitions,
            jsonb_to_recordset(api_definitions.api_definitions) AS api_res_defs(type TEXT, "customType" TEXT,
                                                                                "mediaType" TEXT,
                                                                                url TEXT)) as api_defs
 UNION ALL
-(SELECT id                                   AS api_definition_id,
-        spec_type::text                      AS type,
-        NULL                                 AS custom_type,
-        format('/apiSpecifications(%s)', id) AS url,
-        spec_format::text                    AS media_type
+(SELECT id                                  AS api_definition_id,
+        spec_type::text                     AS type,
+        NULL                                AS custom_type,
+        format('/api/%s/specification', id) AS url,
+        spec_format::text                   AS media_type
  FROM api_definitions);
 
 CREATE VIEW api_resource_links AS
@@ -266,21 +266,21 @@ UNION ALL
 /*TODO: Currently each Event has only a single Event Definition, once we implement the aggregator this view should be fully represented in a separate specifications table which will have the data as well*/
 CREATE VIEW event_resource_definitions AS
 SELECT *
-FROM (SELECT id                                     AS event_definition_id,
-             event_res_defs.type                    AS type,
-             event_res_defs."customType"            AS custom_type,
-             format('/eventSpecifications(%s)', id) AS url,
-             event_res_defs."mediaType"             AS media_type
+FROM (SELECT id                                    AS event_definition_id,
+             event_res_defs.type                   AS type,
+             event_res_defs."customType"           AS custom_type,
+             format('/event/%s/specification', id) AS url,
+             event_res_defs."mediaType"            AS media_type
       FROM event_api_definitions,
            jsonb_to_recordset(event_api_definitions.event_definitions) AS event_res_defs(type TEXT, "customType" TEXT,
                                                                                          "mediaType" TEXT,
                                                                                          url TEXT)) as event_defs
 UNION ALL
-(SELECT id                                     AS event_definition_id,
-        spec_type::text                        AS type,
-        NULL                                   AS custom_type,
-        format('/eventSpecifications(%s)', id) AS url,
-        spec_format::text                      AS media_type
+(SELECT id                                    AS event_definition_id,
+        spec_type::text                       AS type,
+        NULL                                  AS custom_type,
+        format('/event/%s/specification', id) AS url,
+        spec_format::text                     AS media_type
  FROM event_api_definitions);
 
 COMMIT;

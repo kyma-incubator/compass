@@ -1,15 +1,17 @@
 package com.sap.cloud.cmp.ord.service.storage.model.converter;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
 @Converter
+@Component
 public class UrlConverter implements AttributeConverter<String, String> {
 
-    // @Value("${odata.jpa.request_mapping_path}") TODO: Use value from application.yaml
-    private static String requestMappingPath = "open-resource-discovery";
+    private static Environment env;
 
     @Override
     public String convertToDatabaseColumn(String s) {
@@ -18,6 +20,11 @@ public class UrlConverter implements AttributeConverter<String, String> {
 
     @Override
     public String convertToEntityAttribute(String s) {
-        return "/" + requestMappingPath + s;
+        return env.getProperty("server.self_url") + "/" + env.getProperty("odata.jpa.request_mapping_path") + s;
+    }
+
+    @Autowired
+    public void setEnv(Environment env) {
+        UrlConverter.env = env;
     }
 }

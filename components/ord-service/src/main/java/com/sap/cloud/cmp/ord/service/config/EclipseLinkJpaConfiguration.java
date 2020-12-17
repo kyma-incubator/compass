@@ -58,7 +58,7 @@ public class EclipseLinkJpaConfiguration extends JpaBaseConfiguration {
     }
 
     @Bean
-    public LocalContainerEntityManagerFactoryBean customerEntityManagerFactory(
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(
             final EntityManagerFactoryBuilder builder, final DataSource ds) {
         Set<Class<?>> entityClasses = getEntityClasses();
 

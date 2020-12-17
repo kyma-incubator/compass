@@ -40,6 +40,8 @@ spec:
           env:
             - name: SERVER_PORT
               value: "{{ .Values.deployment.args.containerPort }}"
+            - name: SERVER_SELF_URL
+              value: "https://{{ .Values.global.ord_service.tls.host }}.{{ .Values.global.ingress.domainName }}" # TODO: Check Host When Virtual Service for ORD Service is introduced
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:

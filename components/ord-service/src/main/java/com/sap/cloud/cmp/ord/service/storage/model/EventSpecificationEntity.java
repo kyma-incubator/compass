@@ -22,6 +22,13 @@ public class EventSpecificationEntity {
     private UUID eventDefinitionId;
 
     @Column(name = "spec_data", length = Integer.MAX_VALUE)
-    @Lob
-    private Clob specData;
+    private String specData;
+
+    public UUID getEventDefinitionId() {
+        return eventDefinitionId;
+    }
+
+    public String getSpecData() {
+        return specData;
+    }
 }
