@@ -80,7 +80,30 @@ spec:
 
 ```
 
-Cert manager will take care to rotate certificates as defined in the resources.
+Cert manager will take care to rotate certificates as defined in the resources. Check that this certificate is specified as `isCA: true`. This means that the certificate will be used to issue other certificates.
+
+##### Domain certificates
+
+Cert manager can also take care to rotate Istio gateway certificates. An example for such certificate:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: <name>
+  namespace: <namespace>
+spec:
+  secretName: "<secret-to-put-the-generated-certificate>"
+  issuerRef:
+    name: <name-of-issuer-to-issue-certificates-from> (this can be Let's encrypt issuer)
+    kind: ClusterIssuer
+  commonName: <wildcard_domain_name>
+  dnsNames:
+    - <wildcard_domain_name>
+    - <alternative_wildcard_domain_name>
+```
+
+In this case as this certificate will not be used to issue other certificates it is not a CA cert. Also its validity depends on what the issuer (for exampel Let's encrypt) sets it to.
 
 ### Cluster installation
 
