@@ -224,10 +224,19 @@ FROM (SELECT id                                  AS api_definition_id,
                                                                                url TEXT)) as api_defs
 UNION ALL
 (SELECT id                                  AS api_definition_id,
-        spec_type::text                     AS type,
+        CASE
+            WHEN spec_type::text = 'ODATA' THEN 'edmx'
+            WHEN spec_type::text = 'OPEN_API' THEN 'openapi-v3' --TODO
+            ELSE spec_type::text
+            END                             AS type,
         NULL                                AS custom_type,
         format('/api/%s/specification', id) AS url,
-        spec_format::text                   AS media_type
+        CASE
+            WHEN spec_format::text = 'YAML' THEN 'text/yaml'
+            WHEN spec_format::text = 'XML' THEN 'application/xml'
+            WHEN spec_format::text = 'JSON' THEN 'application/json'
+            ELSE spec_format::text
+            END                             AS media_type
  FROM api_definitions);
 
 CREATE VIEW api_resource_links AS
@@ -276,11 +285,19 @@ FROM (SELECT id                                    AS event_definition_id,
                                                                                          "mediaType" TEXT,
                                                                                          url TEXT)) as event_defs
 UNION ALL
-(SELECT id                                    AS event_definition_id,
-        spec_type::text                       AS type,
-        NULL                                  AS custom_type,
-        format('/event/%s/specification', id) AS url,
-        spec_format::text                     AS media_type
+(SELECT id                                  AS api_definition_id,
+        CASE
+            WHEN spec_type::text = 'ASYNC_API' THEN 'asyncapi-v2'
+            ELSE spec_type::text
+            END                             AS type,
+        NULL                                AS custom_type,
+        format('/api/%s/specification', id) AS url,
+        CASE
+            WHEN spec_format::text = 'YAML' THEN 'text/yaml'
+            WHEN spec_format::text = 'XML' THEN 'application/xml'
+            WHEN spec_format::text = 'JSON' THEN 'application/json'
+            ELSE spec_format::text
+            END                             AS media_type
  FROM event_api_definitions);
 
 COMMIT;
