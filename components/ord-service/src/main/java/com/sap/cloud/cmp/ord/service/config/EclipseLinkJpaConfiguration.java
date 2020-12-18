@@ -54,6 +54,11 @@ public class EclipseLinkJpaConfiguration extends JpaBaseConfiguration {
         map.put(PersistenceUnitProperties.DDL_GENERATION, "none");
         map.put(PersistenceUnitProperties.LOGGING_LEVEL, SessionLog.FINE_LABEL);
         map.put(PersistenceUnitProperties.TRANSACTION_TYPE, "RESOURCE_LOCAL");
+        // do not cache entities locally, as this causes problems if multiple application instances are used
+        map.put(PersistenceUnitProperties.CACHE_SHARED_DEFAULT, "false");
+        // You can also tweak your application performance by configuring your database connection pool.
+        // https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#connectionpool
+        map.put(PersistenceUnitProperties.CONNECTION_POOL_MAX, 50);
         return map;
     }
 
