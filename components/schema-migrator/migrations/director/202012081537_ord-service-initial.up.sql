@@ -226,7 +226,7 @@ UNION ALL
 (SELECT id                                  AS api_definition_id,
         CASE
             WHEN spec_type::text = 'ODATA' THEN 'edmx'
-            WHEN spec_type::text = 'OPEN_API' THEN 'openapi-v3' --TODO
+            WHEN spec_type::text = 'OPEN_API' THEN 'openapi-v3' --TODO in ORD there are Open API v2 and v3 we have a single OPEN_API type?
             ELSE spec_type::text
             END                             AS type,
         NULL                                AS custom_type,
