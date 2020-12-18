@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	"github.com/stretchr/testify/assert"
@@ -23,6 +25,7 @@ import (
 )
 
 func TestHandler(t *testing.T) {
+	username := "admin"
 	target := "http://example.com/foo"
 	externalTenantID := "external-" + uuid.New().String()
 	tenantID := uuid.New()
@@ -31,8 +34,12 @@ func TestHandler(t *testing.T) {
 	testError := errors.New("some error")
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
+	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow}
+	oAuthAuthDetails := oathkeeper.AuthDetails{AuthID: systemAuthID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+	certAuthDetails := oathkeeper.AuthDetails{AuthID: systemAuthID.String(), AuthFlow: oathkeeper.CertificateFlow}
+	oneTimeTokenAuthDetails := oathkeeper.AuthDetails{AuthID: systemAuthID.String(), AuthFlow: oathkeeper.OneTimeTokenFlow}
+
 	t.Run("success for the request parsed as JWT flow", func(t *testing.T) {
-		username := "admin"
 		scopes := "application:read"
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
@@ -60,10 +67,14 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		mapperForUserMock := getMapperForUserMock()
-		mapperForUserMock.On("GetObjectContext", mock.Anything, reqDataMock, username).Return(objCtxMock, nil).Once()
+		userMockContextProvider := getMockContextProvider()
+		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetails).Return(objCtxMock, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, mapperForUserMock, nil)
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.UserObjectContextProvider: userMockContextProvider,
+		}
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -73,7 +84,208 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForUserMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
+	})
+
+	t.Run("success for the request parsed as JWT flow with custom authenticator", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		scopes := "application:read"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+				},
+			},
+		}
+		objCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			Scopes:       scopes,
+			ConsumerID:   username,
+			ConsumerType: "Static User",
+		}
+		authn := []authenticator.Config{
+			{
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0]}
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		authenticatorMockContextProvider := getMockContextProvider()
+		authenticatorMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(objCtxMock, nil).Once()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+		}
+
+		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, authenticatorMockContextProvider)
+	})
+
+	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		identityUsername := "identityAdmin"
+		scopes := "application:read"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.UsernameKey: username,
+					uniqueAttributeKey:     uniqueAttributeValue,
+					identityAttributeKey:   identityUsername,
+				},
+			},
+		}
+		objCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			Scopes:       scopes,
+			ConsumerID:   username,
+			ConsumerType: "Static User",
+		}
+		authn := []authenticator.Config{
+			{
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: identityUsername, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0]}
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + identityUsername + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		userMockContextProvider := getMockContextProvider()
+		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(objCtxMock, nil).Once()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.AuthenticatorObjectContextProvider: userMockContextProvider,
+		}
+
+		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
+	})
+
+	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present but no authenticator matches", func(t *testing.T) {
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		scopes := "application:read"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.UsernameKey: username,
+				},
+			},
+		}
+		objCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			Scopes:       scopes,
+			ConsumerID:   username,
+			ConsumerType: "Static User",
+		}
+		authn := []authenticator.Config{
+			{
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+			},
+		}
+
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","name":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `"},"header":null}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		userMockContextProvider := getMockContextProvider()
+		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetails).Return(objCtxMock, nil).Once()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.UserObjectContextProvider: userMockContextProvider,
+		}
+
+		handler := tenantmapping.NewHandler(authn, reqDataParserMock, transact, objectContextProviders)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as OAuth2 flow", func(t *testing.T) {
@@ -104,10 +316,14 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.OAuth2Flow).Return(objCtx, nil).Once()
+		systemAuthMockContextProvider := getMockContextProvider()
+		systemAuthMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, oAuthAuthDetails).Return(objCtx, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, mapperForSystemAuthMock)
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
+		}
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -117,7 +333,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForSystemAuthMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, systemAuthMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as Certificate flow", func(t *testing.T) {
@@ -149,10 +365,14 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.CertificateFlow).Return(objCtx, nil).Once()
+		systemAuthMockContextProvider := getMockContextProvider()
+		systemAuthMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, certAuthDetails).Return(objCtx, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, mapperForSystemAuthMock)
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
+		}
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -162,7 +382,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForSystemAuthMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, systemAuthMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as OneTimeToken flow", func(t *testing.T) {
@@ -194,10 +414,14 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 
-		mapperForSystemAuthMock := getMapperForSystemAuthMock()
-		mapperForSystemAuthMock.On("GetObjectContext", mock.Anything, reqDataMock, systemAuthID.String(), oathkeeper.OneTimeTokenFlow).Return(objCtx, nil).Once()
+		systemAuthMockContextProvider := getMockContextProvider()
+		systemAuthMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, oneTimeTokenAuthDetails).Return(objCtx, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, mapperForSystemAuthMock)
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
+		}
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -207,7 +431,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForSystemAuthMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, systemAuthMockContextProvider)
 	})
 
 	t.Run("error when sending different HTTP verb than POST", func(t *testing.T) {
@@ -232,7 +456,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, errors.New("some error")).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, nil, nil, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -275,10 +499,14 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatFailsOnCommit()
 
-		mapperForUserMock := getMapperForUserMock()
-		mapperForUserMock.On("GetObjectContext", mock.Anything, reqData, username).Return(objCtxMock, nil).Once()
+		userMockContextProvider := getMockContextProvider()
+		userMockContextProvider.On("GetObjectContext", mock.Anything, reqData, jwtAuthDetails).Return(objCtxMock, nil).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, mapperForUserMock, nil)
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.UserObjectContextProvider: userMockContextProvider,
+		}
+
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -290,7 +518,7 @@ func TestHandler(t *testing.T) {
 
 		assert.Equal(t, reqData.Body, out)
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, mapperForUserMock)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
 	})
 
 	t.Run("error when transaction begin fails", func(t *testing.T) {
@@ -310,7 +538,7 @@ func TestHandler(t *testing.T) {
 
 		persist, transact := txGen.ThatFailsOnBegin()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, transact, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -332,9 +560,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, nil).Once()
 
-		persist, transact := txGen.ThatDoesntExpectCommit()
-
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, nil)
+		handler := tenantmapping.NewHandler(nil, reqDataParserMock, nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -346,16 +572,11 @@ func TestHandler(t *testing.T) {
 
 		assert.Equal(t, oathkeeper.ReqBody{}, out)
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock)
 	})
 }
 
-func getMapperForUserMock() *automock.ObjectContextForUserProvider {
-	provider := &automock.ObjectContextForUserProvider{}
-	return provider
-}
-
-func getMapperForSystemAuthMock() *automock.ObjectContextForSystemAuthProvider {
-	provider := &automock.ObjectContextForSystemAuthProvider{}
+func getMockContextProvider() *automock.ObjectContextProvider {
+	provider := &automock.ObjectContextProvider{}
 	return provider
 }

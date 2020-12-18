@@ -17,23 +17,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewMapperForSystemAuth(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter, tenantRepo TenantRepository) *mapperForSystemAuth {
-	return &mapperForSystemAuth{
+func NewSystemAuthContextProvider(systemAuthSvc systemauth.SystemAuthService, scopesGetter ScopesGetter, tenantRepo TenantRepository) *systemAuthContextProvider {
+	return &systemAuthContextProvider{
 		systemAuthSvc: systemAuthSvc,
 		scopesGetter:  scopesGetter,
 		tenantRepo:    tenantRepo,
 	}
 }
 
-type mapperForSystemAuth struct {
+type systemAuthContextProvider struct {
 	systemAuthSvc systemauth.SystemAuthService
 	scopesGetter  ScopesGetter
 	tenantRepo    TenantRepository
 }
 
-func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string, authFlow oathkeeper.AuthFlow) (ObjectContext, error) {
-
-	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authID)
+func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+	sysAuth, err := m.systemAuthSvc.GetGlobal(ctx, authDetails.AuthID)
 	if err != nil {
 		return ObjectContext{}, errors.Wrap(err, "while retrieving system auth from database")
 	}
@@ -51,13 +50,13 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 	case model.IntegrationSystemReference:
 		tenantCtx, scopes, err = m.getTenantAndScopesForIntegrationSystem(ctx, reqData)
 	case model.RuntimeReference, model.ApplicationReference:
-		tenantCtx, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(ctx, sysAuth, refObjType, reqData, authFlow)
+		tenantCtx, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(ctx, sysAuth, refObjType, reqData, authDetails.AuthFlow)
 	default:
 		return ObjectContext{}, errors.Errorf("unsupported reference object type (%s)", refObjType)
 	}
 
 	if err != nil {
-		return ObjectContext{}, errors.Wrapf(err, "while fetching the tenant and scopes for system auth with id: %s, object type: %s, using auth flow: %s", sysAuth.ID, refObjType, authFlow)
+		return ObjectContext{}, errors.Wrapf(err, "while fetching the tenant and scopes for system auth with id: %s, object type: %s, using auth flow: %s", sysAuth.ID, refObjType, authDetails.AuthFlow)
 	}
 	log.C(ctx).Debugf("Successfully got tenant context - external ID: %s, internal ID: %s", tenantCtx.ExternalTenantID, tenantCtx.TenantID)
 
@@ -78,7 +77,7 @@ func (m *mapperForSystemAuth) GetObjectContext(ctx context.Context, reqData oath
 	return objCxt, nil
 }
 
-func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper.ReqData) (TenantContext, string, error) {
+func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx context.Context, reqData oathkeeper.ReqData) (TenantContext, string, error) {
 	var externalTenantID, scopes string
 
 	scopes, err := reqData.GetScopes()
@@ -113,7 +112,7 @@ func (m *mapperForSystemAuth) getTenantAndScopesForIntegrationSystem(ctx context
 	return NewTenantContext(externalTenantID, tenantMapping.ID), scopes, nil
 }
 
-func (m *mapperForSystemAuth) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData oathkeeper.ReqData, authFlow oathkeeper.AuthFlow) (TenantContext, string, error) {
+func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, sysAuth *model.SystemAuth, refObjType model.SystemAuthReferenceObjectType, reqData oathkeeper.ReqData, authFlow oathkeeper.AuthFlow) (TenantContext, string, error) {
 	var externalTenantID, scopes string
 	var err error
 

@@ -15,21 +15,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewMapperForUser(staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *mapperForUser {
-	return &mapperForUser{
+func NewUserContextProvider(staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository, tenantRepo TenantRepository) *userContextProvider {
+	return &userContextProvider{
 		staticUserRepo:  staticUserRepo,
 		staticGroupRepo: staticGroupRepo,
 		tenantRepo:      tenantRepo,
 	}
 }
 
-type mapperForUser struct {
+type userContextProvider struct {
 	staticUserRepo  StaticUserRepository
 	staticGroupRepo StaticGroupRepository
 	tenantRepo      TenantRepository
 }
 
-func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, username string) (ObjectContext, error) {
+func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	var externalTenantID, scopes string
 	var staticUser *StaticUser
 	var err error
@@ -45,21 +45,21 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 	if !hasScopes(scopes) {
 		log.C(ctx).Info("No scopes found from groups, getting user data")
 
-		staticUser, scopes, err = m.getUserData(ctx, reqData, username)
+		staticUser, scopes, err = m.getUserData(ctx, reqData, authDetails.AuthID)
 		if err != nil {
-			return ObjectContext{}, errors.Wrapf(err, "while getting user data for user: %s", username)
+			return ObjectContext{}, errors.Wrapf(err, "while getting user data for user: %s", authDetails.AuthID)
 		}
 	}
 
 	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
 		if !apperrors.IsKeyDoesNotExist(err) {
-			return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", username)
+			return ObjectContext{}, errors.Wrapf(err, "could not parse external ID for user: %s", authDetails.AuthID)
 		}
 		log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
 
 		log.C(ctx).Info("Could not create tenant context, returning empty context...")
-		return NewObjectContext(TenantContext{}, scopes, username, consumer.User), nil
+		return NewObjectContext(TenantContext{}, scopes, authDetails.AuthID, consumer.User), nil
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
@@ -69,7 +69,7 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), scopes, username, consumer.User), nil
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), scopes, authDetails.AuthID, consumer.User), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantId=%s]", externalTenantID)
 	}
@@ -78,13 +78,13 @@ func (m *mapperForUser) GetObjectContext(ctx context.Context, reqData oathkeeper
 		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: %s missmatch external tenant: %s", staticUser.Username, tenantMapping.ExternalTenant))
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, username, consumer.User)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), scopes, authDetails.AuthID, consumer.User)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
 }
 
-func (m *mapperForUser) getScopesForUserGroups(ctx context.Context, reqData oathkeeper.ReqData) string {
+func (m *userContextProvider) getScopesForUserGroups(ctx context.Context, reqData oathkeeper.ReqData) string {
 	userGroups := reqData.GetUserGroups()
 	if len(userGroups) == 0 {
 		return ""
@@ -102,7 +102,7 @@ func (m *mapperForUser) getScopesForUserGroups(ctx context.Context, reqData oath
 	return scopes
 }
 
-func (m *mapperForUser) getUserData(ctx context.Context, reqData oathkeeper.ReqData, username string) (*StaticUser, string, error) {
+func (m *userContextProvider) getUserData(ctx context.Context, reqData oathkeeper.ReqData, username string) (*StaticUser, string, error) {
 	staticUser, err := m.staticUserRepo.Get(username)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "while searching for a static user with username %s", username)

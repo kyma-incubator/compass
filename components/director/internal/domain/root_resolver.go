@@ -3,7 +3,6 @@ package domain
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
@@ -81,7 +80,7 @@ func NewRootResolver(
 	pairingAdaptersMapping map[string]string,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
-	clientTimeout time.Duration,
+	httpClient *http.Client,
 	protectedLabelPattern string,
 ) *RootResolver {
 	oAuth20HTTPClient := &http.Client{
@@ -130,16 +129,13 @@ func NewRootResolver(
 	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageInstanceAuthConv)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 
-	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL, clientTimeout)
+	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL, httpClient.Timeout)
 
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
-	httpClient := &http.Client{
-		Timeout:   clientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
-	}
+
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)

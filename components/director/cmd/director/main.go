@@ -7,6 +7,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/vrischmann/envconfig"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
@@ -32,7 +38,7 @@ import (
 
 	"github.com/dlmiddlecote/sqlstats"
 
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	mp_authenticator "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -62,8 +68,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
-	"github.com/vrischmann/envconfig"
 )
+
+const envPrefix = "APP"
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
@@ -71,13 +78,14 @@ type config struct {
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
 
-	Database                persistence.DatabaseConfig
-	APIEndpoint             string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint   string `envconfig:"default=/tenant-mapping"`
-	RuntimeMappingEndpoint  string `envconfig:"default=/runtime-mapping"`
-	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
-	ConfigurationFile       string
-	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	Database                      persistence.DatabaseConfig
+	APIEndpoint                   string `envconfig:"default=/graphql"`
+	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
+	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
+	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
+	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
+	ConfigurationFile             string
+	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
 
 	Log log.Config
 
@@ -110,8 +118,11 @@ func main() {
 	signal.HandleInterrupts(ctx, cancel, term)
 
 	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, "APP")
+	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
+
+	authenticators, err := authenticator.InitFromEnv(envPrefix)
+	exitOnError(err, "Failed to retrieve authenticators config")
 
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
@@ -135,6 +146,11 @@ func main() {
 	pairingAdapters, err := getPairingAdaptersMapping(ctx, cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
 
+	httpClient := &http.Client{
+		Timeout:   cfg.ClientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+	}
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -145,7 +161,7 @@ func main() {
 			pairingAdapters,
 			cfg.Features,
 			metricsCollector,
-			cfg.ClientTimeout,
+			httpClient,
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
@@ -158,7 +174,7 @@ func main() {
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
@@ -187,7 +203,7 @@ func main() {
 		handler.RecoverFunc(panic_handler.RecoverFn))))
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
@@ -198,6 +214,11 @@ func main() {
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
+
+	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.AuthenticationMappingEndpoint)
+	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider)
+
+	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
@@ -275,7 +296,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticators []authenticator.Config, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -294,12 +315,14 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsers
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
-	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo, staticGroupsRepo, tenantRepo)
-	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, cfgProvider, tenantRepo)
-
+	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+		tenantmapping.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(staticUsersRepo, staticGroupsRepo, tenantRepo),
+		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(systemAuthSvc, cfgProvider, tenantRepo),
+		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(tenantRepo),
+	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
+	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders).ServeHTTP, nil
 }
 
 func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {
