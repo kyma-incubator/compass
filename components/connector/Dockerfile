@@ -3,6 +3,9 @@ FROM golang:1.15.5-alpine3.12 as builder
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/connector
 WORKDIR ${BASE_APP_DIR}
 
+COPY go.mod go.sum ${BASE_APP_DIR}/
+RUN go mod download -x
+
 COPY . ${BASE_APP_DIR}
 
 RUN go build -v -o main ./cmd
