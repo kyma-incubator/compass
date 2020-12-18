@@ -134,7 +134,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(compass_gateway_auditlog_channel_length)",
+              "expr": "sum by (pod) (compass_gateway_auditlog_channel_length)",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
