@@ -16,9 +16,9 @@ spec:
   http:
   - match:
     - uri:
-        exact: /director
+        exact: {{ .Values.global.director.prefix }}
     redirect:
-      uri: /director/
+      uri: {{ .Values.global.director.prefix }}/
     headers:
       request:
         remove:

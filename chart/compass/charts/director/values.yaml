@@ -22,13 +22,8 @@ deployment:
 metrics:
   port: 3001
 
-adminGroupNames:
-  - "mps-superadmin"
-  - "runtimeAdmin"
-  - "runtimeNamespaceAdmin"
-
-operatorGroupNames:
-  - "runtimeOperator"
+adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
+operatorGroupNames: "runtimeOperator"
 
 applicationHideSelectors: |-
   applicationHideSelectorKey:

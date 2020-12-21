@@ -59,7 +59,7 @@ spec:
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
-              value: "/director/graphql"
+              value: "{{ .Values.global.director.prefix }}/graphql"
             - name: APP_JWKS_ENDPOINT
               value: http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json
             - name: APP_DB_USER
@@ -99,7 +99,7 @@ spec:
             - name: APP_ONE_TIME_TOKEN_URL
               value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.internal.port }}/graphql"
             - name: APP_CONNECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql"
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_CONFIGURATION_FILE
               value: /config/config.yaml
             - name: APP_ALLOW_JWT_SIGNING_NONE
@@ -110,12 +110,20 @@ spec:
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
             - name: APP_LEGACY_CONNECTOR_URL
               value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}/v1/applications/signingRequests/info"
-            {{ if .Values.deployment.pairingAdapterConfigMap }}
+            {{- if .Values.deployment.pairingAdapterConfigMap }}
             - name: APP_PAIRING_ADAPTER_SRC
               value: /pairing-adapters/config.json
-            {{ end }}
+            {{- end }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
+            {{- range $authenticatorName, $config := .Values.global.authenticators }}
+            {{- if eq $config.enabled true }}
+            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_SCOPE_PREFIX
+              value: {{ $config.scopePrefix }}
+            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ $config.attributes | quote }}
+            {{- end }}
+            {{- end }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

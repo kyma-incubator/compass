@@ -16,7 +16,7 @@ spec:
   http:
     - match:
       - uri:
-          prefix: /connector
+          prefix: {{ .Values.global.connector.prefix }}
       route:
       - destination:
           host: {{ .Values.global.oathkeeper.host }}
@@ -30,9 +30,17 @@ spec:
             {{- end }}
     - match:
       - uri:
-          exact: /director
+          prefix: {{ .Values.global.tenantFetcher.prefix }}
+      route:
+      - destination:
+          host: {{ .Values.global.tenantFetcher.host }}
+          port:
+            number: {{ .Values.global.tenantFetcher.port }}
+    - match:
+      - uri:
+          exact: {{ .Values.global.director.prefix }}
       redirect:
-        uri: /director/
+        uri: {{ .Values.global.director.prefix }}/
       headers:
         request:
           remove:

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/sirupsen/logrus"
@@ -13,7 +15,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
+)
+
+const (
+	UserObjectContextProvider          = "UserObjectContextProvider"
+	SystemAuthObjectContextProvider    = "SystemAuthObjectContextProvider"
+	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
 )
 
 //go:generate mockery -name=ScopesGetter -output=automock -outpkg=automock -case=underscore
@@ -26,14 +33,9 @@ type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
-//go:generate mockery -name=ObjectContextForUserProvider -output=automock -outpkg=automock -case=underscore
-type ObjectContextForUserProvider interface {
-	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string) (ObjectContext, error)
-}
-
-//go:generate mockery -name=ObjectContextForSystemAuthProvider -output=automock -outpkg=automock -case=underscore
-type ObjectContextForSystemAuthProvider interface {
-	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authID string, authFlow oathkeeper.AuthFlow) (ObjectContext, error)
+//go:generate mockery -name=ObjectContextProvider -output=automock -outpkg=automock -case=underscore
+type ObjectContextProvider interface {
+	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
 }
 
 //go:generate mockery -name=TenantRepository -output=automock -outpkg=automock -case=underscore
@@ -42,22 +44,22 @@ type TenantRepository interface {
 }
 
 type Handler struct {
-	reqDataParser       ReqDataParser
-	transact            persistence.Transactioner
-	mapperForUser       ObjectContextForUserProvider
-	mapperForSystemAuth ObjectContextForSystemAuthProvider
+	authenticators         []authenticator.Config
+	reqDataParser          ReqDataParser
+	transact               persistence.Transactioner
+	objectContextProviders map[string]ObjectContextProvider
 }
 
 func NewHandler(
+	authenticators []authenticator.Config,
 	reqDataParser ReqDataParser,
 	transact persistence.Transactioner,
-	mapperForUser ObjectContextForUserProvider,
-	mapperForSystemAuth ObjectContextForSystemAuthProvider) *Handler {
+	objectContextProviders map[string]ObjectContextProvider) *Handler {
 	return &Handler{
-		reqDataParser:       reqDataParser,
-		transact:            transact,
-		mapperForUser:       mapperForUser,
-		mapperForSystemAuth: mapperForSystemAuth,
+		authenticators:         authenticators,
+		reqDataParser:          reqDataParser,
+		transact:               transact,
+		objectContextProviders: objectContextProviders,
 	}
 }
 
@@ -78,19 +80,26 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	authID, authFlow, err := reqData.GetAuthID()
+	authDetails, err := reqData.GetAuthIDWithAuthenticators(h.authenticators)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while determining the auth details for the request.")
+		respond(ctx, writer, reqData.Body)
+		return
+	}
+
 	logger := log.C(ctx).WithFields(logrus.Fields{
-		"authID":   authID,
-		"authFlow": authFlow,
+		"authID":        authDetails.AuthID,
+		"authFlow":      authDetails.AuthFlow,
+		"authenticator": authDetails.Authenticator,
 	})
+
 	newCtx := log.ContextWithLogger(ctx, logger)
 
-	body := h.processRequest(newCtx, reqData)
+	body := h.processRequest(newCtx, reqData, *authDetails)
 	respond(newCtx, writer, body)
 }
 
-func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData) oathkeeper.ReqBody {
-
+func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) oathkeeper.ReqBody {
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction.")
@@ -101,7 +110,7 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	newCtx := persistence.SaveToContext(ctx, tx)
 
 	log.C(ctx).Debug("Getting object context")
-	objCtx, err := h.getObjectContext(newCtx, reqData)
+	objCtx, err := h.getObjectContext(newCtx, reqData, authDetails)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context.")
 		return reqData.Body
@@ -121,20 +130,24 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	return reqData.Body
 }
 
-func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData) (ObjectContext, error) {
-	authID, authFlow, err := reqData.GetAuthID()
-	if err != nil {
-		return ObjectContext{}, errors.Wrap(err, "while determining the auth ID from the request")
-	}
+func (h *Handler) getObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
+	log.C(ctx).Infof("Attempting to get object context for %s flow and authID=%s", authDetails.AuthFlow, authDetails.AuthID)
 
-	switch authFlow {
+	var provider ObjectContextProvider
+	switch authDetails.AuthFlow {
 	case oathkeeper.JWTAuthFlow:
-		return h.mapperForUser.GetObjectContext(ctx, reqData, authID)
+		if authDetails.Authenticator != nil {
+			provider = h.objectContextProviders[AuthenticatorObjectContextProvider]
+		} else {
+			provider = h.objectContextProviders[UserObjectContextProvider]
+		}
 	case oathkeeper.OAuth2Flow, oathkeeper.CertificateFlow, oathkeeper.OneTimeTokenFlow:
-		return h.mapperForSystemAuth.GetObjectContext(ctx, reqData, authID, authFlow)
+		provider = h.objectContextProviders[SystemAuthObjectContextProvider]
+	default:
+		return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authDetails.AuthFlow)
 	}
 
-	return ObjectContext{}, fmt.Errorf("unknown authentication flow (%s)", authFlow)
+	return provider.GetObjectContext(ctx, reqData, authDetails)
 }
 
 func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.ReqBody) {

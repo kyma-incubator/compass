@@ -25,13 +25,13 @@ VERIFY_IGNORE := /vendor\|/automock
 # Other variables
 # LOCAL_DIR in a local path to scripts folder
 LOCAL_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-# COMPONENT_DIR is a local path to commponent
+# COMPONENT_DIR is a local path to component
 COMPONENT_DIR = $(shell pwd)
 # COMPONENT_NAME is equivalent to the name of the component as defined in it's helm chart
 COMPONENT_NAME = $(shell basename $(COMPONENT_DIR))
 # WORKSPACE_LOCAL_DIR is a path to the scripts folder in the container
 WORKSPACE_LOCAL_DIR = $(IMG_GOPATH)/src/$(BASE_PKG)/scripts
-# WORKSPACE_COMPONENT_DIR is a path to commponent in hte container
+# WORKSPACE_COMPONENT_DIR is a path to component in hte container
 WORKSPACE_COMPONENT_DIR = $(IMG_GOPATH)/src/$(BASE_PKG)/$(APP_PATH)
 # FILES_TO_CHECK is a command used to determine which files should be verified
 FILES_TO_CHECK = find . -type f -name "*.go" | grep -v "$(VERIFY_IGNORE)"

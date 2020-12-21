@@ -83,7 +83,7 @@ type dummyResolver struct {
 	called bool
 }
 
-func (d *dummyResolver) SuccessResolve(ctx context.Context) (res interface{}, err error) {
+func (d *dummyResolver) SuccessResolve(_ context.Context) (res interface{}, err error) {
 	d.called = true
 	return fixNextOutput(), nil
 }
