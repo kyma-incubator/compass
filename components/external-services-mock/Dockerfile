@@ -4,6 +4,13 @@ ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/external-s
 WORKDIR ${BASE_APP_DIR}
 
 #
+# Download dependencies
+#
+
+COPY go.mod go.sum ${BASE_APP_DIR}/
+RUN go mod download -x
+
+#
 # Copy files
 #
 
