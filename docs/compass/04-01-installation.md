@@ -6,17 +6,18 @@ You can install Compass both on a cluster and on your local machine in two modes
 
 Compass as a central Management Plane cluster requires minimal Kyma installation. Steps to perform the installation vary depending on the installation environment.
 
-#### Prerequisites (if certificate rotation is needed)
+#### Prerequisites
 
-In case certificate rotation is needed, one can install [cert manager](https://github.com/jetstack/cert-manager) to take care of certificates.
+In case certificate rotation is needed, you can install [cert manager](https://github.com/jetstack/cert-manager) to take care of certificates.
 
-There are 3 certificates which can be rotated:
-* Connector intermediate certificate which is used to issue Application and Runtime client certificates.
-* 2 Istio gateway certificates - one for the normal gateway and one for the MTLS gateway.
+The following certificates can be rotated:
+* Connector intermediate certificate that is used to issue Application and Runtime client certificates.
+* Istio gateway certificate for the regular HTTPS gateway.
+* Istio gateway certificate for the MTLS gateway.
 
 ##### Create issuers
 
-In order for the cert manager to be able to issue certificates, it needs a resource called issuer.
+To issue certificates, the cert manager requires a resource called issuer.
 
 Example with self provided CA certificate:
 
@@ -30,7 +31,7 @@ spec:
     secretName: "<secret-name-containing-the-ca-cert>"
 ```
 
-Example with Let's encrypt issuer:
+Example with **Let's encrypt** issuer:
 
 ```yaml
 apiVersion: cert-manager.io/v1alpha2
@@ -52,7 +53,7 @@ spec:
               key: <secret_key>
 ```
 
-You can read more on the different cluster issuer configurations [here](https://cert-manager.io/docs/configuration/acme/)
+For more inforamtion about the different cluster issuer configurations, see the following document: [ACME Issuer](https://cert-manager.io/docs/configuration/acme/)
 
 ##### Connector certificate
 
@@ -80,11 +81,11 @@ spec:
 
 ```
 
-Cert manager will take care to rotate certificates as defined in the resources. Check that this certificate is specified as `isCA: true`. This means that the certificate will be used to issue other certificates.
+Cert manager's role is to rotate certificates as defined in the resources. Make sure that the certificate as shown in the example is specified as `isCA: true`. This means that the certificate is used to issue other certificates.
 
 ##### Domain certificates
 
-Cert manager can also take care to rotate Istio gateway certificates. An example for such certificate:
+Cert manager can also rotate Istio gateway certificates. The following example shows such certificate:
 
 ```yaml
 apiVersion: cert-manager.io/v1alpha2
@@ -103,7 +104,7 @@ spec:
     - <alternative_wildcard_domain_name>
 ```
 
-In this case as this certificate will not be used to issue other certificates it is not a CA cert. Also its validity depends on what the issuer (for exampel Let's encrypt) sets it to.
+In this case, as this certificate is not used to issue other certificates, it is not a CA certificate. Additionally, its validity depends on the settings by the issuer (for example **Let's encrypt**).
 
 ### Cluster installation
 
