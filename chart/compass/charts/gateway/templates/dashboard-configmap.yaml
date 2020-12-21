@@ -322,21 +322,24 @@ data:
           "steppedLine": true,
           "targets": [
             {
-              "expr": "histogram_quantile(0.95, sum(rate(compass_gateway_auditlog_request_duration_seconds_bucket[1m])) by (le))",
+              "expr": "histogram_quantile(0.95, sum(irate(compass_gateway_auditlog_request_duration_seconds_bucket[1m])) by (le))",
               "interval": "",
               "legendFormat": "",
+              "legendFormat": "95th percentile",
               "refId": "A"
             },
             {
-              "expr": "histogram_quantile(0.90, sum(rate(compass_gateway_auditlog_request_duration_seconds_bucket[1m])) by (le))",
+              "expr": "histogram_quantile(0.90, sum(irate(compass_gateway_auditlog_request_duration_seconds_bucket[1m])) by (le))",
               "interval": "",
               "legendFormat": "",
+              "legendFormat": "90th percentile",
               "refId": "B"
             },
             {
-              "expr": "histogram_quantile(0.50, sum(rate(compass_gateway_auditlog_request_duration_seconds_bucket[1m])) by (le))",
+              "expr": "histogram_quantile(0.50, sum(irate(compass_gateway_auditlog_request_duration_seconds_bucket[1m])) by (le))",
               "interval": "",
               "legendFormat": "",
+              "legendFormat": "50th percentile",
               "refId": "C"
             }
           ],
