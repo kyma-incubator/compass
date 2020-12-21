@@ -17,19 +17,19 @@ global:
       version: "PR-1657"
     connectivity_adapter:
       dir:
-      version: "PR-1641"
+      version: "PR-1661"
     pairing_adapter:
       dir:
-      version: "PR-1618"
+      version: "PR-1661"
     director:
       dir:
-      version: "PR-1651"
+      version: "PR-1661"
     gateway:
       dir:
-      version: "PR-1637"
+      version: "PR-1661"
     tenant_fetcher:
       dir:
-      version: "PR-1652"
+      version: "PR-1661"
     healthchecker:
       dir:
       version: "PR-1460"
@@ -43,23 +43,23 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1591"
+      version: "PR-1661"
     console:
       dir:
       version: "PR-11"
     tests:
       director:
         dir:
-        version: "PR-1641"
+        version: "PR-1661"
       connector:
         dir:
-        version: "PR-1657"
+        version: "PR-1661"
       connectivity_adapter:
         dir:
         version: "PR-1641"
       tenant_fetcher:
         dir:
-        version: "PR-1652"
+        version: "PR-1661"
   isLocalEnv: false
   oauth2:
     host: oauth2
