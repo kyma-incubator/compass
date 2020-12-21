@@ -20,9 +20,9 @@ import "errors"
 
 // Config holds all configuration related to an additional authenticator provided to the Director
 type Config struct {
-	Name        string     `json:"name"`
-	ScopePrefix string     `json:"scopePrefix"`
-	Attributes  Attributes `json:"attributes"`
+	Name          string     `json:"name"`
+	ScopePrefixes []string   `json:"scopePrefixes"`
+	Attributes    Attributes `json:"attributes"`
 }
 
 // Attributes holds all attribute properties and values related to an authenticator

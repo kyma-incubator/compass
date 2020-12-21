@@ -400,10 +400,13 @@ func TestReqData_GetScopes(t *testing.T) {
 }
 
 func TestReqData_GetUserScopes(t *testing.T) {
-	const scopePrefix = "test-compass@b12345."
+	const scopePrefix1 = "test-compass@b12345."
+	const scopePrefix2 = "test-compass@b67890."
 
-	t.Run("returns scopes string array when it is specified in the Extra map", func(t *testing.T) {
-		scopes := []interface{}{scopePrefix + "applications:write", scopePrefix + "runtimes:write"}
+	var scopePrefixes = []string{scopePrefix1, scopePrefix2}
+
+	t.Run("returns scopes string array when it is specified in the Extra map and two scope prefixes are provided", func(t *testing.T) {
+		scopes := []interface{}{scopePrefix1 + "applications:write", scopePrefix2 + "runtimes:write"}
 		expectedScopes := []interface{}{"applications:write", "runtimes:write"}
 		reqData := ReqData{
 			Body: ReqBody{
@@ -413,7 +416,24 @@ func TestReqData_GetUserScopes(t *testing.T) {
 			},
 		}
 
-		actualScopes, err := reqData.GetUserScopes(scopePrefix)
+		actualScopes, err := reqData.GetUserScopes(scopePrefixes)
+
+		require.NoError(t, err)
+		require.ElementsMatch(t, expectedScopes, actualScopes)
+	})
+
+	t.Run("returns scopes string array when it is specified in the Extra map and only one scope prefix is provided", func(t *testing.T) {
+		scopes := []interface{}{scopePrefix1 + "applications:write", scopePrefix2 + "runtimes:write"}
+		expectedScopes := []interface{}{"applications:write", scopePrefix2 + "runtimes:write"}
+		reqData := ReqData{
+			Body: ReqBody{
+				Extra: map[string]interface{}{
+					ScopesKey: scopes,
+				},
+			},
+		}
+
+		actualScopes, err := reqData.GetUserScopes([]string{scopePrefix1})
 
 		require.NoError(t, err)
 		require.ElementsMatch(t, expectedScopes, actualScopes)
@@ -422,7 +442,7 @@ func TestReqData_GetUserScopes(t *testing.T) {
 	t.Run("returns empty scopes string array when it is not specified in the Extra map", func(t *testing.T) {
 		reqData := ReqData{}
 
-		actualScopes, err := reqData.GetUserScopes(scopePrefix)
+		actualScopes, err := reqData.GetUserScopes(scopePrefixes)
 
 		require.NoError(t, err)
 		require.Empty(t, actualScopes)
@@ -437,7 +457,7 @@ func TestReqData_GetUserScopes(t *testing.T) {
 			},
 		}
 
-		actualScopes, err := reqData.GetUserScopes(scopePrefix)
+		actualScopes, err := reqData.GetUserScopes(scopePrefixes)
 
 		require.NoError(t, err)
 		require.Empty(t, actualScopes)
@@ -453,7 +473,7 @@ func TestReqData_GetUserScopes(t *testing.T) {
 			},
 		}
 
-		_, err := reqData.GetUserScopes(scopePrefix)
+		_, err := reqData.GetUserScopes(scopePrefixes)
 
 		require.EqualError(t, err, "while parsing the value for scope: Internal Server Error: unable to cast the value to a string type")
 	})
