@@ -30,6 +30,6 @@ done
 set -e
 
 if [ "$directorIsUp" = false ]; then
-    echo "Cannot access Director API"
+    echo "Cannot access Director API."
     exit 1
 fi
