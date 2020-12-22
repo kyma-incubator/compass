@@ -85,12 +85,12 @@ func TestHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		tokenDataMock := &authnMock.TokenData{}
-		tokenDataMock.On("Claims", &reqDataMock.Body.Extra).Return(nil).Once()
+		tokenDataMock.On("OpenIDMetadata", &reqDataMock.Body.Extra).Return(nil).Once()
 
 		verifierMock := &authnMock.TokenVerifier{}
 		verifierMock.On("Verify", mock.Anything, mockedToken).Return(tokenDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		})
 		handler.ServeHTTP(w, req)
@@ -127,12 +127,12 @@ func TestHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		tokenDataMock := &authnMock.TokenData{}
-		tokenDataMock.On("Claims", &reqDataMock.Body.Extra).Return(nil).Twice()
+		tokenDataMock.On("OpenIDMetadata", &reqDataMock.Body.Extra).Return(nil).Twice()
 
 		verifierMock := &authnMock.TokenVerifier{}
 		verifierMock.On("Verify", mock.Anything, mockedToken).Return(tokenDataMock, nil).Twice()
 
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		})
 		handler.ServeHTTP(w, req)
@@ -193,7 +193,7 @@ func TestHandler(t *testing.T) {
 		verifierMock := &authnMock.TokenVerifier{}
 		verifierMock.On("Verify", mock.Anything, mockedToken).Return(nil, mockErr).Once()
 
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		})
 		handler.ServeHTTP(w, req)
@@ -248,7 +248,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", req2).Return(reqDataMock2, nil).Once()
 
 		tokenDataMock := &authnMock.TokenData{}
-		tokenDataMock.On("Claims", &reqDataMock1.Body.Extra).Return(nil).Once()
+		tokenDataMock.On("OpenIDMetadata", &reqDataMock1.Body.Extra).Return(nil).Once()
 
 		mockErr := errors.New("some-error")
 
@@ -256,7 +256,7 @@ func TestHandler(t *testing.T) {
 		verifierMock.On("Verify", mock.Anything, mockedToken1).Return(tokenDataMock, nil).Once()
 		verifierMock.On("Verify", mock.Anything, mockedToken2).Return(nil, mockErr).Once()
 
-		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.Claims) authnmappinghandler.TokenVerifier {
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
 		})
 		handler.ServeHTTP(w1, req1)

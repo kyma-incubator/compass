@@ -16,13 +16,27 @@
 
 package authenticator
 
-import "errors"
+import (
+	"errors"
+)
+
+const CoordinatesKey = "authenticator_coordinates"
 
 // Config holds all configuration related to an additional authenticator provided to the Director
 type Config struct {
-	Name        string     `json:"name"`
-	ScopePrefix string     `json:"scopePrefix"`
-	Attributes  Attributes `json:"attributes"`
+	Name           string          `json:"name"`
+	TrustedIssuers []TrustedIssuer `json:"trusted_issuers""`
+	Attributes     Attributes      `json:"attributes"`
+}
+
+type TrustedIssuer struct {
+	DomainURL   string
+	ScopePrefix string
+}
+
+type Coordinates struct {
+	Name  string
+	Index int
 }
 
 // Attributes holds all attribute properties and values related to an authenticator

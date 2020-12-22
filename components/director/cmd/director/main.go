@@ -107,6 +107,7 @@ type config struct {
 	Features features.Config
 
 	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
+	TrustedIssuers        []authenticator.TrustedIssuer
 }
 
 func main() {

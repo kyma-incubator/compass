@@ -27,6 +27,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tidwall/gjson"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
 	goidc "github.com/coreos/go-oidc"
@@ -52,7 +56,7 @@ type TokenVerifier interface {
 }
 
 // TokenVerifierProvider defines different ways by which one can provide a TokenVerifier
-type TokenVerifierProvider func(ctx context.Context, claims Claims) TokenVerifier
+type TokenVerifierProvider func(ctx context.Context, metadata OpenIDMetadata) TokenVerifier
 
 // Handler is the base struct definition of the AuthenticationMappingHandler
 type Handler struct {
@@ -61,10 +65,11 @@ type Handler struct {
 	tokenVerifierProvider TokenVerifierProvider
 	verifiers             map[string]TokenVerifier
 	verifiersMutex        sync.RWMutex
+	authenticators        []authenticator.Config
 }
 
-// Claims contains basic Claims needed during request authenticcation
-type Claims struct {
+// OpenIDMetadata contains basic metadata for OIDC provider needed during request authentication
+type OpenIDMetadata struct {
 	Issuer  string `json:"issuer"`
 	JWKSURL string `json:"jwks_uri"`
 }
@@ -80,23 +85,24 @@ func (v *oidcVerifier) Verify(ctx context.Context, idToken string) (TokenData, e
 }
 
 // DefaultTokenVerifierProvider is the default TokenVerifierProvider which leverages goidc liberay
-func DefaultTokenVerifierProvider(ctx context.Context, claims Claims) TokenVerifier {
-	keySet := goidc.NewRemoteKeySet(ctx, claims.JWKSURL)
+func DefaultTokenVerifierProvider(ctx context.Context, metadata OpenIDMetadata) TokenVerifier {
+	keySet := goidc.NewRemoteKeySet(ctx, metadata.JWKSURL)
 	verifier := &oidcVerifier{
-		IDTokenVerifier: goidc.NewVerifier(claims.Issuer, keySet, &goidc.Config{SkipClientIDCheck: true}),
+		IDTokenVerifier: goidc.NewVerifier(metadata.Issuer, keySet, &goidc.Config{SkipClientIDCheck: true}),
 	}
 
 	return verifier
 }
 
 // NewHandler constructs the AuthenticationMappingHandler
-func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Client, tokenVerifierProvider TokenVerifierProvider) *Handler {
+func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Client, tokenVerifierProvider TokenVerifierProvider, authenticators []authenticator.Config) *Handler {
 	return &Handler{
 		reqDataParser:         reqDataParser,
 		httpClient:            httpClient,
 		tokenVerifierProvider: tokenVerifierProvider,
 		verifiers:             make(map[string]TokenVerifier),
 		verifiersMutex:        sync.RWMutex{},
+		authenticators:        authenticators,
 	}
 }
 
@@ -115,7 +121,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	claims, err := h.verifyToken(ctx, reqData)
+	claims, authCoordinates, err := h.verifyToken(ctx, reqData)
 	if err != nil {
 		h.logError(ctx, err, "An error has occurred while processing the request.")
 		http.Error(writer, "Token validation failed", http.StatusUnauthorized)
@@ -127,25 +133,36 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		http.Error(writer, "Token claims extraction failed", http.StatusUnauthorized)
 		return
 	}
+	reqData.Body.Extra[authenticator.CoordinatesKey] = authCoordinates
 
 	h.respond(ctx, writer, reqData.Body)
 }
 
-func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (TokenData, error) {
+func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (TokenData, authenticator.Coordinates, error) {
 	authorizationHeader := reqData.Header.Get("Authorization")
 	if authorizationHeader == "" || !strings.HasPrefix(strings.ToLower(authorizationHeader), "bearer ") {
-		return nil, errors.New(fmt.Sprintf("unexpected or empty authorization header with length %d", len(authorizationHeader)))
+		return nil, authenticator.Coordinates{}, errors.New(fmt.Sprintf("unexpected or empty authorization header with length %d", len(authorizationHeader)))
 	}
 
 	token := strings.TrimSpace(authorizationHeader[len("Bearer "):])
 
-	issuerURL, err := extractTokenIssuer(token)
+	tokenPayload, err := getTokenPayload(token)
 	if err != nil {
-		return nil, fmt.Errorf("error while extracting token properties: %s", err)
+		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "while getting token payload")
+	}
+
+	issuerURL, err := extractTokenIssuer(tokenPayload)
+	if err != nil {
+		return nil, authenticator.Coordinates{}, errors.Errorf("error while extracting token properties: %s", err)
 	}
 
 	if issuerURL == "" {
-		return nil, errors.New("invalid token: missing issuer URL")
+		return nil, authenticator.Coordinates{}, errors.New("invalid token: missing issuer URL")
+	}
+
+	coordinates, err := h.getAuthenticatorCoordinates(tokenPayload, issuerURL)
+	if err != nil {
+		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "while getting authenticator coordinates")
 	}
 
 	h.verifiersMutex.RLock()
@@ -156,28 +173,28 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 		log.C(ctx).Infof("Verifier for issuer %q not found. Attempting to construct new verifier from well-known endpoint", issuerURL)
 		resp, err := h.getOpenIDConfig(ctx, issuerURL)
 		if err != nil {
-			return nil, err
+			return nil, authenticator.Coordinates{}, err
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			return nil, handleResponseError(resp)
+			return nil, authenticator.Coordinates{}, handleResponseError(resp)
 		}
 
 		buf, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed read content from response")
+			return nil, authenticator.Coordinates{}, errors.Wrap(err, "failed read content from response")
 		}
 
-		var c Claims
-		if err := json.Unmarshal(buf, &c); err != nil {
-			return nil, fmt.Errorf("error decoding body of response with status %s: %s", resp.Status, err.Error())
+		var m OpenIDMetadata
+		if err := json.Unmarshal(buf, &m); err != nil {
+			return nil, authenticator.Coordinates{}, fmt.Errorf("error decoding body of response with status %s: %s", resp.Status, err.Error())
 		}
 
-		if issuerURL != c.Issuer {
-			return nil, errors.New(fmt.Sprintf("token issuer from token %q does not mismatch token issuer from well-known endpoint %q", issuerURL, c.Issuer))
+		if issuerURL != m.Issuer {
+			return nil, authenticator.Coordinates{}, errors.New(fmt.Sprintf("token issuer from token %q does not mismatch token issuer from well-known endpoint %q", issuerURL, m.Issuer))
 		}
 
-		verifier = h.tokenVerifierProvider(ctx, c)
+		verifier = h.tokenVerifierProvider(ctx, m)
 
 		h.verifiersMutex.Lock()
 		h.verifiers[issuerURL] = verifier
@@ -190,10 +207,10 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 
 	claims, err := verifier.Verify(ctx, token)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to verify token")
+		return nil, authenticator.Coordinates{}, errors.Wrapf(err, "unable to verify token")
 	}
 
-	return claims, nil
+	return claims, coordinates, nil
 }
 
 func (h *Handler) logError(ctx context.Context, err error, message string) {
@@ -229,23 +246,45 @@ func (h *Handler) getOpenIDConfig(ctx context.Context, issuerURL string) (*http.
 	return resp, nil
 }
 
-func extractTokenIssuer(token string) (string, error) {
+func (h *Handler) getAuthenticatorCoordinates(payload []byte, issuerURL string) (authenticator.Coordinates, error) {
+	var authConfig *authenticator.Config
+	for i, authn := range h.authenticators {
+		uniqueAttribute := gjson.GetBytes(payload, authn.Attributes.UniqueAttribute.Key).String()
+		if uniqueAttribute != "" || uniqueAttribute == authn.Attributes.UniqueAttribute.Value {
+			authConfig = &h.authenticators[i]
+			break
+		}
+	}
+	if authConfig == nil {
+		return authenticator.Coordinates{}, errors.New("could not find authenticator for token")
+	}
+
+	i, trusted := getTrustedIssuerIndex(authConfig, issuerURL)
+	if !trusted {
+		return authenticator.Coordinates{}, errors.New("could not find trusted issuer in given authenticator")
+	}
+	return authenticator.Coordinates{
+		Name:  authConfig.Name,
+		Index: i,
+	}, nil
+}
+
+func getTokenPayload(token string) ([]byte, error) {
 	// JWT format: <header>.<payload>.<signature>
 	tokenParts := strings.Split(token, ".")
 	if len(tokenParts) != 3 {
-		return "", errors.New("invalid token format")
+		return nil, errors.New("invalid token format")
 	}
 	payload := tokenParts[1]
 
-	decoded, err := base64.RawURLEncoding.DecodeString(payload)
-	if err != nil {
-		return "", err
-	}
+	return base64.RawURLEncoding.DecodeString(payload)
+}
 
+func extractTokenIssuer(payload []byte) (string, error) {
 	data := &struct {
 		IssuerURL string `json:"iss"`
 	}{}
-	if err = json.Unmarshal(decoded, data); err != nil {
+	if err := json.Unmarshal(payload, data); err != nil {
 		return "", err
 	}
 
@@ -270,4 +309,17 @@ func handleResponseError(response *http.Response) error {
 		return fmt.Errorf("request %s %s failed: %s", response.Request.Method, response.Request.URL, err)
 	}
 	return fmt.Errorf("request failed: %s", err)
+}
+
+func getTrustedIssuerIndex(authConfig *authenticator.Config, issuerURL string) (index int, found bool) {
+	stripedIssuerURL := issuerURL[strings.Index(issuerURL, "."):]
+	stripedIssuerURL = stripedIssuerURL[:strings.Index(stripedIssuerURL, "/")]
+
+	for i, iss := range authConfig.TrustedIssuers {
+		if iss.DomainURL == stripedIssuerURL {
+			index, found = i, true
+			return
+		}
+	}
+	return
 }

@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tidwall/gjson"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -97,28 +95,35 @@ func (d *ReqData) GetAuthID() (*AuthDetails, error) {
 
 // GetAuthIDWithAuthenticators looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct while taking into account existing preconfigured authenticators
 func (d *ReqData) GetAuthIDWithAuthenticators(authenticators []authenticator.Config) (*AuthDetails, error) {
-	extra, err := d.MarshalExtra()
-	if err != nil {
-		return nil, err
-	}
+	//extra, err := d.MarshalExtra()
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	for _, authn := range authenticators {
-		uniqueAttribute := gjson.Get(extra, authn.Attributes.UniqueAttribute.Key).String()
-		if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
-			continue
-		}
+	//for _, authn := range authenticators {
+	//	uniqueAttribute := gjson.Get(extra, authn.Attributes.UniqueAttribute.Key).String()
+	//	if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
+	//		continue
+	//	}
+	coords, ok := d.Body.Extra[authenticator.CoordinatesKey].(authenticator.Coordinates)
+	if ok {
+		for _, authn := range authenticators {
+			if authn.Name != coords.Name {
+				continue
+			}
 
-		log.D().Infof("Request token matches %q authenticator", authn.Name)
-		identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]
-		if !ok {
-			return nil, apperrors.NewInvalidDataError("missing identity attribute from %q authenticator token", authn.Name)
-		}
+			log.D().Infof("Request token matches %q authenticator", authn.Name)
+			identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]
+			if !ok {
+				return nil, apperrors.NewInvalidDataError("missing identity attribute from %q authenticator token", authn.Name)
+			}
 
-		authID, err := str.Cast(identity)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while parsing the value for %s", identity)
+			authID, err := str.Cast(identity)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while parsing the value for %s", identity)
+			}
+			return &AuthDetails{AuthID: authID, AuthFlow: JWTAuthFlow, Authenticator: &authn}, nil
 		}
-		return &AuthDetails{AuthID: authID, AuthFlow: JWTAuthFlow, Authenticator: &authn}, nil
 	}
 
 	if idVal, ok := d.Body.Extra[ClientIDKey]; ok {

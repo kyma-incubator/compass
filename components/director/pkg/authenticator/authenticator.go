@@ -29,7 +29,7 @@ import (
 func InitFromEnv(envPrefix string) ([]Config, error) {
 	authenticators := make(map[string]*Config, 0)
 	attributesPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_ATTRIBUTES$", envPrefix))
-	scopePrefixPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_SCOPE_PREFIX$", envPrefix))
+	scopePrefixPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_TRUSTED_ISSUERS$", envPrefix))
 
 	for _, env := range os.Environ() {
 		pair := strings.SplitN(env, "=", 2)
@@ -60,12 +60,18 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 		if len(matches) > 0 {
 			authenticatorName := matches[1]
 
+			var trustedIssuers []TrustedIssuer
+			//TODO: It would prpobably be nice to have the ability to pass a single value
+			if err := json.Unmarshal([]byte(value), &trustedIssuers); err != nil {
+				return nil, fmt.Errorf("unable to unmarshal trusted issuers: %w", err)
+			}
+
 			if authenticator, exists := authenticators[authenticatorName]; exists {
-				authenticator.ScopePrefix = value
+				authenticator.TrustedIssuers = trustedIssuers
 			} else {
 				authenticators[authenticatorName] = &Config{
-					Name:        authenticatorName,
-					ScopePrefix: value,
+					Name:           authenticatorName,
+					TrustedIssuers: trustedIssuers,
 				}
 			}
 		}
