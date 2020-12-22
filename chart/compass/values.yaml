@@ -297,7 +297,7 @@ global:
     authenticator0:
       enabled: false
       gatewayHost: "compass-gateway-authenticator0"
-      scopePrefix: ""
+      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix"}, {}]'
       attributes: '{"uniqueAttribute": { "key": "", "value": "" }, "tenant": { "key": "" }, "identity": { "key": "" } }'
 
   externalServicesMock:

@@ -25,13 +25,13 @@ const CoordinatesKey = "authenticator_coordinates"
 // Config holds all configuration related to an additional authenticator provided to the Director
 type Config struct {
 	Name           string          `json:"name"`
-	TrustedIssuers []TrustedIssuer `json:"trusted_issuers""`
+	TrustedIssuers []TrustedIssuer `json:"trusted_issuers"`
 	Attributes     Attributes      `json:"attributes"`
 }
 
 type TrustedIssuer struct {
-	DomainURL   string
-	ScopePrefix string
+	DomainURL   string `json:"domain_url"`
+	ScopePrefix string `json:"scope_prefix"`
 }
 
 type Coordinates struct {
