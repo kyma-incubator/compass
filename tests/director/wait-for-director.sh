@@ -2,6 +2,13 @@
 
 # wait for Director to be up and running
 
+echo "Checking if Istio sidecar is up..."
+until curl --head localhost:15000;
+do echo Waiting for Sidecar;
+sleep 2;
+done;
+echo Sidecar available;
+
 echo "Checking if Director is up..."
 
 if [ -z "$DIRECTOR_HEALTHZ_URL" ]; then
