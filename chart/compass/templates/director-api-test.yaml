@@ -3,7 +3,7 @@ kind: TestDefinition
 metadata:
   name: {{ .Chart.Name }}-director-api
   labels:
-    dummy: label
+    dummy: label2
     app: {{ .Chart.Name }}-director-tests
     app.kubernetes.io/name: {{ .Chart.Name }}-director-tests
     app.kubernetes.io/managed-by: {{ .Release.Service }}
