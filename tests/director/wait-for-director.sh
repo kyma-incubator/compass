@@ -1,5 +1,14 @@
 #!/usr/bin/env sh
 
+# wait for side-car to be up and running
+until curl --head localhost:15000
+do
+  echo "Waiting for Sidecar..."
+  sleep 3
+done
+
+echo "Sidecar available..."
+
 # wait for Director to be up and running
 
 echo "Checking if Director is up..."
