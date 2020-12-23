@@ -96,18 +96,11 @@ func (d *ReqData) GetAuthID(ctx context.Context) (*AuthDetails, error) {
 
 // GetAuthIDWithAuthenticators looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct while taking into account existing preconfigured authenticators
 func (d *ReqData) GetAuthIDWithAuthenticators(ctx context.Context, authenticators []authenticator.Config) (*AuthDetails, error) {
-	//extra, err := d.MarshalExtra()
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//for _, authn := range authenticators {
-	//	uniqueAttribute := gjson.Get(extra, authn.Attributes.UniqueAttribute.Key).String()
-	//	if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
-	//		continue
-	//	}
-	coords, ok := d.Body.Extra[authenticator.CoordinatesKey].(authenticator.Coordinates)
-	if ok {
+	coords, exist, err := d.extractCoordinates()
+	if err != nil {
+		return nil, errors.Wrap(err, "while extracting coordinates")
+	}
+	if exist {
 		for _, authn := range authenticators {
 			if authn.Name != coords.Name {
 				continue
@@ -258,4 +251,22 @@ func (d *ReqData) SetExtraFromClaims(claims jwt.MapClaims) {
 	d.Body.Extra[EmailKey] = claims[EmailKey]
 	d.Body.Extra[UsernameKey] = claims[UsernameKey]
 	d.Body.Extra[GroupsKey] = claims[GroupsKey]
+}
+
+func (d *ReqData) extractCoordinates() (authenticator.Coordinates, bool, error) {
+	var coords authenticator.Coordinates
+	coordsInterface, exists := d.Body.Extra[authenticator.CoordinatesKey]
+	if !exists {
+		return coords, false, nil
+	}
+
+	coordsBytes, err := json.Marshal(coordsInterface)
+	if err != nil {
+		return coords, true, errors.Wrap(err, "while marshaling authenticator coordinates")
+	}
+	if err := json.Unmarshal(coordsBytes, &coords); err != nil {
+		return coords, true, errors.Wrap(err, "while unmarshaling authenticator coordinates")
+	}
+
+	return coords, true, nil
 }

@@ -312,9 +312,8 @@ func handleResponseError(response *http.Response) error {
 }
 
 func getTrustedIssuerIndex(authConfig *authenticator.Config, issuerURL string) (index int, found bool) {
-	stripedIssuerURL := issuerURL[strings.Index(issuerURL, "."):]
+	stripedIssuerURL := issuerURL[strings.Index(issuerURL, ".")+1:] //strip the period as well
 	stripedIssuerURL = stripedIssuerURL[:strings.Index(stripedIssuerURL, "/")]
-
 	for i, iss := range authConfig.TrustedIssuers {
 		if iss.DomainURL == stripedIssuerURL {
 			index, found = i, true
