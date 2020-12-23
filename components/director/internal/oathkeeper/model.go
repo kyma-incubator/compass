@@ -149,16 +149,6 @@ func (d *ReqData) GetAuthIDWithAuthenticators(ctx context.Context, authenticator
 	return nil, apperrors.NewInternalError("unable to find valid auth ID")
 }
 
-// MarshalExtra marshals the request data extra content
-func (d *ReqData) MarshalExtra() (string, error) {
-	extra, err := json.Marshal(d.Body.Extra)
-	if err != nil {
-		return "", err
-	}
-
-	return string(extra), nil
-}
-
 // GetExternalTenantID returns external tenant ID from the parsed request input if it is defined
 func (d *ReqData) GetExternalTenantID() (string, error) {
 	if tenantVal := d.Body.Header.Get(ExternalTenantKey); tenantVal != "" {
