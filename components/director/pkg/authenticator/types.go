@@ -35,8 +35,8 @@ type TrustedIssuer struct {
 }
 
 type Coordinates struct {
-	Name  string
-	Index int
+	Name  string `json:"name"`
+	Index int    `json:"index"`
 }
 
 // Attributes holds all attribute properties and values related to an authenticator

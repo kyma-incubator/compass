@@ -92,11 +92,16 @@ func TestHandler(t *testing.T) {
 		uniqueAttributeValue := "uniqueAttributeValue"
 		identityAttributeKey := "identity"
 		scopes := "application:read"
+		authenticatorName := "testAuthenticator"
 		reqDataMock := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					uniqueAttributeKey:   uniqueAttributeValue,
 					identityAttributeKey: username,
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
 				},
 			},
 		}
@@ -111,6 +116,7 @@ func TestHandler(t *testing.T) {
 		}
 		authn := []authenticator.Config{
 			{
+				Name: authenticatorName,
 				Attributes: authenticator.Attributes{
 					UniqueAttribute: authenticator.Attribute{
 						Key:   uniqueAttributeKey,
@@ -120,11 +126,12 @@ func TestHandler(t *testing.T) {
 						Key: identityAttributeKey,
 					},
 				},
+				TrustedIssuers: []authenticator.TrustedIssuer{{ScopePrefix: ""}},
 			},
 		}
 
-		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0]}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + username + `","consumerType":"Static User","externalTenant":"` + externalTenantID + `","identity":"` + username + `","scope":"` + scopes + `","tenant":"` + tenantID.String() + `","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
