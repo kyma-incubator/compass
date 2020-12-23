@@ -88,6 +88,8 @@ func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) 
 func waitUntilDirectorIsReady(directorHealthzURL string) error {
 	httpClient := http.Client{}
 
+	time.Sleep(20 * time.Second)
+
 	return retry.Do(func() error {
 		req, err := http.NewRequest(http.MethodGet, directorHealthzURL, nil)
 		if err != nil {
