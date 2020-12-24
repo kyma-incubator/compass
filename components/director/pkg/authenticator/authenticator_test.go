@@ -155,118 +155,128 @@ func TestInitFromEnv(t *testing.T) {
 		require.ElementsMatch(t, expectedAuthenticators, authenticators)
 	})
 
-	//t.Run("When environment does not contain any authenticator configurations", func(t *testing.T) {
-	//	os.Clearenv()
-	//
-	//	authenticators, err := authenticator.InitFromEnv(envPrefix)
-	//
-	//	require.NoError(t, err)
-	//	require.Equal(t, 0, len(authenticators))
-	//})
-	//
-	//t.Run("When environment contains authenticator configuration with invalid attribute", func(t *testing.T) {
-	//	os.Clearenv()
-	//	defer os.Clearenv()
-	//
-	//	expectedAuthenticator := authenticator.Config{
-	//		Name:        "TEST_AUTHN",
-	//		ScopePrefix: "prefix!",
-	//		Attributes: authenticator.Attributes{
-	//			UniqueAttribute: authenticator.Attribute{
-	//				Key:   "test-unique-key",
-	//				Value: "test-value",
-	//			},
-	//			TenantAttribute: authenticator.Attribute{
-	//				Key: "",
-	//			},
-	//			IdentityAttribute: authenticator.Attribute{
-	//				Key: "",
-	//			},
-	//		},
-	//	}
-	//
-	//	attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
-	//	require.NoError(t, err)
-	//
-	//	err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-	//	require.NoError(t, err)
-	//
-	//	err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
-	//	require.NoError(t, err)
-	//
-	//	_, err = authenticator.InitFromEnv(envPrefix)
-	//
-	//	require.Error(t, err)
-	//})
-	//
-	//t.Run("When environment contains authenticator configuration with missing unique attribute value", func(t *testing.T) {
-	//	os.Clearenv()
-	//	defer os.Clearenv()
-	//
-	//	expectedAuthenticator := authenticator.Config{
-	//		Name:        "TEST_AUTHN",
-	//		ScopePrefix: "prefix!",
-	//		Attributes: authenticator.Attributes{
-	//			UniqueAttribute: authenticator.Attribute{
-	//				Key:   "test-unique-key",
-	//				Value: "",
-	//			},
-	//			TenantAttribute: authenticator.Attribute{
-	//				Key: "test-tenant-key",
-	//			},
-	//			IdentityAttribute: authenticator.Attribute{
-	//				Key: "test-identity-key",
-	//			},
-	//		},
-	//	}
-	//
-	//	attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
-	//	require.NoError(t, err)
-	//
-	//	err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-	//	require.NoError(t, err)
-	//
-	//	err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
-	//	require.NoError(t, err)
-	//
-	//	_, err = authenticator.InitFromEnv(envPrefix)
-	//
-	//	require.Error(t, err)
-	//})
-	//
-	//t.Run("When environment contains authenticator configuration with missing prefix should be okay", func(t *testing.T) {
-	//	os.Clearenv()
-	//	defer os.Clearenv()
-	//
-	//	expectedAuthenticator := authenticator.Config{
-	//		Name: "TEST_AUTHN",
-	//		Attributes: authenticator.Attributes{
-	//			UniqueAttribute: authenticator.Attribute{
-	//				Key:   "test-unique-key",
-	//				Value: "test-value",
-	//			},
-	//			TenantAttribute: authenticator.Attribute{
-	//				Key: "test-tenant-key",
-	//			},
-	//			IdentityAttribute: authenticator.Attribute{
-	//				Key: "test-identity-key",
-	//			},
-	//		},
-	//	}
-	//
-	//	attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
-	//	require.NoError(t, err)
-	//
-	//	err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
-	//	require.NoError(t, err)
-	//
-	//	err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
-	//	require.NoError(t, err)
-	//
-	//	authenticators, err := authenticator.InitFromEnv(envPrefix)
-	//
-	//	require.NoError(t, err)
-	//	require.Equal(t, 1, len(authenticators))
-	//	require.Equal(t, expectedAuthenticator, authenticators[0])
-	//})
+	t.Run("When environment does not contain any authenticator configurations", func(t *testing.T) {
+		os.Clearenv()
+
+		authenticators, err := authenticator.InitFromEnv(envPrefix)
+
+		require.NoError(t, err)
+		require.Equal(t, 0, len(authenticators))
+	})
+
+	t.Run("When environment contains authenticator configuration with invalid attribute", func(t *testing.T) {
+		os.Clearenv()
+		defer os.Clearenv()
+
+		expectedAuthenticator := authenticator.Config{
+			Name:           "TEST_AUTHN",
+			TrustedIssuers: trustedIssuers,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   "test-unique-key",
+					Value: "test-value",
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: "",
+				},
+				IdentityAttribute: authenticator.Attribute{
+					Key: "",
+				},
+			},
+		}
+
+		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
+		require.NoError(t, err)
+
+		issuersJSON, err := json.Marshal(trustedIssuers)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
+		require.NoError(t, err)
+
+		_, err = authenticator.InitFromEnv(envPrefix)
+
+		require.Error(t, err)
+	})
+
+	t.Run("When environment contains authenticator configuration with missing unique attribute value", func(t *testing.T) {
+		os.Clearenv()
+		defer os.Clearenv()
+
+		expectedAuthenticator := authenticator.Config{
+			Name:           "TEST_AUTHN",
+			TrustedIssuers: trustedIssuers,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   "test-unique-key",
+					Value: "",
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: "test-tenant-key",
+				},
+				IdentityAttribute: authenticator.Attribute{
+					Key: "test-identity-key",
+				},
+			},
+		}
+
+		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
+		require.NoError(t, err)
+
+		issuersJSON, err := json.Marshal(trustedIssuers)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
+		require.NoError(t, err)
+
+		_, err = authenticator.InitFromEnv(envPrefix)
+
+		require.Error(t, err)
+	})
+
+	t.Run("When environment contains authenticator configuration with missing prefix should be okay", func(t *testing.T) {
+		os.Clearenv()
+		defer os.Clearenv()
+
+		expectedAuthenticator := authenticator.Config{
+			Name:           "TEST_AUTHN",
+			TrustedIssuers: trustedIssuers,
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   "test-unique-key",
+					Value: "test-value",
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: "test-tenant-key",
+				},
+				IdentityAttribute: authenticator.Attribute{
+					Key: "test-identity-key",
+				},
+			},
+		}
+
+		attributesJSON, err := json.Marshal(expectedAuthenticator.Attributes)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
+		require.NoError(t, err)
+
+		issuersJSON, err := json.Marshal(trustedIssuers)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
+		require.NoError(t, err)
+
+		authenticators, err := authenticator.InitFromEnv(envPrefix)
+
+		require.NoError(t, err)
+		require.Equal(t, 1, len(authenticators))
+		require.Equal(t, expectedAuthenticator, authenticators[0])
+	})
 }
