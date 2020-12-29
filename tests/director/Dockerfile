@@ -17,6 +17,7 @@ RUN apk add --no-cache curl
 LABEL source=git@github.com:kyma-incubator/compass.git
 
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director/wait-for-director.sh .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director/wait-for-proxy.sh .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director/api.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director/gateway-integration.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director/external-services-mock-integration.test .

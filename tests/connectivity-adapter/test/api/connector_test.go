@@ -53,6 +53,7 @@ func TestConnector(t *testing.T) {
 	client, err := director.NewClient(
 		config.DirectorUrl,
 		config.DirectorHealthzUrl,
+		config.IstioProxyURL,
 		config.Tenant,
 		[]string{"application:read", "application:write", "runtime:write", "runtime:read", "eventing:manage"})
 	require.NoError(t, err)

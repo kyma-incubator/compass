@@ -60,9 +60,13 @@ type TenantsResponse struct {
 	Result []*schema.Tenant
 }
 
-func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) (Client, error) {
+func NewClient(directorURL, directorHealthzURL, istioProxyURL, tenant string, scopes []string) (Client, error) {
+	err := waitUntilIstioProxyIsReady(istioProxyURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "Director is not ready")
+	}
 
-	err := waitUntilDirectorIsReady(directorHealthzURL)
+	err = waitUntilDirectorIsReady(directorHealthzURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "Director is not ready")
 	}
@@ -85,35 +89,41 @@ func NewClient(directorURL, directorHealthzURL, tenant string, scopes []string) 
 	}, nil
 }
 
-func waitUntilDirectorIsReady(directorHealthzURL string) error {
+func waitUntilComponentIsReady(name, URL string) error {
 	httpClient := http.Client{}
 
-	time.Sleep(20 * time.Second)
-
 	return retry.Do(func() error {
-		req, err := http.NewRequest(http.MethodGet, directorHealthzURL, nil)
+		req, err := http.NewRequest(http.MethodGet, URL, nil)
 		if err != nil {
-			logrus.Warningf("Failed to create request while waiting for Director: %s", err)
+			logrus.Warningf("Failed to create request while waiting for %s: %s", name, err)
 			return err
 		}
 
 		res, err := httpClient.Do(req)
 		if err != nil {
-			logrus.Warningf("Failed to execute request while waiting for Director: %s", err)
+			logrus.Warningf("Failed to execute request while waiting for %s: %s", name, err)
 			return err
 		}
 
 		err = res.Body.Close()
 		if err != nil {
-			logrus.Warningf("Failed to close request body while waiting for Director: %s", err)
+			logrus.Warningf("Failed to close request body while waiting for %s: %s", name, err)
 		}
 
 		if res.StatusCode != http.StatusOK {
-			return errors.New("Unexpected status code received when waiting for Director: " + res.Status)
+			return errors.New("Unexpected status code received when waiting for %s: " + res.Status)
 		}
 
 		return nil
 	}, defaultRetryOptions()...)
+}
+
+func waitUntilDirectorIsReady(directorHealthzURL string) error {
+	return waitUntilComponentIsReady("director", directorHealthzURL)
+}
+
+func waitUntilIstioProxyIsReady(istioProxyURL string) error {
+	return waitUntilComponentIsReady("istio-proxy", istioProxyURL)
 }
 
 func (c client) CreateApplication(in schema.ApplicationRegisterInput) (string, error) {

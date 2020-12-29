@@ -14,5 +14,6 @@ RUN apk add --no-cache curl
 LABEL source=git@github.com:kyma-incubator/compass.git
 
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher/wait-for-tenant-fetcher.sh .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher/wait-for-proxy.sh .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher/tenant-fetcher.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher/licenses ./licenses

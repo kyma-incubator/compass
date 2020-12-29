@@ -43,6 +43,8 @@ spec:
               value: {{ .Values.global.defaultTenant | quote }}
             - name: APP_DIRECTOR_HEALTHZ_URL
               value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/healthz"
+            - name: APP_ISTIO_PROXY_URL
+              value: "http://localhost:15020/healthz/ready"
           command:
             - "/bin/sh"
           args:
