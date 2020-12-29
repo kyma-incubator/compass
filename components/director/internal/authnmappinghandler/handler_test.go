@@ -117,7 +117,6 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
-		fmt.Println(body)
 
 		expectedPayload, err := json.Marshal(reqDataMock.Body)
 		require.NoError(t, err)
@@ -158,7 +157,6 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
-		fmt.Println(body)
 
 		expectedPayload, err := json.Marshal(reqDataMock.Body)
 		require.NoError(t, err)
@@ -174,7 +172,6 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp2.StatusCode)
 		body2, err := ioutil.ReadAll(resp2.Body)
 		require.NoError(t, err)
-		fmt.Println(body2)
 
 		require.Contains(t, strings.TrimSpace(string(body2)), string(expectedPayload))
 
@@ -282,7 +279,6 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp1.StatusCode)
 		body1, err := ioutil.ReadAll(resp1.Body)
 		require.NoError(t, err)
-		fmt.Println(body1)
 
 		expectedPayload, err := json.Marshal(reqDataMock1.Body)
 		require.NoError(t, err)
@@ -605,6 +601,46 @@ func TestHandler(t *testing.T) {
 
 		resp := w.Result()
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("error when extracting token claims", func(t *testing.T) {
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					"tenant": "test-tenant",
+				},
+			},
+			Header: map[string][]string{
+				"Authorization": {"Bearer " + mockedToken},
+			},
+		}
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+		tokenDataMock := &authnMock.TokenData{}
+		tokenDataMock.On("Claims", &reqDataMock.Body.Extra).Return(errors.New("expected")).Once()
+
+		verifierMock := &authnMock.TokenVerifier{}
+		verifierMock.On("Verify", mock.Anything, mockedToken).Return(tokenDataMock, nil).Once()
+
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
+			return verifierMock
+		}, authenticators)
+
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		expectedResponse := "Token claims extraction failed"
+		require.NoError(t, err)
+
+		require.Contains(t, strings.TrimSpace(string(body)), expectedResponse)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, verifierMock, tokenDataMock)
 	})
 }
 

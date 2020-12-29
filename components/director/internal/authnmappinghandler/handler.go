@@ -129,7 +129,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := claims.Claims(&reqData.Body.Extra); err != nil {
-		h.logError(ctx, err, "An error has occurred while extracting claims from body.extra.")
+		h.logError(ctx, err, "An error has occurred while extracting claims to request body.extra")
 		http.Error(writer, "Token claims extraction failed", http.StatusUnauthorized)
 		return
 	}
