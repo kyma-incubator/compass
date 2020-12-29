@@ -179,6 +179,8 @@ func initAuditLogs(done chan bool, collector *metrics.AuditlogCollector) (proxy.
 	var httpClient auditlog.HttpClient
 	var msgFactory auditlog.AuditlogMessageFactory
 
+	tr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
+
 	switch cfg.AuthMode {
 	case auditlog.Basic:
 		{
@@ -187,13 +189,13 @@ func initAuditLogs(done chan bool, collector *metrics.AuditlogCollector) (proxy.
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "while loading auditlog basic auth configuration")
 			}
-
-			msgFactory = auditlog.NewMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
-			tr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
 			baseHttpClient := &http.Client{
 				Transport: tr,
 				Timeout:   cfg.ClientTimeout,
 			}
+
+			collector.InstrumentAuditlogHTTPClient(baseHttpClient)
+			msgFactory = auditlog.NewMessageFactory("proxy", basicCfg.Tenant, uuidSvc, timeSvc)
 
 			httpClient = auditlog.NewBasicAuthClient(basicCfg, baseHttpClient)
 		}
@@ -207,12 +209,13 @@ func initAuditLogs(done chan bool, collector *metrics.AuditlogCollector) (proxy.
 
 			ccCfg := fillJWTCredentials(oauthCfg)
 			baseClient := &http.Client{
-				Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+				Transport: tr,
 				Timeout:   cfg.ClientTimeout,
 			}
 			ctx := context.WithValue(context.Background(), oauth2.HTTPClient, baseClient)
 			client := ccCfg.Client(ctx)
 
+			collector.InstrumentAuditlogHTTPClient(client)
 			httpClient = client
 
 			msgFactory = auditlog.NewMessageFactory(oauthCfg.User, oauthCfg.Tenant, uuidSvc, timeSvc)
