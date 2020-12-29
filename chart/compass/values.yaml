@@ -50,16 +50,16 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1641"
+        version: "PR-1663"
       connector:
         dir:
         version: "PR-1657"
       connectivity_adapter:
         dir:
-        version: "PR-1641"
+        version: "PR-1663"
       tenant_fetcher:
         dir:
-        version: "PR-1652"
+        version: "PR-1663"
   isLocalEnv: false
   oauth2:
     host: oauth2
