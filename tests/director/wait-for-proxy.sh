@@ -10,7 +10,7 @@ if [ -z "$ISTIO_HEALTHZ_URL" ]; then
 fi
 
 i=0
-maxRetries=${MAX_RETRIES:-30}
+maxRetries=${MAX_RETRIES:-60}
 istioIsUp=false
 
 set +e
