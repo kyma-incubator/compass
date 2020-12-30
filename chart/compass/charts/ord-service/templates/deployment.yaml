@@ -20,7 +20,6 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
-      serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
@@ -41,7 +40,7 @@ spec:
             - name: SERVER_PORT
               value: "{{ .Values.deployment.args.containerPort }}"
             - name: SERVER_SELF_URL
-              value: "https://{{ .Values.global.ord_service.tls.host }}.{{ .Values.global.ingress.domainName }}" # TODO: Check Host When Virtual Service for ORD Service is introduced
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:

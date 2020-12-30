@@ -9,7 +9,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.global.open_discovery_service.port }}
+    - port: {{ .Values.global.ordService.port }}
       protocol: TCP
       name: http
     - port: {{ .Values.global.istio.proxy.port }}

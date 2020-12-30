@@ -4,7 +4,7 @@ deployment:
     pullPolicy: IfNotPresent
   resources: {}
   args:
-    containerPort: 4000
+    containerPort: 3000
   securityContext: # Set on container level
     runAsUser: 2000
     allowPrivilegeEscalation: false
