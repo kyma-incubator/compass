@@ -22,7 +22,8 @@ public class ODataController {
     @RequestMapping(value = "**", method = { RequestMethod.GET })
     public void handleODataRequest(HttpServletRequest request, HttpServletResponse response) throws ODataException {
         final JPAODataGetHandler handler = new JPAODataGetHandler(serviceContext);
-        handler.getJPAODataRequestContext().setDebugSupport(new DefaultDebugSupport()); // Use query parameter odata-debug=json to activate.
+        //handler.getJPAODataRequestContext().setDebugSupport(new DefaultDebugSupport()); // Use query parameter odata-debug=json to activate.
+        // Activate debug support after security is in place
 
         handler.process(request, response);
     }
