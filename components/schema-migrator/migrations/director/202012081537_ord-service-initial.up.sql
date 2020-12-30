@@ -101,7 +101,7 @@ FROM (SELECT id                AS package_id,
              links.url         AS url,
              links.description AS description
       FROM packages,
-           jsonb_to_recordset(packages.links) AS links(title TEXT, description TEXT, url TEXT)) AS package_links
+           jsonb_to_recordset(packages.links) AS links(title TEXT, description TEXT, url TEXT)) AS package_links /* TODO: this alias may be unnecessary */
 UNION ALL
 (SELECT NULL::uuid        AS package_id,
         id                AS api_definition_id,
@@ -136,7 +136,7 @@ FROM (SELECT packages.id    AS package_id,
              elements.value AS value
       FROM packages,
            jsonb_each(packages.labels) AS expand,
-           jsonb_array_elements_text(expand.value) AS elements) AS package_tags
+           jsonb_array_elements_text(expand.value) AS elements) AS package_tags /* TODO: this alias may be unnecessary */
 UNION ALL
 (SELECT NULL::uuid         AS package_id,
         api_definitions.id AS api_definition_id,
@@ -163,7 +163,7 @@ FROM (SELECT packages.id    AS package_id,
              NULL::uuid     AS event_definition_id,
              elements.value AS value
       FROM packages,
-           jsonb_array_elements_text(packages.tags) AS elements) AS package_tags
+           jsonb_array_elements_text(packages.tags) AS elements) AS package_tags /* TODO: this alias may be unnecessary */
 UNION ALL
 (SELECT NULL::uuid         AS package_id,
         api_definitions.id AS api_definition_id,
@@ -186,7 +186,7 @@ FROM (SELECT packages.id    AS package_id,
              NULL::uuid     AS event_definition_id,
              elements.value AS value
       FROM packages,
-           jsonb_array_elements_text(packages.countries) AS elements) AS package_tags
+           jsonb_array_elements_text(packages.countries) AS elements) AS package_tags /* TODO: this alias may be unnecessary */
 UNION ALL
 (SELECT NULL::uuid         AS package_id,
         api_definitions.id AS api_definition_id,
@@ -221,7 +221,7 @@ FROM (SELECT id                                  AS api_definition_id,
       FROM api_definitions,
            jsonb_to_recordset(api_definitions.api_definitions) AS api_res_defs(type TEXT, "customType" TEXT,
                                                                                "mediaType" TEXT,
-                                                                               url TEXT)) as api_defs
+                                                                               url TEXT)) as api_defs /* TODO: this alias may be unnecessary */
 UNION ALL
 (SELECT id                                  AS api_definition_id,
         CASE
@@ -259,7 +259,7 @@ FROM (SELECT id                      AS api_definition_id,
       FROM api_definitions,
            jsonb_to_recordset(api_definitions.changelog_entries) AS entries(version TEXT, "releaseStatus" TEXT,
                                                                             date TEXT,
-                                                                            description TEXT, url TEXT)) AS api_entries
+                                                                            description TEXT, url TEXT)) AS api_entries /* TODO: this alias may be unnecessary */
 UNION ALL
 (SELECT NULL::uuid              AS api_definition_id,
         id                      AS event_definition_id,
@@ -283,7 +283,7 @@ FROM (SELECT id                                    AS event_definition_id,
       FROM event_api_definitions,
            jsonb_to_recordset(event_api_definitions.event_definitions) AS event_res_defs(type TEXT, "customType" TEXT,
                                                                                          "mediaType" TEXT,
-                                                                                         url TEXT)) as event_defs
+                                                                                         url TEXT)) as event_defs /* TODO: this alias may be unnecessary */
 UNION ALL
 (SELECT id                                  AS api_definition_id,
         CASE

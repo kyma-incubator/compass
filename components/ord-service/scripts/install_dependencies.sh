@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-COMPONENT_DIR="$(pwd)/$(dirname $0)"
 OLINGO_JPA_LIB_DIR="$COMPONENT_DIR/olingo-jpa-processor-v4"
 OLINGO_VERSION_TAG="0.3.8"
 
-source "$COMPONENT_DIR/commons.sh"
+source "$COMPONENT_DIR/scripts/commons.sh"
 
 if [[ -d "$OLINGO_JPA_LIB_DIR" ]]
 then
@@ -22,11 +21,3 @@ cd "$OLINGO_JPA_LIB_DIR/jpa/"
 
 log_section "Installing Olingo JPA Library..."
 mvn clean install -DskipTests
-
-cd "$COMPONENT_DIR"
-
-log_section "Installing Open Resource Discovery Service..."
-mvn clean install -DskipTests
-
-ARTIFACT_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -DforceStdout -q)
-log_section "Installed Open Resource Discovery Service version: $ARTIFACT_VERSION"
