@@ -16,6 +16,19 @@ spec:
     {{- toYaml .Values.deployment.strategy | nindent 4 }}
   template:
     metadata:
+      annotations:
+        {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.requests.memory }}
+        sidecar.istio.io/proxyMemory: {{ .Values.deployment.resourcesIstioProxy.requests.memory }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        sidecar.istio.io/proxyCPULimit: {{ .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.memory }}
+        sidecar.istio.io/proxyMemoryLimit: {{ .Values.deployment.resourcesIstioProxy.limits.memory }}
+      {{ end }}
       labels:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
@@ -77,17 +90,20 @@ spec:
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
           volumeMounts:
         {{if eq .Values.global.database.embedded.enabled false}}
-            - name: cloudsql-instance-viewer-credentials
-              mountPath: /secrets/cloudsql-instance-viewer-credentials
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
         - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.16
+          image: gcr.io/cloudsql-docker/gce-proxy:1.18.0-alpine
           command: ["/cloud_sql_proxy",
-                    "-instances=sap-cp-cmp-dev:europe-west1:cmp-dev-testing-56b5=tcp:5432",
-                    "-credential_file=/secrets/cloudsql-instance-viewer-credentials/credentials.json"]
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                    "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json",
+                    "-term_timeout=2s"]
+          resources:
+          {{- toYaml .Values.deployment.resourcesCloudsqlProxy | nindent 12 }}
           volumeMounts:
-            - name: cloudsql-instance-viewer-credentials
-              mountPath: /secrets/cloudsql-instance-viewer-credentials
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
           {{- with .Values.deployment.securityContext }}
           securityContext:
@@ -96,7 +112,7 @@ spec:
           {{end}}
       volumes:
         {{if eq .Values.global.database.embedded.enabled false}}
-        - name: cloudsql-instance-viewer-credentials
+        - name: cloudsql-instance-credentials
           secret:
-            secretName: cloudsql-instance-viewer-credentials
+            secretName: cloudsql-instance-credentials
         {{end}}

@@ -32,13 +32,13 @@ global:
       version: "PR-1661"
     ord_service:
       dir:
-      version: "PR-1666"
+      version: "PR-1"
     healthchecker:
       dir:
       version: "PR-1460"
     schema_migrator:
       dir:
-      version: "PR-1603"
+      version: "PR-1666"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
