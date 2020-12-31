@@ -24,7 +24,7 @@ spec:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "eu.gcr.io/sap-cp-cmp-dev/od-service:0.0.1-SNAPSHOT"
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.ord_service.dir }}compass-ord-service:{{ .Values.global.images.ord_service.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
@@ -40,7 +40,9 @@ spec:
             - name: SERVER_PORT
               value: "{{ .Values.deployment.args.containerPort }}"
             - name: SERVER_SELF_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: ODATA_JPA_REQUEST_MAPPING_PATH
+              value: {{ .Values.global.ordService.prefix | trimPrefix "/" }}
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:
