@@ -1,5 +1,16 @@
 BEGIN;
 
+DROP VIEW links;
+DROP VIEW providers;
+DROP VIEW ord_labels;
+DROP VIEW tags;
+DROP VIEW countries;
+DROP VIEW package_links;
+DROP VIEW api_resource_definitions;
+DROP VIEW api_resource_links;
+DROP VIEW changelog_entries;
+DROP VIEW event_resource_definitions;
+
 ALTER TABLE packages
     DROP COLUMN ord_id,
     DROP COLUMN short_description,
@@ -48,16 +59,5 @@ ALTER TABLE event_api_definitions
 
 DROP TYPE api_protocol;
 DROP TYPE release_status;
-
-DROP VIEW links;
-DROP VIEW providers;
-DROP VIEW ord_labels;
-DROP VIEW tags;
-DROP VIEW countries;
-DROP VIEW package_links;
-DROP VIEW api_resource_definitions;
-DROP VIEW api_resource_links;
-DROP VIEW changelog_entries;
-DROP VIEW event_resource_definitions;
 
 COMMIT;
