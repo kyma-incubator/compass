@@ -20,6 +20,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"testing"
+	"time"
+
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
@@ -27,10 +32,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/ord-service/pkg"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"io/ioutil"
-	"net/http"
-	"testing"
-	"time"
 )
 
 const TestApp = "mytestapp"

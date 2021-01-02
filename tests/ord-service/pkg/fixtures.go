@@ -19,13 +19,14 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gateway_integration "github.com/kyma-incubator/compass/tests/director/gateway-integration"
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var tc *gateway_integration.TestContext
