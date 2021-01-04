@@ -14,8 +14,8 @@ type FetchRequestService struct {
 	mock.Mock
 }
 
-// HandleAPISpec provides a mock function with given fields: ctx, fr
-func (_m *FetchRequestService) HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string {
+// HandleSpec provides a mock function with given fields: ctx, fr
+func (_m *FetchRequestService) HandleSpec(ctx context.Context, fr *model.FetchRequest) *string {
 	ret := _m.Called(ctx, fr)
 
 	var r0 *string
