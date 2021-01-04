@@ -48,7 +48,7 @@ func buildSelectQuery(tableName string, selectedColumns string, conditions Condi
 
 	err := writeEnumeratedConditions(&stmtBuilder, conditions)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "while writing enumerated conditions")
+		return "", nil, errors.Wrap(err, "while writing enumerated conditions.")
 	}
 
 	err = writeOrderByPart(&stmtBuilder, orderByParams)

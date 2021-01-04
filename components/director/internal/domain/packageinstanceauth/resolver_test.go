@@ -296,7 +296,7 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 			resolver := packageinstanceauth.NewResolver(transact, svc, pkgSvc, converter)
 
 			// when
-			result, err := resolver.RequestPackageInstanceAuthCreation(context.Background(), testPackageID, *gqlRequestInput)
+			result, err := resolver.RequestPackageInstanceAuthCreation(context.TODO(), testPackageID, *gqlRequestInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -422,7 +422,7 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 			resolver := packageinstanceauth.NewResolver(transact, svc, nil, converter)
 
 			// when
-			result, err := resolver.SetPackageInstanceAuth(context.Background(), testAuthID, *gqlSetInput)
+			result, err := resolver.SetPackageInstanceAuth(context.TODO(), testAuthID, *gqlSetInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)

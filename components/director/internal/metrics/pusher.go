@@ -5,12 +5,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/google/uuid"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
-	log "github.com/sirupsen/logrus"
 )
 
 type Pusher struct {
@@ -28,7 +30,7 @@ func NewPusher(endpoint string, timeout time.Duration) *Pusher {
 	}, []string{"method", "code", "desc"})
 
 	instanceID := uuid.New()
-	log.WithField(InstanceIDKeyName, instanceID).Infof("Initializing Metrics Pusher...")
+	log.D().WithField(InstanceIDKeyName, instanceID).Infof("Initializing Metrics Pusher...")
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(eventingRequestTotal)
@@ -44,7 +46,7 @@ func NewPusher(endpoint string, timeout time.Duration) *Pusher {
 }
 
 func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc string) {
-	log.WithFields(log.Fields{
+	log.D().WithFields(logrus.Fields{
 		InstanceIDKeyName: p.instanceID,
 		"statusCode":      statusCode,
 		"desc":            desc,
@@ -53,10 +55,10 @@ func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc strin
 }
 
 func (p *Pusher) Push() {
-	log.WithField(InstanceIDKeyName, p.instanceID).Info("Pushing metrics...")
+	log.D().WithField(InstanceIDKeyName, p.instanceID).Info("Pushing metrics...")
 	err := p.pusher.Add()
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while pushing metrics to Pushgateway")
-		log.WithField(InstanceIDKeyName, p.instanceID).Error(wrappedErr)
+		log.D().WithField(InstanceIDKeyName, p.instanceID).Error(wrappedErr)
 	}
 }

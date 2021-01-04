@@ -1,10 +1,19 @@
+{{ $outerScope := . }}
 {{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
-{{if eq $config.enabled true}}
+{{ if eq $config.enabled true }}
+{{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName }}
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: "compass-tenant-fetcher-{{ $tenantFetcherName }}"
+  name: "{{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}"
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
 spec:
   schedule: "{{ $config.schedule }}"
   failedJobsHistoryLimit: 5
@@ -20,11 +29,20 @@ spec:
           labels:
             cronjob: tenant-fetcher
         spec:
+          serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:
           - name: fetcher
             image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
             imagePullPolicy: IfNotPresent
             env:
+              - name: APP_USE_KUBERNETES
+                value: "true"
+              - name: APP_KUBERNETES_POLL_INTERVAL
+                value: {{ $config.kubernetes.pollInterval }}
+              - name: APP_KUBERNETES_POLL_TIMEOUT
+                value: {{ $config.kubernetes.pollTimeout }}
+              - name: APP_KUBERNETES_TIMEOUT
+                value: {{ $config.kubernetes.timeout }}
               - name: APP_DB_USER
                 valueFrom:
                   secretKeyRef:
@@ -82,6 +100,12 @@ spec:
                   secretKeyRef:
                     name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-token-endpoint
+              - name: APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
+                value: {{ $configmapName }}
+              - name: APP_CONFIGMAP_NAMESPACE
+                value: {{ $config.kubernetes.configMapNamespace }}
+              - name: APP_CONFIGMAP_TIMESTAMP_FIELD
+                value: "lastConsumedTenantTimestamp"
               - name: APP_MAPPING_FIELD_ID
                 value: {{ $config.fieldMapping.idField }}
               - name: APP_MAPPING_FIELD_NAME
@@ -138,5 +162,78 @@ spec:
             secret:
               secretName: cloudsql-instance-credentials
           {{end}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $configmapName }}
+  namespace: "{{ $config.kubernetes.configMapNamespace }}"
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+  {{- $configmap := (lookup "v1" "ConfigMap" $config.kubernetes.configMapNamespace $configmapName) }}
+  {{- if empty $configmap }}
+data:
+  lastConsumedTenantTimestamp: "1"
+  {{ else }}
+data:
+  {{ toYaml $configmap.data | indent 2}}
+  {{ end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $configmapName }}
+  namespace: {{ $config.kubernetes.configMapNamespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["configmaps"]
+    resourceNames: [{{ $configmapName }}]
+    verbs: ["get", "update"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}-config
+  namespace: {{ $config.kubernetes.configMapNamespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ $configmapName }}
+  apiGroup: rbac.authorization.k8s.io
 {{ end }}
 {{- end -}}

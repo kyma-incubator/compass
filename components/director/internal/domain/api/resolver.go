@@ -9,8 +9,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
@@ -80,9 +80,9 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.Infof("Adding APIDefinition to package with id %s", packageID)
+	log.C(ctx).Infof("Adding APIDefinition to package with id %s", packageID)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -117,7 +117,7 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 
 	gqlAPI := r.converter.ToGraphQL(api)
 
-	log.Infof("APIDefinition with id %s successfully added to Package with id %s", id, packageID)
+	log.C(ctx).Infof("APIDefinition with id %s successfully added to Package with id %s", id, packageID)
 	return gqlAPI, nil
 }
 
@@ -126,9 +126,9 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.Infof("Updating APIDefinition with id %s", id)
+	log.C(ctx).Infof("Updating APIDefinition with id %s", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -154,7 +154,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 
 	gqlAPI := r.converter.ToGraphQL(api)
 
-	log.Infof("APIDefinition with id %s successfully updated.", id)
+	log.C(ctx).Infof("APIDefinition with id %s successfully updated.", id)
 	return gqlAPI, nil
 }
 func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
@@ -162,9 +162,9 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.Infof("Deleting APIDefinition with id %s", id)
+	log.C(ctx).Infof("Deleting APIDefinition with id %s", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -183,7 +183,7 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 		return nil, err
 	}
 
-	log.Infof("APIDefinition with id %s successfully deleted.", id)
+	log.C(ctx).Infof("APIDefinition with id %s successfully deleted.", id)
 	return r.converter.ToGraphQL(api), nil
 }
 func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
@@ -191,9 +191,9 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.Infof("Refetching APISpec for API with id %s", apiID)
+	log.C(ctx).Infof("Refetching APISpec for API with id %s", apiID)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -208,12 +208,12 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 	}
 
 	converted := r.converter.SpecToGraphQL(apiID, spec)
-	log.Infof("Successfully refetched APISpec for APIDefinition with id %s", apiID)
+	log.C(ctx).Infof("Successfully refetched APISpec for APIDefinition with id %s", apiID)
 	return converted, nil
 }
 
 func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
-	log.Infof("Fetching request for APIDefinition with id %s", obj.DefinitionID)
+	log.C(ctx).Infof("Fetching request for APIDefinition with id %s", obj.DefinitionID)
 
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Error occurred when fetching request for APIDefinition. API Spec cannot be empty")
@@ -223,7 +223,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -245,6 +245,6 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*gra
 		return nil, err
 	}
 
-	log.Infof("Successfully fetched request for APIDefinition %s", obj.DefinitionID)
+	log.C(ctx).Infof("Successfully fetched request for APIDefinition %s", obj.DefinitionID)
 	return r.frConverter.ToGraphQL(fr)
 }

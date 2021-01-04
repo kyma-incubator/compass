@@ -33,7 +33,7 @@ func (r *Resolver) Tenants(ctx context.Context) ([]*graphql.Tenant, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

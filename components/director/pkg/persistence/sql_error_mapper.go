@@ -1,10 +1,10 @@
 package persistence
 
 import (
+	"context"
 	"database/sql"
-	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -13,23 +13,23 @@ import (
 	"github.com/lib/pq"
 )
 
-func MapSQLError(err error, resourceType resource.Type, sqlOperation resource.SQLOperation, format string, args ...interface{}) error {
+func MapSQLError(ctx context.Context, err error, resourceType resource.Type, sqlOperation resource.SQLOperation, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
 	}
 
 	if err == sql.ErrNoRows {
-		log.Errorf("SQL: no rows in result set for '%s' resource type", resourceType)
+		log.C(ctx).WithError(err).Errorf("SQL: no rows in result set for '%s' resource type", resourceType)
 		return apperrors.NewNotFoundErrorWithType(resourceType)
 	}
 
 	pgErr, ok := err.(*pq.Error)
 	if !ok {
-		log.Errorf("Error while casting to postgres error. Actual error: %s", err)
+		log.C(ctx).WithError(err).Errorf("Error while casting to postgres error.")
 		return apperrors.NewInternalError("Unexpected error while executing SQL query")
 	}
 
-	log.Errorf("SQL Error: %s. Caused by: %s. DETAILS: %s", fmt.Sprintf(format, args...), pgErr.Message, pgErr.Detail)
+	log.C(ctx).WithError(pgErr).Errorf("SQL Error. Caused by: %s. DETAILS: %s", pgErr.Message, pgErr.Detail)
 
 	switch pgErr.Code {
 	case NotNullViolation:

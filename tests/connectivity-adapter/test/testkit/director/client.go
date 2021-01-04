@@ -20,8 +20,11 @@ import (
 type Client interface {
 	CreateRuntime(in schema.RuntimeInput) (string, error)
 	DeleteRuntime(runtimeID string) error
+	SetRuntimeLabel(runtimeID, key, value string) error
 	CreateApplication(in schema.ApplicationRegisterInput) (string, error)
 	DeleteApplication(appID string) error
+	SetApplicationLabel(applicationID, key, value string) error
+	DeleteApplicationLabel(applicationID, key string) error
 	SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error
 	GetOneTimeTokenUrl(appID string) (string, string, error)
 }
@@ -142,6 +145,30 @@ func (c client) DeleteApplication(appID string) error {
 	return nil
 }
 
+func (c client) SetApplicationLabel(applicationID, key, value string) error {
+	query := setApplicationLabel(applicationID, key, value)
+	var response SetLabelResponse
+
+	err := c.executeWithRetries(query, &response)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c client) DeleteApplicationLabel(applicationID, key string) error {
+	query := deleteApplicationLabel(applicationID, key)
+	var response SetLabelResponse
+
+	err := c.executeWithRetries(query, &response)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c client) CreateRuntime(in schema.RuntimeInput) (string, error) {
 
 	runtimeGraphQL, err := c.graphqulizer.RuntimeInputToGQL(in)
@@ -170,10 +197,22 @@ func (c client) DeleteRuntime(runtimeID string) error {
 	return nil
 }
 
+func (c client) SetRuntimeLabel(runtimeID, key, value string) error {
+	query := setRuntimeLabel(runtimeID, key, value)
+	var response SetLabelResponse
+
+	err := c.executeWithRetries(query, &response)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c client) SetDefaultEventing(runtimeID string, appID string, eventsBaseURL string) error {
 
 	{
-		query := setEventBaseURLQuery(runtimeID, eventsBaseURL)
+		query := setRuntimeLabel(runtimeID, "runtime_eventServiceUrl", eventsBaseURL)
 		var response SetLabelResponse
 
 		err := c.executeWithRetries(query, &response)

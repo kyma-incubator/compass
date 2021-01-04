@@ -54,7 +54,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 
 				return transact
 			},
@@ -87,7 +87,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 
 				return transact
 			},
@@ -118,7 +118,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 
 				return transact
 			},
@@ -149,7 +149,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 
 				return transact
 			},
@@ -180,7 +180,7 @@ func TestResolver_AddDocumentToPackage(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 
 				return transact
 			},
@@ -265,7 +265,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 
 				return transact
 			},
@@ -292,7 +292,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 
 				return transact
 			},
@@ -317,7 +317,7 @@ func TestResolver_DeleteDocument(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 
 				return transact
 			},
@@ -391,7 +391,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 				return transact
 			},
 			ServiceFn: func() *automock.DocumentService {
@@ -417,7 +417,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
 				persistTx.On("Commit").Return(nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 				return transact
 			},
 			ServiceFn: func() *automock.DocumentService {
@@ -441,7 +441,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := &persistenceautomock.Transactioner{}
 				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", persistTx).Return().Once()
+				transact.On("RollbackUnlessCommitted", context.TODO(), persistTx).Return().Once()
 				return transact
 			},
 			ServiceFn: func() *automock.DocumentService {

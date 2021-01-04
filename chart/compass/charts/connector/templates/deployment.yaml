@@ -54,7 +54,7 @@ spec:
             - name: APP_HYDRATOR_ADDRESS
               value: "0.0.0.0:{{ .Values.global.connector.validator.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
-              value: "/connector/graphql"
+              value: "{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_TOKEN_LENGTH
               value: {{ .Values.deployment.args.token.length | quote }}
             - name: APP_TOKEN_RUNTIME_EXPIRATION
@@ -90,9 +90,9 @@ spec:
             - name: APP_CSR_SUBJECT_PROVINCE
               value: {{ .Values.deployment.args.csrSubject.province | quote }}
             - name: APP_DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_CERTIFICATE_SECURED_CONNECTOR_URL
-              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}/connector/graphql"
+              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_KUBERNETES_CLIENT_POLL_INTERVAL
               value: {{ .Values.deployment.kubernetesClient.pollInterval | quote }}
             - name: APP_KUBERNETES_CLIENT_POLL_TIMEOUT

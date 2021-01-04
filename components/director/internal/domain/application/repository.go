@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -33,6 +33,7 @@ type EntityConverter interface {
 type pgRepository struct {
 	existQuerier    repo.ExistQuerier
 	singleGetter    repo.SingleGetter
+	lister          repo.Lister
 	deleter         repo.Deleter
 	pageableQuerier repo.PageableQuerier
 	creator         repo.Creator
@@ -45,6 +46,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		existQuerier:    repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
 		singleGetter:    repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		deleter:         repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
+		lister:          repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		creator:         repo.NewCreator(resource.Application, applicationTable, applicationColumns),
 		updater:         repo.NewUpdater(resource.Application, applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name"}, tenantColumn, []string{"id"}),
@@ -69,6 +71,18 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.A
 	appModel := r.conv.FromEntity(&appEnt)
 
 	return appModel, nil
+}
+
+func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.Application, error) {
+	var entities EntityCollection
+
+	err := r.lister.List(ctx, tenantID, &entities)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
 }
 
 func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
@@ -165,13 +179,13 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	log.Debugf("Converting Application model with id %s to entity", model.ID)
+	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
 	appEnt, err := r.conv.ToEntity(model)
 	if err != nil {
 		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	log.Debugf("Persisting Application entity with id %s to db", model.ID)
+	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)
 	return r.creator.Create(ctx, appEnt)
 }
 
@@ -180,13 +194,22 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Application) err
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	log.Debugf("Converting Application model with id %s to entity", model.ID)
+	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
 	appEnt, err := r.conv.ToEntity(model)
 
 	if err != nil {
 		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	log.Debugf("Persisting updated Application entity with id %s to db", model.ID)
+	log.C(ctx).Debugf("Persisting updated Application entity with id %s to db", model.ID)
 	return r.updater.UpdateSingle(ctx, appEnt)
+}
+
+func (r *pgRepository) multipleFromEntities(entities EntityCollection) ([]*model.Application, error) {
+	var items []*model.Application
+	for _, ent := range entities {
+		m := r.conv.FromEntity(&ent)
+		items = append(items, m)
+	}
+	return items, nil
 }

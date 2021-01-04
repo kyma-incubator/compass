@@ -50,7 +50,7 @@ func (r *Resolver) SetEventingForApplication(ctx context.Context, appID string, 
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening the transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -81,7 +81,7 @@ func (r *Resolver) UnsetEventingForApplication(ctx context.Context, appID string
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening the transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

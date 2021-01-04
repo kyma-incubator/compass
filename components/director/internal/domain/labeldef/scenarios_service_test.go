@@ -175,7 +175,7 @@ func TestScenariosService_AddDefaultScenarioIfEnabled(t *testing.T) {
 		labels := map[string]interface{}{}
 
 		// WHEN
-		sut.AddDefaultScenarioIfEnabled(&labels)
+		sut.AddDefaultScenarioIfEnabled(context.TODO(), &labels)
 
 		// THEN
 		assert.Equal(t, expected, labels)
@@ -190,7 +190,7 @@ func TestScenariosService_AddDefaultScenarioIfEnabled(t *testing.T) {
 		var labels map[string]interface{}
 
 		// WHEN
-		sut.AddDefaultScenarioIfEnabled(&labels)
+		sut.AddDefaultScenarioIfEnabled(context.TODO(), &labels)
 
 		// THEN
 		assert.Equal(t, expected, labels)
@@ -207,7 +207,7 @@ func TestScenariosService_AddDefaultScenarioIfEnabled(t *testing.T) {
 		}
 
 		// WHEN
-		sut.AddDefaultScenarioIfEnabled(&labels)
+		sut.AddDefaultScenarioIfEnabled(context.TODO(), &labels)
 
 		// THEN
 		assert.Equal(t, expected, labels)
@@ -220,7 +220,7 @@ func TestScenariosService_AddDefaultScenarioIfEnabled(t *testing.T) {
 		labels := map[string]interface{}{}
 
 		// WHEN
-		sut.AddDefaultScenarioIfEnabled(&labels)
+		sut.AddDefaultScenarioIfEnabled(context.TODO(), &labels)
 
 		// THEN
 		assert.Equal(t, expected, labels)

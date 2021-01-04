@@ -3,7 +3,8 @@ package domain
 import (
 	"context"
 	"net/http"
-	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 
@@ -41,12 +42,13 @@ import (
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
 
 type RootResolver struct {
+	appNameNormalizer   normalizer.Normalizator
 	app                 *application.Resolver
 	appTemplate         *apptemplate.Resolver
 	api                 *api.Resolver
@@ -70,6 +72,7 @@ type RootResolver struct {
 }
 
 func NewRootResolver(
+	appNameNormalizer normalizer.Normalizator,
 	transact persistence.Transactioner,
 	cfgProvider *configprovider.Provider,
 	oneTimeTokenCfg onetimetoken.Config,
@@ -77,7 +80,8 @@ func NewRootResolver(
 	pairingAdaptersMapping map[string]string,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
-	clientTimeout time.Duration,
+	httpClient *http.Client,
+	protectedLabelPattern string,
 ) *RootResolver {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
@@ -125,24 +129,21 @@ func NewRootResolver(
 	packageInstanceAuthRepo := packageinstanceauth.NewRepository(packageInstanceAuthConv)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 
-	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL, clientTimeout)
+	connectorGCLI := graphql_client.NewGraphQLClient(oneTimeTokenCfg.OneTimeTokenURL, httpClient.Timeout)
 
 	uidSvc := uid.NewService()
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
-	httpClient := &http.Client{
-		Timeout:   clientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
-	}
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, log.StandardLogger())
+
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, scenarioAssignmentEngine)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 	runtimeCtxSvc := runtime_context.NewService(runtimeContextRepo, labelRepo, labelUpsertSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, scenariosSvc, uidSvc)
@@ -150,13 +151,14 @@ func NewRootResolver(
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg, oAuth20HTTPClient)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
-	eventingSvc := eventing.NewService(runtimeRepo, labelRepo)
+	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	packageSvc := packageutil.NewService(packageRepo, apiRepo, eventAPIRepo, docRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	appSvc := application.NewService(cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
+	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, packageSvc, uidSvc)
 	tokenSvc := onetimetoken.NewTokenService(connectorGCLI, systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, oneTimeTokenCfg.ConnectorURL, pairingAdaptersMapping)
 	packageInstanceAuthSvc := packageinstanceauth.NewService(packageInstanceAuthRepo, uidSvc)
 
 	return &RootResolver{
+		appNameNormalizer:   appNameNormalizer,
 		app:                 application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, packageSvc, packageConverter),
 		appTemplate:         apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
 		api:                 api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, packageSvc, apiConverter, frConverter),
@@ -236,7 +238,7 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.Labe
 	}
 
 	if consumerInfo.ConsumerType == consumer.Runtime {
-		log.Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
+		log.C(ctx).Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
 		return r.app.ApplicationsForRuntime(ctx, consumerInfo.ConsumerID, first, after)
 	}
 
@@ -253,7 +255,29 @@ func (r *queryResolver) ApplicationTemplate(ctx context.Context, id string) (*gr
 	return r.appTemplate.ApplicationTemplate(ctx, id)
 }
 func (r *queryResolver) ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
-	return r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
+	apps, err := r.app.ApplicationsForRuntime(ctx, runtimeID, first, after)
+	if err != nil {
+		return nil, err
+	}
+
+	labels, err := r.runtime.GetLabel(ctx, runtimeID, runtime.IsNormalizedLabel)
+	if err != nil {
+		return nil, err
+	}
+
+	shouldNormalize := true
+	if labels != nil {
+		labelsMap := (map[string]interface{})(*labels)
+		shouldNormalize = labelsMap[runtime.IsNormalizedLabel] == nil || labelsMap[runtime.IsNormalizedLabel] == "true"
+	}
+
+	if shouldNormalize {
+		for i := range apps.Data {
+			apps.Data[i].Name = r.appNameNormalizer.Normalize(apps.Data[i].Name)
+		}
+	}
+
+	return apps, nil
 }
 func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimePage, error) {
 	return r.runtime.Runtimes(ctx, filter, first, after)

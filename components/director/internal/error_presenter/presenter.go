@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/gqlerror"
@@ -19,23 +19,23 @@ type UUIDService interface {
 
 type presenter struct {
 	uuidService UUIDService
-	Logger      *log.Logger
 }
 
-func NewPresenter(logger *log.Logger, service UUIDService) *presenter {
-	return &presenter{Logger: logger, uuidService: service}
+func NewPresenter(service UUIDService) *presenter {
+	return &presenter{uuidService: service}
 }
 
 func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 	customErr := apperrors.Error{}
 	errID := p.uuidService.Generate()
+
 	if found := errors.As(err, &customErr); !found {
-		p.Logger.WithField("errorID", errID).Infof("Unknown error: %s\n", err.Error())
+		log.C(ctx).WithField("errorID", errID).Infof("Unknown error: %s\n", err.Error())
 		return newGraphqlErrorResponse(ctx, apperrors.InternalError, "Internal Server Error [errorID=%s]", errID)
 	}
 
 	if apperrors.ErrorCode(customErr) == apperrors.InternalError {
-		p.Logger.WithField("errorID", errID).Infof("Internal Server Error: %s", err.Error())
+		log.C(ctx).WithField("errorID", errID).Infof("Internal Server Error: %s", err.Error())
 		return newGraphqlErrorResponse(ctx, apperrors.InternalError, "Internal Server Error [errorID=%s]", errID)
 	}
 

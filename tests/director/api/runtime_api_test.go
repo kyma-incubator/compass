@@ -14,6 +14,7 @@ import (
 
 const (
 	scenariosLabel          = "scenarios"
+	isNormalizedLabel       = "isNormalized"
 	queryRuntimesCategory   = "query runtimes"
 	registerRuntimeCategory = "register runtime"
 )
@@ -57,7 +58,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	getRuntimeReq := fixRuntimeRequest(actualRuntime.ID)
 	err = tc.RunOperation(ctx, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
-	assert.Len(t, actualRuntime.Labels, 3)
+	assert.Len(t, actualRuntime.Labels, 4)
 
 	// add agent auth
 	// GIVEN
@@ -91,12 +92,14 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	updateRuntimeReq := fixUpdateRuntimeRequest(actualRuntime.ID, runtimeInGQL)
 	saveExample(t, updateRuntimeReq.Query(), "update runtime")
 	//WHEN
+	actualRuntime = graphql.RuntimeExt{}
 	err = tc.RunOperation(ctx, updateRuntimeReq, &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
 	assert.Equal(t, givenInput.Name, actualRuntime.Name)
 	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
+	assert.Equal(t, len(actualRuntime.Labels), 2)
 	assert.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
 
 	// delete runtime
@@ -452,7 +455,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	assert.Len(t, runtimes, 0)
 }
 
-func TestRegisterRuntimeWithoutLabels(t *testing.T) {
+func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	name := "test-create-runtime-without-labels"
@@ -467,4 +470,60 @@ func TestRegisterRuntimeWithoutLabels(t *testing.T) {
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
 	assertRuntime(t, runtimeInput, *fetchedRuntime)
+
+	//GIVEN
+	secondRuntime := graphql.RuntimeExt{}
+	secondInput := graphql.RuntimeInput{
+		Name:        name,
+		Description: ptr.String("runtime-1-description"),
+		Labels:      &graphql.Labels{scenariosLabel: []interface{}{"DEFAULT"}},
+	}
+	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(secondInput)
+	require.NoError(t, err)
+	updateReq := fixUpdateRuntimeRequest(fetchedRuntime.ID, runtimeInGQL)
+
+	// WHEN
+	err = tc.RunOperation(ctx, updateReq, &secondRuntime)
+
+	//THEN
+	require.NoError(t, err)
+	assertRuntime(t, secondInput, secondRuntime)
+}
+
+func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	name := "test-create-runtime-without-labels"
+	runtimeInput := graphql.RuntimeInput{
+		Name:   name,
+		Labels: &graphql.Labels{isNormalizedLabel: "false"},
+	}
+
+	runtime := registerRuntimeFromInput(t, ctx, &runtimeInput)
+	defer unregisterRuntime(t, runtime.ID)
+
+	//WHEN
+	fetchedRuntime := getRuntime(t, ctx, runtime.ID)
+
+	//THEN
+	require.Equal(t, runtime.ID, fetchedRuntime.ID)
+	assertRuntime(t, runtimeInput, *fetchedRuntime)
+
+	//GIVEN
+	secondRuntime := graphql.RuntimeExt{}
+	secondInput := graphql.RuntimeInput{
+		Name:        name,
+		Description: ptr.String("runtime-1-description"),
+		Labels:      &graphql.Labels{isNormalizedLabel: "true", scenariosLabel: []interface{}{"DEFAULT"}},
+	}
+	runtimeInGQL, err := tc.graphqlizer.RuntimeInputToGQL(secondInput)
+	require.NoError(t, err)
+	updateReq := fixUpdateRuntimeRequest(fetchedRuntime.ID, runtimeInGQL)
+
+	// WHEN
+	err = tc.RunOperation(ctx, updateReq, &secondRuntime)
+
+	//THEN
+	require.NoError(t, err)
+	assertRuntime(t, secondInput, secondRuntime)
 }

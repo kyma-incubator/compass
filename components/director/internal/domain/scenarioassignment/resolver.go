@@ -49,7 +49,7 @@ func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in gra
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -75,7 +75,7 @@ func (r *Resolver) GetAutomaticScenarioAssignmentForScenarioName(ctx context.Con
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -99,7 +99,7 @@ func (r *Resolver) AutomaticScenarioAssignmentsForSelector(ctx context.Context, 
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -131,7 +131,7 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -163,7 +163,7 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Con
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -192,7 +192,7 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Cont
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

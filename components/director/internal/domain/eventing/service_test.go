@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/google/uuid"
@@ -16,6 +18,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	appNameNormalizer = &normalizer.DefaultNormalizator{}
+	app               = fixApplicationModel("test-app")
+)
+
 func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
 	t.Run("Success when cleanup does not return errors", func(t *testing.T) {
 		// GIVEN
@@ -23,7 +30,7 @@ func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("DeleteByKey", ctx, tenantID.String(), getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
-		svc := NewService(nil, labelRepo)
+		svc := NewService(nil, nil, labelRepo)
 
 		// WHEN
 		eventingCfg, err := svc.CleanupAfterUnregisteringApplication(ctx, applicationID)
@@ -38,7 +45,7 @@ func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		// GIVEN
-		svc := NewService(nil, nil)
+		svc := NewService(nil, nil, nil)
 
 		// WHEN
 		_, err := svc.CleanupAfterUnregisteringApplication(context.TODO(), uuid.Nil)
@@ -55,7 +62,7 @@ func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("DeleteByKey", ctx, tenantID.String(), getDefaultEventingForAppLabelKey(applicationID)).Return(errors.New("some-error"))
 
-		svc := NewService(nil, labelRepo)
+		svc := NewService(nil, nil, labelRepo)
 
 		// WHEN
 		_, err := svc.CleanupAfterUnregisteringApplication(ctx, applicationID)
@@ -69,7 +76,8 @@ func Test_CleanupAfterUnregisteringApplication(t *testing.T) {
 }
 
 func Test_SetForApplication(t *testing.T) {
-	app := fixApplicationModel("test-app")
+	appEventURL := fixAppEventURL(t, app.Name)
+	appNormalizedEventURL := fixAppEventURL(t, appNameNormalizer.Normalize(app.Name))
 
 	t.Run("Success when assigning new default runtime, when there was no previous one", func(t *testing.T) {
 		// GIVEN
@@ -86,8 +94,10 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
 		// WHEN
 		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -95,7 +105,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, fmt.Sprintf(eventURLSchema, app.Name), eventingCfg.DefaultURL.String())
+		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -115,8 +125,10 @@ func Test_SetForApplication(t *testing.T) {
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
 		// WHEN
 		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -124,13 +136,73 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, fmt.Sprintf(eventURLSchema, app.Name), eventingCfg.DefaultURL.String())
+		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
+	t.Run("Success when there is runtime labeled for application eventing and is labeled for normalization", func(t *testing.T) {
+		// GIVEN
+		ctx := fixCtxWithTenant()
+		app := fixApplicationModel("test-app")
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
+		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
+			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
+			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
+		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "true"}, nil)
+
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
+
+		// WHEN
+		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, app)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, eventingCfg)
+		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
+	t.Run("Success when there is runtime labeled for application eventing and is labeled not for normalization", func(t *testing.T) {
+		// GIVEN
+		ctx := fixCtxWithTenant()
+		app := fixApplicationModel("test-app")
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
+		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
+			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
+			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
+		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "false"}, nil)
+
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
+
+		// WHEN
+		eventingCfg, err := svc.SetForApplication(ctx, runtimeID, app)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, eventingCfg)
+		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		// GIVEN
-		svc := NewService(nil, nil)
+		svc := NewService(nil, nil, nil)
 
 		// WHEN
 		_, err := svc.SetForApplication(context.TODO(), uuid.Nil, model.Application{})
@@ -149,7 +221,7 @@ func Test_SetForApplication(t *testing.T) {
 			1, mock.Anything).Return(nil, errors.New("some-error"))
 		labelRepo := &automock.LabelRepository{}
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -169,7 +241,7 @@ func Test_SetForApplication(t *testing.T) {
 			1, mock.Anything).Return(fixRuntimePage(), nil)
 		labelRepo := &automock.LabelRepository{}
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -191,7 +263,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(errors.New("some-error"))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -215,7 +287,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(nil, errors.New("some error"))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -239,7 +311,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -265,7 +337,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -291,7 +363,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -304,7 +376,7 @@ func Test_SetForApplication(t *testing.T) {
 
 	t.Run("Error when assigning new default runtime", func(t *testing.T) {
 		// GIVEN
-		expectedError := fmt.Sprintf(`while setting the runtime as default for eveting for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some-error`, runtimeID, applicationID)
+		expectedError := fmt.Sprintf(`while setting the runtime as default for eventing for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some-error`, runtimeID, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
@@ -318,7 +390,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -347,7 +419,7 @@ func Test_SetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.SetForApplication(ctx, runtimeID, app)
@@ -357,10 +429,42 @@ func Test_SetForApplication(t *testing.T) {
 		require.EqualError(t, err, expectedError)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
+
+	t.Run("Error when getting runtime normalization label", func(t *testing.T) {
+		// GIVEN
+		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, isNormalizedLabel, runtimeID)
+		ctx := fixCtxWithTenant()
+		app := fixApplicationModel("test-app")
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
+		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
+			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
+			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
+		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(nil, errors.New("some error"))
+
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
+
+		// WHEN
+		_, err := svc.SetForApplication(ctx, runtimeID, app)
+
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, expectedError)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
 }
 
 func Test_UnsetForApplication(t *testing.T) {
-	app := fixApplicationModel("test-app")
+	appEventURL := fixAppEventURL(t, app.Name)
+	appNormalizedEventURL := fixAppEventURL(t, appNameNormalizer.Normalize(app.Name))
 
 	t.Run("Success when there is no default runtime assigned for eventing", func(t *testing.T) {
 		// GIVEN
@@ -369,7 +473,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 
-		svc := NewService(runtimeRepo, nil)
+		svc := NewService(nil, runtimeRepo, nil)
 
 		// WHEN
 		eventingCfg, err := svc.UnsetForApplication(ctx, app)
@@ -392,8 +496,10 @@ func Test_UnsetForApplication(t *testing.T) {
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
 		// WHEN
 		eventingCfg, err := svc.UnsetForApplication(ctx, app)
@@ -401,13 +507,65 @@ func Test_UnsetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, fmt.Sprintf(eventURLSchema, app.Name), eventingCfg.DefaultURL.String())
+		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
+	t.Run("Success when there is runtime labeled for application eventing and is labeled for normalization", func(t *testing.T) {
+		// GIVEN
+		ctx := fixCtxWithTenant()
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
+			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "true"}, nil)
+
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
+
+		// WHEN
+		eventingCfg, err := svc.UnsetForApplication(ctx, app)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, eventingCfg)
+		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
+	t.Run("Success when there is runtime labeled for application eventing and is labeled not for normalization", func(t *testing.T) {
+		// GIVEN
+		ctx := fixCtxWithTenant()
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
+			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "false"}, nil)
+
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
+
+		// WHEN
+		eventingCfg, err := svc.UnsetForApplication(ctx, app)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, eventingCfg)
+		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		// GIVEN
-		svc := NewService(nil, nil)
+		svc := NewService(nil, nil, nil)
 
 		// WHEN
 		_, err := svc.UnsetForApplication(context.TODO(), app)
@@ -425,7 +583,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(nil, errors.New("some-error"))
 
-		svc := NewService(runtimeRepo, nil)
+		svc := NewService(nil, runtimeRepo, nil)
 
 		// WHEN
 		_, err := svc.UnsetForApplication(ctx, app)
@@ -444,7 +602,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePage(), nil)
 
-		svc := NewService(runtimeRepo, nil)
+		svc := NewService(nil, runtimeRepo, nil)
 
 		// WHEN
 		_, err := svc.UnsetForApplication(ctx, app)
@@ -466,7 +624,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(errors.New("some-error"))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.UnsetForApplication(ctx, app)
@@ -490,7 +648,33 @@ func Test_UnsetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
+
+		// WHEN
+		_, err := svc.UnsetForApplication(ctx, app)
+
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, expectedError)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
+	t.Run("Success when there is runtime labeled for application eventing and is labeled not for normalization", func(t *testing.T) {
+		// GIVEN
+		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, isNormalizedLabel, runtimeID)
+		ctx := fixCtxWithTenant()
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
+			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(nil, errors.New("some error"))
+
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.UnsetForApplication(ctx, app)
@@ -503,8 +687,8 @@ func Test_UnsetForApplication(t *testing.T) {
 }
 
 func Test_GetForApplication(t *testing.T) {
-	app := fixApplicationModel("test-app")
-	appEventURL := fixAppEventURL(t, "test-app")
+	appEventURL := fixAppEventURL(t, app.Name)
+	appNormalizedEventURL := fixAppEventURL(t, appNameNormalizer.Normalize(app.Name))
 
 	t.Run("Success when there is default runtime labeled for application eventing", func(t *testing.T) {
 		// GIVEN
@@ -519,8 +703,10 @@ func Test_GetForApplication(t *testing.T) {
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
 		// WHEN
 		eventingCfg, err := svc.GetForApplication(ctx, app)
@@ -528,7 +714,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
-		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
+		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
 		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
 	})
 
@@ -546,7 +732,65 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("Upsert", ctx, mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).Return(nil)
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
-		svc := NewService(runtimeRepo, labelRepo)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(nil, apperrors.NewNotFoundError(resource.Runtime, runtimeID.String()))
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
+
+		// WHEN
+		eventingCfg, err := svc.GetForApplication(ctx, app)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, eventingCfg)
+		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
+	t.Run("Success when there is runtime labeled for application eventing and is labeled for normalization", func(t *testing.T) {
+		// GIVEN
+		ctx := fixCtxWithTenant()
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
+		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
+			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
+			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "true"}, nil)
+
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
+
+		// WHEN
+		eventingCfg, err := svc.GetForApplication(ctx, app)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, eventingCfg)
+		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
+	t.Run("Success when there is runtime labeled for application eventing and is labeled not for normalization", func(t *testing.T) {
+		// GIVEN
+		ctx := fixCtxWithTenant()
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
+		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
+			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
+			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(&model.Label{Value: "false"}, nil)
+
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
 		// WHEN
 		eventingCfg, err := svc.GetForApplication(ctx, app)
@@ -570,7 +814,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		eventingCfg, err := svc.GetForApplication(ctx, app)
@@ -591,7 +835,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		eventingCfg, err := svc.GetForApplication(ctx, app)
@@ -619,7 +863,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(nil)
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		eventingCfg, err := svc.GetForApplication(ctx, app)
@@ -633,7 +877,7 @@ func Test_GetForApplication(t *testing.T) {
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		// GIVEN
-		svc := NewService(nil, nil)
+		svc := NewService(nil, nil, nil)
 
 		// WHEN
 		_, err := svc.GetForApplication(context.TODO(), app)
@@ -658,7 +902,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("Upsert", ctx,
 			mock.MatchedBy(fixMatcherDefaultEventingForAppLabel())).
 			Return(errors.New("some error"))
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -681,7 +925,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -704,7 +948,7 @@ func Test_GetForApplication(t *testing.T) {
 		scenariosLabel.Value = "abc"
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(scenariosLabel, nil)
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -725,7 +969,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(nil, errors.New("some error"))
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -743,7 +987,7 @@ func Test_GetForApplication(t *testing.T) {
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(nil, errors.New("some error"))
-		svc := NewService(runtimeRepo, nil)
+		svc := NewService(nil, runtimeRepo, nil)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -763,7 +1007,7 @@ func Test_GetForApplication(t *testing.T) {
 			1, mock.Anything).Return(fixRuntimePage(), nil)
 		labelRepo := &automock.LabelRepository{}
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -785,7 +1029,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(nil, errors.New("some error"))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -807,7 +1051,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -831,7 +1075,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -857,7 +1101,7 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
 			getDefaultEventingForAppLabelKey(applicationID)).Return(errors.New("some-error"))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -883,7 +1127,35 @@ func Test_GetForApplication(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
 			runtimeID.String(), RuntimeEventingURLLabel).Return(nil, errors.New("some error"))
 
-		svc := NewService(runtimeRepo, labelRepo)
+		svc := NewService(nil, runtimeRepo, labelRepo)
+
+		// WHEN
+		_, err := svc.GetForApplication(ctx, app)
+
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, expectedError)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo)
+	})
+
+	t.Run("Error when getting runtime normalization label", func(t *testing.T) {
+		// GIVEN
+		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, isNormalizedLabel, runtimeID)
+		ctx := fixCtxWithTenant()
+		runtimeRepo := &automock.RuntimeRepository{}
+		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
+		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
+			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
+			applicationID.String(), model.ScenariosKey).Return(fixApplicationScenariosLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), RuntimeEventingURLLabel).Return(fixRuntimeEventingURLLabel(), nil)
+		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
+			runtimeID.String(), isNormalizedLabel).Return(nil, errors.New("some error"))
+
+		svc := NewService(appNameNormalizer, runtimeRepo, labelRepo)
 
 		// WHEN
 		_, err := svc.GetForApplication(ctx, app)
@@ -903,7 +1175,7 @@ func Test_GetForRuntime(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(), RuntimeEventingURLLabel).
 			Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
 		expectedEventingCfg := fixRuntimeEventngCfgWithEmptyURL(t)
-		eventingSvc := NewService(nil, labelRepo)
+		eventingSvc := NewService(nil, nil, labelRepo)
 
 		// WHEN
 		eventingCfg, err := eventingSvc.GetForRuntime(ctx, runtimeID)
@@ -921,7 +1193,7 @@ func Test_GetForRuntime(t *testing.T) {
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(), RuntimeEventingURLLabel).
 			Return(fixRuntimeEventingURLLabel(), nil)
 		expectedEventingCfg := fixRuntimeEventngCfgWithURL(t, runtimeEventURL)
-		eventingSvc := NewService(nil, labelRepo)
+		eventingSvc := NewService(nil, nil, labelRepo)
 
 		// WHEN
 		eventingCfg, err := eventingSvc.GetForRuntime(ctx, runtimeID)
@@ -934,7 +1206,7 @@ func Test_GetForRuntime(t *testing.T) {
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		// GIVEN
-		svc := NewService(nil, nil)
+		svc := NewService(nil, nil, nil)
 
 		// WHEN
 		_, err := svc.GetForRuntime(context.TODO(), uuid.Nil)
@@ -950,7 +1222,7 @@ func Test_GetForRuntime(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(), RuntimeEventingURLLabel).
 			Return(nil, errors.New("some error"))
-		eventingSvc := NewService(nil, labelRepo)
+		eventingSvc := NewService(nil, nil, labelRepo)
 
 		// WHEN
 		_, err := eventingSvc.GetForRuntime(ctx, runtimeID)
@@ -971,7 +1243,7 @@ func Test_GetForRuntime(t *testing.T) {
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(), RuntimeEventingURLLabel).
 			Return(label, nil)
-		eventingSvc := NewService(nil, labelRepo)
+		eventingSvc := NewService(nil, nil, labelRepo)
 
 		// WHEN
 		_, err := eventingSvc.GetForRuntime(ctx, runtimeID)

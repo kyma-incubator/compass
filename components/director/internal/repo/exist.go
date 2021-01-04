@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -70,10 +70,10 @@ func (g *universalExistQuerier) unsafeExists(ctx context.Context, conditions Con
 
 	query := getQueryFromBuilder(stmtBuilder)
 
-	log.Debugf("Executing DB query: %s", query)
+	log.C(ctx).Debugf("Executing DB query: %s", query)
 	var count int
 	err = persist.Get(&count, query, allArgs...)
-	err = persistence.MapSQLError(err, g.resourceType, resource.Exists, "while getting object from '%s' table", g.tableName)
+	err = persistence.MapSQLError(ctx, err, g.resourceType, resource.Exists, "while getting object from '%s' table", g.tableName)
 
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
