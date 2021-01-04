@@ -53,7 +53,7 @@ type UIDService interface {
 
 //go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
 type FetchRequestService interface {
-	HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string
+	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
 type service struct {
@@ -265,7 +265,7 @@ func (s *service) createAPIs(ctx context.Context, packageID, tenant string, apis
 				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
 
-			api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
+			api.Spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 			err = s.apiRepo.Update(ctx, api)
 			if err != nil {
 				return errors.Wrap(err, "while updating api with api spec")
@@ -281,6 +281,7 @@ func (s *service) createEvents(ctx context.Context, packageID, tenant string, ev
 	var err error
 	for _, item := range events {
 		eventID := s.uidService.Generate()
+
 		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinPackage(eventID, packageID, tenant))
 		if err != nil {
 			return errors.Wrapf(err, "while creating EventDefinition with id %s in Package with id %s", eventID, packageID)

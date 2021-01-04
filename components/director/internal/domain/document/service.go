@@ -35,19 +35,26 @@ type UIDService interface {
 	Generate() string
 }
 
-type service struct {
-	repo             DocumentRepository
-	fetchRequestRepo FetchRequestRepository
-	uidService       UIDService
-	timestampGen     timestamp.Generator
+//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
+type FetchRequestService interface {
+	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
-func NewService(repo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService) *service {
+type service struct {
+	repo                DocumentRepository
+	fetchRequestRepo    FetchRequestRepository
+	uidService          UIDService
+	fetchRequestService FetchRequestService
+	timestampGen        timestamp.Generator
+}
+
+func NewService(repo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
 	return &service{
-		repo:             repo,
-		fetchRequestRepo: fetchRequestRepo,
-		uidService:       uidService,
-		timestampGen:     timestamp.DefaultGenerator(),
+		repo:                repo,
+		fetchRequestRepo:    fetchRequestRepo,
+		uidService:          uidService,
+		fetchRequestService: fetchRequestService,
+		timestampGen:        timestamp.DefaultGenerator(),
 	}
 }
 
@@ -95,21 +102,20 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 	}
 
 	id := s.uidService.Generate()
-
 	document := in.ToDocumentWithinPackage(id, tnt, packageID)
-	err = s.repo.Create(ctx, document)
-	if err != nil {
-		return "", errors.Wrap(err, "while creating Document")
-	}
 
 	if in.FetchRequest != nil {
-		generatedID := s.uidService.Generate()
-		fetchRequestID := &generatedID
-		fetchRequestModel := in.FetchRequest.ToFetchRequest(s.timestampGen(), *fetchRequestID, tnt, model.DocumentFetchRequestReference, id)
-		err := s.fetchRequestRepo.Create(ctx, fetchRequestModel)
+		fr, err := s.createFetchRequest(ctx, tnt, *in.FetchRequest, id)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for Document %s", id)
 		}
+
+		document.Data = s.fetchRequestService.HandleSpec(ctx, fr)
+	}
+
+	err = s.repo.Create(ctx, document)
+	if err != nil {
+		return "", errors.Wrap(err, "while creating Document")
 	}
 
 	return document.ID, nil
@@ -152,4 +158,15 @@ func (s *service) GetFetchRequest(ctx context.Context, documentID string) (*mode
 	}
 
 	return fetchRequest, nil
+}
+
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {
+	id := s.uidService.Generate()
+	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, model.DocumentFetchRequestReference, parentObjectID)
+	err := s.fetchRequestRepo.Create(ctx, fr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", model.DocumentFetchRequestReference, parentObjectID)
+	}
+
+	return fr, nil
 }

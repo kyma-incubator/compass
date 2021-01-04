@@ -121,7 +121,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(nil)
+				svc.On("HandleSpec", ctx, modelFr).Return(nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -233,7 +233,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(nil)
+				svc.On("HandleSpec", ctx, modelFr).Return(nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -272,7 +272,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(nil)
+				svc.On("HandleSpec", ctx, modelFr).Return(nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -317,7 +317,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(nil)
+				svc.On("HandleSpec", ctx, modelFr).Return(nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -362,7 +362,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(nil)
+				svc.On("HandleSpec", ctx, modelFr).Return(nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -407,7 +407,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(&spec)
+				svc.On("HandleSpec", ctx, modelFr).Return(&spec)
 				return svc
 			},
 			Input:       modelInput,
