@@ -187,7 +187,7 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData) (
 
 		var m OpenIDMetadata
 		if err := json.Unmarshal(buf, &m); err != nil {
-			return nil, authenticator.Coordinates{}, fmt.Errorf("error decoding body of response with status %s: %s", resp.Status, err.Error())
+			return nil, authenticator.Coordinates{}, fmt.Errorf("while decoding body of response with status %s: %s", resp.Status, err.Error())
 		}
 
 		if issuerURL != m.Issuer {

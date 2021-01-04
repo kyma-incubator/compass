@@ -642,6 +642,44 @@ func TestHandler(t *testing.T) {
 		require.Contains(t, strings.TrimSpace(string(body)), expectedResponse)
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, verifierMock, tokenDataMock)
 	})
+	t.Run("error when authenticator is found but it does not contain matching trusted issuer", func(t *testing.T) {
+		logsBuffer := &bytes.Buffer{}
+		entry := log.DefaultLogger()
+		entry.Logger.SetOutput(logsBuffer)
+		ctx := log.ContextWithLogger(context.Background(), entry)
+
+		unknownIssuer := "http://tenant." + "unknown.com" + "/oauth/token"
+		invalidToken := generateToken(t, unknownIssuer, mockedAttributes)
+
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					"tenant": "test-tenant",
+				},
+			},
+			Header: map[string][]string{
+				"Authorization": {"Bearer " + invalidToken},
+			},
+		}
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		req = req.WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		verifierMock := &authnMock.TokenVerifier{}
+		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
+			return verifierMock
+		}, authenticators)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+		require.Contains(t, logsBuffer.String(), "could not find trusted issuer in given authenticator")
+	})
 }
 
 func generateToken(t *testing.T, issuer string, attributes map[string]interface{}) string {
