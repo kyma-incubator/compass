@@ -68,7 +68,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo, nil, nil)
+			svc := document.NewService(repo, nil, nil, nil)
 
 			// when
 			doc, err := svc.Get(ctx, testCase.InputID)
@@ -85,6 +85,14 @@ func TestService_Get(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.Get(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
 }
 
 func TestService_GetForPackage(t *testing.T) {
@@ -140,7 +148,7 @@ func TestService_GetForPackage(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo, nil, nil)
+			svc := document.NewService(repo, nil, nil, nil)
 
 			// when
 			eventAPIDefinition, err := svc.GetForPackage(ctx, testCase.InputID, testCase.PackageID)
@@ -157,7 +165,7 @@ func TestService_GetForPackage(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := document.NewService(nil, nil, nil)
+		svc := document.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForPackage(context.TODO(), "", "")
 		// THEN
@@ -227,7 +235,7 @@ func TestService_ListForPackage(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo, nil, nil)
+			svc := document.NewService(repo, nil, nil, nil)
 
 			// when
 			docs, err := svc.ListForPackage(ctx, packageID, first, after)
@@ -244,6 +252,14 @@ func TestService_ListForPackage(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListForPackage(context.TODO(), "", 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
 }
 func TestService_CreateToPackage(t *testing.T) {
 	// given
@@ -259,17 +275,19 @@ func TestService_CreateToPackage(t *testing.T) {
 	packageID := "foo"
 	frURL := "foo.bar"
 	frID := "fr-id"
+	data := "foodata"
 	timestamp := time.Now()
 	modelInput := fixModelDocumentInputWithFetchRequest(frURL)
 	modelDoc := modelInput.ToDocumentWithinPackage(id, tnt, packageID)
 
 	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.DocumentRepository
-		FetchRequestRepoFn func() *automock.FetchRequestRepository
-		UIDServiceFn       func() *automock.UIDService
-		Input              model.DocumentInput
-		ExpectedErr        error
+		Name                string
+		RepositoryFn        func() *automock.DocumentRepository
+		FetchRequestRepoFn  func() *automock.FetchRequestRepository
+		FetchRequestService func() *automock.FetchRequestService
+		UIDServiceFn        func() *automock.UIDService
+		Input               model.DocumentInput
+		ExpectedErr         error
 	}{
 		{
 			Name: "Success",
@@ -282,6 +300,11 @@ func TestService_CreateToPackage(t *testing.T) {
 				repo := &automock.FetchRequestRepository{}
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
+			},
+			FetchRequestService: func() *automock.FetchRequestService {
+				svc:=&automock.FetchRequestService{}
+				svc.On("HandleSpec", ctx,fixModelFetchRequest(frID, frURL, timestamp)).Return(&data)
+				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -301,11 +324,18 @@ func TestService_CreateToPackage(t *testing.T) {
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
+				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil).Once()
 				return repo
+			},
+			FetchRequestService: func() *automock.FetchRequestService {
+				svc:=&automock.FetchRequestService{}
+				svc.On("HandleSpec", ctx,fixModelFetchRequest(frID, frURL, timestamp)).Return(&data)
+				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
+				svc.On("Generate").Return(frID).Once()
 				return svc
 			},
 			Input:       *modelInput,
@@ -315,13 +345,17 @@ func TestService_CreateToPackage(t *testing.T) {
 			Name: "Error - Fetch Request Creation",
 			RepositoryFn: func() *automock.DocumentRepository {
 				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, modelDoc).Return(nil).Once()
 				return repo
 			},
 			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
 				repo := &automock.FetchRequestRepository{}
 				repo.On("Create", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(testErr).Once()
 				return repo
+			},
+			FetchRequestService: func() *automock.FetchRequestService {
+				svc:=&automock.FetchRequestService{}
+				svc.On("HandleSpec", ctx,fixModelFetchRequest(frID, frURL, timestamp)).Return(&data)
+				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -338,8 +372,9 @@ func TestService_CreateToPackage(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			idSvc := testCase.UIDServiceFn()
+			fetchRequestService:= testCase.FetchRequestService()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
-			svc := document.NewService(repo, fetchRequestRepo, idSvc)
+			svc := document.NewService(repo, fetchRequestRepo, idSvc, fetchRequestService)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -361,7 +396,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := document.NewService(nil, nil, nil)
+		svc := document.NewService(nil, nil, nil, nil)
 		// when
 		_, err := svc.CreateInPackage(context.TODO(), "Dd", model.DocumentInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -414,7 +449,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := document.NewService(repo, nil, nil)
+			svc := document.NewService(repo, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -430,6 +465,14 @@ func TestService_Delete(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil, nil)
+		// WHEN
+		err := svc.Delete(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
 }
 
 func TestService_GetFetchRequest(t *testing.T) {
@@ -522,7 +565,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
-			svc := document.NewService(repo, fetchRequestRepo, nil)
+			svc := document.NewService(repo, fetchRequestRepo, nil, nil)
 
 			// when
 			l, err := svc.GetFetchRequest(ctx, refID)
@@ -540,4 +583,10 @@ func TestService_GetFetchRequest(t *testing.T) {
 			fetchRequestRepo.AssertExpectations(t)
 		})
 	}
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		svc := document.NewService(nil, nil, nil, nil)
+		// when
+		_, err := svc.GetFetchRequest(context.TODO(), "dd")
+		assert.True(t, apperrors.IsCannotReadTenant(err))
+	})
 }
