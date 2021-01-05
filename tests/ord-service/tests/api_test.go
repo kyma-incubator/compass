@@ -19,6 +19,7 @@ package tests
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -180,32 +181,43 @@ func TestODService(t *testing.T) {
 			require.Equal(t, *expectedAPI.Description, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
 			require.Equal(t, expectedAPI.TargetURL, gjson.Get(respBody, fmt.Sprintf("value.%d.entryPoint", i)).String())
 			require.NotEmpty(t, gjson.Get(respBody, fmt.Sprintf("value.%d.partOfPackage", i)).String())
+
 			releaseStatus := gjson.Get(respBody, fmt.Sprintf("value.%d.releaseStatus", i)).String()
-			if *expectedAPI.Version.ForRemoval {
-				require.Equal(t, "decommissioned", releaseStatus)
-			} else if *expectedAPI.Version.Deprecated {
-				require.Equal(t, "deprecated", releaseStatus)
-			} else {
-				require.Equal(t, "active", releaseStatus)
+			switch releaseStatus {
+			case "decommissioned":
+				require.NotNil(t, *expectedAPI.Version.ForRemoval)
+			case "deprecated":
+				require.NotNil(t, *expectedAPI.Version.Deprecated)
+			case "active":
+				require.Nil(t, *expectedAPI.Version.ForRemoval)
+				require.Nil(t, *expectedAPI.Version.Deprecated)
+			default:
+				panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
 			}
 
 			specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", i)).Array()
 			require.Equal(t, 1, len(specs))
 
 			specType := specs[0].Get("type").String()
-			if expectedAPI.Spec.Type == directorSchema.APISpecTypeOdata {
-				require.Equal(t, "edmx", specType)
-			} else if expectedAPI.Spec.Type == directorSchema.APISpecTypeOpenAPI {
-				require.Equal(t, "openapi-v3", specType)
+			switch specType {
+			case "edmx":
+				require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOdata)
+			case "openapi-v3":
+				require.Equal(t, expectedAPI.Spec.Type, directorSchema.APISpecTypeOpenAPI)
+			default:
+				panic(errors.New(fmt.Sprintf("Unknown spec type: %s", specType)))
 			}
 
 			specFormat := specs[0].Get("mediaType").String()
-			if expectedAPI.Spec.Format == directorSchema.SpecFormatYaml {
-				require.Equal(t, "text/yaml", specFormat)
-			} else if expectedAPI.Spec.Format == directorSchema.SpecFormatJSON {
-				require.Equal(t, "application/json", specFormat)
-			} else if expectedAPI.Spec.Format == directorSchema.SpecFormatXML {
-				require.Equal(t, "application/xml", specFormat)
+			switch specFormat {
+			case "text/yaml":
+				require.Equal(t, expectedAPI.Spec.Format, directorSchema.SpecFormatYaml)
+			case "application/json":
+				require.Equal(t, expectedAPI.Spec.Format, directorSchema.SpecFormatJSON)
+			case "application/xml":
+				require.Equal(t, expectedAPI.Spec.Format, directorSchema.SpecFormatXML)
+			default:
+				panic(errors.New(fmt.Sprintf("Unknown spec format: %s", specFormat)))
 			}
 
 			apiID := gjson.Get(respBody, fmt.Sprintf("value.%d.id", i)).String()
@@ -254,30 +266,41 @@ func TestODService(t *testing.T) {
 
 			require.Equal(t, *expectedEvent.Description, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
 			require.NotEmpty(t, gjson.Get(respBody, fmt.Sprintf("value.%d.partOfPackage", i)).String())
+
 			releaseStatus := gjson.Get(respBody, fmt.Sprintf("value.%d.releaseStatus", i)).String()
-			if *expectedEvent.Version.ForRemoval {
-				require.Equal(t, "decommissioned", releaseStatus)
-			} else if *expectedEvent.Version.Deprecated {
-				require.Equal(t, "deprecated", releaseStatus)
-			} else {
-				require.Equal(t, "active", releaseStatus)
+			switch releaseStatus {
+			case "decommissioned":
+				require.NotNil(t, *expectedEvent.Version.ForRemoval)
+			case "deprecated":
+				require.NotNil(t, *expectedEvent.Version.Deprecated)
+			case "active":
+				require.Nil(t, *expectedEvent.Version.ForRemoval)
+				require.Nil(t, *expectedEvent.Version.Deprecated)
+			default:
+				panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
 			}
 
 			specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", i)).Array()
 			require.Equal(t, 1, len(specs))
 
 			specType := specs[0].Get("type").String()
-			if expectedEvent.Spec.Type == directorSchema.EventSpecTypeAsyncAPI {
-				require.Equal(t, "asyncapi-v2", specType)
+			switch specType {
+			case "asyncapi-v2":
+				require.Equal(t, expectedEvent.Spec.Type, directorSchema.EventSpecTypeAsyncAPI)
+			default:
+				panic(errors.New(fmt.Sprintf("Unknown spec type: %s", specType)))
 			}
 
 			specFormat := specs[0].Get("mediaType").String()
-			if expectedEvent.Spec.Format == directorSchema.SpecFormatYaml {
-				require.Equal(t, "text/yaml", specFormat)
-			} else if expectedEvent.Spec.Format == directorSchema.SpecFormatJSON {
-				require.Equal(t, "application/json", specFormat)
-			} else if expectedEvent.Spec.Format == directorSchema.SpecFormatXML {
-				require.Equal(t, "application/xml", specFormat)
+			switch specFormat {
+			case "text/yaml":
+				require.Equal(t, expectedEvent.Spec.Format, directorSchema.SpecFormatYaml)
+			case "application/json":
+				require.Equal(t, expectedEvent.Spec.Format, directorSchema.SpecFormatJSON)
+			case "application/xml":
+				require.Equal(t, expectedEvent.Spec.Format, directorSchema.SpecFormatXML)
+			default:
+				panic(errors.New(fmt.Sprintf("Unknown spec format: %s", specFormat)))
 			}
 
 			eventID := gjson.Get(respBody, fmt.Sprintf("value.%d.id", i)).String()
