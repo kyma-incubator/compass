@@ -119,7 +119,7 @@ spec:
             {{- range $authenticatorName, $config := .Values.global.authenticators }}
             {{- if eq $config.enabled true }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
-              value: {{ $config.trusted_issuers }}
+              value: {{ $config.trusted_issuers | quote }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.attributes | quote }}
             {{- end }}
