@@ -80,7 +80,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	authDetails, err := reqData.GetAuthIDWithAuthenticators(h.authenticators)
+	authDetails, err := reqData.GetAuthIDWithAuthenticators(ctx, h.authenticators)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while determining the auth details for the request.")
 		respond(ctx, writer, reqData.Body)

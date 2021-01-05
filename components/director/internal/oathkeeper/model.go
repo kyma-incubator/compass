@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tidwall/gjson"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -39,6 +37,7 @@ type AuthDetails struct {
 	AuthID        string
 	AuthFlow      AuthFlow
 	Authenticator *authenticator.Config
+	ScopePrefix   string
 }
 
 // AuthFlow wraps possible flows of auth like OAuth2, JWT and certificate
@@ -91,34 +90,35 @@ func NewReqData(ctx context.Context, reqBody ReqBody, reqHeader http.Header) Req
 }
 
 // GetAuthID looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct
-func (d *ReqData) GetAuthID() (*AuthDetails, error) {
-	return d.GetAuthIDWithAuthenticators([]authenticator.Config{})
+func (d *ReqData) GetAuthID(ctx context.Context) (*AuthDetails, error) {
+	return d.GetAuthIDWithAuthenticators(ctx, []authenticator.Config{})
 }
 
 // GetAuthIDWithAuthenticators looks for auth ID and identifies auth flow in the parsed request input represented by the ReqData struct while taking into account existing preconfigured authenticators
-func (d *ReqData) GetAuthIDWithAuthenticators(authenticators []authenticator.Config) (*AuthDetails, error) {
-	extra, err := d.MarshalExtra()
+func (d *ReqData) GetAuthIDWithAuthenticators(ctx context.Context, authenticators []authenticator.Config) (*AuthDetails, error) {
+	coords, exist, err := d.extractCoordinates()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while extracting coordinates")
 	}
+	if exist {
+		for _, authn := range authenticators {
+			if authn.Name != coords.Name {
+				continue
+			}
 
-	for _, authn := range authenticators {
-		uniqueAttribute := gjson.Get(extra, authn.Attributes.UniqueAttribute.Key).String()
-		if uniqueAttribute == "" || uniqueAttribute != authn.Attributes.UniqueAttribute.Value {
-			continue
-		}
+			log.C(ctx).Infof("Request token matches %q authenticator", authn.Name)
+			identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]
+			if !ok {
+				return nil, apperrors.NewInvalidDataError("missing identity attribute from %q authenticator token", authn.Name)
+			}
 
-		log.D().Infof("Request token matches %q authenticator", authn.Name)
-		identity, ok := d.Body.Extra[authn.Attributes.IdentityAttribute.Key]
-		if !ok {
-			return nil, apperrors.NewInvalidDataError("missing identity attribute from %q authenticator token", authn.Name)
+			authID, err := str.Cast(identity)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while parsing the value for %s", identity)
+			}
+			index := coords.Index
+			return &AuthDetails{AuthID: authID, AuthFlow: JWTAuthFlow, Authenticator: &authn, ScopePrefix: authn.TrustedIssuers[index].ScopePrefix}, nil
 		}
-
-		authID, err := str.Cast(identity)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while parsing the value for %s", identity)
-		}
-		return &AuthDetails{AuthID: authID, AuthFlow: JWTAuthFlow, Authenticator: &authn}, nil
 	}
 
 	if idVal, ok := d.Body.Extra[ClientIDKey]; ok {
@@ -251,4 +251,22 @@ func (d *ReqData) SetExtraFromClaims(claims jwt.MapClaims) {
 	d.Body.Extra[EmailKey] = claims[EmailKey]
 	d.Body.Extra[UsernameKey] = claims[UsernameKey]
 	d.Body.Extra[GroupsKey] = claims[GroupsKey]
+}
+
+func (d *ReqData) extractCoordinates() (authenticator.Coordinates, bool, error) {
+	var coords authenticator.Coordinates
+	coordsInterface, exists := d.Body.Extra[authenticator.CoordinatesKey]
+	if !exists {
+		return coords, false, nil
+	}
+
+	coordsBytes, err := json.Marshal(coordsInterface)
+	if err != nil {
+		return coords, true, errors.Wrap(err, "while marshaling authenticator coordinates")
+	}
+	if err := json.Unmarshal(coordsBytes, &coords); err != nil {
+		return coords, true, errors.Wrap(err, "while unmarshaling authenticator coordinates")
+	}
+
+	return coords, true, nil
 }
