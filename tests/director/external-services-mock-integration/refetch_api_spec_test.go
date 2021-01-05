@@ -2,7 +2,7 @@ package external_services_mock_integration
 
 import (
 	"context"
-	"net/url"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
@@ -14,59 +14,98 @@ import (
 )
 
 func TestRefetchAPISpecDifferentSpec(t *testing.T) {
-	ctx := context.Background()
-	tenant := testConfig.DefaultTenant
 
-	t.Log("Get Dex id_token")
-	dexToken, err := idtokenprovider.GetDexToken()
-	require.NoError(t, err)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
-
-	appName := "app-test-package"
-	application := registerApplication(t, ctx, dexGraphQLClient, appName, tenant)
-	defer unregisterApplication(t, dexGraphQLClient, application.ID, tenant)
-
-	externalServicesURL, err := url.Parse(testConfig.ExternalServicesMockBaseURL)
-	require.NoError(t, err)
-	externalServicesURL.Path = "external-api/spec"
-
-	pkgName := "test-package"
-	pkgInput := graphql.PackageCreateInput{
-		Name: pkgName,
-		APIDefinitions: []*graphql.APIDefinitionInput{{
-			Name:      "test",
-			TargetURL: "https://target.url",
-			Spec: &graphql.APISpecInput{
-				Format: graphql.SpecFormatJSON,
-				Type:   graphql.APISpecTypeOpenAPI,
-				FetchRequest: &graphql.FetchRequestInput{
-					URL: externalServicesURL.String(),
+	testCases := []struct {
+		Name         string
+		FetchRequest *graphql.FetchRequestInput
+	}{
+		{
+			Name: "Success without credentials",
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/unsecured/spec",
+			},
+		},
+		{
+			Name: "Success with basic credentials",
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/basic/spec",
+				Auth: &graphql.AuthInput{
+					Credential: &graphql.CredentialDataInput{
+						Basic: &graphql.BasicCredentialDataInput{
+							Username: "admin",
+							Password: "admin",
+						},
+					},
 				},
 			},
 		},
+		{
+			Name: "Success with oauth",
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/spec",
+				Auth: &graphql.AuthInput{
+					Credential: &graphql.CredentialDataInput{
+						Oauth: &graphql.OAuthCredentialDataInput{
+							ClientID:     "client_id",
+							ClientSecret: "client_secret",
+							URL:          testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/token",
+						},
+					},
+				},
+			},
 		},
 	}
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+			ctx := context.Background()
+			tenant := testConfig.DefaultTenant
 
-	pkg := createPackageWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, pkgInput)
-	defer deletePackage(t, ctx, dexGraphQLClient, tenant, pkg.ID)
-	pkgID := pkg.ID
-	assertSpecInPackageNotNil(t, pkg)
-	spec := *pkg.APIDefinitions.Data[0].Spec.APISpec.Data
+			t.Log("Get Dex id_token")
+			dexToken, err := idtokenprovider.GetDexToken()
+			require.NoError(t, err)
 
-	var refetchedSpec graphql.APISpecExt
-	apiID := pkg.APIDefinitions.Data[0].ID
-	req := fixRefetchAPISpecRequest(apiID)
+			dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &refetchedSpec)
-	require.NoError(t, err)
+			appName := "app-test-package"
+			application := registerApplication(t, ctx, dexGraphQLClient, appName, tenant)
+			defer unregisterApplication(t, dexGraphQLClient, application.ID, tenant)
 
-	require.NotNil(t, refetchedSpec.APISpec.Data)
-	assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
+			pkgName := "test-package"
+			pkgInput := graphql.PackageCreateInput{
+				Name: pkgName,
+				APIDefinitions: []*graphql.APIDefinitionInput{{
+					Name:      "test",
+					TargetURL: "https://target.url",
+					Spec: &graphql.APISpecInput{
+						Format:       graphql.SpecFormatJSON,
+						Type:         graphql.APISpecTypeOpenAPI,
+						FetchRequest: testCase.FetchRequest,
+					},
+				},
+				},
+			}
 
-	pkg = getPackage(t, ctx, dexGraphQLClient, tenant, application.ID, pkgID)
+			pkg := createPackageWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, pkgInput)
+			defer deletePackage(t, ctx, dexGraphQLClient, tenant, pkg.ID)
+			pkgID := pkg.ID
+			assertSpecInPackageNotNil(t, pkg)
+			spec := *pkg.APIDefinitions.Data[0].Spec.APISpec.Data
 
-	assertSpecInPackageNotNil(t, pkg)
-	assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
+			var refetchedSpec graphql.APISpecExt
+			apiID := pkg.APIDefinitions.Data[0].ID
+			req := fixRefetchAPISpecRequest(apiID)
+
+			err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &refetchedSpec)
+			require.NoError(t, err)
+
+			require.NotNil(t, refetchedSpec.APISpec.Data)
+			assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
+
+			pkg = getPackage(t, ctx, dexGraphQLClient, tenant, application.ID, pkgID)
+
+			assertSpecInPackageNotNil(t, pkg)
+			assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
+		})
+	}
 
 }
