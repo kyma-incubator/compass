@@ -18,14 +18,12 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		FetchRequest  *graphql.FetchRequestInput
-		ShouldRefetch bool
 	}{
 		{
 			Name: "Success without credentials",
 			FetchRequest: &graphql.FetchRequestInput{
 				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/unsecured/spec",
 			},
-			ShouldRefetch: true,
 		},
 		{
 			Name: "Success with basic credentials",
@@ -40,22 +38,6 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 					},
 				},
 			},
-			ShouldRefetch: true,
-		},
-		{
-			Name: "Wrong basic credentials",
-			FetchRequest: &graphql.FetchRequestInput{
-				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/basic/spec",
-				Auth: &graphql.AuthInput{
-					Credential: &graphql.CredentialDataInput{
-						Basic: &graphql.BasicCredentialDataInput{
-							Username: "admin",
-							Password: "",
-						},
-					},
-				},
-			},
-			ShouldRefetch: false,
 		},
 		{
 			Name: "Success with oauth",
@@ -71,23 +53,6 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 					},
 				},
 			},
-			ShouldRefetch: true,
-		},
-		{
-			Name: "Wrong client credentials",
-			FetchRequest: &graphql.FetchRequestInput{
-				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/spec",
-				Auth: &graphql.AuthInput{
-					Credential: &graphql.CredentialDataInput{
-						Oauth: &graphql.OAuthCredentialDataInput{
-							ClientID:     "wrong_id",
-							ClientSecret: "wrong_secret",
-							URL:          testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/token",
-						},
-					},
-				},
-			},
-			ShouldRefetch: false,
 		},
 	}
 	for _, testCase := range testCases {
@@ -134,21 +99,95 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 			require.NoError(t, err)
 
 			require.NotNil(t, refetchedSpec.APISpec.Data)
-			if testCase.ShouldRefetch {
-				assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
-			} else {
-				assert.Equal(t, spec, *refetchedSpec.APISpec.Data)
-			}
+			assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
 
 			pkg = getPackage(t, ctx, dexGraphQLClient, tenant, application.ID, pkgID)
 
 			assertSpecInPackageNotNil(t, pkg)
-			if testCase.ShouldRefetch {
-				assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
-			} else {
-				assert.NotEqual(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
-			}
+			assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
+
 		})
 	}
 
+}
+
+
+func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
+
+	testCases := []struct {
+		Name         string
+		FetchRequest *graphql.FetchRequestInput
+	}{
+		{
+			Name: "API creation fails when fetch request has wrong basic credentials",
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/basic/spec",
+				Auth: &graphql.AuthInput{
+					Credential: &graphql.CredentialDataInput{
+						Basic: &graphql.BasicCredentialDataInput{
+							Username: "admin",
+							Password: "",
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "API creation fails when fetch request has wrong oauth client credentials",
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/spec",
+				Auth: &graphql.AuthInput{
+					Credential: &graphql.CredentialDataInput{
+						Oauth: &graphql.OAuthCredentialDataInput{
+							ClientID:     "wrong_id",
+							ClientSecret: "wrong_secret",
+							URL:          testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/token",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
+			ctx := context.Background()
+			tenant := testConfig.DefaultTenant
+
+			t.Log("Get Dex id_token")
+			dexToken, err := idtokenprovider.GetDexToken()
+			require.NoError(t, err)
+
+			dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+			appName := "app-test-package"
+			application := registerApplication(t, ctx, dexGraphQLClient, appName, tenant)
+			defer unregisterApplication(t, dexGraphQLClient, application.ID, tenant)
+
+			pkgName := "test-package"
+			pkgInput := graphql.PackageCreateInput{
+				Name: pkgName,
+				APIDefinitions: []*graphql.APIDefinitionInput{{
+					Name:      "test",
+					TargetURL: "https://target.url",
+					Spec: &graphql.APISpecInput{
+						Format:       graphql.SpecFormatJSON,
+						Type:         graphql.APISpecTypeOpenAPI,
+						FetchRequest: testCase.FetchRequest,
+					},
+				},
+				},
+			}
+
+			in, err := tc.Graphqlizer.PackageCreateInputToGQL(pkgInput)
+			require.NoError(t, err)
+
+			req := fixAddPackageRequest(application.ID, in)
+			var resp graphql.PackageExt
+
+			err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &resp)
+			require.Error(t, err)
+			require.Contains(t, err.Error(),"Invalid data PackageCreateInput")
+		})
+	}
 }
