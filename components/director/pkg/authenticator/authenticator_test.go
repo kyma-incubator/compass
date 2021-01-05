@@ -29,13 +29,20 @@ import (
 const envPrefix = "APP"
 
 func TestInitFromEnv(t *testing.T) {
+	authenticatorDomain := "example.domain.com"
+	authenticatorPrefix := "prefix!"
+	trustedIssuers := []authenticator.TrustedIssuer{
+		{
+			DomainURL:   authenticatorDomain,
+			ScopePrefix: authenticatorPrefix,
+		},
+	}
 	t.Run("When environment contains authenticator configuration", func(t *testing.T) {
 		os.Clearenv()
 		defer os.Clearenv()
-
 		expectedAuthenticator := authenticator.Config{
-			Name:        "TEST_AUTHN",
-			ScopePrefix: "prefix!",
+			Name:           "TEST_AUTHN",
+			TrustedIssuers: trustedIssuers,
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   "test-unique-key",
@@ -56,7 +63,10 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		issuersJSON, err := json.Marshal(trustedIssuers)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
 		require.NoError(t, err)
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
@@ -69,10 +79,18 @@ func TestInitFromEnv(t *testing.T) {
 	t.Run("When environment contains multiple authenticator configurations", func(t *testing.T) {
 		os.Clearenv()
 		defer os.Clearenv()
+		authenticatorDomain2 := "example.domain2.com"
+		authenticatorPrefix2 := "prefix!2"
+		trustedIssuers2 := []authenticator.TrustedIssuer{
+			{
+				DomainURL:   authenticatorDomain2,
+				ScopePrefix: authenticatorPrefix2,
+			},
+		}
 
 		expectedAuthenticator1 := authenticator.Config{
-			Name:        "TEST_AUTHN1",
-			ScopePrefix: "prefix!",
+			Name:           "TEST_AUTHN1",
+			TrustedIssuers: trustedIssuers,
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   "test-unique-key",
@@ -88,8 +106,8 @@ func TestInitFromEnv(t *testing.T) {
 		}
 
 		expectedAuthenticator2 := authenticator.Config{
-			Name:        "TEST_AUTHN2",
-			ScopePrefix: "prefix!",
+			Name:           "TEST_AUTHN2",
+			TrustedIssuers: trustedIssuers2,
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   "test-unique-key",
@@ -112,16 +130,22 @@ func TestInitFromEnv(t *testing.T) {
 		attributesJSON2, err := json.Marshal(expectedAuthenticator2.Attributes)
 		require.NoError(t, err)
 
+		issuersJSON1, err := json.Marshal(trustedIssuers)
+		require.NoError(t, err)
+
+		issuersJSON2, err := json.Marshal(trustedIssuers2)
+		require.NoError(t, err)
+
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator1.Name), string(attributesJSON1))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator1.Name), expectedAuthenticator1.ScopePrefix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator1.Name), string(issuersJSON1))
 		require.NoError(t, err)
 
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator2.Name), string(attributesJSON2))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator2.Name), expectedAuthenticator2.ScopePrefix)
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator2.Name), string(issuersJSON2))
 		require.NoError(t, err)
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)
@@ -145,8 +169,8 @@ func TestInitFromEnv(t *testing.T) {
 		defer os.Clearenv()
 
 		expectedAuthenticator := authenticator.Config{
-			Name:        "TEST_AUTHN",
-			ScopePrefix: "prefix!",
+			Name:           "TEST_AUTHN",
+			TrustedIssuers: trustedIssuers,
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   "test-unique-key",
@@ -167,7 +191,10 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		issuersJSON, err := json.Marshal(trustedIssuers)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
 		require.NoError(t, err)
 
 		_, err = authenticator.InitFromEnv(envPrefix)
@@ -180,8 +207,8 @@ func TestInitFromEnv(t *testing.T) {
 		defer os.Clearenv()
 
 		expectedAuthenticator := authenticator.Config{
-			Name:        "TEST_AUTHN",
-			ScopePrefix: "prefix!",
+			Name:           "TEST_AUTHN",
+			TrustedIssuers: trustedIssuers,
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   "test-unique-key",
@@ -202,7 +229,10 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		issuersJSON, err := json.Marshal(trustedIssuers)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
 		require.NoError(t, err)
 
 		_, err = authenticator.InitFromEnv(envPrefix)
@@ -215,7 +245,8 @@ func TestInitFromEnv(t *testing.T) {
 		defer os.Clearenv()
 
 		expectedAuthenticator := authenticator.Config{
-			Name: "TEST_AUTHN",
+			Name:           "TEST_AUTHN",
+			TrustedIssuers: trustedIssuers,
 			Attributes: authenticator.Attributes{
 				UniqueAttribute: authenticator.Attribute{
 					Key:   "test-unique-key",
@@ -236,7 +267,10 @@ func TestInitFromEnv(t *testing.T) {
 		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_ATTRIBUTES", expectedAuthenticator.Name), string(attributesJSON))
 		require.NoError(t, err)
 
-		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_SCOPE_PREFIX", expectedAuthenticator.Name), expectedAuthenticator.ScopePrefix)
+		issuersJSON, err := json.Marshal(trustedIssuers)
+		require.NoError(t, err)
+
+		err = os.Setenv(fmt.Sprintf("APP_%s_AUTHENTICATOR_TRUSTED_ISSUERS", expectedAuthenticator.Name), string(issuersJSON))
 		require.NoError(t, err)
 
 		authenticators, err := authenticator.InitFromEnv(envPrefix)

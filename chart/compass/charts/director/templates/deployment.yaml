@@ -118,8 +118,8 @@ spec:
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             {{- range $authenticatorName, $config := .Values.global.authenticators }}
             {{- if eq $config.enabled true }}
-            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_SCOPE_PREFIX
-              value: {{ $config.scopePrefix }}
+            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ $config.trusted_issuers }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.attributes | quote }}
             {{- end }}
