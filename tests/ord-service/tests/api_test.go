@@ -35,11 +35,9 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const TestApp = "mytestapp"
-
 func TestODService(t *testing.T) {
 	appInput := directorSchema.ApplicationRegisterInput{
-		Name:        TestApp,
+		Name:        "test-app",
 		Description: ptr.String("my application"),
 		Packages: []*directorSchema.PackageCreateInput{
 			{
@@ -137,38 +135,15 @@ func TestODService(t *testing.T) {
 	}
 
 	t.Run("Requesting Packages returns them as expected", func(t *testing.T) {
-		request, err := http.NewRequest(http.MethodGet, testConfig.ORDServiceURL+"/packages?$format=json", nil)
-		require.NoError(t, err)
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json")
 
-		response, err := httpClient.Do(request)
-
-		// THEN
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, response.StatusCode)
-
-		body, err := ioutil.ReadAll(response.Body)
-		require.NoError(t, err)
-
-		respBody := string(body)
 		require.Equal(t, len(appInput.Packages), len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, appInput.Packages[0].Name, gjson.Get(respBody, "value.0.title").String())
 		require.Equal(t, *appInput.Packages[0].Description, gjson.Get(respBody, "value.0.description").String())
 	})
 
 	t.Run("Requesting APIs and their specs returns them as expected", func(t *testing.T) {
-		request, err := http.NewRequest(http.MethodGet, testConfig.ORDServiceURL+"/apis?$format=json", nil)
-		require.NoError(t, err)
-
-		response, err := httpClient.Do(request)
-
-		// THEN
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, response.StatusCode)
-
-		body, err := ioutil.ReadAll(response.Body)
-		require.NoError(t, err)
-
-		respBody := string(body)
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json")
 
 		require.Equal(t, len(appInput.Packages[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
@@ -176,7 +151,8 @@ func TestODService(t *testing.T) {
 			name := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
 			require.NotEmpty(t, name)
 
-			expectedAPI := apisMap[name]
+			expectedAPI, exists := apisMap[name]
+			require.True(t, exists)
 
 			require.Equal(t, *expectedAPI.Description, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
 			require.Equal(t, expectedAPI.TargetURL, gjson.Get(respBody, fmt.Sprintf("value.%d.entryPoint", i)).String())
@@ -224,37 +200,17 @@ func TestODService(t *testing.T) {
 			require.NotEmpty(t, apiID)
 
 			specURL := specs[0].Get("url").String()
-			require.Equal(t, fmt.Sprintf("%s/api/%s/specification", testConfig.ORDServiceURL, apiID), specURL)
+			specPath := fmt.Sprintf("/api/%s/specification", apiID)
+			require.Equal(t, testConfig.ORDServiceURL+specPath, specURL)
 
-			specReq, err := http.NewRequest(http.MethodGet, specURL, nil)
-			require.NoError(t, err)
+			respBody := makeRequest(t, httpClient, specURL)
 
-			specResp, err := httpClient.Do(specReq)
-
-			require.NoError(t, err)
-			require.Equal(t, http.StatusOK, specResp.StatusCode)
-
-			body, err := ioutil.ReadAll(specResp.Body)
-			require.NoError(t, err)
-
-			require.Equal(t, string(*expectedAPI.Spec.Data), string(body))
+			require.Equal(t, string(*expectedAPI.Spec.Data), respBody)
 		}
 	})
 
 	t.Run("Requesting Events and their specs returns them as expected", func(t *testing.T) {
-		request, err := http.NewRequest(http.MethodGet, testConfig.ORDServiceURL+"/events?$format=json", nil)
-		require.NoError(t, err)
-
-		response, err := httpClient.Do(request)
-
-		// THEN
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, response.StatusCode)
-
-		body, err := ioutil.ReadAll(response.Body)
-		require.NoError(t, err)
-
-		respBody := string(body)
+		respBody := makeRequest(t, httpClient, "/events?$format=json")
 
 		require.Equal(t, len(appInput.Packages[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
@@ -262,7 +218,8 @@ func TestODService(t *testing.T) {
 			name := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
 			require.NotEmpty(t, name)
 
-			expectedEvent := eventsMap[name]
+			expectedEvent, exists := eventsMap[name]
+			require.True(t, exists)
 
 			require.Equal(t, *expectedEvent.Description, gjson.Get(respBody, fmt.Sprintf("value.%d.description", i)).String())
 			require.NotEmpty(t, gjson.Get(respBody, fmt.Sprintf("value.%d.partOfPackage", i)).String())
@@ -307,39 +264,186 @@ func TestODService(t *testing.T) {
 			require.NotEmpty(t, eventID)
 
 			specURL := specs[0].Get("url").String()
-			require.Equal(t, fmt.Sprintf("%s/event/%s/specification", testConfig.ORDServiceURL, eventID), specURL)
+			specPath := fmt.Sprintf("/api/%s/specification", eventID)
+			require.Equal(t, testConfig.ORDServiceURL+specPath, specURL)
 
-			specReq, err := http.NewRequest(http.MethodGet, specURL, nil)
-			require.NoError(t, err)
+			respBody := makeRequest(t, httpClient, specURL)
 
-			specResp, err := httpClient.Do(specReq)
+			require.Equal(t, string(*expectedEvent.Spec.Data), respBody)
+		}
+	})
 
-			require.NoError(t, err)
-			require.Equal(t, http.StatusOK, specResp.StatusCode)
+	// Paging:
+	t.Run("Requesting paging of Packages returns them as expected", func(t *testing.T) {
+		totalCount := len(appInput.Packages)
 
-			body, err := ioutil.ReadAll(specResp.Body)
-			require.NoError(t, err)
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$top=10&$skip=0&$format=json")
+		require.Equal(t, totalCount, len(gjson.Get(respBody, "value").Array()))
 
-			require.Equal(t, string(*expectedEvent.Spec.Data), string(body))
+		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$top=10&$skip=%d&$format=json", testConfig.ORDServiceURL, totalCount))
+		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
+	})
+
+	t.Run("Requesting paging of Package APIs returns them as expected", func(t *testing.T) {
+		totalCount := len(appInput.Packages[0].APIDefinitions)
+
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=apis($top=10;$skip=0)&$format=json")
+		require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.apis").Array()))
+
+		expectedItemCount := 1
+		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($top=10;$skip=%d)&$format=json", testConfig.ORDServiceURL, totalCount-expectedItemCount))
+		require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
+	})
+
+	t.Run("Requesting paging of Package Events returns them as expected", func(t *testing.T) {
+		totalCount := len(appInput.Packages[0].EventDefinitions)
+
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=events($top=10;$skip=0)&$format=json")
+		require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.events").Array()))
+
+		expectedItemCount := 1
+		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($top=10;$skip=%d)&$format=json", testConfig.ORDServiceURL, totalCount-expectedItemCount))
+		require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
+	})
+
+	// Filtering:
+	t.Run("Requesting filtering of Packages returns them as expected", func(t *testing.T) {
+		pkgName := appInput.Packages[0].Name
+
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$filter=(name eq '%s')&$format=json", testConfig.ORDServiceURL, pkgName))
+		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+
+		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$filter=(name ne '%s')&$format=json", testConfig.ORDServiceURL, pkgName))
+		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
+	})
+
+	t.Run("Requesting filtering of Package APIs returns them as expected", func(t *testing.T) {
+		totalCount := len(appInput.Packages[0].APIDefinitions)
+		apiName := appInput.Packages[0].APIDefinitions[0].Name
+
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(name eq '%s'))&$format=json", testConfig.ORDServiceURL, apiName))
+		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+
+		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(name ne '%s'))&$format=json", testConfig.ORDServiceURL, apiName))
+		require.Equal(t, totalCount-1, len(gjson.Get(respBody, "value.0.apis").Array()))
+	})
+
+	t.Run("Requesting filtering of Package Events returns them as expected", func(t *testing.T) {
+		totalCount := len(appInput.Packages[0].EventDefinitions)
+		eventName := appInput.Packages[0].EventDefinitions[0].Name
+
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(name eq '%s'))&$format=json", testConfig.ORDServiceURL, eventName))
+		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+
+		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(name ne '%s'))&$format=json", testConfig.ORDServiceURL, eventName))
+		require.Equal(t, totalCount-1, len(gjson.Get(respBody, "value.0.events").Array()))
+	})
+
+	// Projection:
+	t.Run("Requesting projection of Packages returns them as expected", func(t *testing.T) {
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$select=title&$format=json")
+		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+		require.Equal(t, appInput.Packages[0].Name, gjson.Get(respBody, "value.0.title").String())
+		require.Equal(t, false, gjson.Get(respBody, "value.0.description").Exists())
+	})
+
+	t.Run("Requesting projection of Package APIs returns them as expected", func(t *testing.T) {
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=apis($select=title)&$format=json")
+
+		apis := gjson.Get(respBody, "value.0.apis").Array()
+		require.Len(t, apis, len(appInput.Packages[0].APIDefinitions))
+
+		for i := range appInput.Packages[0].APIDefinitions {
+			name := apis[i].Get("title").String()
+			require.NotEmpty(t, name)
+
+			_, exists := apisMap[name]
+			require.True(t, exists)
+			require.False(t, apis[i].Get("description").Exists())
+		}
+	})
+
+	t.Run("Requesting projection of Package Events returns them as expected", func(t *testing.T) {
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=events($select=title)&$format=json")
+
+		events := gjson.Get(respBody, "value.0.events").Array()
+		require.Len(t, events, len(appInput.Packages[0].EventDefinitions))
+
+		for i := range appInput.Packages[0].APIDefinitions {
+			name := events[i].Get("title").String()
+			require.NotEmpty(t, name)
+
+			_, exists := eventsMap[name]
+			require.True(t, exists)
+			require.False(t, events[i].Get("description").Exists())
+		}
+	})
+
+	//Ordering:
+	t.Run("Requesting ordering of Packages returns them as expected", func(t *testing.T) {
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$orderby=title asc,description desc&$format=json")
+		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
+		require.Equal(t, appInput.Packages[0].Name, gjson.Get(respBody, "value.0.title").String())
+		require.Equal(t, appInput.Packages[0].Description, gjson.Get(respBody, "value.0.description").String())
+	})
+
+	t.Run("Requesting ordering of Package APIs returns them as expected", func(t *testing.T) {
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=apis($orderby=title asc,description desc)&$format=json")
+
+		apis := gjson.Get(respBody, "value.0.apis").Array()
+		require.Len(t, apis, len(appInput.Packages[0].APIDefinitions))
+
+		for i := range appInput.Packages[0].APIDefinitions {
+			name := apis[i].Get("title").String()
+			require.NotEmpty(t, name)
+
+			expectedAPI, exists := apisMap[name]
+			require.True(t, exists)
+
+			require.Equal(t, expectedAPI.Description, apis[i].Get("description").String())
+		}
+	})
+
+	t.Run("Requesting ordering of Package Events returns them as expected", func(t *testing.T) {
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=events($orderby=title asc,description desc)&$format=json")
+
+		events := gjson.Get(respBody, "value.0.events").Array()
+		require.Len(t, events, len(appInput.Packages[0].EventDefinitions))
+
+		for i := range appInput.Packages[0].EventDefinitions {
+			name := events[i].Get("title").String()
+			require.NotEmpty(t, name)
+
+			expectedEvent, exists := eventsMap[name]
+			require.True(t, exists)
+
+			require.Equal(t, expectedEvent.Description, events[i].Get("description").String())
 		}
 	})
 
 	t.Run("Errors generate user-friendly message", func(t *testing.T) {
-		request, err := http.NewRequest(http.MethodGet, testConfig.ORDServiceURL+"/test?$format=json", nil)
-		require.NoError(t, err)
-
-		response, err := httpClient.Do(request)
-
-		// THEN
-		require.NoError(t, err)
-		require.Equal(t, http.StatusNotFound, response.StatusCode)
-
-		body, err := ioutil.ReadAll(response.Body)
-		require.NoError(t, err)
-
-		respBody := string(body)
+		respBody := makeRequestWithStatusExpect(t, httpClient, "/test?$format=json", http.StatusNotFound)
 
 		require.Contains(t, gjson.Get(respBody, "error.message").String(), "Use odata-debug query parameter with value one of the following formats: json,html,download for more information")
 	})
 
+}
+
+func makeRequest(t *testing.T, httpClient *http.Client, url string) string {
+	return makeRequestWithStatusExpect(t, httpClient, url, http.StatusOK)
+}
+
+func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url string, expectedHTTPStatus int) string {
+	request, err := http.NewRequest(http.MethodGet, url, nil)
+	require.NoError(t, err)
+
+	response, err := httpClient.Do(request)
+
+	require.NoError(t, err)
+	require.Equal(t, expectedHTTPStatus, response.StatusCode)
+
+	body, err := ioutil.ReadAll(response.Body)
+	require.NoError(t, err)
+
+	return string(body)
 }
