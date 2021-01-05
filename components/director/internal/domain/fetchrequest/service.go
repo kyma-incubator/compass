@@ -12,6 +12,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
+	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -20,6 +22,7 @@ import (
 type service struct {
 	repo         FetchRequestRepository
 	client       *http.Client
+	timestampGen timestamp.Generator
 }
 
 //go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
@@ -31,6 +34,7 @@ func NewService(repo FetchRequestRepository, client *http.Client) *service {
 	return &service{
 		repo:         repo,
 		client:       client,
+		timestampGen: timestamp.DefaultGenerator(),
 	}
 }
 
@@ -51,7 +55,7 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 	err := s.validateFetchRequest(fr)
 	if err != nil {
 		log.C(ctx).WithError(err).Error()
-		return nil, fixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()))
+		return nil, FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()), s.timestampGen())
 	}
 
 	var resp *http.Response
@@ -63,7 +67,7 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while fetching Spec.")
-		return nil, fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec: %s", err.Error())))
+		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec: %s", err.Error())), s.timestampGen())
 	}
 
 	defer func() {
@@ -78,17 +82,17 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 	if resp.StatusCode != http.StatusOK {
 		errMsg := fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)
 		log.C(ctx).Errorf(errMsg)
-		return nil, fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)))
+		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", resp.StatusCode)), s.timestampGen())
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while reading Spec.")
-		return nil, fixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading API Spec: %s", err.Error())))
+		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading API Spec: %s", err.Error())), s.timestampGen())
 	}
 
 	spec := string(body)
-	return &spec, fixStatus(model.FetchRequestStatusConditionSucceeded, nil)
+	return &spec, FixStatus(model.FetchRequestStatusConditionSucceeded, nil, s.timestampGen())
 }
 
 func (s *service) validateFetchRequest(fr *model.FetchRequest) error {
@@ -153,10 +157,10 @@ func (s *service) requestWithoutCredentials(fr *model.FetchRequest) (*http.Respo
 	return s.client.Do(req)
 }
 
-func fixStatus(condition model.FetchRequestStatusCondition, message *string) *model.FetchRequestStatus {
+func FixStatus(condition model.FetchRequestStatusCondition, message *string, timestamp time.Time) *model.FetchRequestStatus {
 	return &model.FetchRequestStatus{
 		Condition: condition,
 		Message:   message,
-		Timestamp: time.Now(),
+		Timestamp: timestamp,
 	}
 }

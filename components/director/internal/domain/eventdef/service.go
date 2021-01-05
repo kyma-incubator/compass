@@ -160,8 +160,6 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		eventAPI.Spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 	}
 
-	eventAPI = in.ToEventDefinitionWithinPackage(id, eventAPI.PackageID, tnt)
-
 	err = s.eventAPIRepo.Update(ctx, eventAPI)
 	if err != nil {
 		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
