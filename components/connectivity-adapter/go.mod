@@ -1,6 +1,6 @@
 module github.com/kyma-incubator/compass/components/connectivity-adapter
 
-go 1.13
+go 1.15
 
 require (
 	github.com/avast/retry-go v2.4.3+incompatible
