@@ -16,8 +16,8 @@ import (
 func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 
 	testCases := []struct {
-		Name          string
-		FetchRequest  *graphql.FetchRequestInput
+		Name         string
+		FetchRequest *graphql.FetchRequestInput
 	}{
 		{
 			Name: "Success without credentials",
@@ -111,7 +111,6 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 
 }
 
-
 func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 
 	testCases := []struct {
@@ -187,7 +186,7 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 
 			err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &resp)
 			require.Error(t, err)
-			require.Contains(t, err.Error(),"Invalid data PackageCreateInput")
+			require.Contains(t, err.Error(), "Invalid data PackageCreateInput")
 		})
 	}
 }
