@@ -16,14 +16,16 @@ import (
 func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 
 	testCases := []struct {
-		Name         string
-		FetchRequest *graphql.FetchRequestInput
+		Name          string
+		FetchRequest  *graphql.FetchRequestInput
+		ShouldRefetch bool
 	}{
 		{
 			Name: "Success without credentials",
 			FetchRequest: &graphql.FetchRequestInput{
 				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/unsecured/spec",
 			},
+			ShouldRefetch: true,
 		},
 		{
 			Name: "Success with basic credentials",
@@ -38,6 +40,22 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 					},
 				},
 			},
+			ShouldRefetch: true,
+		},
+		{
+			Name: "Wrong basic credentials",
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/basic/spec",
+				Auth: &graphql.AuthInput{
+					Credential: &graphql.CredentialDataInput{
+						Basic: &graphql.BasicCredentialDataInput{
+							Username: "admin",
+							Password: "",
+						},
+					},
+				},
+			},
+			ShouldRefetch: false,
 		},
 		{
 			Name: "Success with oauth",
@@ -53,6 +71,23 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 					},
 				},
 			},
+			ShouldRefetch: true,
+		},
+		{
+			Name: "Wrong client credentials",
+			FetchRequest: &graphql.FetchRequestInput{
+				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/spec",
+				Auth: &graphql.AuthInput{
+					Credential: &graphql.CredentialDataInput{
+						Oauth: &graphql.OAuthCredentialDataInput{
+							ClientID:     "wrong_id",
+							ClientSecret: "wrong_secret",
+							URL:          testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/token",
+						},
+					},
+				},
+			},
+			ShouldRefetch: false,
 		},
 	}
 	for _, testCase := range testCases {
@@ -99,12 +134,20 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 			require.NoError(t, err)
 
 			require.NotNil(t, refetchedSpec.APISpec.Data)
-			assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
+			if testCase.ShouldRefetch {
+				assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
+			} else {
+				assert.Equal(t, spec, *refetchedSpec.APISpec.Data)
+			}
 
 			pkg = getPackage(t, ctx, dexGraphQLClient, tenant, application.ID, pkgID)
 
 			assertSpecInPackageNotNil(t, pkg)
-			assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
+			if testCase.ShouldRefetch {
+				assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
+			} else {
+				assert.NotEqual(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
+			}
 		})
 	}
 
