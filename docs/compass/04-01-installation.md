@@ -6,7 +6,108 @@ You can install Compass both on a cluster and on your local machine in two modes
 
 Compass as a central Management Plane cluster requires minimal Kyma installation. Steps to perform the installation vary depending on the installation environment.
 
+#### Prerequisites
+
+In case certificate rotation is needed, you can install [cert manager](https://github.com/jetstack/cert-manager) to take care of certificates.
+
+The following certificates can be rotated:
+* Connector intermediate certificate that is used to issue Application and Runtime client certificates.
+* Istio gateway certificate for the regular HTTPS gateway.
+* Istio gateway certificate for the MTLS gateway.
+
+##### Create issuers
+
+To issue certificates, the cert manager requires a resource called issuer.
+
+Example with self provided CA certificate:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: <name>
+spec:
+  ca:
+    secretName: "<secret-name-containing-the-ca-cert>"
+```
+
+Example with **Let's encrypt** issuer:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: <name>
+spec:
+  acme:
+    email: <lets_encrypt_email>
+    server: <lets_encrypt_server_url>
+    privateKeySecretRef:
+      name: <lets_encrypt_secret>
+    solvers:
+      - dns01:
+          clouddns:
+            project: <project_name>
+            serviceAccountSecretRef:
+              name: <secret_name>
+              key: <secret_key>
+```
+
+For more inforamtion about the different cluster issuer configurations, see the following document: [ACME Issuer](https://cert-manager.io/docs/configuration/acme/)
+
+##### Connector certificate
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: <name>
+  namespace: <namespace>
+spec:
+  secretName: "<secret-to-put-the-generated-certificate>"
+  duration: 3d
+  renewBefore: 1d
+  issuerRef:
+    name: <name-of-issuer-to-issue-certificates-from>
+    kind: ClusterIssuer
+  commonName: Kyma
+  isCA: true
+  keyAlgorithm: rsa
+  keySize: 4096
+  usages:
+    - "digital signature"
+    - "key encipherment"
+    - "cert sign"
+
+```
+
+Cert manager's role is to rotate certificates as defined in the resources. Make sure that the certificate as shown in the example is specified as `isCA: true`. This means that the certificate is used to issue other certificates.
+
+##### Domain certificates
+
+Cert manager can also rotate Istio gateway certificates. The following example shows such certificate:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: <name>
+  namespace: <namespace>
+spec:
+  secretName: "<secret-to-put-the-generated-certificate>"
+  issuerRef:
+    name: <name-of-issuer-to-issue-certificates-from> (this can be Let's encrypt issuer)
+    kind: ClusterIssuer
+  commonName: <wildcard_domain_name>
+  dnsNames:
+    - <wildcard_domain_name>
+    - <alternative_wildcard_domain_name>
+```
+
+In this case, as this certificate is not used to issue other certificates, it is not a CA certificate. Additionally, its validity depends on the settings by the issuer (for example **Let's encrypt**).
+
 ### Cluster installation
+
 
 To install Compass as central Management Plane on a cluster, follow these steps:
 
