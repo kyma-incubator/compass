@@ -17,13 +17,13 @@ global:
       version: "PR-1657"
     connectivity_adapter:
       dir:
-      version: "PR-1661"
+      version: "PR-1669"
     pairing_adapter:
       dir:
       version: "PR-1661"
     director:
       dir:
-      version: "PR-1665"
+      version: "PR-1670"
     gateway:
       dir:
       version: "PR-1659"
