@@ -302,8 +302,8 @@ func TestService_CreateToPackage(t *testing.T) {
 				return repo
 			},
 			FetchRequestService: func() *automock.FetchRequestService {
-				svc:=&automock.FetchRequestService{}
-				svc.On("HandleSpec", ctx,fixModelFetchRequest(frID, frURL, timestamp)).Return(&data)
+				svc := &automock.FetchRequestService{}
+				svc.On("HandleSpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(&data)
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -328,8 +328,8 @@ func TestService_CreateToPackage(t *testing.T) {
 				return repo
 			},
 			FetchRequestService: func() *automock.FetchRequestService {
-				svc:=&automock.FetchRequestService{}
-				svc.On("HandleSpec", ctx,fixModelFetchRequest(frID, frURL, timestamp)).Return(&data)
+				svc := &automock.FetchRequestService{}
+				svc.On("HandleSpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(&data)
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -353,8 +353,8 @@ func TestService_CreateToPackage(t *testing.T) {
 				return repo
 			},
 			FetchRequestService: func() *automock.FetchRequestService {
-				svc:=&automock.FetchRequestService{}
-				svc.On("HandleSpec", ctx,fixModelFetchRequest(frID, frURL, timestamp)).Return(&data)
+				svc := &automock.FetchRequestService{}
+				svc.On("HandleSpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(&data)
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -372,7 +372,7 @@ func TestService_CreateToPackage(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			idSvc := testCase.UIDServiceFn()
-			fetchRequestService:= testCase.FetchRequestService()
+			fetchRequestService := testCase.FetchRequestService()
 			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			svc := document.NewService(repo, fetchRequestRepo, idSvc, fetchRequestService)
 			svc.SetTimestampGen(func() time.Time { return timestamp })

@@ -5,12 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/stretchr/testify/mock"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest/automock"
 

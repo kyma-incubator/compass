@@ -3,9 +3,10 @@ package eventdef_test
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -875,12 +876,12 @@ func TestService_RefetchAPISpec(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name            string
-		RepositoryFn    func() *automock.EventAPIRepository
+		Name               string
+		RepositoryFn       func() *automock.EventAPIRepository
 		FetchRequestRepoFn func() *automock.FetchRequestRepository
 		FetchRequestSvcFn  func() *automock.FetchRequestService
-		ExpectedAPISpec *model.EventSpec
-		ExpectedErr     error
+		ExpectedAPISpec    *model.EventSpec
+		ExpectedErr        error
 	}{
 		{
 			Name: "Success",

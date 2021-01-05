@@ -3,12 +3,13 @@ package fetchrequest
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -129,13 +130,13 @@ func (s *service) requestWithCredentials(ctx context.Context, fr *model.FetchReq
 	}
 
 	if fr.Auth.Credential.Oauth != nil {
-		resp, err = s.secureClient(ctx,fr).Do(req)
+		resp, err = s.secureClient(ctx, fr).Do(req)
 	}
 
 	return resp, err
 }
 
-func (s *service) secureClient(ctx context.Context, fr *model.FetchRequest) *http.Client{
+func (s *service) secureClient(ctx context.Context, fr *model.FetchRequest) *http.Client {
 	conf := &clientcredentials.Config{
 		ClientID:     fr.Auth.Credential.Oauth.ClientID,
 		ClientSecret: fr.Auth.Credential.Oauth.ClientSecret,
