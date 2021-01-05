@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	urlpkg "net/url"
 	"testing"
 	"time"
 
@@ -35,7 +36,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func TestODService(t *testing.T) {
+func TestORDService(t *testing.T) {
 	appInput := directorSchema.ApplicationRegisterInput{
 		Name:        "test-app",
 		Description: ptr.String("my application"),
@@ -161,12 +162,14 @@ func TestODService(t *testing.T) {
 			releaseStatus := gjson.Get(respBody, fmt.Sprintf("value.%d.releaseStatus", i)).String()
 			switch releaseStatus {
 			case "decommissioned":
-				require.NotNil(t, *expectedAPI.Version.ForRemoval)
+				require.True(t, *expectedAPI.Version.ForRemoval)
+				require.False(t, *expectedAPI.Version.Deprecated)
 			case "deprecated":
-				require.NotNil(t, *expectedAPI.Version.Deprecated)
+				require.True(t, *expectedAPI.Version.ForRemoval)
+				require.True(t, *expectedAPI.Version.Deprecated)
 			case "active":
-				require.Nil(t, *expectedAPI.Version.ForRemoval)
-				require.Nil(t, *expectedAPI.Version.Deprecated)
+				require.False(t, *expectedAPI.Version.ForRemoval)
+				require.False(t, *expectedAPI.Version.Deprecated)
 			default:
 				panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
 			}
@@ -210,7 +213,7 @@ func TestODService(t *testing.T) {
 	})
 
 	t.Run("Requesting Events and their specs returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, "/events?$format=json")
+		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json")
 
 		require.Equal(t, len(appInput.Packages[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
@@ -227,12 +230,14 @@ func TestODService(t *testing.T) {
 			releaseStatus := gjson.Get(respBody, fmt.Sprintf("value.%d.releaseStatus", i)).String()
 			switch releaseStatus {
 			case "decommissioned":
-				require.NotNil(t, *expectedEvent.Version.ForRemoval)
+				require.True(t, *expectedEvent.Version.ForRemoval)
+				require.False(t, *expectedEvent.Version.Deprecated)
 			case "deprecated":
-				require.NotNil(t, *expectedEvent.Version.Deprecated)
+				require.True(t, *expectedEvent.Version.ForRemoval)
+				require.True(t, *expectedEvent.Version.Deprecated)
 			case "active":
-				require.Nil(t, *expectedEvent.Version.ForRemoval)
-				require.Nil(t, *expectedEvent.Version.Deprecated)
+				require.False(t, *expectedEvent.Version.ForRemoval)
+				require.False(t, *expectedEvent.Version.Deprecated)
 			default:
 				panic(errors.New(fmt.Sprintf("Unknown release status: %s", releaseStatus)))
 			}
@@ -310,10 +315,12 @@ func TestODService(t *testing.T) {
 	t.Run("Requesting filtering of Packages returns them as expected", func(t *testing.T) {
 		pkgName := appInput.Packages[0].Name
 
-		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$filter=(name eq '%s')&$format=json", testConfig.ORDServiceURL, pkgName))
+		escapedFilterValue := urlpkg.PathEscape(fmt.Sprintf("title eq '%s'", pkgName))
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$filter=(%s)&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 
-		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$filter=(name ne '%s')&$format=json", testConfig.ORDServiceURL, pkgName))
+		escapedFilterValue = urlpkg.PathEscape(fmt.Sprintf("title ne '%s'", pkgName))
+		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$filter=(%s)&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 	})
 
@@ -321,10 +328,12 @@ func TestODService(t *testing.T) {
 		totalCount := len(appInput.Packages[0].APIDefinitions)
 		apiName := appInput.Packages[0].APIDefinitions[0].Name
 
-		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(name eq '%s'))&$format=json", testConfig.ORDServiceURL, apiName))
+		escapedFilterValue := urlpkg.PathEscape(fmt.Sprintf("title eq '%s'", apiName))
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 
-		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(name ne '%s'))&$format=json", testConfig.ORDServiceURL, apiName))
+		escapedFilterValue = urlpkg.PathEscape(fmt.Sprintf("title ne '%s'", apiName))
+		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
 		require.Equal(t, totalCount-1, len(gjson.Get(respBody, "value.0.apis").Array()))
 	})
 
@@ -332,10 +341,12 @@ func TestODService(t *testing.T) {
 		totalCount := len(appInput.Packages[0].EventDefinitions)
 		eventName := appInput.Packages[0].EventDefinitions[0].Name
 
-		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(name eq '%s'))&$format=json", testConfig.ORDServiceURL, eventName))
+		escapedFilterValue := urlpkg.PathEscape(fmt.Sprintf("title eq '%s'", eventName))
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 
-		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(name ne '%s'))&$format=json", testConfig.ORDServiceURL, eventName))
+		escapedFilterValue = urlpkg.PathEscape(fmt.Sprintf("title ne '%s'", eventName))
+		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
 		require.Equal(t, totalCount-1, len(gjson.Get(respBody, "value.0.events").Array()))
 	})
 
@@ -369,7 +380,7 @@ func TestODService(t *testing.T) {
 		events := gjson.Get(respBody, "value.0.events").Array()
 		require.Len(t, events, len(appInput.Packages[0].EventDefinitions))
 
-		for i := range appInput.Packages[0].APIDefinitions {
+		for i := range appInput.Packages[0].EventDefinitions {
 			name := events[i].Get("title").String()
 			require.NotEmpty(t, name)
 
@@ -381,14 +392,16 @@ func TestODService(t *testing.T) {
 
 	//Ordering:
 	t.Run("Requesting ordering of Packages returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$orderby=title asc,description desc&$format=json")
+		escapedOrderByValue := urlpkg.PathEscape("title asc,description desc")
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$orderby=%s&$format=json", testConfig.ORDServiceURL, escapedOrderByValue))
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, appInput.Packages[0].Name, gjson.Get(respBody, "value.0.title").String())
-		require.Equal(t, appInput.Packages[0].Description, gjson.Get(respBody, "value.0.description").String())
+		require.Equal(t, *appInput.Packages[0].Description, gjson.Get(respBody, "value.0.description").String())
 	})
 
 	t.Run("Requesting ordering of Package APIs returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=apis($orderby=title asc,description desc)&$format=json")
+		escapedOrderByValue := urlpkg.PathEscape("title asc,description desc")
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($orderby=%s)&$format=json", testConfig.ORDServiceURL, escapedOrderByValue))
 
 		apis := gjson.Get(respBody, "value.0.apis").Array()
 		require.Len(t, apis, len(appInput.Packages[0].APIDefinitions))
@@ -400,12 +413,13 @@ func TestODService(t *testing.T) {
 			expectedAPI, exists := apisMap[name]
 			require.True(t, exists)
 
-			require.Equal(t, expectedAPI.Description, apis[i].Get("description").String())
+			require.Equal(t, *expectedAPI.Description, apis[i].Get("description").String())
 		}
 	})
 
 	t.Run("Requesting ordering of Package Events returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=events($orderby=title asc,description desc)&$format=json")
+		escapedOrderByValue := urlpkg.PathEscape("title asc,description desc")
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($orderby=%s)&$format=json", testConfig.ORDServiceURL, escapedOrderByValue))
 
 		events := gjson.Get(respBody, "value.0.events").Array()
 		require.Len(t, events, len(appInput.Packages[0].EventDefinitions))
@@ -417,12 +431,12 @@ func TestODService(t *testing.T) {
 			expectedEvent, exists := eventsMap[name]
 			require.True(t, exists)
 
-			require.Equal(t, expectedEvent.Description, events[i].Get("description").String())
+			require.Equal(t, *expectedEvent.Description, events[i].Get("description").String())
 		}
 	})
 
 	t.Run("Errors generate user-friendly message", func(t *testing.T) {
-		respBody := makeRequestWithStatusExpect(t, httpClient, "/test?$format=json", http.StatusNotFound)
+		respBody := makeRequestWithStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/test?$format=json", http.StatusNotFound)
 
 		require.Contains(t, gjson.Get(respBody, "error.message").String(), "Use odata-debug query parameter with value one of the following formats: json,html,download for more information")
 	})
