@@ -269,7 +269,7 @@ func TestORDService(t *testing.T) {
 			require.NotEmpty(t, eventID)
 
 			specURL := specs[0].Get("url").String()
-			specPath := fmt.Sprintf("/api/%s/specification", eventID)
+			specPath := fmt.Sprintf("/event/%s/specification", eventID)
 			require.Equal(t, testConfig.ORDServiceURL+specPath, specURL)
 
 			respBody := makeRequest(t, httpClient, specURL)

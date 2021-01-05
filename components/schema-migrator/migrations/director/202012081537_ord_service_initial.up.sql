@@ -22,8 +22,8 @@ $$
 BEGIN
     NEW.release_status := CASE
                               WHEN NEW.release_status IS NOT NULL THEN NEW.release_status
-                              WHEN NEW.version_deprecated IS NULL AND NEW.version_for_removal THEN 'decommissioned'
                               WHEN NEW.version_deprecated THEN 'deprecated'
+                              WHEN NEW.version_for_removal THEN 'decommissioned'
                               ELSE 'active' END;
 
     NEW.version_for_removal := CASE
