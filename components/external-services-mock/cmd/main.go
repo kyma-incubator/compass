@@ -102,8 +102,8 @@ func basicAuthMiddleware(next http.Handler) http.Handler {
 			httphelpers.WriteError(w, errors.New("No Basic credentials"), http.StatusUnauthorized)
 			return
 		}
-		if len(username) == 0 || len(password) == 0 {
-			httphelpers.WriteError(w, errors.New("Empty credentials"), http.StatusUnauthorized)
+		if username != "admin" || password != "admin" {
+			httphelpers.WriteError(w, errors.New("Bad credentials"), http.StatusUnauthorized)
 			return
 		}
 

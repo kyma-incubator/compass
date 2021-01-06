@@ -124,8 +124,8 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 				Auth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Basic: &graphql.BasicCredentialDataInput{
-							Username: "admin",
-							Password: "",
+							Username: "wrong_username",
+							Password: "wrong_password",
 						},
 					},
 				},
