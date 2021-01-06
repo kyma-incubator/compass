@@ -163,9 +163,9 @@ func TestORDService(t *testing.T) {
 			switch releaseStatus {
 			case "decommissioned":
 				require.True(t, *expectedAPI.Version.ForRemoval)
-				require.False(t, *expectedAPI.Version.Deprecated)
+				require.True(t, *expectedAPI.Version.Deprecated)
 			case "deprecated":
-				require.True(t, *expectedAPI.Version.ForRemoval)
+				require.False(t, *expectedAPI.Version.ForRemoval)
 				require.True(t, *expectedAPI.Version.Deprecated)
 			case "active":
 				require.False(t, *expectedAPI.Version.ForRemoval)
@@ -231,9 +231,9 @@ func TestORDService(t *testing.T) {
 			switch releaseStatus {
 			case "decommissioned":
 				require.True(t, *expectedEvent.Version.ForRemoval)
-				require.False(t, *expectedEvent.Version.Deprecated)
+				require.True(t, *expectedEvent.Version.Deprecated)
 			case "deprecated":
-				require.True(t, *expectedEvent.Version.ForRemoval)
+				require.False(t, *expectedEvent.Version.ForRemoval)
 				require.True(t, *expectedEvent.Version.Deprecated)
 			case "active":
 				require.False(t, *expectedEvent.Version.ForRemoval)

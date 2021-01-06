@@ -88,7 +88,7 @@ func FixActiveVersion() *graphql.VersionInput {
 func FixDecomissionedVersion() *graphql.VersionInput {
 	return &graphql.VersionInput{
 		Value:      "v1",
-		Deprecated: ptr.Bool(false),
+		Deprecated: ptr.Bool(true),
 		ForRemoval: ptr.Bool(true),
 	}
 }
@@ -97,7 +97,7 @@ func FixDepracatedVersion() *graphql.VersionInput {
 	return &graphql.VersionInput{
 		Value:           "v1",
 		Deprecated:      ptr.Bool(true),
-		ForRemoval:      ptr.Bool(true),
+		ForRemoval:      ptr.Bool(false),
 		DeprecatedSince: ptr.String("v5"),
 	}
 }
