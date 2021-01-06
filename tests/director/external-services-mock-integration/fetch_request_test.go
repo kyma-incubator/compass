@@ -22,13 +22,13 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 		{
 			Name: "Success without credentials",
 			FetchRequest: &graphql.FetchRequestInput{
-				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/unsecured/spec",
+				URL: testConfig.ExternalServicesMockBaseURL + "external-api/unsecured/spec",
 			},
 		},
 		{
 			Name: "Success with basic credentials",
 			FetchRequest: &graphql.FetchRequestInput{
-				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/basic/spec",
+				URL: testConfig.ExternalServicesMockBaseURL + "external-api/secured/basic/spec",
 				Auth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Basic: &graphql.BasicCredentialDataInput{
@@ -42,13 +42,13 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 		{
 			Name: "Success with oauth",
 			FetchRequest: &graphql.FetchRequestInput{
-				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/spec",
+				URL: testConfig.ExternalServicesMockBaseURL + "external-api/secured/oauth/spec",
 				Auth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Oauth: &graphql.OAuthCredentialDataInput{
 							ClientID:     "client_id",
 							ClientSecret: "client_secret",
-							URL:          testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/token",
+							URL:          testConfig.ExternalServicesMockBaseURL + "oauth/token",
 						},
 					},
 				},
@@ -120,7 +120,7 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 		{
 			Name: "API creation fails when fetch request has wrong basic credentials",
 			FetchRequest: &graphql.FetchRequestInput{
-				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/basic/spec",
+				URL: testConfig.ExternalServicesMockBaseURL + "external-api/secured/basic/spec",
 				Auth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Basic: &graphql.BasicCredentialDataInput{
@@ -134,13 +134,13 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 		{
 			Name: "API creation fails when fetch request has wrong oauth client credentials",
 			FetchRequest: &graphql.FetchRequestInput{
-				URL: testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/spec",
+				URL: testConfig.ExternalServicesMockBaseURL + "external-api/secured/oauth/spec",
 				Auth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Oauth: &graphql.OAuthCredentialDataInput{
 							ClientID:     "wrong_id",
 							ClientSecret: "wrong_secret",
-							URL:          testConfig.ExternalServicesMockBaseURL + "/external-api/secured/oauth/token",
+							URL:          testConfig.ExternalServicesMockBaseURL + "oauth/token",
 						},
 					},
 				},
@@ -178,15 +178,13 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 				},
 			}
 
-			in, err := tc.Graphqlizer.PackageCreateInputToGQL(pkgInput)
-			require.NoError(t, err)
+			pkg := createPackageWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, pkgInput)
+			defer deletePackage(t, ctx, dexGraphQLClient, tenant, pkg.ID)
 
-			req := fixAddPackageRequest(application.ID, in)
-			var resp graphql.PackageExt
-
-			err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &resp)
-			require.Error(t, err)
-			require.Contains(t, err.Error(), "Invalid data PackageCreateInput")
+			assert.True(t, len(pkg.APIDefinitions.Data) > 0)
+			assert.NotNil(t, pkg.APIDefinitions.Data[0])
+			assert.NotNil(t, pkg.APIDefinitions.Data[0].Spec)
+			assert.Nil(t, pkg.APIDefinitions.Data[0].Spec.Data)
 		})
 	}
 }

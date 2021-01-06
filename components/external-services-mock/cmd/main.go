@@ -63,13 +63,13 @@ func initHTTP(cfg config) http.Handler {
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
 	router.HandleFunc("/audit-log/v2/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
+	router.HandleFunc("/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
 
 	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
 
 	oauthRouter := router.PathPrefix("/external-api/secured/oauth").Subrouter()
 	oauthRouter.Use(oauthMiddleware)
 	oauthRouter.HandleFunc("/spec", apispec.HandleFunc)
-	oauthRouter.HandleFunc("/token", oauthHandler.Generate).Methods(http.MethodPost)
 
 	basicAuthRouter := router.PathPrefix("/external-api/secured/basic").Subrouter()
 	basicAuthRouter.Use(basicAuthMiddleware)
