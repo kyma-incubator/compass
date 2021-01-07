@@ -40,10 +40,10 @@ spec:
       - uri:
           prefix: {{ .Values.global.ordService.prefix }}
       route:
-      - destination:
-          host: {{ .Values.global.ordService.host }}
-          port:
-            number: {{ .Values.global.ordService.port }}
+        - destination:
+            host: {{ .Values.global.oathkeeper.host }}
+            port:
+              number: {{ .Values.global.oathkeeper.port }}
     - match:
       - uri:
           exact: {{ .Values.global.director.prefix }}
