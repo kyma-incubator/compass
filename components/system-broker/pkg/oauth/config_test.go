@@ -37,15 +37,6 @@ func TestConfig_Validate(t *testing.T) {
 			},
 		},
 		{
-			Msg: "Missing TokenValue should be invalid when running locally",
-			ConfigProvider: func() *oauth.Config {
-				config := oauth.DefaultConfig()
-				config.Local = true
-				config.TokenValue = ""
-				return config
-			},
-		},
-		{
 			Msg: "Negative WaitSecretTimeout should be invalid",
 			ConfigProvider: func() *oauth.Config {
 				config := oauth.DefaultConfig()
@@ -54,10 +45,26 @@ func TestConfig_Validate(t *testing.T) {
 			},
 		},
 		{
-			Msg: "Negative WaitSecretTimeout should be invalid",
+			Msg: "Zero WaitSecretTimeout should be invalid",
 			ConfigProvider: func() *oauth.Config {
 				config := oauth.DefaultConfig()
 				config.WaitSecretTimeout = 0
+				return config
+			},
+		},
+		{
+			Msg: "Negative WaitKubeMapperTimeout should be invalid",
+			ConfigProvider: func() *oauth.Config {
+				config := oauth.DefaultConfig()
+				config.WaitKubeMapperTimeout = -1
+				return config
+			},
+		},
+		{
+			Msg: "Zero WaitKubeMapperTimeout should be invalid",
+			ConfigProvider: func() *oauth.Config {
+				config := oauth.DefaultConfig()
+				config.WaitKubeMapperTimeout = 0
 				return config
 			},
 		},

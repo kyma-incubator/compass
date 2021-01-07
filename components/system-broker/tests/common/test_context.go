@@ -191,7 +191,7 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter())
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
-	sbServer := server.New(cfg.Server, uuid.NewService(), osbApi, specsApi)
+	sbServer := server.New(cfg.Server, uuid.NewService(), []string{""}, osbApi, specsApi)
 
 	sbServer.Addr = "localhost:" + strconv.Itoa(cfg.Server.Port) // Needed to avoid annoying macOS permissions popup
 

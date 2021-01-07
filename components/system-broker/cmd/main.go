@@ -59,13 +59,13 @@ func main() {
 
 	uuidSrv := uuid.NewService()
 
-	directorGraphQLClient, err := prepareGqlClient(cfg, uuidSrv)
+	directorGraphQLClient, err := prepareGqlClient(ctx, cfg, uuidSrv)
 	fatalOnError(err)
 
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, log.NewDefaultLagerAdapter())
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
-	srv := server.New(cfg.Server, uuidSrv, osbApi, specsApi)
+	srv := server.New(cfg.Server, uuidSrv, cfg.HttpClient.ForwardHeaders, osbApi, specsApi)
 
 	srv.Start(ctx)
 }
@@ -76,17 +76,22 @@ func fatalOnError(err error) {
 	}
 }
 
-func prepareGqlClient(cfg *config.Config, uudSrv uuid.Service) (*director.GraphQLClient, error) {
+func prepareGqlClient(ctx context.Context, cfg *config.Config, uudSrv uuid.Service) (*director.GraphQLClient, error) {
 	// prepare raw http transport and http client based on cfg
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
 	httpClient := httputil.NewClient(cfg.HttpClient.Timeout, httpTransport)
 
-	oauthTokenProvider, err := oauth.NewTokenProvider(cfg.OAuthProvider, httpClient)
+	tokenProviders := make([]httputil.TokenProvider, 0)
+	tokenProviderFromHeader := oauth.NewTokenProviderFromHeader()
+	tokenProviders = append(tokenProviders, tokenProviderFromHeader)
+	tokenProviderFromSecret, err := oauth.NewTokenProviderFromSecret(cfg.OAuthProvider, httpClient, cfg.HttpClient.Timeout, oauth.PrepareK8sClient)
 	if err != nil {
-		return nil, err
+		log.C(ctx).Warnf("Could not initialize token provider from secret: %s", err.Error())
+	} else {
+		tokenProviders = append(tokenProviders, tokenProviderFromSecret)
 	}
 
-	securedTransport := httputil.NewSecuredTransport(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
+	securedTransport := httputil.NewSecuredTransport(httpTransport, tokenProviders...)
 	securedClient := &http.Client{
 		Transport: securedTransport,
 		Timeout:   cfg.HttpClient.Timeout,

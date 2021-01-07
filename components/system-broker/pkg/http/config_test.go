@@ -69,6 +69,14 @@ func TestConfig_Validate(t *testing.T) {
 			},
 		},
 		{
+			Msg: "Nil ForwardHeaders should be invalid",
+			ConfigProvider: func() *http.Config {
+				config := http.DefaultConfig()
+				config.ForwardHeaders = nil
+				return config
+			},
+		},
+		{
 			Msg: "Negative MaxIdleConns should be invalid",
 			ConfigProvider: func() *http.Config {
 				config := http.DefaultConfig()

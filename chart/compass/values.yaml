@@ -132,10 +132,10 @@ global:
     caCertificate: ""
 
   system_broker:
-    port: 5001
-    tls:
-      host: compass-gateway
     enabled: true
+    port: 5001
+    prefix: /broker
+    forwardHeaders: Authorization
     secrets:
       integrationSystemCredentials:
         name: compass-system-broker-credentials

@@ -19,64 +19,59 @@ package http
 import (
 	"context"
 	"net/http"
-	"sync"
-	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . TokenProvider
 type TokenProvider interface {
+	Name() string
+	Matches(ctx context.Context) bool
 	GetAuthorizationToken(ctx context.Context) (Token, error)
 }
 
 type SecuredTransport struct {
-	timeout       time.Duration
-	roundTripper  HTTPRoundTripper
-	tokenProvider TokenProvider
-	lock          sync.RWMutex
-
-	token Token
+	roundTripper   HTTPRoundTripper
+	tokenProviders []TokenProvider
 }
 
-func NewSecuredTransport(timeout time.Duration, roundTripper HTTPRoundTripper, provider TokenProvider) *SecuredTransport {
+func NewSecuredTransport(roundTripper HTTPRoundTripper, providers ...TokenProvider) *SecuredTransport {
 	return &SecuredTransport{
-		timeout:       timeout,
-		roundTripper:  roundTripper,
-		tokenProvider: provider,
-		lock:          sync.RWMutex{},
+		roundTripper:   roundTripper,
+		tokenProviders: providers,
 	}
 }
 
 func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, error) {
-	if err := c.refreshToken(request.Context()); err != nil {
+	logger := log.C(request.Context())
+
+	token, err := c.getToken(request.Context())
+	if err != nil {
+		logger.Errorf("Could not get token for request: %s", err.Error())
 		return nil, err
 	}
 
-	request.Header.Set("Authorization", "Bearer "+c.token.AccessToken)
+	logger.Debug("Successfully got token for request")
+	request.Header.Set("Authorization", "Bearer "+token.AccessToken)
 
 	return c.roundTripper.RoundTrip(request)
 }
 
-func (c *SecuredTransport) refreshToken(ctx context.Context) error {
-	if c.validToken() {
-		return nil
+func (c *SecuredTransport) getToken(ctx context.Context) (Token, error) {
+	for _, tokenProvider := range c.tokenProviders {
+		if !tokenProvider.Matches(ctx) {
+			continue
+		}
+		log.C(ctx).Debugf("Successfully matched '%s' token provider", tokenProvider.Name())
+
+		token, err := tokenProvider.GetAuthorizationToken(ctx)
+		if err != nil {
+			return Token{}, errors.Wrap(err, "error while obtaining token")
+		}
+
+		return token, nil
 	}
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	token, err := c.tokenProvider.GetAuthorizationToken(ctx)
-	if err != nil {
-		return errors.Wrap(err, "error while obtaining token")
-	}
-	c.token = token
-
-	return nil
-}
-
-func (c *SecuredTransport) validToken() bool {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-	return !c.token.EmptyOrExpired(c.timeout)
+	return Token{}, errors.New("context did not match any token provider")
 }
