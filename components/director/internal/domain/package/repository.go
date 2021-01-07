@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -71,6 +73,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Package) error {
 		return errors.Wrap(err, "while converting to Package entity")
 	}
 
+	log.C(ctx).Debugf("Persisting Package entity with id %s to db", model.ID)
 	return r.creator.Create(ctx, pkgEnt)
 }
 

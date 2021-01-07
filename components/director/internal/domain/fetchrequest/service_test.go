@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	logrustest "github.com/sirupsen/logrus/hooks/test"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest/automock"
@@ -17,7 +19,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,8 +40,15 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 func TestService_HandleAPISpec(t *testing.T) {
 	mockSpec := "spec"
 	timestamp := time.Now()
-	ctx := context.TODO()
 	testErr := errors.New("test")
+	ctx := context.TODO()
+	var actualLog bytes.Buffer
+	logger, hook := logrustest.NewNullLogger()
+	logger.SetFormatter(&logrus.TextFormatter{
+		DisableTimestamp: true,
+	})
+	logger.SetOutput(&actualLog)
+	ctx = log.ContextWithLogger(ctx, logrus.NewEntry(logger))
 
 	modelInput := model.FetchRequest{
 		ID:   "test",
@@ -88,8 +98,10 @@ func TestService_HandleAPISpec(t *testing.T) {
 		FetchRequestRepoFn func() *automock.FetchRequestRepository
 		InputFr            model.FetchRequest
 		ExpectedOutput     *string
-		ExpectedLog        *string
+		ExpectedMessage    *string
+		ExpectedError      *string
 	}{
+
 		{
 			Name: "Success",
 			RoundTripFn: func() RoundTripFunc {
@@ -137,10 +149,11 @@ func TestService_HandleAPISpec(t *testing.T) {
 				repo.On("Update", ctx, &modelInputFailed).Return(nil).Once()
 				return repo
 			},
-			InputFr:        modelInput,
-			ExpectedLog:    str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", http.StatusInternalServerError)),
-			ExpectedOutput: nil,
-		}, {
+			InputFr:         modelInput,
+			ExpectedMessage: str.Ptr(fmt.Sprintf("While fetching API Spec status code: %d", http.StatusInternalServerError)),
+			ExpectedOutput:  nil,
+		},
+		{
 			Name: "Nil when failed to update status",
 			RoundTripFn: func() RoundTripFunc {
 				return func(req *http.Request) *http.Response {
@@ -155,32 +168,30 @@ func TestService_HandleAPISpec(t *testing.T) {
 				repo.On("Update", ctx, &modelInputSucceeded).Return(testErr).Once()
 				return repo
 			},
-			InputFr:        modelInput,
-			ExpectedLog:    str.Ptr(fmt.Sprintf("While updating fetch request status: %s", testErr.Error())),
-			ExpectedOutput: nil,
+			InputFr:         modelInput,
+			ExpectedOutput:  nil,
+			ExpectedMessage: str.Ptr(fmt.Sprintf("An error has occurred while updating fetch request status.")),
+			ExpectedError:   str.Ptr(testErr.Error()),
 		},
 	}
+
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			client := NewTestClient(testCase.RoundTripFn())
-
-			var actualLog bytes.Buffer
-			logger := log.New()
-			logger.SetFormatter(&log.TextFormatter{
-				DisableTimestamp: true,
-			})
-			logger.SetOutput(&actualLog)
+			actualLog.Reset()
 
 			frRepo := testCase.FetchRequestRepoFn()
 
-			svc := fetchrequest.NewService(frRepo, client, logger)
+			svc := fetchrequest.NewService(frRepo, client)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			output := svc.HandleAPISpec(ctx, &testCase.InputFr)
 
-			if testCase.ExpectedLog != nil {
-				expectedLog := fmt.Sprintf("level=error msg=\"%s\"\n", *testCase.ExpectedLog)
-				assert.Equal(t, expectedLog, actualLog.String())
+			if testCase.ExpectedMessage != nil {
+				assert.Equal(t, *testCase.ExpectedMessage, hook.LastEntry().Message)
+			}
+			if testCase.ExpectedError != nil {
+				assert.Equal(t, *testCase.ExpectedError, hook.LastEntry().Data["error"].(error).Error())
 			}
 			if testCase.ExpectedOutput != nil {
 				assert.Equal(t, testCase.ExpectedOutput, output)

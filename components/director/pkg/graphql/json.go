@@ -7,8 +7,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
-	log "github.com/sirupsen/logrus"
 )
 
 type JSON string
@@ -31,6 +31,6 @@ func (j *JSON) UnmarshalGQL(v interface{}) error {
 func (j JSON) MarshalGQL(w io.Writer) {
 	_, err := io.WriteString(w, strconv.Quote(string(j)))
 	if err != nil {
-		log.Errorf("while writing %T: %s", j, err)
+		log.D().Errorf("while writing %T: %s", j, err)
 	}
 }

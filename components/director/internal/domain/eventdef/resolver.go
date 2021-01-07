@@ -7,6 +7,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -73,18 +74,20 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Adding EventDefinition to package with id %s", packageID)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting EventDefinition input")
+		return nil, errors.Wrap(err, "while converting GraphQL input to EventDefinition")
 	}
 
 	found, err := r.pkgSvc.Exist(ctx, packageID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while checking existence of Package")
+		return nil, errors.Wrapf(err, "while checking existence of Package with id %s when adding EventDefinition", packageID)
 	}
 
 	if !found {
@@ -93,7 +96,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while creating EventDefinition in Package with id %s", packageID)
 	}
 
 	api, err := r.svc.Get(ctx, id)
@@ -108,6 +111,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	gqlAPI := r.converter.ToGraphQL(api)
 
+	log.C(ctx).Infof("EventDefinition with id %s successfully added to package with id %s", id, packageID)
 	return gqlAPI, nil
 }
 
@@ -116,13 +120,15 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Updating EventDefinition with id %s", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting EventDefinition input")
+		return nil, errors.Wrapf(err, "while converting GraphQL input to EventDefinition with id %s", id)
 	}
 
 	err = r.svc.Update(ctx, id, *convertedIn)
@@ -142,6 +148,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 		return nil, err
 	}
 
+	log.C(ctx).Infof("EventDefinition with id %s successfully updated.", id)
 	return gqlAPI, nil
 }
 
@@ -150,7 +157,9 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Deleting EventDefinition with id %s", id)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -171,6 +180,7 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
+	log.C(ctx).Infof("EventDefinition with id %s successfully deleted.", id)
 	return deletedAPI, nil
 }
 
@@ -179,7 +189,9 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Refetching EventDefinitionSpec for EventDefinition with id %s", eventID)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -195,6 +207,7 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 	convertedOut := r.converter.ToGraphQL(&model.EventDefinition{Spec: spec})
 
+	log.C(ctx).Infof("Successfully refetched EventDefinitionSpec for EventDefinition with id %s", eventID)
 	return convertedOut.Spec, nil
 }
 
@@ -207,7 +220,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -229,5 +242,6 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 		return nil, err
 	}
 
+	log.C(ctx).Infof("Successfully fetched request for EventDefinition %s", obj.DefinitionID)
 	return r.frConverter.ToGraphQL(fr)
 }

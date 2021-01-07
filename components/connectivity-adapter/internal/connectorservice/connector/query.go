@@ -30,13 +30,13 @@ func (qp queryProvider) signCSR(csr string) string {
     }`, removeWhiteChars(csr))
 }
 
-func (qp queryProvider) token(application string) string {
+func (qp queryProvider) token(authID string) string {
 	return fmt.Sprintf(`mutation {
-    result: generateApplicationToken(appID: "%s")
+    result: generateApplicationToken(authID: "%s")
   	{
     	token
   	}
-	}`, application)
+	}`, authID)
 }
 
 func (qp queryProvider) revoke() string {

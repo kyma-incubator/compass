@@ -14,77 +14,71 @@ spec:
   gateways:
     - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
   http:
-  - match:
-    - uri:
-        prefix: /broker
-    route:
-      - destination:
-          host: 'compass-system-broker.{{ .Release.Namespace }}.svc.cluster.local'
-          port:
-            number: {{ .Values.global.system_broker.port }}
-    headers:
-      request:
-        remove:
-          {{- range .Values.global.gateway.headers.request.remove }}
-          - {{ . }}
-          {{- end }}
-  - match:
-    - uri:
-        prefix: /connector
-    route:
-    - destination:
-        host: {{ .Values.global.oathkeeper.host }}
-        port:
-          number: {{ .Values.global.oathkeeper.port }}
-    headers:
-      request:
-        remove:
-          {{- range .Values.global.gateway.headers.request.remove }}
-          - {{ . }}
-          {{- end }}
-  - match:
-    - uri:
-        exact: /director
-    redirect:
-      uri: /director/
-    headers:
-      request:
-        remove:
-          {{- range .Values.global.gateway.headers.request.remove }}
-          - {{ . }}
-          {{- end }}
-    corsPolicy:
-      allowOrigin:
-        - "*"
-      allowHeaders:
-        - "authorization"
-        - "content-type"
-        - "tenant"
-      allowMethods:
-        - "GET"
-  - match:
-    - uri:
-        regex: /.*
-    route:
-      - destination:
-          host: {{ .Values.global.oathkeeper.host }}
-          port:
-            number: {{ .Values.global.oathkeeper.port }}
-    headers:
-      request:
-        remove:
-          {{- range .Values.global.gateway.headers.request.remove }}
-          - {{ . }}
-          {{- end }}
-    corsPolicy:
-      allowOrigin:
-        - "*"
-      allowHeaders:
-        - "authorization"
-        - "content-type"
-        - "tenant"
-      allowMethods:
-        - "GET"
-        - "POST"
-        - "PUT"
-        - "DELETE"
+    - match:
+        - uri:
+            prefix: {{ .Values.global.connector.prefix }}
+      route:
+        - destination:
+            host: {{ .Values.global.oathkeeper.host }}
+            port:
+              number: {{ .Values.global.oathkeeper.port }}
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+    {{- end }}
+    - match:
+        - uri:
+            prefix: {{ .Values.global.tenantFetcher.prefix }}
+      route:
+        - destination:
+            host: {{ .Values.global.tenantFetcher.host }}
+            port:
+              number: {{ .Values.global.tenantFetcher.port }}
+    - match:
+        - uri:
+            exact: {{ .Values.global.director.prefix }}
+      redirect:
+        uri: {{ .Values.global.director.prefix }}/
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+      {{- end }}
+      corsPolicy:
+        allowOrigins:
+          - regex: ".*"
+        allowHeaders:
+          - "authorization"
+          - "content-type"
+          - "tenant"
+        allowMethods:
+          - "GET"
+    - match:
+        - uri:
+            regex: /.*
+      route:
+        - destination:
+            host: {{ .Values.global.oathkeeper.host }}
+            port:
+              number: {{ .Values.global.oathkeeper.port }}
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+      {{- end }}
+      corsPolicy:
+        allowOrigins:
+          - regex: ".*"
+        allowHeaders:
+          - "authorization"
+          - "content-type"
+          - "tenant"
+        allowMethods:
+          - "GET"
+          - "POST"
+          - "PUT"
+          - "DELETE"

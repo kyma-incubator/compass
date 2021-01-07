@@ -25,7 +25,6 @@ type ExternalClient struct {
 }
 
 func NewClient(doer HTTPDoer, mapping Mapping) *ExternalClient {
-
 	return &ExternalClient{
 		doer:    doer,
 		mapping: mapping,

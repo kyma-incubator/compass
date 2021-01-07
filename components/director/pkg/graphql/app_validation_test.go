@@ -27,11 +27,6 @@ func TestApplicationRegisterInput_Validate_Name(t *testing.T) {
 			ExpectedValid: false,
 		},
 		{
-			Name:          "Invalid Upper Case Letters",
-			Value:         "Invalid",
-			ExpectedValid: false,
-		},
-		{
 			Name:          "String longer than 37 chars",
 			Value:         inputvalidationtest.String37Long,
 			ExpectedValid: false,

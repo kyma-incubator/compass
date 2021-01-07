@@ -1,7 +1,14 @@
-FROM golang:1.14.4-alpine3.12 as builder
+FROM golang:1.15.5-alpine3.12 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/external-services-mock
 WORKDIR ${BASE_APP_DIR}
+
+#
+# Download dependencies
+#
+
+COPY go.mod go.sum ${BASE_APP_DIR}/
+RUN go mod download -x
 
 #
 # Copy files

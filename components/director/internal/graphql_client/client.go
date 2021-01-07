@@ -5,20 +5,21 @@ import (
 	"net/http"
 	"time"
 
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	gcli "github.com/machinebox/graphql"
 )
 
-func NewGraphQLClient(URL string) *gcli.Client {
-	return gcli.NewClient(URL, gcli.WithHTTPClient(newAuthorizedHTTPClient()))
+func NewGraphQLClient(URL string, timeout time.Duration) *gcli.Client {
+	return gcli.NewClient(URL, gcli.WithHTTPClient(newAuthorizedHTTPClient(timeout)))
 }
 
-func newAuthorizedHTTPClient() *http.Client {
+func newAuthorizedHTTPClient(timeout time.Duration) *http.Client {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
 	return &http.Client{
-		Transport: transport,
-		Timeout:   time.Second * 3,
+		Transport: httputil.NewCorrelationIDTransport(transport),
+		Timeout:   timeout,
 	}
 }

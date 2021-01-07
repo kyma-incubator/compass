@@ -1,6 +1,7 @@
 package persistence_test
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"testing"
@@ -29,7 +30,17 @@ func TestMapSQLError(t *testing.T) {
 		{
 			Name:       "Standard error",
 			Error:      errors.New("test error"),
-			AssertFunc: isInternalServerErr(t, "Internal Server Error: testErr: test error"),
+			AssertFunc: isInternalServerErr(t, "Internal Server Error: Unexpected error while executing SQL query"),
+		},
+		{
+			Name:       "Not null violation",
+			Error:      &pq.Error{Code: persistence.NotNullViolation},
+			AssertFunc: apperrors.IsNewNotNullViolationError,
+		},
+		{
+			Name:       "Check violation",
+			Error:      &pq.Error{Code: persistence.CheckViolation},
+			AssertFunc: apperrors.IsNewCheckViolationError,
 		},
 		{
 			Name:       "Unique violation error",
@@ -37,21 +48,30 @@ func TestMapSQLError(t *testing.T) {
 			AssertFunc: apperrors.IsNotUniqueError,
 		},
 		{
-			Name:       "Unique violation error",
+			Name:       "Foreign key violation error",
 			Error:      &pq.Error{Code: persistence.ForeignKeyViolation},
 			AssertFunc: apperrors.IsNewInvalidDataError,
 		},
 		{
 			Name:       "Not mapper sql error",
 			Error:      &pq.Error{Code: "123", Message: "SQL fault"},
-			AssertFunc: isInternalServerErr(t, "Internal Server Error: SQL Error: testErr: pq: SQL fault"),
+			AssertFunc: isInternalServerErr(t, "Internal Server Error: Unexpected error while executing SQL query"),
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//WHEN
-			err := persistence.MapSQLError(testCase.Error, resource.Application, "testErr")
+			err := persistence.MapSQLError(context.TODO(), testCase.Error, resource.Application, resource.Create, "testErr")
+
+			//THEN
+			require.Error(t, err)
+			assert.True(t, testCase.AssertFunc(err))
+		})
+
+		t.Run(testCase.Name, func(t *testing.T) {
+			//WHEN
+			err := persistence.MapSQLError(context.TODO(), testCase.Error, resource.Application, resource.Delete, "testErr")
 
 			//THEN
 			require.Error(t, err)
@@ -61,7 +81,7 @@ func TestMapSQLError(t *testing.T) {
 
 	t.Run("Error is nil", func(t *testing.T) {
 		//WHEN
-		err := persistence.MapSQLError(nil, resource.Application, "test: %s", "test")
+		err := persistence.MapSQLError(context.TODO(), nil, resource.Application, resource.Create, "test: %s", "test")
 
 		//THEN
 		require.NoError(t, err)

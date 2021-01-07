@@ -1,15 +1,17 @@
 package auditlog
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type BasicHttpClient struct {
-	cl  http.Client
+	cl  *http.Client
 	cfg BasicAuthConfig
 }
 
-func NewBasicAuthClient(cfg BasicAuthConfig) *BasicHttpClient {
+func NewBasicAuthClient(cfg BasicAuthConfig, client *http.Client) *BasicHttpClient {
 	return &BasicHttpClient{
-		cl:  http.Client{},
+		cl:  client,
 		cfg: cfg,
 	}
 }

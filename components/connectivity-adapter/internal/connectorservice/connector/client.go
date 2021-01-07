@@ -26,17 +26,17 @@ func NewClient(gqlClient *graphql.Client) Client {
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
 type Client interface {
-	Configuration(headers map[string]string) (schema.Configuration, apperrors.AppError)
-	SignCSR(csr string, headers map[string]string) (schema.CertificationResult, apperrors.AppError)
-	Revoke(headers map[string]string) apperrors.AppError
+	Configuration(ctx context.Context, headers map[string]string) (schema.Configuration, apperrors.AppError)
+	SignCSR(ctx context.Context, csr string, headers map[string]string) (schema.CertificationResult, apperrors.AppError)
+	Revoke(ctx context.Context, headers map[string]string) apperrors.AppError
 }
 
-func (c client) Configuration(headers map[string]string) (schema.Configuration, apperrors.AppError) {
+func (c client) Configuration(ctx context.Context, headers map[string]string) (schema.Configuration, apperrors.AppError) {
 	query := c.queryProvider.configuration()
 
 	var response ConfigurationResponse
 
-	err := c.executeExternal(headers, query, &response)
+	err := c.executeExternal(ctx, headers, query, &response)
 	if err != nil {
 		return schema.Configuration{}, toAppError(err)
 	}
@@ -44,12 +44,12 @@ func (c client) Configuration(headers map[string]string) (schema.Configuration, 
 	return response.Result, nil
 }
 
-func (c client) SignCSR(csr string, headers map[string]string) (schema.CertificationResult, apperrors.AppError) {
+func (c client) SignCSR(ctx context.Context, csr string, headers map[string]string) (schema.CertificationResult, apperrors.AppError) {
 	query := c.queryProvider.signCSR(csr)
 
 	var response CertificateResponse
 
-	err := c.executeExternal(headers, query, &response)
+	err := c.executeExternal(ctx, headers, query, &response)
 	if err != nil {
 		return schema.CertificationResult{}, toAppError(err)
 	}
@@ -57,30 +57,30 @@ func (c client) SignCSR(csr string, headers map[string]string) (schema.Certifica
 	return response.Result, nil
 }
 
-func (c client) Revoke(headers map[string]string) apperrors.AppError {
+func (c client) Revoke(ctx context.Context, headers map[string]string) apperrors.AppError {
 	query := c.queryProvider.revoke()
 
 	var response RevokeResponse
 
-	err := c.executeExternal(headers, query, response)
+	err := c.executeExternal(ctx, headers, query, response)
 
 	return toAppError(err)
 }
 
-func (c *client) executeExternal(headers map[string]string, query string, res interface{}) error {
-	return c.execute(c.gqlAPIClient, headers, query, res)
+func (c *client) executeExternal(ctx context.Context, headers map[string]string, query string, res interface{}) error {
+	return c.execute(ctx, c.gqlAPIClient, headers, query, res)
 }
 
-func (c *client) execute(client *graphql.Client, headers map[string]string, query string, res interface{}) error {
+func (c *client) execute(ctx context.Context, client *graphql.Client, headers map[string]string, query string, res interface{}) error {
 	req := graphql.NewRequest(query)
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	newCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	return retry.GQLRun(client.Run, ctx, req, res)
+	return retry.GQLRun(client.Run, newCtx, req, res)
 }
 
 type ConfigurationResponse struct {

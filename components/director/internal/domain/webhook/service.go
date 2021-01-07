@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -65,8 +67,9 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Web
 	webhook := in.ToWebhook(id, tnt, applicationID)
 
 	if err = s.repo.Create(ctx, webhook); err != nil {
-		return "", errors.Wrap(err, "while creating Webhook")
+		return "", errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", id, webhook.Type, applicationID)
 	}
+	log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for Application with id %s", id, webhook.Type, applicationID)
 
 	return webhook.ID, nil
 }

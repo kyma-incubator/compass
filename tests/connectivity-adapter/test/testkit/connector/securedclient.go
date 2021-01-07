@@ -23,7 +23,6 @@ type securedConnectorClient struct {
 }
 
 func NewSecuredConnectorClient(skipVerify bool, key *rsa.PrivateKey, certs []byte, tenant string) SecuredConnectorClient {
-
 	client := NewTLSClientWithCert(skipVerify, key, certs)
 
 	return &securedConnectorClient{

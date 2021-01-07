@@ -75,7 +75,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 	if in.ApplicationInput != nil {
 		appCreateInput, err = c.appConverter.CreateInputGQLToJSON(in.ApplicationInput)
 		if err != nil {
-			return model.ApplicationTemplateInput{}, errors.Wrap(err, "while packing GQL application input")
+			return model.ApplicationTemplateInput{}, errors.Wrapf(err, "error occurred while converting GraphQL input to Application Template model with name %s", in.Name)
 		}
 	}
 

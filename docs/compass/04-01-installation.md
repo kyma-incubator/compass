@@ -6,21 +6,122 @@ You can install Compass both on a cluster and on your local machine in two modes
 
 Compass as a central Management Plane cluster requires minimal Kyma installation. Steps to perform the installation vary depending on the installation environment.
 
+#### Prerequisites
+
+In case certificate rotation is needed, you can install [cert manager](https://github.com/jetstack/cert-manager) to take care of certificates.
+
+The following certificates can be rotated:
+* Connector intermediate certificate that is used to issue Application and Runtime client certificates.
+* Istio gateway certificate for the regular HTTPS gateway.
+* Istio gateway certificate for the MTLS gateway.
+
+##### Create issuers
+
+To issue certificates, the cert manager requires a resource called issuer.
+
+Example with self provided CA certificate:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: <name>
+spec:
+  ca:
+    secretName: "<secret-name-containing-the-ca-cert>"
+```
+
+Example with **Let's encrypt** issuer:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: <name>
+spec:
+  acme:
+    email: <lets_encrypt_email>
+    server: <lets_encrypt_server_url>
+    privateKeySecretRef:
+      name: <lets_encrypt_secret>
+    solvers:
+      - dns01:
+          clouddns:
+            project: <project_name>
+            serviceAccountSecretRef:
+              name: <secret_name>
+              key: <secret_key>
+```
+
+For more inforamtion about the different cluster issuer configurations, see the following document: [ACME Issuer](https://cert-manager.io/docs/configuration/acme/)
+
+##### Connector certificate
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: <name>
+  namespace: <namespace>
+spec:
+  secretName: "<secret-to-put-the-generated-certificate>"
+  duration: 3d
+  renewBefore: 1d
+  issuerRef:
+    name: <name-of-issuer-to-issue-certificates-from>
+    kind: ClusterIssuer
+  commonName: Kyma
+  isCA: true
+  keyAlgorithm: rsa
+  keySize: 4096
+  usages:
+    - "digital signature"
+    - "key encipherment"
+    - "cert sign"
+
+```
+
+Cert manager's role is to rotate certificates as defined in the resources. Make sure that the certificate as shown in the example is specified as `isCA: true`. This means that the certificate is used to issue other certificates.
+
+##### Domain certificates
+
+Cert manager can also rotate Istio gateway certificates. The following example shows such certificate:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: <name>
+  namespace: <namespace>
+spec:
+  secretName: "<secret-to-put-the-generated-certificate>"
+  issuerRef:
+    name: <name-of-issuer-to-issue-certificates-from> (this can be Let's encrypt issuer)
+    kind: ClusterIssuer
+  commonName: <wildcard_domain_name>
+  dnsNames:
+    - <wildcard_domain_name>
+    - <alternative_wildcard_domain_name>
+```
+
+In this case, as this certificate is not used to issue other certificates, it is not a CA certificate. Additionally, its validity depends on the settings by the issuer (for example **Let's encrypt**).
+
 ### Cluster installation
+
 
 To install Compass as central Management Plane on a cluster, follow these steps:
 
 1. Select installation option for Compass and Kyma. ​There are three possible installation options:
 
-    | Installation option     	| Value to use with the installation command   	| Example value          	|
-    |-------------------------	|-------------------	|-------------------------	|
-    | From the Compass `master` branch 	| `master`          	| `master`                	|
-    | From a specific commit on the Compass `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
-    | From a specific PR on the Compass repository       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
+   | Installation option     	| Value to use with the installation command   	| Example value          	|
+       |-------------------------	|-------------------	|-------------------------	|
+   | From the Compass `master` branch 	| `master`          	| `master`                	|
+   | From a specific commit on the Compass `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+   | From a specific PR on the Compass repository       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
 
-    The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
+   The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
 
-    Once you decide on the installation option, use this command:
+   Once you decide on the installation option, use this command:
 
     ```bash
     export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION_HERE}
@@ -38,18 +139,18 @@ To install Compass as central Management Plane on a cluster, follow these steps:
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/kyma-installer.yaml"
     ```
 1. Check the Kyma installation progress. To do so, download the script and check the progress of the installation:
-    
+
     ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-kyma-installed.sh")
     ```
 1. Perform Kyma post-installation steps for a cluster [with the `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-post-installation-steps) or [with a custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-configure-dns-for-the-cluster-load-balancer).
-1. Install Compass with the following command: 
+1. Install Compass with the following command:
 
     ```bash
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
     ```​   
 1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
-   
+
      ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
     ```
@@ -67,7 +168,7 @@ The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/
 ```bash
 ./installation/cmd/run.sh --kyma-release {KYMA_VERSION}
 ```
-You can also specify if you want the kyma installation to contain only minimal components or whether you want full kyma
+You can also specify if you want the Kyma installation to contain only `minimal` components or whether you want `full` Kyma
 
 ```bash
 ./installation/cmd/run.sh --kyma-installation full
@@ -109,27 +210,27 @@ To install Compass and Runtime components on a single cluster, follow these step
     EOF
     ```
 
-    > **NOTE:** If you installed Kyma on a cluster with a custom domain, remember to apply global overrides to the `compass-installer` Namespace as well. To do that, run this command:
+   > **NOTE:** If you installed Kyma on a cluster with a custom domain, remember to apply global overrides to the `compass-installer` Namespace as well. To do that, run this command:
 
     ```bash
     kubectl get configmap -n kyma-installer {OVERRIDE_NAME} -oyaml --export | kubectl apply -n compass-installer -f -
     ```
 1. Install Compass. ​There are three possible installation options:
 
-    | Installation option     	| Value to use with the installation command   	| Example value          	|
-    |-------------------------	|-------------------	|-------------------------	|
-    | From the `master` branch 	| `master`          	| `master`                	|
-    | From a specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
-    | From a specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
+   | Installation option     	| Value to use with the installation command   	| Example value          	|
+       |-------------------------	|-------------------	|-------------------------	|
+   | From the `master` branch 	| `master`          	| `master`                	|
+   | From a specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+   | From a specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
 
-    Once you decide on the installation option, use these commands:
-    
+   Once you decide on the installation option, use these commands:
+
     ```bash
     export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION}
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
     ```
 1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
-    
+
     ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
     ```
@@ -138,8 +239,10 @@ Once Compass is installed, Runtime Agent will be configured to fetch the Runtime
 
 ### Local Minikube installation
 
-To install Compass and Runtime components on Minikube, run the following command. Kyma source code will be picked up according to KYMA_VERSION file and compass source code will be picked up from local sources (locally checked out branch)
+To install Compass and Runtime components on Minikube, run the following command. Kyma source code will be picked up according to the KYMA_VERSION file and Compass source code will be picked up from the local sources (locally checked out branch):
 
-    ```bash
-    ./installation/cmd/run.sh --kyma-installation full
-    ```
+```bash
+./installation/cmd/run.sh --kyma-installation full
+```
+
+> **Note:** To reduce memory and CPU usage, from the `installer-cr-kyma.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, or `kiali`.

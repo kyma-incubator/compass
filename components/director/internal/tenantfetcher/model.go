@@ -8,10 +8,4 @@ const (
 	UpdatedEventsType
 )
 
-type TenantEventsResponse struct {
-	Events       []Event
-	TotalResults int
-	TotalPages   int
-}
-
-type Event map[string]interface{}
+type TenantEventsResponse []byte

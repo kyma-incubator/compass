@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/gqlerror"
 
@@ -16,17 +18,20 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/lestrrat-go/jwx/jwk"
 )
 
-const AuthorizationHeaderKey = "Authorization"
+const (
+	AuthorizationHeaderKey = "Authorization"
+	ClientUserHeader       = "client_user"
+)
 
 type Authenticator struct {
 	jwksEndpoint        string
@@ -39,11 +44,11 @@ func New(jwksEndpoint string, allowJWTSigningNone bool) *Authenticator {
 	return &Authenticator{jwksEndpoint: jwksEndpoint, allowJWTSigningNone: allowJWTSigningNone}
 }
 
-func (a *Authenticator) SynchronizeJWKS() error {
-	log.Info("Synchronizing JWKS...")
+func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
+	log.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
 	defer a.mux.Unlock()
-	jwks, err := FetchJWK(a.jwksEndpoint)
+	jwks, err := FetchJWK(ctx, a.jwksEndpoint)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
@@ -55,35 +60,41 @@ func (a *Authenticator) SynchronizeJWKS() error {
 func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
-				log.Error(errors.Wrap(err, "while getting token from header"))
-				a.writeAppError(w, err, http.StatusBadRequest)
+				log.C(ctx).WithError(err).Error("An error has occurred while getting token from header. Error code: ", http.StatusBadRequest)
+				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
 
-			claims, err := a.parseClaimsWithRetry(bearerToken)
+			claims, err := a.parseClaimsWithRetry(r.Context(), bearerToken)
 			if err != nil {
-				log.Error(err)
-				a.writeAppError(w, err, http.StatusUnauthorized)
+				log.C(ctx).WithError(err).Error("An error has occurred while parsing claims. Error code: ", http.StatusUnauthorized)
+				a.writeAppError(ctx, w, err, http.StatusUnauthorized)
 				return
 			}
 
 			if claims.Tenant == "" && claims.ExternalTenant != "" {
 				err := apperrors.NewTenantNotFoundError(claims.ExternalTenant)
-				log.Error(err)
-				a.writeAppError(w, err, http.StatusBadRequest)
+				log.C(ctx).WithError(err).Error("Tenant not found. Error code: ", http.StatusBadRequest)
+				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
 
-			ctx := a.contextWithClaims(r.Context(), claims)
+			ctx = a.contextWithClaims(r.Context(), claims)
+
+			if clientUser := r.Header.Get(ClientUserHeader); clientUser != "" {
+				log.C(ctx).Infof("Found %s header in request with value: %s", ClientUserHeader, clientUser)
+				ctx = client.SaveToContext(ctx, clientUser)
+			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func (a *Authenticator) parseClaimsWithRetry(bearerToken string) (Claims, error) {
+func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken string) (Claims, error) {
 	var claims Claims
 	var err error
 
@@ -94,7 +105,7 @@ func (a *Authenticator) parseClaimsWithRetry(bearerToken string) (Claims, error)
 			return Claims{}, apperrors.NewUnauthorizedError(err.Error())
 		}
 
-		err := a.SynchronizeJWKS()
+		err := a.SynchronizeJWKS(ctx)
 		if err != nil {
 			return Claims{}, apperrors.InternalErrorFrom(err, "while synchronizing JWKs during parsing token")
 		}
@@ -166,10 +177,9 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 	}
 }
 
-func (a *Authenticator) writeAppError(w http.ResponseWriter, appErr error, statusCode int) {
+func (a *Authenticator) writeAppError(ctx context.Context, w http.ResponseWriter, appErr error, statusCode int) {
 	errCode := apperrors.ErrorCode(appErr)
 	if errCode == apperrors.UnknownError || errCode == apperrors.InternalError {
-		log.Error(appErr.Error())
 		errCode = apperrors.InternalError
 	}
 
@@ -180,6 +190,6 @@ func (a *Authenticator) writeAppError(w http.ResponseWriter, appErr error, statu
 		Extensions: map[string]interface{}{"error_code": errCode, "error": errCode.String()}}}}
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
-		log.Error(err, "while encoding data")
+		log.C(ctx).WithError(err).Error("An error occurred while encoding data. ")
 	}
 }

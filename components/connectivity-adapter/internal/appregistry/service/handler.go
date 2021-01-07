@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,20 +18,20 @@ import (
 
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
 type DirectorClient interface {
-	CreatePackage(appID string, in graphql.PackageCreateInput) (string, error)
-	GetPackage(appID string, packageID string) (graphql.PackageExt, error)
-	ListPackages(appID string) ([]*graphql.PackageExt, error)
-	DeletePackage(packageID string) error
-	UpdatePackage(packageID string, in graphql.PackageUpdateInput) error
+	CreatePackage(ctx context.Context, appID string, in graphql.PackageCreateInput) (string, error)
+	GetPackage(ctx context.Context, appID string, packageID string) (graphql.PackageExt, error)
+	ListPackages(ctx context.Context, appID string) ([]*graphql.PackageExt, error)
+	DeletePackage(ctx context.Context, packageID string) error
+	UpdatePackage(ctx context.Context, packageID string, in graphql.PackageUpdateInput) error
 
-	CreateAPIDefinition(packageID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error)
-	CreateEventDefinition(packageID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error)
-	CreateDocument(packageID string, documentInput graphql.DocumentInput) (string, error)
-	DeleteAPIDefinition(apiID string) error
-	DeleteEventDefinition(eventID string) error
-	DeleteDocument(documentID string) error
+	CreateAPIDefinition(ctx context.Context, packageID string, apiDefinitionInput graphql.APIDefinitionInput) (string, error)
+	CreateEventDefinition(ctx context.Context, packageID string, eventDefinitionInput graphql.EventDefinitionInput) (string, error)
+	CreateDocument(ctx context.Context, packageID string, documentInput graphql.DocumentInput) (string, error)
+	DeleteAPIDefinition(ctx context.Context, apiID string) error
+	DeleteEventDefinition(ctx context.Context, eventID string) error
+	DeleteDocument(ctx context.Context, documentID string) error
 
-	SetApplicationLabel(appID string, label graphql.LabelInput) error
+	SetApplicationLabel(ctx context.Context, appID string, label graphql.LabelInput) error
 }
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -112,7 +113,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 	h.logger.Infoln("doing GraphQL request...")
 
 	appID := reqContext.AppID
-	serviceID, err := reqContext.DirectorClient.CreatePackage(appID, converted)
+	serviceID, err := reqContext.DirectorClient.CreatePackage(request.Context(), appID, converted)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating Service")
 		h.logger.Error(wrappedErr)
@@ -125,7 +126,7 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		Identifier: serviceDetails.Identifier,
 	}
 
-	err = h.setAppLabelWithServiceRef(legacyServiceRef, reqContext)
+	err = h.setAppLabelWithServiceRef(request.Context(), legacyServiceRef, reqContext)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while setting Application label with legacy service metadata")
 		h.logger.Error(wrappedErr)
@@ -161,7 +162,7 @@ func (h *Handler) Get(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	h.getAndWriteServiceByID(writer, serviceID, reqContext)
+	h.getAndWriteServiceByID(request.Context(), writer, serviceID, reqContext)
 }
 
 func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
@@ -175,7 +176,7 @@ func (h *Handler) List(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	appID := reqContext.AppID
-	packages, err := reqContext.DirectorClient.ListPackages(appID)
+	packages, err := reqContext.DirectorClient.ListPackages(request.Context(), appID)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while fetching Services")
 		h.logger.Error(wrappedErr)
@@ -252,7 +253,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	}
 	dirCli := reqContext.DirectorClient
 
-	previousPackage, err := dirCli.GetPackage(reqContext.AppID, id)
+	previousPackage, err := dirCli.GetPackage(request.Context(), reqContext.AppID, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, id)
@@ -266,7 +267,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 
 	pkgID := previousPackage.ID
 
-	err = dirCli.UpdatePackage(id, h.converter.GraphQLCreateInputToUpdateInput(createInput))
+	err = dirCli.UpdatePackage(request.Context(), id, h.converter.GraphQLCreateInputToUpdateInput(createInput))
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while updating Service")
 		h.logger.WithField("ID", id).Error(wrappedErr)
@@ -274,7 +275,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = h.deleteRelatedObjectsForPackage(dirCli, previousPackage)
+	err = h.deleteRelatedObjectsForPackage(request.Context(), dirCli, previousPackage)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while deleting related objects for Service")
 		h.logger.WithField("ID", id).Error(wrappedErr)
@@ -282,7 +283,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = h.createRelatedObjectsForPackage(dirCli, pkgID, createInput)
+	err = h.createRelatedObjectsForPackage(request.Context(), dirCli, pkgID, createInput)
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while creating related objects for Service")
 		h.logger.WithField("ID", id).Error(wrappedErr)
@@ -293,7 +294,7 @@ func (h *Handler) Update(writer http.ResponseWriter, request *http.Request) {
 	// Legacy service reference should be updated, but right now it contains only identifier field
 	// which has to preserved during update (to match old metadata service behaviour), so there's nothing to update.
 
-	h.getAndWriteServiceByID(writer, pkgID, reqContext)
+	h.getAndWriteServiceByID(request.Context(), writer, pkgID, reqContext)
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
@@ -307,7 +308,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = reqContext.DirectorClient.DeletePackage(id)
+	err = reqContext.DirectorClient.DeletePackage(request.Context(), id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, id)
@@ -327,7 +328,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = reqContext.DirectorClient.SetApplicationLabel(reqContext.AppID, label)
+	err = reqContext.DirectorClient.SetApplicationLabel(request.Context(), reqContext.AppID, label)
 	if err != nil {
 		wrappedError := errors.Wrap(err, "while setting Application label")
 		h.logger.Error(wrappedError)
@@ -394,13 +395,13 @@ func (h *Handler) getServiceID(request *http.Request) string {
 	return id
 }
 
-func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID string, pkg graphql.PackageCreateInput) error {
+func (h *Handler) createRelatedObjectsForPackage(ctx context.Context, dirCli DirectorClient, pkgID string, pkg graphql.PackageCreateInput) error {
 	for _, apiDef := range pkg.APIDefinitions {
 		if apiDef == nil {
 			continue
 		}
 
-		_, err := dirCli.CreateAPIDefinition(pkgID, *apiDef)
+		_, err := dirCli.CreateAPIDefinition(ctx, pkgID, *apiDef)
 		if err != nil {
 			return errors.Wrap(err, "while creating API Definition")
 		}
@@ -411,7 +412,7 @@ func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID st
 			continue
 		}
 
-		_, err := dirCli.CreateEventDefinition(pkgID, *eventDef)
+		_, err := dirCli.CreateEventDefinition(ctx, pkgID, *eventDef)
 		if err != nil {
 			return errors.Wrap(err, "while creating Event Definition")
 		}
@@ -422,7 +423,7 @@ func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID st
 			continue
 		}
 
-		_, err := dirCli.CreateDocument(pkgID, *doc)
+		_, err := dirCli.CreateDocument(ctx, pkgID, *doc)
 		if err != nil {
 			return errors.Wrap(err, "while creating Document")
 		}
@@ -431,13 +432,13 @@ func (h *Handler) createRelatedObjectsForPackage(dirCli DirectorClient, pkgID st
 	return nil
 }
 
-func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg graphql.PackageExt) error {
+func (h *Handler) deleteRelatedObjectsForPackage(ctx context.Context, dirCli DirectorClient, pkg graphql.PackageExt) error {
 	for _, apiDef := range pkg.APIDefinitions.Data {
 		if apiDef == nil {
 			continue
 		}
 
-		err := dirCli.DeleteAPIDefinition(apiDef.ID)
+		err := dirCli.DeleteAPIDefinition(ctx, apiDef.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while deleting API Definition with ID '%s'", apiDef.ID)
 		}
@@ -448,7 +449,7 @@ func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg grap
 			continue
 		}
 
-		err := dirCli.DeleteEventDefinition(eventDef.ID)
+		err := dirCli.DeleteEventDefinition(ctx, eventDef.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while deleting Event Definition with ID '%s'", eventDef.ID)
 		}
@@ -459,7 +460,7 @@ func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg grap
 			continue
 		}
 
-		err := dirCli.DeleteDocument(doc.ID)
+		err := dirCli.DeleteDocument(ctx, doc.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while deleting Document with ID '%s'", doc.ID)
 		}
@@ -468,8 +469,8 @@ func (h *Handler) deleteRelatedObjectsForPackage(dirCli DirectorClient, pkg grap
 	return nil
 }
 
-func (h *Handler) getAndWriteServiceByID(writer http.ResponseWriter, serviceID string, reqContext RequestContext) {
-	output, err := reqContext.DirectorClient.GetPackage(reqContext.AppID, serviceID)
+func (h *Handler) getAndWriteServiceByID(ctx context.Context, writer http.ResponseWriter, serviceID string, reqContext RequestContext) {
+	output, err := reqContext.DirectorClient.GetPackage(ctx, reqContext.AppID, serviceID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			h.writeErrorNotFound(writer, serviceID)
@@ -526,13 +527,13 @@ func (h *Handler) ensureUniqueIdentifier(identifier string, reqContext RequestCo
 	return nil
 }
 
-func (h *Handler) setAppLabelWithServiceRef(serviceRef LegacyServiceReference, reqContext RequestContext) error {
+func (h *Handler) setAppLabelWithServiceRef(ctx context.Context, serviceRef LegacyServiceReference, reqContext RequestContext) error {
 	label, err := h.appLabeler.WriteServiceReference(reqContext.AppLabels, serviceRef)
 	if err != nil {
 		return errors.Wrap(err, "while writing Application label")
 	}
 
-	err = reqContext.DirectorClient.SetApplicationLabel(reqContext.AppID, label)
+	err = reqContext.DirectorClient.SetApplicationLabel(ctx, reqContext.AppID, label)
 	if err != nil {
 		return errors.Wrap(err, "while setting Application label")
 	}

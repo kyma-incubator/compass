@@ -1,26 +1,41 @@
-// Copied from github.com/kyma-project/kyma/components/service-binding-usage-controller/pkg/signal/signal.go
+/*
+ * Copyright 2020 The Compass Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package signal
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-// SetupChannel registered for SIGTERM and Interrupt. A stop channel is returned
-// which is closed on one of these signals. If a second signal is caught, the program
-// is terminated with exit code 1.
-func SetupChannel() (stopCh <-chan struct{}) {
-	stop := make(chan struct{})
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+// HandleInterrupts handles process signal interrupts
+func HandleInterrupts(ctx context.Context, cancel context.CancelFunc, term chan os.Signal) {
+	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		<-c
-		close(stop)
-		<-c
-		os.Exit(1) // second signal. Exit directly.
+		select {
+		case <-term:
+			log.C(ctx).Error("Received OS interrupt, exiting gracefully...")
+			cancel()
+		case <-ctx.Done():
+			log.C(ctx).Error("Context canceled...")
+			return
+		}
 	}()
-
-	return stop
 }

@@ -8,7 +8,7 @@ type TokenResponse struct {
 }
 
 type InfoResponse struct {
-	CertUrl     string   `json:"csrUrl"`
+	CertURL     string   `json:"csrUrl"`
 	Api         ApiInfo  `json:"api"`
 	Certificate CertInfo `json:"certificate"`
 }
@@ -31,19 +31,19 @@ type ClusterClientIdentity struct {
 
 type ManagementInfoURLs struct {
 	*RuntimeURLs
-	RenewCertUrl  string `json:"renewCertUrl"`
+	RenewCertURL  string `json:"renewCertUrl"`
 	RevokeCertURL string `json:"revokeCertUrl"`
 }
 
 type RuntimeURLs struct {
-	MetadataUrl string `json:"metadataUrl"`
-	EventsUrl   string `json:"eventsUrl"`
+	MetadataURL string `json:"metadataUrl"`
+	EventsURL   string `json:"eventsUrl"`
 }
 
 type ApiInfo struct {
 	*RuntimeURLs
 	ManagementInfoURL string `json:"infoUrl"`
-	CertificatesUrl   string `json:"certificatesUrl"`
+	CertificatesURL   string `json:"certificatesUrl"`
 }
 
 type CertInfo struct {

@@ -3,6 +3,8 @@ package systemauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -55,6 +57,8 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 		}
 	}
 
+	log.C(ctx).Debugf("Tenant %s loaded while creating SystemAuth for %s with id %s", tnt, objectType, objectID)
+
 	systemAuth := model.SystemAuth{
 		ID:    id,
 		Value: authInput.ToAuth(),
@@ -76,7 +80,7 @@ func (s *service) create(ctx context.Context, id string, objectType model.System
 
 	err = s.repo.Create(ctx, systemAuth)
 	if err != nil {
-		return "", errors.Wrapf(err, "while creating System Auth for %s", objectType)
+		return "", err
 	}
 
 	return systemAuth.ID, nil

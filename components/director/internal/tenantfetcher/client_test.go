@@ -1,10 +1,12 @@
 package tenantfetcher_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -23,18 +25,24 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	metricsPusherMock := fixMetricsPusherMock()
 	defer metricsPusherMock.AssertExpectations(t)
 
+	queryParams := tenantfetcher.QueryParams{
+		"pageSize":  "1",
+		"pageNum":   "1",
+		"timestamp": "1",
+	}
+
 	apiCfg := tenantfetcher.APIConfig{
 		EndpointTenantCreated: endpoint + "/created",
 		EndpointTenantDeleted: endpoint + "/deleted",
 		EndpointTenantUpdated: endpoint + "/updated",
 	}
-	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Success fetching creation events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedEventsType, 1)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedEventsType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -42,7 +50,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching update events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, 1)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -50,7 +58,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching deletion events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, 1)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -58,7 +66,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when unkown events type", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(-1, 1)
+		res, err := client.FetchTenantEventsPage(-1, queryParams)
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("unknown events type").Error())
 		assert.Empty(t, res)
@@ -70,13 +78,13 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointTenantDeleted: "http://127.0.0.1:8111/badpath",
 		EndpointTenantUpdated: endpoint + "/empty",
 	}
-	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg)
+	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
 	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Success when no content", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, 1)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		require.Empty(t, res)
@@ -84,7 +92,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when endpoint not parsable", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedEventsType, 1)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedEventsType, queryParams)
 		// THEN
 		require.EqualError(t, err, "parse \"___ :// ___ \": first path segment in URL cannot contain colon")
 		assert.Empty(t, res)
@@ -92,9 +100,27 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when bad path", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, 1)
+		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedEventsType, queryParams)
 		// THEN
-		require.EqualError(t, err, "while sending get request: Get \"http://127.0.0.1:8111/badpath?page=1&resultsPerPage=1000&ts=1\": dial tcp 127.0.0.1:8111: connect: connection refused")
+		require.EqualError(t, err, "while sending get request: Get \"http://127.0.0.1:8111/badpath?pageNum=1&pageSize=1&timestamp=1\": dial tcp 127.0.0.1:8111: connect: connection refused")
+		assert.Empty(t, res)
+	})
+
+	// GIVEN
+	apiCfg = tenantfetcher.APIConfig{
+		EndpointTenantCreated: endpoint + "/created",
+		EndpointTenantDeleted: endpoint + "/deleted",
+		EndpointTenantUpdated: endpoint + "/badRequest",
+	}
+	client = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, apiCfg, time.Second)
+	client.SetMetricsPusher(metricsPusherMock)
+	client.SetHTTPClient(mockClient)
+
+	t.Run("Error when status code not equal to 200 OK and 204 No Content is returned", func(t *testing.T) {
+		// WHEN
+		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedEventsType, queryParams)
+		// THEN
+		require.EqualError(t, err, fmt.Sprintf("request to \"%s/badRequest?pageNum=1&pageSize=1&timestamp=1\" returned status code 400 and body \"\"", endpoint))
 		assert.Empty(t, res)
 	})
 }
@@ -122,6 +148,9 @@ func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {
 	})
 	mux.HandleFunc("/empty", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("/badRequest", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
 	})
 
 	ts := httptest.NewServer(mux)
@@ -215,6 +244,7 @@ func fixMetricsPusherMock() *automock.MetricsPusher {
 	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusOK, "200 OK")
 	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusNoContent, "204 No Content").Once()
 	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, 0, "connect: connection refused").Once()
+	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusBadRequest, "400 Bad Request").Once()
 
 	return metricsPusherMock
 }

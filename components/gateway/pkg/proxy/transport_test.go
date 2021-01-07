@@ -11,17 +11,19 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
-
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy/automock"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+const ConsumerId = "134039be-840a-47f1-a962-d13410edf311"
 
 func TestAuditLog(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 
 		//GIVEN
-		graphqlResp := fixGraphqResponse()
+		graphqlResp := fixGraphQLResponse()
 		graphqlPayload, err := json.Marshal(&graphqlResp)
 		require.NoError(t, err)
 
@@ -32,17 +34,19 @@ func TestAuditLog(t *testing.T) {
 		}
 		resp := http.Response{
 			StatusCode:    http.StatusCreated,
-			Body:          ioutil.NopCloser(bytes.NewBuffer([]byte(graphqlPayload))),
+			Body:          ioutil.NopCloser(bytes.NewBuffer(graphqlPayload)),
 			ContentLength: (int64)(len(graphqlPayload)),
 		}
 
 		roundTripper := &automock.RoundTrip{}
 		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
 
-		auditlogSvc := &automock.AuditlogService{}
-		auditlogSvc.On("Log", string(graphqlPayload), string(graphqlPayload), fixClaims()).Return(nil)
+		auditlogSink := &automock.AuditlogService{}
+		auditlogSvc := &automock.PreAuditlogService{}
+		auditlogSink.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil)
+		auditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil)
 
-		transport := proxy.NewTransport(auditlogSvc, roundTripper)
+		transport := proxy.NewTransport(auditlogSink, auditlogSvc, roundTripper)
 
 		//WHEN
 		output, err := transport.RoundTrip(req)
@@ -67,7 +71,7 @@ func TestAuditLog(t *testing.T) {
 		roundTripper := &automock.RoundTrip{}
 		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
 
-		transport := proxy.NewTransport(nil, roundTripper)
+		transport := proxy.NewTransport(nil, nil, roundTripper)
 
 		//WHEN
 		_, err := transport.RoundTrip(req)
@@ -81,7 +85,7 @@ func fixClaims() proxy.Claims {
 	return proxy.Claims{
 		Tenant:       "e36c520b-caa2-4677-b289-8a171184192b",
 		Scopes:       "scopes",
-		ConsumerID:   "134039be-840a-47f1-a962-d13410edf311",
+		ConsumerID:   ConsumerId,
 		ConsumerType: "Application",
 	}
 }
@@ -100,7 +104,7 @@ func fixBearerHeader(t *testing.T) string {
 	return fmt.Sprintf("Bearer %s", fmt.Sprintf("%s.%s.", tokenHeader, tokenClaims))
 }
 
-func fixGraphqResponse() model.GraphqlResponse {
+func fixGraphQLResponse() model.GraphqlResponse {
 	return model.GraphqlResponse{
 		Errors: nil,
 		Data:   "payload",

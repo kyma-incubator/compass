@@ -1,6 +1,7 @@
 package clientset
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
@@ -74,9 +75,10 @@ func TestMain(m *testing.M) {
 		},
 	)
 
-	internalComponents, certLoader := config.InitInternalComponents(cfg, k8sClientSet)
+	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet)
 
-	go certLoader.Run()
+	go certsLoader.Run(context.TODO())
+	go revokedCertsLoader.Run(context.TODO())
 
 	tokenService = internalComponents.TokenService
 	externalAPIUrl = fmt.Sprintf("https://%s%s", cfg.ExternalAddress, cfg.APIEndpoint)
@@ -85,10 +87,10 @@ func TestMain(m *testing.M) {
 		internalComponents.Authenticator,
 		internalComponents.TokenService,
 		internalComponents.CertificateService,
-		internalComponents.SubjectConsts,
+		internalComponents.CSRSubjectConsts,
 		cfg.DirectorURL,
 		cfg.CertificateSecuredConnectorURL,
-		internalComponents.RevocationsRepository)
+		internalComponents.RevokedCertsRepository)
 
 	authContextTestMiddleware := func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +98,7 @@ func TestMain(m *testing.M) {
 			if connectorToken != "" {
 				tokenData, err := tokenService.Resolve(connectorToken)
 				if err != nil {
-					httputils.RespondWithError(w, http.StatusForbidden, err)
+					httputils.RespondWithError(r.Context(), w, http.StatusForbidden, err)
 					return
 				}
 				r = r.WithContext(authentication.PutIntoContext(r.Context(), authentication.ClientIdFromTokenKey, tokenData.ClientId))
@@ -105,7 +107,7 @@ func TestMain(m *testing.M) {
 			}
 
 			if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
-				httputils.RespondWithError(w, http.StatusForbidden, errors.New("Token and Certificate not provided"))
+				httputils.RespondWithError(r.Context(), w, http.StatusForbidden, errors.New("Token and Certificate not provided"))
 				return
 			}
 
@@ -117,7 +119,9 @@ func TestMain(m *testing.M) {
 		})
 	}
 
-	externalGqlServer := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextTestMiddleware)
+	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, authContextTestMiddleware)
+	exitOnError(err, "Error configuring external graphQL handler")
+
 	externalGqlServer.TLSConfig = &tls.Config{ClientAuth: tls.RequestClientCert}
 
 	go func() {

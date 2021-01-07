@@ -21,11 +21,18 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	if app.Status == nil {
 		app.Status = &ApplicationStatus{}
 	}
-
-	app.Description = update.Description
-	app.HealthCheckURL = update.HealthCheckURL
-	app.IntegrationSystemID = update.IntegrationSystemID
-	app.ProviderName = update.ProviderName
+	if update.Description != nil {
+		app.Description = update.Description
+	}
+	if update.HealthCheckURL != nil {
+		app.HealthCheckURL = update.HealthCheckURL
+	}
+	if update.IntegrationSystemID != nil {
+		app.IntegrationSystemID = update.IntegrationSystemID
+	}
+	if update.ProviderName != nil {
+		app.ProviderName = update.ProviderName
+	}
 	app.Status.Condition = getApplicationStatusConditionOrDefault(update.StatusCondition)
 	app.Status.Timestamp = timestamp
 }

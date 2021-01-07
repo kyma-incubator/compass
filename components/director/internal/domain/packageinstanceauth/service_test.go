@@ -241,7 +241,7 @@ func TestService_Delete(t *testing.T) {
 
 func TestService_SetAuth(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.Background(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	modelInstanceAuthFn := func() *model.PackageInstanceAuth {
 		return fixModelPackageInstanceAuth(testID, testPackageID, testTenant, nil, fixModelStatusPending())
@@ -326,7 +326,7 @@ func TestService_SetAuth(t *testing.T) {
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
-			ExpectedError: errors.New("auth can be set only on Package Instance Auths in PENDING state"),
+			ExpectedError: errors.New("auth can be set only on PackageInstanceAuths in PENDING state"),
 		},
 		{
 			Name: "Error when Package Instance Auth status condition different from PENDING",
@@ -341,7 +341,7 @@ func TestService_SetAuth(t *testing.T) {
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
-			ExpectedError: errors.New("auth can be set only on Package Instance Auths in PENDING state"),
+			ExpectedError: errors.New("auth can be set only on PackageInstanceAuths in PENDING state"),
 		},
 		{
 			Name: "Error when retrieved Package Instance Auth is nil",
@@ -352,7 +352,7 @@ func TestService_SetAuth(t *testing.T) {
 				return instanceAuthRepo
 			},
 			Input:         *modelSetInput,
-			ExpectedError: errors.Errorf("Package Instance Auth with ID %s not found", testID),
+			ExpectedError: errors.Errorf("PackageInstanceAuth with id %s not found", testID),
 		},
 	}
 
@@ -382,7 +382,7 @@ func TestService_SetAuth(t *testing.T) {
 		svc := packageinstanceauth.NewService(nil, nil)
 
 		// WHEN
-		err := svc.SetAuth(context.Background(), testID, model.PackageInstanceAuthSetInput{})
+		err := svc.SetAuth(context.TODO(), testID, model.PackageInstanceAuthSetInput{})
 
 		// THEN
 		require.Error(t, err)
@@ -392,7 +392,7 @@ func TestService_SetAuth(t *testing.T) {
 
 func TestService_Create(t *testing.T) {
 	// GIVEN
-	ctx := tenant.SaveToContext(context.Background(), testTenant, testExternalTenant)
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	modelAuth := fixModelAuth()
 	modelExpectedInstanceAuth := fixModelPackageInstanceAuth(testID, testPackageID, testTenant, modelAuth, fixModelStatusSucceeded())
@@ -578,7 +578,7 @@ func TestService_Create(t *testing.T) {
 		svc := packageinstanceauth.NewService(nil, nil)
 
 		// WHEN
-		_, err := svc.Create(context.Background(), testPackageID, model.PackageInstanceAuthRequestInput{}, nil, nil)
+		_, err := svc.Create(context.TODO(), testPackageID, model.PackageInstanceAuthRequestInput{}, nil, nil)
 
 		// THEN
 		require.Error(t, err)
@@ -756,7 +756,7 @@ func TestService_RequestDeletion(t *testing.T) {
 
 	t.Run("Error - nil", func(t *testing.T) {
 		// GIVEN
-		expectedError := errors.New("instance auth is required to request its deletion")
+		expectedError := errors.New("PackageInstanceAuth is required to request its deletion")
 
 		// WHEN
 		svc := packageinstanceauth.NewService(nil, nil)

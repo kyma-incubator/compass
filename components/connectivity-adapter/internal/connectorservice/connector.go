@@ -2,6 +2,7 @@ package connectorservice
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api"
@@ -13,17 +14,19 @@ import (
 )
 
 type Config struct {
-	ConnectorEndpoint  string `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
+	ConnectorEndpoint string        `envconfig:"default=http://compass-connector.compass-system.svc.cluster.local:3000/graphql"`
+	ClientTimeout     time.Duration `envconfig:"default=115s"`
+
 	AdapterBaseURL     string `envconfig:"default=https://adapter-gateway.kyma.local"`
 	AdapterMtlsBaseURL string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
 }
 
-func RegisterHandler(router *mux.Router, config Config, directorURL string) error {
+func RegisterHandler(router *mux.Router, config Config, directorURL string, directorTimeout time.Duration) error {
 	logger := logrus.New().WithField("component", "connector").Logger
 	logger.SetReportCaller(true)
 
-	directorClientProvider := director.NewClientProvider(directorURL)
-	connectorClientProvider := connector.NewClientProvider(config.ConnectorEndpoint)
+	directorClientProvider := director.NewClientProvider(directorURL, directorTimeout)
+	connectorClientProvider := connector.NewClientProvider(config.ConnectorEndpoint, config.ClientTimeout)
 
 	authorizationMiddleware := middlewares.NewAuthorizationMiddleware()
 	router.Use(authorizationMiddleware.GetAuthorizationHeaders)

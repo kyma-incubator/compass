@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/res"
@@ -18,6 +20,7 @@ import (
 const (
 	HeaderContentType          = "Content-Type"
 	ContentTypeApplicationJson = "application/json;charset=UTF-8"
+	appNameLabel               = "name"
 )
 
 type infoHandler struct {
@@ -56,26 +59,20 @@ func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	contextLogger := contextLogger(ih.logger, systemAuthID)
 	contextLogger.Info("Getting Info")
 
-	application, err := ih.directorClientProvider.Client(r).GetApplication(systemAuthID)
+	application, err := ih.directorClientProvider.Client(r).GetApplication(r.Context(), systemAuthID)
 	if err != nil {
 		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to get application from Director"), apperrors.CodeInternal)
 
 		return
 	}
 
-	configuration, err := ih.connectorClientProvider.Client(r).Configuration(authorizationHeaders)
+	configuration, err := ih.connectorClientProvider.Client(r).Configuration(r.Context(), authorizationHeaders)
 	if err != nil {
 		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to get configuration from Connector"), apperrors.CodeInternal)
-
 		return
 	}
 
-	infoResponse, err := ih.makeResponseFunc(
-		application.Name,
-		application.EventingConfiguration.DefaultURL,
-		"",
-		configuration)
-
+	infoResponse, err := ih.makeResponseFunc(getApplicationName(application), application.EventingConfiguration.DefaultURL, "", configuration)
 	if err != nil {
 		respondWithError(w, contextLogger, errors.Wrap(err, "Failed to build info response"), apperrors.CodeInternal)
 
@@ -83,4 +80,22 @@ func (ih *infoHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithBody(w, http.StatusOK, infoResponse, contextLogger)
+}
+
+func getApplicationName(application graphql.ApplicationExt) string {
+	appName := application.Name
+
+	labelsMap := map[string]interface{}(application.Labels)
+	if labelsMap == nil {
+		return appName
+	}
+
+	if label, ok := labelsMap[appNameLabel]; ok {
+		name, ok := label.(string)
+		if ok && name != "" {
+			appName = name
+		}
+	}
+
+	return appName
 }

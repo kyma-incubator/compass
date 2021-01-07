@@ -5,7 +5,16 @@ import (
 	"net/http"
 )
 
-func Authenticate(config Config) (string, error) {
+func GetDexToken() (string, error) {
+	config, err := NewConfigFromEnv()
+	if err != nil {
+		return "", err
+	}
+
+	return authenticate(config)
+}
+
+func authenticate(config Config) (string, error) {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -14,20 +23,5 @@ func Authenticate(config Config) (string, error) {
 	}
 
 	idTokenProvider := newDexIdTokenProvider(httpClient, config)
-	token, err := idTokenProvider.fetchIdToken()
-	return token, err
-}
-
-func GetDexToken() (string, error) {
-	config, err := NewConfigFromEnv()
-	if err != nil {
-		return "", err
-	}
-
-	dexToken, err := Authenticate(config)
-	if err != nil {
-		return "", err
-	}
-
-	return dexToken, nil
+	return idTokenProvider.fetchIdToken()
 }

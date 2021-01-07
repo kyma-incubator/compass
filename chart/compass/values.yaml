@@ -15,28 +15,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1441"
+      version: "PR-1657"
     connectivity_adapter:
       dir:
-      version: "PR-1480"
+      version: "PR-1669"
     pairing_adapter:
       dir:
-      version: "PR-1460"
+      version: "PR-1661"
     director:
       dir:
-      version: "PR-1469"
+      version: "PR-1670"
     gateway:
       dir:
-      version: "PR-1460"
+      version: "PR-1659"
+    tenant_fetcher:
+      dir:
+      version: "PR-1661"
     healthchecker:
       dir:
       version: "PR-1460"
-    schema_migrator:
-      dir:
-      version: "PR-1461"
     system_broker:
       dir:
       version: "latest"
+    schema_migrator:
+      dir:
+      version: "PR-1603"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -44,20 +47,23 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1460"
-    metris:
+      version: "PR-1661"
+    console:
       dir:
-      version: "PR-1434"
+      version: "PR-11"
     tests:
       director:
         dir:
-        version: "PR-1469"
+        version: "PR-1661"
       connector:
         dir:
-        version: "PR-1453"
+        version: "PR-1661"
       connectivity_adapter:
         dir:
-        version: "PR-1453"
+        version: "PR-1641"
+      tenant_fetcher:
+        dir:
+        version: "PR-1661"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -73,6 +79,7 @@ global:
   agentPreconfiguration: false
 
   director:
+    prefix: /director
     port: 3000
 
     tests:
@@ -93,6 +100,7 @@ global:
       maxIdleConnections: 1
 
   connector:
+    prefix: /connector
     graphql:
       external:
         port: 3000
@@ -108,9 +116,11 @@ global:
         certificateKey: ca.crt
         keyKey: ca.key
       rootCA:
-        name: kyma-gateway-certs
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
-        cacert: kyma-gateway-certs-cacert # For cert-rotation the cacert should be in different secret
+        # In order for istio mTLS to work we should have two different secrets one containing the server certificate (let’s say X) and one used for validation of the client’s certificates.
+        # The second one should be our root certificate and istio wants it to be named X-cacert. (-cacert suffix).
+        # This is the reason for the confusing name of our root certificate. https://preliminary.istio.io/v1.6/docs/tasks/traffic-management/ingress/secure-ingress/#configure-a-mutual-tls-ingress-gateway
+        cacert: compass-gateway-mtls-certs-cacert # For cert-rotation the cacert should be in different secret
         certificateKey: cacert
     certificateDataHeader: "Certificate-Data"
     revocation:
@@ -139,6 +149,7 @@ global:
           host: compass-gateway-auth-oauth
     mtls:
       host: compass-gateway-mtls
+      certSecret: compass-gateway-mtls-certs
     headers:
       request:
         remove:
@@ -156,15 +167,30 @@ global:
 
   rewriteFilters:
     workloadLabel: oathkeeper
+    namespace: kyma-system
     tokenDataHeader: "Connector-Token"
     certificateDataHeader: "Certificate-Data"
 
   istio:
-    gateway:
-      name: "compass-istio-gateway"
+    mtlsGateway:
+      name: "compass-gateway-mtls"
       namespace: "compass-system"
+    gateway:
+      name: "kyma-gateway"
+      namespace: "kyma-system"
     proxy:
       port: 15020
+    namespace: istio-system
+    ingressgateway:
+      workloadLabel: istio-ingressgateway
+      correlationHeaderRewriteFilter:
+        expectedHeaders:
+        - "x-request-id"
+        - "x-correlation-id"
+        - "x-correlationid"
+        - "x-forrequest-id"
+        - "x-vcap-request-id"
+        - "x-broker-api-request-identity"
 
   database:
     manageSecrets: true
@@ -202,6 +228,13 @@ global:
             retry:
               give_up_after: 3s
               max_delay: 2000ms
+      authenticationMappingService:
+        config:
+          api:
+            url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping
+            retry:
+              give_up_after: 3s
+              max_delay: 2000ms
       tenantMappingService:
         config:
           api:
@@ -225,35 +258,62 @@ global:
               max_delay: 2000ms
 
   tenantFetcher:
-    enabled: false
-    manageSecrets: true
-    providerName: "compass"
-    schedule: "*/5 * * * *"
-    oauth:
-      client: ""
-      secret: ""
-      tokenURL: ""
-    endpoints:
-      tenantCreated: "127.0.0.1/events?type=created"
-      tenantDeleted: "127.0.0.1/events?type=deleted"
-      tenantUpdated: "127.0.0.1/events?type=updated"
-    fieldMapping:
-      idField: "id"
-      nameField: "name"
-      discriminatorField: ""
-      discriminatorValue: ""
-    dbPool:
-      maxOpenConnections: 1
-      maxIdleConnections: 1
+    host: compass-tenant-fetcher.compass-system.svc.cluster.local
+    prefix: /tenants
+    port: 3000
+
+  tenantFetchers:
+    job1:
+      enabled: false
+      configMapNamespace: "compass-system"
+      manageSecrets: true
+      providerName: "compass"
+      schedule: "*/5 * * * *"
+      kubernetes:
+        configMapNamespace: "compass-system"
+        pollInterval: 2s
+        pollTimeout: 1m
+        timeout: 2m
+      oauth:
+        client: ""
+        secret: ""
+        tokenURL: ""
+      endpoints:
+        tenantCreated: "127.0.0.1/events?type=created"
+        tenantDeleted: "127.0.0.1/events?type=deleted"
+        tenantUpdated: "127.0.0.1/events?type=updated"
+      fieldMapping:
+        totalPagesField: "totalPages"
+        totalResultsField: "totalResults"
+        tenantEventsField: "events"
+        idField: "id"
+        nameField: "name"
+        discriminatorField: ""
+        discriminatorValue: ""
+        detailsField: "details"
+      queryMapping:
+        pageNumField: "pageNum"
+        pageSizeField: "pageSize"
+        timestampField: "timestamp"
+      query:
+        startPage: "0"
+        pageSize: "100"
+      dbPool:
+        maxOpenConnections: 1
+        maxIdleConnections: 1
 
   metrics:
     enabled: true
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
 
-  externalServicesMock:
-    enabled: false
+  authenticators:
+    authenticator0:
+      enabled: false
+      gatewayHost: "compass-gateway-authenticator0"
+      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix"}, {}]'
+      attributes: '{"uniqueAttribute": { "key": "", "value": "" }, "tenant": { "key": "" }, "identity": { "key": "" } }'
 
-  metris:
+  externalServicesMock:
     enabled: false
 
 pairing-adapter:

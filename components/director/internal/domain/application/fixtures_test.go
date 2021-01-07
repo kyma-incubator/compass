@@ -185,6 +185,12 @@ func fixModelApplicationUpdateInput(name, description, url string, statusConditi
 	}
 }
 
+func fixModelApplicationUpdateInputStatus(statusCondition model.ApplicationStatusCondition) model.ApplicationUpdateInput {
+	return model.ApplicationUpdateInput{
+		StatusCondition: &statusCondition,
+	}
+}
+
 func fixGQLApplicationRegisterInput(name, description string) graphql.ApplicationRegisterInput {
 	labels := graphql.Labels{
 		"test": []string{"val", "val2"},

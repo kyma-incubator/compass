@@ -111,7 +111,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
 		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
 		if err != nil {
-			return "", errors.Wrapf(err, "while creating FetchRequest for EventDefinition %s", id)
+			return "", errors.Wrapf(err, "while creating FetchRequest for EventDefinition with id %s", id)
 		}
 	}
 
@@ -131,13 +131,13 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 
 	err = s.fetchRequestRepo.DeleteByReferenceObjectID(ctx, tnt, model.EventAPIFetchRequestReference, id)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting FetchRequest for EventDefinition %s", id)
+		return errors.Wrapf(err, "while deleting FetchRequest for EventDefinition with id %s", id)
 	}
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
 		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
 		if err != nil {
-			return errors.Wrapf(err, "while creating FetchRequest for EventDefinition %s", id)
+			return errors.Wrapf(err, "while creating FetchRequest for EventDefinition with id %s", id)
 		}
 	}
 
@@ -145,7 +145,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 
 	err = s.eventAPIRepo.Update(ctx, eventAPI)
 	if err != nil {
-		return errors.Wrapf(err, "while updating EventDefinition with ID %s", id)
+		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
 	}
 
 	return nil
@@ -159,7 +159,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	err = s.eventAPIRepo.Delete(ctx, tnt, id)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting EventDefinition with ID %s", id)
+		return errors.Wrapf(err, "while deleting EventDefinition with id %s", id)
 	}
 
 	return nil

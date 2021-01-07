@@ -18,16 +18,20 @@ func _() {
 	_ = x[TenantNotFound-25]
 	_ = x[Unauthorized-26]
 	_ = x[InvalidOperation-27]
+	_ = x[OperationTimeout-28]
+	_ = x[EmptyData-29]
+	_ = x[InconsistentData-30]
+	_ = x[NotUniqueName-31]
 }
 
 const (
 	_ErrorType_name_0 = "InternalErrorUnknownError"
-	_ErrorType_name_1 = "NotFoundNotUniqueInvalidDataInsufficientScopesTenantRequiredTenantNotFoundUnauthorizedInvalidOperation"
+	_ErrorType_name_1 = "NotFoundNotUniqueInvalidDataInsufficientScopesTenantRequiredTenantNotFoundUnauthorizedInvalidOperationOperationTimeoutEmptyDataInconsistentDataNotUniqueName"
 )
 
 var (
 	_ErrorType_index_0 = [...]uint8{0, 13, 25}
-	_ErrorType_index_1 = [...]uint8{0, 8, 17, 28, 46, 60, 74, 86, 102}
+	_ErrorType_index_1 = [...]uint8{0, 8, 17, 28, 46, 60, 74, 86, 102, 118, 127, 143, 156}
 )
 
 func (i ErrorType) String() string {
@@ -35,7 +39,7 @@ func (i ErrorType) String() string {
 	case 10 <= i && i <= 11:
 		i -= 10
 		return _ErrorType_name_0[_ErrorType_index_0[i]:_ErrorType_index_0[i+1]]
-	case 20 <= i && i <= 27:
+	case 20 <= i && i <= 31:
 		i -= 20
 		return _ErrorType_name_1[_ErrorType_index_1[i]:_ErrorType_index_1[i+1]]
 	default:

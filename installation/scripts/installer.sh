@@ -98,8 +98,3 @@ echo -e "\nStarting installation!"
 kubectl apply -f - <<< "$COMBO_YAML"
 sleep 15
 kubectl apply -f "${CR_PATH}"
-
-if [[ "${HELM_VERSION}" == *"v2"* ]]; then
-    echo -e "\nGetting Helm certificates"
-    ${CURRENT_DIR}/tiller-tls.sh && echo "Certificates successfully saved! " || echo "An unexpected error occured while saving Helm certificates. Please check the installation status"
-fi

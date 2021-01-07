@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 type Config struct {
@@ -11,7 +13,11 @@ type Config struct {
 	APIEndpoint           string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint string `envconfig:"default=/graphql"`
 
+	Log log.Config
+
 	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
+
+	ServerTimeout time.Duration `envconfig:"default=100s"`
 
 	CSRSubject struct {
 		Country            string `envconfig:"default=PL"`
@@ -43,6 +49,11 @@ type Config struct {
 
 	DirectorURL                    string `envconfig:"default=127.0.0.1:3003"`
 	CertificateSecuredConnectorURL string `envconfig:"default=https://compass-gateway-mtls.kyma.local"`
+	KubernetesClient               struct {
+		PollInteval time.Duration `envconfig:"default=2s"`
+		PollTimeout time.Duration `envconfig:"default=1m"`
+		Timeout     time.Duration `envconfig:"default=95s"`
+	}
 }
 
 func (c *Config) String() string {
@@ -54,7 +65,8 @@ func (c *Config) String() string {
 		"CertificateSecuredConnectorURL: %s, "+
 		"RevocationConfigMapName: %s, "+
 		"TokenLength: %d, TokenRuntimeExpiration: %s, TokenApplicationExpiration: %s, TokenCSRExpiration: %s, "+
-		"DirectorURL: %s",
+		"DirectorURL: %s "+
+		"KubernetesClientPollInteval: %s, KubernetesClientPollTimeout: %s",
 		c.ExternalAddress, c.InternalAddress, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
@@ -63,5 +75,6 @@ func (c *Config) String() string {
 		c.CertificateSecuredConnectorURL,
 		c.RevocationConfigMapName,
 		c.Token.Length, c.Token.RuntimeExpiration.String(), c.Token.ApplicationExpiration.String(), c.Token.CSRExpiration.String(),
-		c.DirectorURL)
+		c.DirectorURL,
+		c.KubernetesClient.PollInteval, c.KubernetesClient.PollTimeout)
 }
