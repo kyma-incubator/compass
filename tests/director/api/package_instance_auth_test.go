@@ -103,7 +103,7 @@ func TestRequestPackageInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 		// THEN
 		require.NoError(t, err)
-		assertPackageInstanceAuth(t, pkgInstanceAuthRequestInput, output)
+		assertPackageInstanceAuthInput(t, pkgInstanceAuthRequestInput, output)
 
 		// Fetch Application with packages
 		packagesForApplicationReq := fixPackagesRequest(application.ID)
