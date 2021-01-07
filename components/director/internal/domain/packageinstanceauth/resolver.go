@@ -63,7 +63,7 @@ func (r *Resolver) PackageByInstanceAuth(ctx context.Context, authID string) (*g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -93,7 +93,7 @@ func (r *Resolver) PackageInstanceAuth(ctx context.Context, id string) (*graphql
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
