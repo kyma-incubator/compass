@@ -67,12 +67,12 @@ func (s *service) Create(ctx context.Context, packageID string, in model.Package
 
 	err = s.setCreationStatusFromAuth(ctx, &pkgInstAuth, defaultAuth)
 	if err != nil {
-		return "", errors.Wrapf(err, "while setting creation status for PackageInstanceAuth with id %s", in.ID)
+		return "", errors.Wrapf(err, "while setting creation status for PackageInstanceAuth with id %s", *in.ID)
 	}
 
 	err = s.repo.Create(ctx, &pkgInstAuth)
 	if err != nil {
-		return "", errors.Wrapf(err, "while creating PackageInstanceAuth with id %s for Package with id %s", in.ID,
+		return "", errors.Wrapf(err, "while creating PackageInstanceAuth with id %s for Package with id %s", *in.ID,
 			packageID)
 	}
 
