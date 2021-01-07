@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM alpine:3.12.3
 
 ARG MIGRATE_VER=4.5.0
 
