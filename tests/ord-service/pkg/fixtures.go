@@ -19,8 +19,9 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gateway_integration "github.com/kyma-incubator/compass/tests/director/gateway-integration"
@@ -88,7 +89,6 @@ func RequestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Cont
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, "", generateIntSysAuthRequest, intSysAuth)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSysAuth.Auth)
-
 
 	t.Log("Check if client credentials were generated")
 	assert.NotEmpty(t, intSysAuth.Auth.Credential)

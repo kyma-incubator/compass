@@ -21,6 +21,12 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	urlpkg "net/url"
+	"testing"
+	"time"
+
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
@@ -30,11 +36,6 @@ import (
 	"github.com/tidwall/gjson"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
-	"io/ioutil"
-	"net/http"
-	urlpkg "net/url"
-	"testing"
-	"time"
 )
 
 func TestORDService(t *testing.T) {
