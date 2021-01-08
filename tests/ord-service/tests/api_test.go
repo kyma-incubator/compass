@@ -146,7 +146,9 @@ func TestORDService(t *testing.T) {
 		},
 	}
 
-	oauthCredentialData := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
+	oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
+	require.True(t, ok)
+
 	conf := &clientcredentials.Config{
 		ClientID:     oauthCredentialData.ClientID,
 		ClientSecret: oauthCredentialData.ClientSecret,
