@@ -25,6 +25,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/handler"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/panic_recovery"
@@ -58,11 +61,17 @@ func New(c *Config, middlewares []mux.MiddlewareFunc, routesProvider ...func(rou
 	router.HandleFunc(c.RootAPI+"/debug/pprof/symbol", pprof.Symbol)
 	router.HandleFunc(c.RootAPI+"/debug/pprof/trace", pprof.Trace)
 
+	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	router.Use(log.RequestLogger())
 	router.Use(panic_recovery.NewRecoveryMiddleware())
 
 	for _, m := range middlewares {
 		router.Use(m)
+	}
+
+	handlerWithTimeout, err := handler.WithTimeout(router, c.RequestTimeout)
+	if err != nil {
+		log.D().Fatalf("Could not create timeout handler: %v\n", err)
 	}
 
 	for _, applyRoutes := range routesProvider {
@@ -71,7 +80,7 @@ func New(c *Config, middlewares []mux.MiddlewareFunc, routesProvider ...func(rou
 
 	s.Server = &http.Server{
 		Addr:    ":" + strconv.Itoa(c.Port),
-		Handler: router,
+		Handler: handlerWithTimeout,
 
 		ReadTimeout:  c.RequestTimeout,
 		WriteTimeout: c.RequestTimeout,
