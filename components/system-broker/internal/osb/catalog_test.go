@@ -3,8 +3,9 @@ package osb
 import (
 	"context"
 	"errors"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"testing"
+
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 
 	"github.com/stretchr/testify/assert"
 

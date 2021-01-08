@@ -7,15 +7,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewAddsAdditionalRoutes(t *testing.T) {
 	config := server.DefaultConfig()
-	uuid := uuid.NewService()
 
-	server := server.New(config, uuid, []mux.MiddlewareFunc{}, func(router *mux.Router) {
+	server := server.New(config, []mux.MiddlewareFunc{}, func(router *mux.Router) {
 		router.HandleFunc(config.RootAPI+"/test", func(writer http.ResponseWriter, request *http.Request) {
 			writer.WriteHeader(http.StatusOK)
 		})
@@ -26,7 +24,6 @@ func TestNewAddsAdditionalRoutes(t *testing.T) {
 
 func TestNewAddsSystemLivenessRoutes(t *testing.T) {
 	config := server.DefaultConfig()
-	uuid := uuid.NewService()
 
 	var tests = []struct {
 		Msg   string
@@ -44,7 +41,7 @@ func TestNewAddsSystemLivenessRoutes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Msg, func(t *testing.T) {
-			server := server.New(config, uuid, []mux.MiddlewareFunc{})
+			server := server.New(config, []mux.MiddlewareFunc{})
 			AssertRouteExists(t, server, test.Route)
 		})
 	}
@@ -52,7 +49,6 @@ func TestNewAddsSystemLivenessRoutes(t *testing.T) {
 
 func TestNewAddsSystemRoutes(t *testing.T) {
 	config := server.DefaultConfig()
-	uuid := uuid.NewService()
 
 	var tests = []struct {
 		Msg   string
@@ -86,7 +82,7 @@ func TestNewAddsSystemRoutes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Msg, func(t *testing.T) {
-			server := server.New(config, uuid, []mux.MiddlewareFunc{})
+			server := server.New(config, []mux.MiddlewareFunc{})
 			AssertRouteExists(t, server, config.RootAPI+test.Route)
 		})
 	}

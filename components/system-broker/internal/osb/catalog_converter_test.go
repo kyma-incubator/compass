@@ -2,10 +2,11 @@ package osb
 
 import (
 	"fmt"
+	"testing"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestConverter_Convert(t *testing.T) {
