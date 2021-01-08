@@ -13,6 +13,8 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-director-api-tests
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:

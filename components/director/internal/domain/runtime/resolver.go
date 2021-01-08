@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -45,6 +47,12 @@ type RuntimeService interface {
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
 }
 
+//go:generate mockery -name=ScenarioAssignmentService -output=automock -outpkg=automock -case=underscore
+type ScenarioAssignmentService interface {
+	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
+}
+
 //go:generate mockery -name=RuntimeConverter -output=automock -outpkg=automock -case=underscore
 type RuntimeConverter interface {
 	ToGraphQL(in *model.Runtime) *graphql.Runtime
@@ -63,24 +71,26 @@ type SystemAuthService interface {
 }
 
 type Resolver struct {
-	transact    persistence.Transactioner
-	svc         RuntimeService
-	sysAuthSvc  SystemAuthService
-	converter   RuntimeConverter
-	sysAuthConv SystemAuthConverter
-	oAuth20Svc  OAuth20Service
-	eventingSvc EventingService
+	transact                  persistence.Transactioner
+	runtimeService            RuntimeService
+	scenarioAssignmentService ScenarioAssignmentService
+	sysAuthSvc                SystemAuthService
+	converter                 RuntimeConverter
+	sysAuthConv               SystemAuthConverter
+	oAuth20Svc                OAuth20Service
+	eventingSvc               EventingService
 }
 
-func NewResolver(transact persistence.Transactioner, svc RuntimeService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService) *Resolver {
+func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService) *Resolver {
 	return &Resolver{
-		transact:    transact,
-		svc:         svc,
-		sysAuthSvc:  sysAuthSvc,
-		oAuth20Svc:  oAuthSvc,
-		converter:   conv,
-		sysAuthConv: sysAuthConv,
-		eventingSvc: eventingSvc,
+		transact:                  transact,
+		runtimeService:            runtimeService,
+		scenarioAssignmentService: scenarioAssignmentService,
+		sysAuthSvc:                sysAuthSvc,
+		oAuth20Svc:                oAuthSvc,
+		converter:                 conv,
+		sysAuthConv:               sysAuthConv,
+		eventingSvc:               eventingSvc,
 	}
 }
 
@@ -97,7 +107,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -105,7 +115,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
-	runtimesPage, err := r.svc.List(ctx, labelFilter, *first, cursor)
+	runtimesPage, err := r.runtimeService.List(ctx, labelFilter, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -133,11 +143,11 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	runtime, err := r.svc.Get(ctx, id)
+	runtime, err := r.runtimeService.Get(ctx, id)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -160,16 +170,16 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	id, err := r.svc.Create(ctx, convertedIn)
+	id, err := r.runtimeService.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
-	runtime, err := r.svc.Get(ctx, id)
+	runtime, err := r.runtimeService.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -190,16 +200,16 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = r.svc.Update(ctx, id, convertedIn)
+	err = r.runtimeService.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
 	}
 
-	runtime, err := r.svc.Get(ctx, id)
+	runtime, err := r.runtimeService.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -219,11 +229,11 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	runtime, err := r.svc.Get(ctx, id)
+	runtime, err := r.runtimeService.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -238,9 +248,14 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		return nil, err
 	}
 
+	err = r.deleteAssociatedScenarioAssignments(ctx, runtime.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	deletedRuntime := r.converter.ToGraphQL(runtime)
 
-	err = r.svc.Delete(ctx, id)
+	err = r.runtimeService.Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -251,6 +266,42 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	}
 
 	return deletedRuntime, nil
+}
+
+func (r *Resolver) GetLabel(ctx context.Context, runtimeID string, key string) (*graphql.Labels, error) {
+	if runtimeID == "" {
+		return nil, apperrors.NewInternalError("Runtime cannot be empty")
+	}
+	if key == "" {
+		return nil, apperrors.NewInternalError("Runtime label key cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	label, err := r.runtimeService.GetLabel(ctx, runtimeID, key)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	resultLabels := make(map[string]interface{})
+	resultLabels[key] = label.Value
+
+	var gqlLabels graphql.Labels = resultLabels
+	return &gqlLabels, nil
 }
 
 func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*graphql.Label, error) {
@@ -264,11 +315,11 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = r.svc.SetLabel(ctx, &model.LabelInput{
+	err = r.runtimeService.SetLabel(ctx, &model.LabelInput{
 		Key:        key,
 		Value:      value,
 		ObjectType: model.RuntimeLabelableObject,
@@ -278,7 +329,7 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 		return nil, err
 	}
 
-	label, err := r.svc.GetLabel(ctx, runtimeID, key)
+	label, err := r.runtimeService.GetLabel(ctx, runtimeID, key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting label with key: [%s]", key)
 	}
@@ -299,16 +350,16 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	label, err := r.svc.GetLabel(ctx, runtimeID, key)
+	label, err := r.runtimeService.GetLabel(ctx, runtimeID, key)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.svc.DeleteLabel(ctx, runtimeID, key)
+	err = r.runtimeService.DeleteLabel(ctx, runtimeID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -333,11 +384,11 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	itemMap, err := r.svc.ListLabels(ctx, obj.ID)
+	itemMap, err := r.runtimeService.ListLabels(ctx, obj.ID)
 	if err != nil {
 		if strings.Contains(err.Error(), "doesn't exist") { // TODO: Use custom error and check its type
 			return nil, tx.Commit()
@@ -369,7 +420,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -409,7 +460,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening the transaction")
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -423,4 +474,41 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 	}
 
 	return eventing.RuntimeEventingConfigurationToGraphQL(eventingCfg), nil
+}
+
+// deleteAssociatedScenarioAssignments ensures that scenario assignments which are responsible for creation of certain runtime labels are deleted,
+// if runtime doesn't have the scenarios label or is part of a scenario for which no scenario assignment exists => noop
+func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runtimeID string) error {
+	scenariosLbl, err := r.runtimeService.GetLabel(ctx, runtimeID, model.ScenariosKey)
+	notFound := apperrors.IsNotFoundError(err)
+	if err != nil && !notFound {
+		return err
+	}
+
+	if notFound {
+		return nil
+	}
+
+	scenarios, err := label.ValueToStringsSlice(scenariosLbl.Value)
+	if err != nil {
+		return err
+	}
+
+	for _, scenario := range scenarios {
+		scenarioAssignment, err := r.scenarioAssignmentService.GetForScenarioName(ctx, scenario)
+		notFound := apperrors.IsNotFoundError(err)
+		if err != nil && !notFound {
+			return err
+		}
+
+		if notFound {
+			continue
+		}
+
+		if err := r.scenarioAssignmentService.Delete(ctx, scenarioAssignment); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

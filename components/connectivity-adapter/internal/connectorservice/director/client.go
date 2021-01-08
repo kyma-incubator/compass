@@ -12,7 +12,7 @@ import (
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
 type Client interface {
-	GetApplication(systemAuthID string) (schema.ApplicationExt, apperrors.AppError)
+	GetApplication(ctx context.Context, systemAuthID string) (schema.ApplicationExt, apperrors.AppError)
 }
 
 func NewClient(gqlClient *graphql.Client) Client {
@@ -27,8 +27,8 @@ type client struct {
 	timeout   time.Duration
 }
 
-func (c client) GetApplication(systemAuthID string) (schema.ApplicationExt, apperrors.AppError) {
-	appID, err := c.getApplicationID(systemAuthID)
+func (c client) GetApplication(ctx context.Context, systemAuthID string) (schema.ApplicationExt, apperrors.AppError) {
+	appID, err := c.getApplicationID(ctx, systemAuthID)
 	if err != nil {
 		return schema.ApplicationExt{}, apperrors.Internal(err.Error())
 	}
@@ -36,7 +36,7 @@ func (c client) GetApplication(systemAuthID string) (schema.ApplicationExt, appe
 	query := applicationQuery(appID)
 	var response ApplicationResponse
 
-	err = c.execute(c.gqlClient, query, &response)
+	err = c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
 		return schema.ApplicationExt{}, apperrors.Internal(err.Error())
 	}
@@ -44,12 +44,12 @@ func (c client) GetApplication(systemAuthID string) (schema.ApplicationExt, appe
 	return response.Result, nil
 }
 
-func (c client) getApplicationID(systemAuthID string) (string, error) {
+func (c client) getApplicationID(ctx context.Context, systemAuthID string) (string, error) {
 	query := viewerQuery()
 
 	var response ViewerResponse
 
-	err := c.execute(c.gqlClient, query, &response)
+	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
 		return "", err
 	}
@@ -65,11 +65,11 @@ type ApplicationResponse struct {
 	Result schema.ApplicationExt `json:"result"`
 }
 
-func (c *client) execute(client *graphql.Client, query string, res interface{}) error {
+func (c *client) execute(ctx context.Context, client *graphql.Client, query string, res interface{}) error {
 	req := graphql.NewRequest(query)
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	newCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	return retry.GQLRun(client.Run, ctx, req, res)
+	return retry.GQLRun(client.Run, newCtx, req, res)
 }

@@ -120,6 +120,12 @@ models:
       eventingConfiguration:
         resolver: true
 
+  RuntimeContext:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeContext"
+    fields:
+      labels:
+        resolver: true
+
   IntegrationSystem:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.IntegrationSystem"
     fields:

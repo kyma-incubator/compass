@@ -19,6 +19,7 @@ func TestPackageInstanceAuthRequestInput_ToPackageInstanceAuth(t *testing.T) {
 	testTenant := "baz"
 
 	input := PackageInstanceAuthRequestInput{
+		ID:          str.Ptr("foo"),
 		Context:     str.Ptr(`"test"`),
 		InputParams: str.Ptr(`"test"`),
 	}

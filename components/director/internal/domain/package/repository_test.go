@@ -212,7 +212,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 		sqlMock.AssertExpectations(t)
 		assert.Nil(t, modelPkg)
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.packages: test error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {
@@ -363,7 +363,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 		sqlMock.AssertExpectations(t)
 		assert.Nil(t, modelPkg)
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.packages: test error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns error when conversion failed", func(t *testing.T) {

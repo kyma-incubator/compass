@@ -2,14 +2,11 @@ package statusupdate
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
-
-	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 )
@@ -17,7 +14,6 @@ import (
 type update struct {
 	transact persistence.Transactioner
 	repo     StatusUpdateRepository
-	logger   *log.Logger
 }
 
 //go:generate mockery -name=StatusUpdateRepository -output=automock -outpkg=automock -case=underscore
@@ -33,11 +29,10 @@ const (
 	Runtimes     WithStatusObject = "runtimes"
 )
 
-func New(transact persistence.Transactioner, repo StatusUpdateRepository, logger *log.Logger) *update {
+func New(transact persistence.Transactioner, repo StatusUpdateRepository) *update {
 	return &update{
 		transact: transact,
 		repo:     repo,
-		logger:   logger,
 	}
 }
 
@@ -45,8 +40,10 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			consumerInfo, err := consumer.LoadFromContext(r.Context())
+			logger := log.C(r.Context())
+
 			if err != nil {
-				u.logger.Error(errors.Wrap(err, "while fetching consumer info from from context").Error())
+				logger.WithError(err).Error("An error has occurred while fetching consumer info from context.")
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -63,17 +60,17 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			tx, err := u.transact.Begin()
 			if err != nil {
-				u.logger.Error(errors.Wrap(err, "while opening transaction").Error())
+				logger.WithError(err).Error("An error has occurred while opening transaction.")
 				next.ServeHTTP(w, r)
 				return
 			}
-			defer u.transact.RollbackUnlessCommitted(tx)
+			defer u.transact.RollbackUnlessCommitted(r.Context(), tx)
 
 			ctxWithDB := persistence.SaveToContext(r.Context(), tx)
 
 			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, object)
 			if err != nil {
-				u.logger.Error(errors.Wrap(err, "while checking status").Error())
+				logger.WithError(err).Error("An error has occurred while checking repository status.")
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -81,37 +78,18 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			if !isConnected {
 				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, object)
 				if err != nil {
-					u.logger.Error(errors.Wrap(err, "while updating status").Error())
+					logger.WithError(err).Error("An error has occurred while updating repository status.")
 					next.ServeHTTP(w, r)
 					return
 				}
 			}
 
 			if err := tx.Commit(); err != nil {
-				u.logger.Error(errors.Wrap(err, "while committing").Error())
+				logger.WithError(err).Error("An error has occurred while committing transaction.")
 				next.ServeHTTP(w, r)
 				return
 			}
 			next.ServeHTTP(w, r)
 		})
-	}
-}
-
-type errorResponse struct {
-	Errors []gqlError `json:"errors"`
-}
-
-type gqlError struct {
-	Message string `json:"message"`
-}
-
-func (u *update) writeError(w http.ResponseWriter, message string, statusCode int) {
-	w.WriteHeader(statusCode)
-	w.Header().Set("Content-Type", "application/json")
-
-	resp := errorResponse{Errors: []gqlError{{Message: message}}}
-	err := json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		log.Error(err, "while encoding data")
 	}
 }

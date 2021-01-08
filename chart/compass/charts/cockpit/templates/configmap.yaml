@@ -1,4 +1,4 @@
-{{- $directorApiUrl :=  printf "https://%s.%s/director/graphql" .Values.global.gateway.tls.host .Values.global.ingress.domainName }}
+{{- $directorApiUrl :=  printf "https://%s.%s%s/graphql" .Values.global.gateway.tls.host .Values.global.ingress.domainName .Values.global.director.prefix }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/pkg/errors"
-
 	"github.com/stretchr/testify/mock"
 
 	revocationMocks "github.com/kyma-incubator/compass/components/connector/internal/revocation/mocks"
@@ -180,10 +178,10 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 
 		certHeaderParser := &mocks2.CertificateHeaderParser{}
 		certHeaderParser.On("GetCertificateData", req).Return(clientId, hash, true)
-		revocationList := &revocationMocks.RevocationListRepository{}
-		revocationList.On("Contains", hash).Return(false, nil)
+		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
+		revokedCertsRepository.On("Contains", hash).Return(false)
 
-		validator := NewValidationHydrator(nil, certHeaderParser, revocationList)
+		validator := NewValidationHydrator(nil, certHeaderParser, revokedCertsRepository)
 
 		// when
 		validator.ResolveIstioCertHeader(rr, req)
@@ -232,37 +230,10 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 
 		certHeaderParser := &mocks2.CertificateHeaderParser{}
 		certHeaderParser.On("GetCertificateData", req).Return(clientId, hash, true)
-		revocationList := &revocationMocks.RevocationListRepository{}
-		revocationList.On("Contains", hash).Return(true, nil)
+		revokedCertsRepository := &revocationMocks.RevokedCertificatesRepository{}
+		revokedCertsRepository.On("Contains", hash).Return(true)
 
-		validator := NewValidationHydrator(nil, certHeaderParser, revocationList)
-
-		// when
-		validator.ResolveIstioCertHeader(rr, req)
-
-		// then
-		assert.Equal(t, http.StatusOK, rr.Code)
-
-		var authSession AuthenticationSession
-		err = json.NewDecoder(rr.Body).Decode(&authSession)
-		require.NoError(t, err)
-
-		assert.Equal(t, emptyAuthSession(), authSession)
-		mock.AssertExpectationsForObjects(t, certHeaderParser)
-	})
-
-	t.Run("should not modify authentication session if failed to read revoked certificates", func(t *testing.T) {
-		// given
-		req, err := http.NewRequest(http.MethodPost, "", bytes.NewBuffer(marshalledSession))
-		require.NoError(t, err)
-		rr := httptest.NewRecorder()
-
-		certHeaderParser := &mocks2.CertificateHeaderParser{}
-		certHeaderParser.On("GetCertificateData", req).Return(clientId, hash, true)
-		revocationList := &revocationMocks.RevocationListRepository{}
-		revocationList.On("Contains", hash).Return(false, errors.Errorf("some error"))
-
-		validator := NewValidationHydrator(nil, certHeaderParser, revocationList)
+		validator := NewValidationHydrator(nil, certHeaderParser, revokedCertsRepository)
 
 		// when
 		validator.ResolveIstioCertHeader(rr, req)

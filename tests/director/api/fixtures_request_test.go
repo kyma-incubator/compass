@@ -526,6 +526,15 @@ func fixDeleteLabelDefinitionRequest(labelDefinitionKey string, deleteRelatedLab
 			}`, labelDefinitionKey, deleteRelatedLabels, tc.gqlFieldsProvider.ForLabelDefinition()))
 }
 
+func fixDeleteRuntimeLabelRequest(runtimeID, labelKey string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteRuntimeLabel(runtimeID: "%s", key: "%s") {
+					%s
+				}
+			}`, runtimeID, labelKey, tc.gqlFieldsProvider.ForLabel()))
+}
+
 func fixDeleteApplicationLabelRequest(applicationID, labelKey string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

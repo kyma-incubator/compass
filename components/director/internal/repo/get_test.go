@@ -169,7 +169,7 @@ func TestGetSingle(t *testing.T) {
 		// WHEN
 		err := sut.Get(ctx, givenTenant, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from table users: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns ErrorNotFound if object not found", func(t *testing.T) {
@@ -315,7 +315,7 @@ func TestGetSingleGlobal(t *testing.T) {
 		// WHEN
 		err := sut.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id_col", givenID)}, repo.NoOrderBy, &dest)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: while getting object from table users: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("returns ErrorNotFound if object not found", func(t *testing.T) {

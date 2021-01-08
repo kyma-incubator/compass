@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/appdetails"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/director"
@@ -21,7 +22,7 @@ func TestRequestContextProvider_ForRequest(t *testing.T) {
 	require.NoError(t, err)
 	rq.Header.Set(gqlcli.AuthorizationHeaderKey, "foo")
 
-	gqlCli := gqlcli.NewAuthorizedGraphQLClient("", rq)
+	gqlCli := gqlcli.NewAuthorizedGraphQLClient("", time.Second, rq)
 	app := graphql.ApplicationExt{Application: graphql.Application{ID: "app-id"}}
 	expected := service.RequestContext{
 		AppID:          app.ID,

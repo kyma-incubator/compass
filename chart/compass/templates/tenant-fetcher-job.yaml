@@ -1,10 +1,21 @@
-{{if eq .Values.global.tenantFetcher.enabled true}}
+{{ $outerScope := . }}
+{{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
+{{ if eq $config.enabled true }}
+{{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName }}
+---
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: "compass-tenant-fetcher"
+  name: "{{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}"
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
 spec:
-  schedule: "{{ .Values.global.tenantFetcher.schedule }}"
+  schedule: "{{ $config.schedule }}"
   failedJobsHistoryLimit: 5
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 60 # Fix for https://github.com/kyma-incubator/compass/issues/1155
@@ -18,11 +29,20 @@ spec:
           labels:
             cronjob: tenant-fetcher
         spec:
+          serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:
           - name: fetcher
-            image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.director.dir }}compass-director:{{ .Values.global.images.director.version }}
+            image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
             imagePullPolicy: IfNotPresent
             env:
+              - name: APP_USE_KUBERNETES
+                value: "true"
+              - name: APP_KUBERNETES_POLL_INTERVAL
+                value: {{ $config.kubernetes.pollInterval }}
+              - name: APP_KUBERNETES_POLL_TIMEOUT
+                value: {{ $config.kubernetes.pollTimeout }}
+              - name: APP_KUBERNETES_TIMEOUT
+                value: {{ $config.kubernetes.timeout }}
               - name: APP_DB_USER
                 valueFrom:
                   secretKeyRef:
@@ -54,57 +74,81 @@ spec:
                     name: compass-postgresql
                     key: postgresql-sslMode
               - name: APP_DB_MAX_OPEN_CONNECTIONS
-                value: "{{.Values.global.tenantFetcher.dbPool.maxOpenConnections}}"
+                value: "{{ $config.dbPool.maxOpenConnections }}"
               - name: APP_DB_MAX_IDLE_CONNECTIONS
-                value: "{{.Values.global.tenantFetcher.dbPool.maxIdleConnections}}"
+                value: "{{ $config.dbPool.maxIdleConnections }}"
               - name: APP_ENDPOINT_TENANT_CREATED
-                value: {{ .Values.global.tenantFetcher.endpoints.tenantCreated }}
+                value: {{ $config.endpoints.tenantCreated }}
               - name: APP_ENDPOINT_TENANT_DELETED
-                value: {{ .Values.global.tenantFetcher.endpoints.tenantDeleted }}
+                value: {{ $config.endpoints.tenantDeleted }}
               - name: APP_ENDPOINT_TENANT_UPDATED
-                value: {{ .Values.global.tenantFetcher.endpoints.tenantUpdated }}
+                value: {{ $config.endpoints.tenantUpdated }}
               - name: APP_TENANT_PROVIDER
-                value: {{ .Values.global.tenantFetcher.providerName }}
+                value: {{ $config.providerName }}
               - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
-                    name: compass-tenant-fetcher-secret
+                    name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-client
               - name: APP_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
-                    name: compass-tenant-fetcher-secret
+                    name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-secret
               - name: APP_OAUTH_TOKEN_ENDPOINT
                 valueFrom:
                   secretKeyRef:
-                    name: compass-tenant-fetcher-secret
+                    name: compass-tenant-fetcher-secret-{{ $tenantFetcherName }}
                     key: oauth-token-endpoint
+              - name: APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
+                value: {{ $configmapName }}
+              - name: APP_CONFIGMAP_NAMESPACE
+                value: {{ $config.kubernetes.configMapNamespace }}
+              - name: APP_CONFIGMAP_TIMESTAMP_FIELD
+                value: "lastConsumedTenantTimestamp"
               - name: APP_MAPPING_FIELD_ID
-                value: {{ .Values.global.tenantFetcher.fieldMapping.idField }}
+                value: {{ $config.fieldMapping.idField }}
               - name: APP_MAPPING_FIELD_NAME
-                value: {{ .Values.global.tenantFetcher.fieldMapping.nameField }}
+                value: {{ $config.fieldMapping.nameField }}
               - name: APP_MAPPING_FIELD_DISCRIMINATOR
-                value: {{ .Values.global.tenantFetcher.fieldMapping.discriminatorField }}
+                value: {{ $config.fieldMapping.discriminatorField }}
               - name: APP_MAPPING_VALUE_DISCRIMINATOR
-                value: {{ .Values.global.tenantFetcher.fieldMapping.discriminatorValue }}
-            {{ if and (.Values.global.metrics.enabled) (.Values.global.metrics.pushEndpoint) }}
+                value: {{ $config.fieldMapping.discriminatorValue }}
+              - name: APP_MAPPING_FIELD_DETAILS
+                value: {{ $config.fieldMapping.detailsField}}
+              - name: APP_TENANT_TOTAL_PAGES_FIELD
+                value: {{ $config.fieldMapping.totalPagesField}}
+              - name: APP_TENANT_TOTAL_RESULTS_FIELD
+                value: {{ $config.fieldMapping.totalResultsField}}
+              - name: APP_TENANT_EVENTS_FIELD
+                value: {{ $config.fieldMapping.tenantEventsField}}
+              - name: APP_QUERY_PAGE_NUM_FIELD
+                value: {{ $config.queryMapping.pageNumField}}
+              - name: APP_QUERY_PAGE_SIZE_FIELD
+                value: {{ $config.queryMapping.pageSizeField}}
+              - name: APP_QUERY_TIMESTAMP_FIELD
+                value: {{ $config.queryMapping.timestampField}}
+              - name: APP_QUERY_PAGE_START
+                value: "{{ $config.query.startPage}}"
+              - name: APP_QUERY_PAGE_SIZE
+                value: "{{ $config.query.pageSize}}"
+            {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
               - name: APP_METRICS_PUSH_ENDPOINT
-                value: {{ .Values.global.metrics.pushEndpoint}}
+                value: {{ $.Values.global.metrics.pushEndpoint}}
             {{ end }}
             command:
               - "/bin/sh"
             args:
               - "-c"
               - "./tenantfetcher; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
-          {{if eq .Values.global.database.embedded.enabled false}}
+          {{if eq $.Values.global.database.embedded.enabled false}}
           - name: cloudsql-proxy
-            image: gcr.io/cloudsql-docker/gce-proxy:1.14
+            image: gcr.io/cloudsql-docker/gce-proxy:1.18.0-alpine
             command:
               - /bin/sh
             args:
               - -c
-              - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+              - "trap 'exit 0' SIGINT; echo 'Waiting for istio-proxy to start...' && sleep 15; /cloud_sql_proxy -instances={{ $.Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json -term_timeout=2s"
             volumeMounts:
               - name: cloudsql-instance-credentials
                 mountPath: /secrets/cloudsql-instance-credentials
@@ -112,10 +156,84 @@ spec:
           {{end}}
           restartPolicy: Never
           shareProcessNamespace: true
-          {{if eq .Values.global.database.embedded.enabled false}}
+          {{if eq $.Values.global.database.embedded.enabled false}}
           volumes:
           - name: cloudsql-instance-credentials
             secret:
               secretName: cloudsql-instance-credentials
           {{end}}
-{{end}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $configmapName }}
+  namespace: "{{ $config.kubernetes.configMapNamespace }}"
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+  {{- $configmap := (lookup "v1" "ConfigMap" $config.kubernetes.configMapNamespace $configmapName) }}
+  {{- if empty $configmap }}
+data:
+  lastConsumedTenantTimestamp: "1"
+  {{ else }}
+data:
+  {{ toYaml $configmap.data | indent 2}}
+  {{ end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $configmapName }}
+  namespace: {{ $config.kubernetes.configMapNamespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["configmaps"]
+    resourceNames: [{{ $configmapName }}]
+    verbs: ["get", "update"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}-config
+  namespace: {{ $config.kubernetes.configMapNamespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ $configmapName }}
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}
+{{- end -}}

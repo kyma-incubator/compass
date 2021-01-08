@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -50,7 +51,7 @@ func TestTokenService(t *testing.T) {
 			tokenService := newTokenService()
 
 			// when
-			token, err := tokenService.CreateToken(clientId, testCase.tokenType)
+			token, err := tokenService.CreateToken(context.TODO(), clientId, testCase.tokenType)
 
 			// then
 			require.NoError(t, err)

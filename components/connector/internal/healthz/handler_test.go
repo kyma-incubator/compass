@@ -5,8 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,7 +14,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(NewHTTPHandler(logrus.StandardLogger()))
+		handler := http.HandlerFunc(NewHTTPHandler())
 
 		handler.ServeHTTP(rr, req)
 

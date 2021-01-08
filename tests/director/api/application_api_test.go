@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/director/pkg/jwtbuilder"
+
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -22,6 +24,8 @@ const (
 	addWebhookCategory          = "add webhook"
 	updateWebhookCategory       = "update webhook"
 	webhookURL                  = "https://kyma-project.io"
+	defaultScenario             = "DEFAULT"
+	defaultNormalizationPrefix  = "mp-"
 )
 
 var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
@@ -56,6 +60,79 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	defer unregisterApplication(t, actualApp.ID)
 	assertApplication(t, in, actualApp)
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
+}
+
+func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	firstAppName := "app@wordpress"
+	actualApp := registerApplication(t, ctx, firstAppName)
+	//THEN
+	require.NotEmpty(t, actualApp.ID)
+	require.Equal(t, actualApp.Name, firstAppName)
+	defer unregisterApplication(t, actualApp.ID)
+
+	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
+
+	// SECOND APP WITH SAME APP NAME WHEN NORMALIZED
+	inSecond := graphql.ApplicationRegisterInput{
+		Name:           "app!wordpress",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: &graphql.Labels{
+			"group":     []interface{}{"production", "experimental"},
+			"scenarios": []interface{}{"DEFAULT"},
+		},
+	}
+	appSecondInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(inSecond)
+	require.NoError(t, err)
+	actualSecondApp := graphql.ApplicationExt{}
+	// WHEN
+	request := fixRegisterApplicationRequest(appSecondInputGQL)
+	err = tc.RunOperation(ctx, request, &actualSecondApp)
+	//THEN
+	require.EqualError(t, err, "graphql: Object name is not unique [object=Application]")
+	require.Empty(t, actualSecondApp.ID)
+
+	// THIRD APP WITH DIFFERENT APP NAME WHEN NORMALIZED
+	actualThirdApp := registerApplication(t, ctx, "appwordpress")
+	//THEN
+	require.NotEmpty(t, actualThirdApp.ID)
+	defer unregisterApplication(t, actualThirdApp.ID)
+
+	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualThirdApp.Status.Condition)
+
+	// FOURTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH MATCHES EXISTING APP WHEN NORMALIZED
+	inFourth := graphql.ApplicationRegisterInput{
+		Name:           "mp-appwordpress",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: &graphql.Labels{
+			"group":     []interface{}{"production", "experimental"},
+			"scenarios": []interface{}{"DEFAULT"},
+		},
+	}
+	appFourthInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(inFourth)
+	require.NoError(t, err)
+	actualFourthApp := graphql.ApplicationExt{}
+	// WHEN
+	request = fixRegisterApplicationRequest(appFourthInputGQL)
+	err = tc.RunOperation(ctx, request, &actualFourthApp)
+	//THEN
+	require.EqualError(t, err, "graphql: Object name is not unique [object=Application]")
+	require.Empty(t, actualFourthApp.ID)
+
+	// FIFTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH DOES NOT MATCH ANY EXISTING APP WHEN NORMALIZED
+	fifthAppName := "mp-application"
+	actualFifthApp := registerApplication(t, ctx, fifthAppName)
+	//THEN
+	require.NotEmpty(t, actualFifthApp.ID)
+	require.Equal(t, actualFifthApp.Name, fifthAppName)
+	defer unregisterApplication(t, actualFifthApp.ID)
+
+	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualFifthApp.Status.Condition)
 }
 
 func TestRegisterApplicationWithStatusCondition(t *testing.T) {
@@ -463,17 +540,76 @@ func TestQuerySpecificApplication(t *testing.T) {
 	err = tc.RunOperation(context.Background(), request, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	createdID := actualApp.ID
-	defer unregisterApplication(t, actualApp.ID)
+	appID := actualApp.ID
+	defer unregisterApplication(t, appID)
 
-	// WHEN
-	queryAppReq := fixApplicationRequest(actualApp.ID)
-	err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
-	saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
+	t.Run("Query Application With Consumer User", func(t *testing.T) {
+		actualApp := graphql.Application{}
 
-	//THEN
-	require.NoError(t, err)
-	assert.Equal(t, createdID, actualApp.ID)
+		// WHEN
+		queryAppReq := fixApplicationRequest(appID)
+		err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
+		saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
+
+		//THE
+		require.NoError(t, err)
+		assert.Equal(t, appID, actualApp.ID)
+	})
+
+	ctx := context.Background()
+
+	runtime := registerRuntime(t, ctx, "runtime-test")
+	defer unregisterRuntime(t, runtime.ID)
+
+	scenarios := []string{defaultScenario, "test-scenario"}
+
+	// update label definitions
+	updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios)
+	defer updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios[:1])
+
+	runtimeConsumer := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
+		ID:   runtime.ID,
+		Type: jwtbuilder.RuntimeConsumer,
+	})
+
+	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
+		// set application scenarios label
+		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[1:])
+		defer setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1])
+
+		// set runtime scenarios label
+		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
+		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+
+		actualApp := graphql.Application{}
+
+		// WHEN
+		queryAppReq := fixApplicationRequest(appID)
+		err = runtimeConsumer.Run(queryAppReq, &actualApp)
+
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, appID, actualApp.ID)
+	})
+
+	t.Run("Query Application With Consumer Runtime not in same scenario", func(t *testing.T) {
+		// set application scenarios label
+		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1])
+
+		// set runtime scenarios label
+		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
+		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+
+		actualApp := graphql.Application{}
+
+		// WHEN
+		queryAppReq := fixApplicationRequest(appID)
+		err = runtimeConsumer.Run(queryAppReq, &actualApp)
+
+		//THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "The operation is not allowed")
+	})
 }
 
 func TestTenantSeparation(t *testing.T) {
@@ -497,6 +633,339 @@ func TestTenantSeparation(t *testing.T) {
 	err = tc.RunOperationWithCustomTenant(ctx, customTenant, getAppReq, &anotherTenantsApps)
 	require.NoError(t, err)
 	assert.Empty(t, anotherTenantsApps.Data)
+}
+
+func TestApplicationsForRuntime(t *testing.T) {
+	//GIVEN
+	ctx := context.Background()
+	tenantID := testTenants.GetIDByName(t, "Test1")
+	otherTenant := testTenants.GetIDByName(t, "Test2")
+	tenantUnnormalizedApplications := []*graphql.Application{}
+	tenantNormalizedApplications := []*graphql.Application{}
+	defaultValue := "DEFAULT"
+	scenarios := []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
+
+	jsonSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": scenarios,
+		},
+	}
+	var schema interface{} = jsonSchema
+
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, otherTenant)
+
+	applications := []struct {
+		ApplicationName string
+		Tenant          string
+		WithinTenant    bool
+		Scenarios       []string
+	}{
+		{
+			Tenant:          tenantID,
+			ApplicationName: "first",
+			WithinTenant:    true,
+			Scenarios:       []string{defaultValue},
+		},
+		{
+			Tenant:          tenantID,
+			ApplicationName: "second",
+			WithinTenant:    true,
+			Scenarios:       []string{defaultValue, "black-friday-campaign"},
+		},
+		{
+			Tenant:          tenantID,
+			ApplicationName: "third",
+			WithinTenant:    true,
+			Scenarios:       []string{"black-friday-campaign", "christmas-campaign", "summer-campaign"},
+		},
+		{
+			Tenant:          tenantID,
+			ApplicationName: "allscenarios",
+			WithinTenant:    true,
+			Scenarios:       []string{defaultValue, "black-friday-campaign", "christmas-campaign", "summer-campaign"},
+		},
+		{
+			Tenant:          otherTenant,
+			ApplicationName: "test",
+			WithinTenant:    false,
+			Scenarios:       []string{defaultValue, "black-friday-campaign"},
+		},
+	}
+
+	for _, testApp := range applications {
+		applicationInput := fixSampleApplicationRegisterInput(testApp.ApplicationName)
+		applicationInput.Labels = &graphql.Labels{scenariosLabel: testApp.Scenarios}
+		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
+		require.NoError(t, err)
+
+		createApplicationReq := fixRegisterApplicationRequest(appInputGQL)
+		application := graphql.Application{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, testApp.Tenant, createApplicationReq, &application)
+
+		require.NoError(t, err)
+		require.NotEmpty(t, application.ID)
+
+		defer unregisterApplicationInTenant(t, application.ID, testApp.Tenant)
+		if testApp.WithinTenant {
+			tenantUnnormalizedApplications = append(tenantUnnormalizedApplications, &application)
+
+			normalizedApp := application
+			normalizedApp.Name = defaultNormalizationPrefix + normalizedApp.Name
+			tenantNormalizedApplications = append(tenantNormalizedApplications, &normalizedApp)
+		}
+	}
+
+	//create runtime without normalization
+	runtimeInputWithoutNormalization := fixRuntimeInput("unnormalized-runtime")
+	(*runtimeInputWithoutNormalization.Labels)[scenariosLabel] = scenarios
+	(*runtimeInputWithoutNormalization.Labels)[isNormalizedLabel] = "false"
+	runtimeInputWithoutNormalizationGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInputWithoutNormalization)
+	require.NoError(t, err)
+	registerRuntimeWithNormalizationRequest := fixRegisterRuntimeRequest(runtimeInputWithoutNormalizationGQL)
+
+	runtimeWithoutNormalization := graphql.Runtime{}
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeWithNormalizationRequest, &runtimeWithoutNormalization)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtimeWithoutNormalization.ID)
+	defer unregisterRuntimeWithinTenant(t, runtimeWithoutNormalization.ID, tenantID)
+
+	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
+		request := fixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
+		applicationPage := graphql.ApplicationPage{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+		saveExample(t, request.Query(), "query applications for runtime")
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, applicationPage.Data, len(tenantUnnormalizedApplications))
+		assert.ElementsMatch(t, tenantUnnormalizedApplications, applicationPage.Data)
+
+	})
+
+	t.Run("Applications For Runtime Query without normalization due to missing label", func(t *testing.T) {
+		//create runtime without normalization
+		unlabeledRuntimeInput := fixRuntimeInput("unlabeled-runtime")
+		(*unlabeledRuntimeInput.Labels)[scenariosLabel] = scenarios
+		(*unlabeledRuntimeInput.Labels)[isNormalizedLabel] = "false"
+		unlabeledRuntimeGQL, err := tc.graphqlizer.RuntimeInputToGQL(unlabeledRuntimeInput)
+		require.NoError(t, err)
+		registerUnlabeledRuntimeRequest := fixRegisterRuntimeRequest(unlabeledRuntimeGQL)
+
+		unlabledRuntime := graphql.Runtime{}
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerUnlabeledRuntimeRequest, &unlabledRuntime)
+		require.NoError(t, err)
+		require.NotEmpty(t, unlabledRuntime.ID)
+		defer unregisterRuntimeWithinTenant(t, unlabledRuntime.ID, tenantID)
+
+		deleteLabelRuntimeResp := graphql.Runtime{}
+		deleteLabelRequest := fixDeleteRuntimeLabelRequest(unlabledRuntime.ID, isNormalizedLabel)
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, deleteLabelRequest, &deleteLabelRuntimeResp)
+		require.NoError(t, err)
+
+		request := fixApplicationForRuntimeRequest(unlabledRuntime.ID)
+		applicationPage := graphql.ApplicationPage{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+		saveExample(t, request.Query(), "query applications for runtime")
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, applicationPage.Data, len(tenantNormalizedApplications))
+		assert.ElementsMatch(t, tenantNormalizedApplications, applicationPage.Data)
+	})
+
+	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
+		//create runtime without normalization
+		runtimeInputWithNormalization := fixRuntimeInput("normalized-runtime")
+		(*runtimeInputWithNormalization.Labels)[scenariosLabel] = scenarios
+		(*runtimeInputWithNormalization.Labels)[isNormalizedLabel] = "true"
+		runtimeInputWithNormalizationGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInputWithNormalization)
+		require.NoError(t, err)
+		registerRuntimeWithNormalizationRequest := fixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
+
+		runtimeWithNormalization := graphql.Runtime{}
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeWithNormalizationRequest, &runtimeWithNormalization)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtimeWithNormalization.ID)
+		defer unregisterRuntimeWithinTenant(t, runtimeWithNormalization.ID, tenantID)
+
+		request := fixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
+		applicationPage := graphql.ApplicationPage{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+		saveExample(t, request.Query(), "query applications for runtime")
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, applicationPage.Data, len(tenantNormalizedApplications))
+		assert.ElementsMatch(t, tenantNormalizedApplications, applicationPage.Data)
+	})
+
+	t.Run("Applications Query With Consumer Runtime", func(t *testing.T) {
+		request := fixApplicationsRequest()
+		applicationPage := graphql.ApplicationPage{}
+
+		err = tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
+			ID:   runtimeWithoutNormalization.ID,
+			Type: jwtbuilder.RuntimeConsumer,
+		}).Run(request, &applicationPage)
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, applicationPage.Data, len(tenantUnnormalizedApplications))
+		assert.ElementsMatch(t, tenantUnnormalizedApplications, applicationPage.Data)
+	})
+}
+
+func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
+	//GIVEN
+	ctx := context.Background()
+	tenantID := testTenants.GetIDByName(t, "TestApplicationsForRuntimeWithHiddenApps")
+	expectedApplications := []*graphql.Application{}
+	expectedNormalizedApplications := []*graphql.Application{}
+
+	defaultValue := "DEFAULT"
+	scenarios := []string{defaultValue, "test-scenario"}
+
+	jsonSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": scenarios,
+		},
+	}
+	var schema interface{} = jsonSchema
+
+	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+
+	applications := []struct {
+		ApplicationName string
+		Scenarios       []string
+		Hidden          bool
+	}{
+		{
+			ApplicationName: "first",
+			Scenarios:       []string{defaultValue},
+			Hidden:          false,
+		},
+		{
+			ApplicationName: "second",
+			Scenarios:       []string{"test-scenario"},
+			Hidden:          false,
+		},
+		{
+			ApplicationName: "third",
+			Scenarios:       []string{"test-scenario"},
+			Hidden:          true,
+		},
+	}
+
+	applicationHideSelectorKey := "applicationHideSelectorKey"
+	applicationHideSelectorValue := "applicationHideSelectorValue"
+
+	for _, testApp := range applications {
+		applicationInput := fixSampleApplicationRegisterInput(testApp.ApplicationName)
+		applicationInput.Labels = &graphql.Labels{scenariosLabel: testApp.Scenarios}
+		if testApp.Hidden {
+			(*applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue
+		}
+		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
+		require.NoError(t, err)
+
+		createApplicationReq := fixRegisterApplicationRequest(appInputGQL)
+		application := graphql.Application{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, createApplicationReq, &application)
+
+		require.NoError(t, err)
+		require.NotEmpty(t, application.ID)
+
+		defer unregisterApplicationInTenant(t, application.ID, tenantID)
+		if !testApp.Hidden {
+			expectedApplications = append(expectedApplications, &application)
+
+			normalizedApp := application
+			normalizedApp.Name = defaultNormalizationPrefix + normalizedApp.Name
+			expectedNormalizedApplications = append(expectedNormalizedApplications, &normalizedApp)
+		}
+	}
+
+	//create runtime without normalization
+	runtimeWithoutNormalizationInput := fixRuntimeInput("unnormalized-runtime")
+	(*runtimeWithoutNormalizationInput.Labels)[scenariosLabel] = scenarios
+	(*runtimeWithoutNormalizationInput.Labels)[isNormalizedLabel] = "false"
+	runtimeWithoutNormalizationInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeWithoutNormalizationInput)
+	require.NoError(t, err)
+	registerWithoutNormalizationRuntimeRequest := fixRegisterRuntimeRequest(runtimeWithoutNormalizationInputGQL)
+	runtimeWithoutNormalization := graphql.Runtime{}
+	err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerWithoutNormalizationRuntimeRequest, &runtimeWithoutNormalization)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtimeWithoutNormalization.ID)
+	defer unregisterRuntimeWithinTenant(t, runtimeWithoutNormalization.ID, tenantID)
+
+	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
+		//WHEN
+		request := fixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
+		applicationPage := graphql.ApplicationPage{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, applicationPage.Data, len(expectedApplications))
+		assert.ElementsMatch(t, expectedApplications, applicationPage.Data)
+	})
+
+	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
+		//create runtime with normalization
+		runtimeWithNormalizationInput := fixRuntimeInput("normalized-runtime")
+		(*runtimeWithNormalizationInput.Labels)[scenariosLabel] = scenarios
+		(*runtimeWithNormalizationInput.Labels)[isNormalizedLabel] = "true"
+		runtimeWithNormalizationInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeWithNormalizationInput)
+		require.NoError(t, err)
+		registerWithNormalizationRuntimeRequest := fixRegisterRuntimeRequest(runtimeWithNormalizationInputGQL)
+		runtimeWithNormalization := graphql.Runtime{}
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerWithNormalizationRuntimeRequest, &runtimeWithNormalization)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtimeWithNormalization.ID)
+		defer unregisterRuntimeWithinTenant(t, runtimeWithNormalization.ID, tenantID)
+
+		//WHEN
+		request := fixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
+		applicationPage := graphql.ApplicationPage{}
+
+		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, applicationPage.Data, len(expectedNormalizedApplications))
+		assert.ElementsMatch(t, expectedNormalizedApplications, applicationPage.Data)
+	})
+
+	t.Run("Applications Query With Consumer Runtime", func(t *testing.T) {
+		//WHEN
+		request := fixApplicationsRequest()
+		applicationPage := graphql.ApplicationPage{}
+
+		err = tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
+			ID:   runtimeWithoutNormalization.ID,
+			Type: jwtbuilder.RuntimeConsumer,
+		}).Run(request, &applicationPage)
+
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, applicationPage.Data, len(expectedApplications))
+		assert.ElementsMatch(t, expectedApplications, applicationPage.Data)
+	})
 }
 
 func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {

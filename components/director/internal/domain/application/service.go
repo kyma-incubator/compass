@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -29,6 +33,7 @@ type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, item *model.Application) error
 	Update(ctx context.Context, item *model.Application) error
@@ -67,7 +72,7 @@ type LabelUpsertService interface {
 //go:generate mockery -name=ScenariosService -output=automock -outpkg=automock -case=underscore
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(labels *map[string]interface{})
+	AddDefaultScenarioIfEnabled(ctx context.Context, labels *map[string]interface{})
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -81,6 +86,7 @@ type ApplicationHideCfgProvider interface {
 }
 
 type service struct {
+	appNameNormalizer  normalizer.Normalizator
 	appHideCfgProvider ApplicationHideCfgProvider
 
 	appRepo       ApplicationRepository
@@ -96,17 +102,9 @@ type service struct {
 	timestampGen       timestamp.Generator
 }
 
-func NewService(appHideCfgProvider ApplicationHideCfgProvider,
-	app ApplicationRepository,
-	webhook WebhookRepository,
-	runtimeRepo RuntimeRepository,
-	labelRepo LabelRepository,
-	intSystemRepo IntegrationSystemRepository,
-	labelUpsertService LabelUpsertService,
-	scenariosService ScenariosService,
-	pkgService PackageService,
-	uidService UIDService) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
 	return &service{
+		appNameNormalizer:  appNameNormalizer,
 		appHideCfgProvider: appHideCfgProvider,
 		appRepo:            app,
 		webhookRepo:        webhook,
@@ -199,7 +197,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 
 	app, err := s.appRepo.GetByID(ctx, appTenant, id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Application with ID %s", id)
+		return nil, errors.Wrapf(err, "while getting Application with id %s", id)
 	}
 
 	return app, nil
@@ -224,6 +222,19 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	if err != nil {
 		return "", err
 	}
+	log.C(ctx).Debugf("Loaded Application Tenant %s from context", appTenant)
+
+	applications, err := s.appRepo.ListAll(ctx, appTenant)
+	if err != nil {
+		return "", err
+	}
+
+	normalizedName := s.appNameNormalizer.Normalize(in.Name)
+	for _, app := range applications {
+		if normalizedName == s.appNameNormalizer.Normalize(app.Name) {
+			return "", apperrors.NewNotUniqueNameError(resource.Application)
+		}
+	}
 
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
@@ -235,18 +246,22 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	}
 
 	id := s.uidService.Generate()
+	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
+
 	app := in.ToApplication(s.timestampGen(), id, appTenant)
 
 	err = s.appRepo.Create(ctx, app)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "while creating Application with name %s", in.Name)
 	}
 
+	log.C(ctx).Debugf("Ensuring Scenarios label definition exists for Tenant %s", appTenant)
 	err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, appTenant)
 	if err != nil {
 		return "", err
 	}
-	s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
+
+	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, &in.Labels)
 
 	if in.Labels == nil {
 		in.Labels = map[string]interface{}{}
@@ -255,22 +270,22 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	if in.IntegrationSystemID != nil {
 		in.Labels[intSysKey] = *in.IntegrationSystemID
 	}
-	in.Labels[nameKey] = in.Name
+	in.Labels[nameKey] = s.appNameNormalizer.Normalize(in.Name)
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
-		return id, errors.Wrapf(err, "while creating multiple labels for Application")
+		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
 	}
 
 	err = s.createRelatedResources(ctx, in, app.Tenant, app.ID)
 	if err != nil {
-		return "", errors.Wrap(err, "while creating related Application resources")
+		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", id)
 	}
 
 	if in.Packages != nil {
 		err = s.pkgService.CreateMultiple(ctx, id, in.Packages)
 		if err != nil {
-			return "", errors.Wrap(err, "while creating Packages for Application")
+			return "", errors.Wrapf(err, "while creating related Package resources for Application with id %s", id)
 		}
 	}
 
@@ -289,30 +304,31 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 
 	app, err := s.Get(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, "while getting Application")
+		return errors.Wrapf(err, "while getting Application with id %s", id)
 	}
 
 	app.SetFromUpdateInput(in, s.timestampGen())
 
 	err = s.appRepo.Update(ctx, app)
 	if err != nil {
-		return errors.Wrap(err, "while updating Application")
+		return errors.Wrapf(err, "while updating Application with id %s", id)
 	}
 
-	intSysLabel := createLabel(intSysKey, "", id)
 	if in.IntegrationSystemID != nil {
-		intSysLabel = createLabel(intSysKey, *in.IntegrationSystemID, id)
-	}
-	err = s.SetLabel(ctx, intSysLabel)
-	if err != nil {
-		return errors.Wrap(err, "while setting the integration system label")
+		intSysLabel := createLabel(intSysKey, *in.IntegrationSystemID, id)
+		err = s.SetLabel(ctx, intSysLabel)
+		if err != nil {
+			return errors.Wrapf(err, "while setting the integration system label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
+		}
+		log.C(ctx).Debugf("Successfully set Label for %s with id %s", intSysLabel.ObjectType, intSysLabel.ObjectID)
 	}
 
-	labelName := createLabel(nameKey, app.Name, app.ID)
-	err = s.SetLabel(ctx, labelName)
+	label := createLabel(nameKey, s.appNameNormalizer.Normalize(app.Name), app.ID)
+	err = s.SetLabel(ctx, label)
 	if err != nil {
 		return errors.Wrap(err, "while setting application name label")
 	}
+	log.C(ctx).Debugf("Successfully set Label for Application with id %s", app.ID)
 	return nil
 }
 
@@ -324,7 +340,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 	err = s.appRepo.Delete(ctx, appTenant, id)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting Application")
+		return errors.Wrapf(err, "while deleting Application with id %s", id)
 	}
 
 	return nil
@@ -446,13 +462,16 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 		return true, nil
 	}
 
+	log.C(ctx).Infof("Ensuring Integration System with id %s exists", *id)
 	exists, err := s.intSystemRepo.Exists(ctx, *id)
 	if err != nil {
 		return false, err
 	}
 
 	if !exists {
+		log.C(ctx).Infof("Integration System with id %s does not exist", *id)
 		return false, nil
 	}
+	log.C(ctx).Infof("Integration System with id %s exists", *id)
 	return true, nil
 }

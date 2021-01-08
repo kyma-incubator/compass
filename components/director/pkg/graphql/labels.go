@@ -5,7 +5,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 
@@ -32,7 +32,7 @@ func (y *Labels) UnmarshalGQL(v interface{}) error {
 func (y Labels) MarshalGQL(w io.Writer) {
 	err := scalar.WriteMarshalled(y, w)
 	if err != nil {
-		log.Errorf("while writing %T: %s", y, err)
+		log.D().Errorf("while writing %T: %s", y, err)
 		return
 	}
 }

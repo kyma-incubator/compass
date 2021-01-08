@@ -7,27 +7,27 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 
 	"github.com/avast/retry-go"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
 const requestForRuntime = `
-		mutation { generateRuntimeToken (runtimeID:"%s")
+		mutation { generateRuntimeToken (authID:"%s")
 		  {
 			token
 		  }
 		}`
 
 const requestForApplication = `
-		mutation { generateApplicationToken (appID:"%s")
+		mutation { generateApplicationToken (authID:"%s")
 		  {
 			token
 		  }
@@ -111,10 +111,17 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	if err != nil {
 		return model.OneTimeToken{}, errors.Wrapf(err, "while getting external tenant for internal tenant [%s]", app.Tenant)
 	}
+
+	clientUser, err := client.LoadFromContext(ctx)
+	if err != nil {
+		log.C(ctx).Infof("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]", app.Tenant, extTenant)
+	}
+
 	graphqlApp := s.appConverter.ToGraphQL(&app)
 	data := pairing.RequestData{
 		Application: *graphqlApp,
 		Tenant:      extTenant,
+		ClientUser:  clientUser,
 	}
 
 	asJSON, err := json.Marshal(data)
@@ -125,7 +132,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	var externalToken string
 	err = retry.Do(func() error {
 		buf := bytes.NewBuffer(asJSON)
-		req, err := http.NewRequest(http.MethodPost, adapterURL, buf)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, adapterURL, buf)
 		if err != nil {
 			return errors.Wrap(err, "while creating request")
 		}
@@ -138,7 +145,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		defer func() {
 			err := resp.Body.Close()
 			if err != nil {
-				logrus.Warnf("Got error on closing response body: [%v]", err)
+				log.C(ctx).Warnf("Got error on closing response body: [%v]", err)
 			}
 		}()
 
@@ -163,19 +170,19 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 }
 
 func (s service) getOneTimeToken(ctx context.Context, id string, tokenType model.SystemAuthReferenceObjectType) (string, error) {
-	var request *gcli.Request
+	var req *gcli.Request
 
 	switch tokenType {
 	case model.RuntimeReference:
-		request = gcli.NewRequest(fmt.Sprintf(requestForRuntime, id))
+		req = gcli.NewRequest(fmt.Sprintf(requestForRuntime, id))
 	case model.ApplicationReference:
-		request = gcli.NewRequest(fmt.Sprintf(requestForApplication, id))
+		req = gcli.NewRequest(fmt.Sprintf(requestForApplication, id))
 	default:
 		return "", errors.Errorf("cannot generate token for %T", tokenType)
 	}
 
 	output := ConnectorTokenModel{}
-	err := s.cli.Run(ctx, request, &output)
+	err := s.cli.Run(ctx, req, &output)
 	if err != nil {
 		return "", errors.Wrapf(err, "while calling connector for %s one time token", tokenType)
 	}

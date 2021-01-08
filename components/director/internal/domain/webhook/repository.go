@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -93,14 +95,16 @@ func (r *repository) Create(ctx context.Context, item *model.Webhook) error {
 		return errors.Wrap(err, "while converting model to entity")
 	}
 
+	log.C(ctx).Debugf("Persisting Webhook entity with type %s and id %s for Application with id %s to db", item.Type, item.ID, item.ApplicationID)
 	return r.creator.Create(ctx, entity)
 }
 
 func (r *repository) CreateMany(ctx context.Context, items []*model.Webhook) error {
 	for _, item := range items {
 		if err := r.Create(ctx, item); err != nil {
-			return errors.Wrap(err, "while creating many webhooks")
+			return errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", item.Type, item.ID, item.ApplicationID)
 		}
+		log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for Application with id %s", item.Type, item.ID, item.ApplicationID)
 	}
 	return nil
 }

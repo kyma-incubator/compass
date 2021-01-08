@@ -79,7 +79,7 @@ func TestRepository_Delete(t *testing.T) {
 		err := repository.Delete(ctx, givenTenant(), givenID())
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while deleting object from database: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -131,7 +131,7 @@ func TestRepository_Create(t *testing.T) {
 		err := repository.Create(ctx, appModel)
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while inserting row to 'public.applications' table: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -202,7 +202,7 @@ func TestRepository_Update(t *testing.T) {
 		err := repository.Update(ctx, appModel)
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while updating single entity: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 
 	t.Run("Converter Error", func(t *testing.T) {
@@ -269,7 +269,7 @@ func TestRepository_GetByID(t *testing.T) {
 		_, err := repository.GetByID(ctx, givenTenant(), givenID())
 
 		// then
-		require.EqualError(t, err, "Internal Server Error: while getting object from table public.applications: some error")
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
 }
 
@@ -347,6 +347,73 @@ func TestPgRepository_List(t *testing.T) {
 		//then
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "while fetching list of objects from DB: some error")
+	})
+}
+
+func TestPgRepository_ListAll(t *testing.T) {
+	app1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
+	app2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
+	appEntity1 := fixDetailedEntityApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+	appEntity2 := fixDetailedEntityApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
+
+	appModel1 := fixDetailedModelApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+	appModel2 := fixDetailedModelApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
+
+	listQuery := `^SELECT (.+) FROM public\.applications WHERE tenant_id = \$1`
+
+	t.Run("Success", func(t *testing.T) {
+		// given
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name"}).
+			AddRow(appEntity1.ID, appEntity1.TenantID, appEntity1.Name, appEntity1.Description, appEntity1.StatusCondition, appEntity1.StatusTimestamp, appEntity1.HealthCheckURL, appEntity1.IntegrationSystemID, appEntity1.ProviderName).
+			AddRow(appEntity2.ID, appEntity2.TenantID, appEntity2.Name, appEntity2.Description, appEntity2.StatusCondition, appEntity2.StatusTimestamp, appEntity2.HealthCheckURL, appEntity2.IntegrationSystemID, appEntity2.ProviderName)
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+
+		sqlMock.ExpectQuery(listQuery).
+			WithArgs(givenTenant()).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+		conv := &automock.EntityConverter{}
+		conv.On("FromEntity", appEntity2).Return(appModel2).Once()
+		conv.On("FromEntity", appEntity1).Return(appModel1).Once()
+		defer conv.AssertExpectations(t)
+
+		pgRepository := application.NewRepository(conv)
+
+		// when
+		modelApp, err := pgRepository.ListAll(ctx, givenTenant())
+
+		// then
+		require.NoError(t, err)
+		require.Len(t, modelApp, 2)
+		assert.Equal(t, appEntity1.ID, modelApp[0].ID)
+		assert.Equal(t, appEntity2.ID, modelApp[1].ID)
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		// given
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+
+		sqlMock.ExpectQuery(listQuery).
+			WithArgs(givenTenant()).
+			WillReturnError(givenError())
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		conv := &automock.EntityConverter{}
+		defer conv.AssertExpectations(t)
+
+		pgRepository := application.NewRepository(conv)
+
+		// when
+		_, err := pgRepository.ListAll(ctx, givenTenant())
+
+		//then
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "error while executing SQL query")
 	})
 }
 

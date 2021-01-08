@@ -9,6 +9,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 //go:generate mockery -name=Service -output=automock -outpkg=automock -case=underscore
@@ -61,7 +63,7 @@ func (r *Resolver) PackageByInstanceAuth(ctx context.Context, authID string) (*g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -91,7 +93,7 @@ func (r *Resolver) PackageInstanceAuth(ctx context.Context, id string) (*graphql
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -117,7 +119,7 @@ func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string)
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	instanceAuth, err := r.svc.Get(ctx, authID)
@@ -129,6 +131,8 @@ func (r *Resolver) DeletePackageInstanceAuth(ctx context.Context, authID string)
 	if err != nil {
 		return nil, err
 	}
+
+	log.C(ctx).Infof("PackageInstanceAuth with id %s successfully deleted", authID)
 
 	err = tx.Commit()
 	if err != nil {
@@ -144,12 +148,14 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Infof("Setting credentials for PackageInstanceAuth with id %s", authID)
 
 	convertedIn, err := r.conv.SetInputFromGraphQL(in)
 	if err != nil {
-		return nil, errors.Wrap(err, "while converting PackageInstanceAuth from GraphQL")
+		return nil, errors.Wrapf(err, "while converting PackageInstanceAuth with id %s from GraphQL", authID)
 	}
 
 	err = r.svc.SetAuth(ctx, authID, convertedIn)
@@ -161,6 +167,8 @@ func (r *Resolver) SetPackageInstanceAuth(ctx context.Context, authID string, in
 	if err != nil {
 		return nil, err
 	}
+
+	log.C(ctx).Infof("Credentials successfully set for PackageInstanceAuth with id %s", authID)
 
 	err = tx.Commit()
 	if err != nil {
@@ -176,8 +184,10 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Infof("Requesting PackageInstanceAuth creation for Package with id %s", packageID)
 
 	pkg, err := r.pkgSvc.Get(ctx, packageID)
 	if err != nil {
@@ -195,6 +205,7 @@ func (r *Resolver) RequestPackageInstanceAuthCreation(ctx context.Context, packa
 	if err != nil {
 		return nil, err
 	}
+	log.C(ctx).Infof("Successfully created PackageInstanceAuth with id %s for Package with id %s", instanceAuthID, packageID)
 
 	err = tx.Commit()
 	if err != nil {
@@ -210,8 +221,10 @@ func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authI
 		return nil, err
 	}
 
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Infof("Requesting PackageInstanceAuth deletion for PackageInstanceAuth with id %s", authID)
 
 	instanceAuth, err := r.svc.Get(ctx, authID)
 	if err != nil {
@@ -234,6 +247,8 @@ func (r *Resolver) RequestPackageInstanceAuthDeletion(ctx context.Context, authI
 			return nil, err
 		}
 	}
+
+	log.C(ctx).Infof("PackageInstanceAuth with id %s successfully deleted.", authID)
 
 	err = tx.Commit()
 	if err != nil {

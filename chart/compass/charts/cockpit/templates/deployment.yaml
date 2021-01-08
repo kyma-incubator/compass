@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.images.containerRegistry.path }}/{{ .Values.images.ui.dir }}compass:{{ .Values.images.ui.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.console.dir }}compass-console:{{ .Values.global.images.console.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           livenessProbe:
             httpGet:
@@ -33,7 +33,7 @@ spec:
             - containerPort: {{ .Values.service.internalPort }}
             - containerPort: {{ .Values.service.mfInternalPort }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
           volumeMounts:
           - name: config
             mountPath: /var/public/config

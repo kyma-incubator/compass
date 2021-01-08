@@ -56,7 +56,7 @@ func (r *Resolver) AddApplicationWebhook(ctx context.Context, applicationID stri
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.webhookConverter.InputFromGraphQL(&in)
@@ -95,7 +95,7 @@ func (r *Resolver) UpdateApplicationWebhook(ctx context.Context, webhookID strin
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.webhookConverter.InputFromGraphQL(&in)
@@ -125,7 +125,7 @@ func (r *Resolver) DeleteApplicationWebhook(ctx context.Context, webhookID strin
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	webhook, err := r.webhookSvc.Get(ctx, webhookID)

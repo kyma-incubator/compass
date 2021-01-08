@@ -14,6 +14,8 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
+      labels:
+        app: {{ .Chart.Name }}-director-gateway-integration-tests
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
@@ -33,7 +35,7 @@ spec:
           args: ["-c", "./wait-for-director.sh && /gateway-integration.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}/director"
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_HEALTHZ_URL
               value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/healthz"
             - name: ALL_SCOPES

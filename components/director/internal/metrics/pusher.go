@@ -1,14 +1,18 @@
 package metrics
 
 import (
+	"net/http"
 	"strconv"
+	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
-	log "github.com/sirupsen/logrus"
 )
 
 type Pusher struct {
@@ -17,7 +21,7 @@ type Pusher struct {
 	instanceID           uuid.UUID
 }
 
-func NewPusher(endpoint string) *Pusher {
+func NewPusher(endpoint string, timeout time.Duration) *Pusher {
 	eventingRequestTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: Namespace,
 		Subsystem: TenantFetcherSubsystem,
@@ -26,11 +30,13 @@ func NewPusher(endpoint string) *Pusher {
 	}, []string{"method", "code", "desc"})
 
 	instanceID := uuid.New()
-	log.WithField(InstanceIDKeyName, instanceID).Infof("Initializing Metrics Pusher...")
+	log.D().WithField(InstanceIDKeyName, instanceID).Infof("Initializing Metrics Pusher...")
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(eventingRequestTotal)
-	pusher := push.New(endpoint, TenantFetcherJobName).Gatherer(registry)
+	pusher := push.New(endpoint, TenantFetcherJobName).Gatherer(registry).Client(&http.Client{
+		Timeout: timeout,
+	})
 
 	return &Pusher{
 		eventingRequestTotal: eventingRequestTotal,
@@ -40,7 +46,7 @@ func NewPusher(endpoint string) *Pusher {
 }
 
 func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc string) {
-	log.WithFields(log.Fields{
+	log.D().WithFields(logrus.Fields{
 		InstanceIDKeyName: p.instanceID,
 		"statusCode":      statusCode,
 		"desc":            desc,
@@ -49,10 +55,10 @@ func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc strin
 }
 
 func (p *Pusher) Push() {
-	log.WithField(InstanceIDKeyName, p.instanceID).Info("Pushing metrics...")
+	log.D().WithField(InstanceIDKeyName, p.instanceID).Info("Pushing metrics...")
 	err := p.pusher.Add()
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "while pushing metrics to Pushgateway")
-		log.WithField(InstanceIDKeyName, p.instanceID).Error(wrappedErr)
+		log.D().WithField(InstanceIDKeyName, p.instanceID).Error(wrappedErr)
 	}
 }

@@ -136,7 +136,7 @@ func TestHandler_Create(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("CreatePackage", mock.Anything, mock.Anything).Return("", testErr)
+		mockClient.On("CreatePackage", mock.Anything, mock.Anything, mock.Anything).Return("", testErr)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -260,7 +260,7 @@ func TestHandler_Create(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("CreatePackage", mock.Anything, mock.Anything).Return("test", nil)
+		mockClient.On("CreatePackage", mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -300,8 +300,8 @@ func TestHandler_Create(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("CreatePackage", mock.Anything, mock.Anything).Return("test", nil)
-		mockClient.On("SetApplicationLabel", "test", graphql.LabelInput{}).Return(testErr)
+		mockClient.On("CreatePackage", mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+		mockClient.On("SetApplicationLabel", mock.Anything, "test", graphql.LabelInput{}).Return(testErr)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -341,8 +341,8 @@ func TestHandler_Create(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("CreatePackage", mock.Anything, mock.Anything).Return("test", nil)
-		mockClient.On("SetApplicationLabel", "test", graphql.LabelInput{}).Return(nil)
+		mockClient.On("CreatePackage", mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+		mockClient.On("SetApplicationLabel", mock.Anything, "test", graphql.LabelInput{}).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -388,8 +388,8 @@ func TestHandler_Create(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("CreatePackage", mock.Anything, mock.Anything).Return("test", nil)
-		mockClient.On("SetApplicationLabel", "test", mock.Anything).Return(nil)
+		mockClient.On("CreatePackage", mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+		mockClient.On("SetApplicationLabel", mock.Anything, "test", mock.Anything).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", AppLabels: labels, DirectorClient: &mockClient}, nil)
 
@@ -451,7 +451,7 @@ func TestHandler_Get(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, apperrors.NotFound("test"))
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, apperrors.NotFound("test"))
 
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
@@ -476,7 +476,7 @@ func TestHandler_Get(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, testErr)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, testErr)
 
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
@@ -498,7 +498,7 @@ func TestHandler_Get(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
 
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
@@ -529,7 +529,7 @@ func TestHandler_Get(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
 
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
@@ -559,7 +559,7 @@ func TestHandler_Get(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
 
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
@@ -870,7 +870,7 @@ func TestHandler_Update(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, apperrors.NotFound("test"))
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, apperrors.NotFound("test"))
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -901,7 +901,7 @@ func TestHandler_Update(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, testErr)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, testErr)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -933,8 +933,8 @@ func TestHandler_Update(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
-		mockClient.On("UpdatePackage", mock.Anything, mock.Anything).Return(testErr)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("UpdatePackage", mock.Anything, mock.Anything, mock.Anything).Return(testErr)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -966,9 +966,9 @@ func TestHandler_Update(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil).Once()
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, testErr).Once()
-		mockClient.On("UpdatePackage", mock.Anything, mock.Anything).Return(nil)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil).Once()
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, testErr).Once()
+		mockClient.On("UpdatePackage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -1003,8 +1003,8 @@ func TestHandler_Update(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
-		mockClient.On("UpdatePackage", mock.Anything, mock.Anything).Return(nil)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("UpdatePackage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -1041,8 +1041,8 @@ func TestHandler_Update(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
-		mockClient.On("UpdatePackage", mock.Anything, mock.Anything).Return(nil)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("UpdatePackage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -1079,8 +1079,8 @@ func TestHandler_Update(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("GetPackage", mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
-		mockClient.On("UpdatePackage", mock.Anything, mock.Anything).Return(nil)
+		mockClient.On("GetPackage", mock.Anything, mock.Anything, mock.Anything).Return(graphql.PackageExt{}, nil)
+		mockClient.On("UpdatePackage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -1135,7 +1135,7 @@ func TestHandler_Delete(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("DeletePackage", mock.Anything).Return(apperrors.NotFound("test"))
+		mockClient.On("DeletePackage", mock.Anything, mock.Anything).Return(apperrors.NotFound("test"))
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -1158,7 +1158,7 @@ func TestHandler_Delete(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("DeletePackage", mock.Anything).Return(testErr)
+		mockClient.On("DeletePackage", mock.Anything, mock.Anything).Return(testErr)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -1181,7 +1181,7 @@ func TestHandler_Delete(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("DeletePackage", mock.Anything).Return(nil)
+		mockClient.On("DeletePackage", mock.Anything, mock.Anything).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -1208,8 +1208,8 @@ func TestHandler_Delete(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("DeletePackage", mock.Anything).Return(nil)
-		mockClient.On("SetApplicationLabel", "test", graphql.LabelInput{}).Return(testErr)
+		mockClient.On("DeletePackage", mock.Anything, mock.Anything).Return(nil)
+		mockClient.On("SetApplicationLabel", mock.Anything, "test", graphql.LabelInput{}).Return(testErr)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -1234,8 +1234,8 @@ func TestHandler_Delete(t *testing.T) {
 
 		mockContextProvider := automock.RequestContextProvider{}
 		mockClient := automock.DirectorClient{}
-		mockClient.On("DeletePackage", mock.Anything).Return(nil)
-		mockClient.On("SetApplicationLabel", "test", graphql.LabelInput{}).Return(nil)
+		mockClient.On("DeletePackage", mock.Anything, mock.Anything).Return(nil)
+		mockClient.On("SetApplicationLabel", mock.Anything, "test", graphql.LabelInput{}).Return(nil)
 		mockContextProvider.On("ForRequest", mock.Anything).
 			Return(service.RequestContext{AppID: "test", DirectorClient: &mockClient}, nil)
 
@@ -1254,13 +1254,8 @@ func TestHandler_Delete(t *testing.T) {
 
 }
 
-type response struct {
-	Code  int    `json:"code"`
-	Error string `json:"error"`
-}
-
 func getErrorMessage(t *testing.T, data []byte) string {
-	var body response
+	var body res.ErrorResponse
 	err := json.Unmarshal(data, &body)
 	require.NoError(t, err)
 	return body.Error

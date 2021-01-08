@@ -16,9 +16,9 @@ spec:
   http:
   - match:
     - uri:
-        exact: /director
+        exact: {{ .Values.global.director.prefix }}
     redirect:
-      uri: /director/
+      uri: {{ .Values.global.director.prefix }}/
     headers:
       request:
         remove:
@@ -26,8 +26,8 @@ spec:
           - {{ . }}
           {{- end }}
     corsPolicy:
-      allowOrigin:
-        - "*"
+      allowOrigins:
+        - regex: ".*"
       allowHeaders:
         - "authorization"
         - "content-type"
@@ -43,12 +43,13 @@ spec:
         port:
           number: {{ .Values.global.oathkeeper.port }}
     corsPolicy:
-      allowOrigin:
-      - "*"
+      allowOrigins:
+      - regex: ".*"
       allowHeaders:
       - "authorization"
       - "content-type"
       - "tenant"
+      - "client_user"
       allowMethods:
       - "GET"
       - "POST"

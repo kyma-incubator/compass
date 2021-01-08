@@ -2,6 +2,7 @@ package apptemplate
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
@@ -37,7 +39,7 @@ type ApplicationTemplateConverter interface {
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
-	CreateInputFromGraphQL(in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
+	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore
@@ -70,7 +72,7 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -108,7 +110,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -143,7 +145,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -152,10 +154,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
 	id, err := r.appTemplateSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
 	}
+	log.C(ctx).Infof("Successfully created an Application Template with name %s and id %s", convertedIn.Name, id)
 
 	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
@@ -169,7 +173,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	gqlAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting application template to graphql")
+		return nil, errors.Wrapf(err, "while converting Application Template with id %s to GraphQL", id)
 	}
 
 	return gqlAppTemplate, nil
@@ -180,40 +184,52 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	//log.Infof("Registering an Application from Application Template with name %s", in.TemplateName)
 	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
 
+	log.C(ctx).Debugf("Extracting Application Template with name %s from GraphQL input", in.TemplateName)
 	appTemplate, err := r.appTemplateSvc.GetByName(ctx, convertedIn.TemplateName)
 	if err != nil {
 		return nil, err
 	}
+	applicationName, err := extractApplicationNameFromTemplateInput(appTemplate.ApplicationInputJSON)
+	if err != nil {
+		return nil, err
+	}
+	log.C(ctx).Infof("Registering an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 
+	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	appCreateInputJSON, err := r.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, convertedIn.Values)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	}
 
+	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
 	appCreateInputGQL, err := r.appConverter.CreateInputJSONToGQL(appCreateInputJSON)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %s", in.TemplateName)
 	}
 
+	log.C(ctx).Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %s", convertedIn.TemplateName)
 	if err := inputvalidation.Validate(appCreateInputGQL); err != nil {
-		return nil, errors.Wrapf(err, "while validating application input from application template [name=%s]", convertedIn.TemplateName)
+		return nil, errors.Wrapf(err, "while validating application input from Application Template with name %s", convertedIn.TemplateName)
 	}
 
-	appCreateInputModel, err := r.appConverter.CreateInputFromGraphQL(appCreateInputGQL)
+	appCreateInputModel, err := r.appConverter.CreateInputFromGraphQL(ctx, appCreateInputGQL)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting ApplicationFromTemplate input")
 	}
 
+	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	id, err := r.appSvc.Create(ctx, appCreateInputModel)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	}
+	log.C(ctx).Infof("Application with name %s and id %s successfully created from Application Template with name %s", applicationName, id, in.TemplateName)
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
@@ -234,7 +250,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -271,7 +287,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(tx)
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -296,4 +312,16 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 	}
 
 	return deletedAppTemplate, nil
+}
+
+func extractApplicationNameFromTemplateInput(applicationInputJSON string) (string, error) {
+	b := []byte(applicationInputJSON)
+	data := make(map[string]interface{})
+
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		return "", errors.Wrap(err, "while unmarshalling application input JSON")
+	}
+
+	return data["name"].(string), nil
 }

@@ -7,7 +7,28 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/vrischmann/envconfig"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
+
 	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
+
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 
 	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 
@@ -17,7 +38,7 @@ import (
 
 	"github.com/dlmiddlecote/sqlstats"
 
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	mp_authenticator "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -47,19 +68,26 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-	"github.com/vrischmann/envconfig"
 )
 
+const envPrefix = "APP"
+
 type config struct {
-	Address                 string `envconfig:"default=127.0.0.1:3000"`
-	Database                persistence.DatabaseConfig
-	APIEndpoint             string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint   string `envconfig:"default=/tenant-mapping"`
-	RuntimeMappingEndpoint  string `envconfig:"default=/runtime-mapping"`
-	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
-	ConfigurationFile       string
-	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
+	Address string `envconfig:"default=127.0.0.1:3000"`
+
+	ClientTimeout time.Duration `envconfig:"default=105s"`
+	ServerTimeout time.Duration `envconfig:"default=110s"`
+
+	Database                      persistence.DatabaseConfig
+	APIEndpoint                   string `envconfig:"default=/graphql"`
+	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
+	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
+	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
+	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
+	ConfigurationFile             string
+	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
+
+	Log log.Config
 
 	MetricsAddress string `envconfig:"default=127.0.0.1:3001"`
 
@@ -77,16 +105,30 @@ type config struct {
 	OAuth20      oauth20.Config
 
 	Features features.Config
+
+	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
+
 	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, "APP")
+	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
 
-	configureLogger()
+	authenticators, err := authenticator.InitFromEnv(envPrefix)
+	exitOnError(err, "Failed to retrieve authenticators config")
 
-	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), cfg.Database)
+	ctx, err = log.Configure(ctx, &cfg.Log)
+	exitOnError(err, "Failed to configure Logger")
+	logger := log.C(ctx)
+
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
@@ -94,18 +136,24 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	stopCh := signal.SetupChannel()
-	cfgProvider := createAndRunConfigProvider(stopCh, cfg)
+	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
-	log.Infof("Registering metrics collectors...")
+	logger.Infof("Registering metrics collectors...")
 	metricsCollector := metrics.NewCollector()
 	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
 	prometheus.MustRegister(metricsCollector, dbStatsCollector)
 
-	pairingAdapters, err := getPairingAdaptersMapping(cfg.PairingAdapterSrc)
+	pairingAdapters, err := getPairingAdaptersMapping(ctx, cfg.PairingAdapterSrc)
 	exitOnError(err, "Error while reading Pairing Adapters Configuration")
+
+	httpClient := &http.Client{
+		Timeout:   cfg.ClientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+	}
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
+			&normalizer.DefaultNormalizator{},
 			transact,
 			cfgProvider,
 			cfg.OneTimeToken,
@@ -113,35 +161,39 @@ func main() {
 			pairingAdapters,
 			cfg.Features,
 			metricsCollector,
+			httpClient,
+			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			HasScopes: scope.NewDirective(cfgProvider).VerifyScopes,
-			Validate:  inputvalidation.NewDirective().Validate,
+			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultPackageRepo(), defaultPackageInstanceAuthRepo()).HasScenario,
+			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
+			Validate:    inputvalidation.NewDirective().Validate,
 		},
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
 
-	log.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
+	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
+	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone)
 
 	if cfg.JWKSSyncPeriod != 0 {
-		log.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
-		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(stopCh <-chan struct{}) {
-			err := authMiddleware.SynchronizeJWKS()
+		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
+		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
+			err := authMiddleware.SynchronizeJWKS(ctx)
 			if err != nil {
-				log.Error(errors.Wrap(err, "while synchronizing JWKS"))
+				logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
 			}
 		})
-		go periodicExecutor.Run(stopCh)
+		go periodicExecutor.Run(ctx)
 	}
 
-	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository(), log.New())
+	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	presenter := error_presenter.NewPresenter(log.StandardLogger(), uid.NewService())
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	presenter := error_presenter.NewPresenter(uid.NewService())
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
@@ -150,23 +202,29 @@ func main() {
 		handler.ErrorPresenter(presenter.Do),
 		handler.RecoverFunc(panic_handler.RecoverFn))))
 
-	log.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
+	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
 
-	log.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, stopCh, cfg.Features.DefaultScenarioEnabled)
+	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
+	runtimeMappingHandlerFunc, err := getRuntimeMappingHandlerFunc(transact, cfg.JWKSSyncPeriod, ctx, cfg.Features.DefaultScenarioEnabled, cfg.ProtectedLabelPattern)
+
 	exitOnError(err, "Error while configuring runtime mapping handler")
 
 	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
 
-	log.Infof("Registering readiness endpoint...")
+	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.AuthenticationMappingEndpoint)
+	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
+
+	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
+
+	logger.Infof("Registering readiness endpoint...")
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
 
-	log.Infof("Registering liveness endpoint...")
-	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler(transact, log.StandardLogger()))
+	logger.Infof("Registering liveness endpoint...")
+	mainRouter.HandleFunc("/healthz", healthz.NewLivenessHandler(transact))
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
@@ -174,11 +232,11 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
-	runMetricsSrv, shutdownMetricsSrv := createServer(cfg.MetricsAddress, metricsHandler, "metrics")
-	runMainSrv, shutdownMainSrv := createServer(cfg.Address, mainRouter, "main")
+	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
 
 	go func() {
-		<-stopCh
+		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
 		shutdownMetricsSrv()
 		shutdownMainSrv()
@@ -188,9 +246,11 @@ func main() {
 	runMainSrv()
 }
 
-func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
+func getPairingAdaptersMapping(ctx context.Context, filePath string) (map[string]string, error) {
+	logger := log.C(ctx)
+
 	if filePath == "" {
-		log.Infof("No configuration for pairing adapters")
+		logger.Infof("No configuration for pairing adapters")
 		return nil, nil
 	}
 
@@ -200,7 +260,7 @@ func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Warnf("Got error on closing file with pairing adapters configuration: %v", err)
+			logger.Warnf("Got error on closing file with pairing adapters configuration: %v", err)
 		}
 	}()
 
@@ -210,21 +270,21 @@ func getPairingAdaptersMapping(filePath string) (map[string]string, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "while decoding file [%s] to map[string]string", filePath)
 	}
-	log.Infof("Successfully read pairing adapters configuration")
+	logger.Infof("Successfully read pairing adapters configuration")
 	return out, nil
 }
 
-func createAndRunConfigProvider(stopCh <-chan struct{}, cfg config) *configprovider.Provider {
+func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
 	provider := configprovider.NewProvider(cfg.ConfigurationFile)
 	err := provider.Load()
 	exitOnError(err, "Error on loading configuration file")
-	executor.NewPeriodic(cfg.ConfigurationFileReload, func(stopCh <-chan struct{}) {
+	executor.NewPeriodic(cfg.ConfigurationFileReload, func(ctx context.Context) {
 		if err := provider.Load(); err != nil {
 			exitOnError(err, "Error from Reloader watch")
 		}
-		log.Infof("Successfully reloaded configuration file")
+		log.C(ctx).Infof("Successfully reloaded configuration file.")
 
-	}).Run(stopCh)
+	}).Run(ctx)
 
 	return provider
 }
@@ -232,18 +292,11 @@ func createAndRunConfigProvider(stopCh <-chan struct{}, cfg config) *configprovi
 func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.D().Fatal(wrappedError)
 	}
 }
 
-func configureLogger() {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-	log.SetReportCaller(true)
-}
-
-func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
+func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticators []authenticator.Config, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	systemAuthConverter := systemauth.NewConverter(authConverter)
@@ -262,17 +315,17 @@ func getTenantMappingHandlerFunc(transact persistence.Transactioner, staticUsers
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
-	mapperForUser := tenantmapping.NewMapperForUser(staticUsersRepo, staticGroupsRepo, tenantRepo)
-	mapperForSystemAuth := tenantmapping.NewMapperForSystemAuth(systemAuthSvc, cfgProvider, tenantRepo)
-
+	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+		tenantmapping.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(staticUsersRepo, staticGroupsRepo, tenantRepo),
+		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(systemAuthSvc, cfgProvider, tenantRepo),
+		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(tenantRepo),
+	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	return tenantmapping.NewHandler(reqDataParser, transact, mapperForUser, mapperForSystemAuth).ServeHTTP, nil
+	return tenantmapping.NewHandler(authenticators, reqDataParser, transact, objectContextProviders).ServeHTTP, nil
 }
 
-func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, stopCh <-chan struct{}, defaultScenarioEnabled bool) (func(writer http.ResponseWriter, request *http.Request), error) {
-	logger := log.WithField("component", "runtime-mapping-handler").Logger
-
+func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePeriod time.Duration, ctx context.Context, defaultScenarioEnabled bool, protectedLabelPattern string) (func(writer http.ResponseWriter, request *http.Request), error) {
 	uidSvc := uid.NewService()
 
 	labelConv := label.NewConverter()
@@ -287,7 +340,7 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignmentConv)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
 
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelUpsertSvc, uidSvc, scenarioAssignmentEngine, protectedLabelPattern)
 
 	tenantConv := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConv)
@@ -295,16 +348,15 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	jwksFetch := runtimemapping.NewJWKsFetch(logger)
-	jwksCache := runtimemapping.NewJWKsCache(logger, jwksFetch, cachePeriod)
-	tokenVerifier := runtimemapping.NewTokenVerifier(logger, jwksCache)
+	jwksFetch := runtimemapping.NewJWKsFetch()
+	jwksCache := runtimemapping.NewJWKsCache(jwksFetch, cachePeriod)
+	tokenVerifier := runtimemapping.NewTokenVerifier(jwksCache)
 
-	executor.NewPeriodic(1*time.Minute, func(stopCh <-chan struct{}) {
-		jwksCache.Cleanup()
-	}).Run(stopCh)
+	executor.NewPeriodic(1*time.Minute, func(ctx context.Context) {
+		jwksCache.Cleanup(ctx)
+	}).Run(ctx)
 
 	return runtimemapping.NewHandler(
-		logger,
 		reqDataParser,
 		transact,
 		tokenVerifier,
@@ -312,22 +364,46 @@ func getRuntimeMappingHandlerFunc(transact persistence.Transactioner, cachePerio
 		tenantSvc).ServeHTTP, nil
 }
 
-func createServer(address string, handler http.Handler, name string) (func(), func()) {
-	srv := &http.Server{Addr: address, Handler: handler}
+func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
+	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
+	exitOnError(err, "Error while configuring tenant mapping handler")
+
+	srv := &http.Server{
+		Addr:              address,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: timeout,
+	}
 
 	runFn := func() {
-		log.Infof("Running %s server on %s...", name, address)
+		log.C(ctx).Infof("Running %s server on %s...", name, address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Errorf("%s HTTP server ListenAndServe: %v", name, err)
+			log.C(ctx).WithError(err).Errorf("An error has occurred with %s HTTP server when ListenAndServe.", name)
 		}
 	}
 
 	shutdownFn := func() {
-		log.Infof("Shutting down %s server...", name)
+		log.C(ctx).Infof("Shutting down %s server...", name)
 		if err := srv.Shutdown(context.Background()); err != nil {
-			log.Errorf("%s HTTP server Shutdown: %v", name, err)
+			log.C(ctx).WithError(err).Errorf("An error has occurred while shutting down HTTP server %s.", name)
 		}
 	}
 
 	return runFn, shutdownFn
+}
+
+func defaultPackageInstanceAuthRepo() packageinstanceauth.Repository {
+	authConverter := auth.NewConverter()
+
+	return packageinstanceauth.NewRepository(packageinstanceauth.NewConverter(authConverter))
+}
+
+func defaultPackageRepo() mp_package.PackageRepository {
+	authConverter := auth.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	docConverter := document.NewConverter(frConverter)
+	apiConverter := api.NewConverter(frConverter, versionConverter)
+
+	return mp_package.NewRepository(mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }

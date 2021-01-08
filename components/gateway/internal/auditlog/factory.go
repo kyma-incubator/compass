@@ -6,12 +6,12 @@ import (
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
 )
 
-//go:generate mockery -name=UUIDService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=UUIDService --output=automock --outpkg=automock --case=underscore
 type UUIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=TimeService -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TimeService --output=automock --outpkg=automock --case=underscore
 type TimeService interface {
 	Now() time.Time
 }

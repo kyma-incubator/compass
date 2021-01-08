@@ -56,7 +56,7 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting transaction")
 	}
-	defer r.transactioner.RollbackUnlessCommitted(tx)
+	defer r.transactioner.RollbackUnlessCommitted(ctx, tx)
 
 	ld, err := r.conv.FromGraphQL(in, tnt)
 	if err != nil {
@@ -92,7 +92,7 @@ func (r *Resolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefini
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting transaction")
 	}
-	defer r.transactioner.RollbackUnlessCommitted(tx)
+	defer r.transactioner.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	defs, err := r.srv.List(ctx, tnt)
@@ -126,7 +126,7 @@ func (r *Resolver) LabelDefinition(ctx context.Context, key string) (*graphql.La
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting transaction")
 	}
-	defer r.transactioner.RollbackUnlessCommitted(tx)
+	defer r.transactioner.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 	def, err := r.srv.Get(ctx, tnt, key)
 
@@ -159,7 +159,7 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting transaction")
 	}
-	defer r.transactioner.RollbackUnlessCommitted(tx)
+	defer r.transactioner.RollbackUnlessCommitted(ctx, tx)
 
 	ld, err := r.conv.FromGraphQL(in, tnt)
 	if err != nil {
@@ -200,7 +200,7 @@ func (r *Resolver) DeleteLabelDefinition(ctx context.Context, key string, delete
 	if err != nil {
 		return nil, errors.Wrap(err, "while starting transaction")
 	}
-	defer r.transactioner.RollbackUnlessCommitted(tx)
+	defer r.transactioner.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 

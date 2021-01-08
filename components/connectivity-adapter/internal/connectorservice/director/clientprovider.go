@@ -2,6 +2,7 @@ package director
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/gqlcli"
 )
@@ -13,16 +14,18 @@ type ClientProvider interface {
 
 type directorClientProvider struct {
 	directorURL string
+	timeout     time.Duration
 }
 
-func NewClientProvider(directorURL string) directorClientProvider {
+func NewClientProvider(directorURL string, timeout time.Duration) directorClientProvider {
 	return directorClientProvider{
 		directorURL: directorURL,
+		timeout:     timeout,
 	}
 }
 
 func (dcp directorClientProvider) Client(r *http.Request) Client {
-	gqlClient := gqlcli.NewAuthorizedGraphQLClient(dcp.directorURL, r)
+	gqlClient := gqlcli.NewAuthorizedGraphQLClient(dcp.directorURL, dcp.timeout, r)
 
 	return NewClient(gqlClient)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	pkgmock "github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -27,12 +28,13 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.Service
-		ConverterFn     func() *automock.Converter
-		ExpectedResult  *graphql.PackageInstanceAuth
-		ExpectedErr     error
+		Name               string
+		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn          func() *automock.Service
+		ConverterFn        func() *automock.Converter
+		PackageConverterFn func() *pkgmock.PackageConverter
+		ExpectedResult     *graphql.PackageInstanceAuth
+		ExpectedErr        error
 	}{
 		{
 			Name:            "Success",
@@ -48,6 +50,9 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
 		},
@@ -61,6 +66,9 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -76,6 +84,9 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -93,6 +104,9 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 				conv := &automock.Converter{}
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -109,6 +123,9 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 				conv := &automock.Converter{}
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -120,8 +137,9 @@ func TestResolver_DeletePackageInstanceAuth(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			pkgConverter := testCase.PackageConverterFn()
 
-			resolver := packageinstanceauth.NewResolver(transact, svc, nil, converter)
+			resolver := packageinstanceauth.NewResolver(transact, svc, nil, converter, pkgConverter)
 
 			// when
 			result, err := resolver.DeletePackageInstanceAuth(context.TODO(), id)
@@ -150,13 +168,14 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.Service
-		PkgServiceFn    func() *automock.PackageService
-		ConverterFn     func() *automock.Converter
-		ExpectedResult  *graphql.PackageInstanceAuth
-		ExpectedErr     error
+		Name               string
+		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn          func() *automock.Service
+		PkgServiceFn       func() *automock.PackageService
+		ConverterFn        func() *automock.Converter
+		PackageConverterFn func() *pkgmock.PackageConverter
+		ExpectedResult     *graphql.PackageInstanceAuth
+		ExpectedErr        error
 	}{
 		{
 			Name:            "Success",
@@ -178,6 +197,9 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
 		},
@@ -195,6 +217,9 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -218,6 +243,9 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput, nil).Once()
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
 		},
@@ -236,6 +264,9 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -257,6 +288,9 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 				conv := &automock.Converter{}
 				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput, nil).Once()
 				return conv
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -280,6 +314,9 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput, nil).Once()
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
 		},
@@ -292,11 +329,12 @@ func TestResolver_RequestPackageInstanceAuthCreation(t *testing.T) {
 			svc := testCase.ServiceFn()
 			pkgSvc := testCase.PkgServiceFn()
 			converter := testCase.ConverterFn()
+			pkgConverter := testCase.PackageConverterFn()
 
-			resolver := packageinstanceauth.NewResolver(transact, svc, pkgSvc, converter)
+			resolver := packageinstanceauth.NewResolver(transact, svc, pkgSvc, converter, pkgConverter)
 
 			// when
-			result, err := resolver.RequestPackageInstanceAuthCreation(context.Background(), testPackageID, *gqlRequestInput)
+			result, err := resolver.RequestPackageInstanceAuthCreation(context.TODO(), testPackageID, *gqlRequestInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -321,12 +359,13 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.Service
-		ConverterFn     func() *automock.Converter
-		ExpectedResult  *graphql.PackageInstanceAuth
-		ExpectedErr     error
+		Name               string
+		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn          func() *automock.Service
+		ConverterFn        func() *automock.Converter
+		PackageConverterFn func() *pkgmock.PackageConverter
+		ExpectedResult     *graphql.PackageInstanceAuth
+		ExpectedErr        error
 	}{
 		{
 			Name:            "Success",
@@ -343,6 +382,9 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
 		},
@@ -356,6 +398,9 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -374,6 +419,9 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
 		},
@@ -389,6 +437,9 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 				conv := &automock.Converter{}
 				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
 				return conv
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -407,6 +458,9 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
 		},
@@ -418,11 +472,12 @@ func TestResolver_SetPackageInstanceAuth(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			pkgConverter := testCase.PackageConverterFn()
 
-			resolver := packageinstanceauth.NewResolver(transact, svc, nil, converter)
+			resolver := packageinstanceauth.NewResolver(transact, svc, nil, converter, pkgConverter)
 
 			// when
-			result, err := resolver.SetPackageInstanceAuth(context.Background(), testAuthID, *gqlSetInput)
+			result, err := resolver.SetPackageInstanceAuth(context.TODO(), testAuthID, *gqlSetInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
@@ -446,13 +501,14 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name             string
-		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn        func() *automock.Service
-		PackageServiceFn func() *automock.PackageService
-		ConverterFn      func() *automock.Converter
-		ExpectedResult   *graphql.PackageInstanceAuth
-		ExpectedErr      error
+		Name               string
+		TransactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn          func() *automock.Service
+		PackageServiceFn   func() *automock.PackageService
+		ConverterFn        func() *automock.Converter
+		PackageConverterFn func() *pkgmock.PackageConverter
+		ExpectedResult     *graphql.PackageInstanceAuth
+		ExpectedErr        error
 	}{
 		{
 			Name:            "Success - Deleted",
@@ -472,6 +528,9 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 				conv := &automock.Converter{}
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
@@ -495,6 +554,9 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
 		},
@@ -511,6 +573,9 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -531,6 +596,9 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -550,6 +618,9 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -572,6 +643,9 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -586,6 +660,9 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
+			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -607,6 +684,9 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
 			},
+			PackageConverterFn: func() *pkgmock.PackageConverter {
+				return &pkgmock.PackageConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -619,8 +699,9 @@ func TestResolver_RequestPackageInstanceAuthDeletion(t *testing.T) {
 			svc := testCase.ServiceFn()
 			packageSvc := testCase.PackageServiceFn()
 			converter := testCase.ConverterFn()
+			pkgConverter := testCase.PackageConverterFn()
 
-			resolver := packageinstanceauth.NewResolver(transact, svc, packageSvc, converter)
+			resolver := packageinstanceauth.NewResolver(transact, svc, packageSvc, converter, pkgConverter)
 
 			// when
 			result, err := resolver.RequestPackageInstanceAuthDeletion(context.TODO(), id)
