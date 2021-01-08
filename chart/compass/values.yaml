@@ -30,12 +30,15 @@ global:
     tenant_fetcher:
       dir:
       version: "PR-1674"
+    ord_service:
+      dir:
+      version: "PR-1"
     healthchecker:
       dir:
       version: "PR-1674"
     schema_migrator:
       dir:
-      version: "PR-1674"
+      version: "PR-1666"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -60,6 +63,9 @@ global:
       tenant_fetcher:
         dir:
         version: "PR-1674"
+      ord_service:
+        dir:
+        version: "PR-1666"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -247,6 +253,11 @@ global:
   tenantFetcher:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
+    port: 3000
+
+  ordService:
+    host: compass-ord-service.compass-system.svc.cluster.local
+    prefix: /open-resource-discovery
     port: 3000
 
   tenantFetchers:
