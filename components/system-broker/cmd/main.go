@@ -24,6 +24,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
@@ -31,11 +32,10 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	lagger "github.com/kyma-incubator/compass/components/system-broker/pkg/lager"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/signal"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	gql "github.com/machinebox/graphql"
 )
 
@@ -59,19 +59,17 @@ func main() {
 	ctx, err = log.Configure(ctx, cfg.Log)
 	fatalOnError(err)
 
-	uuidSrv := uuid.NewService()
-
-	directorGraphQLClient, err := prepareGqlClient(cfg, uuidSrv)
+	directorGraphQLClient, err := prepareGqlClient(cfg)
 	fatalOnError(err)
 
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
-	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, log.NewDefaultLagerAdapter())
+	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, lagger.NewDefaultLagerAdapter())
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
 
 	middlewares := []mux.MiddlewareFunc{
 		httputil.HeaderForwarder(cfg.HttpClient.ForwardHeaders),
 	}
-	srv := server.New(cfg.Server, uuidSrv, middlewares, osbApi, specsApi)
+	srv := server.New(cfg.Server, middlewares, osbApi, specsApi)
 
 	srv.Start(ctx)
 }
@@ -82,8 +80,8 @@ func fatalOnError(err error) {
 	}
 }
 
-func prepareGqlClient(cfg *config.Config, uudSrv uuid.Service) (*director.GraphQLClient, error) {
-	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
+func prepareGqlClient(cfg *config.Config) (*director.GraphQLClient, error) {
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)))
 
 	tokenProviderFromHeader, err := oauth.NewTokenProviderFromHeader(cfg.GraphQLClient.GraphqlEndpoint)
 	if err != nil {

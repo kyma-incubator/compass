@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"

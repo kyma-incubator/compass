@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 )

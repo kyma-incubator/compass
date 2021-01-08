@@ -19,10 +19,10 @@ package config
 import (
 	"reflect"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/pkg/errors"
