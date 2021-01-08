@@ -18,7 +18,7 @@ COPY ./licenses ${BASE_APP_DIR}/licenses
 RUN go build -v -o main .
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
-FROM alpine:3.12.0
+FROM alpine:3.12.3
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 

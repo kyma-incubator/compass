@@ -28,7 +28,7 @@ RUN mkdir /app && mv ./director /app/director \
   && mv ./tenantloader /app/tenantloader \
   && mv ./licenses /app/licenses
 
-FROM alpine:edge
+FROM alpine:3.12.3
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
