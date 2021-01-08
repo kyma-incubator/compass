@@ -163,17 +163,6 @@ func TestORDService(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, testConfig.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
 	})
 
-	t.Run("401 when request ORD Service with dex user token", func(t *testing.T) {
-		request, err := http.NewRequest(http.MethodGet, testConfig.ORDServiceURL+"/$metadata?$format=json", nil)
-		require.NoError(t, err)
-		request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", dexToken))
-
-		response, err := httpClient.Do(request)
-
-		require.NoError(t, err)
-		require.Equal(t, http.StatusUnauthorized, response.StatusCode)
-	})
-
 	t.Run("Requesting Packages returns them as expected", func(t *testing.T) {
 		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json")
 
