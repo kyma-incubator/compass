@@ -130,7 +130,6 @@ func TestORDService(t *testing.T) {
 
 	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
-
 	t.Log("Create integration system")
 	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "test-int-system")
 	require.NotEmpty(t, intSys)
