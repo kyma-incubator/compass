@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 GOOS=linux go test -c ./test/apitests
 
 
 
-FROM alpine:3.12.0
+FROM alpine:3.12.3
 
 LABEL source=git@github.com:kyma-project/kyma.git
 
