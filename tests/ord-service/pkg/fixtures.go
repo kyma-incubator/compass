@@ -19,6 +19,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -58,6 +59,53 @@ func UnregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Cl
 	return app
 }
 
+func RegisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, name string) *graphql.IntegrationSystemExt {
+	input := graphql.IntegrationSystemInput{Name: name}
+	in, err := tc.Graphqlizer.IntegrationSystemInputToGQL(input)
+	if err != nil {
+		return nil
+	}
+	req := fixRegisterIntegrationSystemRequest(in)
+	out := &graphql.IntegrationSystemExt{}
+	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, "", req, out)
+	require.NotEmpty(t, out)
+	require.NoError(t, err)
+	return out
+}
+
+func UnregisterIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) {
+	req := fixunregisterIntegrationSystem(id)
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, "", req, nil)
+	require.NoError(t, err)
+}
+
+func RequestClientCredentialsForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.SystemAuth {
+	generateIntSysAuthRequest := fixRequestClientCredentialsForIntegrationSystem(id)
+	intSysAuth := &graphql.SystemAuth{}
+
+	// WHEN
+	t.Log("Generate client credentials for integration system")
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, "", generateIntSysAuthRequest, intSysAuth)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSysAuth.Auth)
+
+
+	t.Log("Check if client credentials were generated")
+	assert.NotEmpty(t, intSysAuth.Auth.Credential)
+	oauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+	assert.NotEmpty(t, oauthCredentialData.ClientID)
+	assert.NotEmpty(t, oauthCredentialData.ClientSecret)
+	assert.Equal(t, intSysAuth.ID, oauthCredentialData.ClientID)
+	return intSysAuth
+}
+
+func DeleteSystemAuthForIntegrationSystem(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string) {
+	req := fixDeleteSystemAuthForIntegrationSystemRequest(id)
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, "", req, nil)
+	require.NoError(t, err)
+}
+
 func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -75,6 +123,43 @@ func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 			%s
 		}	
 	}`, id, tc.GQLFieldsProvider.ForApplication()))
+}
+
+func fixRegisterIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: registerIntegrationSystem(in: %s) {
+					%s
+				}
+			}`,
+			integrationSystemInGQL, tc.GQLFieldsProvider.ForIntegrationSystem()))
+}
+
+func fixunregisterIntegrationSystem(intSysID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: unregisterIntegrationSystem(id: "%s") {
+					%s
+				}
+			}`, intSysID, tc.GQLFieldsProvider.ForIntegrationSystem()))
+}
+
+func fixRequestClientCredentialsForIntegrationSystem(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: requestClientCredentialsForIntegrationSystem(id: "%s") {
+						%s
+					}
+				}`, id, tc.GQLFieldsProvider.ForSystemAuth()))
+}
+
+func fixDeleteSystemAuthForIntegrationSystemRequest(authID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: deleteSystemAuthForIntegrationSystem(authID: "%s") {
+					%s
+				}
+			}`, authID, tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 func FixActiveVersion() *graphql.VersionInput {
