@@ -256,6 +256,13 @@ func generateCertificate(t *testing.T, appID string, clientKey *rsa.PrivateKey) 
 	return generateCertificateForToken(t, token.Token, clientKey)
 }
 
+func GenerateRuntimeCertificate(t *testing.T, runtimeID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
+	token, err := internalClient.GenerateRuntimeToken(runtimeID)
+	require.NoError(t, err)
+
+	return generateCertificateForToken(t, token.Token, clientKey)
+}
+
 func generateCertificateForToken(t *testing.T, token string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
 	configuration, err := connectorClient.Configuration(token)
 	require.NoError(t, err)
