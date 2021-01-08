@@ -157,9 +157,9 @@ gqlgen-local:
 
 check-gqlgen:
 	@echo make gqlgen-check
-	@if [ -n "$$(git status -s pkg/graphql)" ]; then \
+	@if [ -n "$$(git status -s pkg/graphql | grep -v '_test.go')" ]; then \
 		echo -e "${RED}✗ gqlgen.sh modified some files, schema and code are out-of-sync${NC}"; \
-		git status -s pkg/graphql; \
+		git status -s pkg/graphql | grep -v "_test.go"; \
 		exit 1; \
 	fi;
 
