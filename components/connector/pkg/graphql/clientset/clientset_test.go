@@ -18,8 +18,9 @@ func Test_Clientset(t *testing.T) {
 	clientId := "abcd-efgh"
 
 	// given
+	ctx := context.TODO()
 	var err error
-	token, err := tokenService.CreateToken(context.TODO(), clientId, tokens.ApplicationToken)
+	token, err := tokenService.CreateToken(ctx, clientId, tokens.ApplicationToken)
 	require.NoError(t, err)
 
 	clientSet := NewConnectorClientSet(WithSkipTLSVerify(true))
@@ -60,7 +61,7 @@ func Test_Clientset(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	require.True(t, revokeResponse)
-	revocationCM, err := k8sClientSet.CoreV1().ConfigMaps("default").Get(testConfigMapName, v1.GetOptions{})
+	revocationCM, err := k8sClientSet.CoreV1().ConfigMaps("default").Get(ctx, testConfigMapName, v1.GetOptions{})
 	require.NoError(t, err)
 	assert.Len(t, revocationCM.Data, 1)
 }
