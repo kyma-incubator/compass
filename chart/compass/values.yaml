@@ -14,28 +14,28 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1657"
+      version: "PR-1674"
     connectivity_adapter:
       dir:
-      version: "PR-1669"
+      version: "PR-1674"
     pairing_adapter:
       dir:
-      version: "PR-1661"
+      version: "PR-1674"
     director:
       dir:
-      version: "PR-1670"
+      version: "PR-1674"
     gateway:
       dir:
-      version: "PR-1659"
+      version: "PR-1674"
     tenant_fetcher:
       dir:
-      version: "PR-1661"
+      version: "PR-1674"
     ord_service:
       dir:
       version: "PR-1"
     healthchecker:
       dir:
-      version: "PR-1460"
+      version: "PR-1674"
     schema_migrator:
       dir:
       version: "PR-1666"
@@ -46,7 +46,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1661"
+      version: "PR-1674"
     console:
       dir:
       version: "PR-11"
@@ -56,13 +56,13 @@ global:
         version: "PR-1666"
       connector:
         dir:
-        version: "PR-1661"
+        version: "PR-1674"
       connectivity_adapter:
         dir:
-        version: "PR-1641"
+        version: "PR-1674"
       tenant_fetcher:
         dir:
-        version: "PR-1661"
+        version: "PR-1674"
       ord_service:
         dir:
         version: "PR-1666"
