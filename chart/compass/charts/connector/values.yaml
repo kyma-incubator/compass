@@ -38,3 +38,4 @@ istio:
     connectorInternalApi:
       compassDirector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-director
       compassConnectorTests: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector-tests
+      compassSystemBrokerTests: cluster.local/ns/{{ .Values.global.system_broker.testNamespace }}/sa/compass-system-broker-tests

@@ -40,4 +40,5 @@ ping() {
 }
 
 ping "Director" $DIRECTOR_HEALTHZ_URL
+ping "Connector" $CONNECTOR_HEALTHZ_URL
 ping "System Broker" $SYSTEM_BROKER_HEALTHZ_URL

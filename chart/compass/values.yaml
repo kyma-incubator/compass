@@ -139,6 +139,7 @@ global:
     secrets:
       integrationSystemCredentials:
         name: compass-system-broker-credentials
+    testNamespace: kyma-system
 
   gateway:
     port: 3000
