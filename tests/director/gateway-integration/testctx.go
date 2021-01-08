@@ -29,13 +29,13 @@ func init() {
 // TestContext contains dependencies that help executing tests
 type TestContext struct {
 	Graphqlizer       graphqlizer.Graphqlizer
-	gqlFieldsProvider graphqlizer.GqlFieldsProvider
+	GQLFieldsProvider graphqlizer.GqlFieldsProvider
 }
 
 func NewTestContext() (*TestContext, error) {
 	return &TestContext{
 		Graphqlizer:       graphqlizer.Graphqlizer{},
-		gqlFieldsProvider: graphqlizer.GqlFieldsProvider{},
+		GQLFieldsProvider: graphqlizer.GqlFieldsProvider{},
 	}, nil
 }
 
