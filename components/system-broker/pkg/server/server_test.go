@@ -1,13 +1,14 @@
 package server_test
 
 import (
-	"net/http"
-	"net/url"
-	"testing"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"github.com/stretchr/testify/require"
+	"net/http"
+	"net/url"
+	"reflect"
+	"testing"
+	"unsafe"
 )
 
 func TestNewAddsAdditionalRoutes(t *testing.T) {
@@ -89,7 +90,9 @@ func TestNewAddsSystemRoutes(t *testing.T) {
 }
 
 func AssertRouteExists(t *testing.T, server *server.Server, path string) {
-	router, ok := server.Handler.(*mux.Router)
+	handler := server.Handler
+
+	router, ok := extractMuxRouter(handler)
 	require.True(t, ok)
 
 	match := &mux.RouteMatch{}
@@ -98,4 +101,15 @@ func AssertRouteExists(t *testing.T, server *server.Server, path string) {
 			Path: path,
 		},
 	}, match), match.MatchErr)
+}
+
+func extractMuxRouter(handler http.Handler) (*mux.Router, bool) {
+	innerHandlerValue := reflect.ValueOf(handler).Elem().FieldByName("h").Elem()
+	innerHandlerValue = innerHandlerValue.Elem().FieldByName("h").Elem()
+	innerHandlerValue = innerHandlerValue.Elem().FieldByName("handler").Elem()
+	innerHandlerValue = innerHandlerValue.Elem().FieldByName("h")
+	routerValue := reflect.NewAt(innerHandlerValue.Type(), unsafe.Pointer(innerHandlerValue.UnsafeAddr())).Elem()
+
+	router, ok := routerValue.Interface().(*mux.Router)
+	return router, ok
 }
