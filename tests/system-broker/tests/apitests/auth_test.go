@@ -1,10 +1,12 @@
 package apitests
 
 import (
+	"bytes"
 	"context"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 
 	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
 
@@ -35,9 +38,10 @@ func TestTokens(t *testing.T) {
 	}
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(token, testCtx.DirectorURL)
 	runtimeInput := &graphql.RuntimeInput{
-		Name: "test-runtime",
+		Name: "test-runtime1",
 	}
 	runtime := director.RegisterRuntimeFromInputWithinTenant(t, context.TODO(), dexGraphQLClient, testCtx.Tenant, runtimeInput)
+	defer director.UnregisterRuntimeWithinTenant(t, context.TODO(), dexGraphQLClient, testCtx.Tenant, runtime.ID)
 
 	runtimeToken := director.GenerateOneTimeTokenForRuntime(t, context.TODO(), dexGraphQLClient, testCtx.Tenant, runtime.ID)
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
@@ -47,7 +51,7 @@ func TestTokens(t *testing.T) {
 		logrus.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
-	certResult, _ := connector.GenerateRuntimeCertificate(t, oneTimeToken, testCtx.ConnectorTokenSecuredClient, clientKey)
+	certResult, configuration := connector.GenerateRuntimeCertificate(t, oneTimeToken, testCtx.ConnectorTokenSecuredClient, clientKey)
 	certChain := connectorTestkit.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := createCertClient(clientKey, certChain...)
 
@@ -75,9 +79,40 @@ func TestTokens(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Broker-API-Version", "2.15")
 
-		_, err = http.DefaultClient.Do(req)
+		client := http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
+		}
+		_, err = client.Do(req)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "connection reset by peer")
+		require.Contains(t, err.Error(), "tls: certificate required")
+	})
+
+	t.Run("Gets unauthorized when calling with revoked cert", func(t *testing.T) {
+		connectorClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
+		ok, err := connectorClient.RevokeCertificate()
+		require.NoError(t, err)
+		require.Equal(t, ok, true)
+
+		details, _ := json.Marshal(domain.BindDetails{
+			ServiceID: "serviceID",
+			PlanID:    "planID",
+		})
+
+		req, err := http.NewRequest(http.MethodPut, testCtx.SystemBrokerURL+"/v2/service_instances/2be0980c-92d2-460f-9568-ffcbb98155c7/service_bindings/043ccdb4-0ebc-475b-849f-6afec54fdd95?accepts_incomplete=true", bytes.NewBuffer(details))
+		require.NoError(t, err)
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Broker-API-Version", "2.15")
+
+		resp, err := securedClient.Do(req)
+		logrus.Infof("Response is: %+v", resp)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "abc")
+		require.Nil(t, resp)
 	})
 }
 
