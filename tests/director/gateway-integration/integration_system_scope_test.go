@@ -80,7 +80,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		runtimeInput := graphql.RuntimeInput{
 			Name: "test",
 		}
-		runtime := registerRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
+		runtime := RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
 		require.NotEmpty(t, runtime.ID)
 
 		t.Log("Get runtime")

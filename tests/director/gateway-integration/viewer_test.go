@@ -90,7 +90,7 @@ func TestViewerQuery(t *testing.T) {
 		}
 
 		t.Log("Register Runtime with Dex id token")
-		runtime := registerRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
+		runtime := RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
 
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
 		defer unregisterRuntimeWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)

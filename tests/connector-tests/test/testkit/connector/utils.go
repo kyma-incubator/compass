@@ -11,10 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func GenerateRuntimeCertificate(t *testing.T, internalClient *InternalClient, connectorClient *TokenSecuredClient, runtimeID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
-	token, err := internalClient.GenerateRuntimeToken(runtimeID)
-	require.NoError(t, err)
-
+func GenerateRuntimeCertificate(t *testing.T, token *externalschema.Token, connectorClient *TokenSecuredClient, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
 	return generateCertificateForToken(t, connectorClient, token.Token, clientKey)
 }
 
