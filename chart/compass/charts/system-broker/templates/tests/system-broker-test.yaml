@@ -25,7 +25,6 @@ spec:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
-      serviceAccountName: {{ template "fullname" . }}-tests
       containers:
         - name: system-broker-tests
           image: axel0r/system-broker-test
