@@ -5,16 +5,18 @@ import (
 )
 
 type TestContext struct {
-	SystemBrokerURL string
+	Tenant string
 
-	InternalConnectorClient     *connector.InternalClient
+	SystemBrokerURL             string
+	DirectorURL                 string
 	ConnectorTokenSecuredClient *connector.TokenSecuredClient
 }
 
 func NewTestContext(cfg Config) *TestContext {
 	return &TestContext{
+		Tenant:                      cfg.Tenant,
 		SystemBrokerURL:             cfg.SystemBrokerURL,
-		InternalConnectorClient:     connector.NewInternalClient(cfg.InternalConnectorURL),
+		DirectorURL:                 cfg.DirectorURL,
 		ConnectorTokenSecuredClient: connector.NewConnectorClient(cfg.ConnectorURL),
 	}
 }

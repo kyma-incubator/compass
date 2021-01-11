@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	SystemBrokerURL      string
-	ConnectorURL         string
-	InternalConnectorURL string `envconfig:"default=http://compass-connector:3001/graphql"`
+	Tenant          string
+	SystemBrokerURL string
+	DirectorURL     string
+	ConnectorURL    string
 }
 
 func ReadConfig() (Config, error) {

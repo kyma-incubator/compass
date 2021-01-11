@@ -39,12 +39,14 @@ spec:
               value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.external.port }}/healthz"
             - name: SYSTEM_BROKER_HEALTHZ_URL
               value: "http://compass-system-broker.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.system_broker.port }}/broker/healthz"
+            - name: APP_TENANT
+              value: "{{ .Values.global.fooTenant }}"
             - name: APP_SYSTEM_BROKER_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}/broker"
+            - name: APP_DIRECTOR_URL
+              value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
             - name: APP_CONNECTOR_URL
               value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql'
-            - name: APP_INTERNAL_CONNECTOR_URL
-              value: 'http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.internal.port }}/graphql'
             - name: USER_EMAIL
               valueFrom:
                 secretKeyRef:

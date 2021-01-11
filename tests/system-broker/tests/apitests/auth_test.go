@@ -1,6 +1,7 @@
 package apitests
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
@@ -8,6 +9,13 @@ import (
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
+	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
+
+	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
 
@@ -20,23 +28,26 @@ import (
 
 // Todo: add tests for revoked and invalid certs
 func TestTokens(t *testing.T) {
-	runtimeID := "54f83a73-b340-418d-b653-d95b5e347d74"
 	token, err := idtokenprovider.GetDexToken()
 	if err != nil {
 		logrus.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
-	logrus.Infof("token is %s", token)
-	//dexGraphQLClient := gql.NewAuthorizedGraphQLClient(token)
-	// TODO: need a tenant to register runtime maybe use foo or bar ones? (other tests use default tenant)
-	// TODO: expose registerRuntimeFromInputWithinTenant in order to register runtime
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(testCtx.DirectorURL, token)
+	runtimeInput := &graphql.RuntimeInput{
+		Name: "test-runtime",
+	}
+	runtime := director.RegisterRuntimeFromInputWithinTenant(t, context.TODO(), dexGraphQLClient, testCtx.Tenant, runtimeInput)
+
+	runtimeToken := director.GenerateOneTimeTokenForRuntime(t, context.TODO(), dexGraphQLClient, testCtx.Tenant, runtime.ID)
+	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
+
 	clientKey, err := connectorTestkit.GenerateKey()
 	if err != nil {
 		logrus.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
-
-	certResult, _ := connector.GenerateRuntimeCertificate(t, testCtx.InternalConnectorClient, testCtx.ConnectorTokenSecuredClient, runtimeID, clientKey)
+	certResult, _ := connector.GenerateRuntimeCertificate(t, oneTimeToken, testCtx.ConnectorTokenSecuredClient, clientKey)
 	certChain := connectorTestkit.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := createCertClient(clientKey, certChain...)
 
