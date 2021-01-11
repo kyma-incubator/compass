@@ -89,7 +89,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		require.Equal(t, runtime.ID, gqlRuntime.ID)
 
 		t.Log("Unregister runtime")
-		unregisterRuntimeWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		UnregisterRuntimeWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 
 	})
 

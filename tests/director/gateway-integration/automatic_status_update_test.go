@@ -145,7 +145,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		runtime := RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
 
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
-		defer unregisterRuntimeWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		defer UnregisterRuntimeWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 
 		t.Log("Request Client Credentials for Runtime")
 		rtmAuth := requestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)

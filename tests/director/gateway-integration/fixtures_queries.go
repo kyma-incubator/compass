@@ -87,7 +87,7 @@ func requestClientCredentialsForRuntime(t *testing.T, ctx context.Context, gqlCl
 	return systemAuth
 }
 
-func unregisterRuntimeWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+func UnregisterRuntimeWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
 	delReq := fixUnregisterRuntimeRequest(id)
 
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
