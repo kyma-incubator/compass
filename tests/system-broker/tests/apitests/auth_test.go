@@ -33,7 +33,7 @@ func TestTokens(t *testing.T) {
 		logrus.Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(testCtx.DirectorURL, token)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(token, testCtx.DirectorURL)
 	runtimeInput := &graphql.RuntimeInput{
 		Name: "test-runtime",
 	}
