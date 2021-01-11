@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -120,6 +121,8 @@ func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
+
+	fmt.Println("Test fix")
 
 	authenticators, err := authenticator.InitFromEnv(envPrefix)
 	exitOnError(err, "Failed to retrieve authenticators config")
