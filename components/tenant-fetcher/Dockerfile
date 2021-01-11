@@ -24,7 +24,7 @@ RUN go build -v -o tenant-fetcher ./cmd/main.go
 RUN mkdir /app && mv ./tenant-fetcher /app/tenant-fetcher \
   && mv ./licenses /app/licenses
 
-FROM alpine:edge
+FROM alpine:3.12.3
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
