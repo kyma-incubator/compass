@@ -220,8 +220,8 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 		return nil, err
 	}
 
-	if pageSize < 1 || pageSize > 100 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
 	return s.pkgRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
