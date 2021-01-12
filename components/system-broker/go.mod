@@ -32,7 +32,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.6.1
-	github.com/tidwall/gjson v1.6.3 // indirect
+	github.com/tidwall/gjson v1.6.3
 	github.com/valyala/fasthttp v1.16.0 // indirect
 	github.com/vektah/gqlparser v1.3.1
 	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0 // indirect

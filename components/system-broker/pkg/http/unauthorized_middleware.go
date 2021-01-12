@@ -3,15 +3,14 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 
-	"github.com/tidwall/gjson"
-
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 )
 
 // UnauthorizedMiddleware
@@ -38,13 +37,13 @@ func UnauthorizedMiddleware(unauthorizedString string) func(next http.Handler) h
 				return
 			}
 
-			rw.WriteHeader(recorder.Code)
 			for key, values := range recorder.Header() {
 				for _, v := range values {
 					rw.Header().Add(key, v)
 				}
 			}
 
+			rw.WriteHeader(recorder.Code)
 			if _, err := rw.Write(brokerResponseBody); err != nil {
 				log.C(ctx).Errorf("error while writing response body: %s", err.Error())
 				writeErrorResponse(ctx, rw, http.StatusInternalServerError, errors.New("internal server error"))

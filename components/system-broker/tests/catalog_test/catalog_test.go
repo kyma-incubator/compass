@@ -66,7 +66,6 @@ func (suite *OSBCatalogTestSuite) TestWithManyApps() {
 }
 
 func (suite *OSBCatalogTestSuite) TestWhenDirectorReturnsError() {
-
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "applications", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
