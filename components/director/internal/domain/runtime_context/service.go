@@ -69,8 +69,8 @@ func (s *service) List(ctx context.Context, runtimeID string, filter []*labelfil
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	if pageSize < 1 || pageSize > 100 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
 	return s.repo.List(ctx, runtimeID, rtmCtxTenant, filter, pageSize, cursor)

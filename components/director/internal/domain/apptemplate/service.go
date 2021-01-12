@@ -85,8 +85,8 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
-	if pageSize < 1 || pageSize > 100 {
-		return model.ApplicationTemplatePage{}, apperrors.NewInvalidDataError("page size must be between 1 and 100")
+	if pageSize < 1 || pageSize > 200 {
+		return model.ApplicationTemplatePage{}, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
 	return s.appTemplateRepo.List(ctx, pageSize, cursor)
