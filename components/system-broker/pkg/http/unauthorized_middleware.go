@@ -22,6 +22,12 @@ func UnauthorizedMiddleware(unauthorizedString string) func(next http.Handler) h
 			next.ServeHTTP(recorder, r)
 			ctx := r.Context()
 
+			for key, values := range recorder.Header() {
+				for _, v := range values {
+					rw.Header().Add(key, v)
+				}
+			}
+
 			brokerResponseBody, err := ioutil.ReadAll(recorder.Body)
 			if err != nil {
 				log.C(ctx).Errorf("error while reading recorder body: %s", err.Error())
@@ -35,12 +41,6 @@ func UnauthorizedMiddleware(unauthorizedString string) func(next http.Handler) h
 
 				writeErrorResponse(ctx, rw, http.StatusUnauthorized, errors.New("unauthorized: insufficient scopes"))
 				return
-			}
-
-			for key, values := range recorder.Header() {
-				for _, v := range values {
-					rw.Header().Add(key, v)
-				}
 			}
 
 			rw.WriteHeader(recorder.Code)
