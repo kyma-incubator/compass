@@ -226,18 +226,18 @@ func TestService_ListForPackage(t *testing.T) {
 			InputPageSize:      0,
 			InputCursor:        after,
 			ExpectedResult:     eventAPIDefinitionPage,
-			ExpectedErrMessage: "page size must be between 1 and 100",
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Return error when page size is bigger than 100",
+			Name: "Return error when page size is bigger than 200",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				return repo
 			},
-			InputPageSize:      101,
+			InputPageSize:      201,
 			InputCursor:        after,
 			ExpectedResult:     eventAPIDefinitionPage,
-			ExpectedErrMessage: "page size must be between 1 and 100",
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
 			Name: "Returns error when Event Definition listing failed",

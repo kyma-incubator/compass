@@ -3609,7 +3609,7 @@ type Application {
 	status: ApplicationStatus!
 	webhooks: [Webhook!]
 	healthCheckURL: String
-	packages(first: Int = 100, after: PageCursor): PackagePage
+	packages(first: Int = 200, after: PageCursor): PackagePage
 	package(id: ID!): Package
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
@@ -3817,9 +3817,9 @@ type Package {
 	When defined, all Auth requests fallback to defaultInstanceAuth.
 	"""
 	defaultInstanceAuth: Auth
-	apiDefinitions(group: String, first: Int = 100, after: PageCursor): APIDefinitionPage
-	eventDefinitions(group: String, first: Int = 100, after: PageCursor): EventDefinitionPage
-	documents(first: Int = 100, after: PageCursor): DocumentPage
+	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
+	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
+	documents(first: Int = 200, after: PageCursor): DocumentPage
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
 	document(id: ID!): Document
@@ -3970,7 +3970,7 @@ type Query {
 	- [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
 	- [query applications](examples/query-applications/query-applications.graphql)
 	"""
-	applications(filter: [LabelFilter!], first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
+	applications(filter: [LabelFilter!], first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
 	"""
 	**Examples**
 	- [query application](examples/query-application/query-application.graphql)
@@ -3982,14 +3982,14 @@ type Query {
 	**Examples**
 	- [query applications for runtime](examples/query-applications-for-runtime/query-applications-for-runtime.graphql)
 	"""
-	applicationsForRuntime(runtimeID: ID!, first: Int = 100, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
+	applicationsForRuntime(runtimeID: ID!, first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
 	**Examples**
 	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
-	applicationTemplates(first: Int = 100, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
+	applicationTemplates(first: Int = 200, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
 	"""
 	**Examples**
 	- [query application template](examples/query-application-template/query-application-template.graphql)
@@ -4003,8 +4003,8 @@ type Query {
 	- [query runtimes with pagination](examples/query-runtimes/query-runtimes-with-pagination.graphql)
 	- [query runtimes](examples/query-runtimes/query-runtimes.graphql)
 	"""
-	runtimes(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
-	runtimeContexts(filter: [LabelFilter!], first: Int = 100, after: PageCursor): RuntimeContextPage! @hasScopes(path: "graphql.query.runtimeContexts")
+	runtimes(filter: [LabelFilter!], first: Int = 200, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
+	runtimeContexts(filter: [LabelFilter!], first: Int = 200, after: PageCursor): RuntimeContextPage! @hasScopes(path: "graphql.query.runtimeContexts")
 	"""
 	**Examples**
 	- [query runtime](examples/query-runtime/query-runtime.graphql)
@@ -4017,14 +4017,14 @@ type Query {
 	- [query label definition](examples/query-label-definition/query-label-definition.graphql)
 	"""
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
-	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 100, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
+	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 200, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
 	**Examples**
 	- [query integration systems](examples/query-integration-systems/query-integration-systems.graphql)
 	"""
-	integrationSystems(first: Int = 100, after: PageCursor): IntegrationSystemPage! @hasScopes(path: "graphql.query.integrationSystems")
+	integrationSystems(first: Int = 200, after: PageCursor): IntegrationSystemPage! @hasScopes(path: "graphql.query.integrationSystems")
 	"""
 	**Examples**
 	- [query integration system](examples/query-integration-system/query-integration-system.graphql)
@@ -4050,7 +4050,7 @@ type Query {
 	**Examples**
 	- [query automatic scenario assignments](examples/query-automatic-scenario-assignments/query-automatic-scenario-assignments.graphql)
 	"""
-	automaticScenarioAssignments(first: Int = 100, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
+	automaticScenarioAssignments(first: Int = 200, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 }
 
 type Mutation {

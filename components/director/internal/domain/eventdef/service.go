@@ -58,8 +58,8 @@ func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize
 		return nil, errors.Wrap(err, "while loading tenant from context")
 	}
 
-	if pageSize < 1 || pageSize > 100 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
 	return s.eventAPIRepo.ListForPackage(ctx, tnt, packageID, pageSize, cursor)

@@ -227,7 +227,7 @@ func TestService_List(t *testing.T) {
 				return intSysRepo
 			},
 			InputPageSize:  0,
-			ExpectedError:  errors.New("page size must be between 1 and 100"),
+			ExpectedError:  errors.New("page size must be between 1 and 200"),
 			ExpectedOutput: model.IntegrationSystemPage{},
 		},
 		{
@@ -236,8 +236,8 @@ func TestService_List(t *testing.T) {
 				intSysRepo := &automock.IntegrationSystemRepository{}
 				return intSysRepo
 			},
-			InputPageSize:  101,
-			ExpectedError:  errors.New("page size must be between 1 and 100"),
+			InputPageSize:  201,
+			ExpectedError:  errors.New("page size must be between 1 and 200"),
 			ExpectedOutput: model.IntegrationSystemPage{},
 		},
 	}
