@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -110,6 +111,8 @@ type config struct {
 }
 
 func main() {
+	fmt.Println("Dummy fix")
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	defer cancel()
