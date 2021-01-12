@@ -849,7 +849,7 @@ func TestService_Delete(t *testing.T) {
 	})
 }
 
-func TestService_RefetchAPISpec(t *testing.T) {
+func TestService_RefetchSpec(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 

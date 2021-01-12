@@ -38,7 +38,7 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 	}
 }
 
-func TestService_HandleAPISpec(t *testing.T) {
+func TestService_HandleSpec(t *testing.T) {
 	const username = "username"
 	const password = "password"
 	const clientId = "clId"
@@ -285,7 +285,7 @@ func TestService_HandleAPISpec(t *testing.T) {
 	}
 }
 
-func TestService_HandleAPISpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
+func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 	ctx := context.TODO()
 	timestamp := time.Now()
 	frRepo := &automock.FetchRequestRepository{}
