@@ -18,10 +18,6 @@ package osb
 
 import (
 	"context"
-	"net/http"
-	"strings"
-
-	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -49,9 +45,6 @@ func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error
 
 	applications, err := b.lister.FetchApplications(ctx)
 	if err != nil {
-		if strings.Contains(err.Error(), "insufficient scopes provided") {
-			return nil, apiresponses.NewFailureResponse(err, http.StatusUnauthorized, "")
-		}
 		//broker api does not log catalog errors
 		err := errors.Wrap(err, "while listing applications from director")
 		log.C(ctx).WithError(err).Error("catalog failure")

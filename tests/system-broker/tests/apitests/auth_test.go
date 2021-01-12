@@ -66,10 +66,10 @@ func TestTokens(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.Equal(t, resp.StatusCode, http.StatusOK)
-		bytes, err := ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
-		require.Contains(t, string(bytes), "services")
+		require.Contains(t, string(body), "services")
 	})
 
 	t.Run("Gets unauthorized when calling mtls broker endpoint with default http client", func(t *testing.T) {
@@ -109,10 +109,12 @@ func TestTokens(t *testing.T) {
 		req.Header.Set("X-Broker-API-Version", "2.15")
 
 		resp, err := securedClient.Do(req)
-		logrus.Infof("Response is: %+v", resp)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "abc")
-		require.Nil(t, resp)
+
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Contains(t, string(body), "unauthorized: insufficient scopes")
 	})
 }
 

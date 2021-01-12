@@ -19,8 +19,6 @@ package osb
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-	"strings"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -66,9 +64,6 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 		},
 	})
 	if err != nil && !IsNotFoundError(err) {
-		if strings.Contains(err.Error(), "insufficient scopes provided") {
-			return domain.Binding{}, apiresponses.NewFailureResponse(err, http.StatusUnauthorized, "")
-		}
 		return domain.Binding{}, errors.Wrapf(err, "while getting package instance credentials from director")
 	}
 	exists := !IsNotFoundError(err)
@@ -99,9 +94,6 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 			InputSchema: rawParams,
 		})
 		if err != nil {
-			if strings.Contains(err.Error(), "insufficient scopes provided") {
-				return domain.Binding{}, apiresponses.NewFailureResponse(err, http.StatusUnauthorized, "")
-			}
 			return domain.Binding{}, errors.Wrap(err, "while requesting package instance credentials creation from director")
 		}
 		instanceAuth = createResp.InstanceAuth
