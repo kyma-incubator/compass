@@ -1,17 +1,22 @@
 package testkit
 
-import "net/http"
+import (
+	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
+)
 
 type TestContext struct {
-	SystemBrokerURL string
+	Tenant string
 
-	HttpClient *http.Client
+	SystemBrokerURL             string
+	DirectorURL                 string
+	ConnectorTokenSecuredClient *connector.TokenSecuredClient
 }
 
 func NewTestContext(cfg Config) *TestContext {
 	return &TestContext{
-		SystemBrokerURL: cfg.URL,
-
-		HttpClient: http.DefaultClient,
+		Tenant:                      cfg.Tenant,
+		SystemBrokerURL:             cfg.SystemBrokerURL,
+		DirectorURL:                 cfg.DirectorURL,
+		ConnectorTokenSecuredClient: connector.NewConnectorClient(cfg.ConnectorURL),
 	}
 }

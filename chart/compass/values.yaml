@@ -1,6 +1,7 @@
 global:
   disableLegacyConnectivity: true
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+  fooTenant: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
   tenants:
     - name: default
       id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
@@ -139,6 +140,7 @@ global:
     secrets:
       integrationSystemCredentials:
         name: compass-system-broker-credentials
+    testNamespace: kyma-system
 
   gateway:
     port: 3000
