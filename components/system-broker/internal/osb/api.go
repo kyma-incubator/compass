@@ -19,12 +19,13 @@ package osb
 import (
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/pivotal-cf/brokerapi/v7"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pivotal-cf/brokerapi/v7/middlewares"
 )
 
-func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger) func(router *mux.Router) {
+func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger, unauthorizedString string) func(router *mux.Router) {
 	return func(router *mux.Router) {
 
 		r := router.PathPrefix(rootAPI).Subrouter()
@@ -33,6 +34,7 @@ func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger
 		r.Use(middlewares.AddOriginatingIdentityToContext)
 		r.Use(middlewares.APIVersionMiddleware{LoggerFactory: logger}.ValidateAPIVersionHdr)
 		r.Use(middlewares.AddInfoLocationToContext)
+		r.Use(http.UnauthorizedMiddleware(unauthorizedString))
 
 		brokerapi.AttachRoutes(r, serviceBroker, logger)
 	}

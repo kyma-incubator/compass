@@ -189,7 +189,7 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 
 	directorGraphQLClient, err := prepareGQLClient(cfg)
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
-	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter())
+	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter(), cfg.HttpClient.UnauthorizedString)
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
 	sbServer := server.New(cfg.Server, uuid.NewService(), []string{""}, osbApi, specsApi)
 

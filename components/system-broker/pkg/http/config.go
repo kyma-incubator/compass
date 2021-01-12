@@ -32,7 +32,8 @@ type Config struct {
 	MaxIdleConns      int  `mapstructure:"max_idle_cons"`
 	SkipSSLValidation bool `mapstructure:"skip_ssl_validation" description:"whether to skip ssl verification when making calls to external services"`
 
-	ForwardHeaders []string `mapstructure:"forward_headers"`
+	UnauthorizedString string   `mapstructure:"unauthorized_string"`
+	ForwardHeaders     []string `mapstructure:"forward_headers"`
 }
 
 func DefaultConfig() *Config {
@@ -46,6 +47,7 @@ func DefaultConfig() *Config {
 		MaxIdleConns:          90,
 		SkipSSLValidation:     true,
 		ForwardHeaders:        []string{"Authorization"},
+		UnauthorizedString:    "insufficient scopes provided",
 	}
 }
 
@@ -73,6 +75,9 @@ func (s *Config) Validate() error {
 	}
 	if len(s.ForwardHeaders) == 0 {
 		return fmt.Errorf("validate httpclient settings: forward headers should not be nil")
+	}
+	if s.UnauthorizedString == "" {
+		return fmt.Errorf("validate httpclient settings: unauthorized string shpuld not be empty")
 	}
 	return nil
 }
