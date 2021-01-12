@@ -9,58 +9,39 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-
-	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
-
-	"github.com/kyma-incubator/compass/tests/director/pkg/gql"
-
-	"github.com/kyma-incubator/compass/tests/director/pkg/idtokenprovider"
-
-	"github.com/sirupsen/logrus"
-
 	connectorTestkit "github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
+	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
-// Todo: add tests for revoked and invalid certs
 func TestTokens(t *testing.T) {
-	token, err := idtokenprovider.GetDexToken()
-	if err != nil {
-		logrus.Errorf("Failed to generate private key: %s", err.Error())
-		os.Exit(1)
-	}
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(token, testCtx.DirectorURL)
+	// setup
 	runtimeInput := &graphql.RuntimeInput{
-		Name: "test-runtime1",
+		Name: "test-runtime",
 	}
-	runtime := director.RegisterRuntimeFromInputWithinTenant(t, context.TODO(), dexGraphQLClient, testCtx.Tenant, runtimeInput)
-	defer director.UnregisterRuntimeWithinTenant(t, context.TODO(), dexGraphQLClient, testCtx.Tenant, runtime.ID)
 
-	runtimeToken := director.GenerateOneTimeTokenForRuntime(t, context.TODO(), dexGraphQLClient, testCtx.Tenant, runtime.ID)
+	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
+	runtime := director.RegisterRuntimeFromInputWithinTenant(t, context.TODO(), testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
+	defer director.UnregisterRuntimeWithinTenant(t, context.TODO(), testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
+
+	logrus.Infof("generating one-time token for runtime with id: %s", runtime.ID)
+	runtimeToken := director.GenerateOneTimeTokenForRuntime(t, context.TODO(), testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
 
-	clientKey, err := connectorTestkit.GenerateKey()
-	if err != nil {
-		logrus.Errorf("Failed to generate private key: %s", err.Error())
-		os.Exit(1)
-	}
-	certResult, configuration := connector.GenerateRuntimeCertificate(t, oneTimeToken, testCtx.ConnectorTokenSecuredClient, clientKey)
+	logrus.Infof("generation certificate fot runtime with id: %s", runtime.ID)
+	certResult, configuration := connector.GenerateRuntimeCertificate(t, oneTimeToken, testCtx.ConnectorTokenSecuredClient, testCtx.ClientKey)
 	certChain := connectorTestkit.DecodeCertChain(t, certResult.CertificateChain)
-	securedClient := createCertClient(clientKey, certChain...)
+	securedClient := createCertClient(testCtx.ClientKey, certChain...)
 
-	t.Run("Successfully calls mtls broker endpoint with certificate secured client", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, testCtx.SystemBrokerURL+"/v2/catalog", nil)
-		require.NoError(t, err)
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Broker-API-Version", "2.15")
+	t.Run("Should successfully call catalog endpoint with certificate secured client", func(t *testing.T) {
+		req := createCatalogRequest(t)
 
 		resp, err := securedClient.Do(req)
 		require.NoError(t, err)
@@ -72,12 +53,8 @@ func TestTokens(t *testing.T) {
 		require.Contains(t, string(body), "services")
 	})
 
-	t.Run("Gets unauthorized when calling mtls broker endpoint with default http client", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, testCtx.SystemBrokerURL+"/v2/catalog", nil)
-		require.NoError(t, err)
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Broker-API-Version", "2.15")
+	t.Run("Should fail calling catalog endpoint without certificate", func(t *testing.T) {
+		req := createCatalogRequest(t)
 
 		client := http.Client{
 			Transport: &http.Transport{
@@ -86,27 +63,19 @@ func TestTokens(t *testing.T) {
 				},
 			},
 		}
-		_, err = client.Do(req)
+		_, err := client.Do(req)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "tls: certificate required")
 	})
 
-	t.Run("Gets unauthorized when calling with revoked cert", func(t *testing.T) {
-		connectorClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
+	t.Run("Should fail calling bind endpoint with revoked cert", func(t *testing.T) {
+		logrus.Infof("revoking cert for runtime with id: %s", runtime.ID)
+		connectorClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testCtx.ClientKey, certChain...)
 		ok, err := connectorClient.RevokeCertificate()
 		require.NoError(t, err)
 		require.Equal(t, ok, true)
 
-		details, _ := json.Marshal(domain.BindDetails{
-			ServiceID: "serviceID",
-			PlanID:    "planID",
-		})
-
-		req, err := http.NewRequest(http.MethodPut, testCtx.SystemBrokerURL+"/v2/service_instances/2be0980c-92d2-460f-9568-ffcbb98155c7/service_bindings/043ccdb4-0ebc-475b-849f-6afec54fdd95?accepts_incomplete=true", bytes.NewBuffer(details))
-		require.NoError(t, err)
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Broker-API-Version", "2.15")
+		req := createBindRequest(t)
 
 		resp, err := securedClient.Do(req)
 
@@ -116,6 +85,42 @@ func TestTokens(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, string(body), "unauthorized: insufficient scopes")
 	})
+
+	t.Run("Should fail calling bind endpoint with invalid certificate", func(t *testing.T) {
+		req := createCatalogRequest(t)
+
+		fakedClientKey, err := connectorTestkit.GenerateKey()
+		require.NoError(t, err)
+		client := createCertClient(fakedClientKey, certChain...)
+
+		_, err = client.Do(req)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "tls: error decrypting message")
+	})
+}
+
+func createCatalogRequest(t *testing.T) *http.Request {
+	req, err := http.NewRequest(http.MethodGet, testCtx.SystemBrokerURL+"/v2/catalog", nil)
+	require.NoError(t, err)
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Broker-API-Version", "2.15")
+	return req
+}
+
+func createBindRequest(t *testing.T) *http.Request {
+	details, err := json.Marshal(domain.BindDetails{
+		ServiceID: "serviceID",
+		PlanID:    "planID",
+	})
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(http.MethodPut, testCtx.SystemBrokerURL+"/v2/service_instances/2be0980c-92d2-460f-9568-ffcbb98155c7/service_bindings/043ccdb4-0ebc-475b-849f-6afec54fdd95?accepts_incomplete=true", bytes.NewBuffer(details))
+	require.NoError(t, err)
+
+	req.Header.Set("Content-Type", "application/json")catalog_test
+	req.Header.Set("X-Broker-API-Version", "2.15")
+	return req
 }
 
 func createCertClient(key *rsa.PrivateKey, certificates ...*x509.Certificate) *http.Client {

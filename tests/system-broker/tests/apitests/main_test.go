@@ -19,7 +19,11 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	testCtx = testkit.NewTestContext(cfg)
+	testCtx, err = testkit.NewTestContext(cfg)
+	if err != nil {
+		logrus.Errorf("Failed to create test context: %s", err.Error())
+		os.Exit(1)
+	}
 
 	exitCode := m.Run()
 	logrus.Info("Tests finished. Exit code: ", exitCode)
