@@ -48,7 +48,7 @@ func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error
 		//broker api does not log catalog errors
 		err := errors.Wrap(err, "while listing applications from director")
 		log.C(ctx).WithError(err).Error("catalog failure")
-		return nil, errors.New("could not build catalog")
+		return nil, errors.Wrap(err, "could not build catalog")
 	}
 
 	for _, app := range applications.Result.Data {

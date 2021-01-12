@@ -103,6 +103,17 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsErrorOnFindCredenti
 		Expect().Status(http.StatusInternalServerError)
 }
 
+func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnauthorizedOnFindCredentialsShouldReturnUnauthorized() {
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth", `{"error": "insufficient scopes provided"}`)
+	assert.NoError(suite.T(), err)
+
+	resp := suite.testContext.SystemBroker.GET(bindingPath).
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		Expect().Status(http.StatusUnauthorized)
+
+	resp.JSON().Path("$.description").String().Contains("unauthorized: insufficient scopes")
+}
+
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsContextWithMismatchedInstanceOnFindCredentialsShouldReturnNotFound() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
 		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, "test", bindingID))

@@ -77,6 +77,19 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsErrorOnFindCreden
 		Expect().Status(http.StatusInternalServerError)
 }
 
+func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsUnauthorizedOnFindCredentialsShouldReturnUnauthorized() {
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", `{"error": "insufficient scopes provided"}`)
+	assert.NoError(suite.T(), err)
+
+	resp := suite.testContext.SystemBroker.GET(lastOperationBindingPath).
+		WithQuery("operation", osb.BindOp).
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+		Expect().Status(http.StatusUnauthorized)
+
+	resp.JSON().Path("$.description").String().Contains("unauthorized: insufficient scopes")
+}
+
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsNotFound() {
 	suite.Run("BindOpShouldReturnGone", func() {
 		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", notFoundResponse)
