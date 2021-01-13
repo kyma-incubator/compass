@@ -190,8 +190,10 @@ global:
     embedded:
       enabled: true
       director:
-        name: "postgres"
+        name: "director"
       directorDBName: "postgres"
+      connector:
+        name: "connector"
     managedGCP:
       serviceAccountKey: ""
       instanceConnectionName: ""
@@ -245,7 +247,7 @@ global:
       tokenResolverService:
         config:
           api:
-            url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/tokens/resolve
+            url: http://compass-director.compass-system.svc.cluster.local:8080/v1/tokens/resolve
             retry:
               give_up_after: 3s
               max_delay: 2000ms

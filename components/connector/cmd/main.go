@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
 	"github.com/kyma-incubator/compass/components/connector/config"
@@ -46,6 +47,14 @@ func main() {
 	k8sClientSet, appErr := newK8SClientSet(ctx, cfg.KubernetesClient.PollInteval, cfg.KubernetesClient.PollTimeout, cfg.KubernetesClient.Timeout)
 	exitOnError(appErr, "Failed to initialize Kubernetes client.")
 
+	transactioner, closeDB, err := persistence.Configure(ctx, cfg.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	defer func() {
+		err := closeDB()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
 	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet)
 	go certsLoader.Run(ctx)
 	go revokedCertsLoader.Run(ctx)
@@ -57,17 +66,18 @@ func main() {
 		internalComponents.CSRSubjectConsts,
 		cfg.DirectorURL,
 		cfg.CertificateSecuredConnectorURL,
-		internalComponents.RevokedCertsRepository)
+		internalComponents.RevokedCertsRepository,
+		transactioner)
 
 	authContextMiddleware := authentication.NewAuthenticationContextMiddleware()
 
 	externalGqlServer, err := config.PrepareExternalGraphQLServer(cfg, certificateResolver, correlation.AttachCorrelationIDToContext(), log.RequestLogger(), authContextMiddleware.PropagateAuthentication)
 	exitOnError(err, "Failed configuring external graphQL handler")
 
-	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, api.NewTokenResolver(internalComponents.TokenService), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	internalGqlServer, err := config.PrepareInternalGraphQLServer(cfg, api.NewTokenResolver(transactioner, internalComponents.TokenService), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring internal graphQL handler")
 
-	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	hydratorServer, err := config.PrepareHydratorServer(cfg, internalComponents.TokenService, internalComponents.CSRSubjectConsts, internalComponents.RevokedCertsRepository, transactioner, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	exitOnError(err, "Failed configuring hydrator handler")
 
 	wg := &sync.WaitGroup{}

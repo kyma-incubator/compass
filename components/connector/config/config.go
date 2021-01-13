@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
 type Config struct {
@@ -54,6 +55,7 @@ type Config struct {
 		PollTimeout time.Duration `envconfig:"default=1m"`
 		Timeout     time.Duration `envconfig:"default=95s"`
 	}
+	Database persistence.DatabaseConfig
 }
 
 func (c *Config) String() string {

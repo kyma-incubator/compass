@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
@@ -29,6 +30,7 @@ type certificateResolver struct {
 	directorURL                    string
 	certificateSecuredConnectorURL string
 	revokedCertsRepository         revocation.RevokedCertificatesRepository
+	transact                       persistence.Transactioner
 }
 
 func NewCertificateResolver(
@@ -38,7 +40,8 @@ func NewCertificateResolver(
 	csrSubjectConsts certificates.CSRSubjectConsts,
 	directorURL string,
 	certificateSecuredConnectorURL string,
-	revokedCertsRepository revocation.RevokedCertificatesRepository) CertificateResolver {
+	revokedCertsRepository revocation.RevokedCertificatesRepository,
+	transact persistence.Transactioner) CertificateResolver {
 	return &certificateResolver{
 		authenticator:                  authenticator,
 		tokenService:                   tokenService,
@@ -47,10 +50,19 @@ func NewCertificateResolver(
 		directorURL:                    directorURL,
 		certificateSecuredConnectorURL: certificateSecuredConnectorURL,
 		revokedCertsRepository:         revokedCertsRepository,
+		transact:                       transact,
 	}
 }
 
 func (r *certificateResolver) Configuration(ctx context.Context) (*externalschema.Configuration, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	log.C(ctx).Debug("Authenticating the call for configuration fetching.")
 
 	clientId, err := r.authenticator.Authenticate(ctx)
@@ -65,6 +77,11 @@ func (r *certificateResolver) Configuration(ctx context.Context) (*externalschem
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error occurred while creating one-time token for client with id %s during fetching configuration process", clientId)
 		return nil, errors.Wrap(err, "Failed to create one-time token during fetching configuration process")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	csrInfo := &externalschema.CertificateSigningRequestInfo{

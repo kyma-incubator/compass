@@ -97,6 +97,40 @@ spec:
               value: {{ .Values.deployment.kubernetesClient.pollInterval | quote }}
             - name: APP_KUBERNETES_CLIENT_POLL_TIMEOUT
               value: {{ .Values.deployment.kubernetesClient.pollTimeout | quote }}
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-connector-username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-connector-password
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-connector-db-name
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+            - name: APP_DB_MAX_OPEN_CONNECTIONS
+              value: "{{.Values.deployment.dbPool.maxOpenConnections}}"
+            - name: APP_DB_MAX_IDLE_CONNECTIONS
+              value: "{{.Values.deployment.dbPool.maxIdleConnections}}"
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

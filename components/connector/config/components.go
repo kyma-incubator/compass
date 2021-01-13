@@ -7,6 +7,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
+	"github.com/kyma-incubator/compass/components/connector/internal/domain/token"
 	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
@@ -52,8 +53,10 @@ func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface) (Comp
 	return Components{
 		Authenticator: authentication.NewAuthenticator(),
 		TokenService: tokens.NewTokenService(
-			tokens.NewTokenCache(cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration),
-			tokens.NewTokenGenerator(cfg.Token.Length)),
+			token.NewRepository(),
+			tokens.NewTokenGenerator(cfg.Token.Length),
+			cfg.Token.ApplicationExpiration, cfg.Token.RuntimeExpiration, cfg.Token.CSRExpiration,
+		),
 		CertificateService:     certsService,
 		RevokedCertsRepository: revokedCertsRepository,
 		CSRSubjectConsts:       newCSRSubjectConsts(cfg),

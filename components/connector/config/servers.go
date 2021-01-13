@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
@@ -68,10 +69,10 @@ func PrepareInternalGraphQLServer(cfg Config, tokenResolver api.TokenResolver, m
 	}, nil
 }
 
-func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
+func PrepareHydratorServer(cfg Config, tokenService tokens.Service, subjectConsts certificates.CSRSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, transact persistence.Transactioner, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
 	certHeaderParser := oathkeeper.NewHeaderParser(cfg.CertificateDataHeader, subjectConsts)
 
-	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser, revokedCertsRepository)
+	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, certHeaderParser, revokedCertsRepository, transact)
 
 	router := mux.NewRouter()
 	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

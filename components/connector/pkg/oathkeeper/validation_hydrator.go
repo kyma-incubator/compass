@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/httputils"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
@@ -19,16 +20,21 @@ type ValidationHydrator interface {
 }
 
 type validationHydrator struct {
+	transact               persistence.Transactioner
 	tokenService           tokens.Service
 	certHeaderParser       CertificateHeaderParser
 	revokedCertsRepository revocation.RevokedCertificatesRepository
 }
 
-func NewValidationHydrator(tokenService tokens.Service, certHeaderParser CertificateHeaderParser, revokedCertsRepository revocation.RevokedCertificatesRepository) ValidationHydrator {
+func NewValidationHydrator(tokenService tokens.Service,
+	certHeaderParser CertificateHeaderParser,
+	revokedCertsRepository revocation.RevokedCertificatesRepository,
+	transact persistence.Transactioner) ValidationHydrator {
 	return &validationHydrator{
 		tokenService:           tokenService,
 		certHeaderParser:       certHeaderParser,
 		revokedCertsRepository: revokedCertsRepository,
+		transact:               transact,
 	}
 }
 
@@ -57,7 +63,17 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 
 	log.C(ctx).Info("Trying to resolve token...")
 
-	tokenData, err := tvh.tokenService.Resolve(connectorToken)
+	tx, err := tvh.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Failed to open db transaction")
+		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not fulfill request"))
+		return
+	}
+	defer tvh.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tokenData, err := tvh.tokenService.Resolve(ctx, connectorToken)
 	if err != nil {
 		log.C(ctx).Infof("Invalid token provided: %s", err.Error())
 		respondWithAuthSession(ctx, w, authSession)
@@ -70,7 +86,18 @@ func (tvh *validationHydrator) ResolveConnectorTokenHeader(w http.ResponseWriter
 
 	authSession.Header.Add(ClientIdFromTokenHeader, tokenData.ClientId)
 
-	tvh.tokenService.Delete(connectorToken)
+	if err := tvh.tokenService.Delete(ctx, connectorToken); err != nil {
+		log.C(ctx).WithError(err).Error("Failed to invalidate token")
+		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not invalidate token"))
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Could not commit transaction")
+		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not fulfill request"))
+		return
+	}
 
 	log.C(ctx).Infof("Token for %s resolved successfully", tokenData.ClientId)
 	respondWithAuthSession(ctx, w, authSession)
