@@ -2,7 +2,6 @@ package apitests
 
 import (
 	"bytes"
-	"context"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
@@ -28,11 +27,11 @@ func TestTokens(t *testing.T) {
 	}
 
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
-	runtime := director.RegisterRuntimeFromInputWithinTenant(t, context.TODO(), testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
-	defer director.UnregisterRuntimeWithinTenant(t, context.TODO(), testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
+	runtime := director.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
+	defer director.UnregisterRuntimeWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
 
 	logrus.Infof("generating one-time token for runtime with id: %s", runtime.ID)
-	runtimeToken := director.GenerateOneTimeTokenForRuntime(t, context.TODO(), testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
+	runtimeToken := director.GenerateOneTimeTokenForRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
 
 	logrus.Infof("generation certificate fot runtime with id: %s", runtime.ID)
@@ -118,7 +117,7 @@ func createBindRequest(t *testing.T) *http.Request {
 	req, err := http.NewRequest(http.MethodPut, testCtx.SystemBrokerURL+"/v2/service_instances/2be0980c-92d2-460f-9568-ffcbb98155c7/service_bindings/043ccdb4-0ebc-475b-849f-6afec54fdd95?accepts_incomplete=true", bytes.NewBuffer(details))
 	require.NoError(t, err)
 
-	req.Header.Set("Content-Type", "application/json")catalog_test
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Broker-API-Version", "2.15")
 	return req
 }

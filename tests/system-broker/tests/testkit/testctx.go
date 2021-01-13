@@ -1,6 +1,7 @@
 package testkit
 
 import (
+	"context"
 	"crypto/rsa"
 
 	connectorTestkit "github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
@@ -12,7 +13,8 @@ import (
 )
 
 type TestContext struct {
-	Tenant string
+	Tenant  string
+	Context context.Context
 
 	SystemBrokerURL string
 	DirectorURL     string
@@ -36,6 +38,7 @@ func NewTestContext(cfg Config) (*TestContext, error) {
 
 	return &TestContext{
 		Tenant:                      cfg.Tenant,
+		Context:                     context.Background(),
 		SystemBrokerURL:             cfg.SystemBrokerURL,
 		DirectorURL:                 cfg.DirectorURL,
 		ClientKey:                   clientKey,

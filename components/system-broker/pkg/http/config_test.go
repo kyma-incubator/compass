@@ -77,6 +77,14 @@ func TestConfig_Validate(t *testing.T) {
 			},
 		},
 		{
+			Msg: "Empty unauthorizedString should be invalid",
+			ConfigProvider: func() *http.Config {
+				config := http.DefaultConfig()
+				config.UnauthorizedString = ""
+				return config
+			},
+		},
+		{
 			Msg: "Negative MaxIdleConns should be invalid",
 			ConfigProvider: func() *http.Config {
 				config := http.DefaultConfig()
