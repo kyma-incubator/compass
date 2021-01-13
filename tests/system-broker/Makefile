@@ -5,8 +5,7 @@ SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
-test-local:
-	;
+test-local: ;
 
 resolve-local:
 	@echo ${SKIP_STEP_MESSAGE}
