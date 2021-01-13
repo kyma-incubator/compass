@@ -27,8 +27,8 @@ spec:
       {{ end }}
       containers:
         - name: system-broker-tests
-          image: axel0r/system-broker-test
-          imagePullPolicy: Always
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.system_broker.dir}}system-broker-tests:{{ .Values.global.images.tests.system_broker.version }}
+          imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./wait-for-components.sh && /system-broker.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
