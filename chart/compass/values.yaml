@@ -14,28 +14,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1657"
+      version: "PR-1674"
     connectivity_adapter:
       dir:
-      version: "PR-1669"
+      version: "PR-1674"
     pairing_adapter:
       dir:
-      version: "PR-1661"
+      version: "PR-1674"
     director:
       dir:
       version: "PR-1668"
     gateway:
       dir:
-      version: "PR-1659"
+      version: "PR-1674"
     tenant_fetcher:
       dir:
-      version: "PR-1661"
+      version: "PR-1674"
+    ord_service:
+      dir:
+      version: "PR-1"
     healthchecker:
       dir:
-      version: "PR-1460"
+      version: "PR-1674"
     schema_migrator:
       dir:
-      version: "PR-1603"
+      version: "PR-1666"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -53,13 +56,16 @@ global:
         version: "PR-1668"
       connector:
         dir:
-        version: "PR-1661"
+        version: "PR-1674"
       connectivity_adapter:
         dir:
-        version: "PR-1641"
+        version: "PR-1674"
       tenant_fetcher:
         dir:
-        version: "PR-1661"
+        version: "PR-1674"
+      ord_service:
+        dir:
+        version: "PR-1666"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -250,6 +256,11 @@ global:
   tenantFetcher:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
+    port: 3000
+
+  ordService:
+    host: compass-ord-service.compass-system.svc.cluster.local
+    prefix: /open-resource-discovery
     port: 3000
 
   tenantFetchers:

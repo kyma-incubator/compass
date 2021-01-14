@@ -12,10 +12,7 @@ COPY . ${BASE_TEST_DIR}
 RUN CGO_ENABLED=0 go test -c ./tests -o tenant-fetcher.test
 
 
-
-
-
-FROM alpine:3.12.0
+FROM alpine:3.12.3
 
 RUN apk add --no-cache curl
 
