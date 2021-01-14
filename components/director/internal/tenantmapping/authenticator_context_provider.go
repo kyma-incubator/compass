@@ -18,6 +18,7 @@ package tenantmapping
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -68,9 +69,9 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 		return ObjectContext{}, err
 	}
 
-	externalTenantID = gjson.Get(extra, authn.Attributes.TenantAttribute.Key).String()
+	externalTenantID = tenantID(extra, authn.Attributes.TenantAttribute.Key, reqData.Header)
 	if externalTenantID == "" {
-		return ObjectContext{}, errors.Errorf("tenant attribute %q missing from %s authenticator token", authn.Attributes.TenantAttribute.Key, authn.Name)
+		return ObjectContext{}, errors.Errorf("tenant attribute %q missing from %s authenticator token and %q request header", authn.Attributes.TenantAttribute.Key, authn.Name, oathkeeper.ExternalTenantKey)
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
@@ -89,4 +90,13 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
+}
+
+func tenantID(extra string, tenantKeyInExtra string, reqHeaders http.Header) string {
+	id := gjson.Get(extra, tenantKeyInExtra).String()
+	if id == "" {
+		id = reqHeaders.Get(oathkeeper.ExternalTenantKey)
+	}
+
+	return id
 }
