@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/panic_recovery"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -40,7 +39,7 @@ type Server struct {
 	shutdownTimeout time.Duration
 }
 
-func New(c *Config, service log.UUIDService, forwardHeaders []string, routesProvider ...func(router *mux.Router)) *Server {
+func New(c *Config, service log.UUIDService, middlewares []mux.MiddlewareFunc, routesProvider ...func(router *mux.Router)) *Server {
 	s := &Server{
 		shutdownTimeout: c.ShutdownTimeout,
 		routesProvider:  routesProvider,
@@ -61,7 +60,10 @@ func New(c *Config, service log.UUIDService, forwardHeaders []string, routesProv
 
 	router.Use(log.RequestLogger(service))
 	router.Use(panic_recovery.NewRecoveryMiddleware())
-	router.Use(httputil.HeaderForwarder(forwardHeaders))
+
+	for _, m := range middlewares {
+		router.Use(m)
+	}
 
 	for _, applyRoutes := range routesProvider {
 		applyRoutes(router)

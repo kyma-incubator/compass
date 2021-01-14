@@ -91,6 +91,8 @@ spec:
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: HTTP_CLIENT_FORWARD_HEADERS
               value: "{{ .Values.global.system_broker.forwardHeaders }}"
+            - name: HTTP_CLIENT_UNAUTHORIZED_STRING
+              value: {{ .Values.global.system_broker.unauthorizedString }}
             # - name: OAUTH_PROVIDER_SECRET_NAME
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             # - name: OAUTH_PROVIDER_SECRET_NAMESPACE

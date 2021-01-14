@@ -46,8 +46,8 @@ func DefaultConfig() *Config {
 		ExpectContinueTimeout: time.Second * 2,
 		MaxIdleConns:          90,
 		SkipSSLValidation:     true,
-		ForwardHeaders:        []string{"Authorization"},
-		UnauthorizedString:    "insufficient scopes provided",
+		ForwardHeaders:        []string{},
+		UnauthorizedString:    "",
 	}
 }
 
@@ -72,12 +72,6 @@ func (s *Config) Validate() error {
 	}
 	if s.MaxIdleConns < 0 {
 		return fmt.Errorf("validate httpclient settings: max_idle_cons should be >= 0")
-	}
-	if len(s.ForwardHeaders) == 0 {
-		return fmt.Errorf("validate httpclient settings: forward headers should not be nil")
-	}
-	if s.UnauthorizedString == "" {
-		return fmt.Errorf("validate httpclient settings: unauthorized string should not be empty")
 	}
 	return nil
 }

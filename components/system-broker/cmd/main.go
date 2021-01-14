@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
@@ -65,7 +67,11 @@ func main() {
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, log.NewDefaultLagerAdapter(), cfg.HttpClient.UnauthorizedString)
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
-	srv := server.New(cfg.Server, uuidSrv, cfg.HttpClient.ForwardHeaders, osbApi, specsApi)
+
+	middlewares := []mux.MiddlewareFunc{
+		httputil.HeaderForwarder(cfg.HttpClient.ForwardHeaders),
+	}
+	srv := server.New(cfg.Server, uuidSrv, middlewares, osbApi, specsApi)
 
 	srv.Start(ctx)
 }

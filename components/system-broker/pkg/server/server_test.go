@@ -15,7 +15,7 @@ func TestNewAddsAdditionalRoutes(t *testing.T) {
 	config := server.DefaultConfig()
 	uuid := uuid.NewService()
 
-	server := server.New(config, uuid, []string{""}, func(router *mux.Router) {
+	server := server.New(config, uuid, []mux.MiddlewareFunc{}, func(router *mux.Router) {
 		router.HandleFunc(config.RootAPI+"/test", func(writer http.ResponseWriter, request *http.Request) {
 			writer.WriteHeader(http.StatusOK)
 		})
@@ -44,7 +44,7 @@ func TestNewAddsSystemLivenessRoutes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Msg, func(t *testing.T) {
-			server := server.New(config, uuid, []string{""})
+			server := server.New(config, uuid, []mux.MiddlewareFunc{})
 			AssertRouteExists(t, server, test.Route)
 		})
 	}
@@ -86,7 +86,7 @@ func TestNewAddsSystemRoutes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Msg, func(t *testing.T) {
-			server := server.New(config, uuid, []string{""})
+			server := server.New(config, uuid, []mux.MiddlewareFunc{})
 			AssertRouteExists(t, server, config.RootAPI+test.Route)
 		})
 	}
