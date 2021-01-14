@@ -32,8 +32,8 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 				Auth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Basic: &graphql.BasicCredentialDataInput{
-							Username: "admin",
-							Password: "admin",
+							Username: testConfig.BasicCredentialsUsername,
+							Password: testConfig.BasicCredentialsPassword,
 						},
 					},
 				},
@@ -46,8 +46,8 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 				Auth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Oauth: &graphql.OAuthCredentialDataInput{
-							ClientID:     "client_id",
-							ClientSecret: "client_secret",
+							ClientID:     testConfig.AppClientID,
+							ClientSecret: testConfig.AppClientSecret,
 							URL:          testConfig.ExternalServicesMockBaseURL + "oauth/token",
 						},
 					},
@@ -124,8 +124,8 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 				Auth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Basic: &graphql.BasicCredentialDataInput{
-							Username: "wrong_username",
-							Password: "wrong_password",
+							Username: "wrong_" + testConfig.BasicCredentialsUsername,
+							Password: "wrong_" + testConfig.BasicCredentialsPassword,
 						},
 					},
 				},
@@ -138,8 +138,8 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 				Auth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Oauth: &graphql.OAuthCredentialDataInput{
-							ClientID:     "wrong_id",
-							ClientSecret: "wrong_secret",
+							ClientID:     "wrong_" + testConfig.AppClientID,
+							ClientSecret: "wrong_" + testConfig.AppClientSecret,
 							URL:          testConfig.ExternalServicesMockBaseURL + "oauth/token",
 						},
 					},

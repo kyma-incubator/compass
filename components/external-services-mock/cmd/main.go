@@ -24,10 +24,16 @@ import (
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
 	OAuthConfig
+	BasicCredentialsConfig
 }
 type OAuthConfig struct {
-	ClientID     string `envconfig:"APP_AUDITLOG_CLIENT_ID"`
-	ClientSecret string `envconfig:"APP_AUDITLOG_CLIENT_SECRET"`
+	ClientID     string `envconfig:"APP_CLIENT_ID"`
+	ClientSecret string `envconfig:"APP_CLIENT_SECRET"`
+}
+
+type BasicCredentialsConfig struct {
+	Username     string `envconfig:"BASIC_USERNAME"`
+	Password string `envconfig:"BASIC_PASSWORD"`
 }
 
 func main() {
@@ -72,7 +78,12 @@ func initHTTP(cfg config) http.Handler {
 	oauthRouter.HandleFunc("/spec", apispec.HandleFunc)
 
 	basicAuthRouter := router.PathPrefix("/external-api/secured/basic").Subrouter()
-	basicAuthRouter.Use(basicAuthMiddleware)
+
+	h:=&handler{
+		Username: cfg.Username,
+		Password: cfg.Password,
+	}
+	basicAuthRouter.Use(h.basicAuthMiddleware)
 	basicAuthRouter.HandleFunc("/spec", apispec.HandleFunc)
 
 	return router
@@ -94,7 +105,12 @@ func oauthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func basicAuthMiddleware(next http.Handler) http.Handler {
+type handler struct{
+	Username     string `envconfig:"BASIC_USERNAME"`
+	Password string `envconfig:"BASIC_PASSWORD"`
+}
+
+func (h *handler)basicAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 
@@ -102,7 +118,7 @@ func basicAuthMiddleware(next http.Handler) http.Handler {
 			httphelpers.WriteError(w, errors.New("No Basic credentials"), http.StatusUnauthorized)
 			return
 		}
-		if username != "admin" || password != "admin" {
+		if username != h.Username || password != h.Password {
 			httphelpers.WriteError(w, errors.New("Bad credentials"), http.StatusUnauthorized)
 			return
 		}

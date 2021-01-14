@@ -87,6 +87,9 @@ global:
     script:
       configMapName: "auditlog-script"
 
+  testCredentials:
+    secretName: "test-credentials-secret"
+
   enableCompassDefaultScenarioAssignment: true
 
   tenantConfig:

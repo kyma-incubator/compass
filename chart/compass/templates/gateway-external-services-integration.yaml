@@ -52,6 +52,26 @@ spec:
                 secretKeyRef:
                   name: admin-user
                   key: password
+            - name: APP_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secretName }}
+                  key: auditlog-client-id
+            - name: APP_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secretName }}
+                  key: auditlog-client-secret
+            - name: BASIC_CREDENTIALS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.testCredentials.secretName }}
+                  key: username
+            - name: BASIC_CREDENTIALS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.testCredentials.secretName }}
+                  key: password
             - name: DEFAULT_TENANT
               value: "{{.Values.global.defaultTenant}}"
             - name: DOMAIN
