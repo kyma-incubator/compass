@@ -65,7 +65,7 @@ global:
         version: "PR-1674"
       ord_service:
         dir:
-        version: "PR-1666"
+        version: "PR-1689"
   isLocalEnv: false
   oauth2:
     host: oauth2

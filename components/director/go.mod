@@ -38,7 +38,7 @@ require (
 	github.com/prometheus/client_golang v1.6.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.6.1
-	github.com/tidwall/gjson v1.6.4
+	github.com/tidwall/gjson v1.6.7
 	github.com/vektah/gqlparser v1.3.1
 	github.com/vrischmann/envconfig v1.2.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
