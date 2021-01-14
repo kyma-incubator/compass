@@ -134,8 +134,8 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 		return nil, err
 	}
 
-	if pageSize < 1 || pageSize > 100 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
 	return s.repo.List(ctx, tnt, pageSize, cursor)
