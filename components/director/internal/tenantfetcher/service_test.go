@@ -95,8 +95,8 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
 				return client
 			},
 			ExpectedError: nil,
@@ -122,8 +122,8 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
 				return client
 			},
 			ExpectedError: nil,
@@ -147,8 +147,8 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
 				return client
 			},
 			ExpectedError: nil,
@@ -177,8 +177,8 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-				client.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+				client.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
 				return client
 			},
 			ExpectedError: nil,
@@ -202,7 +202,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -225,7 +225,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -245,7 +245,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -266,7 +266,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -288,7 +288,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -309,7 +309,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -330,7 +330,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -352,7 +352,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -377,7 +377,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -402,7 +402,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -427,7 +427,7 @@ func TestService_SyncTenants(t *testing.T) {
 			},
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
-				client.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
+				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
 				client.AssertNotCalled(t, "UpdateTenantFetcherConfigMapData")
 				return client
 			},
@@ -493,8 +493,8 @@ func TestService_SyncTenants(t *testing.T) {
 		tenantStorageSvc.On("CreateManyIfNotExists", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
 		tenantStorageSvc.On("DeleteMany", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil).Once()
 		kubeClient := &automock.KubeClient{}
-		kubeClient.On("GetTenantFetcherConfigMapData").Return("1", nil).Once()
-		kubeClient.On("UpdateTenantFetcherConfigMapData", mock.Anything).Return(nil).Once()
+		kubeClient.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", nil).Once()
+		kubeClient.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything).Return(nil).Once()
 
 		svc := tenantfetcher.NewService(tenantfetcher.QueryConfig{
 			PageNumField:   "pageNum",
