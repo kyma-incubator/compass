@@ -1,7 +1,6 @@
 package healthcheck_test
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/system-broker/tests/common"
@@ -24,10 +23,4 @@ func (suite *HealthcheckTestSuite) SetupSuite() {
 
 func (suite *HealthcheckTestSuite) TearDownSuite() {
 	suite.testContext.CleanUp()
-}
-
-func (suite *HealthcheckTestSuite) TestHealthcheck() {
-	suite.testContext.SystemBroker.GET("/healthz").Expect().
-		Status(http.StatusOK).
-		Body().Equal(`{"status": "success"}`)
 }

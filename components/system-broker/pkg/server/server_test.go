@@ -24,6 +24,32 @@ func TestNewAddsAdditionalRoutes(t *testing.T) {
 	AssertRouteExists(t, server, config.RootAPI+"/test")
 }
 
+func TestNewAddsSystemLivenessRoutes(t *testing.T) {
+	config := server.DefaultConfig()
+	uuid := uuid.NewService()
+
+	var tests = []struct {
+		Msg   string
+		Route string
+	}{
+		{
+			Msg:   "Health route should exist",
+			Route: "/healthz",
+		},
+		{
+			Msg:   "Ready route should exist",
+			Route: "/readyz",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Msg, func(t *testing.T) {
+			server := server.New(config, uuid, []string{""})
+			AssertRouteExists(t, server, test.Route)
+		})
+	}
+}
+
 func TestNewAddsSystemRoutes(t *testing.T) {
 	config := server.DefaultConfig()
 	uuid := uuid.NewService()
@@ -35,10 +61,6 @@ func TestNewAddsSystemRoutes(t *testing.T) {
 		{
 			Msg:   "Metrics route should exist",
 			Route: "/metrics",
-		},
-		{
-			Msg:   "Health route should exist",
-			Route: "/healthz",
 		},
 		{
 			Msg:   "Pprof root route should exist",

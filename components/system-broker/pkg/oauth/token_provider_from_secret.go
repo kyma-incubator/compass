@@ -86,15 +86,19 @@ func (c *TokenProviderFromSecret) Matches(ctx context.Context) bool {
 }
 
 func (c *TokenProviderFromSecret) GetAuthorizationToken(ctx context.Context) (httputils.Token, error) {
-	if c.validToken() {
-		//TODO: Should we RLock this here?
-		log.C(ctx).Debug("The token is valid, it'll be reused")
+	c.lock.RLock()
+	isValidToken := !c.token.EmptyOrExpired(c.tokenTimeout)
+	c.lock.RUnlock()
+	if isValidToken {
 		return c.token, nil
 	}
 
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	//TODO: After the lock, should be check if the token was already updates by another thread? if so, return
+
+	if !c.token.EmptyOrExpired(c.tokenTimeout) {
+		return c.token, nil
+	}
 
 	log.C(ctx).Debug("Token is invalid, getting a new one...")
 
@@ -106,12 +110,6 @@ func (c *TokenProviderFromSecret) GetAuthorizationToken(ctx context.Context) (ht
 	token, err := c.getAuthorizationToken(ctx, credentials)
 	c.token = token
 	return token, err
-}
-
-func (c *TokenProviderFromSecret) validToken() bool {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-	return !c.token.EmptyOrExpired(c.tokenTimeout)
 }
 
 func (c *TokenProviderFromSecret) extractOAuthClientFromSecret(ctx context.Context) (credentials, error) {
