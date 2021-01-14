@@ -77,7 +77,7 @@ func (s *Config) Validate() error {
 		return fmt.Errorf("validate httpclient settings: forward headers should not be nil")
 	}
 	if s.UnauthorizedString == "" {
-		return fmt.Errorf("validate httpclient settings: unauthorized string shpuld not be empty")
+		return fmt.Errorf("validate httpclient settings: unauthorized string should not be empty")
 	}
 	return nil
 }
