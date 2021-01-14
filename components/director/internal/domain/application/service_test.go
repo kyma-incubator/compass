@@ -1375,18 +1375,18 @@ func TestService_List(t *testing.T) {
 			InputPageSize:      0,
 			InputLabelFilters:  filter,
 			ExpectedResult:     nil,
-			ExpectedErrMessage: "page size must be between 1 and 100",
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Returns error when page size is bigger than 100",
+			Name: "Returns error when page size is bigger than 200",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				return repo
 			},
-			InputPageSize:      101,
+			InputPageSize:      201,
 			InputLabelFilters:  filter,
 			ExpectedResult:     nil,
-			ExpectedErrMessage: "page size must be between 1 and 100",
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 	}
 

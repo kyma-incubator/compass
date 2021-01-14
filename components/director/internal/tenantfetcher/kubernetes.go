@@ -12,8 +12,8 @@ import (
 
 //go:generate mockery --name=KubeClient --output=automock --outpkg=automock --case=underscore
 type KubeClient interface {
-	GetTenantFetcherConfigMapData() (string, error)
-	UpdateTenantFetcherConfigMapData(timestamp string) error
+	GetTenantFetcherConfigMapData(ctx context.Context) (string, error)
+	UpdateTenantFetcherConfigMapData(ctx context.Context, timestamp string) error
 }
 
 func NewKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error) {
@@ -42,11 +42,11 @@ func newNoopKubernetesClient() KubeClient {
 	}
 }
 
-func (k *noopKubernetesClient) GetTenantFetcherConfigMapData() (string, error) {
+func (k *noopKubernetesClient) GetTenantFetcherConfigMapData(_ context.Context) (string, error) {
 	return "1", nil
 }
 
-func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ string) error {
+func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ context.Context, _ string) error {
 	return nil
 }
 
@@ -77,8 +77,8 @@ func newKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error
 	}, nil
 }
 
-func (k *kubernetesClient) GetTenantFetcherConfigMapData() (string, error) {
-	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(k.cfg.ConfigMapName, metav1.GetOptions{})
+func (k *kubernetesClient) GetTenantFetcherConfigMapData(ctx context.Context) (string, error) {
+	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(ctx, k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -89,13 +89,13 @@ func (k *kubernetesClient) GetTenantFetcherConfigMapData() (string, error) {
 	return "", errors.New("failed to find timestamp property in configMap")
 }
 
-func (k *kubernetesClient) UpdateTenantFetcherConfigMapData(timestamp string) error {
-	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(k.cfg.ConfigMapName, metav1.GetOptions{})
+func (k *kubernetesClient) UpdateTenantFetcherConfigMapData(ctx context.Context, timestamp string) error {
+	configMap, err := k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Get(ctx, k.cfg.ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	configMap.Data[k.cfg.ConfigMapTimestampField] = timestamp
-	_, err = k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Update(configMap)
+	_, err = k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Update(ctx, configMap, metav1.UpdateOptions{})
 	return err
 }

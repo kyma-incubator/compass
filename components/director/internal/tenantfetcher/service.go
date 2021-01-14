@@ -82,7 +82,7 @@ func (s Service) SyncTenants() error {
 	ctx := context.Background()
 	startTime := time.Now()
 
-	lastConsumedTenantTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData()
+	lastConsumedTenantTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (s Service) SyncTenants() error {
 		return err
 	}
 
-	err = s.kubeClient.UpdateTenantFetcherConfigMapData(convertTimeToUnixNanoString(startTime))
+	err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixNanoString(startTime))
 	if err != nil {
 		return err
 	}

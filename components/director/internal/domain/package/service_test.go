@@ -976,17 +976,17 @@ func TestService_ListByApplicationID(t *testing.T) {
 			},
 			PageSize:           0,
 			ExpectedResult:     packagePage,
-			ExpectedErrMessage: "page size must be between 1 and 100",
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Return error when page size is bigger than 100",
+			Name: "Return error when page size is bigger than 200",
 			RepositoryFn: func() *automock.PackageRepository {
 				repo := &automock.PackageRepository{}
 				return repo
 			},
-			PageSize:           101,
+			PageSize:           201,
 			ExpectedResult:     packagePage,
-			ExpectedErrMessage: "page size must be between 1 and 100",
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
 			Name: "Returns error when Package listing failed",
