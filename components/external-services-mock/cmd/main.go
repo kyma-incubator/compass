@@ -32,7 +32,7 @@ type OAuthConfig struct {
 }
 
 type BasicCredentialsConfig struct {
-	Username     string `envconfig:"BASIC_USERNAME"`
+	Username string `envconfig:"BASIC_USERNAME"`
 	Password string `envconfig:"BASIC_PASSWORD"`
 }
 
@@ -79,7 +79,7 @@ func initHTTP(cfg config) http.Handler {
 
 	basicAuthRouter := router.PathPrefix("/external-api/secured/basic").Subrouter()
 
-	h:=&handler{
+	h := &handler{
 		Username: cfg.Username,
 		Password: cfg.Password,
 	}
@@ -105,12 +105,12 @@ func oauthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-type handler struct{
-	Username     string `envconfig:"BASIC_USERNAME"`
+type handler struct {
+	Username string `envconfig:"BASIC_USERNAME"`
 	Password string `envconfig:"BASIC_PASSWORD"`
 }
 
-func (h *handler)basicAuthMiddleware(next http.Handler) http.Handler {
+func (h *handler) basicAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 
