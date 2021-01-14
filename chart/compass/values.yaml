@@ -24,7 +24,7 @@ global:
       version: "PR-1674"
     director:
       dir:
-      version: "PR-1686"
+      version: "PR-XXXX"
     gateway:
       dir:
       version: "PR-1674"
@@ -37,10 +37,9 @@ global:
     schema_migrator:
       dir:
       version: "PR-1674"
-    # TODO: Prow job?
     system_broker:
       dir:
-      version: "PR-1686"
+      version: "PR-XXXX"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
