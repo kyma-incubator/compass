@@ -19,15 +19,18 @@ External Services Mock binary allows you to override some configuration paramete
 ### Audit log mock API configuration
 | Name                             | Description                                                                       | 
 | -------------------------------- | --------------------------------------------------------------------------------- | 
-| **APP_AUDITLOG_CLIENT_SECRET**   | The expected audit log client Secret used to obtain a JWT         | 
-| **APP_AUDITLOG_CLIENT_ID**       | The expected audit log client ID used to obtain a JWT              | 
-
+| **APP_CLIENT_SECRET**   | The expected audit log client Secret used to obtain a JWT         | 
+| **APP_CLIENT_ID**       | The expected audit log client ID used to obtain a JWT             | 
+| **BASIC_USERNAME**      | The expected username from basic credentials                      |
+| **BASIC_PASSWORD**      | The expected password from basic credentials                      |
 ## Development
 
 Use this command to run the component locally:
 
 ```bash
-export APP_AUDITLOG_CLIENT_SECRET={CLIENT_SECRET}
-export APP_AUDITLOG_CLIENT_ID={CLIENT_ID}
+export APP_CLIENT_SECRET={CLIENT_SECRET}
+export APP_CLIENT_ID={CLIENT_ID}
+export BASIC_USERNAME={USERNAME}
+export BASIC_PASSWORD={PASSWORD}
 go run ./cmd/main.go
 ```
