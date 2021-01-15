@@ -25,6 +25,7 @@ import (
 	"net/http"
 	urlpkg "net/url"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -488,14 +489,16 @@ func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url stri
 	require.NoError(t, err)
 	require.Equal(t, expectedHTTPStatus, response.StatusCode)
 
-	reqFormatPattern := regexp.MustCompile(fmt.Sprintf("^.*\\$format=(.*)$"))
-	matches := reqFormatPattern.FindStringSubmatch(url)
+	if !strings.Contains(url, "/specification") {
+		reqFormatPattern := regexp.MustCompile(fmt.Sprintf("^.*\\$format=(.*)$"))
+		matches := reqFormatPattern.FindStringSubmatch(url)
 
-	contentType := response.Header.Get("Content-Type")
-	if len(matches) > 1 {
-		require.Contains(t, contentType, matches[1])
-	} else {
-		require.Contains(t, contentType, testConfig.ORDServiceDefaultResponseType)
+		contentType := response.Header.Get("Content-Type")
+		if len(matches) > 1 {
+			require.Contains(t, contentType, matches[1])
+		} else {
+			require.Contains(t, contentType, testConfig.ORDServiceDefaultResponseType)
+		}
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
