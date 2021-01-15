@@ -21,7 +21,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"go/ast"
 	"io/ioutil"
 	"net/http"
 	urlpkg "net/url"
