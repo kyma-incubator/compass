@@ -488,7 +488,7 @@ func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url stri
 	require.NoError(t, err)
 	require.Equal(t, expectedHTTPStatus, response.StatusCode)
 
-	reqFormatPattern := regexp.MustCompile(fmt.Sprintf("^.*$format=(.*)$"))
+	reqFormatPattern := regexp.MustCompile(fmt.Sprintf("^.*\\$format=(.*)$"))
 	matches := reqFormatPattern.FindStringSubmatch(url)
 
 	contentType := response.Header.Get("Content-Type")
