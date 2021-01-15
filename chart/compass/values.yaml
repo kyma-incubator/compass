@@ -63,7 +63,7 @@ global:
         version: "PR-1674"
       system_broker:
         dir:
-        version: "PR-1686"
+        version: "PR-XXXX"
       tenant_fetcher:
         dir:
         version: "PR-1674"

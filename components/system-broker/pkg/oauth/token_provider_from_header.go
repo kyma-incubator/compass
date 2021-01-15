@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"context"
+	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -13,10 +14,18 @@ import (
 const AuthzHeader = "Authorization"
 
 type TokenProviderFromHeader struct {
+	targetURL *url.URL
 }
 
-func NewTokenProviderFromHeader() *TokenProviderFromHeader {
-	return &TokenProviderFromHeader{}
+func NewTokenProviderFromHeader(targetURL string) (*TokenProviderFromHeader, error) {
+	parsedURL, err := url.Parse(targetURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TokenProviderFromHeader{
+		targetURL: parsedURL,
+	}, nil
 }
 
 func (c *TokenProviderFromHeader) Name() string {
@@ -30,6 +39,10 @@ func (c *TokenProviderFromHeader) Matches(ctx context.Context) bool {
 	}
 
 	return true
+}
+
+func (c *TokenProviderFromHeader) TargetURL() *url.URL {
+	return c.targetURL
 }
 
 func (c *TokenProviderFromHeader) GetAuthorizationToken(ctx context.Context) (httputils.Token, error) {

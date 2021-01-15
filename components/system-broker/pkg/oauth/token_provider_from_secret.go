@@ -36,6 +36,8 @@ const (
 )
 
 type TokenProviderFromSecret struct {
+	targetURL *url.URL
+
 	httpClient        httputils.Client
 	k8sClient         client.Client
 	waitSecretTimeout time.Duration
@@ -53,13 +55,20 @@ type credentials struct {
 	tokensEndpoint string
 }
 
-func NewTokenProviderFromSecret(config *Config, httpClient httputils.Client, tokenTimeout time.Duration, k8sClientConstructor func(time.Duration) (client.Client, error)) (*TokenProviderFromSecret, error) {
+func NewTokenProviderFromSecret(config *Config, targetURL string, httpClient httputils.Client, tokenTimeout time.Duration, k8sClientConstructor func(time.Duration) (client.Client, error)) (*TokenProviderFromSecret, error) {
 	k8sClient, err := k8sClientConstructor(config.WaitKubeMapperTimeout)
 	if err != nil {
 		return nil, err
 	}
 
+	parsedUrl, err := url.Parse(targetURL)
+	if err != nil {
+		return nil, err
+	}
+
 	return &TokenProviderFromSecret{
+		targetURL: parsedUrl,
+
 		httpClient:        httpClient,
 		k8sClient:         k8sClient,
 		waitSecretTimeout: config.WaitSecretTimeout,
@@ -83,6 +92,10 @@ func (c *TokenProviderFromSecret) Matches(ctx context.Context) bool {
 	}
 
 	return false
+}
+
+func (c *TokenProviderFromSecret) TargetURL() *url.URL {
+	return c.targetURL
 }
 
 func (c *TokenProviderFromSecret) GetAuthorizationToken(ctx context.Context) (httputils.Token, error) {

@@ -1,11 +1,9 @@
-package apitests
+package tests
 
 import (
-	"bytes"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -15,12 +13,11 @@ import (
 	connectorTestkit "github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
 	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
-func TestTokens(t *testing.T) {
+func TestSystemBrokerAuthentication(t *testing.T) {
 	// setup
 	runtimeInput := &graphql.RuntimeInput{
 		Name: "test-runtime",
@@ -67,14 +64,14 @@ func TestTokens(t *testing.T) {
 		require.Contains(t, err.Error(), "tls: certificate required")
 	})
 
-	t.Run("Should fail calling bind endpoint with revoked cert", func(t *testing.T) {
+	t.Run("Should fail calling catalog endpoint with revoked cert", func(t *testing.T) {
 		logrus.Infof("revoking cert for runtime with id: %s", runtime.ID)
 		connectorClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testCtx.ClientKey, certChain...)
 		ok, err := connectorClient.RevokeCertificate()
 		require.NoError(t, err)
 		require.Equal(t, ok, true)
 
-		req := createBindRequest(t)
+		req := createCatalogRequest(t)
 
 		resp, err := securedClient.Do(req)
 
@@ -85,7 +82,7 @@ func TestTokens(t *testing.T) {
 		require.Contains(t, string(body), "unauthorized: insufficient scopes")
 	})
 
-	t.Run("Should fail calling bind endpoint with invalid certificate", func(t *testing.T) {
+	t.Run("Should fail calling catalog endpoint with invalid certificate", func(t *testing.T) {
 		req := createCatalogRequest(t)
 
 		fakedClientKey, err := connectorTestkit.GenerateKey()
@@ -100,21 +97,6 @@ func TestTokens(t *testing.T) {
 
 func createCatalogRequest(t *testing.T) *http.Request {
 	req, err := http.NewRequest(http.MethodGet, testCtx.SystemBrokerURL+"/v2/catalog", nil)
-	require.NoError(t, err)
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Broker-API-Version", "2.15")
-	return req
-}
-
-func createBindRequest(t *testing.T) *http.Request {
-	details, err := json.Marshal(domain.BindDetails{
-		ServiceID: "serviceID",
-		PlanID:    "planID",
-	})
-	require.NoError(t, err)
-
-	req, err := http.NewRequest(http.MethodPut, testCtx.SystemBrokerURL+"/v2/service_instances/2be0980c-92d2-460f-9568-ffcbb98155c7/service_bindings/043ccdb4-0ebc-475b-849f-6afec54fdd95?accepts_incomplete=true", bytes.NewBuffer(details))
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/json")

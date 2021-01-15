@@ -22,11 +22,14 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsTokenFromCorrectTokenProvi
 		return nil, nil
 	}
 
+	tokenProviderURL, err := url.Parse("http://url-from-token-provider:8080")
+	require.NoError(t, err)
 	tokenProvider := &httpfakes.FakeTokenProvider{}
 	tokenProvider.MatchesReturns(true)
 	tokenProvider.GetAuthorizationTokenReturns(httputil.Token{
 		AccessToken: accessToken,
 	}, nil)
+	tokenProvider.TargetURLReturns(tokenProviderURL)
 
 	tokenProvider2 := &httpfakes.FakeTokenProvider{}
 	tokenProvider2.MatchesReturns(false)
@@ -51,6 +54,7 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsTokenFromCorrectTokenProvi
 	securedTransport := httputil.NewSecuredTransport(transport, tokenProvider)
 	_, err = securedTransport.RoundTrip(request)
 	require.NoError(t, err)
+	require.Equal(t, request.URL, tokenProviderURL)
 }
 
 func TestSecuredTransport_RoundTripCouldNotObtainTokeWhenNoTokenProviderMatches(t *testing.T) {
@@ -87,6 +91,7 @@ func TestSecuredTransport_RoundTripCouldNotObtainTokeWhenNoTokenProviderMatches(
 	securedTransport := httputil.NewSecuredTransport(transport, tokenProvider)
 	_, err = securedTransport.RoundTrip(request)
 	require.EqualError(t, err, "context did not match any token provider")
+	require.Equal(t, request.URL, testUrl)
 }
 
 func TestSecuredTransport_RoundTripFailsOnTokenProviderError(t *testing.T) {
@@ -107,4 +112,5 @@ func TestSecuredTransport_RoundTripFailsOnTokenProviderError(t *testing.T) {
 	securedTransport := httputil.NewSecuredTransport(transport, tokenProvider)
 	_, err = securedTransport.RoundTrip(request)
 	require.EqualError(t, err, "error while obtaining token: error")
+	require.Equal(t, request.URL, testUrl)
 }

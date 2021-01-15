@@ -20,16 +20,13 @@ import "github.com/pkg/errors"
 
 type Config struct {
 	GraphqlEndpoint string `mapstructure:"graphql_endpoint"`
-	// used when system broker acts like an integration system
-	GraphqlOauthEndpoint string `mapstructure:"graphql_oauth_endpoint"`
-	EnableLogging        bool   `mapstructure:"enable_logging"`
+	EnableLogging   bool   `mapstructure:"enable_logging"`
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		GraphqlEndpoint:      "http://localhost:3000/graphql",
-		GraphqlOauthEndpoint: "http://localhost:3000/graphql",
-		EnableLogging:        true,
+		GraphqlEndpoint: "http://localhost:3000/graphql",
+		EnableLogging:   true,
 	}
 }
 

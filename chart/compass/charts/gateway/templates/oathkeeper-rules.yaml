@@ -96,14 +96,14 @@ spec:
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
-  name: compass-broker-certs
+  name: compass-system-broker-certs
 spec:
   description: Configuration of oathkeeper for secure endpoint of compass system broker
   upstream:
     url: "http://compass-system-broker.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.system_broker.port }}"
   match:
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"]
-    url: <http|https>://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>/broker<(/.*)?>
+    url: <http|https>://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.system_broker.prefix }}<(/.*)?>
   authenticators:
   - handler: noop
   authorizer:

@@ -13,7 +13,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// UnauthorizedMiddleware
+// UnauthorizedMiddleware ensures that unauthorized responses are correctly propagated.
 func UnauthorizedMiddleware(unauthorizedString string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {

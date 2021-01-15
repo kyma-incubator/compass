@@ -19,6 +19,7 @@ package http
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -28,6 +29,7 @@ import (
 type TokenProvider interface {
 	Name() string
 	Matches(ctx context.Context) bool
+	TargetURL() *url.URL
 	GetAuthorizationToken(ctx context.Context) (Token, error)
 }
 
@@ -46,7 +48,7 @@ func NewSecuredTransport(roundTripper HTTPRoundTripper, providers ...TokenProvid
 func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	logger := log.C(request.Context())
 
-	token, err := c.getToken(request.Context())
+	targetURL, token, err := c.getCredentialsFromProvider(request.Context())
 	if err != nil {
 		logger.Errorf("Could not get token for request: %s", err.Error())
 		return nil, err
@@ -55,10 +57,12 @@ func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, err
 	logger.Debug("Successfully got token for request")
 	request.Header.Set("Authorization", "Bearer "+token.AccessToken)
 
+	request.URL = targetURL
+
 	return c.roundTripper.RoundTrip(request)
 }
 
-func (c *SecuredTransport) getToken(ctx context.Context) (Token, error) {
+func (c *SecuredTransport) getCredentialsFromProvider(ctx context.Context) (*url.URL, Token, error) {
 	for _, tokenProvider := range c.tokenProviders {
 		if !tokenProvider.Matches(ctx) {
 			continue
@@ -67,11 +71,11 @@ func (c *SecuredTransport) getToken(ctx context.Context) (Token, error) {
 
 		token, err := tokenProvider.GetAuthorizationToken(ctx)
 		if err != nil {
-			return Token{}, errors.Wrap(err, "error while obtaining token")
+			return nil, Token{}, errors.Wrap(err, "error while obtaining token")
 		}
 
-		return token, nil
+		return tokenProvider.TargetURL(), token, nil
 	}
 
-	return Token{}, errors.New("context did not match any token provider")
+	return nil, Token{}, errors.New("context did not match any token provider")
 }

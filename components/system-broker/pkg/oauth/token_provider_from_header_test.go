@@ -18,15 +18,26 @@ type TokenProviderFromHeaderTestSuite struct {
 	suite.Suite
 }
 
+const targetURL = "http://localhost"
+
+func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_New() {
+	provider, err := oauth.NewTokenProviderFromHeader("%zzz")
+	suite.Require().Error(err)
+	suite.Require().Nil(provider)
+}
+
 func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_Name() {
-	provider := oauth.NewTokenProviderFromHeader()
+	provider, err := oauth.NewTokenProviderFromHeader(targetURL)
+	suite.Require().NoError(err)
+
 	name := provider.Name()
 
 	suite.Require().Equal(name, "TokenProviderFromHeader")
 }
 
 func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_Matches() {
-	provider := oauth.NewTokenProviderFromHeader()
+	provider, err := oauth.NewTokenProviderFromHeader(targetURL)
+	suite.Require().NoError(err)
 
 	ctx := context.TODO()
 	matches := provider.Matches(ctx)
@@ -37,9 +48,19 @@ func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_Matches() 
 	suite.Require().Equal(matches, true)
 }
 
+func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_URL() {
+	provider, err := oauth.NewTokenProviderFromHeader(targetURL)
+	suite.Require().NoError(err)
+
+	url := provider.TargetURL()
+
+	suite.Require().Equal(url.String(), targetURL)
+}
+
 func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_GetAuthorizationToken() {
 	const tokenVal = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0"
-	provider := oauth.NewTokenProviderFromHeader()
+	provider, err := oauth.NewTokenProviderFromHeader(targetURL)
+	suite.Require().NoError(err)
 
 	ctx := context.TODO()
 	ctx = httputils.SaveToContext(ctx, oauth.AuthzHeader, "Bearer "+tokenVal)
@@ -50,7 +71,8 @@ func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_GetAuthori
 }
 
 func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_GetAuthorizationTokenFailsWhenNoHeadersInContext() {
-	provider := oauth.NewTokenProviderFromHeader()
+	provider, err := oauth.NewTokenProviderFromHeader(targetURL)
+	suite.Require().NoError(err)
 
 	ctx := context.TODO()
 	token, err := provider.GetAuthorizationToken(ctx)
@@ -60,7 +82,8 @@ func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_GetAuthori
 }
 
 func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_GetAuthorizationTokenFailsWhenNoAuthHeaderInContext() {
-	provider := oauth.NewTokenProviderFromHeader()
+	provider, err := oauth.NewTokenProviderFromHeader(targetURL)
+	suite.Require().NoError(err)
 
 	ctx := context.TODO()
 	ctx = httputils.SaveToContext(ctx, "key", "val")
@@ -72,7 +95,8 @@ func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_GetAuthori
 }
 
 func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_GetAuthorizationTokenFailsWhenAuthHeaderIsEmpty() {
-	provider := oauth.NewTokenProviderFromHeader()
+	provider, err := oauth.NewTokenProviderFromHeader(targetURL)
+	suite.Require().NoError(err)
 
 	ctx := context.TODO()
 	ctx = httputils.SaveToContext(ctx, oauth.AuthzHeader, "")
@@ -84,7 +108,8 @@ func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_GetAuthori
 }
 
 func (suite *TokenProviderFromHeaderTestSuite) TestOAuthTokenProvider_GetAuthorizationTokenFailsWhenAuthHeaderIsInvalid() {
-	provider := oauth.NewTokenProviderFromHeader()
+	provider, err := oauth.NewTokenProviderFromHeader(targetURL)
+	suite.Require().NoError(err)
 
 	ctx := context.TODO()
 	ctx = httputils.SaveToContext(ctx, oauth.AuthzHeader, "NotBearer ")

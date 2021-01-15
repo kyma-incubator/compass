@@ -55,3 +55,27 @@ func TestHeaderForwarderForwardsGivenHeaderIfPresent(t *testing.T) {
 
 	})).ServeHTTP(response, request)
 }
+
+func TestHeaderForwarderDoesNotForwardHeadersIfNoneArePresent(t *testing.T) {
+	const authorizationString = "Authorization"
+
+	var response = httptest.NewRecorder()
+
+	testUrl, err := url.Parse("http://localhost:8080")
+	require.NoError(t, err)
+	request := &http.Request{
+		Method: http.MethodPost,
+		URL:    testUrl,
+		Header: map[string][]string{},
+	}
+
+	handler := httputil.HeaderForwarder([]string{authorizationString})
+	handler(http.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) {
+		ctx := request.Context()
+		actualHeaders, err := httputil.LoadFromContext(ctx)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "headers not found in context")
+		require.Nil(t, actualHeaders)
+
+	})).ServeHTTP(response, request)
+}

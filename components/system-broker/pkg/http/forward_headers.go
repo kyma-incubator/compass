@@ -23,7 +23,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// HeaderForwarder stores the specified request in the context so that they can later be used and forwarded to other backends
+type key int
+
+const HeadersContextKey key = iota
+
+// HeaderForwarder stores the specified request headers in the context so that they can later be used and forwarded to other backends
 func HeaderForwarder(forwardHeaders []string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
@@ -41,10 +45,6 @@ func HeaderForwarder(forwardHeaders []string) func(next http.Handler) http.Handl
 		})
 	}
 }
-
-type key int
-
-const HeadersContextKey key = iota
 
 func LoadFromContext(ctx context.Context) (map[string]string, error) {
 	value := ctx.Value(HeadersContextKey)

@@ -61,7 +61,7 @@ func main() {
 
 	uuidSrv := uuid.NewService()
 
-	directorGraphQLClient, err := prepareGqlClient(ctx, cfg, uuidSrv)
+	directorGraphQLClient, err := prepareGqlClient(cfg, uuidSrv)
 	fatalOnError(err)
 
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
@@ -82,29 +82,23 @@ func fatalOnError(err error) {
 	}
 }
 
-func prepareGqlClient(ctx context.Context, cfg *config.Config, uudSrv uuid.Service) (*director.GraphQLClient, error) {
-	// prepare raw http transport and http client based on cfg
+func prepareGqlClient(cfg *config.Config, uudSrv uuid.Service) (*director.GraphQLClient, error) {
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
-	httpClient := httputil.NewClient(cfg.HttpClient.Timeout, httpTransport)
 
-	tokenProviders := make([]httputil.TokenProvider, 0)
-	tokenProviderFromHeader := oauth.NewTokenProviderFromHeader()
-	tokenProviders = append(tokenProviders, tokenProviderFromHeader)
-	tokenProviderFromSecret, err := oauth.NewTokenProviderFromSecret(cfg.OAuthProvider, httpClient, cfg.HttpClient.Timeout, oauth.PrepareK8sClient)
+	tokenProviderFromHeader, err := oauth.NewTokenProviderFromHeader(cfg.GraphQLClient.GraphqlEndpoint)
 	if err != nil {
-		log.C(ctx).Warnf("Could not initialize token provider from secret: %s", err.Error())
-	} else {
-		tokenProviders = append(tokenProviders, tokenProviderFromSecret)
+		return nil, err
 	}
 
-	securedTransport := httputil.NewSecuredTransport(httpTransport, tokenProviders...)
+	securedTransport := httputil.NewSecuredTransport(httpTransport, tokenProviderFromHeader)
 	securedClient := &http.Client{
 		Transport: securedTransport,
 		Timeout:   cfg.HttpClient.Timeout,
 	}
 
 	// prepare graphql client that uses secured http client as a basis
-	graphClient := gql.NewClient(cfg.GraphQLClient.GraphqlEndpoint, gql.WithHTTPClient(securedClient))
+	// the provided endpoint in the graphClient will be changed in the secured transport based on the matching token provider
+	graphClient := gql.NewClient("", gql.WithHTTPClient(securedClient))
 	gqlClient := graphql.NewClient(cfg.GraphQLClient, graphClient)
 
 	inputGraphqlizer := &graphqlizer.Graphqlizer{}

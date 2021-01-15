@@ -59,10 +59,8 @@ spec:
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: SERVER_SELF_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
-            - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT # directly call the compass-gateway, as we already have a crafted jwt id token
+            - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
               value: "http://{{ .Values.global.gateway.tls.host }}.{{ .Release.Namespace }}.svc.cluster.local:{{.Values.global.gateway.port }}/director/graphql"
-            - name: GRAPHQL_CLIENT_GRAPHQL_OAUTH_ENDPOINT # used when system-broker acts as an integration system, we need to convert the oauth2 opaque access token to jwt id token
-              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             # - name: GRAPHQL_CLIENT_ENABLE_LOGGING
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             # - name: LOG_LEVEL
@@ -93,10 +91,6 @@ spec:
               value: "{{ .Values.global.system_broker.forwardHeaders }}"
             - name: HTTP_CLIENT_UNAUTHORIZED_STRING
               value: {{ .Values.global.system_broker.unauthorizedString }}
-            # - name: OAUTH_PROVIDER_SECRET_NAME
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: OAUTH_PROVIDER_SECRET_NAMESPACE
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
           livenessProbe:
             httpGet:
               path: /healthz
