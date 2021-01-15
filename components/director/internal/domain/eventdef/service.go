@@ -37,18 +37,26 @@ type UIDService interface {
 	Generate() string
 }
 
-type service struct {
-	eventAPIRepo     EventAPIRepository
-	fetchRequestRepo FetchRequestRepository
-	uidService       UIDService
-	timestampGen     timestamp.Generator
+//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
+type FetchRequestService interface {
+	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
-func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService) *service {
-	return &service{eventAPIRepo: eventAPIRepo,
-		fetchRequestRepo: fetchRequestRepo,
-		uidService:       uidService,
-		timestampGen:     timestamp.DefaultGenerator(),
+type service struct {
+	eventAPIRepo        EventAPIRepository
+	fetchRequestRepo    FetchRequestRepository
+	uidService          UIDService
+	fetchRequestService FetchRequestService
+	timestampGen        timestamp.Generator
+}
+
+func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
+	return &service{
+		eventAPIRepo:        eventAPIRepo,
+		fetchRequestRepo:    fetchRequestRepo,
+		uidService:          uidService,
+		fetchRequestService: fetchRequestService,
+		timestampGen:        timestamp.DefaultGenerator(),
 	}
 }
 
@@ -109,9 +117,16 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 	}
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		fr, err := s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
 		if err != nil {
 			return "", errors.Wrapf(err, "while creating FetchRequest for EventDefinition with id %s", id)
+		}
+
+		eventAPI.Spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
+
+		err = s.eventAPIRepo.Update(ctx, eventAPI)
+		if err != nil {
+			return "", errors.Wrap(err, "while updating event with event spec")
 		}
 	}
 
@@ -134,14 +149,16 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		return errors.Wrapf(err, "while deleting FetchRequest for EventDefinition with id %s", id)
 	}
 
+	eventAPI = in.ToEventDefinitionWithinPackage(id, eventAPI.PackageID, tnt)
+
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
-		_, err = s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
+		fr, err := s.createFetchRequest(ctx, tnt, in.Spec.FetchRequest, id)
 		if err != nil {
 			return errors.Wrapf(err, "while creating FetchRequest for EventDefinition with id %s", id)
 		}
-	}
 
-	eventAPI = in.ToEventDefinitionWithinPackage(id, eventAPI.PackageID, tnt)
+		eventAPI.Spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
+	}
 
 	err = s.eventAPIRepo.Update(ctx, eventAPI)
 	if err != nil {
@@ -176,6 +193,20 @@ func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.EventSp
 		return nil, err
 	}
 
+	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.EventAPIFetchRequestReference, id)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "while getting FetchRequest by Event Definition ID %s", id)
+	}
+
+	if fetchRequest != nil {
+		eventAPI.Spec.Data = s.fetchRequestService.HandleSpec(ctx, fetchRequest)
+	}
+
+	err = s.eventAPIRepo.Update(ctx, eventAPI)
+	if err != nil {
+		return nil, errors.Wrap(err, "while updating event api with event api spec")
+	}
+
 	return eventAPI.Spec, nil
 }
 
@@ -204,7 +235,7 @@ func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*m
 	return fetchRequest, nil
 }
 
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, parentObjectID string) (*string, error) {
+func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -216,5 +247,5 @@ func (s *service) createFetchRequest(ctx context.Context, tenant string, in *mod
 		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", model.EventAPIFetchRequestReference, parentObjectID)
 	}
 
-	return &id, nil
+	return fr, nil
 }

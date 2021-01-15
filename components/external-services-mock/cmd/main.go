@@ -24,10 +24,16 @@ import (
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
 	OAuthConfig
+	BasicCredentialsConfig
 }
 type OAuthConfig struct {
-	ClientID     string `envconfig:"APP_AUDITLOG_CLIENT_ID"`
-	ClientSecret string `envconfig:"APP_AUDITLOG_CLIENT_SECRET"`
+	ClientID     string `envconfig:"APP_CLIENT_ID"`
+	ClientSecret string `envconfig:"APP_CLIENT_SECRET"`
+}
+
+type BasicCredentialsConfig struct {
+	Username string `envconfig:"BASIC_USERNAME"`
+	Password string `envconfig:"BASIC_PASSWORD"`
 }
 
 func main() {
@@ -59,16 +65,31 @@ func initHTTP(cfg config) http.Handler {
 	router.HandleFunc("/v1/healtz", health.HandleFunc)
 
 	configChangeRouter := router.PathPrefix("/audit-log/v2/configuration-changes").Subrouter()
-	configChangeRouter.Use(authMiddleware)
+	configChangeRouter.Use(oauthMiddleware)
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
 	router.HandleFunc("/audit-log/v2/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
+	router.HandleFunc("/oauth/token", oauthHandler.Generate).Methods(http.MethodPost)
 
-	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/unsecured/spec", apispec.HandleFunc)
+
+	oauthRouter := router.PathPrefix("/external-api/secured/oauth").Subrouter()
+	oauthRouter.Use(oauthMiddleware)
+	oauthRouter.HandleFunc("/spec", apispec.HandleFunc)
+
+	basicAuthRouter := router.PathPrefix("/external-api/secured/basic").Subrouter()
+
+	h := &handler{
+		Username: cfg.Username,
+		Password: cfg.Password,
+	}
+	basicAuthRouter.Use(h.basicAuthMiddleware)
+	basicAuthRouter.HandleFunc("/spec", apispec.HandleFunc)
+
 	return router
 }
 
-func authMiddleware(next http.Handler) http.Handler {
+func oauthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if len(authHeader) == 0 {
@@ -77,6 +98,28 @@ func authMiddleware(next http.Handler) http.Handler {
 		}
 		if !strings.Contains(authHeader, "Bearer") {
 			httphelpers.WriteError(w, errors.New("No Bearer token"), http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+type handler struct {
+	Username string `envconfig:"BASIC_USERNAME"`
+	Password string `envconfig:"BASIC_PASSWORD"`
+}
+
+func (h *handler) basicAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+
+		if !ok {
+			httphelpers.WriteError(w, errors.New("No Basic credentials"), http.StatusUnauthorized)
+			return
+		}
+		if username != h.Username || password != h.Password {
+			httphelpers.WriteError(w, errors.New("Bad credentials"), http.StatusUnauthorized)
 			return
 		}
 

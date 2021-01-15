@@ -55,6 +55,10 @@ func TestAuditlogIntegration(t *testing.T) {
 	t.Log("Get auditlog from external services mock")
 	auditlogs := searchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
 
+	for _, auditlog := range auditlogs {
+		defer deleteAuditlogByID(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, auditlog.UUID)
+	}
+
 	t.Log("Compare request to director with auditlog")
 	requestBody := prepareRegisterAppRequestBody(t, registerRequest)
 	require.True(t, len(auditlogs[0].Attributes) == 3 || len(auditlogs[0].Attributes) == 4)

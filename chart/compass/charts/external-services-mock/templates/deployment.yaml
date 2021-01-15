@@ -24,16 +24,26 @@ spec:
               env:
               - name: APP_ADDRESS
                 value: "127.0.0.1:{{ .Values.deployment.port }}"
-              - name: APP_AUDITLOG_CLIENT_ID
+              - name: APP_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
                     name: {{ .Values.global.auditlog.secretName }}
                     key: auditlog-client-id
-              - name: APP_AUDITLOG_CLIENT_SECRET
+              - name: APP_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
                     name: {{ .Values.global.auditlog.secretName }}
                     key: auditlog-client-secret
+              - name: BASIC_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.testCredentials.secretName }}
+                    key: username
+              - name: BASIC_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.global.testCredentials.secretName }}
+                    key: password
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

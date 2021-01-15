@@ -23,7 +23,7 @@ global:
       version: "PR-1674"
     director:
       dir:
-      version: "PR-1689"
+      version: "PR-1668"
     gateway:
       dir:
       version: "PR-1674"
@@ -46,14 +46,14 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1674"
+      version: "PR-1668"
     console:
       dir:
       version: "PR-14"
     tests:
       director:
         dir:
-        version: "PR-1666"
+        version: "PR-1668"
       connector:
         dir:
         version: "PR-1674"
@@ -92,6 +92,9 @@ global:
     secretName: "compass-gateway-auditlog-secret"
     script:
       configMapName: "auditlog-script"
+
+  testCredentials:
+    secretName: "test-credentials-secret"
 
   enableCompassDefaultScenarioAssignment: true
 

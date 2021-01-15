@@ -95,5 +95,6 @@ bash ${CURRENT_DIR}/configure-components.sh
 
 echo -e "\nStarting installation!"
 kubectl apply -f - <<< "$COMBO_YAML"
+kubectl rollout restart deployment -n compass-installer compass-installer
 sleep 15
 kubectl apply -f "${CR_PATH}"

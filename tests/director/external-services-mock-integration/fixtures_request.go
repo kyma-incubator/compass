@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	auditlogTokenEndpoint  = "audit-log/v2/oauth/token"
-	auditlogSearchEndpoint = "audit-log/v2/configuration-changes/search"
+	auditlogTokenEndpoint        = "audit-log/v2/oauth/token"
+	auditlogSearchEndpoint       = "audit-log/v2/configuration-changes/search"
+	auditlogDeleteEndpointFormat = "audit-log/v2/configuration-changes/%s"
 )
 
 type token struct {
@@ -83,6 +84,17 @@ func searchForAuditlogByString(t *testing.T, client *http.Client, baseURL string
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	return auditlogs
+}
+
+func deleteAuditlogByID(t *testing.T, client *http.Client, baseURL string, auditlogToken token, id string) {
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s%s", baseURL, fmt.Sprintf(auditlogDeleteEndpointFormat, id)), nil)
+	require.NoError(t, err)
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken.AccessToken))
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 //Package

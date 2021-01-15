@@ -14,6 +14,10 @@ type config struct {
 	DefaultTenant               string
 	DirectorURL                 string
 	ExternalServicesMockBaseURL string
+	BasicCredentialsUsername    string
+	BasicCredentialsPassword    string
+	AppClientID                 string
+	AppClientSecret             string
 }
 
 var testConfig config
