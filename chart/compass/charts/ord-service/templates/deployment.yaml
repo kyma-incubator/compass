@@ -54,6 +54,8 @@ spec:
               value: "{{ .Values.deployment.args.containerPort }}"
             - name: SERVER_SELF_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: SERVER_DEFAULT_RESPONSE_TYPE
+              value: {{ .Values.global.ordService.defaultResponseType }}
             - name: ODATA_JPA_REQUEST_MAPPING_PATH
               value: {{ .Values.global.ordService.prefix | trimPrefix "/" }}
             - name: SPRING_DATASOURCE_USERNAME

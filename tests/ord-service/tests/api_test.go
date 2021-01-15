@@ -21,9 +21,11 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"go/ast"
 	"io/ioutil"
 	"net/http"
 	urlpkg "net/url"
+	"regexp"
 	"testing"
 	"time"
 
@@ -161,6 +163,10 @@ func TestORDService(t *testing.T) {
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, testConfig.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
+	})
+
+	t.Run("Requesting entities without specifying response format falls back to configured default response type", func(t *testing.T) {
+		makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages")
 	})
 
 	t.Run("Requesting Packages returns them as expected", func(t *testing.T) {
@@ -482,6 +488,16 @@ func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url stri
 
 	require.NoError(t, err)
 	require.Equal(t, expectedHTTPStatus, response.StatusCode)
+
+	reqFormatPattern := regexp.MustCompile(fmt.Sprintf("^.*$format=(.*)$"))
+	matches := reqFormatPattern.FindStringSubmatch(url)
+
+	contentType := response.Header.Get("Content-Type")
+	if len(matches) > 1 {
+		require.Contains(t, contentType, matches[1])
+	} else {
+		require.Contains(t, contentType, testConfig.ORDServiceDefaultResponseType)
+	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	require.NoError(t, err)
