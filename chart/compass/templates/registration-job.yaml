@@ -205,4 +205,4 @@ spec:
 
               echo "Checking if system-broker secret with credentials exists..."
               ensure_secret "compass-system-broker" "Compass System Broker" "$SYSTEM_BROKER_SECRET_NAME"
-  {{ end }}
+{{ end }}
