@@ -40,6 +40,8 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+const acceptHeader = "Accept"
+
 func TestORDService(t *testing.T) {
 	appInput := directorSchema.ApplicationRegisterInput{
 		Name:        "test-app",
@@ -165,8 +167,12 @@ func TestORDService(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, testConfig.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
 	})
 
-	t.Run("Requesting entities without specifying response format falls back to configured default response type", func(t *testing.T) {
-		makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages")
+	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
+		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages", map[string][]string{acceptHeader: {"*/*"}})
+	})
+
+	t.Run("Requesting entities without specifying response format falls back to response type specified by Accept header when it provides a specific type", func(t *testing.T) {
+		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages", map[string][]string{acceptHeader: {"application/json"}})
 	})
 
 	t.Run("Requesting Packages returns them as expected", func(t *testing.T) {
@@ -477,12 +483,26 @@ func TestORDService(t *testing.T) {
 }
 
 func makeRequest(t *testing.T, httpClient *http.Client, url string) string {
-	return makeRequestWithStatusExpect(t, httpClient, url, http.StatusOK)
+	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, http.StatusOK)
+}
+
+func makeRequestWithHeaders(t *testing.T, httpClient *http.Client, url string, headers map[string][]string) string {
+	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK)
 }
 
 func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url string, expectedHTTPStatus int) string {
+	return makeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus)
+}
+
+func makeRequestWithHeadersAndStatusExpect(t *testing.T, httpClient *http.Client, url string, headers map[string][]string, expectedHTTPStatus int) string {
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
+
+	for key, values := range headers {
+		for _, value := range values {
+			request.Header.Add(key, value)
+		}
+	}
 
 	response, err := httpClient.Do(request)
 
@@ -493,9 +513,13 @@ func makeRequestWithStatusExpect(t *testing.T, httpClient *http.Client, url stri
 		reqFormatPattern := regexp.MustCompile(fmt.Sprintf("^.*\\$format=(.*)$"))
 		matches := reqFormatPattern.FindStringSubmatch(url)
 
+		acceptHeader, acceptHeaderProvided := headers[acceptHeader]
+
 		contentType := response.Header.Get("Content-Type")
 		if len(matches) > 1 {
 			require.Contains(t, contentType, matches[1])
+		} else if acceptHeaderProvided && acceptHeader[0] != "*/*" {
+			require.Contains(t, contentType, acceptHeader[0])
 		} else {
 			require.Contains(t, contentType, testConfig.ORDServiceDefaultResponseType)
 		}
