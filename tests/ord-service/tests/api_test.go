@@ -24,7 +24,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	urlpkg "net/url"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -509,15 +508,16 @@ func makeRequestWithHeadersAndStatusExpect(t *testing.T, httpClient *http.Client
 	require.NoError(t, err)
 	require.Equal(t, expectedHTTPStatus, response.StatusCode)
 
-	if !strings.Contains(url, "/specification") {
-		reqFormatPattern := regexp.MustCompile(fmt.Sprintf("^.*\\$format=(.*)$"))
-		matches := reqFormatPattern.FindStringSubmatch(url)
+	parsedURL, err := urlpkg.Parse(url)
+	require.NoError(t, err)
 
+	if !strings.Contains(parsedURL.Path, "/specification") {
+		formatParam := parsedURL.Query().Get("$format")
 		acceptHeader, acceptHeaderProvided := headers[acceptHeader]
 
 		contentType := response.Header.Get("Content-Type")
-		if len(matches) > 1 {
-			require.Contains(t, contentType, matches[1])
+		if formatParam != "" {
+			require.Contains(t, contentType, formatParam)
 		} else if acceptHeaderProvided && acceptHeader[0] != "*/*" {
 			require.Contains(t, contentType, acceptHeader[0])
 		} else {
