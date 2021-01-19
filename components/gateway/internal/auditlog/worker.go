@@ -2,6 +2,7 @@ package auditlog
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"

@@ -2,8 +2,9 @@ package httpcommon
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"io"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 func CloseBody(ctx context.Context, body io.ReadCloser) {

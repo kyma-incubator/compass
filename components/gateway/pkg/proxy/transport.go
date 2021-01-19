@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"

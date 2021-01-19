@@ -147,7 +147,6 @@ func createServer(ctx context.Context, address string, handler http.Handler, nam
 	}
 
 	runFn := func() {
-
 		logger.Infof("Running %s server on %s...", name, address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			logger.WithError(err).Errorf("%s HTTP server ListenAndServe", name)
