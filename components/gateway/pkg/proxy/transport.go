@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 
@@ -64,7 +64,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		return nil, err
 	}
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(requestBody))
-	defer httpcommon.CloseBody(req.Body)
+	defer httpcommon.CloseBody(req.Context(), req.Body)
 
 	correlationHeaders := correlation.HeadersForRequest(req)
 
@@ -74,7 +74,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	}
 
 	if !isMutation && err != emptyQuery {
-		log.Println("Will not send auditlog message for queries")
+		log.C(req.Context()).Println("Will not send auditlog message for queries")
 		return t.RoundTripper.RoundTrip(req)
 	}
 
@@ -109,7 +109,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		return nil, err
 	}
 	resp.Body = ioutil.NopCloser(bytes.NewReader(responseBody))
-	defer httpcommon.CloseBody(resp.Body)
+	defer httpcommon.CloseBody(req.Context(), resp.Body)
 
 	err = t.auditlogSink.Log(req.Context(), AuditlogMessage{
 		CorrelationIDHeaders: correlationHeaders,

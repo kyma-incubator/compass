@@ -2,7 +2,7 @@ package auditlog
 
 import (
 	"context"
-	"log"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/proxy"
@@ -27,19 +27,20 @@ func NewWorker(svc proxy.AuditlogService, auditlogChannel chan proxy.AuditlogMes
 
 func (w *Worker) Start() {
 	ctx := context.Background()
+	logger := log.C(ctx)
 	for {
 		select {
 		case <-w.done:
-			log.Println("Worker for auditlog message processing has finished")
+			logger.Println("Worker for auditlog message processing has finished")
 			ctx.Done()
 			return
 		case msg := <-w.auditlogChannel:
-			log.Printf("Read from auditlog channel (size=%d, cap=%d)", len(w.auditlogChannel), cap(w.auditlogChannel))
+			logger.Printf("Read from auditlog channel (size=%d, cap=%d)", len(w.auditlogChannel), cap(w.auditlogChannel))
 			w.collector.SetChannelSize(len(w.auditlogChannel))
 			ctx := context.WithValue(ctx, correlation.HeadersContextKey, msg.CorrelationIDHeaders)
 			err := w.svc.Log(ctx, msg)
 			if err != nil {
-				log.Printf("Error while saving auditlog message with error: %s", err.Error())
+				logger.Printf("Error while saving auditlog message with error: %s", err.Error())
 			}
 		}
 	}
