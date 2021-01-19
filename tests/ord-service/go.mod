@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/tests/ord-service
 go 1.14
 
 require (
-	github.com/kyma-incubator/compass/components/director v0.0.0-20201203125420-917d516b00f4
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210119151733-586ca2a3ee31 // indirect
 	github.com/kyma-incubator/compass/tests/connectivity-adapter v0.0.0-20201229100928-9b55563638ca
 	github.com/kyma-incubator/compass/tests/director v0.0.0-20201230234453-c6824d9f3df6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
