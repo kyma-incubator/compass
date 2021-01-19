@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"time"
 
@@ -197,6 +199,7 @@ func main() {
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
+	gqlAPIRouter.Use(PackageToBundleHandler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema,
 		handler.ErrorPresenter(presenter.Do),
@@ -406,4 +409,35 @@ func defaultBundleRepo() mp_bundle.BundleRepository {
 	apiConverter := api.NewConverter(frConverter, versionConverter)
 
 	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
+}
+
+func PackageToBundleHandler() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			recorder := httptest.NewRecorder()
+
+			// todo pre process
+
+			next.ServeHTTP(recorder, r)
+
+			for key, values := range recorder.Header() {
+				for _, v := range values {
+					w.Header().Add(key, v)
+				}
+			}
+
+			responseBody, err := ioutil.ReadAll(recorder.Body)
+			if err != nil {
+				// todo handle err
+				return
+			}
+
+			// todo post process
+
+			w.WriteHeader(recorder.Code)
+			if _, err := w.Write(responseBody); err != nil {
+				// todo handle err
+			}
+		})
+	}
 }
