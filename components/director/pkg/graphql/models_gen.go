@@ -86,7 +86,7 @@ type ApplicationRegisterInput struct {
 	Webhooks []*WebhookInput `json:"webhooks"`
 	// **Validation:** valid URL, max=256
 	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	Packages            []*PackageCreateInput       `json:"packages"`
+	Bundles             []*BundleCreateInput        `json:"bundles"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 }
@@ -382,7 +382,7 @@ type OAuthCredentialDataInput struct {
 	URL string `json:"url"`
 }
 
-type PackageCreateInput struct {
+type BundleCreateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
@@ -394,37 +394,37 @@ type PackageCreateInput struct {
 	Documents                      []*DocumentInput        `json:"documents"`
 }
 
-type PackageInstanceAuth struct {
+type BundleInstanceAuth struct {
 	ID string `json:"id"`
-	// Context of PackageInstanceAuth - such as Runtime ID, namespace
+	// Context of BundleInstanceAuth - such as Runtime ID, namespace
 	Context *JSON `json:"context"`
-	// User input while requesting Package Instance Auth
+	// User input while requesting Bundle Instance Auth
 	InputParams *JSON `json:"inputParams"`
 	// It may be empty if status is PENDING.
-	// Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	Auth   *Auth                      `json:"auth"`
-	Status *PackageInstanceAuthStatus `json:"status"`
+	// Populated with `bundle.defaultAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	Auth   *Auth                     `json:"auth"`
+	Status *BundleInstanceAuthStatus `json:"status"`
 }
 
-type PackageInstanceAuthRequestInput struct {
-	// Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
+type BundleInstanceAuthRequestInput struct {
+	// Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
 	Context *JSON `json:"context"`
-	// **Validation:** JSON validated against package.instanceAuthRequestInputSchema
+	// **Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
 	InputParams *JSON `json:"inputParams"`
 }
 
-type PackageInstanceAuthSetInput struct {
+type BundleInstanceAuthSetInput struct {
 	// **Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
 	Auth *AuthInput `json:"auth"`
 	// **Validation:** Optional if the auth is provided.
 	// If the status condition is "FAILED", auth must be empty.
-	Status *PackageInstanceAuthStatusInput `json:"status"`
+	Status *BundleInstanceAuthStatusInput `json:"status"`
 }
 
-type PackageInstanceAuthStatus struct {
-	Condition PackageInstanceAuthStatusCondition `json:"condition"`
-	Timestamp Timestamp                          `json:"timestamp"`
-	Message   string                             `json:"message"`
+type BundleInstanceAuthStatus struct {
+	Condition BundleInstanceAuthStatusCondition `json:"condition"`
+	Timestamp Timestamp                         `json:"timestamp"`
+	Message   string                            `json:"message"`
 	// Possible reasons:
 	// - PendingNotification
 	// - NotificationSent
@@ -434,8 +434,8 @@ type PackageInstanceAuthStatus struct {
 	Reason string `json:"reason"`
 }
 
-type PackageInstanceAuthStatusInput struct {
-	Condition PackageInstanceAuthSetStatusConditionInput `json:"condition"`
+type BundleInstanceAuthStatusInput struct {
+	Condition BundleInstanceAuthSetStatusConditionInput `json:"condition"`
 	// **Validation:** required, if condition is FAILED
 	Message string `json:"message"`
 	// Example reasons:
@@ -449,21 +449,21 @@ type PackageInstanceAuthStatusInput struct {
 	Reason string `json:"reason"`
 }
 
-type PackagePage struct {
-	Data       []*Package `json:"data"`
-	PageInfo   *PageInfo  `json:"pageInfo"`
-	TotalCount int        `json:"totalCount"`
+type BundlePage struct {
+	Data       []*Bundle `json:"data"`
+	PageInfo   *PageInfo `json:"pageInfo"`
+	TotalCount int       `json:"totalCount"`
 }
 
-func (PackagePage) IsPageable() {}
+func (BundlePage) IsPageable() {}
 
-type PackageUpdateInput struct {
+type BundleUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
 	Description                    *string     `json:"description"`
 	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema"`
-	// While updating defaultInstanceAuth, existing PackageInstanceAuths are NOT updated.
+	// While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
 	DefaultInstanceAuth *AuthInput `json:"defaultInstanceAuth"`
 }
 
@@ -832,20 +832,20 @@ func (e EventSpecType) MarshalGQL(w io.Writer) {
 type FetchMode string
 
 const (
-	FetchModeSingle  FetchMode = "SINGLE"
-	FetchModePackage FetchMode = "PACKAGE"
-	FetchModeIndex   FetchMode = "INDEX"
+	FetchModeSingle FetchMode = "SINGLE"
+	FetchModeBundle FetchMode = "BUNDLE"
+	FetchModeIndex  FetchMode = "INDEX"
 )
 
 var AllFetchMode = []FetchMode{
 	FetchModeSingle,
-	FetchModePackage,
+	FetchModeBundle,
 	FetchModeIndex,
 }
 
 func (e FetchMode) IsValid() bool {
 	switch e {
-	case FetchModeSingle, FetchModePackage, FetchModeIndex:
+	case FetchModeSingle, FetchModeBundle, FetchModeIndex:
 		return true
 	}
 	return false
@@ -995,91 +995,91 @@ func (e HealthCheckType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type PackageInstanceAuthSetStatusConditionInput string
+type BundleInstanceAuthSetStatusConditionInput string
 
 const (
-	PackageInstanceAuthSetStatusConditionInputSucceeded PackageInstanceAuthSetStatusConditionInput = "SUCCEEDED"
-	PackageInstanceAuthSetStatusConditionInputFailed    PackageInstanceAuthSetStatusConditionInput = "FAILED"
+	BundleInstanceAuthSetStatusConditionInputSucceeded BundleInstanceAuthSetStatusConditionInput = "SUCCEEDED"
+	BundleInstanceAuthSetStatusConditionInputFailed    BundleInstanceAuthSetStatusConditionInput = "FAILED"
 )
 
-var AllPackageInstanceAuthSetStatusConditionInput = []PackageInstanceAuthSetStatusConditionInput{
-	PackageInstanceAuthSetStatusConditionInputSucceeded,
-	PackageInstanceAuthSetStatusConditionInputFailed,
+var AllBundleInstanceAuthSetStatusConditionInput = []BundleInstanceAuthSetStatusConditionInput{
+	BundleInstanceAuthSetStatusConditionInputSucceeded,
+	BundleInstanceAuthSetStatusConditionInputFailed,
 }
 
-func (e PackageInstanceAuthSetStatusConditionInput) IsValid() bool {
+func (e BundleInstanceAuthSetStatusConditionInput) IsValid() bool {
 	switch e {
-	case PackageInstanceAuthSetStatusConditionInputSucceeded, PackageInstanceAuthSetStatusConditionInputFailed:
+	case BundleInstanceAuthSetStatusConditionInputSucceeded, BundleInstanceAuthSetStatusConditionInputFailed:
 		return true
 	}
 	return false
 }
 
-func (e PackageInstanceAuthSetStatusConditionInput) String() string {
+func (e BundleInstanceAuthSetStatusConditionInput) String() string {
 	return string(e)
 }
 
-func (e *PackageInstanceAuthSetStatusConditionInput) UnmarshalGQL(v interface{}) error {
+func (e *BundleInstanceAuthSetStatusConditionInput) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = PackageInstanceAuthSetStatusConditionInput(str)
+	*e = BundleInstanceAuthSetStatusConditionInput(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid PackageInstanceAuthSetStatusConditionInput", str)
+		return fmt.Errorf("%s is not a valid BundleInstanceAuthSetStatusConditionInput", str)
 	}
 	return nil
 }
 
-func (e PackageInstanceAuthSetStatusConditionInput) MarshalGQL(w io.Writer) {
+func (e BundleInstanceAuthSetStatusConditionInput) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type PackageInstanceAuthStatusCondition string
+type BundleInstanceAuthStatusCondition string
 
 const (
 	// When creating, before Application sets the credentials
-	PackageInstanceAuthStatusConditionPending   PackageInstanceAuthStatusCondition = "PENDING"
-	PackageInstanceAuthStatusConditionSucceeded PackageInstanceAuthStatusCondition = "SUCCEEDED"
-	PackageInstanceAuthStatusConditionFailed    PackageInstanceAuthStatusCondition = "FAILED"
+	BundleInstanceAuthStatusConditionPending   BundleInstanceAuthStatusCondition = "PENDING"
+	BundleInstanceAuthStatusConditionSucceeded BundleInstanceAuthStatusCondition = "SUCCEEDED"
+	BundleInstanceAuthStatusConditionFailed    BundleInstanceAuthStatusCondition = "FAILED"
 	// When Runtime requests deletion and Application has to revoke the credentials
-	PackageInstanceAuthStatusConditionUnused PackageInstanceAuthStatusCondition = "UNUSED"
+	BundleInstanceAuthStatusConditionUnused BundleInstanceAuthStatusCondition = "UNUSED"
 )
 
-var AllPackageInstanceAuthStatusCondition = []PackageInstanceAuthStatusCondition{
-	PackageInstanceAuthStatusConditionPending,
-	PackageInstanceAuthStatusConditionSucceeded,
-	PackageInstanceAuthStatusConditionFailed,
-	PackageInstanceAuthStatusConditionUnused,
+var AllBundleInstanceAuthStatusCondition = []BundleInstanceAuthStatusCondition{
+	BundleInstanceAuthStatusConditionPending,
+	BundleInstanceAuthStatusConditionSucceeded,
+	BundleInstanceAuthStatusConditionFailed,
+	BundleInstanceAuthStatusConditionUnused,
 }
 
-func (e PackageInstanceAuthStatusCondition) IsValid() bool {
+func (e BundleInstanceAuthStatusCondition) IsValid() bool {
 	switch e {
-	case PackageInstanceAuthStatusConditionPending, PackageInstanceAuthStatusConditionSucceeded, PackageInstanceAuthStatusConditionFailed, PackageInstanceAuthStatusConditionUnused:
+	case BundleInstanceAuthStatusConditionPending, BundleInstanceAuthStatusConditionSucceeded, BundleInstanceAuthStatusConditionFailed, BundleInstanceAuthStatusConditionUnused:
 		return true
 	}
 	return false
 }
 
-func (e PackageInstanceAuthStatusCondition) String() string {
+func (e BundleInstanceAuthStatusCondition) String() string {
 	return string(e)
 }
 
-func (e *PackageInstanceAuthStatusCondition) UnmarshalGQL(v interface{}) error {
+func (e *BundleInstanceAuthStatusCondition) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = PackageInstanceAuthStatusCondition(str)
+	*e = BundleInstanceAuthStatusCondition(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid PackageInstanceAuthStatusCondition", str)
+		return fmt.Errorf("%s is not a valid BundleInstanceAuthStatusCondition", str)
 	}
 	return nil
 }
 
-func (e PackageInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
+func (e BundleInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

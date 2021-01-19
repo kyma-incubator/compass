@@ -298,7 +298,7 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 	require.NotNil(t, convertedInputModel)
 	require.NotNil(t, convertedInputModel.Spec)
 	require.Nil(t, convertedInputModel.Spec.Data)
-	convertedAPIDef := convertedInputModel.ToAPIDefinitionWithinPackage("id", "app_id", tenantID)
+	convertedAPIDef := convertedInputModel.ToAPIDefinitionWithinBundle("id", "app_id", tenantID)
 	require.NotNil(t, convertedAPIDef)
 	convertedGraphqlAPIDef := converter.ToGraphQL(convertedAPIDef)
 	require.NotNil(t, convertedGraphqlAPIDef)
@@ -319,14 +319,14 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		apiModel := fixAPIDefinitionModel("id", "pkg_id", "name", "target_url")
+		apiModel := fixAPIDefinitionModel("id", "bndl_id", "name", "target_url")
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, versionConv)
 		//WHEN
 		entity := conv.ToEntity(*apiModel)
 		//THEN
-		assert.Equal(t, fixEntityAPIDefinition("id", "pkg_id", "name", "target_url"), entity)
+		assert.Equal(t, fixEntityAPIDefinition("id", "bndl_id", "name", "target_url"), entity)
 	})
 }
 
@@ -343,13 +343,13 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
-		entity := fixEntityAPIDefinition("id", "pkg_id", "name", "target_url")
+		entity := fixEntityAPIDefinition("id", "bndl_id", "name", "target_url")
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, versionConv)
 		//WHEN
 		apiModel := conv.FromEntity(entity)
 		//THEN
-		expectedModel := fixAPIDefinitionModel("id", "pkg_id", "name", "target_url")
+		expectedModel := fixAPIDefinitionModel("id", "bndl_id", "name", "target_url")
 		require.NotNil(t, expectedModel)
 		assert.Equal(t, *expectedModel, apiModel)
 	})

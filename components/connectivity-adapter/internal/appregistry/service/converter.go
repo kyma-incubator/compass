@@ -21,8 +21,8 @@ func NewConverter() *converter {
 const oDataSpecFormat = "%s/$metadata"
 const oDataSpecType = "odata"
 
-func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails) (graphql.PackageCreateInput, error) {
-	out := graphql.PackageCreateInput{}
+func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails) (graphql.BundleCreateInput, error) {
+	out := graphql.BundleCreateInput{}
 	out.Name = deprecated.Name
 	if deprecated.Description != "" {
 		out.Description = &deprecated.Description
@@ -92,7 +92,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 		if deprecated.Api.Headers != nil {
 			h, err := graphql.NewHttpHeadersSerialized(*deprecated.Api.Headers)
 			if err != nil {
-				return graphql.PackageCreateInput{}, err
+				return graphql.BundleCreateInput{}, err
 			}
 
 			defaultInstanceAuth.AdditionalHeadersSerialized = &h
@@ -102,7 +102,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 		if deprecated.Api.QueryParameters != nil {
 			q, err := graphql.NewQueryParamsSerialized(*deprecated.Api.QueryParameters)
 			if err != nil {
-				return graphql.PackageCreateInput{}, err
+				return graphql.BundleCreateInput{}, err
 			}
 
 			defaultInstanceAuth.AdditionalQueryParamsSerialized = &q
@@ -113,7 +113,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 			if deprecated.Api.RequestParameters.Headers != nil {
 				h, err := graphql.NewHttpHeadersSerialized(*deprecated.Api.RequestParameters.Headers)
 				if err != nil {
-					return graphql.PackageCreateInput{}, err
+					return graphql.BundleCreateInput{}, err
 				}
 
 				defaultInstanceAuth.AdditionalHeadersSerialized = &h
@@ -121,7 +121,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 			if deprecated.Api.RequestParameters.QueryParameters != nil {
 				q, err := graphql.NewQueryParamsSerialized(*deprecated.Api.RequestParameters.QueryParameters)
 				if err != nil {
-					return graphql.PackageCreateInput{}, err
+					return graphql.BundleCreateInput{}, err
 				}
 
 				defaultInstanceAuth.AdditionalQueryParamsSerialized = &q
@@ -203,7 +203,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 				if deprecated.Api.SpecificationRequestParameters.Headers != nil {
 					h, err := graphql.NewHttpHeadersSerialized(*deprecated.Api.SpecificationRequestParameters.Headers)
 					if err != nil {
-						return graphql.PackageCreateInput{}, err
+						return graphql.BundleCreateInput{}, err
 					}
 
 					apiDef.Spec.FetchRequest.Auth.AdditionalHeadersSerialized = &h
@@ -211,7 +211,7 @@ func (c *converter) DetailsToGraphQLCreateInput(deprecated model.ServiceDetails)
 				if deprecated.Api.SpecificationRequestParameters.QueryParameters != nil {
 					q, err := graphql.NewQueryParamsSerialized(*deprecated.Api.SpecificationRequestParameters.QueryParameters)
 					if err != nil {
-						return graphql.PackageCreateInput{}, err
+						return graphql.BundleCreateInput{}, err
 					}
 
 					apiDef.Spec.FetchRequest.Auth.AdditionalQueryParamsSerialized = &q
@@ -322,7 +322,7 @@ func toNewSpecType(apiType string) graphql.APISpecType {
 	}
 }
 
-func (c *converter) GraphQLToServiceDetails(in graphql.PackageExt, legacyServiceReference LegacyServiceReference) (model.ServiceDetails, error) {
+func (c *converter) GraphQLToServiceDetails(in graphql.BundleExt, legacyServiceReference LegacyServiceReference) (model.ServiceDetails, error) {
 	var desc string
 	if in.Description != nil {
 		desc = *in.Description
@@ -490,8 +490,8 @@ func (c *converter) GraphQLToServiceDetails(in graphql.PackageExt, legacyService
 	return outDeprecated, nil
 }
 
-func (c *converter) GraphQLCreateInputToUpdateInput(in graphql.PackageCreateInput) graphql.PackageUpdateInput {
-	return graphql.PackageUpdateInput{
+func (c *converter) GraphQLCreateInputToUpdateInput(in graphql.BundleCreateInput) graphql.BundleUpdateInput {
+	return graphql.BundleUpdateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: in.InstanceAuthRequestInputSchema,

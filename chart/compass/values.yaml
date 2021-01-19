@@ -32,7 +32,7 @@ global:
       version: "PR-1674"
     ord_service:
       dir:
-      version: "PR-2"
+      version: "PR-4"
     healthchecker:
       dir:
       version: "PR-1674"
@@ -65,7 +65,7 @@ global:
         version: "PR-1674"
       ord_service:
         dir:
-        version: "PR-1689"
+        version: "PR-1691"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -262,6 +262,7 @@ global:
     host: compass-ord-service.compass-system.svc.cluster.local
     prefix: /open-resource-discovery
     port: 3000
+    defaultResponseType: "xml"
 
   tenantFetchers:
     job1:

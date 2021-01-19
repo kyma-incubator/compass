@@ -90,18 +90,18 @@ type RuntimeService interface {
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 }
 
-//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
-type PackageService interface {
-	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Package, error)
-	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.PackagePage, error)
-	CreateMultiple(ctx context.Context, applicationID string, in []*model.PackageCreateInput) error
+//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+type BundleService interface {
+	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
+	ListByApplicationID(ctx context.Context, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
+	CreateMultiple(ctx context.Context, applicationID string, in []*model.BundleCreateInput) error
 }
 
-//go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
-type PackageConverter interface {
-	ToGraphQL(in *model.Package) (*graphql.Package, error)
-	MultipleToGraphQL(in []*model.Package) ([]*graphql.Package, error)
-	MultipleCreateInputFromGraphQL(in []*graphql.PackageCreateInput) ([]*model.PackageCreateInput, error)
+//go:generate mockery -name=BundleConverter -output=automock -outpkg=automock -case=underscore
+type BundleConverter interface {
+	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
+	MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error)
+	MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)
 }
 
 type Resolver struct {
@@ -113,12 +113,12 @@ type Resolver struct {
 	webhookSvc WebhookService
 	oAuth20Svc OAuth20Service
 	sysAuthSvc SystemAuthService
-	pkgSvc     PackageService
+	bndlSvc    BundleService
 
 	webhookConverter WebhookConverter
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
-	pkgConv          PackageConverter
+	bndlConv         BundleConverter
 }
 
 func NewResolver(transact persistence.Transactioner,
@@ -130,8 +130,8 @@ func NewResolver(transact persistence.Transactioner,
 	webhookConverter WebhookConverter,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
-	pkgSvc PackageService,
-	pkgConverter PackageConverter) *Resolver {
+	bndlSvc BundleService,
+	bndlConverter BundleConverter) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		appSvc:           svc,
@@ -142,8 +142,8 @@ func NewResolver(transact persistence.Transactioner,
 		webhookConverter: webhookConverter,
 		sysAuthConv:      sysAuthConv,
 		eventingSvc:      eventingSvc,
-		pkgSvc:           pkgSvc,
-		pkgConv:          pkgConverter,
+		bndlSvc:          bndlSvc,
+		bndlConv:         bndlConverter,
 	}
 }
 
@@ -572,7 +572,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	return eventing.ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
-func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.PackagePage, error) {
+func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
@@ -594,7 +594,7 @@ func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first
 		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
-	pkgsPage, err := r.pkgSvc.ListByApplicationID(ctx, obj.ID, *first, cursor)
+	bndlsPage, err := r.bndlSvc.ListByApplicationID(ctx, obj.ID, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -604,23 +604,23 @@ func (r *Resolver) Packages(ctx context.Context, obj *graphql.Application, first
 		return nil, err
 	}
 
-	gqlPkgs, err := r.pkgConv.MultipleToGraphQL(pkgsPage.Data)
+	gqlPkgs, err := r.bndlConv.MultipleToGraphQL(bndlsPage.Data)
 	if err != nil {
 		return nil, err
 	}
 
-	return &graphql.PackagePage{
+	return &graphql.BundlePage{
 		Data:       gqlPkgs,
-		TotalCount: pkgsPage.TotalCount,
+		TotalCount: bndlsPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(pkgsPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(pkgsPage.PageInfo.EndCursor),
-			HasNextPage: pkgsPage.PageInfo.HasNextPage,
+			StartCursor: graphql.PageCursor(bndlsPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(bndlsPage.PageInfo.EndCursor),
+			HasNextPage: bndlsPage.PageInfo.HasNextPage,
 		},
 	}, nil
 }
 
-func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id string) (*graphql.Package, error) {
+func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id string) (*graphql.Bundle, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
@@ -633,7 +633,7 @@ func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id str
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	pkg, err := r.pkgSvc.GetForApplication(ctx, id, obj.ID)
+	bndl, err := r.bndlSvc.GetForApplication(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -646,5 +646,5 @@ func (r *Resolver) Package(ctx context.Context, obj *graphql.Application, id str
 		return nil, err
 	}
 
-	return r.pkgConv.ToGraphQL(pkg)
+	return r.bndlConv.ToGraphQL(bndl)
 }

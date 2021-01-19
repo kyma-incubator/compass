@@ -17,7 +17,7 @@ import (
 
 //go:generate mockery -name=EventDefService -output=automock -outpkg=automock -case=underscore
 type EventDefService interface {
-	CreateInPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error)
+	CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.EventDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -44,8 +44,8 @@ type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
-type PackageService interface {
+//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+type BundleService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
@@ -53,30 +53,30 @@ type Resolver struct {
 	transact    persistence.Transactioner
 	svc         EventDefService
 	appSvc      ApplicationService
-	pkgSvc      PackageService
+	bndlSvc     BundleService
 	converter   EventDefConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc ApplicationService, pkgSvc PackageService, converter EventDefConverter, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc ApplicationService, bndlSvc BundleService, converter EventDefConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
 		appSvc:      appSvc,
-		pkgSvc:      pkgSvc,
+		bndlSvc:     bndlSvc,
 		converter:   converter,
 		frConverter: frConverter,
 	}
 }
 
-func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.C(ctx).Infof("Adding EventDefinition to package with id %s", packageID)
+	log.C(ctx).Infof("Adding EventDefinition to bundle with id %s", bundleID)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -85,18 +85,18 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 		return nil, errors.Wrap(err, "while converting GraphQL input to EventDefinition")
 	}
 
-	found, err := r.pkgSvc.Exist(ctx, packageID)
+	found, err := r.bndlSvc.Exist(ctx, bundleID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while checking existence of Package with id %s when adding EventDefinition", packageID)
+		return nil, errors.Wrapf(err, "while checking existence of Bundle with id %s when adding EventDefinition", bundleID)
 	}
 
 	if !found {
-		return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Package")
+		return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Bundle")
 	}
 
-	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
+	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating EventDefinition in Package with id %s", packageID)
+		return nil, errors.Wrapf(err, "while creating EventDefinition in Bundle with id %s", bundleID)
 	}
 
 	api, err := r.svc.Get(ctx, id)
@@ -111,7 +111,7 @@ func (r *Resolver) AddEventDefinitionToPackage(ctx context.Context, packageID st
 
 	gqlAPI := r.converter.ToGraphQL(api)
 
-	log.C(ctx).Infof("EventDefinition with id %s successfully added to package with id %s", id, packageID)
+	log.C(ctx).Infof("EventDefinition with id %s successfully added to bundle with id %s", id, bundleID)
 	return gqlAPI, nil
 }
 

@@ -46,14 +46,14 @@ func TestCompassAuth(t *testing.T) {
 	appByIntSys := registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NotEmpty(t, appByIntSys.ID)
 
-	t.Log("Add Package with API Spec to Application")
+	t.Log("Add Bundle with API Spec to Application")
 	apiInput := graphql.APIDefinitionInput{
 		Name:      "new-api-name",
 		TargetURL: "https://kyma-project.io",
 	}
-	pkg := createPackage(t, ctx, oauthGraphQLClient, appByIntSys.ID, testConfig.DefaultTenant, "pkg")
-	defer deletePackage(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, pkg.ID)
-	addAPIToPackageWithInput(t, ctx, oauthGraphQLClient, pkg.ID, testConfig.DefaultTenant, apiInput)
+	bndl := createBundle(t, ctx, oauthGraphQLClient, appByIntSys.ID, testConfig.DefaultTenant, "bndl")
+	defer deleteBundle(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, bndl.ID)
+	addAPIToBundleWithInput(t, ctx, oauthGraphQLClient, bndl.ID, testConfig.DefaultTenant, apiInput)
 
 	t.Log("Try removing Integration System")
 	unregisterIntegrationSystemWithErr(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)

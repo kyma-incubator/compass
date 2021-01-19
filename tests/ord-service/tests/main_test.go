@@ -27,9 +27,10 @@ import (
 )
 
 type config struct {
-	DefaultTenant string
-	DirectorURL   string
-	ORDServiceURL string
+	DefaultTenant                 string
+	DirectorURL                   string
+	ORDServiceURL                 string
+	ORDServiceDefaultResponseType string
 }
 
 var testConfig config

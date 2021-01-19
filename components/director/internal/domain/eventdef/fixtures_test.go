@@ -18,18 +18,18 @@ const (
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	bundleID         = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 )
 
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{ID: id, Tenant: tenantID, PackageID: packageID, Name: placeholder}
+	return &model.EventDefinition{ID: id, Tenant: tenantID, BundleID: bundleID, Name: placeholder}
 }
 
 func fixGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
-		ID:        id,
-		PackageID: packageID,
-		Name:      placeholder,
+		ID:       id,
+		BundleID: bundleID,
+		Name:     placeholder,
 	}
 }
 
@@ -44,7 +44,7 @@ func fixFullModelEventDefinition(id, placeholder string) model.EventDefinition {
 	return model.EventDefinition{
 		ID:          id,
 		Tenant:      tenantID,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Group:       str.Ptr("group_" + placeholder),
@@ -76,7 +76,7 @@ func fixDetailedGQLEventDefinition(id, placeholder string) *graphql.EventDefinit
 
 	return &graphql.EventDefinition{
 		ID:          id,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
@@ -148,7 +148,7 @@ func fixFullEventDef(id, placeholder string) eventdef.Entity {
 	v := fixVersionEntity()
 	return eventdef.Entity{
 		ID:          id,
-		PkgID:       packageID,
+		PkgID:       bundleID,
 		TenantID:    tenantID,
 		Name:        placeholder,
 		GroupName:   repo.NewValidNullableString("group_" + placeholder),
@@ -164,7 +164,7 @@ func fixFullEventDef(id, placeholder string) eventdef.Entity {
 
 func fixMinEntityEventDef(id, placeholder string) eventdef.Entity {
 	return eventdef.Entity{ID: id, TenantID: tenantID,
-		PkgID: packageID, Name: placeholder}
+		PkgID: bundleID, Name: placeholder}
 }
 
 func fixVersionModel() model.Version {
@@ -188,18 +188,18 @@ func fixVersionEntity() version.Version {
 }
 
 func fixEventDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "package_id", "name", "description", "group_name", "spec_data",
+	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated",
 		"version_deprecated_since", "version_for_removal"}
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		"data", "JSON", "ASYNC_API", "v1.1", false, "v1.0", false}
 }
 
 func fixEventCreateArgs(id string, api model.EventDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, packageID, api.Name, api.Description, api.Group,
+	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
 		api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type), api.Version.Value, api.Version.Deprecated,
 		api.Version.DeprecatedSince, api.Version.ForRemoval}
 }

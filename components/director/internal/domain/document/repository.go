@@ -18,7 +18,7 @@ import (
 const documentTable = "public.documents"
 
 var (
-	documentColumns = []string{"id", "tenant_id", "package_id", "title", "display_name", "description", "format", "kind", "data"}
+	documentColumns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data"}
 	tenantColumn    = "tenant_id"
 )
 
@@ -68,12 +68,12 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Doc
 	return &docModel, nil
 }
 
-func (r *repository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.Document, error) {
+func (r *repository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error) {
 	var ent Entity
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("id", id),
-		repo.NewEqualCondition("package_id", packageID),
+		repo.NewEqualCondition("bundle_id", bundleID),
 	}
 	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
@@ -119,9 +119,9 @@ func (r *repository) Delete(ctx context.Context, tenant, id string) error {
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-func (r *repository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+func (r *repository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error) {
 	conditions := repo.Conditions{
-		repo.NewEqualCondition("package_id", packageID),
+		repo.NewEqualCondition("bundle_id", bundleID),
 	}
 	return r.list(ctx, tenantID, pageSize, cursor, conditions)
 }

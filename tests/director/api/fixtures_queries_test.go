@@ -338,12 +338,12 @@ func setDefaultEventingForApplication(t *testing.T, ctx context.Context, appID s
 	require.NoError(t, err)
 }
 
-func createPackage(t *testing.T, ctx context.Context, appID, pkgName string) graphql.PackageExt {
-	in, err := tc.graphqlizer.PackageCreateInputToGQL(fixPackageCreateInput(pkgName))
+func createBundle(t *testing.T, ctx context.Context, appID, bndlName string) graphql.BundleExt {
+	in, err := tc.graphqlizer.BundleCreateInputToGQL(fixBundleCreateInput(bndlName))
 	require.NoError(t, err)
 
-	req := fixAddPackageRequest(appID, in)
-	var resp graphql.PackageExt
+	req := fixAddBundleRequest(appID, in)
+	var resp graphql.BundleExt
 
 	err = tc.RunOperation(ctx, req, &resp)
 	require.NoError(t, err)
@@ -351,12 +351,12 @@ func createPackage(t *testing.T, ctx context.Context, appID, pkgName string) gra
 	return resp
 }
 
-func createPackageWithInput(t *testing.T, ctx context.Context, appID string, input graphql.PackageCreateInput) graphql.PackageExt {
-	in, err := tc.graphqlizer.PackageCreateInputToGQL(input)
+func createBundleWithInput(t *testing.T, ctx context.Context, appID string, input graphql.BundleCreateInput) graphql.BundleExt {
+	in, err := tc.graphqlizer.BundleCreateInputToGQL(input)
 	require.NoError(t, err)
 
-	req := fixAddPackageRequest(appID, in)
-	var resp graphql.PackageExt
+	req := fixAddBundleRequest(appID, in)
+	var resp graphql.BundleExt
 
 	err = tc.RunOperation(ctx, req, &resp)
 	require.NoError(t, err)
@@ -364,76 +364,76 @@ func createPackageWithInput(t *testing.T, ctx context.Context, appID string, inp
 	return resp
 }
 
-func getPackage(t *testing.T, ctx context.Context, appID, pkgID string) graphql.PackageExt {
-	req := fixPackageRequest(appID, pkgID)
-	pkg := graphql.ApplicationExt{}
-	require.NoError(t, tc.RunOperation(ctx, req, &pkg))
-	return pkg.Package
+func getBundle(t *testing.T, ctx context.Context, appID, bndlID string) graphql.BundleExt {
+	req := fixBundleRequest(appID, bndlID)
+	bndl := graphql.ApplicationExt{}
+	require.NoError(t, tc.RunOperation(ctx, req, &bndl))
+	return bndl.Bundle
 }
 
-func deletePackage(t *testing.T, ctx context.Context, id string) {
-	req := fixDeletePackageRequest(id)
+func deleteBundle(t *testing.T, ctx context.Context, id string) {
+	req := fixDeleteBundleRequest(id)
 
 	require.NoError(t, tc.RunOperation(ctx, req, nil))
 }
 
-func addAPIToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.APIDefinitionInput) graphql.APIDefinitionExt {
+func addAPIToBundleWithInput(t *testing.T, ctx context.Context, bndlID string, input graphql.APIDefinitionInput) graphql.APIDefinitionExt {
 	inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
 	actualApi := graphql.APIDefinitionExt{}
-	req := fixAddAPIToPackageRequest(pkgID, inStr)
+	req := fixAddAPIToBundleRequest(bndlID, inStr)
 	err = tc.RunOperation(ctx, req, &actualApi)
 	require.NoError(t, err)
 	return actualApi
 }
 
-func addAPIToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.APIDefinitionExt {
-	return addAPIToPackageWithInput(t, ctx, pkgID, fixAPIDefinitionInput())
+func addAPIToBundle(t *testing.T, ctx context.Context, bndlID string) graphql.APIDefinitionExt {
+	return addAPIToBundleWithInput(t, ctx, bndlID, fixAPIDefinitionInput())
 }
 
-func addEventToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.EventDefinitionInput) graphql.EventDefinition {
+func addEventToBundleWithInput(t *testing.T, ctx context.Context, bndlID string, input graphql.EventDefinitionInput) graphql.EventDefinition {
 	inStr, err := tc.graphqlizer.EventDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
 	event := graphql.EventDefinition{}
-	req := fixAddEventAPIToPackageRequest(pkgID, inStr)
+	req := fixAddEventAPIToBundleRequest(bndlID, inStr)
 	err = tc.RunOperation(ctx, req, &event)
 	require.NoError(t, err)
 	return event
 }
 
-func addEventToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.EventDefinition {
-	return addEventToPackageWithInput(t, ctx, pkgID, fixEventAPIDefinitionInput())
+func addEventToBundle(t *testing.T, ctx context.Context, bndlID string) graphql.EventDefinition {
+	return addEventToBundleWithInput(t, ctx, bndlID, fixEventAPIDefinitionInput())
 }
 
-func addDocumentToPackageWithInput(t *testing.T, ctx context.Context, pkgID string, input graphql.DocumentInput) graphql.DocumentExt {
+func addDocumentToBundleWithInput(t *testing.T, ctx context.Context, bndlID string, input graphql.DocumentInput) graphql.DocumentExt {
 	inStr, err := tc.graphqlizer.DocumentInputToGQL(&input)
 	require.NoError(t, err)
 
 	actualDoc := graphql.DocumentExt{}
-	req := fixAddDocumentToPackageRequest(pkgID, inStr)
+	req := fixAddDocumentToBundleRequest(bndlID, inStr)
 	err = tc.RunOperation(ctx, req, &actualDoc)
 	require.NoError(t, err)
 	return actualDoc
 }
 
-func addDocumentToPackage(t *testing.T, ctx context.Context, pkgID string) graphql.DocumentExt {
-	return addDocumentToPackageWithInput(t, ctx, pkgID, fixDocumentInput(t))
+func addDocumentToBundle(t *testing.T, ctx context.Context, bndlID string) graphql.DocumentExt {
+	return addDocumentToBundleWithInput(t, ctx, bndlID, fixDocumentInput(t))
 }
 
-func createPackageInstanceAuth(t *testing.T, ctx context.Context, pkgID string) graphql.PackageInstanceAuth {
-	authCtx, inputParams := fixPackageInstanceAuthContextAndInputParams(t)
-	in, err := tc.graphqlizer.PackageInstanceAuthRequestInputToGQL(fixPackageInstanceAuthRequestInput(authCtx, inputParams))
+func createBundleInstanceAuth(t *testing.T, ctx context.Context, bndlID string) graphql.BundleInstanceAuth {
+	authCtx, inputParams := fixBundleInstanceAuthContextAndInputParams(t)
+	in, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(fixBundleInstanceAuthRequestInput(authCtx, inputParams))
 	require.NoError(t, err)
 
 	req := gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: requestPackageInstanceAuthCreation(packageID: "%s", in: %s) {
+			result: requestBundleInstanceAuthCreation(bundleID: "%s", in: %s) {
 				id
-			}}`, pkgID, in))
+			}}`, bndlID, in))
 
-	var resp graphql.PackageInstanceAuth
+	var resp graphql.BundleInstanceAuth
 
 	err = tc.RunOperation(ctx, req, &resp)
 	require.NoError(t, err)
@@ -441,7 +441,7 @@ func createPackageInstanceAuth(t *testing.T, ctx context.Context, pkgID string) 
 	return resp
 }
 
-func fixPackageInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *graphql.JSON) {
+func fixBundleInstanceAuthContextAndInputParams(t *testing.T) (*graphql.JSON, *graphql.JSON) {
 	authCtxPayload := map[string]interface{}{
 		"ContextData": "ContextValue",
 	}

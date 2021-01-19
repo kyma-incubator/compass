@@ -14,11 +14,11 @@ import (
 	"github.com/vrischmann/envconfig"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -165,7 +165,7 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultPackageRepo(), defaultPackageInstanceAuthRepo()).HasScenario,
+			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultBundleRepo(), defaultBundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},
@@ -391,13 +391,13 @@ func createServer(ctx context.Context, address string, handler http.Handler, nam
 	return runFn, shutdownFn
 }
 
-func defaultPackageInstanceAuthRepo() packageinstanceauth.Repository {
+func defaultBundleInstanceAuthRepo() bundleinstanceauth.Repository {
 	authConverter := auth.NewConverter()
 
-	return packageinstanceauth.NewRepository(packageinstanceauth.NewConverter(authConverter))
+	return bundleinstanceauth.NewRepository(bundleinstanceauth.NewConverter(authConverter))
 }
 
-func defaultPackageRepo() mp_package.PackageRepository {
+func defaultBundleRepo() mp_bundle.BundleRepository {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -405,5 +405,5 @@ func defaultPackageRepo() mp_package.PackageRepository {
 	docConverter := document.NewConverter(frConverter)
 	apiConverter := api.NewConverter(frConverter, versionConverter)
 
-	return mp_package.NewRepository(mp_package.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
+	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }
