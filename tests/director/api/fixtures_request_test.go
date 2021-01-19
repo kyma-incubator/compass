@@ -88,13 +88,13 @@ func fixDeleteDocumentRequest(docID string) *gcli.Request {
 			}`, docID))
 }
 
-func fixAddDocumentToPackageRequest(packageID, documentInputInGQL string) *gcli.Request {
+func fixAddDocumentToBundleRequest(bundleID, documentInputInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addDocumentToPackage(packageID: "%s", in: %s) {
+		result: addDocumentToBundle(bundleID: "%s", in: %s) {
  				%s
 			}				
-		}`, packageID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
+		}`, bundleID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
 }
 
 func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
@@ -126,14 +126,14 @@ func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
 		`, appID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
-func fixAddAPIToPackageRequest(pkgID, APIInputGQL string) *gcli.Request {
+func fixAddAPIToBundleRequest(bndlID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addAPIDefinitionToPackage(packageID: "%s", in: %s) {
+		result: addAPIDefinitionToBundle(bundleID: "%s", in: %s) {
 				%s
 			}
 		}
-		`, pkgID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+		`, bndlID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
 func fixUpdateAPIRequest(apiID, APIInputGQL string) *gcli.Request {
@@ -165,14 +165,14 @@ func fixAddEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
 		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
-func fixAddEventAPIToPackageRequest(pkgID, eventAPIInputGQL string) *gcli.Request {
+func fixAddEventAPIToBundleRequest(bndlID, eventAPIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addEventDefinitionToPackage(packageID: "%s", in: %s) {
+		result: addEventDefinitionToBundle(bundleID: "%s", in: %s) {
 				%s
 			}
 		}
-		`, pkgID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
+		`, bndlID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
 func fixUpdateEventAPIRequest(eventAPIID, eventAPIInputGQL string) *gcli.Request {
@@ -623,155 +623,155 @@ func fixSetDefaultEventingForApplication(appID string, runtimeID string) *gcli.R
 			runtimeID, appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
 }
 
-func fixAPIDefinitionInPackageRequest(appID, pkgID, apiID string) *gcli.Request {
+func fixAPIDefinitionInBundleRequest(appID, bndlID, apiID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							apiDefinition(id: "%s"){
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, apiID, tc.gqlFieldsProvider.ForAPIDefinition()))
+			}`, appID, bndlID, apiID, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
-func fixEventDefinitionInPackageRequest(appID, pkgID, eventID string) *gcli.Request {
+func fixEventDefinitionInBundleRequest(appID, bndlID, eventID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							eventDefinition(id: "%s"){
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, eventID, tc.gqlFieldsProvider.ForEventDefinition()))
+			}`, appID, bndlID, eventID, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
-func fixDocumentInPackageRequest(appID, pkgID, docID string) *gcli.Request {
+func fixDocumentInBundleRequest(appID, bndlID, docID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							document(id: "%s"){
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, docID, tc.gqlFieldsProvider.ForDocument()))
+			}`, appID, bndlID, docID, tc.gqlFieldsProvider.ForDocument()))
 }
 
-func fixAPIDefinitionsInPackageRequest(appID, pkgID string) *gcli.Request {
+func fixAPIDefinitionsInBundleRequest(appID, bndlID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							apiDefinitions{
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForAPIDefinition())))
+			}`, appID, bndlID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForAPIDefinition())))
 
 }
 
-func fixEventDefinitionsInPackageRequest(appID, pkgID string) *gcli.Request {
+func fixEventDefinitionsInBundleRequest(appID, bndlID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							eventDefinitions{
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForEventDefinition())))
+			}`, appID, bndlID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForEventDefinition())))
 }
 
-func fixDocumentsInPackageRequest(appID, pkgID string) *gcli.Request {
+func fixDocumentsInBundleRequest(appID, bndlID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							documents{
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForDocument())))
+			}`, appID, bndlID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForDocument())))
 }
 
-func fixAddPackageRequest(appID, pkgCreateInput string) *gcli.Request {
+func fixAddBundleRequest(appID, bndlCreateInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: addPackage(applicationID: "%s", in: %s) {
+			result: addBundle(applicationID: "%s", in: %s) {
 				%s
-			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForPackage()))
+			}}`, appID, bndlCreateInput, tc.gqlFieldsProvider.ForBundle()))
 }
 
-func fixUpdatePackageRequest(packageID, pkgUpdateInput string) *gcli.Request {
+func fixUpdateBundleRequest(bundleID, bndlUpdateInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: updatePackage(id: "%s", in: %s) {
-				%s
-			}
-		}`, packageID, pkgUpdateInput, tc.gqlFieldsProvider.ForPackage()))
-}
-
-func fixDeletePackageRequest(packageID string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: deletePackage(id: "%s") {
+			result: updateBundle(id: "%s", in: %s) {
 				%s
 			}
-		}`, packageID, tc.gqlFieldsProvider.ForPackage()))
+		}`, bundleID, bndlUpdateInput, tc.gqlFieldsProvider.ForBundle()))
 }
 
-func fixSetPackageInstanceAuthRequest(authID, apiAuthInput string) *gcli.Request {
+func fixDeleteBundleRequest(bundleID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: setPackageInstanceAuth(authID: "%s", in: %s) {
+			result: deleteBundle(id: "%s") {
 				%s
 			}
-		}`, authID, apiAuthInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+		}`, bundleID, tc.gqlFieldsProvider.ForBundle()))
 }
 
-func fixDeletePackageInstanceAuthRequest(authID string) *gcli.Request {
+func fixSetBundleInstanceAuthRequest(authID, apiAuthInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: deletePackageInstanceAuth(authID: "%s") {
+			result: setBundleInstanceAuth(authID: "%s", in: %s) {
 				%s
 			}
-		}`, authID, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+		}`, authID, apiAuthInput, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
-func fixRequestPackageInstanceAuthCreationRequest(packageID, pkgInstanceAuthRequestInput string) *gcli.Request {
+func fixDeleteBundleInstanceAuthRequest(authID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: requestPackageInstanceAuthCreation(packageID: "%s", in: %s) {
+			result: deleteBundleInstanceAuth(authID: "%s") {
 				%s
 			}
-		}`, packageID, pkgInstanceAuthRequestInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+		}`, authID, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
-func fixRequestPackageInstanceAuthDeletionRequest(authID string) *gcli.Request {
+func fixRequestBundleInstanceAuthCreationRequest(bundleID, bndlInstanceAuthRequestInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: requestPackageInstanceAuthDeletion(authID: "%s") {
+			result: requestBundleInstanceAuthCreation(bundleID: "%s", in: %s) {
 				%s
 			}
-		}`, authID, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+		}`, bundleID, bndlInstanceAuthRequestInput, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
-func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
+func fixRequestBundleInstanceAuthDeletionRequest(authID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: requestBundleInstanceAuthDeletion(authID: "%s") {
+				%s
+			}
+		}`, authID, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
+}
+
+func fixBundleRequest(applicationID string, bundleID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 				%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
-			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
+			"Application.bundle": fmt.Sprintf(`bundle(id: "%s") {%s}`, bundleID, tc.gqlFieldsProvider.ForBundle()),
 		})))
 }
 
@@ -797,7 +797,7 @@ func fixEventDefinitionRequest(applicationID string, eventDefID string) *gcli.Re
 		})))
 }
 
-func fixPackageWithInstanceAuthRequest(applicationID string, packageID string, instanceAuthID string) *gcli.Request {
+func fixBundleWithInstanceAuthRequest(applicationID string, bundleID string, instanceAuthID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
@@ -805,17 +805,17 @@ func fixPackageWithInstanceAuthRequest(applicationID string, packageID string, i
 				}
 			}`, applicationID,
 			tc.gqlFieldsProvider.ForApplication(
-				graphqlizer.FieldCtx{"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`,
-					packageID,
-					tc.gqlFieldsProvider.ForPackage(graphqlizer.FieldCtx{
-						"Package.instanceAuth": fmt.Sprintf(`instanceAuth(id: "%s") {%s}`,
+				graphqlizer.FieldCtx{"Application.bundle": fmt.Sprintf(`bundle(id: "%s") {%s}`,
+					bundleID,
+					tc.gqlFieldsProvider.ForBundle(graphqlizer.FieldCtx{
+						"Bundle.instanceAuth": fmt.Sprintf(`instanceAuth(id: "%s") {%s}`,
 							instanceAuthID,
-							tc.gqlFieldsProvider.ForPackageInstanceAuth()),
+							tc.gqlFieldsProvider.ForBundleInstanceAuth()),
 					})),
 				})))
 }
 
-func fixPackagesRequest(applicationID string) *gcli.Request {
+func fixBundlesRequest(applicationID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {

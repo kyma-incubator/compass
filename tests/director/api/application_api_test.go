@@ -203,10 +203,10 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
-func TestRegisterApplicationWithPackages(t *testing.T) {
+func TestRegisterApplicationWithBundles(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := fixApplicationRegisterInputWithPackages(t)
+	in := fixApplicationRegisterInputWithBundles(t)
 	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
@@ -216,7 +216,7 @@ func TestRegisterApplicationWithPackages(t *testing.T) {
 	err = tc.RunOperation(ctx, request, &actualApp)
 
 	//THEN
-	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with packages")
+	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with bundles")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	defer unregisterApplication(t, actualApp.ID)

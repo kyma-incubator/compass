@@ -14,20 +14,20 @@ type APIService struct {
 	mock.Mock
 }
 
-// CreateInPackage provides a mock function with given fields: ctx, packageID, in
-func (_m *APIService) CreateInPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error) {
-	ret := _m.Called(ctx, packageID, in)
+// CreateInBundle provides a mock function with given fields: ctx, bundleID, in
+func (_m *APIService) CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput) (string, error) {
+	ret := _m.Called(ctx, bundleID, in)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput) string); ok {
-		r0 = rf(ctx, packageID, in)
+		r0 = rf(ctx, bundleID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.APIDefinitionInput) error); ok {
-		r1 = rf(ctx, packageID, in)
+		r1 = rf(ctx, bundleID, in)
 	} else {
 		r1 = ret.Error(1)
 	}

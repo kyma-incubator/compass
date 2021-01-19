@@ -20,12 +20,12 @@ import (
 
 var testErr = errors.New("Test error")
 
-func TestDirectorClient_CreatePackage(t *testing.T) {
+func TestDirectorClient_CreateBundle(t *testing.T) {
 	appID := "foo"
-	in := graphql.PackageCreateInput{
+	in := graphql.BundleCreateInput{
 		Name: "bar",
 	}
-	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addPackage(applicationID: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}}")
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addBundle(applicationID: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}}")
 
 	tests := []struct {
 		Name           string
@@ -44,18 +44,18 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
-					res, ok := arg.(*director.CreatePackageResult)
+					res, ok := arg.(*director.CreateBundleResult)
 					if !ok {
 						return
 					}
 
-					res.Result = graphql.PackageExt{Package: graphql.Package{ID: "resID"}}
+					res.Result = graphql.BundleExt{Bundle: graphql.Bundle{ID: "resID"}}
 				}).Return(nil).Once()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
 				am := &automock.GraphQLizer{}
-				am.On("PackageCreateInputToGQL", in).Return("input", nil).Once()
+				am.On("BundleCreateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
 			ExpectedResult: str.Ptr("resID"),
@@ -75,18 +75,18 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
-					res, ok := arg.(*director.CreatePackageResult)
+					res, ok := arg.(*director.CreateBundleResult)
 					if !ok {
 						return
 					}
 
-					res.Result = graphql.PackageExt{Package: graphql.Package{ID: "resID"}}
+					res.Result = graphql.BundleExt{Bundle: graphql.Bundle{ID: "resID"}}
 				}).Return(nil).Once()
 				return am
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
 				am := &automock.GraphQLizer{}
-				am.On("PackageCreateInputToGQL", in).Return("input", nil).Once()
+				am.On("BundleCreateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
 			ExpectedResult: str.Ptr("resID"),
@@ -99,7 +99,7 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
 				am := &automock.GraphQLizer{}
-				am.On("PackageCreateInputToGQL", in).Return("", testErr).Once()
+				am.On("BundleCreateInputToGQL", in).Return("", testErr).Once()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -117,7 +117,7 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
 				am := &automock.GraphQLizer{}
-				am.On("PackageCreateInputToGQL", in).Return("input", nil).Once()
+				am.On("BundleCreateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -130,7 +130,7 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, nil)
 
-			result, err := dirCli.CreatePackage(context.TODO(), appID, in)
+			result, err := dirCli.CreateBundle(context.TODO(), appID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -144,12 +144,12 @@ func TestDirectorClient_CreatePackage(t *testing.T) {
 	}
 }
 
-func TestDirectorClient_UpdatePackage(t *testing.T) {
-	packageID := "foo"
-	in := graphql.PackageUpdateInput{
+func TestDirectorClient_UpdateBundle(t *testing.T) {
+	bundleID := "foo"
+	in := graphql.BundleUpdateInput{
 		Name: "bar",
 	}
-	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: updatePackage(id: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}\n\t\t}")
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: updateBundle(id: \"foo\", in: input) {\n\t\t\t\tid\n\t\t\t}\n\t\t}")
 
 	tests := []struct {
 		Name          string
@@ -170,7 +170,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
 				am := &automock.GraphQLizer{}
-				am.On("PackageUpdateInputToGQL", in).Return("input", nil).Once()
+				am.On("BundleUpdateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
 			ExpectedErr: nil,
@@ -193,7 +193,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
 				am := &automock.GraphQLizer{}
-				am.On("PackageUpdateInputToGQL", in).Return("input", nil).Once()
+				am.On("BundleUpdateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
 			ExpectedErr: nil,
@@ -206,7 +206,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
 				am := &automock.GraphQLizer{}
-				am.On("PackageUpdateInputToGQL", in).Return("", testErr).Once()
+				am.On("BundleUpdateInputToGQL", in).Return("", testErr).Once()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -224,7 +224,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 			},
 			GraphqlizerFn: func() *automock.GraphQLizer {
 				am := &automock.GraphQLizer{}
-				am.On("PackageUpdateInputToGQL", in).Return("input", nil).Once()
+				am.On("BundleUpdateInputToGQL", in).Return("input", nil).Once()
 				return am
 			},
 			ExpectedErr: testErr,
@@ -237,7 +237,7 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, nil)
 
-			err := dirCli.UpdatePackage(context.TODO(), packageID, in)
+			err := dirCli.UpdateBundle(context.TODO(), bundleID, in)
 
 			if tC.ExpectedErr != nil {
 				require.Error(t, err)
@@ -251,16 +251,16 @@ func TestDirectorClient_UpdatePackage(t *testing.T) {
 	}
 }
 
-func TestDirectorClient_GetPackage(t *testing.T) {
+func TestDirectorClient_GetBundle(t *testing.T) {
 	appID := "foo"
-	packageID := "foo"
-	successResult := graphql.PackageExt{Package: graphql.Package{ID: "1"}}
+	bundleID := "foo"
+	successResult := graphql.BundleExt{Bundle: graphql.Bundle{ID: "1"}}
 	gqlRequest := gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
 		GQLClientFn    func() *gcliautomock.GraphQLClient
-		ExpectedResult *graphql.PackageExt
+		ExpectedResult *graphql.BundleExt
 		ExpectedErr    error
 	}{
 		{
@@ -273,12 +273,12 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
-					res, ok := arg.(*director.GetPackageResult)
+					res, ok := arg.(*director.GetBundleResult)
 					if !ok {
 						return
 					}
 
-					res.Result = graphql.ApplicationExt{Package: successResult}
+					res.Result = graphql.ApplicationExt{Bundle: successResult}
 				}).Return(nil).Once()
 				return am
 			},
@@ -299,12 +299,12 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
-					res, ok := arg.(*director.GetPackageResult)
+					res, ok := arg.(*director.GetBundleResult)
 					if !ok {
 						return
 					}
 
-					res.Result = graphql.ApplicationExt{Package: successResult}
+					res.Result = graphql.ApplicationExt{Bundle: successResult}
 				}).Return(nil).Once()
 				return am
 			},
@@ -329,12 +329,12 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 			gqlCli := tC.GQLClientFn()
 
 			gqlFieldsProvider := &automock.GqlFieldsProvider{}
-			gqlFieldsProvider.On("ForApplication", graphqlizer.FieldCtx{"Application.package": "package(id: \"foo\") {pkg-fields}"}).Return("fields").Maybe()
-			gqlFieldsProvider.On("ForPackage").Return("pkg-fields").Maybe()
+			gqlFieldsProvider.On("ForApplication", graphqlizer.FieldCtx{"Application.bundle": "bundle(id: \"foo\") {bndl-fields}"}).Return("fields").Maybe()
+			gqlFieldsProvider.On("ForBundle").Return("bndl-fields").Maybe()
 
 			dirCli := director.NewClient(gqlCli, nil, gqlFieldsProvider)
 
-			result, err := dirCli.GetPackage(context.TODO(), appID, packageID)
+			result, err := dirCli.GetBundle(context.TODO(), appID, bundleID)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -348,15 +348,15 @@ func TestDirectorClient_GetPackage(t *testing.T) {
 	}
 }
 
-func TestDirectorClient_ListPackages(t *testing.T) {
+func TestDirectorClient_ListBundles(t *testing.T) {
 	appID := "foo"
-	successResult := []*graphql.PackageExt{{Package: graphql.Package{ID: "1"}}, {Package: graphql.Package{ID: "2"}}}
+	successResult := []*graphql.BundleExt{{Bundle: graphql.Bundle{ID: "1"}}, {Bundle: graphql.Bundle{ID: "2"}}}
 	gqlRequest := gcli.NewRequest("query {\n\t\t\tresult: application(id: \"foo\") {\n\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
 		GQLClientFn    func() *gcliautomock.GraphQLClient
-		ExpectedResult []*graphql.PackageExt
+		ExpectedResult []*graphql.BundleExt
 		ExpectedErr    error
 	}{
 		{
@@ -369,12 +369,12 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
-					res, ok := arg.(*director.ListPackagesResult)
+					res, ok := arg.(*director.ListBundlesResult)
 					if !ok {
 						return
 					}
 
-					res.Result = graphql.ApplicationExt{Packages: graphql.PackagePageExt{Data: successResult}}
+					res.Result = graphql.ApplicationExt{Bundles: graphql.BundlePageExt{Data: successResult}}
 				}).Return(nil).Once()
 				return am
 			},
@@ -395,12 +395,12 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 					mock.Anything,
 				).Run(func(args mock.Arguments) {
 					arg := args.Get(2)
-					res, ok := arg.(*director.ListPackagesResult)
+					res, ok := arg.(*director.ListBundlesResult)
 					if !ok {
 						return
 					}
 
-					res.Result = graphql.ApplicationExt{Packages: graphql.PackagePageExt{Data: successResult}}
+					res.Result = graphql.ApplicationExt{Bundles: graphql.BundlePageExt{Data: successResult}}
 				}).Return(nil).Once()
 				return am
 			},
@@ -429,7 +429,7 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, nil, gqlFieldsProvider)
 
-			result, err := dirCli.ListPackages(context.TODO(), appID)
+			result, err := dirCli.ListBundles(context.TODO(), appID)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, tC.ExpectedResult, result)
@@ -443,9 +443,9 @@ func TestDirectorClient_ListPackages(t *testing.T) {
 	}
 }
 
-func TestDirectorClient_DeletePackage(t *testing.T) {
+func TestDirectorClient_DeleteBundle(t *testing.T) {
 	id := "foo"
-	gqlRequest := gcli.NewRequest("mutation {\n\t\tdeletePackage(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}")
+	gqlRequest := gcli.NewRequest("mutation {\n\t\tdeleteBundle(id: \"foo\") {\n\t\t\tid\n\t\t}\t\n\t}")
 
 	tests := []struct {
 		Name        string
@@ -503,7 +503,7 @@ func TestDirectorClient_DeletePackage(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, nil, nil)
 
-			err := dirCli.DeletePackage(context.TODO(), id)
+			err := dirCli.DeleteBundle(context.TODO(), id)
 
 			if tC.ExpectedErr != nil {
 				require.Error(t, err)
@@ -518,11 +518,11 @@ func TestDirectorClient_DeletePackage(t *testing.T) {
 }
 
 func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
-	packageID := "foo"
+	bundleID := "foo"
 	in := graphql.APIDefinitionInput{
 		Name: "bar",
 	}
-	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addAPIDefinitionToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addAPIDefinitionToBundle(bundleID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -630,7 +630,7 @@ func TestDirectorClient_CreateAPIDefinition(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, gqlFieldsProvider)
 
-			result, err := dirCli.CreateAPIDefinition(context.TODO(), packageID, in)
+			result, err := dirCli.CreateAPIDefinition(context.TODO(), bundleID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -719,11 +719,11 @@ func TestDirectorClient_DeleteAPIDefinition(t *testing.T) {
 }
 
 func TestDirectorClient_CreateEventDefinition(t *testing.T) {
-	packageID := "foo"
+	bundleID := "foo"
 	in := graphql.EventDefinitionInput{
 		Name: "bar",
 	}
-	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addEventDefinitionToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addEventDefinitionToBundle(bundleID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -831,7 +831,7 @@ func TestDirectorClient_CreateEventDefinition(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, gqlFieldsProvider)
 
-			result, err := dirCli.CreateEventDefinition(context.TODO(), packageID, in)
+			result, err := dirCli.CreateEventDefinition(context.TODO(), bundleID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)
@@ -920,11 +920,11 @@ func TestDirectorClient_DeleteEventDefinition(t *testing.T) {
 }
 
 func TestDirectorClient_CreateDocument(t *testing.T) {
-	packageID := "foo"
+	bundleID := "foo"
 	in := graphql.DocumentInput{
 		Title: "bar",
 	}
-	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addDocumentToPackage(packageID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
+	gqlRequest := gcli.NewRequest("mutation {\n\t\t\tresult: addDocumentToBundle(bundleID: \"foo\", in: input) {\n\t\t\t\t\tfields\n\t\t\t\t}\n\t\t\t}")
 
 	tests := []struct {
 		Name           string
@@ -1032,7 +1032,7 @@ func TestDirectorClient_CreateDocument(t *testing.T) {
 
 			dirCli := director.NewClient(gqlCli, gqlizer, gqlFieldsProvider)
 
-			result, err := dirCli.CreateDocument(context.TODO(), packageID, in)
+			result, err := dirCli.CreateDocument(context.TODO(), bundleID, in)
 
 			if tC.ExpectedResult != nil {
 				assert.Equal(t, *tC.ExpectedResult, result)

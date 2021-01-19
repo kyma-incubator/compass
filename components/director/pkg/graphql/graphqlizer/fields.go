@@ -67,7 +67,7 @@ func (fp *GqlFieldsProvider) Page(item string) string {
 }
 
 func (fp *GqlFieldsProvider) OmitForApplication(omittedProperties []string) string {
-	packagesOmittedProperties := extractOmitFor(omittedProperties, "packages")
+	bundlesOmittedProperties := extractOmitFor(omittedProperties, "bundles")
 	webhooksOmittedProperties := extractOmitFor(omittedProperties, "webhooks")
 
 	return buildProperties(map[string]string{
@@ -80,7 +80,7 @@ func (fp *GqlFieldsProvider) OmitForApplication(omittedProperties []string) stri
 		"status":                "status { condition timestamp }",
 		"webhooks":              fmt.Sprintf("webhooks {%s}", fp.OmitForWebhooks(webhooksOmittedProperties)),
 		"healthCheckURL":        "healthCheckURL",
-		"packages":              fmt.Sprintf("packages {%s}", fp.Page(fp.OmitForPackage(packagesOmittedProperties))),
+		"bundles":               fmt.Sprintf("bundles {%s}", fp.Page(fp.OmitForBundle(bundlesOmittedProperties))),
 		"auths":                 fmt.Sprintf("auths {%s}", fp.ForSystemAuth()),
 		"eventingConfiguration": "eventingConfiguration { defaultURL }",
 	}, omittedProperties)
@@ -97,11 +97,11 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		status {condition timestamp}
 		webhooks {%s}
 		healthCheckURL
-		packages {%s}
+		bundles {%s}
 		auths {%s}
 		eventingConfiguration { defaultURL }
-	`, fp.ForWebhooks(), fp.Page(fp.ForPackage()), fp.ForSystemAuth()),
-		ctx, []string{"Application.package", "Application.apiDefinition", "Application.eventDefinition"})
+	`, fp.ForWebhooks(), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
+		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
 func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
@@ -422,7 +422,7 @@ func (fp *GqlFieldsProvider) ForTenant() string {
 		initialized`
 }
 
-func (fp *GqlFieldsProvider) OmitForPackage(omittedProperties []string) string {
+func (fp *GqlFieldsProvider) OmitForBundle(omittedProperties []string) string {
 	apiDefOmittedProperties := extractOmitFor(omittedProperties, "apiDefinitions")
 	eventDefOmittedProperties := extractOmitFor(omittedProperties, "eventDefinitions")
 	documentsOmittedProperties := extractOmitFor(omittedProperties, "documents")
@@ -433,7 +433,7 @@ func (fp *GqlFieldsProvider) OmitForPackage(omittedProperties []string) string {
 		"name":                           "name",
 		"description":                    "description",
 		"instanceAuthRequestInputSchema": "instanceAuthRequestInputSchema",
-		"instanceAuths":                  fmt.Sprintf("instanceAuths {%s}", fp.OmitForPackageInstanceAuth(instanceAuthsOmittedProperties)),
+		"instanceAuths":                  fmt.Sprintf("instanceAuths {%s}", fp.OmitForBundleInstanceAuth(instanceAuthsOmittedProperties)),
 		"defaultInstanceAuth":            fmt.Sprintf("defaultInstanceAuth {%s}", fp.ForAuth()),
 		"apiDefinitions":                 fmt.Sprintf("apiDefinitions {%s}", fp.Page(fp.OmitForAPIDefinition(apiDefOmittedProperties))),
 		"eventDefinitions":               fmt.Sprintf("eventDefinitions {%s}", fp.Page(fp.OmitForEventDefinition(eventDefOmittedProperties))),
@@ -441,7 +441,7 @@ func (fp *GqlFieldsProvider) OmitForPackage(omittedProperties []string) string {
 	}, omittedProperties)
 }
 
-func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
+func (fp *GqlFieldsProvider) ForBundle(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`
 		id
 		name
@@ -451,11 +451,11 @@ func (fp *GqlFieldsProvider) ForPackage(ctx ...FieldCtx) string {
 		defaultInstanceAuth {%s}
 		apiDefinitions {%s}
 		eventDefinitions {%s}
-		documents {%s}`, fp.ForPackageInstanceAuth(), fp.ForAuth(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument())),
-		ctx, []string{"Package.instanceAuth"})
+		documents {%s}`, fp.ForBundleInstanceAuth(), fp.ForAuth(), fp.Page(fp.ForAPIDefinition(ctx...)), fp.Page(fp.ForEventDefinition()), fp.Page(fp.ForDocument())),
+		ctx, []string{"Bundle.instanceAuth"})
 }
 
-func (fp *GqlFieldsProvider) OmitForPackageInstanceAuth(omittedProperties []string) string {
+func (fp *GqlFieldsProvider) OmitForBundleInstanceAuth(omittedProperties []string) string {
 	statusOmittedProperties := extractOmitFor(omittedProperties, "status")
 
 	return buildProperties(map[string]string{
@@ -463,20 +463,20 @@ func (fp *GqlFieldsProvider) OmitForPackageInstanceAuth(omittedProperties []stri
 		"context":     "context",
 		"inputParams": "inputParams",
 		"auth":        fmt.Sprintf("auth {%s}", fp.ForAuth()),
-		"status":      fmt.Sprintf("status {%s}", fp.OmitForPackageInstanceAuthStatus(statusOmittedProperties)),
+		"status":      fmt.Sprintf("status {%s}", fp.OmitForBundleInstanceAuthStatus(statusOmittedProperties)),
 	}, omittedProperties)
 }
 
-func (fp *GqlFieldsProvider) ForPackageInstanceAuth() string {
+func (fp *GqlFieldsProvider) ForBundleInstanceAuth() string {
 	return fmt.Sprintf(`
 		id
 		context
 		inputParams
 		auth {%s}
-		status {%s}`, fp.ForAuth(), fp.ForPackageInstanceAuthStatus())
+		status {%s}`, fp.ForAuth(), fp.ForBundleInstanceAuthStatus())
 }
 
-func (fp *GqlFieldsProvider) OmitForPackageInstanceAuthStatus(omittedProperties []string) string {
+func (fp *GqlFieldsProvider) OmitForBundleInstanceAuthStatus(omittedProperties []string) string {
 	return buildProperties(map[string]string{
 		"condition": "condition",
 		"timestamp": "timestamp",
@@ -485,7 +485,7 @@ func (fp *GqlFieldsProvider) OmitForPackageInstanceAuthStatus(omittedProperties 
 	}, omittedProperties)
 }
 
-func (fp *GqlFieldsProvider) ForPackageInstanceAuthStatus() string {
+func (fp *GqlFieldsProvider) ForBundleInstanceAuthStatus() string {
 	return `
 		condition
 		timestamp

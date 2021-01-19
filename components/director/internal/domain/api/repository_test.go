@@ -48,11 +48,11 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 }
 
-func TestPgRepository_GetForPackage(t *testing.T) {
+func TestPgRepository_GetForBundle(t *testing.T) {
 	// given
 	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
 
-	selectQuery := `^SELECT (.+) FROM "public"."api_definitions" WHERE tenant_id = \$1 AND id = \$2 AND package_id = \$3`
+	selectQuery := `^SELECT (.+) FROM "public"."api_definitions" WHERE tenant_id = \$1 AND id = \$2 AND bundle_id = \$3`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -60,20 +60,20 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 			AddRow(fixAPIDefinitionRow(apiDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, apiDefID, packageID).
+			WithArgs(tenantID, apiDefID, bundleID).
 			WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, PackageID: packageID}, nil).Once()
+		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, BundleID: bundleID}, nil).Once()
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
-		modelApiDef, err := pgRepository.GetForPackage(ctx, tenantID, apiDefID, packageID)
+		modelApiDef, err := pgRepository.GetForBundle(ctx, tenantID, apiDefID, bundleID)
 		//THEN
 		require.NoError(t, err)
 		assert.Equal(t, apiDefID, modelApiDef.ID)
 		assert.Equal(t, tenantID, modelApiDef.Tenant)
-		assert.Equal(t, packageID, modelApiDef.PackageID)
+		assert.Equal(t, bundleID, modelApiDef.BundleID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
 	})
@@ -85,13 +85,13 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 		testError := errors.New("test error")
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, apiDefID, packageID).
+			WithArgs(tenantID, apiDefID, bundleID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		// when
-		modelApiDef, err := repo.GetForPackage(ctx, tenantID, apiDefID, packageID)
+		modelApiDef, err := repo.GetForBundle(ctx, tenantID, apiDefID, bundleID)
 		// then
 
 		sqlMock.AssertExpectations(t)
@@ -100,7 +100,7 @@ func TestPgRepository_GetForPackage(t *testing.T) {
 	})
 }
 
-func TestPgRepository_ListForPackage(t *testing.T) {
+func TestPgRepository_ListForBundle(t *testing.T) {
 	// GIVEN
 	ExpectedLimit := 3
 	ExpectedOffset := 0
@@ -114,11 +114,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 	secondApiDefEntity := fixFullEntityAPIDefinition(secondApiDefID, "placeholder")
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM "public"."api_definitions" 
-		WHERE tenant_id = \$1 AND package_id = \$2
+		WHERE tenant_id = \$1 AND bundle_id = \$2
 		ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset)
 
 	rawCountQuery := `SELECT COUNT(*) FROM "public"."api_definitions" 
-		WHERE tenant_id = $1 AND package_id = $2`
+		WHERE tenant_id = $1 AND bundle_id = $2`
 	countQuery := regexp.QuoteMeta(rawCountQuery)
 
 	t.Run("success", func(t *testing.T) {
@@ -128,11 +128,11 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 			AddRow(fixAPIDefinitionRow(secondApiDefID, "placeholder")...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, bundleID).
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, bundleID).
 			WillReturnRows(testdb.RowCount(2))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
@@ -141,7 +141,7 @@ func TestPgRepository_ListForPackage(t *testing.T) {
 		convMock.On("FromEntity", secondApiDefEntity).Return(model.APIDefinition{ID: secondApiDefID}, nil)
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
-		modelAPIDef, err := pgRepository.ListForPackage(ctx, tenantID, packageID, inputPageSize, inputCursor)
+		modelAPIDef, err := pgRepository.ListForBundle(ctx, tenantID, bundleID, inputPageSize, inputCursor)
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, modelAPIDef.Data, 2)

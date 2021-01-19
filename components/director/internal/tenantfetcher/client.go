@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	pkgErrors "github.com/pkg/errors"
+	bndlErrors "github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -87,7 +87,7 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 			desc := c.failedRequestDesc(err)
 			c.metricsPusher.RecordEventingRequest(http.MethodGet, 0, desc)
 		}
-		return nil, pkgErrors.Wrap(err, "while sending get request")
+		return nil, bndlErrors.Wrap(err, "while sending get request")
 	}
 	defer func() {
 		err := res.Body.Close()
@@ -102,7 +102,7 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, pkgErrors.Wrap(err, "while reading response body")
+		return nil, bndlErrors.Wrap(err, "while reading response body")
 	}
 
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNoContent {
