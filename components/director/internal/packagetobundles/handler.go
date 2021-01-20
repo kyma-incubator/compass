@@ -28,6 +28,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/vektah/gqlparser/gqlerror"
 	"io/ioutil"
 	"net/http"
@@ -44,10 +45,11 @@ type LabelUpsertService interface {
 }
 
 type Handler struct {
+	transact           persistence.Transactioner
 	labelUpsertService LabelUpsertService
 }
 
-func NewHandler() *Handler {
+func NewHandler(transact persistence.Transactioner) *Handler {
 	labelRepo := label.NewRepository(label.NewConverter())
 	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
 
@@ -55,6 +57,7 @@ func NewHandler() *Handler {
 	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
 
 	return &Handler{
+		transact:           transact,
 		labelUpsertService: labelUpsertSvc,
 	}
 }
@@ -74,25 +77,11 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 					log.C(ctx).WithError(err).Error("Error determining request consumer")
 					appErr := apperrors.InternalErrorFrom(err, "while determining request consumer")
 					writeAppError(ctx, w, appErr, http.StatusInternalServerError)
-					return
 				}
 
-				if consumerInfo.ConsumerType == consumer.Runtime {
-					tenantID, err := tenant.LoadFromContext(ctx)
-					if err != nil {
-						log.C(ctx).WithError(err).Error("Error determining request tenant")
-						appErr := apperrors.InternalErrorFrom(err, "while determining request tenant")
-						writeAppError(ctx, w, appErr, http.StatusInternalServerError)
-						return
-					}
-
-					log.C(ctx).Infof("Proceeding with labeling runtime with ID %q with label %q", consumerInfo.ConsumerID, useBundlesParam)
-					h.labelUpsertService.UpsertLabel(ctx, tenantID, &model.LabelInput{
-						Key:        useBundlesParam,
-						Value:      "true",
-						ObjectID:   consumerInfo.ConsumerID,
-						ObjectType: model.LabelableObject(consumerInfo.ConsumerType),
-					})
+				if err := h.reconcileConsumerLabel(ctx, consumerInfo); err != nil {
+					writeAppError(ctx, w, err, http.StatusInternalServerError)
+					return
 				}
 
 				log.C(ctx).Infof("Returning request without rewriting the request body for consumer with ID %q and type %q", consumerInfo.ConsumerID, consumerInfo.ConsumerType)
@@ -176,6 +165,46 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 			}
 		})
 	}
+}
+
+func (h *Handler) reconcileConsumerLabel(ctx context.Context, consumerInfo consumer.Consumer) error {
+	if consumerInfo.ConsumerType != consumer.Runtime {
+		return nil
+	}
+
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Error determining request tenant")
+		return apperrors.InternalErrorFrom(err, "while determining request tenant")
+	}
+
+	tx, err := h.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while opening the db transaction.")
+		return apperrors.InternalErrorFrom(err, "while communicating with the database")
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Infof("Proceeding with labeling runtime with ID %q with label %q", consumerInfo.ConsumerID, useBundlesParam)
+	if err := h.labelUpsertService.UpsertLabel(ctx, tenantID, &model.LabelInput{
+		Key:        useBundlesParam,
+		Value:      "true",
+		ObjectID:   consumerInfo.ConsumerID,
+		ObjectType: model.LabelableObject(consumerInfo.ConsumerType),
+	}); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while upserting %q label", useBundlesParam)
+		return apperrors.InternalErrorFrom(err, "while executing database transaction")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while finalizing upsert of %q label", useBundlesParam)
+		return apperrors.InternalErrorFrom(err, "while finalizing database transaction")
+	}
+
+	return nil
 }
 
 func writeAppError(ctx context.Context, w http.ResponseWriter, appErr error, statusCode int) {

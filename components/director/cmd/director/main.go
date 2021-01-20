@@ -188,7 +188,7 @@ func main() {
 		go periodicExecutor.Run(ctx)
 	}
 
-	packageToBundlesMiddleware := packagetobundles.NewHandler()
+	packageToBundlesMiddleware := packagetobundles.NewHandler(transact)
 
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
