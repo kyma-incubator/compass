@@ -420,6 +420,16 @@ func PackageToBundleHandler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			useBundles := r.URL.Query().Get("useBundles")
+			if useBundles == "true" {
+				log.C(ctx).Info("Will proceed with request without rewriting the request body. Bundles are adopted")
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			log.C(ctx).Info("Will rewrite the request body. Bundles are still not adopted")
+
 			recorder := httptest.NewRecorder()
 
 			reqBody, err := ioutil.ReadAll(r.Body)
