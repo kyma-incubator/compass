@@ -3,14 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/vektah/gqlparser/gqlerror"
-	"io/ioutil"
+	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 	"net/http"
-	"net/http/httptest"
 	"os"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
@@ -70,7 +65,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -194,6 +188,8 @@ func main() {
 		go periodicExecutor.Run(ctx)
 	}
 
+	packageToBundlesMiddleware := packagetobundles.NewHandler()
+
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
 	mainRouter := mux.NewRouter()
@@ -204,7 +200,7 @@ func main() {
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
-	gqlAPIRouter.Use(PackageToBundleHandler())
+	gqlAPIRouter.Use(packageToBundlesMiddleware.Handle())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema,
 		handler.ErrorPresenter(presenter.Do),
@@ -414,112 +410,4 @@ func defaultBundleRepo() mp_bundle.BundleRepository {
 	apiConverter := api.NewConverter(frConverter, versionConverter)
 
 	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
-}
-
-func PackageToBundleHandler() func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			useBundles := r.URL.Query().Get("useBundles")
-			if useBundles == "true" {
-				log.C(ctx).Info("Will proceed with request without rewriting the request body. Bundles are adopted")
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			log.C(ctx).Info("Will rewrite the request body. Bundles are still not adopted")
-
-			recorder := httptest.NewRecorder()
-
-			reqBody, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				log.C(ctx).WithError(err).Error("Error reading request body")
-				appErr := apperrors.InternalErrorFrom(err, "while reading request body")
-				writeAppError(ctx, w, appErr, http.StatusInternalServerError)
-				return
-			}
-
-			body := string(reqBody)
-			body = strings.ReplaceAll(body, "\\n", "") // removes unnecessary complexity from the next regexes
-
-			reqPackagesJSONPattern := regexp.MustCompile(`(\s*)packages(\s*:\s*\[)`) // matches ` packages:  [`
-			body = reqPackagesJSONPattern.ReplaceAllString(body, "${1}bundles${2}")
-
-			reqPackagesGraphQLPattern := regexp.MustCompile(`(\s*)packages(\s*\{)`) // matches ` packages {`
-			body = reqPackagesGraphQLPattern.ReplaceAllString(body, "${1}bundles${2}")
-
-			reqPackageGraphQLPattern := regexp.MustCompile(`(\s*)package(\s*\(\s*id\s*:\s*)`) // matches ` package ( id : `
-			body = reqPackageGraphQLPattern.ReplaceAllString(body, "${1}bundle${2}")
-
-			reqPackageModeGraphQLPattern := regexp.MustCompile(`(\s*)mode(\s*):(\s*)PACKAGE(\s*)`) // matches ` mode: PACKAGE `
-			body = reqPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}BUNDLE${4}")
-
-			body = strings.ReplaceAll(body, "addPackage", "addBundle")
-			body = strings.ReplaceAll(body, "updatePackage", "updateBundle")
-			body = strings.ReplaceAll(body, "deletePackage", "deleteBundle")
-			body = strings.ReplaceAll(body, "addAPIDefinitionToPackage", "addAPIDefinitionToBundle")
-			body = strings.ReplaceAll(body, "addEventDefinitionToPackage", "addEventDefinitionToBundle")
-			body = strings.ReplaceAll(body, "addDocumentToPackage", "addDocumentToBundle")
-			body = strings.ReplaceAll(body, "setPackageInstanceAuth", "setBundleInstanceAuth")
-			body = strings.ReplaceAll(body, "deletePackageInstanceAuth", "deleteBundleInstanceAuth")
-			body = strings.ReplaceAll(body, "requestPackageInstanceAuthCreation", "requestBundleInstanceAuthCreation")
-			body = strings.ReplaceAll(body, "requestBundleInstanceAuthDeletion", "requestBundleInstanceAuthDeletion")
-
-			r.Body = ioutil.NopCloser(strings.NewReader(body))
-			r.ContentLength = int64(len(body))
-
-			next.ServeHTTP(recorder, r)
-
-			for key, values := range recorder.Header() {
-				for _, v := range values {
-					w.Header().Add(key, v)
-				}
-			}
-
-			respBody, err := ioutil.ReadAll(recorder.Body)
-			if err != nil {
-				log.C(ctx).WithError(err).Error("Error reading response body")
-				appErr := apperrors.InternalErrorFrom(err, "while reading response body")
-				writeAppError(ctx, w, appErr, http.StatusInternalServerError)
-				return
-			}
-
-			body = string(respBody)
-
-			respPackagesJSONPattern := regexp.MustCompile(`(\s*\")bundles(\"\s*:\s*\{)`) // matches ` "bundles":  {`
-			body = respPackagesJSONPattern.ReplaceAllString(body, "${1}packages${2}")
-
-			respPackageJSONPattern := regexp.MustCompile(`(\s*\")bundle(\"\s*:\s*\{)`) // matches ` "bundle":  {`
-			body = respPackageJSONPattern.ReplaceAllString(body, "${1}package${2}")
-
-			respPackageModeGraphQLPattern := regexp.MustCompile(`(\s*\")mode(\"\s*):(\s*\")BUNDLE(\"\s*)`) // matches ` "mode": "BUNDLE" `
-			body = respPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}PACKAGE${4}")
-
-			w.WriteHeader(recorder.Code)
-			if _, err := w.Write([]byte(body)); err != nil {
-				log.C(ctx).WithError(err).Error("Error writing response body")
-				appErr := apperrors.InternalErrorFrom(err, "while writing response body")
-				writeAppError(ctx, w, appErr, http.StatusInternalServerError)
-				return
-			}
-		})
-	}
-}
-
-func writeAppError(ctx context.Context, w http.ResponseWriter, appErr error, statusCode int) {
-	errCode := apperrors.ErrorCode(appErr)
-	if errCode == apperrors.UnknownError || errCode == apperrors.InternalError {
-		errCode = apperrors.InternalError
-	}
-
-	w.WriteHeader(statusCode)
-	w.Header().Set("Content-Type", "application/json")
-	resp := gqlgen.Response{Errors: []*gqlerror.Error{{
-		Message:    appErr.Error(),
-		Extensions: map[string]interface{}{"error_code": errCode, "error": errCode.String()}}}}
-	err := json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while encoding data. ")
-	}
 }
