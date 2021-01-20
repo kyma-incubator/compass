@@ -9,7 +9,7 @@ RUN go mod download -x
 
 COPY . ${BASE_TEST_DIR}
 
-RUN CGO_ENABLED=0 go test -c ./tests/apitests -o system-broker.test
+RUN CGO_ENABLED=0 go test -c ./tests -o system-broker.test
 
 FROM alpine:3.12.0
 
