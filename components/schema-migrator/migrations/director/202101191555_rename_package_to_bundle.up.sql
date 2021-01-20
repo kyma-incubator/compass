@@ -1,5 +1,16 @@
 BEGIN;
 
+ALTER TABLE fetch_requests ALTER COLUMN mode TYPE VARCHAR(255);
+DROP TYPE fetch_request_mode;
+
+CREATE TYPE fetch_request_mode AS ENUM (
+    'SINGLE',
+    'BUNDLE',
+    'INDEX'
+);
+
+ALTER TABLE fetch_requests ALTER COLUMN mode TYPE fetch_request_mode USING (mode::fetch_request_mode);
+
 DROP VIEW links;
 DROP VIEW providers;
 DROP VIEW ord_labels;
