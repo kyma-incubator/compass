@@ -95,29 +95,22 @@ func main() {
 	handlerWithTimeout, err := handler.WithTimeout(router, cfg.ServerTimeout)
 	exitOnError(err, "Failed configuring timeout on handler")
 
-	http.Handle("/", handlerWithTimeout)
-
-	server := &http.Server{
-		Addr:              cfg.Address,
-		ReadHeaderTimeout: cfg.ServerTimeout,
-	}
-
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, handlerWithTimeout, "main", cfg.ServerTimeout)
+
 	go func() {
 		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
 		shutdownMetricsSrv()
+		shutdownMainSrv()
 	}()
-	go runMetricsSrv()
 
-	logger.Infof("Listening on %s", cfg.Address)
-	if err := server.ListenAndServe(); err != nil {
-		done <- true
-		panic(err)
-	}
+	go runMetricsSrv()
+	runMainSrv()
+
 }
 
 func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, middleware ...mux.MiddlewareFunc) error {
@@ -137,7 +130,7 @@ func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path str
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
 	logger := log.C(ctx)
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while configuring server handler")
 
 	srv := &http.Server{
 		Addr:              address,
