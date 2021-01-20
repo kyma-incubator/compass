@@ -54,7 +54,7 @@ func main() {
 	exitOnError(err, "Error while loading app config")
 
 	router := mux.NewRouter()
-	router.Use(correlation.AttachCorrelationIDToContext())
+	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	metricsCollector := metrics.NewAuditlogMetricCollector()
 	prometheus.MustRegister(metricsCollector)
 
