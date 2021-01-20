@@ -75,7 +75,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	}
 
 	if !isMutation && err != emptyQuery {
-		log.C(req.Context()).Println("Will not send auditlog message for queries")
+		log.C(req.Context()).Debugln("Will not send auditlog message for queries")
 		return t.RoundTripper.RoundTrip(req)
 	}
 

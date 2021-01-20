@@ -83,12 +83,12 @@ func (c *Client) sendAuditLog(ctx context.Context, req *http.Request) error {
 	defer httpcommon.CloseBody(ctx, response.Body)
 
 	if response.StatusCode != http.StatusCreated {
-		logger.Printf("Got different status code: %d\n", response.StatusCode)
+		logger.Infof("Got different status code: %d\n", response.StatusCode)
 		output, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			return errors.Wrap(err, "while reading response from auditlog")
 		}
-		logger.Println(string(output))
+		logger.Infoln(string(output))
 		return errors.Errorf("Write to auditlog failed with status code: %d", response.StatusCode)
 	}
 	return nil

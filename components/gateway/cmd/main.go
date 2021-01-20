@@ -55,7 +55,6 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(correlation.AttachCorrelationIDToContext())
-
 	metricsCollector := metrics.NewAuditlogMetricCollector()
 	prometheus.MustRegister(metricsCollector)
 
@@ -114,7 +113,7 @@ func main() {
 	}()
 	go runMetricsSrv()
 
-	logger.Printf("Listening on %s", cfg.Address)
+	logger.Infof("Listening on %s", cfg.Address)
 	if err := server.ListenAndServe(); err != nil {
 		done <- true
 		panic(err)
@@ -122,7 +121,7 @@ func main() {
 }
 
 func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, middleware ...mux.MiddlewareFunc) error {
-	log.C(ctx).Printf("Proxying requests on path `%s` to `%s`", path, targetOrigin)
+	log.C(ctx).Infof("Proxying requests on path `%s` to `%s`", path, targetOrigin)
 	componentProxy, err := proxy.New(targetOrigin, path, transport)
 	if err != nil {
 		return errors.Wrapf(err, "while initializing proxy for component")
@@ -240,7 +239,7 @@ func initAuditLogs(ctx context.Context, done chan bool, collector *metrics.Audit
 	workers := make(chan bool, cfg.WriteWorkers)
 	initWorkers(ctx, workers, auditlogSvc, done, msgChannel, collector)
 
-	log.C(ctx).Printf("Auditlog configured successfully, auth mode:%s", cfg.AuthMode)
+	log.C(ctx).Infof("Auditlog configured successfully, auth mode: %s", cfg.AuthMode)
 	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout, collector), auditlogSvc, nil
 }
 
@@ -260,13 +259,13 @@ func initWorkers(ctx context.Context, workers chan bool, auditlogSvc proxy.Audit
 		for {
 			select {
 			case <-done:
-				log.Println("Worker starter goroutine finished")
+				log.Info("Worker starter goroutine finished")
 				return
 			case workers <- true:
 			}
 			worker := auditlog.NewWorker(auditlogSvc, msgChannel, done, collector)
 			go func() {
-				log.Println("Starting worker for auditlog message processing")
+				log.Info("Starting worker for auditlog message processing")
 				worker.Start()
 				<-workers
 			}()

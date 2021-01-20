@@ -9,6 +9,6 @@ import (
 
 func CloseBody(ctx context.Context, body io.ReadCloser) {
 	if err := body.Close(); err != nil {
-		log.C(ctx).Printf("while closing body %+v\n", err)
+		log.C(ctx).WithError(err).Errorf("while closing body")
 	}
 }

@@ -32,16 +32,16 @@ func (w *Worker) Start() {
 	for {
 		select {
 		case <-w.done:
-			logger.Println("Worker for auditlog message processing has finished")
+			logger.Infoln("Worker for auditlog message processing has finished")
 			ctx.Done()
 			return
 		case msg := <-w.auditlogChannel:
-			logger.Printf("Read from auditlog channel (size=%d, cap=%d)", len(w.auditlogChannel), cap(w.auditlogChannel))
+			logger.Debugf("Read from auditlog channel (size=%d, cap=%d)", len(w.auditlogChannel), cap(w.auditlogChannel))
 			w.collector.SetChannelSize(len(w.auditlogChannel))
 			ctx := context.WithValue(ctx, correlation.HeadersContextKey, msg.CorrelationIDHeaders)
 			err := w.svc.Log(ctx, msg)
 			if err != nil {
-				logger.Printf("Error while saving auditlog message with error: %s", err.Error())
+				logger.WithError(err).Error("while saving auditlog message")
 			}
 		}
 	}
