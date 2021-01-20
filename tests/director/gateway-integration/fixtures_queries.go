@@ -65,7 +65,7 @@ func getApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, t
 }
 
 // Runtime
-func registerRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) graphql.RuntimeExt {
+func RegisterRuntimeFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) graphql.RuntimeExt {
 	inputGQL, err := tc.Graphqlizer.RuntimeInputToGQL(*input)
 	require.NoError(t, err)
 
@@ -87,7 +87,7 @@ func requestClientCredentialsForRuntime(t *testing.T, ctx context.Context, gqlCl
 	return systemAuth
 }
 
-func unregisterRuntimeWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
+func UnregisterRuntimeWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, id string) {
 	delReq := fixUnregisterRuntimeRequest(id)
 
 	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, delReq, nil)
@@ -196,6 +196,20 @@ func generateOneTimeTokenForApplication(t *testing.T, ctx context.Context, gqlCl
 	require.NotEmpty(t, oneTimeToken.Raw)
 	require.NotEmpty(t, oneTimeToken.RawEncoded)
 	require.NotEmpty(t, oneTimeToken.LegacyConnectorURL)
+	return oneTimeToken
+}
+
+func GenerateOneTimeTokenForRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, runtimeID string) graphql.OneTimeTokenForRuntimeExt {
+	req := fixGenerateOneTimeTokenForRuntime(runtimeID)
+	oneTimeToken := graphql.OneTimeTokenForRuntimeExt{}
+
+	err := tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &oneTimeToken)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, oneTimeToken.ConnectorURL)
+	require.NotEmpty(t, oneTimeToken.Token)
+	require.NotEmpty(t, oneTimeToken.Raw)
+	require.NotEmpty(t, oneTimeToken.RawEncoded)
 	return oneTimeToken
 }
 

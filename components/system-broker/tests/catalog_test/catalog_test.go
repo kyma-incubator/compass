@@ -66,13 +66,21 @@ func (suite *OSBCatalogTestSuite) TestWithManyApps() {
 }
 
 func (suite *OSBCatalogTestSuite) TestWhenDirectorReturnsError() {
-
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "applications", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
 		Status(http.StatusInternalServerError).
-		JSON().Object().Value("description").String().Equal("could not build catalog")
+		JSON().Object().Value("description").String().Contains("could not build catalog")
+}
+
+func (suite *OSBCatalogTestSuite) TestWhenDirectorReturnsUnauthorizedShouldReturnUnauthorized() {
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "applications", `{"error": "insufficient scopes provided"}`)
+	assert.NoError(suite.T(), err)
+
+	suite.testContext.SystemBroker.GET("/v2/catalog").WithHeader("X-Broker-API-Version", "2.15").Expect().
+		Status(http.StatusUnauthorized).
+		JSON().Object().Value("description").String().Contains("unauthorized: insufficient scopes")
 }
 
 func testCatalog(suite *OSBCatalogTestSuite, apps, packages, apiDefs, eventDefs, docs int) {

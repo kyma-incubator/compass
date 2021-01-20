@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
@@ -65,7 +67,11 @@ func main() {
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, log.NewDefaultLagerAdapter())
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
-	srv := server.New(cfg.Server, uuidSrv, osbApi, specsApi)
+
+	middlewares := []mux.MiddlewareFunc{
+		httputil.HeaderForwarder(cfg.HttpClient.ForwardHeaders),
+	}
+	srv := server.New(cfg.Server, uuidSrv, middlewares, osbApi, specsApi)
 
 	srv.Start(ctx)
 }
@@ -77,23 +83,22 @@ func fatalOnError(err error) {
 }
 
 func prepareGqlClient(cfg *config.Config, uudSrv uuid.Service) (*director.GraphQLClient, error) {
-	// prepare raw http transport and http client based on cfg
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(cfg.HttpClient)), uudSrv)
-	httpClient := httputil.NewClient(cfg.HttpClient.Timeout, httpTransport)
 
-	oauthTokenProvider, err := oauth.NewTokenProvider(cfg.OAuthProvider, httpClient)
+	tokenProviderFromHeader, err := oauth.NewTokenProviderFromHeader(cfg.GraphQLClient.GraphqlEndpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	securedTransport := httputil.NewSecuredTransport(cfg.HttpClient.Timeout, httpTransport, oauthTokenProvider)
+	securedTransport := httputil.NewSecuredTransport(httpTransport, tokenProviderFromHeader)
 	securedClient := &http.Client{
 		Transport: securedTransport,
 		Timeout:   cfg.HttpClient.Timeout,
 	}
 
 	// prepare graphql client that uses secured http client as a basis
-	graphClient := gql.NewClient(cfg.GraphQLClient.GraphqlEndpoint, gql.WithHTTPClient(securedClient))
+	// the provided endpoint in the graphClient will be changed in the secured transport based on the matching token provider
+	graphClient := gql.NewClient("", gql.WithHTTPClient(securedClient))
 	gqlClient := graphql.NewClient(cfg.GraphQLClient, graphClient)
 
 	inputGraphqlizer := &graphqlizer.Graphqlizer{}

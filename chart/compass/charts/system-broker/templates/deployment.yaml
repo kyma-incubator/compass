@@ -58,10 +58,9 @@ spec:
             # - name: SERVER_SHUTDOWN_TIMEOUT
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: SERVER_SELF_URL
-              value: "https://{{ .Values.global.system_broker.tls.host }}.{{ .Values.global.ingress.domainName }}/broker"
+              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
-              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
-
+              value: "http://{{ .Values.global.gateway.tls.host }}.{{ .Release.Namespace }}.svc.cluster.local:{{.Values.global.gateway.port }}/director/graphql"
             # - name: GRAPHQL_CLIENT_ENABLE_LOGGING
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             # - name: LOG_LEVEL
@@ -88,21 +87,21 @@ spec:
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             # - name: HTTP_CLIENT_SKIP_SSL_VALIDATION
             #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: OAUTH_PROVIDER_SECRET_NAME
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: OAUTH_PROVIDER_SECRET_NAMESPACE
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-#          livenessProbe:
-#            httpGet:
-#              path: /healthz
-#              port: {{ .Values.deployment.args.containerPort }}
-#            periodSeconds: 10
-#            timeoutSeconds: 3
-#            initialDelaySeconds: 30
-#          readinessProbe:
-#            httpGet:
-#              path: /healthz
-#              port: {{ .Values.deployment.args.containerPort }}
-#            periodSeconds: 5
-#            timeoutSeconds: 2
-#            initialDelaySeconds: 10
+            - name: HTTP_CLIENT_FORWARD_HEADERS
+              value: "{{ .Values.global.system_broker.forwardHeaders }}"
+            - name: HTTP_CLIENT_UNAUTHORIZED_STRING
+              value: {{ .Values.global.system_broker.unauthorizedString }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.deployment.args.containerPort }}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.deployment.args.containerPort }}
+            periodSeconds: 5
+            timeoutSeconds: 2
+            initialDelaySeconds: 10

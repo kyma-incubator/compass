@@ -31,6 +31,8 @@ type Config struct {
 
 	MaxIdleConns      int  `mapstructure:"max_idle_cons"`
 	SkipSSLValidation bool `mapstructure:"skip_ssl_validation" description:"whether to skip ssl verification when making calls to external services"`
+
+	ForwardHeaders []string `mapstructure:"forward_headers"`
 }
 
 func DefaultConfig() *Config {
@@ -43,6 +45,7 @@ func DefaultConfig() *Config {
 		ExpectContinueTimeout: time.Second * 2,
 		MaxIdleConns:          90,
 		SkipSSLValidation:     true,
+		ForwardHeaders:        []string{},
 	}
 }
 
@@ -68,6 +71,5 @@ func (s *Config) Validate() error {
 	if s.MaxIdleConns < 0 {
 		return fmt.Errorf("validate httpclient settings: max_idle_cons should be >= 0")
 	}
-
 	return nil
 }

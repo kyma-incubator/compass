@@ -2,11 +2,12 @@ package binding_test
 
 import (
 	"fmt"
-	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 
 	"github.com/stretchr/testify/assert"
 
@@ -88,6 +89,20 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnFindCredential
 		Expect().Status(http.StatusInternalServerError)
 }
 
+func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsUnauthorizedOnFindCredentialsShouldReturnUnauthorized() {
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", `{"error": "insufficient scopes provided"}`)
+	assert.NoError(suite.T(), err)
+
+	resp := suite.testContext.SystemBroker.DELETE(unbindPath).
+		WithQuery("service_id", serviceID).
+		WithQuery("plan_id", planID).
+		WithQuery("accepts_incomplete", "true").
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		Expect().Status(http.StatusUnauthorized)
+
+	resp.JSON().Path("$.description").String().Contains("unauthorized: insufficient scopes")
+}
+
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundShouldReturnGone() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", notFoundResponse)
 	assert.NoError(suite.T(), err)
@@ -128,6 +143,23 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnCredentialsDel
 		WithQuery("accepts_incomplete", "true").
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		Expect().Status(http.StatusInternalServerError)
+}
+
+func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsUnauthorizedOnCredentialsDeletionShouldReturnUnauthorized() {
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+	assert.NoError(suite.T(), err)
+
+	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthDeletion", `{"error": "insufficient scopes provided"}`)
+	assert.NoError(suite.T(), err)
+
+	resp := suite.testContext.SystemBroker.DELETE(unbindPath).
+		WithQuery("service_id", serviceID).
+		WithQuery("plan_id", planID).
+		WithQuery("accepts_incomplete", "true").
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		Expect().Status(http.StatusUnauthorized)
+
+	resp.JSON().Path("$.description").String().Contains("unauthorized: insufficient scopes")
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundOnCredentialsDeletionShouldReturnGone() {

@@ -24,7 +24,7 @@ global:
       version: "PR-1674"
     director:
       dir:
-      version: "PR-1674"
+      version: "PR-XXXX"
     gateway:
       dir:
       version: "PR-1674"
@@ -39,7 +39,7 @@ global:
       version: "PR-1674"
     system_broker:
       dir:
-      version: "latest"
+      version: "PR-XXXX"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -61,6 +61,9 @@ global:
       connectivity_adapter:
         dir:
         version: "PR-1674"
+      system_broker:
+        dir:
+        version: "PR-XXXX"
       tenant_fetcher:
         dir:
         version: "PR-1674"
@@ -132,13 +135,14 @@ global:
     caCertificate: ""
 
   system_broker:
-    port: 5001
-    tls:
-      host: compass-gateway
     enabled: true
+    port: 5001
+    prefix: /broker
+    forwardHeaders: Authorization
     secrets:
       integrationSystemCredentials:
         name: compass-system-broker-credentials
+    testNamespace: kyma-system
 
   gateway:
     port: 3000

@@ -39,15 +39,18 @@ type Server struct {
 	shutdownTimeout time.Duration
 }
 
-func New(c *Config, service log.UUIDService, routesProvider ...func(router *mux.Router)) *Server {
+func New(c *Config, service log.UUIDService, middlewares []mux.MiddlewareFunc, routesProvider ...func(router *mux.Router)) *Server {
 	s := &Server{
 		shutdownTimeout: c.ShutdownTimeout,
 		routesProvider:  routesProvider,
 	}
 
 	router := mux.NewRouter()
+
+	router.Handle("/healthz", s.livenessHandler())
+	router.Handle("/readyz", s.readinessHandler())
+
 	router.Handle(c.RootAPI+"/metrics", promhttp.Handler())
-	router.Handle(c.RootAPI+"/healthz", s.healthHandler())
 
 	router.HandleFunc(c.RootAPI+"/debug/pprof/", pprof.Index)
 	router.HandleFunc(c.RootAPI+"/debug/pprof/cmdline", pprof.Cmdline)
@@ -57,6 +60,10 @@ func New(c *Config, service log.UUIDService, routesProvider ...func(router *mux.
 
 	router.Use(log.RequestLogger(service))
 	router.Use(panic_recovery.NewRecoveryMiddleware())
+
+	for _, m := range middlewares {
+		router.Use(m)
+	}
 
 	for _, applyRoutes := range routesProvider {
 		applyRoutes(router)
@@ -109,7 +116,7 @@ func (s *Server) stop() {
 	}
 }
 
-func (s *Server) healthHandler() http.Handler {
+func (s *Server) livenessHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode := http.StatusServiceUnavailable
 		state := "failed"
@@ -117,10 +124,17 @@ func (s *Server) healthHandler() http.Handler {
 			statusCode = http.StatusOK
 			state = "success"
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
 		if _, err := w.Write([]byte(fmt.Sprintf(`{"status": "%s"}`, state))); err != nil {
 			log.C(r.Context()).Error("Error sending data", err)
 		}
+	})
+}
+
+func (s *Server) readinessHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
 	})
 }

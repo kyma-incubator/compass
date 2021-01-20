@@ -14,6 +14,10 @@ import (
 	"testing"
 	"time"
 
+	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
+
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
@@ -67,6 +71,10 @@ func NewTestContextBuilder() *TestContextBuilder {
 			},
 			func(env env.Environment, servers map[string]FakeServer) {
 				env.Set("graphql_client.graphql_endpoint", servers[DirectorServer].URL()+"/graphql")
+			},
+			func(env env.Environment, servers map[string]FakeServer) {
+				env.Set("http_client.forward_headers", "Authorization")
+				env.Set("http_client.unauthorized_string", "insufficient scopes provided")
 			},
 		},
 		Servers: map[string]FakeServer{},
@@ -191,7 +199,11 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter())
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
-	sbServer := server.New(cfg.Server, uuid.NewService(), osbApi, specsApi)
+
+	middlewares := []mux.MiddlewareFunc{
+		httputil.HeaderForwarder(cfg.HttpClient.ForwardHeaders),
+	}
+	sbServer := server.New(cfg.Server, uuid.NewService(), middlewares, osbApi, specsApi)
 
 	sbServer.Addr = "localhost:" + strconv.Itoa(cfg.Server.Port) // Needed to avoid annoying macOS permissions popup
 

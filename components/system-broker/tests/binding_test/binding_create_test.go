@@ -100,6 +100,19 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnFindCredenti
 		Expect().Status(http.StatusInternalServerError)
 }
 
+func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsInsufficientScopesOnFindCredentialsShouldReturnUnauthorized() {
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", `{"error": "insufficient scopes provided"}`)
+	assert.NoError(suite.T(), err)
+
+	resp := suite.testContext.SystemBroker.PUT(bindingPath).
+		WithQuery("accepts_incomplete", "true").
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+		Expect().Status(http.StatusUnauthorized)
+
+	resp.JSON().Path("$.description").String().Contains("unauthorized: insufficient scopes")
+}
+
 func (suite *BindCreateTestSuite) TestBindWhenDirectorOnFindCredentialsReturnsCredentialsWithMismatchedContextShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
 		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, "mismatched-id", bindingID))
@@ -124,6 +137,22 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnPackageInsta
 		WithHeader("X-Broker-API-Version", brokerAPIVersion).
 		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
 		Expect().Status(http.StatusInternalServerError)
+}
+
+func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsUnauthorizedOnPackageInstanceCreationShouldReturnUnauthorized() {
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", notFoundResponse)
+	assert.NoError(suite.T(), err)
+
+	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthCreation", `{"error": "insufficient scopes provided"}`)
+	assert.NoError(suite.T(), err)
+
+	resp := suite.testContext.SystemBroker.PUT(bindingPath).
+		WithQuery("accepts_incomplete", "true").
+		WithHeader("X-Broker-API-Version", brokerAPIVersion).
+		WithJSON(map[string]string{"service_id": serviceID, "plan_id": planID}).
+		Expect().Status(http.StatusUnauthorized)
+
+	resp.JSON().Path("$.description").String().Contains("unauthorized: insufficient scopes")
 }
 
 func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsAuthWithFailedConditionOnPackageInstanceCreationShouldReturnError() {

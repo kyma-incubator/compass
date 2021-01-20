@@ -168,6 +168,15 @@ func fixGenerateOneTimeTokenForApplication(appID string) *gcli.Request {
 			}`, appID, tc.gqlFieldsProvider.ForOneTimeTokenForApplication()))
 }
 
+func fixGenerateOneTimeTokenForRuntime(runtimeID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: requestOneTimeTokenForRuntime(id: "%s") {
+					%s
+				}
+			}`, runtimeID, tc.gqlFieldsProvider.ForOneTimeTokenForRuntime()))
+}
+
 func fixDeleteApplicationTemplateRequest(appTemplateID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

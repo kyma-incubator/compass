@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	httputils "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
@@ -19,12 +20,33 @@ import (
 	k8scfg "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type OAuthTokenProvider struct {
+const (
+	contentTypeHeader                = "Content-Type"
+	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
+
+	grantTypeFieldName   = "grant_type"
+	credentialsGrantType = "client_credentials"
+
+	scopeFieldName = "scope"
+	scopes         = "application:read application:write runtime:read runtime:write"
+
+	clientIDKey       = "client_id"
+	clientSecretKey   = "client_secret"
+	tokensEndpointKey = "tokens_endpoint"
+)
+
+type TokenProviderFromSecret struct {
+	targetURL *url.URL
+
 	httpClient        httputils.Client
 	k8sClient         client.Client
 	waitSecretTimeout time.Duration
 	secretName        string
 	secretNamespace   string
+
+	token        httputils.Token
+	tokenTimeout time.Duration
+	lock         sync.RWMutex
 }
 
 type credentials struct {
@@ -33,26 +55,77 @@ type credentials struct {
 	tokensEndpoint string
 }
 
-func NewTokenProviderFromSecret(config *Config, httpClient httputils.Client, k8sClient client.Client) (*OAuthTokenProvider, error) {
-	return &OAuthTokenProvider{
+func NewTokenProviderFromSecret(config *Config, targetURL string, httpClient httputils.Client, tokenTimeout time.Duration, k8sClientConstructor func(time.Duration) (client.Client, error)) (*TokenProviderFromSecret, error) {
+	k8sClient, err := k8sClientConstructor(config.WaitKubeMapperTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedUrl, err := url.Parse(targetURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TokenProviderFromSecret{
+		targetURL: parsedUrl,
+
 		httpClient:        httpClient,
 		k8sClient:         k8sClient,
 		waitSecretTimeout: config.WaitSecretTimeout,
 		secretName:        config.SecretName,
 		secretNamespace:   config.SecretNamespace,
+
+		token:        httputils.Token{},
+		tokenTimeout: tokenTimeout,
+		lock:         sync.RWMutex{},
 	}, nil
 }
 
-func (c *OAuthTokenProvider) GetAuthorizationToken(ctx context.Context) (httputils.Token, error) {
+func (c *TokenProviderFromSecret) Name() string {
+	return "TokenProviderFromSecret"
+}
+
+func (c *TokenProviderFromSecret) Matches(ctx context.Context) bool {
+	if _, err := getBearerToken(ctx); err != nil {
+		log.C(ctx).WithError(err).Warn("while obtaining bearer token")
+		return true
+	}
+
+	return false
+}
+
+func (c *TokenProviderFromSecret) TargetURL() *url.URL {
+	return c.targetURL
+}
+
+func (c *TokenProviderFromSecret) GetAuthorizationToken(ctx context.Context) (httputils.Token, error) {
+	c.lock.RLock()
+	isValidToken := !c.token.EmptyOrExpired(c.tokenTimeout)
+	c.lock.RUnlock()
+	if isValidToken {
+		return c.token, nil
+	}
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	if !c.token.EmptyOrExpired(c.tokenTimeout) {
+		return c.token, nil
+	}
+
+	log.C(ctx).Debug("Token is invalid, getting a new one...")
+
 	credentials, err := c.extractOAuthClientFromSecret(ctx)
 	if err != nil {
 		return httputils.Token{}, errors.Wrap(err, "while get credentials from secret")
 	}
 
-	return c.getAuthorizationToken(ctx, credentials)
+	token, err := c.getAuthorizationToken(ctx, credentials)
+	c.token = token
+	return token, err
 }
 
-func (c *OAuthTokenProvider) extractOAuthClientFromSecret(ctx context.Context) (credentials, error) {
+func (c *TokenProviderFromSecret) extractOAuthClientFromSecret(ctx context.Context) (credentials, error) {
 	secret := &v1.Secret{}
 	err := wait.Poll(time.Second*2, c.waitSecretTimeout, func() (bool, error) {
 		err := c.k8sClient.Get(ctx, client.ObjectKey{
@@ -77,7 +150,7 @@ func (c *OAuthTokenProvider) extractOAuthClientFromSecret(ctx context.Context) (
 	}, nil
 }
 
-func (c *OAuthTokenProvider) getAuthorizationToken(ctx context.Context, credentials credentials) (httputils.Token, error) {
+func (c *TokenProviderFromSecret) getAuthorizationToken(ctx context.Context, credentials credentials) (httputils.Token, error) {
 	log.C(ctx).Infof("Getting authorization token from endpoint: %s", credentials.tokensEndpoint)
 
 	form := url.Values{}
@@ -123,7 +196,7 @@ func (c *OAuthTokenProvider) getAuthorizationToken(ctx context.Context, credenti
 	return tokenResponse, nil
 }
 
-func prepareK8sClient() (client.Client, error) {
+func PrepareK8sClient(duration time.Duration) (client.Client, error) {
 	k8sCfg, err := k8scfg.GetConfig()
 	if err != nil {
 		return nil, err
@@ -131,7 +204,7 @@ func prepareK8sClient() (client.Client, error) {
 
 	mapper, err := apiutil.NewDiscoveryRESTMapper(k8sCfg)
 	if err != nil {
-		err = wait.Poll(time.Second, time.Minute, func() (bool, error) {
+		err = wait.Poll(time.Second, duration, func() (bool, error) {
 			mapper, err = apiutil.NewDiscoveryRESTMapper(k8sCfg)
 			if err != nil {
 				return false, nil
