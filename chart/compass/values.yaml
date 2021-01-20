@@ -14,16 +14,16 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1673"
+      version: "PR-1693"
     connectivity_adapter:
       dir:
-      version: "PR-1674"
+      version: "PR-1693"
     pairing_adapter:
       dir:
       version: "PR-1674"
     director:
       dir:
-      version: "PR-1668"
+      version: "PR-1693"
     gateway:
       dir:
       version: "PR-1674"
@@ -38,7 +38,7 @@ global:
       version: "PR-1674"
     schema_migrator:
       dir:
-      version: "PR-1666"
+      version: "PR-1693"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -53,7 +53,7 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1668"
+        version: "PR-1693"
       connector:
         dir:
         version: "PR-1674"
@@ -65,7 +65,7 @@ global:
         version: "PR-1674"
       ord_service:
         dir:
-        version: "PR-1691"
+        version: "PR-1693"
   isLocalEnv: false
   oauth2:
     host: oauth2

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package bndl
+package pkg
 
 import (
 	"context"
