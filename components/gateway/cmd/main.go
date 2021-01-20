@@ -66,11 +66,11 @@ func main() {
 	var auditlogSink proxy.AuditlogService
 	var auditlogSvc proxy.AuditlogService
 	if cfg.AuditlogEnabled {
-		logger.Println("Auditlog is enabled")
+		logger.Infoln("Auditlog is enabled")
 		auditlogSink, auditlogSvc, err = initAuditLogs(ctx, done, metricsCollector)
 		exitOnError(err, "Error while initializing auditlog service")
 	} else {
-		logger.Println("Auditlog is disabled")
+		logger.Infoln("Auditlog is disabled")
 		auditlogSink = &auditlog.NoOpService{}
 		auditlogSvc = &auditlog.NoOpService{}
 	}
