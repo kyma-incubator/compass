@@ -25,7 +25,7 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/middlewares"
 )
 
-func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger, unauthorizedString string) func(router *mux.Router) {
+func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger) func(router *mux.Router) {
 	return func(router *mux.Router) {
 
 		r := router.PathPrefix(rootAPI).Subrouter()
@@ -34,7 +34,7 @@ func API(rootAPI string, serviceBroker domain.ServiceBroker, logger lager.Logger
 		r.Use(middlewares.AddOriginatingIdentityToContext)
 		r.Use(middlewares.APIVersionMiddleware{LoggerFactory: logger}.ValidateAPIVersionHdr)
 		r.Use(middlewares.AddInfoLocationToContext)
-		r.Use(http.UnauthorizedMiddleware(unauthorizedString))
+		r.Use(http.UnauthorizedMiddleware())
 
 		brokerapi.AttachRoutes(r, serviceBroker, logger)
 	}

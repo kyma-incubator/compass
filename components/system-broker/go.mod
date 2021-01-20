@@ -15,7 +15,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20201215113912-5d4fae1f82ec
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210120120046-d5b16de73a83
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.2.2
 	github.com/moul/http2curl v1.0.0 // indirect
@@ -32,7 +32,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.6.1
-	github.com/tidwall/gjson v1.6.3
+	github.com/tidwall/gjson v1.6.4
 	github.com/valyala/fasthttp v1.16.0 // indirect
 	github.com/vektah/gqlparser v1.3.1
 	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0 // indirect

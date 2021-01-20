@@ -8,13 +8,14 @@ import (
 	"net/http/httptest"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
 
 // UnauthorizedMiddleware ensures that unauthorized responses are correctly propagated.
-func UnauthorizedMiddleware(unauthorizedString string) func(next http.Handler) http.Handler {
+func UnauthorizedMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			recorder := httptest.NewRecorder()
@@ -36,7 +37,7 @@ func UnauthorizedMiddleware(unauthorizedString string) func(next http.Handler) h
 			}
 
 			res := gjson.GetBytes(brokerResponseBody, "description")
-			if strings.Contains(res.Str, unauthorizedString) {
+			if strings.Contains(res.Str, apperrors.InsufficientScopesMsg) {
 				log.C(ctx).Info("unauthorized request.. returning 401")
 
 				writeErrorResponse(ctx, rw, http.StatusUnauthorized, errors.New("unauthorized: insufficient scopes"))

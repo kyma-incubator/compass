@@ -139,7 +139,6 @@ global:
     port: 5001
     prefix: /broker
     forwardHeaders: Authorization
-    unauthorizedString: "insufficient scopes provided"
     secrets:
       integrationSystemCredentials:
         name: compass-system-broker-credentials

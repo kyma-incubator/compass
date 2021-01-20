@@ -32,8 +32,7 @@ type Config struct {
 	MaxIdleConns      int  `mapstructure:"max_idle_cons"`
 	SkipSSLValidation bool `mapstructure:"skip_ssl_validation" description:"whether to skip ssl verification when making calls to external services"`
 
-	UnauthorizedString string   `mapstructure:"unauthorized_string"`
-	ForwardHeaders     []string `mapstructure:"forward_headers"`
+	ForwardHeaders []string `mapstructure:"forward_headers"`
 }
 
 func DefaultConfig() *Config {
@@ -47,7 +46,6 @@ func DefaultConfig() *Config {
 		MaxIdleConns:          90,
 		SkipSSLValidation:     true,
 		ForwardHeaders:        []string{},
-		UnauthorizedString:    "",
 	}
 }
 
