@@ -252,13 +252,13 @@ func initWorkers(ctx context.Context, workers chan bool, auditlogSvc proxy.Audit
 		for {
 			select {
 			case <-done:
-				log.Info("Worker starter goroutine finished")
+				log.Infoln("Worker starter goroutine finished")
 				return
 			case workers <- true:
 			}
 			worker := auditlog.NewWorker(auditlogSvc, msgChannel, done, collector)
 			go func() {
-				log.Info("Starting worker for auditlog message processing")
+				log.Infoln("Starting worker for auditlog message processing")
 				worker.Start()
 				<-workers
 			}()
