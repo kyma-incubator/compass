@@ -197,7 +197,7 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 
 	directorGraphQLClient, err := prepareGQLClient(cfg)
 	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
-	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter(), cfg.HttpClient.UnauthorizedString)
+	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter())
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
 
 	middlewares := []mux.MiddlewareFunc{

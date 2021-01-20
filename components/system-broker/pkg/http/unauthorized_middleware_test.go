@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/stretchr/testify/require"
 )
@@ -23,15 +25,13 @@ func TestUnauthorizedMiddlewareWhenErrorOccursShouldReturnInternalServerError(t 
 	}
 
 	preMiddleware := preMiddleware(t, http.StatusInternalServerError, "test")
-	unauthorizedMiddleware := httputil.UnauthorizedMiddleware(authorizedString)
+	unauthorizedMiddleware := httputil.UnauthorizedMiddleware()
 	postMiddleware := postMiddleware(t, http.StatusInternalServerError, "test")
 
 	preMiddleware(unauthorizedMiddleware(postMiddleware(nil))).ServeHTTP(nil, request)
 }
 
 func TestUnauthorizedMiddlewareWhenUnauthorizedShouldReturnUnauthorized(t *testing.T) {
-	const directorUnauthorizedErrorString = "insufficient scopes provided"
-
 	testUrl, err := url.Parse("http://localhost:8080")
 	require.NoError(t, err)
 	request := &http.Request{
@@ -41,8 +41,8 @@ func TestUnauthorizedMiddlewareWhenUnauthorizedShouldReturnUnauthorized(t *testi
 	}
 
 	preMiddleware := preMiddleware(t, http.StatusUnauthorized, "unauthorized: insufficient scopes")
-	unauthorizedMiddleware := httputil.UnauthorizedMiddleware(directorUnauthorizedErrorString)
-	postMiddleware := postMiddleware(t, http.StatusInternalServerError, fmt.Sprintf(`{"description":"%s"}`, directorUnauthorizedErrorString))
+	unauthorizedMiddleware := httputil.UnauthorizedMiddleware()
+	postMiddleware := postMiddleware(t, http.StatusInternalServerError, fmt.Sprintf(`{"description":"%s"}`, apperrors.InsufficientScopesMsg))
 
 	preMiddleware(unauthorizedMiddleware(postMiddleware(nil))).ServeHTTP(nil, request)
 }
