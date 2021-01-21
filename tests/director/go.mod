@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go v2.5.0+incompatible
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/google/uuid v1.1.2
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210119151733-586ca2a3ee31 // indirect
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210121133746-d2a1d973bbc1
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20200429083609-7d80a85180c6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
