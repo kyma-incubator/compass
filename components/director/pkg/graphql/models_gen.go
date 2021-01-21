@@ -186,23 +186,6 @@ type BasicCredentialDataInput struct {
 	Password string `json:"password"`
 }
 
-type Bundle struct {
-	ID                             string                `json:"id"`
-	Name                           string                `json:"name"`
-	Description                    *string               `json:"description"`
-	InstanceAuthRequestInputSchema *JSONSchema           `json:"instanceAuthRequestInputSchema"`
-	InstanceAuth                   *BundleInstanceAuth   `json:"instanceAuth"`
-	InstanceAuths                  []*BundleInstanceAuth `json:"instanceAuths"`
-	// When defined, all Auth requests fallback to defaultInstanceAuth.
-	DefaultInstanceAuth *Auth                `json:"defaultInstanceAuth"`
-	APIDefinitions      *APIDefinitionPage   `json:"apiDefinitions"`
-	EventDefinitions    *EventDefinitionPage `json:"eventDefinitions"`
-	Documents           *DocumentPage        `json:"documents"`
-	APIDefinition       *APIDefinition       `json:"apiDefinition"`
-	EventDefinition     *EventDefinition     `json:"eventDefinition"`
-	Document            *Document            `json:"document"`
-}
-
 type BundleCreateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
