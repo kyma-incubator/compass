@@ -2,10 +2,11 @@ package osb
 
 import (
 	"fmt"
+	"testing"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestConverter_Convert(t *testing.T) {
@@ -311,7 +312,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "Package_instance_auth_request_input_schema is nil",
+			name: "Package instance auth request input schema is nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -348,11 +349,44 @@ func TestConverter_Convert(t *testing.T) {
 			},
 			expectedErr: "",
 		},
+		{
+			name: "Success for entities containing group and version",
+			app: &schema.ApplicationExt{
+				Application: schema.Application{
+					ID:           "id",
+					Name:         "app1",
+					ProviderName: strToPtrStr("provider"),
+					Description:  strToPtrStr("description"),
+				},
+				Labels: schema.Labels{"key": "value"},
+				Packages: schema.PackagePageExt{
+					Data: generatePackageWithModification(addGroupAndVersionToPackage),
+				},
+				EventingConfiguration: schema.ApplicationEventingConfiguration{},
+			},
+			expectedServices: &domain.Service{
+				ID:                   "id",
+				Name:                 "app1",
+				Description:          "description",
+				Bindable:             true,
+				InstancesRetrievable: false,
+				BindingsRetrievable:  true,
+				PlanUpdatable:        false,
+				Plans:                generatePlansWithModification(addGroupAndVersionToPlan),
+				Metadata: &domain.ServiceMetadata{
+					DisplayName:         "app1",
+					ProviderDisplayName: "provider",
+					AdditionalMetadata:  schema.Labels{"key": "value"},
+				},
+			},
+			expectedErr: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := Converter{
-				baseURL: "http://specification.com",
+				baseURL:      "http://specification.com",
+				MapConverter: MapConverter{},
 			}
 			service, err := c.Convert(tt.app)
 			if tt.expectedErr != "" {
@@ -372,7 +406,7 @@ func generateExpectations(packagesCount, apiDefCount, eventDefCount int) []domai
 			ID:          fmt.Sprintf("id%d", i),
 			Name:        fmt.Sprintf("package%d", i),
 			Description: "description",
-			Bindable:    boolPtr(true),
+			Bindable:    boolToPtr(true),
 			Metadata:    &domain.ServicePlanMetadata{},
 			Schemas: &domain.ServiceSchemas{
 				Instance: domain.ServiceInstanceSchema{
@@ -383,34 +417,43 @@ func generateExpectations(packagesCount, apiDefCount, eventDefCount int) []domai
 				Binding: domain.ServiceBindingSchema{},
 			},
 		}
-		specifications := make([]map[string]interface{}, 0, apiDefCount+eventDefCount)
 
+		apis := make([]map[string]interface{}, 0, 0)
 		for j := 0; j < apiDefCount; j++ {
-			apiDefSpec := map[string]interface{}{
-				"definition_id":          fmt.Sprintf("id%d", j),
-				"definition_name":        fmt.Sprintf("apiDef%d", j),
-				"specification_category": "api_definition",
-				"specification_type":     schema.APISpecTypeOdata,
-				"specification_format":   "application/json",
-				"specification_url":      fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j),
+			apiSpec := map[string]interface{}{
+				"id":          fmt.Sprintf("id%d", j),
+				"name":        fmt.Sprintf("apiDef%d", j),
+				"target_url":  fmt.Sprintf("target-url-%d", j),
+				"description": strToPtrStr(fmt.Sprintf("description%d", j)),
 			}
-			specifications = append(specifications, apiDefSpec)
+			specification := make(map[string]interface{})
+			specification["type"] = schema.APISpecTypeOdata
+			specification["format"] = "application/json"
+			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j)
+			apiSpec["specification"] = specification
+
+			apis = append(apis, apiSpec)
 		}
 
+		events := make([]map[string]interface{}, 0, 0)
 		for j := 0; j < eventDefCount; j++ {
-			eventDefSpec := map[string]interface{}{
-				"definition_id":          fmt.Sprintf("id%d", j),
-				"definition_name":        fmt.Sprintf("eventDef%d", j),
-				"specification_category": "event_definition",
-				"specification_type":     schema.EventSpecTypeAsyncAPI,
-				"specification_format":   "application/json",
-				"specification_url":      fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j),
+			eventSpec := map[string]interface{}{
+				"id":          fmt.Sprintf("id%d", j),
+				"name":        fmt.Sprintf("eventDef%d", j),
+				"description": strToPtrStr(fmt.Sprintf("description%d", j)),
 			}
-			specifications = append(specifications, eventDefSpec)
+			specification := make(map[string]interface{})
+			specification["type"] = schema.EventSpecTypeAsyncAPI
+			specification["format"] = "application/json"
+			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j)
+			eventSpec["specification"] = specification
+
+			events = append(events, eventSpec)
 		}
 
 		plan.Metadata.AdditionalMetadata = map[string]interface{}{
-			"specifications": specifications,
+			"api_specs":   apis,
+			"event_specs": events,
 		}
 		plans = append(plans, plan)
 	}
@@ -444,8 +487,10 @@ func generateAPIDefinitions(count int) schema.APIDefinitionPageExt {
 	for i := 0; i < count; i++ {
 		currentAPIDefinition := &schema.APIDefinitionExt{
 			APIDefinition: schema.APIDefinition{
-				ID:   fmt.Sprintf("id%d", i),
-				Name: fmt.Sprintf("apiDef%d", i),
+				ID:          fmt.Sprintf("id%d", i),
+				Name:        fmt.Sprintf("apiDef%d", i),
+				TargetURL:   fmt.Sprintf("target-url-%d", i),
+				Description: strToPtrStr(fmt.Sprintf("description%d", i)),
 			},
 			Spec: &schema.APISpecExt{
 				APISpec: schema.APISpec{
@@ -466,9 +511,11 @@ func generateEventDefinitions(count int) schema.EventAPIDefinitionPageExt {
 	for i := 0; i < count; i++ {
 		currentEventDefinition := &schema.EventAPIDefinitionExt{
 			EventDefinition: schema.EventDefinition{
-				ID:   fmt.Sprintf("id%d", i),
-				Name: fmt.Sprintf("eventDef%d", i),
+				ID:          fmt.Sprintf("id%d", i),
+				Name:        fmt.Sprintf("eventDef%d", i),
+				Description: strToPtrStr(fmt.Sprintf("description%d", i)),
 			},
+
 			Spec: &schema.EventAPISpecExt{
 				EventSpec: schema.EventSpec{
 					Format: schema.SpecFormatJSON,
@@ -484,10 +531,6 @@ func generateEventDefinitions(count int) schema.EventAPIDefinitionPageExt {
 	}
 }
 
-func strToPtrStr(s string) *string {
-	return &s
-}
-
 func generatePlansWithModification(f func(plan domain.ServicePlan) domain.ServicePlan) []domain.ServicePlan {
 	expectations := generateExpectations(1, 1, 1)
 	expectations[0] = f(expectations[0])
@@ -498,4 +541,12 @@ func generatePackageWithModification(f func(*schema.PackageExt) *schema.PackageE
 	pkg := generatePackages(1, 1, 1)
 	pkg[0] = f(pkg[0])
 	return pkg
+}
+
+func strToPtrStr(s string) *string {
+	return &s
+}
+
+func boolToPtrStr(b bool) *bool {
+	return &b
 }

@@ -22,13 +22,13 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 )
 
 type Converter struct {
 	baseURL string
+	MapConverter
 }
 
 func (c Converter) Convert(app *schema.ApplicationExt) (*domain.Service, error) {
@@ -76,7 +76,7 @@ func (c *Converter) toPlans(appID string, packages []*graphql.PackageExt) ([]dom
 			ID:          p.ID,
 			Name:        p.Name,
 			Description: desc,
-			Bindable:    boolPtr(true),
+			Bindable:    boolToPtr(true),
 			Metadata:    metadata,
 			Schemas:     schemas,
 		}
@@ -92,48 +92,26 @@ func (c *Converter) toPlanMetadata(appID string, pkg *graphql.PackageExt) (*doma
 		AdditionalMetadata: make(map[string]interface{}),
 	}
 
-	specificationsArr := make([]map[string]interface{}, 0, 0)
+	apis := make([]map[string]interface{}, 0, 0)
 
 	for _, apiDef := range pkg.APIDefinitions.Data {
-		if apiDef.Spec != nil {
-			specsFormatHeader, err := specs.SpecForamtToContentTypeHeader(apiDef.Spec.Format)
-			if err != nil {
-				return nil, err
-			}
-			specifications := make(map[string]interface{})
-			specifications["definition_id"] = apiDef.ID
-			specifications["definition_name"] = apiDef.Name
-			specifications["specification_category"] = "api_definition"
-			specifications["specification_type"] = apiDef.Spec.Type
-			specifications["specification_format"] = specsFormatHeader
-			specifications["specification_url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
-				c.baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.PackageIDParameter, pkg.ID, specs.DefinitionIDParameter, apiDef.ID)
-
-			specificationsArr = append(specificationsArr, specifications)
+		api, err := c.toApiDefMap(c.baseURL, appID, pkg.ID, apiDef)
+		if err != nil {
+			return nil, fmt.Errorf("while converting apidef to map: %w", err)
 		}
+		apis = append(apis, api)
 	}
+	metadata.AdditionalMetadata["api_specs"] = apis
 
+	events := make([]map[string]interface{}, 0, 0)
 	for _, eventDef := range pkg.EventDefinitions.Data {
-		if eventDef.Spec != nil {
-			specsFormatHeader, err := specs.SpecForamtToContentTypeHeader(eventDef.Spec.Format)
-			if err != nil {
-				return nil, err
-			}
-			specifications := make(map[string]interface{})
-			specifications["definition_id"] = eventDef.ID
-			specifications["definition_name"] = eventDef.Name
-			specifications["specification_category"] = "event_definition"
-			specifications["specification_type"] = eventDef.Spec.Type
-			specifications["specification_format"] = specsFormatHeader
-			specifications["specification_url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
-				c.baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.PackageIDParameter, pkg.ID, specs.DefinitionIDParameter, eventDef.ID)
-
-			specificationsArr = append(specificationsArr, specifications)
-
+		event, err := c.toEventDefMap(c.baseURL, appID, pkg.ID, eventDef)
+		if err != nil {
+			return nil, fmt.Errorf("while converting eventdef to map: %w", err)
 		}
+		events = append(events, event)
 	}
-
-	metadata.AdditionalMetadata["specifications"] = specificationsArr
+	metadata.AdditionalMetadata["event_specs"] = events
 
 	return metadata, nil
 }
@@ -155,8 +133,8 @@ func (c *Converter) toSchemas(pkg *graphql.PackageExt) (*domain.ServiceSchemas, 
 		return nil, nil
 	}
 
-	var unmarshaled map[string]interface{}
-	err := json.Unmarshal([]byte(*pkg.InstanceAuthRequestInputSchema), &unmarshaled)
+	var unmarshalled map[string]interface{}
+	err := json.Unmarshal([]byte(*pkg.InstanceAuthRequestInputSchema), &unmarshalled)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while unmarshaling JSON schema: %v", *pkg.InstanceAuthRequestInputSchema)
 	}
@@ -164,7 +142,7 @@ func (c *Converter) toSchemas(pkg *graphql.PackageExt) (*domain.ServiceSchemas, 
 	return &domain.ServiceSchemas{
 		Instance: domain.ServiceInstanceSchema{
 			Create: domain.Schema{
-				Parameters: unmarshaled,
+				Parameters: unmarshalled,
 			},
 		},
 		Binding: domain.ServiceBindingSchema{},
@@ -179,6 +157,6 @@ func ptrStrToStr(s *string) string {
 	return *s
 }
 
-func boolPtr(in bool) *bool {
+func boolToPtr(in bool) *bool {
 	return &in
 }

@@ -107,7 +107,7 @@ func toDirectorResponse(t *testing.T, mockApp interface{}) string {
 }
 
 func toCatalog(t *testing.T, mockApp director.ApplicationsOutput) interface{} {
-	converter := osb.Converter{}
+	converter := osb.Converter{MapConverter: osb.MapConverter{}}
 	svcs := make([]domain.Service, 0)
 	for _, app := range mockApp.Result.Data {
 		s, err := converter.Convert(app)
