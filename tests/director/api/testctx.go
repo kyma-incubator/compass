@@ -47,13 +47,13 @@ func newTestContext() (*testContext, error) {
 
 func (tc *testContext) NewOperation(ctx context.Context) *Operation {
 	return &Operation{
-		ctx:         ctx,
-		tenant:      testTenants.GetDefaultTenantID(),
+		ctx:    ctx,
+		tenant: testTenants.GetDefaultTenantID(),
 		queryParams: map[string]string{
 			"useBundles": "true", // TODO: Delete after bundles are adopted
 		},
-		scopes:      tc.currentScopes,
-		consumer:    &jwtbuilder.Consumer{},
+		scopes:   tc.currentScopes,
+		consumer: &jwtbuilder.Consumer{},
 	}
 }
 
