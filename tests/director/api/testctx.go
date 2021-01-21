@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -48,7 +49,9 @@ func (tc *testContext) NewOperation(ctx context.Context) *Operation {
 	return &Operation{
 		ctx:         ctx,
 		tenant:      testTenants.GetDefaultTenantID(),
-		queryParams: make(map[string]string, 0),
+		queryParams: map[string]string{
+			"useBundles": "true", // TODO: Delete after bundles are adopted
+		},
 		scopes:      tc.currentScopes,
 		consumer:    &jwtbuilder.Consumer{},
 	}
@@ -96,7 +99,18 @@ func (o *Operation) Run(req *gcli.Request, resp interface{}) error {
 		return errors.Wrap(err, "while building JWT token")
 	}
 
-	cli := gql.NewAuthorizedGraphQLClient(token)
+	url, err := url.Parse(gql.GetDirectorGraphQLURL())
+	if err != nil {
+		return err
+	}
+
+	query := url.Query()
+	for key, val := range o.queryParams {
+		query.Add(key, val)
+	}
+	url.RawQuery = query.Encode()
+
+	cli := gql.NewAuthorizedGraphQLClientWithCustomURL(token, url.String())
 
 	return withRetryOnTemporaryConnectionProblems(func() error {
 		return cli.Run(o.ctx, req, &m)
