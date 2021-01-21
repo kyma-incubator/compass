@@ -57,6 +57,24 @@ enum ApplicationWebhookType {
 	CONFIGURATION_CHANGED
 }
 
+enum BundleInstanceAuthSetStatusConditionInput {
+	SUCCEEDED
+	FAILED
+}
+
+enum BundleInstanceAuthStatusCondition {
+	"""
+	When creating, before Application sets the credentials
+	"""
+	PENDING
+	SUCCEEDED
+	FAILED
+	"""
+	When Runtime requests deletion and Application has to revoke the credentials
+	"""
+	UNUSED
+}
+
 enum DocumentFormat {
 	MARKDOWN
 }
@@ -84,24 +102,6 @@ enum HealthCheckStatusCondition {
 
 enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
-}
-
-enum BundleInstanceAuthSetStatusConditionInput {
-	SUCCEEDED
-	FAILED
-}
-
-enum BundleInstanceAuthStatusCondition {
-	"""
-	When creating, before Application sets the credentials
-	"""
-	PENDING
-	SUCCEEDED
-	FAILED
-	"""
-	When Runtime requests deletion and Application has to revoke the credentials
-	"""
-	UNUSED
 }
 
 enum RuntimeStatusCondition {
@@ -277,6 +277,80 @@ input BasicCredentialDataInput {
 	password: String!
 }
 
+input BundleCreateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	name: String!
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	defaultInstanceAuth: AuthInput
+	apiDefinitions: [APIDefinitionInput!]
+	eventDefinitions: [EventDefinitionInput!]
+	documents: [DocumentInput!]
+}
+
+input BundleInstanceAuthRequestInput {
+	"""
+	Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
+	"""
+	context: JSON
+	"""
+	**Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
+	"""
+	inputParams: JSON
+}
+
+input BundleInstanceAuthSetInput {
+	"""
+	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	"""
+	auth: AuthInput
+	"""
+	**Validation:** Optional if the auth is provided.
+	If the status condition is "FAILED", auth must be empty.
+	"""
+	status: BundleInstanceAuthStatusInput
+}
+
+input BundleInstanceAuthStatusInput {
+	condition: BundleInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	**Validation:** required, if condition is FAILED
+	"""
+	message: String!
+	"""
+	Example reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	
+	   **Validation**: required, if condition is FAILED
+	"""
+	reason: String!
+}
+
+input BundleUpdateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	name: String!
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	"""
+	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
+	"""
+	defaultInstanceAuth: AuthInput
+}
+
 input CSRFTokenCredentialRequestAuthInput {
 	"""
 	**Validation:** valid URL
@@ -432,80 +506,6 @@ input OAuthCredentialDataInput {
 	**Validation:** valid URL
 	"""
 	url: String!
-}
-
-input BundleCreateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	name: String!
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	instanceAuthRequestInputSchema: JSONSchema
-	defaultInstanceAuth: AuthInput
-	apiDefinitions: [APIDefinitionInput!]
-	eventDefinitions: [EventDefinitionInput!]
-	documents: [DocumentInput!]
-}
-
-input BundleInstanceAuthRequestInput {
-	"""
-	Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
-	"""
-	context: JSON
-	"""
-	**Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
-	"""
-	inputParams: JSON
-}
-
-input BundleInstanceAuthSetInput {
-	"""
-	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
-	"""
-	auth: AuthInput
-	"""
-	**Validation:** Optional if the auth is provided.
-	If the status condition is "FAILED", auth must be empty.
-	"""
-	status: BundleInstanceAuthStatusInput
-}
-
-input BundleInstanceAuthStatusInput {
-	condition: BundleInstanceAuthSetStatusConditionInput! = SUCCEEDED
-	"""
-	**Validation:** required, if condition is FAILED
-	"""
-	message: String!
-	"""
-	Example reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	
-	   **Validation**: required, if condition is FAILED
-	"""
-	reason: String!
-}
-
-input BundleUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	name: String!
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	instanceAuthRequestInputSchema: JSONSchema
-	"""
-	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
-	"""
-	defaultInstanceAuth: AuthInput
 }
 
 input PlaceholderDefinitionInput {
@@ -677,6 +677,64 @@ type BasicCredentialData {
 	password: String!
 }
 
+type Bundle {
+	id: ID!
+	name: String!
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	instanceAuth(id: ID!): BundleInstanceAuth
+	instanceAuths: [BundleInstanceAuth!]!
+	"""
+	When defined, all Auth requests fallback to defaultInstanceAuth.
+	"""
+	defaultInstanceAuth: Auth
+	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
+	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
+	documents(first: Int = 200, after: PageCursor): DocumentPage
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
+	document(id: ID!): Document
+}
+
+type BundleInstanceAuth {
+	id: ID!
+	"""
+	Context of BundleInstanceAuth - such as Runtime ID, namespace
+	"""
+	context: JSON
+	"""
+	User input while requesting Bundle Instance Auth
+	"""
+	inputParams: JSON
+	"""
+	It may be empty if status is PENDING.
+	Populated with `bundle.defaultAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	"""
+	auth: Auth
+	status: BundleInstanceAuthStatus!
+}
+
+type BundleInstanceAuthStatus {
+	condition: BundleInstanceAuthStatusCondition!
+	timestamp: Timestamp!
+	message: String!
+	"""
+	Possible reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String!
+}
+
+type BundlePage implements Pageable {
+	data: [Bundle!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type CSRFTokenCredentialRequestAuth {
 	tokenEndpointURL: String!
 	credential: CredentialData
@@ -811,64 +869,6 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	connectorURL: String!
 	raw: String
 	rawEncoded: String
-}
-
-type Bundle {
-	id: ID!
-	name: String!
-	description: String
-	instanceAuthRequestInputSchema: JSONSchema
-	instanceAuth(id: ID!): BundleInstanceAuth
-	instanceAuths: [BundleInstanceAuth!]!
-	"""
-	When defined, all Auth requests fallback to defaultInstanceAuth.
-	"""
-	defaultInstanceAuth: Auth
-	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
-	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
-	documents(first: Int = 200, after: PageCursor): DocumentPage
-	apiDefinition(id: ID!): APIDefinition
-	eventDefinition(id: ID!): EventDefinition
-	document(id: ID!): Document
-}
-
-type BundleInstanceAuth {
-	id: ID!
-	"""
-	Context of BundleInstanceAuth - such as Runtime ID, namespace
-	"""
-	context: JSON
-	"""
-	User input while requesting Bundle Instance Auth
-	"""
-	inputParams: JSON
-	"""
-	It may be empty if status is PENDING.
-	Populated with `bundle.defaultAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	"""
-	auth: Auth
-	status: BundleInstanceAuthStatus!
-}
-
-type BundleInstanceAuthStatus {
-	condition: BundleInstanceAuthStatusCondition!
-	timestamp: Timestamp!
-	message: String!
-	"""
-	Possible reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	"""
-	reason: String!
-}
-
-type BundlePage implements Pageable {
-	data: [Bundle!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
 }
 
 type PageInfo {

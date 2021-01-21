@@ -37,13 +37,13 @@ type Config struct {
 type ResolverRoot interface {
 	APISpec() APISpecResolver
 	Application() ApplicationResolver
+	Bundle() BundleResolver
 	Document() DocumentResolver
 	EventSpec() EventSpecResolver
 	IntegrationSystem() IntegrationSystemResolver
 	Mutation() MutationResolver
 	OneTimeTokenForApplication() OneTimeTokenForApplicationResolver
 	OneTimeTokenForRuntime() OneTimeTokenForRuntimeResolver
-	Bundle() BundleResolver
 	Query() QueryResolver
 	Runtime() RuntimeResolver
 	RuntimeContext() RuntimeContextResolver
@@ -83,6 +83,8 @@ type ComplexityRoot struct {
 
 	Application struct {
 		Auths                 func(childComplexity int) int
+		Bundle                func(childComplexity int, id string) int
+		Bundles               func(childComplexity int, first *int, after *PageCursor) int
 		Description           func(childComplexity int) int
 		EventingConfiguration func(childComplexity int) int
 		HealthCheckURL        func(childComplexity int) int
@@ -90,8 +92,6 @@ type ComplexityRoot struct {
 		IntegrationSystemID   func(childComplexity int) int
 		Labels                func(childComplexity int, key *string) int
 		Name                  func(childComplexity int) int
-		Bundle                func(childComplexity int, id string) int
-		Bundles               func(childComplexity int, first *int, after *PageCursor) int
 		ProviderName          func(childComplexity int) int
 		Status                func(childComplexity int) int
 		Webhooks              func(childComplexity int) int
@@ -150,6 +150,43 @@ type ComplexityRoot struct {
 	BasicCredentialData struct {
 		Password func(childComplexity int) int
 		Username func(childComplexity int) int
+	}
+
+	Bundle struct {
+		APIDefinition                  func(childComplexity int, id string) int
+		APIDefinitions                 func(childComplexity int, group *string, first *int, after *PageCursor) int
+		DefaultInstanceAuth            func(childComplexity int) int
+		Description                    func(childComplexity int) int
+		Document                       func(childComplexity int, id string) int
+		Documents                      func(childComplexity int, first *int, after *PageCursor) int
+		EventDefinition                func(childComplexity int, id string) int
+		EventDefinitions               func(childComplexity int, group *string, first *int, after *PageCursor) int
+		ID                             func(childComplexity int) int
+		InstanceAuth                   func(childComplexity int, id string) int
+		InstanceAuthRequestInputSchema func(childComplexity int) int
+		InstanceAuths                  func(childComplexity int) int
+		Name                           func(childComplexity int) int
+	}
+
+	BundleInstanceAuth struct {
+		Auth        func(childComplexity int) int
+		Context     func(childComplexity int) int
+		ID          func(childComplexity int) int
+		InputParams func(childComplexity int) int
+		Status      func(childComplexity int) int
+	}
+
+	BundleInstanceAuthStatus struct {
+		Condition func(childComplexity int) int
+		Message   func(childComplexity int) int
+		Reason    func(childComplexity int) int
+		Timestamp func(childComplexity int) int
+	}
+
+	BundlePage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	CSRFTokenCredentialRequestAuth struct {
@@ -257,9 +294,9 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddAPIDefinitionToBundle                      func(childComplexity int, bundleID string, in APIDefinitionInput) int
+		AddBundle                                     func(childComplexity int, applicationID string, in BundleCreateInput) int
 		AddDocumentToBundle                           func(childComplexity int, bundleID string, in DocumentInput) int
 		AddEventDefinitionToBundle                    func(childComplexity int, bundleID string, in EventDefinitionInput) int
-		AddBundle                                     func(childComplexity int, applicationID string, in BundleCreateInput) int
 		AddWebhook                                    func(childComplexity int, applicationID string, in WebhookInput) int
 		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
 		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
@@ -269,12 +306,12 @@ type ComplexityRoot struct {
 		DeleteApplicationTemplate                     func(childComplexity int, id string) int
 		DeleteAutomaticScenarioAssignmentForScenario  func(childComplexity int, scenarioName string) int
 		DeleteAutomaticScenarioAssignmentsForSelector func(childComplexity int, selector LabelSelectorInput) int
+		DeleteBundle                                  func(childComplexity int, id string) int
+		DeleteBundleInstanceAuth                      func(childComplexity int, authID string) int
 		DeleteDefaultEventingForApplication           func(childComplexity int, appID string) int
 		DeleteDocument                                func(childComplexity int, id string) int
 		DeleteEventDefinition                         func(childComplexity int, id string) int
 		DeleteLabelDefinition                         func(childComplexity int, key string, deleteRelatedLabels *bool) int
-		DeleteBundle                                  func(childComplexity int, id string) int
-		DeleteBundleInstanceAuth                      func(childComplexity int, authID string) int
 		DeleteRuntimeLabel                            func(childComplexity int, runtimeID string, key string) int
 		DeleteSystemAuthForApplication                func(childComplexity int, authID string) int
 		DeleteSystemAuthForIntegrationSystem          func(childComplexity int, authID string) int
@@ -287,16 +324,16 @@ type ComplexityRoot struct {
 		RegisterIntegrationSystem                     func(childComplexity int, in IntegrationSystemInput) int
 		RegisterRuntime                               func(childComplexity int, in RuntimeInput) int
 		RegisterRuntimeContext                        func(childComplexity int, in RuntimeContextInput) int
+		RequestBundleInstanceAuthCreation             func(childComplexity int, bundleID string, in BundleInstanceAuthRequestInput) int
+		RequestBundleInstanceAuthDeletion             func(childComplexity int, authID string) int
 		RequestClientCredentialsForApplication        func(childComplexity int, id string) int
 		RequestClientCredentialsForIntegrationSystem  func(childComplexity int, id string) int
 		RequestClientCredentialsForRuntime            func(childComplexity int, id string) int
 		RequestOneTimeTokenForApplication             func(childComplexity int, id string) int
 		RequestOneTimeTokenForRuntime                 func(childComplexity int, id string) int
-		RequestBundleInstanceAuthCreation             func(childComplexity int, bundleID string, in BundleInstanceAuthRequestInput) int
-		RequestBundleInstanceAuthDeletion             func(childComplexity int, authID string) int
 		SetApplicationLabel                           func(childComplexity int, applicationID string, key string, value interface{}) int
-		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
+		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
 		UnregisterApplication                         func(childComplexity int, id string) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
@@ -305,10 +342,10 @@ type ComplexityRoot struct {
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
 		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateInput) int
+		UpdateBundle                                  func(childComplexity int, id string, in BundleUpdateInput) int
 		UpdateEventDefinition                         func(childComplexity int, id string, in EventDefinitionInput) int
 		UpdateIntegrationSystem                       func(childComplexity int, id string, in IntegrationSystemInput) int
 		UpdateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
-		UpdateBundle                                  func(childComplexity int, id string, in BundleUpdateInput) int
 		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeInput) int
 		UpdateRuntimeContext                          func(childComplexity int, id string, in RuntimeContextInput) int
 		UpdateWebhook                                 func(childComplexity int, webhookID string, in WebhookInput) int
@@ -333,43 +370,6 @@ type ComplexityRoot struct {
 		Raw          func(childComplexity int) int
 		RawEncoded   func(childComplexity int) int
 		Token        func(childComplexity int) int
-	}
-
-	Bundle struct {
-		APIDefinition                  func(childComplexity int, id string) int
-		APIDefinitions                 func(childComplexity int, group *string, first *int, after *PageCursor) int
-		DefaultInstanceAuth            func(childComplexity int) int
-		Description                    func(childComplexity int) int
-		Document                       func(childComplexity int, id string) int
-		Documents                      func(childComplexity int, first *int, after *PageCursor) int
-		EventDefinition                func(childComplexity int, id string) int
-		EventDefinitions               func(childComplexity int, group *string, first *int, after *PageCursor) int
-		ID                             func(childComplexity int) int
-		InstanceAuth                   func(childComplexity int, id string) int
-		InstanceAuthRequestInputSchema func(childComplexity int) int
-		InstanceAuths                  func(childComplexity int) int
-		Name                           func(childComplexity int) int
-	}
-
-	BundleInstanceAuth struct {
-		Auth        func(childComplexity int) int
-		Context     func(childComplexity int) int
-		ID          func(childComplexity int) int
-		InputParams func(childComplexity int) int
-		Status      func(childComplexity int) int
-	}
-
-	BundleInstanceAuthStatus struct {
-		Condition func(childComplexity int) int
-		Message   func(childComplexity int) int
-		Reason    func(childComplexity int) int
-		Timestamp func(childComplexity int) int
-	}
-
-	BundlePage struct {
-		Data       func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
 	}
 
 	PageInfo struct {
@@ -494,6 +494,17 @@ type ApplicationResolver interface {
 	Auths(ctx context.Context, obj *Application) ([]*SystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Application) (*ApplicationEventingConfiguration, error)
 }
+type BundleResolver interface {
+	InstanceAuth(ctx context.Context, obj *Bundle, id string) (*BundleInstanceAuth, error)
+	InstanceAuths(ctx context.Context, obj *Bundle) ([]*BundleInstanceAuth, error)
+
+	APIDefinitions(ctx context.Context, obj *Bundle, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
+	EventDefinitions(ctx context.Context, obj *Bundle, group *string, first *int, after *PageCursor) (*EventDefinitionPage, error)
+	Documents(ctx context.Context, obj *Bundle, first *int, after *PageCursor) (*DocumentPage, error)
+	APIDefinition(ctx context.Context, obj *Bundle, id string) (*APIDefinition, error)
+	EventDefinition(ctx context.Context, obj *Bundle, id string) (*EventDefinition, error)
+	Document(ctx context.Context, obj *Bundle, id string) (*Document, error)
+}
 type DocumentResolver interface {
 	FetchRequest(ctx context.Context, obj *Document) (*FetchRequest, error)
 }
@@ -568,17 +579,6 @@ type OneTimeTokenForApplicationResolver interface {
 type OneTimeTokenForRuntimeResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForRuntime) (*string, error)
 	RawEncoded(ctx context.Context, obj *OneTimeTokenForRuntime) (*string, error)
-}
-type BundleResolver interface {
-	InstanceAuth(ctx context.Context, obj *Bundle, id string) (*BundleInstanceAuth, error)
-	InstanceAuths(ctx context.Context, obj *Bundle) ([]*BundleInstanceAuth, error)
-
-	APIDefinitions(ctx context.Context, obj *Bundle, group *string, first *int, after *PageCursor) (*APIDefinitionPage, error)
-	EventDefinitions(ctx context.Context, obj *Bundle, group *string, first *int, after *PageCursor) (*EventDefinitionPage, error)
-	Documents(ctx context.Context, obj *Bundle, first *int, after *PageCursor) (*DocumentPage, error)
-	APIDefinition(ctx context.Context, obj *Bundle, id string) (*APIDefinition, error)
-	EventDefinition(ctx context.Context, obj *Bundle, id string) (*EventDefinition, error)
-	Document(ctx context.Context, obj *Bundle, id string) (*Document, error)
 }
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
@@ -731,6 +731,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.Auths(childComplexity), true
 
+	case "Application.bundle":
+		if e.complexity.Application.Bundle == nil {
+			break
+		}
+
+		args, err := ec.field_Application_bundle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Application.Bundle(childComplexity, args["id"].(string)), true
+
+	case "Application.bundles":
+		if e.complexity.Application.Bundles == nil {
+			break
+		}
+
+		args, err := ec.field_Application_bundles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Application.Bundles(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
+
 	case "Application.description":
 		if e.complexity.Application.Description == nil {
 			break
@@ -784,30 +808,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Name(childComplexity), true
-
-	case "Application.bundle":
-		if e.complexity.Application.Bundle == nil {
-			break
-		}
-
-		args, err := ec.field_Application_bundle_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Application.Bundle(childComplexity, args["id"].(string)), true
-
-	case "Application.bundles":
-		if e.complexity.Application.Bundles == nil {
-			break
-		}
-
-		args, err := ec.field_Application_bundles_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Application.Bundles(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
 	case "Application.providerName":
 		if e.complexity.Application.ProviderName == nil {
@@ -1025,6 +1025,216 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BasicCredentialData.Username(childComplexity), true
+
+	case "Bundle.apiDefinition":
+		if e.complexity.Bundle.APIDefinition == nil {
+			break
+		}
+
+		args, err := ec.field_Bundle_apiDefinition_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bundle.APIDefinition(childComplexity, args["id"].(string)), true
+
+	case "Bundle.apiDefinitions":
+		if e.complexity.Bundle.APIDefinitions == nil {
+			break
+		}
+
+		args, err := ec.field_Bundle_apiDefinitions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bundle.APIDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
+
+	case "Bundle.defaultInstanceAuth":
+		if e.complexity.Bundle.DefaultInstanceAuth == nil {
+			break
+		}
+
+		return e.complexity.Bundle.DefaultInstanceAuth(childComplexity), true
+
+	case "Bundle.description":
+		if e.complexity.Bundle.Description == nil {
+			break
+		}
+
+		return e.complexity.Bundle.Description(childComplexity), true
+
+	case "Bundle.document":
+		if e.complexity.Bundle.Document == nil {
+			break
+		}
+
+		args, err := ec.field_Bundle_document_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bundle.Document(childComplexity, args["id"].(string)), true
+
+	case "Bundle.documents":
+		if e.complexity.Bundle.Documents == nil {
+			break
+		}
+
+		args, err := ec.field_Bundle_documents_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bundle.Documents(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
+
+	case "Bundle.eventDefinition":
+		if e.complexity.Bundle.EventDefinition == nil {
+			break
+		}
+
+		args, err := ec.field_Bundle_eventDefinition_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bundle.EventDefinition(childComplexity, args["id"].(string)), true
+
+	case "Bundle.eventDefinitions":
+		if e.complexity.Bundle.EventDefinitions == nil {
+			break
+		}
+
+		args, err := ec.field_Bundle_eventDefinitions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bundle.EventDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
+
+	case "Bundle.id":
+		if e.complexity.Bundle.ID == nil {
+			break
+		}
+
+		return e.complexity.Bundle.ID(childComplexity), true
+
+	case "Bundle.instanceAuth":
+		if e.complexity.Bundle.InstanceAuth == nil {
+			break
+		}
+
+		args, err := ec.field_Bundle_instanceAuth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bundle.InstanceAuth(childComplexity, args["id"].(string)), true
+
+	case "Bundle.instanceAuthRequestInputSchema":
+		if e.complexity.Bundle.InstanceAuthRequestInputSchema == nil {
+			break
+		}
+
+		return e.complexity.Bundle.InstanceAuthRequestInputSchema(childComplexity), true
+
+	case "Bundle.instanceAuths":
+		if e.complexity.Bundle.InstanceAuths == nil {
+			break
+		}
+
+		return e.complexity.Bundle.InstanceAuths(childComplexity), true
+
+	case "Bundle.name":
+		if e.complexity.Bundle.Name == nil {
+			break
+		}
+
+		return e.complexity.Bundle.Name(childComplexity), true
+
+	case "BundleInstanceAuth.auth":
+		if e.complexity.BundleInstanceAuth.Auth == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuth.Auth(childComplexity), true
+
+	case "BundleInstanceAuth.context":
+		if e.complexity.BundleInstanceAuth.Context == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuth.Context(childComplexity), true
+
+	case "BundleInstanceAuth.id":
+		if e.complexity.BundleInstanceAuth.ID == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuth.ID(childComplexity), true
+
+	case "BundleInstanceAuth.inputParams":
+		if e.complexity.BundleInstanceAuth.InputParams == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuth.InputParams(childComplexity), true
+
+	case "BundleInstanceAuth.status":
+		if e.complexity.BundleInstanceAuth.Status == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuth.Status(childComplexity), true
+
+	case "BundleInstanceAuthStatus.condition":
+		if e.complexity.BundleInstanceAuthStatus.Condition == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuthStatus.Condition(childComplexity), true
+
+	case "BundleInstanceAuthStatus.message":
+		if e.complexity.BundleInstanceAuthStatus.Message == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuthStatus.Message(childComplexity), true
+
+	case "BundleInstanceAuthStatus.reason":
+		if e.complexity.BundleInstanceAuthStatus.Reason == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuthStatus.Reason(childComplexity), true
+
+	case "BundleInstanceAuthStatus.timestamp":
+		if e.complexity.BundleInstanceAuthStatus.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.BundleInstanceAuthStatus.Timestamp(childComplexity), true
+
+	case "BundlePage.data":
+		if e.complexity.BundlePage.Data == nil {
+			break
+		}
+
+		return e.complexity.BundlePage.Data(childComplexity), true
+
+	case "BundlePage.pageInfo":
+		if e.complexity.BundlePage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.BundlePage.PageInfo(childComplexity), true
+
+	case "BundlePage.totalCount":
+		if e.complexity.BundlePage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.BundlePage.TotalCount(childComplexity), true
 
 	case "CSRFTokenCredentialRequestAuth.additionalHeaders":
 		if e.complexity.CSRFTokenCredentialRequestAuth.AdditionalHeaders == nil {
@@ -1444,6 +1654,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddAPIDefinitionToBundle(childComplexity, args["bundleID"].(string), args["in"].(APIDefinitionInput)), true
 
+	case "Mutation.addBundle":
+		if e.complexity.Mutation.AddBundle == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addBundle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddBundle(childComplexity, args["applicationID"].(string), args["in"].(BundleCreateInput)), true
+
 	case "Mutation.addDocumentToBundle":
 		if e.complexity.Mutation.AddDocumentToBundle == nil {
 			break
@@ -1467,18 +1689,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddEventDefinitionToBundle(childComplexity, args["bundleID"].(string), args["in"].(EventDefinitionInput)), true
-
-	case "Mutation.addBundle":
-		if e.complexity.Mutation.AddBundle == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_addBundle_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.AddBundle(childComplexity, args["applicationID"].(string), args["in"].(BundleCreateInput)), true
 
 	case "Mutation.addWebhook":
 		if e.complexity.Mutation.AddWebhook == nil {
@@ -1588,6 +1798,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteAutomaticScenarioAssignmentsForSelector(childComplexity, args["selector"].(LabelSelectorInput)), true
 
+	case "Mutation.deleteBundle":
+		if e.complexity.Mutation.DeleteBundle == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteBundle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteBundle(childComplexity, args["id"].(string)), true
+
+	case "Mutation.deleteBundleInstanceAuth":
+		if e.complexity.Mutation.DeleteBundleInstanceAuth == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteBundleInstanceAuth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteBundleInstanceAuth(childComplexity, args["authID"].(string)), true
+
 	case "Mutation.deleteDefaultEventingForApplication":
 		if e.complexity.Mutation.DeleteDefaultEventingForApplication == nil {
 			break
@@ -1635,30 +1869,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteLabelDefinition(childComplexity, args["key"].(string), args["deleteRelatedLabels"].(*bool)), true
-
-	case "Mutation.deleteBundle":
-		if e.complexity.Mutation.DeleteBundle == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteBundle_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteBundle(childComplexity, args["id"].(string)), true
-
-	case "Mutation.deleteBundleInstanceAuth":
-		if e.complexity.Mutation.DeleteBundleInstanceAuth == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteBundleInstanceAuth_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteBundleInstanceAuth(childComplexity, args["authID"].(string)), true
 
 	case "Mutation.deleteRuntimeLabel":
 		if e.complexity.Mutation.DeleteRuntimeLabel == nil {
@@ -1804,6 +2014,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RegisterRuntimeContext(childComplexity, args["in"].(RuntimeContextInput)), true
 
+	case "Mutation.requestBundleInstanceAuthCreation":
+		if e.complexity.Mutation.RequestBundleInstanceAuthCreation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestBundleInstanceAuthCreation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestBundleInstanceAuthCreation(childComplexity, args["bundleID"].(string), args["in"].(BundleInstanceAuthRequestInput)), true
+
+	case "Mutation.requestBundleInstanceAuthDeletion":
+		if e.complexity.Mutation.RequestBundleInstanceAuthDeletion == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestBundleInstanceAuthDeletion_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestBundleInstanceAuthDeletion(childComplexity, args["authID"].(string)), true
+
 	case "Mutation.requestClientCredentialsForApplication":
 		if e.complexity.Mutation.RequestClientCredentialsForApplication == nil {
 			break
@@ -1864,30 +2098,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RequestOneTimeTokenForRuntime(childComplexity, args["id"].(string)), true
 
-	case "Mutation.requestBundleInstanceAuthCreation":
-		if e.complexity.Mutation.RequestBundleInstanceAuthCreation == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_requestBundleInstanceAuthCreation_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.RequestBundleInstanceAuthCreation(childComplexity, args["bundleID"].(string), args["in"].(BundleInstanceAuthRequestInput)), true
-
-	case "Mutation.requestBundleInstanceAuthDeletion":
-		if e.complexity.Mutation.RequestBundleInstanceAuthDeletion == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_requestBundleInstanceAuthDeletion_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.RequestBundleInstanceAuthDeletion(childComplexity, args["authID"].(string)), true
-
 	case "Mutation.setApplicationLabel":
 		if e.complexity.Mutation.SetApplicationLabel == nil {
 			break
@@ -1900,18 +2110,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetApplicationLabel(childComplexity, args["applicationID"].(string), args["key"].(string), args["value"].(interface{})), true
 
-	case "Mutation.setDefaultEventingForApplication":
-		if e.complexity.Mutation.SetDefaultEventingForApplication == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_setDefaultEventingForApplication_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SetDefaultEventingForApplication(childComplexity, args["appID"].(string), args["runtimeID"].(string)), true
-
 	case "Mutation.setBundleInstanceAuth":
 		if e.complexity.Mutation.SetBundleInstanceAuth == nil {
 			break
@@ -1923,6 +2121,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SetBundleInstanceAuth(childComplexity, args["authID"].(string), args["in"].(BundleInstanceAuthSetInput)), true
+
+	case "Mutation.setDefaultEventingForApplication":
+		if e.complexity.Mutation.SetDefaultEventingForApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setDefaultEventingForApplication_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetDefaultEventingForApplication(childComplexity, args["appID"].(string), args["runtimeID"].(string)), true
 
 	case "Mutation.setRuntimeLabel":
 		if e.complexity.Mutation.SetRuntimeLabel == nil {
@@ -2020,6 +2230,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateApplicationTemplate(childComplexity, args["id"].(string), args["in"].(ApplicationTemplateInput)), true
 
+	case "Mutation.updateBundle":
+		if e.complexity.Mutation.UpdateBundle == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateBundle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateBundle(childComplexity, args["id"].(string), args["in"].(BundleUpdateInput)), true
+
 	case "Mutation.updateEventDefinition":
 		if e.complexity.Mutation.UpdateEventDefinition == nil {
 			break
@@ -2055,18 +2277,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateLabelDefinition(childComplexity, args["in"].(LabelDefinitionInput)), true
-
-	case "Mutation.updateBundle":
-		if e.complexity.Mutation.UpdateBundle == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_updateBundle_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.UpdateBundle(childComplexity, args["id"].(string), args["in"].(BundleUpdateInput)), true
 
 	case "Mutation.updateRuntime":
 		if e.complexity.Mutation.UpdateRuntime == nil {
@@ -2187,216 +2397,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OneTimeTokenForRuntime.Token(childComplexity), true
-
-	case "Bundle.apiDefinition":
-		if e.complexity.Bundle.APIDefinition == nil {
-			break
-		}
-
-		args, err := ec.field_Bundle_apiDefinition_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Bundle.APIDefinition(childComplexity, args["id"].(string)), true
-
-	case "Bundle.apiDefinitions":
-		if e.complexity.Bundle.APIDefinitions == nil {
-			break
-		}
-
-		args, err := ec.field_Bundle_apiDefinitions_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Bundle.APIDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
-
-	case "Bundle.defaultInstanceAuth":
-		if e.complexity.Bundle.DefaultInstanceAuth == nil {
-			break
-		}
-
-		return e.complexity.Bundle.DefaultInstanceAuth(childComplexity), true
-
-	case "Bundle.description":
-		if e.complexity.Bundle.Description == nil {
-			break
-		}
-
-		return e.complexity.Bundle.Description(childComplexity), true
-
-	case "Bundle.document":
-		if e.complexity.Bundle.Document == nil {
-			break
-		}
-
-		args, err := ec.field_Bundle_document_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Bundle.Document(childComplexity, args["id"].(string)), true
-
-	case "Bundle.documents":
-		if e.complexity.Bundle.Documents == nil {
-			break
-		}
-
-		args, err := ec.field_Bundle_documents_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Bundle.Documents(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
-
-	case "Bundle.eventDefinition":
-		if e.complexity.Bundle.EventDefinition == nil {
-			break
-		}
-
-		args, err := ec.field_Bundle_eventDefinition_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Bundle.EventDefinition(childComplexity, args["id"].(string)), true
-
-	case "Bundle.eventDefinitions":
-		if e.complexity.Bundle.EventDefinitions == nil {
-			break
-		}
-
-		args, err := ec.field_Bundle_eventDefinitions_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Bundle.EventDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
-
-	case "Bundle.id":
-		if e.complexity.Bundle.ID == nil {
-			break
-		}
-
-		return e.complexity.Bundle.ID(childComplexity), true
-
-	case "Bundle.instanceAuth":
-		if e.complexity.Bundle.InstanceAuth == nil {
-			break
-		}
-
-		args, err := ec.field_Bundle_instanceAuth_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Bundle.InstanceAuth(childComplexity, args["id"].(string)), true
-
-	case "Bundle.instanceAuthRequestInputSchema":
-		if e.complexity.Bundle.InstanceAuthRequestInputSchema == nil {
-			break
-		}
-
-		return e.complexity.Bundle.InstanceAuthRequestInputSchema(childComplexity), true
-
-	case "Bundle.instanceAuths":
-		if e.complexity.Bundle.InstanceAuths == nil {
-			break
-		}
-
-		return e.complexity.Bundle.InstanceAuths(childComplexity), true
-
-	case "Bundle.name":
-		if e.complexity.Bundle.Name == nil {
-			break
-		}
-
-		return e.complexity.Bundle.Name(childComplexity), true
-
-	case "BundleInstanceAuth.auth":
-		if e.complexity.BundleInstanceAuth.Auth == nil {
-			break
-		}
-
-		return e.complexity.BundleInstanceAuth.Auth(childComplexity), true
-
-	case "BundleInstanceAuth.context":
-		if e.complexity.BundleInstanceAuth.Context == nil {
-			break
-		}
-
-		return e.complexity.BundleInstanceAuth.Context(childComplexity), true
-
-	case "BundleInstanceAuth.id":
-		if e.complexity.BundleInstanceAuth.ID == nil {
-			break
-		}
-
-		return e.complexity.BundleInstanceAuth.ID(childComplexity), true
-
-	case "BundleInstanceAuth.inputParams":
-		if e.complexity.BundleInstanceAuth.InputParams == nil {
-			break
-		}
-
-		return e.complexity.BundleInstanceAuth.InputParams(childComplexity), true
-
-	case "BundleInstanceAuth.status":
-		if e.complexity.BundleInstanceAuth.Status == nil {
-			break
-		}
-
-		return e.complexity.BundleInstanceAuth.Status(childComplexity), true
-
-	case "BundleInstanceAuthStatus.condition":
-		if e.complexity.BundleInstanceAuthStatus.Condition == nil {
-			break
-		}
-
-		return e.complexity.BundleInstanceAuthStatus.Condition(childComplexity), true
-
-	case "BundleInstanceAuthStatus.message":
-		if e.complexity.BundleInstanceAuthStatus.Message == nil {
-			break
-		}
-
-		return e.complexity.BundleInstanceAuthStatus.Message(childComplexity), true
-
-	case "BundleInstanceAuthStatus.reason":
-		if e.complexity.BundleInstanceAuthStatus.Reason == nil {
-			break
-		}
-
-		return e.complexity.BundleInstanceAuthStatus.Reason(childComplexity), true
-
-	case "BundleInstanceAuthStatus.timestamp":
-		if e.complexity.BundleInstanceAuthStatus.Timestamp == nil {
-			break
-		}
-
-		return e.complexity.BundleInstanceAuthStatus.Timestamp(childComplexity), true
-
-	case "BundlePage.data":
-		if e.complexity.BundlePage.Data == nil {
-			break
-		}
-
-		return e.complexity.BundlePage.Data(childComplexity), true
-
-	case "BundlePage.pageInfo":
-		if e.complexity.BundlePage.PageInfo == nil {
-			break
-		}
-
-		return e.complexity.BundlePage.PageInfo(childComplexity), true
-
-	case "BundlePage.totalCount":
-		if e.complexity.BundlePage.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.BundlePage.TotalCount(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -3050,6 +3050,24 @@ enum ApplicationWebhookType {
 	CONFIGURATION_CHANGED
 }
 
+enum BundleInstanceAuthSetStatusConditionInput {
+	SUCCEEDED
+	FAILED
+}
+
+enum BundleInstanceAuthStatusCondition {
+	"""
+	When creating, before Application sets the credentials
+	"""
+	PENDING
+	SUCCEEDED
+	FAILED
+	"""
+	When Runtime requests deletion and Application has to revoke the credentials
+	"""
+	UNUSED
+}
+
 enum DocumentFormat {
 	MARKDOWN
 }
@@ -3077,24 +3095,6 @@ enum HealthCheckStatusCondition {
 
 enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
-}
-
-enum BundleInstanceAuthSetStatusConditionInput {
-	SUCCEEDED
-	FAILED
-}
-
-enum BundleInstanceAuthStatusCondition {
-	"""
-	When creating, before Application sets the credentials
-	"""
-	PENDING
-	SUCCEEDED
-	FAILED
-	"""
-	When Runtime requests deletion and Application has to revoke the credentials
-	"""
-	UNUSED
 }
 
 enum RuntimeStatusCondition {
@@ -3270,6 +3270,80 @@ input BasicCredentialDataInput {
 	password: String!
 }
 
+input BundleCreateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	name: String!
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	defaultInstanceAuth: AuthInput
+	apiDefinitions: [APIDefinitionInput!]
+	eventDefinitions: [EventDefinitionInput!]
+	documents: [DocumentInput!]
+}
+
+input BundleInstanceAuthRequestInput {
+	"""
+	Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
+	"""
+	context: JSON
+	"""
+	**Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
+	"""
+	inputParams: JSON
+}
+
+input BundleInstanceAuthSetInput {
+	"""
+	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	"""
+	auth: AuthInput
+	"""
+	**Validation:** Optional if the auth is provided.
+	If the status condition is "FAILED", auth must be empty.
+	"""
+	status: BundleInstanceAuthStatusInput
+}
+
+input BundleInstanceAuthStatusInput {
+	condition: BundleInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	**Validation:** required, if condition is FAILED
+	"""
+	message: String!
+	"""
+	Example reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	
+	   **Validation**: required, if condition is FAILED
+	"""
+	reason: String!
+}
+
+input BundleUpdateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	name: String!
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	"""
+	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
+	"""
+	defaultInstanceAuth: AuthInput
+}
+
 input CSRFTokenCredentialRequestAuthInput {
 	"""
 	**Validation:** valid URL
@@ -3425,80 +3499,6 @@ input OAuthCredentialDataInput {
 	**Validation:** valid URL
 	"""
 	url: String!
-}
-
-input BundleCreateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	name: String!
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	instanceAuthRequestInputSchema: JSONSchema
-	defaultInstanceAuth: AuthInput
-	apiDefinitions: [APIDefinitionInput!]
-	eventDefinitions: [EventDefinitionInput!]
-	documents: [DocumentInput!]
-}
-
-input BundleInstanceAuthRequestInput {
-	"""
-	Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
-	"""
-	context: JSON
-	"""
-	**Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
-	"""
-	inputParams: JSON
-}
-
-input BundleInstanceAuthSetInput {
-	"""
-	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
-	"""
-	auth: AuthInput
-	"""
-	**Validation:** Optional if the auth is provided.
-	If the status condition is "FAILED", auth must be empty.
-	"""
-	status: BundleInstanceAuthStatusInput
-}
-
-input BundleInstanceAuthStatusInput {
-	condition: BundleInstanceAuthSetStatusConditionInput! = SUCCEEDED
-	"""
-	**Validation:** required, if condition is FAILED
-	"""
-	message: String!
-	"""
-	Example reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	
-	   **Validation**: required, if condition is FAILED
-	"""
-	reason: String!
-}
-
-input BundleUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	name: String!
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	instanceAuthRequestInputSchema: JSONSchema
-	"""
-	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
-	"""
-	defaultInstanceAuth: AuthInput
 }
 
 input PlaceholderDefinitionInput {
@@ -3670,6 +3670,64 @@ type BasicCredentialData {
 	password: String!
 }
 
+type Bundle {
+	id: ID!
+	name: String!
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	instanceAuth(id: ID!): BundleInstanceAuth
+	instanceAuths: [BundleInstanceAuth!]!
+	"""
+	When defined, all Auth requests fallback to defaultInstanceAuth.
+	"""
+	defaultInstanceAuth: Auth
+	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
+	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
+	documents(first: Int = 200, after: PageCursor): DocumentPage
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
+	document(id: ID!): Document
+}
+
+type BundleInstanceAuth {
+	id: ID!
+	"""
+	Context of BundleInstanceAuth - such as Runtime ID, namespace
+	"""
+	context: JSON
+	"""
+	User input while requesting Bundle Instance Auth
+	"""
+	inputParams: JSON
+	"""
+	It may be empty if status is PENDING.
+	Populated with ` + "`" + `bundle.defaultAuth` + "`" + ` value if ` + "`" + `bundle.defaultAuth` + "`" + ` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	"""
+	auth: Auth
+	status: BundleInstanceAuthStatus!
+}
+
+type BundleInstanceAuthStatus {
+	condition: BundleInstanceAuthStatusCondition!
+	timestamp: Timestamp!
+	message: String!
+	"""
+	Possible reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String!
+}
+
+type BundlePage implements Pageable {
+	data: [Bundle!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type CSRFTokenCredentialRequestAuth {
 	tokenEndpointURL: String!
 	credential: CredentialData
@@ -3804,64 +3862,6 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	connectorURL: String!
 	raw: String
 	rawEncoded: String
-}
-
-type Bundle {
-	id: ID!
-	name: String!
-	description: String
-	instanceAuthRequestInputSchema: JSONSchema
-	instanceAuth(id: ID!): BundleInstanceAuth
-	instanceAuths: [BundleInstanceAuth!]!
-	"""
-	When defined, all Auth requests fallback to defaultInstanceAuth.
-	"""
-	defaultInstanceAuth: Auth
-	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
-	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
-	documents(first: Int = 200, after: PageCursor): DocumentPage
-	apiDefinition(id: ID!): APIDefinition
-	eventDefinition(id: ID!): EventDefinition
-	document(id: ID!): Document
-}
-
-type BundleInstanceAuth {
-	id: ID!
-	"""
-	Context of BundleInstanceAuth - such as Runtime ID, namespace
-	"""
-	context: JSON
-	"""
-	User input while requesting Bundle Instance Auth
-	"""
-	inputParams: JSON
-	"""
-	It may be empty if status is PENDING.
-	Populated with ` + "`" + `bundle.defaultAuth` + "`" + ` value if ` + "`" + `bundle.defaultAuth` + "`" + ` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	"""
-	auth: Auth
-	status: BundleInstanceAuthStatus!
-}
-
-type BundleInstanceAuthStatus {
-	condition: BundleInstanceAuthStatusCondition!
-	timestamp: Timestamp!
-	message: String!
-	"""
-	Possible reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	"""
-	reason: String!
-}
-
-type BundlePage implements Pageable {
-	data: [Bundle!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
 }
 
 type PageInfo {
@@ -4336,20 +4336,6 @@ func (ec *executionContext) dir_hasScopes_args(ctx context.Context, rawArgs map[
 	return args, nil
 }
 
-func (ec *executionContext) field_Application_labels_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["key"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["key"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Application_bundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -4377,12 +4363,164 @@ func (ec *executionContext) field_Application_bundles_args(ctx context.Context, 
 	args["first"] = arg0
 	var arg1 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["after"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Application_labels_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["key"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["key"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Bundle_apiDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Bundle_apiDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["group"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["group"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *PageCursor
+	if tmp, ok := rawArgs["after"]; ok {
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Bundle_document_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Bundle_documents_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *PageCursor
+	if tmp, ok := rawArgs["after"]; ok {
+		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Bundle_eventDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Bundle_eventDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["group"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["group"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *PageCursor
+	if tmp, ok := rawArgs["after"]; ok {
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Bundle_instanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -4400,7 +4538,7 @@ func (ec *executionContext) field_Mutation_addAPIDefinitionToBundle_args(ctx con
 	var arg1 APIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+			return ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4414,6 +4552,40 @@ func (ec *executionContext) field_Mutation_addAPIDefinitionToBundle_args(ctx con
 			arg1 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinitionInput`, tmp)
+		}
+	}
+	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_addBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["applicationID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["applicationID"] = arg0
+	var arg1 BundleCreateInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNBundleCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(BundleCreateInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleCreateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -4434,7 +4606,7 @@ func (ec *executionContext) field_Mutation_addDocumentToBundle_args(ctx context.
 	var arg1 DocumentInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNDocumentInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentInput(ctx, tmp)
+			return ec.unmarshalNDocumentInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4468,7 +4640,7 @@ func (ec *executionContext) field_Mutation_addEventDefinitionToBundle_args(ctx c
 	var arg1 EventDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionInput(ctx, tmp)
+			return ec.unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4482,40 +4654,6 @@ func (ec *executionContext) field_Mutation_addEventDefinitionToBundle_args(ctx c
 			arg1 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinitionInput`, tmp)
-		}
-	}
-	args["in"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_addBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["applicationID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["applicationID"] = arg0
-	var arg1 BundleCreateInput
-	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNBundleCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleCreateInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(BundleCreateInput); ok {
-			arg1 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleCreateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -4536,7 +4674,7 @@ func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, 
 	var arg1 WebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhookInput(ctx, tmp)
+			return ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4562,7 +4700,7 @@ func (ec *executionContext) field_Mutation_createApplicationTemplate_args(ctx co
 	var arg0 ApplicationTemplateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
+			return ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4587,7 +4725,7 @@ func (ec *executionContext) field_Mutation_createAutomaticScenarioAssignment_arg
 	args := map[string]interface{}{}
 	var arg0 AutomaticScenarioAssignmentSetInput
 	if tmp, ok := rawArgs["in"]; ok {
-		arg0, err = ec.unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx, tmp)
+		arg0, err = ec.unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4602,7 +4740,7 @@ func (ec *executionContext) field_Mutation_createLabelDefinition_args(ctx contex
 	var arg0 LabelDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinitionInput(ctx, tmp)
+			return ec.unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinitionInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4691,12 +4829,40 @@ func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentsFor
 	args := map[string]interface{}{}
 	var arg0 LabelSelectorInput
 	if tmp, ok := rawArgs["selector"]; ok {
-		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
+		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["selector"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteBundleInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["authID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["authID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -4761,34 +4927,6 @@ func (ec *executionContext) field_Mutation_deleteLabelDefinition_args(ctx contex
 		}
 	}
 	args["deleteRelatedLabels"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteBundleInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["authID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["authID"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
 	return args, nil
 }
 
@@ -4904,7 +5042,7 @@ func (ec *executionContext) field_Mutation_registerApplicationFromTemplate_args(
 	var arg0 ApplicationFromTemplateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNApplicationFromTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationFromTemplateInput(ctx, tmp)
+			return ec.unmarshalNApplicationFromTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationFromTemplateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4930,7 +5068,7 @@ func (ec *executionContext) field_Mutation_registerApplication_args(ctx context.
 	var arg0 ApplicationRegisterInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationRegisterInput(ctx, tmp)
+			return ec.unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4956,7 +5094,7 @@ func (ec *executionContext) field_Mutation_registerIntegrationSystem_args(ctx co
 	var arg0 IntegrationSystemInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
+			return ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -4982,7 +5120,7 @@ func (ec *executionContext) field_Mutation_registerRuntimeContext_args(ctx conte
 	var arg0 RuntimeContextInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNRuntimeContextInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContextInput(ctx, tmp)
+			return ec.unmarshalNRuntimeContextInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5008,7 +5146,7 @@ func (ec *executionContext) field_Mutation_registerRuntime_args(ctx context.Cont
 	var arg0 RuntimeInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeInput(ctx, tmp)
+			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5025,6 +5163,54 @@ func (ec *executionContext) field_Mutation_registerRuntime_args(ctx context.Cont
 		}
 	}
 	args["in"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestBundleInstanceAuthCreation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["bundleID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["bundleID"] = arg0
+	var arg1 BundleInstanceAuthRequestInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNBundleInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthRequestInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(BundleInstanceAuthRequestInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInstanceAuthRequestInput`, tmp)
+		}
+	}
+	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestBundleInstanceAuthDeletion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["authID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["authID"] = arg0
 	return args, nil
 }
 
@@ -5098,54 +5284,6 @@ func (ec *executionContext) field_Mutation_requestOneTimeTokenForRuntime_args(ct
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_requestBundleInstanceAuthCreation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["bundleID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["bundleID"] = arg0
-	var arg1 BundleInstanceAuthRequestInput
-	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNBundleInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthRequestInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(BundleInstanceAuthRequestInput); ok {
-			arg1 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInstanceAuthRequestInput`, tmp)
-		}
-	}
-	args["in"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_requestBundleInstanceAuthDeletion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["authID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["authID"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_setApplicationLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -5176,6 +5314,40 @@ func (ec *executionContext) field_Mutation_setApplicationLabel_args(ctx context.
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_setBundleInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["authID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["authID"] = arg0
+	var arg1 BundleInstanceAuthSetInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNBundleInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthSetInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(BundleInstanceAuthSetInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInstanceAuthSetInput`, tmp)
+		}
+	}
+	args["in"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_setDefaultEventingForApplication_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -5195,40 +5367,6 @@ func (ec *executionContext) field_Mutation_setDefaultEventingForApplication_args
 		}
 	}
 	args["runtimeID"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_setBundleInstanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["authID"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["authID"] = arg0
-	var arg1 BundleInstanceAuthSetInput
-	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNBundleInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthSetInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(BundleInstanceAuthSetInput); ok {
-			arg1 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleInstanceAuthSetInput`, tmp)
-		}
-	}
-	args["in"] = arg1
 	return args, nil
 }
 
@@ -5332,7 +5470,7 @@ func (ec *executionContext) field_Mutation_updateAPIDefinition_args(ctx context.
 	var arg1 APIDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
+			return ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5366,7 +5504,7 @@ func (ec *executionContext) field_Mutation_updateApplicationTemplate_args(ctx co
 	var arg1 ApplicationTemplateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
+			return ec.unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5400,7 +5538,7 @@ func (ec *executionContext) field_Mutation_updateApplication_args(ctx context.Co
 	var arg1 ApplicationUpdateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationUpdateInput(ctx, tmp)
+			return ec.unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationUpdateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5414,6 +5552,40 @@ func (ec *executionContext) field_Mutation_updateApplication_args(ctx context.Co
 			arg1 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationUpdateInput`, tmp)
+		}
+	}
+	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 BundleUpdateInput
+	if tmp, ok := rawArgs["in"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNBundleUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleUpdateInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(BundleUpdateInput); ok {
+			arg1 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleUpdateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -5434,7 +5606,7 @@ func (ec *executionContext) field_Mutation_updateEventDefinition_args(ctx contex
 	var arg1 EventDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionInput(ctx, tmp)
+			return ec.unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5468,7 +5640,7 @@ func (ec *executionContext) field_Mutation_updateIntegrationSystem_args(ctx cont
 	var arg1 IntegrationSystemInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
+			return ec.unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5494,7 +5666,7 @@ func (ec *executionContext) field_Mutation_updateLabelDefinition_args(ctx contex
 	var arg0 LabelDefinitionInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinitionInput(ctx, tmp)
+			return ec.unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinitionInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5514,40 +5686,6 @@ func (ec *executionContext) field_Mutation_updateLabelDefinition_args(ctx contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 BundleUpdateInput
-	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNBundleUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleUpdateInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(BundleUpdateInput); ok {
-			arg1 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.BundleUpdateInput`, tmp)
-		}
-	}
-	args["in"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_updateRuntimeContext_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -5562,7 +5700,7 @@ func (ec *executionContext) field_Mutation_updateRuntimeContext_args(ctx context
 	var arg1 RuntimeContextInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNRuntimeContextInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContextInput(ctx, tmp)
+			return ec.unmarshalNRuntimeContextInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5596,7 +5734,7 @@ func (ec *executionContext) field_Mutation_updateRuntime_args(ctx context.Contex
 	var arg1 RuntimeInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeInput(ctx, tmp)
+			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5630,7 +5768,7 @@ func (ec *executionContext) field_Mutation_updateWebhook_args(ctx context.Contex
 	var arg1 WebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhookInput(ctx, tmp)
+			return ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			return ec.directives.Validate(ctx, rawArgs, directive0)
@@ -5647,144 +5785,6 @@ func (ec *executionContext) field_Mutation_updateWebhook_args(ctx context.Contex
 		}
 	}
 	args["in"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Bundle_apiDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Bundle_apiDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["group"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["group"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg1
-	var arg2 *PageCursor
-	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Bundle_document_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Bundle_documents_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg0
-	var arg1 *PageCursor
-	if tmp, ok := rawArgs["after"]; ok {
-		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Bundle_eventDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Bundle_eventDefinitions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["group"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["group"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg1
-	var arg2 *PageCursor
-	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Bundle_instanceAuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
 	return args, nil
 }
 
@@ -5829,7 +5829,7 @@ func (ec *executionContext) field_Query_applicationTemplates_args(ctx context.Co
 	args["first"] = arg0
 	var arg1 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5873,7 +5873,7 @@ func (ec *executionContext) field_Query_applicationsForRuntime_args(ctx context.
 	args["first"] = arg1
 	var arg2 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5887,7 +5887,7 @@ func (ec *executionContext) field_Query_applications_args(ctx context.Context, r
 	args := map[string]interface{}{}
 	var arg0 []*LabelFilter
 	if tmp, ok := rawArgs["filter"]; ok {
-		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelFilter(ctx, tmp)
+		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5903,7 +5903,7 @@ func (ec *executionContext) field_Query_applications_args(ctx context.Context, r
 	args["first"] = arg1
 	var arg2 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5931,7 +5931,7 @@ func (ec *executionContext) field_Query_automaticScenarioAssignmentsForSelector_
 	args := map[string]interface{}{}
 	var arg0 LabelSelectorInput
 	if tmp, ok := rawArgs["selector"]; ok {
-		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
+		arg0, err = ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5953,7 +5953,7 @@ func (ec *executionContext) field_Query_automaticScenarioAssignments_args(ctx co
 	args["first"] = arg0
 	var arg1 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5967,7 +5967,7 @@ func (ec *executionContext) field_Query_healthChecks_args(ctx context.Context, r
 	args := map[string]interface{}{}
 	var arg0 []HealthCheckType
 	if tmp, ok := rawArgs["types"]; ok {
-		arg0, err = ec.unmarshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckType(ctx, tmp)
+		arg0, err = ec.unmarshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5991,7 +5991,7 @@ func (ec *executionContext) field_Query_healthChecks_args(ctx context.Context, r
 	args["first"] = arg2
 	var arg3 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg3, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg3, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6027,7 +6027,7 @@ func (ec *executionContext) field_Query_integrationSystems_args(ctx context.Cont
 	args["first"] = arg0
 	var arg1 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6069,7 +6069,7 @@ func (ec *executionContext) field_Query_runtimeContexts_args(ctx context.Context
 	args := map[string]interface{}{}
 	var arg0 []*LabelFilter
 	if tmp, ok := rawArgs["filter"]; ok {
-		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelFilter(ctx, tmp)
+		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6085,7 +6085,7 @@ func (ec *executionContext) field_Query_runtimeContexts_args(ctx context.Context
 	args["first"] = arg1
 	var arg2 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6113,7 +6113,7 @@ func (ec *executionContext) field_Query_runtimes_args(ctx context.Context, rawAr
 	args := map[string]interface{}{}
 	var arg0 []*LabelFilter
 	if tmp, ok := rawArgs["filter"]; ok {
-		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelFilter(ctx, tmp)
+		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6129,7 +6129,7 @@ func (ec *executionContext) field_Query_runtimes_args(ctx context.Context, rawAr
 	args["first"] = arg1
 	var arg2 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6341,7 +6341,7 @@ func (ec *executionContext) _APIDefinition_spec(ctx context.Context, field graph
 	res := resTmp.(*APISpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
+	return ec.marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinition_targetURL(ctx context.Context, field graphql.CollectedField, obj *APIDefinition) (ret graphql.Marshaler) {
@@ -6446,7 +6446,7 @@ func (ec *executionContext) _APIDefinition_version(ctx context.Context, field gr
 	res := resTmp.(*Version)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐVersion(ctx, field.Selections, res)
+	return ec.marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersion(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinitionPage_data(ctx context.Context, field graphql.CollectedField, obj *APIDefinitionPage) (ret graphql.Marshaler) {
@@ -6483,7 +6483,7 @@ func (ec *executionContext) _APIDefinitionPage_data(ctx context.Context, field g
 	res := resTmp.([]*APIDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinitionPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *APIDefinitionPage) (ret graphql.Marshaler) {
@@ -6520,7 +6520,7 @@ func (ec *executionContext) _APIDefinitionPage_pageInfo(ctx context.Context, fie
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APIDefinitionPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *APIDefinitionPage) (ret graphql.Marshaler) {
@@ -6591,7 +6591,7 @@ func (ec *executionContext) _APISpec_data(ctx context.Context, field graphql.Col
 	res := resTmp.(*CLOB)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx, field.Selections, res)
+	return ec.marshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_format(ctx context.Context, field graphql.CollectedField, obj *APISpec) (ret graphql.Marshaler) {
@@ -6628,7 +6628,7 @@ func (ec *executionContext) _APISpec_format(ctx context.Context, field graphql.C
 	res := resTmp.(SpecFormat)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
+	return ec.marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_type(ctx context.Context, field graphql.CollectedField, obj *APISpec) (ret graphql.Marshaler) {
@@ -6665,7 +6665,7 @@ func (ec *executionContext) _APISpec_type(ctx context.Context, field graphql.Col
 	res := resTmp.(APISpecType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpecType(ctx, field.Selections, res)
+	return ec.marshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _APISpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *APISpec) (ret graphql.Marshaler) {
@@ -6699,7 +6699,7 @@ func (ec *executionContext) _APISpec_fetchRequest(ctx context.Context, field gra
 	res := resTmp.(*FetchRequest)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequest(ctx, field.Selections, res)
+	return ec.marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequest(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_id(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -6916,7 +6916,7 @@ func (ec *executionContext) _Application_labels(ctx context.Context, field graph
 	res := resTmp.(*Labels)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx, field.Selections, res)
+	return ec.marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_status(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -6953,7 +6953,7 @@ func (ec *executionContext) _Application_status(ctx context.Context, field graph
 	res := resTmp.(*ApplicationStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatus(ctx, field.Selections, res)
+	return ec.marshalNApplicationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_webhooks(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -6987,7 +6987,7 @@ func (ec *executionContext) _Application_webhooks(ctx context.Context, field gra
 	res := resTmp.([]*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhook(ctx, field.Selections, res)
+	return ec.marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_healthCheckURL(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -7062,7 +7062,7 @@ func (ec *executionContext) _Application_bundles(ctx context.Context, field grap
 	res := resTmp.(*BundlePage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBundlePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundlePage(ctx, field.Selections, res)
+	return ec.marshalOBundlePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundlePage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_bundle(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -7103,7 +7103,7 @@ func (ec *executionContext) _Application_bundle(ctx context.Context, field graph
 	res := resTmp.(*Bundle)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx, field.Selections, res)
+	return ec.marshalOBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_auths(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -7137,7 +7137,7 @@ func (ec *executionContext) _Application_auths(ctx context.Context, field graphq
 	res := resTmp.([]*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_eventingConfiguration(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -7171,7 +7171,7 @@ func (ec *executionContext) _Application_eventingConfiguration(ctx context.Conte
 	res := resTmp.(*ApplicationEventingConfiguration)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationEventingConfiguration(ctx, field.Selections, res)
+	return ec.marshalOApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventingConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationEventingConfiguration_defaultURL(ctx context.Context, field graphql.CollectedField, obj *ApplicationEventingConfiguration) (ret graphql.Marshaler) {
@@ -7245,7 +7245,7 @@ func (ec *executionContext) _ApplicationPage_data(ctx context.Context, field gra
 	res := resTmp.([]*Application)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ApplicationPage) (ret graphql.Marshaler) {
@@ -7282,7 +7282,7 @@ func (ec *executionContext) _ApplicationPage_pageInfo(ctx context.Context, field
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *ApplicationPage) (ret graphql.Marshaler) {
@@ -7356,7 +7356,7 @@ func (ec *executionContext) _ApplicationStatus_condition(ctx context.Context, fi
 	res := resTmp.(ApplicationStatusCondition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx, field.Selections, res)
+	return ec.marshalNApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationStatus_timestamp(ctx context.Context, field graphql.CollectedField, obj *ApplicationStatus) (ret graphql.Marshaler) {
@@ -7393,7 +7393,7 @@ func (ec *executionContext) _ApplicationStatus_timestamp(ctx context.Context, fi
 	res := resTmp.(Timestamp)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplate_id(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
@@ -7575,7 +7575,7 @@ func (ec *executionContext) _ApplicationTemplate_placeholders(ctx context.Contex
 	res := resTmp.([]*PlaceholderDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPlaceholderDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinition(ctx, field.Selections, res)
+	return ec.marshalNPlaceholderDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplate_accessLevel(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
@@ -7612,7 +7612,7 @@ func (ec *executionContext) _ApplicationTemplate_accessLevel(ctx context.Context
 	res := resTmp.(ApplicationTemplateAccessLevel)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplateAccessLevel(ctx, field.Selections, res)
+	return ec.marshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateAccessLevel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplatePage) (ret graphql.Marshaler) {
@@ -7649,7 +7649,7 @@ func (ec *executionContext) _ApplicationTemplatePage_data(ctx context.Context, f
 	res := resTmp.([]*ApplicationTemplate)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationTemplate2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
+	return ec.marshalNApplicationTemplate2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplatePage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplatePage) (ret graphql.Marshaler) {
@@ -7686,7 +7686,7 @@ func (ec *executionContext) _ApplicationTemplatePage_pageInfo(ctx context.Contex
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplatePage_totalCount(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplatePage) (ret graphql.Marshaler) {
@@ -7757,7 +7757,7 @@ func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.
 	res := resTmp.(CredentialData)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
+	return ec.marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_additionalHeaders(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -7791,7 +7791,7 @@ func (ec *executionContext) _Auth_additionalHeaders(ctx context.Context, field g
 	res := resTmp.(*HttpHeaders)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeaders(ctx, field.Selections, res)
+	return ec.marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_additionalHeadersSerialized(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -7825,7 +7825,7 @@ func (ec *executionContext) _Auth_additionalHeadersSerialized(ctx context.Contex
 	res := resTmp.(*HttpHeadersSerialized)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx, field.Selections, res)
+	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_additionalQueryParams(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -7859,7 +7859,7 @@ func (ec *executionContext) _Auth_additionalQueryParams(ctx context.Context, fie
 	res := resTmp.(*QueryParams)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParams(ctx, field.Selections, res)
+	return ec.marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_additionalQueryParamsSerialized(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -7893,7 +7893,7 @@ func (ec *executionContext) _Auth_additionalQueryParamsSerialized(ctx context.Co
 	res := resTmp.(*QueryParamsSerialized)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx, field.Selections, res)
+	return ec.marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_requestAuth(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -7927,7 +7927,7 @@ func (ec *executionContext) _Auth_requestAuth(ctx context.Context, field graphql
 	res := resTmp.(*CredentialRequestAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialRequestAuth(ctx, field.Selections, res)
+	return ec.marshalOCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialRequestAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AutomaticScenarioAssignment_scenarioName(ctx context.Context, field graphql.CollectedField, obj *AutomaticScenarioAssignment) (ret graphql.Marshaler) {
@@ -8001,7 +8001,7 @@ func (ec *executionContext) _AutomaticScenarioAssignment_selector(ctx context.Co
 	res := resTmp.(*Label)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabel(ctx, field.Selections, res)
+	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AutomaticScenarioAssignmentPage_data(ctx context.Context, field graphql.CollectedField, obj *AutomaticScenarioAssignmentPage) (ret graphql.Marshaler) {
@@ -8038,7 +8038,7 @@ func (ec *executionContext) _AutomaticScenarioAssignmentPage_data(ctx context.Co
 	res := resTmp.([]*AutomaticScenarioAssignment)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AutomaticScenarioAssignmentPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *AutomaticScenarioAssignmentPage) (ret graphql.Marshaler) {
@@ -8075,7 +8075,7 @@ func (ec *executionContext) _AutomaticScenarioAssignmentPage_pageInfo(ctx contex
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AutomaticScenarioAssignmentPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *AutomaticScenarioAssignmentPage) (ret graphql.Marshaler) {
@@ -8189,6 +8189,941 @@ func (ec *executionContext) _BasicCredentialData_password(ctx context.Context, f
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Bundle_id(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_name(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_description(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_instanceAuthRequestInputSchema(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InstanceAuthRequestInputSchema, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*JSONSchema)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_instanceAuth(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Bundle_instanceAuth_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bundle().InstanceAuth(rctx, obj, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*BundleInstanceAuth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_instanceAuths(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bundle().InstanceAuths(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*BundleInstanceAuth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBundleInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_defaultInstanceAuth(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultInstanceAuth, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Auth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_apiDefinitions(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Bundle_apiDefinitions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bundle().APIDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*APIDefinitionPage)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_eventDefinitions(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Bundle_eventDefinitions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bundle().EventDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*EventDefinitionPage)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_documents(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Bundle_documents_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bundle().Documents(rctx, obj, args["first"].(*int), args["after"].(*PageCursor))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DocumentPage)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalODocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_apiDefinition(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Bundle_apiDefinition_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bundle().APIDefinition(rctx, obj, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*APIDefinition)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_eventDefinition(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Bundle_eventDefinition_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bundle().EventDefinition(rctx, obj, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*EventDefinition)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_document(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Bundle_document_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bundle().Document(rctx, obj, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Document)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuth_id(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundleInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuth_context(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundleInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Context, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*JSON)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuth_inputParams(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundleInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InputParams, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*JSON)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuth_auth(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundleInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Auth, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Auth)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuth_status(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundleInstanceAuth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*BundleInstanceAuthStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBundleInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuthStatus_condition(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundleInstanceAuthStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Condition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(BundleInstanceAuthStatusCondition)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBundleInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatusCondition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuthStatus_timestamp(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundleInstanceAuthStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuthStatus_message(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundleInstanceAuthStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundleInstanceAuthStatus_reason(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundleInstanceAuthStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundlePage_data(ctx context.Context, field graphql.CollectedField, obj *BundlePage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundlePage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Bundle)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBundle2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundlePage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *BundlePage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundlePage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BundlePage_totalCount(ctx context.Context, field graphql.CollectedField, obj *BundlePage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "BundlePage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_tokenEndpointURL(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -8257,7 +9192,7 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_credential(ctx conte
 	res := resTmp.(CredentialData)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
+	return ec.marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeaders(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
@@ -8291,7 +9226,7 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeaders(ct
 	res := resTmp.(*HttpHeaders)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeaders(ctx, field.Selections, res)
+	return ec.marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeadersSerialized(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
@@ -8325,7 +9260,7 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalHeadersSer
 	res := resTmp.(*HttpHeadersSerialized)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx, field.Selections, res)
+	return ec.marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParams(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
@@ -8359,7 +9294,7 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParam
 	res := resTmp.(*QueryParams)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParams(ctx, field.Selections, res)
+	return ec.marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParamsSerialized(ctx context.Context, field graphql.CollectedField, obj *CSRFTokenCredentialRequestAuth) (ret graphql.Marshaler) {
@@ -8393,7 +9328,7 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParam
 	res := resTmp.(*QueryParamsSerialized)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx, field.Selections, res)
+	return ec.marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CredentialRequestAuth_csrf(ctx context.Context, field graphql.CollectedField, obj *CredentialRequestAuth) (ret graphql.Marshaler) {
@@ -8427,7 +9362,7 @@ func (ec *executionContext) _CredentialRequestAuth_csrf(ctx context.Context, fie
 	res := resTmp.(*CSRFTokenCredentialRequestAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOCSRFTokenCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCSRFTokenCredentialRequestAuth(ctx, field.Selections, res)
+	return ec.marshalOCSRFTokenCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Document_id(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
@@ -8612,7 +9547,7 @@ func (ec *executionContext) _Document_format(ctx context.Context, field graphql.
 	res := resTmp.(DocumentFormat)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNDocumentFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentFormat(ctx, field.Selections, res)
+	return ec.marshalNDocumentFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentFormat(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Document_kind(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
@@ -8680,7 +9615,7 @@ func (ec *executionContext) _Document_data(ctx context.Context, field graphql.Co
 	res := resTmp.(*CLOB)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx, field.Selections, res)
+	return ec.marshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Document_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *Document) (ret graphql.Marshaler) {
@@ -8714,7 +9649,7 @@ func (ec *executionContext) _Document_fetchRequest(ctx context.Context, field gr
 	res := resTmp.(*FetchRequest)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequest(ctx, field.Selections, res)
+	return ec.marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequest(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DocumentPage_data(ctx context.Context, field graphql.CollectedField, obj *DocumentPage) (ret graphql.Marshaler) {
@@ -8751,7 +9686,7 @@ func (ec *executionContext) _DocumentPage_data(ctx context.Context, field graphq
 	res := resTmp.([]*Document)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNDocument2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx, field.Selections, res)
+	return ec.marshalNDocument2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DocumentPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *DocumentPage) (ret graphql.Marshaler) {
@@ -8788,7 +9723,7 @@ func (ec *executionContext) _DocumentPage_pageInfo(ctx context.Context, field gr
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DocumentPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *DocumentPage) (ret graphql.Marshaler) {
@@ -9001,7 +9936,7 @@ func (ec *executionContext) _EventDefinition_spec(ctx context.Context, field gra
 	res := resTmp.(*EventSpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
+	return ec.marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinition_version(ctx context.Context, field graphql.CollectedField, obj *EventDefinition) (ret graphql.Marshaler) {
@@ -9035,7 +9970,7 @@ func (ec *executionContext) _EventDefinition_version(ctx context.Context, field 
 	res := resTmp.(*Version)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐVersion(ctx, field.Selections, res)
+	return ec.marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersion(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinitionPage_data(ctx context.Context, field graphql.CollectedField, obj *EventDefinitionPage) (ret graphql.Marshaler) {
@@ -9072,7 +10007,7 @@ func (ec *executionContext) _EventDefinitionPage_data(ctx context.Context, field
 	res := resTmp.([]*EventDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinitionPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *EventDefinitionPage) (ret graphql.Marshaler) {
@@ -9109,7 +10044,7 @@ func (ec *executionContext) _EventDefinitionPage_pageInfo(ctx context.Context, f
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventDefinitionPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *EventDefinitionPage) (ret graphql.Marshaler) {
@@ -9180,7 +10115,7 @@ func (ec *executionContext) _EventSpec_data(ctx context.Context, field graphql.C
 	res := resTmp.(*CLOB)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx, field.Selections, res)
+	return ec.marshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventSpec_type(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
@@ -9217,7 +10152,7 @@ func (ec *executionContext) _EventSpec_type(ctx context.Context, field graphql.C
 	res := resTmp.(EventSpecType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpecType(ctx, field.Selections, res)
+	return ec.marshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventSpec_format(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
@@ -9254,7 +10189,7 @@ func (ec *executionContext) _EventSpec_format(ctx context.Context, field graphql
 	res := resTmp.(SpecFormat)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
+	return ec.marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EventSpec_fetchRequest(ctx context.Context, field graphql.CollectedField, obj *EventSpec) (ret graphql.Marshaler) {
@@ -9288,7 +10223,7 @@ func (ec *executionContext) _EventSpec_fetchRequest(ctx context.Context, field g
 	res := resTmp.(*FetchRequest)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequest(ctx, field.Selections, res)
+	return ec.marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequest(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FetchRequest_url(ctx context.Context, field graphql.CollectedField, obj *FetchRequest) (ret graphql.Marshaler) {
@@ -9359,7 +10294,7 @@ func (ec *executionContext) _FetchRequest_auth(ctx context.Context, field graphq
 	res := resTmp.(*Auth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuth(ctx, field.Selections, res)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FetchRequest_mode(ctx context.Context, field graphql.CollectedField, obj *FetchRequest) (ret graphql.Marshaler) {
@@ -9396,7 +10331,7 @@ func (ec *executionContext) _FetchRequest_mode(ctx context.Context, field graphq
 	res := resTmp.(FetchMode)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchMode(ctx, field.Selections, res)
+	return ec.marshalNFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FetchRequest_filter(ctx context.Context, field graphql.CollectedField, obj *FetchRequest) (ret graphql.Marshaler) {
@@ -9467,7 +10402,7 @@ func (ec *executionContext) _FetchRequest_status(ctx context.Context, field grap
 	res := resTmp.(*FetchRequestStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNFetchRequestStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestStatus(ctx, field.Selections, res)
+	return ec.marshalNFetchRequestStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FetchRequestStatus_condition(ctx context.Context, field graphql.CollectedField, obj *FetchRequestStatus) (ret graphql.Marshaler) {
@@ -9504,7 +10439,7 @@ func (ec *executionContext) _FetchRequestStatus_condition(ctx context.Context, f
 	res := resTmp.(FetchRequestStatusCondition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNFetchRequestStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestStatusCondition(ctx, field.Selections, res)
+	return ec.marshalNFetchRequestStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestStatusCondition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FetchRequestStatus_message(ctx context.Context, field graphql.CollectedField, obj *FetchRequestStatus) (ret graphql.Marshaler) {
@@ -9575,7 +10510,7 @@ func (ec *executionContext) _FetchRequestStatus_timestamp(ctx context.Context, f
 	res := resTmp.(Timestamp)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HealthCheck_type(ctx context.Context, field graphql.CollectedField, obj *HealthCheck) (ret graphql.Marshaler) {
@@ -9612,7 +10547,7 @@ func (ec *executionContext) _HealthCheck_type(ctx context.Context, field graphql
 	res := resTmp.(HealthCheckType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckType(ctx, field.Selections, res)
+	return ec.marshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HealthCheck_condition(ctx context.Context, field graphql.CollectedField, obj *HealthCheck) (ret graphql.Marshaler) {
@@ -9649,7 +10584,7 @@ func (ec *executionContext) _HealthCheck_condition(ctx context.Context, field gr
 	res := resTmp.(HealthCheckStatusCondition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNHealthCheckStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckStatusCondition(ctx, field.Selections, res)
+	return ec.marshalNHealthCheckStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckStatusCondition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HealthCheck_origin(ctx context.Context, field graphql.CollectedField, obj *HealthCheck) (ret graphql.Marshaler) {
@@ -9754,7 +10689,7 @@ func (ec *executionContext) _HealthCheck_timestamp(ctx context.Context, field gr
 	res := resTmp.(Timestamp)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HealthCheckPage_data(ctx context.Context, field graphql.CollectedField, obj *HealthCheckPage) (ret graphql.Marshaler) {
@@ -9791,7 +10726,7 @@ func (ec *executionContext) _HealthCheckPage_data(ctx context.Context, field gra
 	res := resTmp.([]*HealthCheck)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheck(ctx, field.Selections, res)
+	return ec.marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheck(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HealthCheckPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *HealthCheckPage) (ret graphql.Marshaler) {
@@ -9828,7 +10763,7 @@ func (ec *executionContext) _HealthCheckPage_pageInfo(ctx context.Context, field
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HealthCheckPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *HealthCheckPage) (ret graphql.Marshaler) {
@@ -10007,7 +10942,7 @@ func (ec *executionContext) _IntegrationSystem_auths(ctx context.Context, field 
 	res := resTmp.([]*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _IntegrationSystemPage_data(ctx context.Context, field graphql.CollectedField, obj *IntegrationSystemPage) (ret graphql.Marshaler) {
@@ -10044,7 +10979,7 @@ func (ec *executionContext) _IntegrationSystemPage_data(ctx context.Context, fie
 	res := resTmp.([]*IntegrationSystem)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNIntegrationSystem2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
+	return ec.marshalNIntegrationSystem2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _IntegrationSystemPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *IntegrationSystemPage) (ret graphql.Marshaler) {
@@ -10081,7 +11016,7 @@ func (ec *executionContext) _IntegrationSystemPage_pageInfo(ctx context.Context,
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _IntegrationSystemPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *IntegrationSystemPage) (ret graphql.Marshaler) {
@@ -10263,7 +11198,7 @@ func (ec *executionContext) _LabelDefinition_schema(ctx context.Context, field g
 	res := resTmp.(*JSONSchema)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx, field.Selections, res)
+	return ec.marshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10327,7 +11262,7 @@ func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, f
 	res := resTmp.(*Application)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10391,7 +11326,7 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 	res := resTmp.(*Application)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10455,7 +11390,7 @@ func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context,
 	res := resTmp.(*Application)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createApplicationTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10519,7 +11454,7 @@ func (ec *executionContext) _Mutation_createApplicationTemplate(ctx context.Cont
 	res := resTmp.(*ApplicationTemplate)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
+	return ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_registerApplicationFromTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10583,7 +11518,7 @@ func (ec *executionContext) _Mutation_registerApplicationFromTemplate(ctx contex
 	res := resTmp.(*Application)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx, field.Selections, res)
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateApplicationTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10647,7 +11582,7 @@ func (ec *executionContext) _Mutation_updateApplicationTemplate(ctx context.Cont
 	res := resTmp.(*ApplicationTemplate)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
+	return ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteApplicationTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10711,7 +11646,7 @@ func (ec *executionContext) _Mutation_deleteApplicationTemplate(ctx context.Cont
 	res := resTmp.(*ApplicationTemplate)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
+	return ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_registerRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10775,7 +11710,7 @@ func (ec *executionContext) _Mutation_registerRuntime(ctx context.Context, field
 	res := resTmp.(*Runtime)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10839,7 +11774,7 @@ func (ec *executionContext) _Mutation_updateRuntime(ctx context.Context, field g
 	res := resTmp.(*Runtime)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_unregisterRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10903,7 +11838,7 @@ func (ec *executionContext) _Mutation_unregisterRuntime(ctx context.Context, fie
 	res := resTmp.(*Runtime)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_registerRuntimeContext(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10967,7 +11902,7 @@ func (ec *executionContext) _Mutation_registerRuntimeContext(ctx context.Context
 	res := resTmp.(*RuntimeContext)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
+	return ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateRuntimeContext(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11031,7 +11966,7 @@ func (ec *executionContext) _Mutation_updateRuntimeContext(ctx context.Context, 
 	res := resTmp.(*RuntimeContext)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
+	return ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_unregisterRuntimeContext(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11095,7 +12030,7 @@ func (ec *executionContext) _Mutation_unregisterRuntimeContext(ctx context.Conte
 	res := resTmp.(*RuntimeContext)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
+	return ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_registerIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11159,7 +12094,7 @@ func (ec *executionContext) _Mutation_registerIntegrationSystem(ctx context.Cont
 	res := resTmp.(*IntegrationSystem)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
+	return ec.marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11223,7 +12158,7 @@ func (ec *executionContext) _Mutation_updateIntegrationSystem(ctx context.Contex
 	res := resTmp.(*IntegrationSystem)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
+	return ec.marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_unregisterIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11287,7 +12222,7 @@ func (ec *executionContext) _Mutation_unregisterIntegrationSystem(ctx context.Co
 	res := resTmp.(*IntegrationSystem)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
+	return ec.marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11351,7 +12286,7 @@ func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field grap
 	res := resTmp.(*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhook(ctx, field.Selections, res)
+	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateWebhook(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11415,7 +12350,7 @@ func (ec *executionContext) _Mutation_updateWebhook(ctx context.Context, field g
 	res := resTmp.(*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhook(ctx, field.Selections, res)
+	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteWebhook(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11479,7 +12414,7 @@ func (ec *executionContext) _Mutation_deleteWebhook(ctx context.Context, field g
 	res := resTmp.(*Webhook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhook(ctx, field.Selections, res)
+	return ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addAPIDefinitionToBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11543,7 +12478,7 @@ func (ec *executionContext) _Mutation_addAPIDefinitionToBundle(ctx context.Conte
 	res := resTmp.(*APIDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateAPIDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11607,7 +12542,7 @@ func (ec *executionContext) _Mutation_updateAPIDefinition(ctx context.Context, f
 	res := resTmp.(*APIDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteAPIDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11671,7 +12606,7 @@ func (ec *executionContext) _Mutation_deleteAPIDefinition(ctx context.Context, f
 	res := resTmp.(*APIDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
+	return ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11735,7 +12670,7 @@ func (ec *executionContext) _Mutation_refetchAPISpec(ctx context.Context, field 
 	res := resTmp.(*APISpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
+	return ec.marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestOneTimeTokenForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11799,7 +12734,7 @@ func (ec *executionContext) _Mutation_requestOneTimeTokenForRuntime(ctx context.
 	res := resTmp.(*OneTimeTokenForRuntime)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOneTimeTokenForRuntime(ctx, field.Selections, res)
+	return ec.marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForRuntime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestOneTimeTokenForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11863,7 +12798,7 @@ func (ec *executionContext) _Mutation_requestOneTimeTokenForApplication(ctx cont
 	res := resTmp.(*OneTimeTokenForApplication)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOneTimeTokenForApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOneTimeTokenForApplication(ctx, field.Selections, res)
+	return ec.marshalNOneTimeTokenForApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestClientCredentialsForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11927,7 +12862,7 @@ func (ec *executionContext) _Mutation_requestClientCredentialsForRuntime(ctx con
 	res := resTmp.(*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestClientCredentialsForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11991,7 +12926,7 @@ func (ec *executionContext) _Mutation_requestClientCredentialsForApplication(ctx
 	res := resTmp.(*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestClientCredentialsForIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12055,7 +12990,7 @@ func (ec *executionContext) _Mutation_requestClientCredentialsForIntegrationSyst
 	res := resTmp.(*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteSystemAuthForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12119,7 +13054,7 @@ func (ec *executionContext) _Mutation_deleteSystemAuthForRuntime(ctx context.Con
 	res := resTmp.(*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteSystemAuthForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12183,7 +13118,7 @@ func (ec *executionContext) _Mutation_deleteSystemAuthForApplication(ctx context
 	res := resTmp.(*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteSystemAuthForIntegrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12247,7 +13182,7 @@ func (ec *executionContext) _Mutation_deleteSystemAuthForIntegrationSystem(ctx c
 	res := resTmp.(*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addEventDefinitionToBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12311,7 +13246,7 @@ func (ec *executionContext) _Mutation_addEventDefinitionToBundle(ctx context.Con
 	res := resTmp.(*EventDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateEventDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12375,7 +13310,7 @@ func (ec *executionContext) _Mutation_updateEventDefinition(ctx context.Context,
 	res := resTmp.(*EventDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteEventDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12439,7 +13374,7 @@ func (ec *executionContext) _Mutation_deleteEventDefinition(ctx context.Context,
 	res := resTmp.(*EventDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
+	return ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_refetchEventDefinitionSpec(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12503,7 +13438,7 @@ func (ec *executionContext) _Mutation_refetchEventDefinitionSpec(ctx context.Con
 	res := resTmp.(*EventSpec)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
+	return ec.marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addDocumentToBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12567,7 +13502,7 @@ func (ec *executionContext) _Mutation_addDocumentToBundle(ctx context.Context, f
 	res := resTmp.(*Document)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx, field.Selections, res)
+	return ec.marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteDocument(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12631,7 +13566,7 @@ func (ec *executionContext) _Mutation_deleteDocument(ctx context.Context, field 
 	res := resTmp.(*Document)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx, field.Selections, res)
+	return ec.marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createLabelDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12695,7 +13630,7 @@ func (ec *executionContext) _Mutation_createLabelDefinition(ctx context.Context,
 	res := resTmp.(*LabelDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
+	return ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateLabelDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12759,7 +13694,7 @@ func (ec *executionContext) _Mutation_updateLabelDefinition(ctx context.Context,
 	res := resTmp.(*LabelDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
+	return ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteLabelDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12823,7 +13758,7 @@ func (ec *executionContext) _Mutation_deleteLabelDefinition(ctx context.Context,
 	res := resTmp.(*LabelDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
+	return ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_setApplicationLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12887,7 +13822,7 @@ func (ec *executionContext) _Mutation_setApplicationLabel(ctx context.Context, f
 	res := resTmp.(*Label)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabel(ctx, field.Selections, res)
+	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteApplicationLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12951,7 +13886,7 @@ func (ec *executionContext) _Mutation_deleteApplicationLabel(ctx context.Context
 	res := resTmp.(*Label)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabel(ctx, field.Selections, res)
+	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_setRuntimeLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13015,7 +13950,7 @@ func (ec *executionContext) _Mutation_setRuntimeLabel(ctx context.Context, field
 	res := resTmp.(*Label)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabel(ctx, field.Selections, res)
+	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteRuntimeLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13079,7 +14014,7 @@ func (ec *executionContext) _Mutation_deleteRuntimeLabel(ctx context.Context, fi
 	res := resTmp.(*Label)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabel(ctx, field.Selections, res)
+	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_setDefaultEventingForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13143,7 +14078,7 @@ func (ec *executionContext) _Mutation_setDefaultEventingForApplication(ctx conte
 	res := resTmp.(*ApplicationEventingConfiguration)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationEventingConfiguration(ctx, field.Selections, res)
+	return ec.marshalNApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventingConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteDefaultEventingForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13207,7 +14142,7 @@ func (ec *executionContext) _Mutation_deleteDefaultEventingForApplication(ctx co
 	res := resTmp.(*ApplicationEventingConfiguration)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationEventingConfiguration(ctx, field.Selections, res)
+	return ec.marshalNApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventingConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_setBundleInstanceAuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13271,7 +14206,7 @@ func (ec *executionContext) _Mutation_setBundleInstanceAuth(ctx context.Context,
 	res := resTmp.(*BundleInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteBundleInstanceAuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13335,7 +14270,7 @@ func (ec *executionContext) _Mutation_deleteBundleInstanceAuth(ctx context.Conte
 	res := resTmp.(*BundleInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestBundleInstanceAuthCreation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13410,7 +14345,7 @@ func (ec *executionContext) _Mutation_requestBundleInstanceAuthCreation(ctx cont
 	res := resTmp.(*BundleInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_requestBundleInstanceAuthDeletion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13485,7 +14420,7 @@ func (ec *executionContext) _Mutation_requestBundleInstanceAuthDeletion(ctx cont
 	res := resTmp.(*BundleInstanceAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
+	return ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13549,7 +14484,7 @@ func (ec *executionContext) _Mutation_addBundle(ctx context.Context, field graph
 	res := resTmp.(*Bundle)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx, field.Selections, res)
+	return ec.marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13613,7 +14548,7 @@ func (ec *executionContext) _Mutation_updateBundle(ctx context.Context, field gr
 	res := resTmp.(*Bundle)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx, field.Selections, res)
+	return ec.marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13677,7 +14612,7 @@ func (ec *executionContext) _Mutation_deleteBundle(ctx context.Context, field gr
 	res := resTmp.(*Bundle)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx, field.Selections, res)
+	return ec.marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createAutomaticScenarioAssignment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13738,7 +14673,7 @@ func (ec *executionContext) _Mutation_createAutomaticScenarioAssignment(ctx cont
 	res := resTmp.(*AutomaticScenarioAssignment)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentForScenario(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13799,7 +14734,7 @@ func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentForScenar
 	res := resTmp.(*AutomaticScenarioAssignment)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13861,7 +14796,7 @@ func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentsForSelec
 	res := resTmp.([]*AutomaticScenarioAssignment)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
@@ -14296,941 +15231,6 @@ func (ec *executionContext) _OneTimeTokenForRuntime_rawEncoded(ctx context.Conte
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Bundle_id(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_name(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_description(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Description, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_instanceAuthRequestInputSchema(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InstanceAuthRequestInputSchema, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*JSONSchema)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_instanceAuth(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Bundle_instanceAuth_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().InstanceAuth(rctx, obj, args["id"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*BundleInstanceAuth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_instanceAuths(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().InstanceAuths(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*BundleInstanceAuth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundleInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_defaultInstanceAuth(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DefaultInstanceAuth, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Auth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_apiDefinitions(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Bundle_apiDefinitions_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().APIDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*APIDefinitionPage)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionPage(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_eventDefinitions(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Bundle_eventDefinitions_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().EventDefinitions(rctx, obj, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*EventDefinitionPage)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionPage(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_documents(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Bundle_documents_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().Documents(rctx, obj, args["first"].(*int), args["after"].(*PageCursor))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*DocumentPage)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalODocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentPage(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_apiDefinition(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Bundle_apiDefinition_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().APIDefinition(rctx, obj, args["id"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*APIDefinition)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_eventDefinition(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Bundle_eventDefinition_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().EventDefinition(rctx, obj, args["id"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*EventDefinition)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Bundle_document(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Bundle",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Bundle_document_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().Document(rctx, obj, args["id"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Document)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundleInstanceAuth_id(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundleInstanceAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundleInstanceAuth_context(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundleInstanceAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Context, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*JSON)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSON(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundleInstanceAuth_inputParams(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundleInstanceAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InputParams, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*JSON)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSON(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundleInstanceAuth_auth(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundleInstanceAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Auth, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Auth)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundleInstanceAuth_status(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuth) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundleInstanceAuth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*BundleInstanceAuthStatus)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundleInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundleInstanceAuthStatus_condition(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundleInstanceAuthStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Condition, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(BundleInstanceAuthStatusCondition)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundleInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatusCondition(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundleInstanceAuthStatus_timestamp(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundleInstanceAuthStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Timestamp, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(Timestamp)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundleInstanceAuthStatus_message(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundleInstanceAuthStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Message, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundleInstanceAuthStatus_reason(ctx context.Context, field graphql.CollectedField, obj *BundleInstanceAuthStatus) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundleInstanceAuthStatus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Reason, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundlePage_data(ctx context.Context, field graphql.CollectedField, obj *BundlePage) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundlePage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Data, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*Bundle)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBundle2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundlePage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *BundlePage) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundlePage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*PageInfo)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BundlePage_totalCount(ctx context.Context, field graphql.CollectedField, obj *BundlePage) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "BundlePage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -15265,7 +15265,7 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	res := resTmp.(PageCursor)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, field.Selections, res)
+	return ec.marshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
@@ -15302,7 +15302,7 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	res := resTmp.(PageCursor)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, field.Selections, res)
+	return ec.marshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
@@ -15474,7 +15474,7 @@ func (ec *executionContext) _Query_applications(ctx context.Context, field graph
 	res := resTmp.(*ApplicationPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationPage(ctx, field.Selections, res)
+	return ec.marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_application(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15546,7 +15546,7 @@ func (ec *executionContext) _Query_application(ctx context.Context, field graphq
 	res := resTmp.(*Application)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx, field.Selections, res)
+	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_applicationsForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15610,7 +15610,7 @@ func (ec *executionContext) _Query_applicationsForRuntime(ctx context.Context, f
 	res := resTmp.(*ApplicationPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationPage(ctx, field.Selections, res)
+	return ec.marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_applicationTemplates(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15674,7 +15674,7 @@ func (ec *executionContext) _Query_applicationTemplates(ctx context.Context, fie
 	res := resTmp.(*ApplicationTemplatePage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationTemplatePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplatePage(ctx, field.Selections, res)
+	return ec.marshalNApplicationTemplatePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplatePage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_applicationTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15735,7 +15735,7 @@ func (ec *executionContext) _Query_applicationTemplate(ctx context.Context, fiel
 	res := resTmp.(*ApplicationTemplate)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
+	return ec.marshalOApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtimes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15799,7 +15799,7 @@ func (ec *executionContext) _Query_runtimes(ctx context.Context, field graphql.C
 	res := resTmp.(*RuntimePage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimePage(ctx, field.Selections, res)
+	return ec.marshalNRuntimePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimePage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtimeContexts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15863,7 +15863,7 @@ func (ec *executionContext) _Query_runtimeContexts(ctx context.Context, field gr
 	res := resTmp.(*RuntimeContextPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContextPage(ctx, field.Selections, res)
+	return ec.marshalNRuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15924,7 +15924,7 @@ func (ec *executionContext) _Query_runtime(ctx context.Context, field graphql.Co
 	res := resTmp.(*Runtime)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtimeContext(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15985,7 +15985,7 @@ func (ec *executionContext) _Query_runtimeContext(ctx context.Context, field gra
 	res := resTmp.(*RuntimeContext)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
+	return ec.marshalORuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_labelDefinitions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16040,7 +16040,7 @@ func (ec *executionContext) _Query_labelDefinitions(ctx context.Context, field g
 	res := resTmp.([]*LabelDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNLabelDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
+	return ec.marshalNLabelDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_labelDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16101,7 +16101,7 @@ func (ec *executionContext) _Query_labelDefinition(ctx context.Context, field gr
 	res := resTmp.(*LabelDefinition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
+	return ec.marshalOLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_healthChecks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16165,7 +16165,7 @@ func (ec *executionContext) _Query_healthChecks(ctx context.Context, field graph
 	res := resTmp.(*HealthCheckPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNHealthCheckPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckPage(ctx, field.Selections, res)
+	return ec.marshalNHealthCheckPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_integrationSystems(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16229,7 +16229,7 @@ func (ec *executionContext) _Query_integrationSystems(ctx context.Context, field
 	res := resTmp.(*IntegrationSystemPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNIntegrationSystemPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystemPage(ctx, field.Selections, res)
+	return ec.marshalNIntegrationSystemPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_integrationSystem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16290,7 +16290,7 @@ func (ec *executionContext) _Query_integrationSystem(ctx context.Context, field 
 	res := resTmp.(*IntegrationSystem)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
+	return ec.marshalOIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16347,7 +16347,7 @@ func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.Col
 	res := resTmp.(*Viewer)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNViewer2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐViewer(ctx, field.Selections, res)
+	return ec.marshalNViewer2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewer(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_tenants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16402,7 +16402,7 @@ func (ec *executionContext) _Query_tenants(ctx context.Context, field graphql.Co
 	res := resTmp.([]*Tenant)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTenant(ctx, field.Selections, res)
+	return ec.marshalNTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_automaticScenarioAssignmentForScenario(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16463,7 +16463,7 @@ func (ec *executionContext) _Query_automaticScenarioAssignmentForScenario(ctx co
 	res := resTmp.(*AutomaticScenarioAssignment)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_automaticScenarioAssignmentsForSelector(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16525,7 +16525,7 @@ func (ec *executionContext) _Query_automaticScenarioAssignmentsForSelector(ctx c
 	res := resTmp.([]*AutomaticScenarioAssignment)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
+	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_automaticScenarioAssignments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16586,7 +16586,7 @@ func (ec *executionContext) _Query_automaticScenarioAssignments(ctx context.Cont
 	res := resTmp.(*AutomaticScenarioAssignmentPage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAutomaticScenarioAssignmentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignmentPage(ctx, field.Selections, res)
+	return ec.marshalOAutomaticScenarioAssignmentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -16735,7 +16735,7 @@ func (ec *executionContext) _Runtime_metadata(ctx context.Context, field graphql
 	res := resTmp.(*RuntimeMetadata)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeMetadata2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeMetadata(ctx, field.Selections, res)
+	return ec.marshalNRuntimeMetadata2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeMetadata(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Runtime_name(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
@@ -16847,7 +16847,7 @@ func (ec *executionContext) _Runtime_labels(ctx context.Context, field graphql.C
 	res := resTmp.(*Labels)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx, field.Selections, res)
+	return ec.marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Runtime_status(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
@@ -16884,7 +16884,7 @@ func (ec *executionContext) _Runtime_status(ctx context.Context, field graphql.C
 	res := resTmp.(*RuntimeStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatus(ctx, field.Selections, res)
+	return ec.marshalNRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Runtime_auths(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
@@ -16918,7 +16918,7 @@ func (ec *executionContext) _Runtime_auths(ctx context.Context, field graphql.Co
 	res := resTmp.([]*SystemAuth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
+	return ec.marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Runtime_eventingConfiguration(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
@@ -16952,7 +16952,7 @@ func (ec *executionContext) _Runtime_eventingConfiguration(ctx context.Context, 
 	res := resTmp.(*RuntimeEventingConfiguration)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalORuntimeEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeEventingConfiguration(ctx, field.Selections, res)
+	return ec.marshalORuntimeEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeEventingConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeContext_id(ctx context.Context, field graphql.CollectedField, obj *RuntimeContext) (ret graphql.Marshaler) {
@@ -17104,7 +17104,7 @@ func (ec *executionContext) _RuntimeContext_labels(ctx context.Context, field gr
 	res := resTmp.(*Labels)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx, field.Selections, res)
+	return ec.marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeContextPage_data(ctx context.Context, field graphql.CollectedField, obj *RuntimeContextPage) (ret graphql.Marshaler) {
@@ -17141,7 +17141,7 @@ func (ec *executionContext) _RuntimeContextPage_data(ctx context.Context, field 
 	res := resTmp.([]*RuntimeContext)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeContext2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
+	return ec.marshalNRuntimeContext2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeContextPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *RuntimeContextPage) (ret graphql.Marshaler) {
@@ -17178,7 +17178,7 @@ func (ec *executionContext) _RuntimeContextPage_pageInfo(ctx context.Context, fi
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeContextPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *RuntimeContextPage) (ret graphql.Marshaler) {
@@ -17289,7 +17289,7 @@ func (ec *executionContext) _RuntimeMetadata_creationTimestamp(ctx context.Conte
 	res := resTmp.(Timestamp)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimePage_data(ctx context.Context, field graphql.CollectedField, obj *RuntimePage) (ret graphql.Marshaler) {
@@ -17326,7 +17326,7 @@ func (ec *executionContext) _RuntimePage_data(ctx context.Context, field graphql
 	res := resTmp.([]*Runtime)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx, field.Selections, res)
+	return ec.marshalNRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimePage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *RuntimePage) (ret graphql.Marshaler) {
@@ -17363,7 +17363,7 @@ func (ec *executionContext) _RuntimePage_pageInfo(ctx context.Context, field gra
 	res := resTmp.(*PageInfo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimePage_totalCount(ctx context.Context, field graphql.CollectedField, obj *RuntimePage) (ret graphql.Marshaler) {
@@ -17437,7 +17437,7 @@ func (ec *executionContext) _RuntimeStatus_condition(ctx context.Context, field 
 	res := resTmp.(RuntimeStatusCondition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatusCondition(ctx, field.Selections, res)
+	return ec.marshalNRuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeStatus_timestamp(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
@@ -17474,7 +17474,7 @@ func (ec *executionContext) _RuntimeStatus_timestamp(ctx context.Context, field 
 	res := resTmp.(Timestamp)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SystemAuth_id(ctx context.Context, field graphql.CollectedField, obj *SystemAuth) (ret graphql.Marshaler) {
@@ -17545,7 +17545,7 @@ func (ec *executionContext) _SystemAuth_auth(ctx context.Context, field graphql.
 	res := resTmp.(*Auth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuth(ctx, field.Selections, res)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Tenant_id(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
@@ -17900,7 +17900,7 @@ func (ec *executionContext) _Viewer_type(ctx context.Context, field graphql.Coll
 	res := resTmp.(ViewerType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNViewerType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐViewerType(ctx, field.Selections, res)
+	return ec.marshalNViewerType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewerType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_id(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -18011,7 +18011,7 @@ func (ec *executionContext) _Webhook_type(ctx context.Context, field graphql.Col
 	res := resTmp.(ApplicationWebhookType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationWebhookType(ctx, field.Selections, res)
+	return ec.marshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_url(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -18082,7 +18082,7 @@ func (ec *executionContext) _Webhook_auth(ctx context.Context, field graphql.Col
 	res := resTmp.(*Auth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuth(ctx, field.Selections, res)
+	return ec.marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -19268,13 +19268,13 @@ func (ec *executionContext) unmarshalInputAPIDefinitionInput(ctx context.Context
 			}
 		case "spec":
 			var err error
-			it.Spec, err = ec.unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpecInput(ctx, v)
+			it.Spec, err = ec.unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "version":
 			var err error
-			it.Version, err = ec.unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐVersionInput(ctx, v)
+			it.Version, err = ec.unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19292,25 +19292,25 @@ func (ec *executionContext) unmarshalInputAPISpecInput(ctx context.Context, obj 
 		switch k {
 		case "data":
 			var err error
-			it.Data, err = ec.unmarshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx, v)
+			it.Data, err = ec.unmarshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "type":
 			var err error
-			it.Type, err = ec.unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpecType(ctx, v)
+			it.Type, err = ec.unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecType(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "format":
 			var err error
-			it.Format, err = ec.unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSpecFormat(ctx, v)
+			it.Format, err = ec.unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "fetchRequest":
 			var err error
-			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestInput(ctx, v)
+			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19334,7 +19334,7 @@ func (ec *executionContext) unmarshalInputApplicationFromTemplateInput(ctx conte
 			}
 		case "values":
 			var err error
-			it.Values, err = ec.unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTemplateValueInput(ctx, v)
+			it.Values, err = ec.unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19370,13 +19370,13 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			}
 		case "labels":
 			var err error
-			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx, v)
+			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "webhooks":
 			var err error
-			it.Webhooks, err = ec.unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhookInput(ctx, v)
+			it.Webhooks, err = ec.unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19388,7 +19388,7 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			}
 		case "bundles":
 			var err error
-			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleCreateInput(ctx, v)
+			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19400,7 +19400,7 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			}
 		case "statusCondition":
 			var err error
-			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx, v)
+			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19430,19 +19430,19 @@ func (ec *executionContext) unmarshalInputApplicationTemplateInput(ctx context.C
 			}
 		case "applicationInput":
 			var err error
-			it.ApplicationInput, err = ec.unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationRegisterInput(ctx, v)
+			it.ApplicationInput, err = ec.unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "placeholders":
 			var err error
-			it.Placeholders, err = ec.unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinitionInput(ctx, v)
+			it.Placeholders, err = ec.unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "accessLevel":
 			var err error
-			it.AccessLevel, err = ec.unmarshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplateAccessLevel(ctx, v)
+			it.AccessLevel, err = ec.unmarshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateAccessLevel(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19484,7 +19484,7 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 			}
 		case "statusCondition":
 			var err error
-			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx, v)
+			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19502,37 +19502,37 @@ func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj int
 		switch k {
 		case "credential":
 			var err error
-			it.Credential, err = ec.unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialDataInput(ctx, v)
+			it.Credential, err = ec.unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalHeaders":
 			var err error
-			it.AdditionalHeaders, err = ec.unmarshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeaders(ctx, v)
+			it.AdditionalHeaders, err = ec.unmarshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalHeadersSerialized":
 			var err error
-			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
+			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalQueryParams":
 			var err error
-			it.AdditionalQueryParams, err = ec.unmarshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParams(ctx, v)
+			it.AdditionalQueryParams, err = ec.unmarshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalQueryParamsSerialized":
 			var err error
-			it.AdditionalQueryParamsSerialized, err = ec.unmarshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx, v)
+			it.AdditionalQueryParamsSerialized, err = ec.unmarshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "requestAuth":
 			var err error
-			it.RequestAuth, err = ec.unmarshalOCredentialRequestAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialRequestAuthInput(ctx, v)
+			it.RequestAuth, err = ec.unmarshalOCredentialRequestAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialRequestAuthInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19556,7 +19556,7 @@ func (ec *executionContext) unmarshalInputAutomaticScenarioAssignmentSetInput(ct
 			}
 		case "selector":
 			var err error
-			it.Selector, err = ec.unmarshalNLabelSelectorInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelSelectorInput(ctx, v)
+			it.Selector, err = ec.unmarshalNLabelSelectorInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19590,6 +19590,178 @@ func (ec *executionContext) unmarshalInputBasicCredentialDataInput(ctx context.C
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputBundleCreateInput(ctx context.Context, obj interface{}) (BundleCreateInput, error) {
+	var it BundleCreateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "instanceAuthRequestInputSchema":
+			var err error
+			it.InstanceAuthRequestInputSchema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "defaultInstanceAuth":
+			var err error
+			it.DefaultInstanceAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "apiDefinitions":
+			var err error
+			it.APIDefinitions, err = ec.unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "eventDefinitions":
+			var err error
+			it.EventDefinitions, err = ec.unmarshalOEventDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "documents":
+			var err error
+			it.Documents, err = ec.unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputBundleInstanceAuthRequestInput(ctx context.Context, obj interface{}) (BundleInstanceAuthRequestInput, error) {
+	var it BundleInstanceAuthRequestInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "context":
+			var err error
+			it.Context, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "inputParams":
+			var err error
+			it.InputParams, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputBundleInstanceAuthSetInput(ctx context.Context, obj interface{}) (BundleInstanceAuthSetInput, error) {
+	var it BundleInstanceAuthSetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "auth":
+			var err error
+			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "status":
+			var err error
+			it.Status, err = ec.unmarshalOBundleInstanceAuthStatusInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatusInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputBundleInstanceAuthStatusInput(ctx context.Context, obj interface{}) (BundleInstanceAuthStatusInput, error) {
+	var it BundleInstanceAuthStatusInput
+	var asMap = obj.(map[string]interface{})
+
+	if _, present := asMap["condition"]; !present {
+		asMap["condition"] = "SUCCEEDED"
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "condition":
+			var err error
+			it.Condition, err = ec.unmarshalNBundleInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthSetStatusConditionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "message":
+			var err error
+			it.Message, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "reason":
+			var err error
+			it.Reason, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputBundleUpdateInput(ctx context.Context, obj interface{}) (BundleUpdateInput, error) {
+	var it BundleUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "instanceAuthRequestInputSchema":
+			var err error
+			it.InstanceAuthRequestInputSchema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "defaultInstanceAuth":
+			var err error
+			it.DefaultInstanceAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCSRFTokenCredentialRequestAuthInput(ctx context.Context, obj interface{}) (CSRFTokenCredentialRequestAuthInput, error) {
 	var it CSRFTokenCredentialRequestAuthInput
 	var asMap = obj.(map[string]interface{})
@@ -19604,31 +19776,31 @@ func (ec *executionContext) unmarshalInputCSRFTokenCredentialRequestAuthInput(ct
 			}
 		case "credential":
 			var err error
-			it.Credential, err = ec.unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialDataInput(ctx, v)
+			it.Credential, err = ec.unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalHeaders":
 			var err error
-			it.AdditionalHeaders, err = ec.unmarshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeaders(ctx, v)
+			it.AdditionalHeaders, err = ec.unmarshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalHeadersSerialized":
 			var err error
-			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
+			it.AdditionalHeadersSerialized, err = ec.unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalQueryParams":
 			var err error
-			it.AdditionalQueryParams, err = ec.unmarshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParams(ctx, v)
+			it.AdditionalQueryParams, err = ec.unmarshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "additionalQueryParamsSerialized":
 			var err error
-			it.AdditionalQueryParamsSerialized, err = ec.unmarshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx, v)
+			it.AdditionalQueryParamsSerialized, err = ec.unmarshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19646,13 +19818,13 @@ func (ec *executionContext) unmarshalInputCredentialDataInput(ctx context.Contex
 		switch k {
 		case "basic":
 			var err error
-			it.Basic, err = ec.unmarshalOBasicCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBasicCredentialDataInput(ctx, v)
+			it.Basic, err = ec.unmarshalOBasicCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBasicCredentialDataInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "oauth":
 			var err error
-			it.Oauth, err = ec.unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOAuthCredentialDataInput(ctx, v)
+			it.Oauth, err = ec.unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19670,7 +19842,7 @@ func (ec *executionContext) unmarshalInputCredentialRequestAuthInput(ctx context
 		switch k {
 		case "csrf":
 			var err error
-			it.Csrf, err = ec.unmarshalOCSRFTokenCredentialRequestAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx, v)
+			it.Csrf, err = ec.unmarshalOCSRFTokenCredentialRequestAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19706,7 +19878,7 @@ func (ec *executionContext) unmarshalInputDocumentInput(ctx context.Context, obj
 			}
 		case "format":
 			var err error
-			it.Format, err = ec.unmarshalNDocumentFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentFormat(ctx, v)
+			it.Format, err = ec.unmarshalNDocumentFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentFormat(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19718,13 +19890,13 @@ func (ec *executionContext) unmarshalInputDocumentInput(ctx context.Context, obj
 			}
 		case "data":
 			var err error
-			it.Data, err = ec.unmarshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx, v)
+			it.Data, err = ec.unmarshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "fetchRequest":
 			var err error
-			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestInput(ctx, v)
+			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19754,7 +19926,7 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 			}
 		case "spec":
 			var err error
-			it.Spec, err = ec.unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpecInput(ctx, v)
+			it.Spec, err = ec.unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19766,7 +19938,7 @@ func (ec *executionContext) unmarshalInputEventDefinitionInput(ctx context.Conte
 			}
 		case "version":
 			var err error
-			it.Version, err = ec.unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐVersionInput(ctx, v)
+			it.Version, err = ec.unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19784,25 +19956,25 @@ func (ec *executionContext) unmarshalInputEventSpecInput(ctx context.Context, ob
 		switch k {
 		case "data":
 			var err error
-			it.Data, err = ec.unmarshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx, v)
+			it.Data, err = ec.unmarshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "type":
 			var err error
-			it.Type, err = ec.unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpecType(ctx, v)
+			it.Type, err = ec.unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "format":
 			var err error
-			it.Format, err = ec.unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSpecFormat(ctx, v)
+			it.Format, err = ec.unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "fetchRequest":
 			var err error
-			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestInput(ctx, v)
+			it.FetchRequest, err = ec.unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19830,13 +20002,13 @@ func (ec *executionContext) unmarshalInputFetchRequestInput(ctx context.Context,
 			}
 		case "auth":
 			var err error
-			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuthInput(ctx, v)
+			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "mode":
 			var err error
-			it.Mode, err = ec.unmarshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchMode(ctx, v)
+			it.Mode, err = ec.unmarshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19890,7 +20062,7 @@ func (ec *executionContext) unmarshalInputLabelDefinitionInput(ctx context.Conte
 			}
 		case "schema":
 			var err error
-			it.Schema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx, v)
+			it.Schema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20002,178 +20174,6 @@ func (ec *executionContext) unmarshalInputOAuthCredentialDataInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputBundleCreateInput(ctx context.Context, obj interface{}) (BundleCreateInput, error) {
-	var it BundleCreateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "description":
-			var err error
-			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "instanceAuthRequestInputSchema":
-			var err error
-			it.InstanceAuthRequestInputSchema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "defaultInstanceAuth":
-			var err error
-			it.DefaultInstanceAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuthInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "apiDefinitions":
-			var err error
-			it.APIDefinitions, err = ec.unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "eventDefinitions":
-			var err error
-			it.EventDefinitions, err = ec.unmarshalOEventDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "documents":
-			var err error
-			it.Documents, err = ec.unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputBundleInstanceAuthRequestInput(ctx context.Context, obj interface{}) (BundleInstanceAuthRequestInput, error) {
-	var it BundleInstanceAuthRequestInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "context":
-			var err error
-			it.Context, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSON(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "inputParams":
-			var err error
-			it.InputParams, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSON(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputBundleInstanceAuthSetInput(ctx context.Context, obj interface{}) (BundleInstanceAuthSetInput, error) {
-	var it BundleInstanceAuthSetInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "auth":
-			var err error
-			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuthInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "status":
-			var err error
-			it.Status, err = ec.unmarshalOBundleInstanceAuthStatusInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatusInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputBundleInstanceAuthStatusInput(ctx context.Context, obj interface{}) (BundleInstanceAuthStatusInput, error) {
-	var it BundleInstanceAuthStatusInput
-	var asMap = obj.(map[string]interface{})
-
-	if _, present := asMap["condition"]; !present {
-		asMap["condition"] = "SUCCEEDED"
-	}
-
-	for k, v := range asMap {
-		switch k {
-		case "condition":
-			var err error
-			it.Condition, err = ec.unmarshalNBundleInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthSetStatusConditionInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "message":
-			var err error
-			it.Message, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "reason":
-			var err error
-			it.Reason, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputBundleUpdateInput(ctx context.Context, obj interface{}) (BundleUpdateInput, error) {
-	var it BundleUpdateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "description":
-			var err error
-			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "instanceAuthRequestInputSchema":
-			var err error
-			it.InstanceAuthRequestInputSchema, err = ec.unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "defaultInstanceAuth":
-			var err error
-			it.DefaultInstanceAuth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuthInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputPlaceholderDefinitionInput(ctx context.Context, obj interface{}) (PlaceholderDefinitionInput, error) {
 	var it PlaceholderDefinitionInput
 	var asMap = obj.(map[string]interface{})
@@ -20218,7 +20218,7 @@ func (ec *executionContext) unmarshalInputRuntimeContextInput(ctx context.Contex
 			}
 		case "labels":
 			var err error
-			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx, v)
+			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20248,13 +20248,13 @@ func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, obj 
 			}
 		case "labels":
 			var err error
-			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx, v)
+			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "statusCondition":
 			var err error
-			it.StatusCondition, err = ec.unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatusCondition(ctx, v)
+			it.StatusCondition, err = ec.unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20332,7 +20332,7 @@ func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, obj 
 		switch k {
 		case "type":
 			var err error
-			it.Type, err = ec.unmarshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationWebhookType(ctx, v)
+			it.Type, err = ec.unmarshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20344,7 +20344,7 @@ func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, obj 
 			}
 		case "auth":
 			var err error
-			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuthInput(ctx, v)
+			it.Auth, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -20408,6 +20408,10 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 		return ec._AutomaticScenarioAssignmentPage(ctx, sel, &obj)
 	case *AutomaticScenarioAssignmentPage:
 		return ec._AutomaticScenarioAssignmentPage(ctx, sel, obj)
+	case BundlePage:
+		return ec._BundlePage(ctx, sel, &obj)
+	case *BundlePage:
+		return ec._BundlePage(ctx, sel, obj)
 	case DocumentPage:
 		return ec._DocumentPage(ctx, sel, &obj)
 	case *DocumentPage:
@@ -20424,10 +20428,6 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 		return ec._IntegrationSystemPage(ctx, sel, &obj)
 	case *IntegrationSystemPage:
 		return ec._IntegrationSystemPage(ctx, sel, obj)
-	case BundlePage:
-		return ec._BundlePage(ctx, sel, &obj)
-	case *BundlePage:
-		return ec._BundlePage(ctx, sel, obj)
 	case RuntimeContextPage:
 		return ec._RuntimeContextPage(ctx, sel, &obj)
 	case *RuntimeContextPage:
@@ -20986,6 +20986,252 @@ func (ec *executionContext) _BasicCredentialData(ctx context.Context, sel ast.Se
 			}
 		case "password":
 			out.Values[i] = ec._BasicCredentialData_password(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var bundleImplementors = []string{"Bundle"}
+
+func (ec *executionContext) _Bundle(ctx context.Context, sel ast.SelectionSet, obj *Bundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, bundleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Bundle")
+		case "id":
+			out.Values[i] = ec._Bundle_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "name":
+			out.Values[i] = ec._Bundle_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "description":
+			out.Values[i] = ec._Bundle_description(ctx, field, obj)
+		case "instanceAuthRequestInputSchema":
+			out.Values[i] = ec._Bundle_instanceAuthRequestInputSchema(ctx, field, obj)
+		case "instanceAuth":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bundle_instanceAuth(ctx, field, obj)
+				return res
+			})
+		case "instanceAuths":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bundle_instanceAuths(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "defaultInstanceAuth":
+			out.Values[i] = ec._Bundle_defaultInstanceAuth(ctx, field, obj)
+		case "apiDefinitions":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bundle_apiDefinitions(ctx, field, obj)
+				return res
+			})
+		case "eventDefinitions":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bundle_eventDefinitions(ctx, field, obj)
+				return res
+			})
+		case "documents":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bundle_documents(ctx, field, obj)
+				return res
+			})
+		case "apiDefinition":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bundle_apiDefinition(ctx, field, obj)
+				return res
+			})
+		case "eventDefinition":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bundle_eventDefinition(ctx, field, obj)
+				return res
+			})
+		case "document":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bundle_document(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var bundleInstanceAuthImplementors = []string{"BundleInstanceAuth"}
+
+func (ec *executionContext) _BundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, obj *BundleInstanceAuth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, bundleInstanceAuthImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BundleInstanceAuth")
+		case "id":
+			out.Values[i] = ec._BundleInstanceAuth_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "context":
+			out.Values[i] = ec._BundleInstanceAuth_context(ctx, field, obj)
+		case "inputParams":
+			out.Values[i] = ec._BundleInstanceAuth_inputParams(ctx, field, obj)
+		case "auth":
+			out.Values[i] = ec._BundleInstanceAuth_auth(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._BundleInstanceAuth_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var bundleInstanceAuthStatusImplementors = []string{"BundleInstanceAuthStatus"}
+
+func (ec *executionContext) _BundleInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, obj *BundleInstanceAuthStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, bundleInstanceAuthStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BundleInstanceAuthStatus")
+		case "condition":
+			out.Values[i] = ec._BundleInstanceAuthStatus_condition(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timestamp":
+			out.Values[i] = ec._BundleInstanceAuthStatus_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "message":
+			out.Values[i] = ec._BundleInstanceAuthStatus_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._BundleInstanceAuthStatus_reason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var bundlePageImplementors = []string{"BundlePage", "Pageable"}
+
+func (ec *executionContext) _BundlePage(ctx context.Context, sel ast.SelectionSet, obj *BundlePage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, bundlePageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BundlePage")
+		case "data":
+			out.Values[i] = ec._BundlePage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._BundlePage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._BundlePage_totalCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -22017,252 +22263,6 @@ func (ec *executionContext) _OneTimeTokenForRuntime(ctx context.Context, sel ast
 				res = ec._OneTimeTokenForRuntime_rawEncoded(ctx, field, obj)
 				return res
 			})
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var bundleImplementors = []string{"Bundle"}
-
-func (ec *executionContext) _Bundle(ctx context.Context, sel ast.SelectionSet, obj *Bundle) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, bundleImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Bundle")
-		case "id":
-			out.Values[i] = ec._Bundle_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "name":
-			out.Values[i] = ec._Bundle_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "description":
-			out.Values[i] = ec._Bundle_description(ctx, field, obj)
-		case "instanceAuthRequestInputSchema":
-			out.Values[i] = ec._Bundle_instanceAuthRequestInputSchema(ctx, field, obj)
-		case "instanceAuth":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_instanceAuth(ctx, field, obj)
-				return res
-			})
-		case "instanceAuths":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_instanceAuths(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "defaultInstanceAuth":
-			out.Values[i] = ec._Bundle_defaultInstanceAuth(ctx, field, obj)
-		case "apiDefinitions":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_apiDefinitions(ctx, field, obj)
-				return res
-			})
-		case "eventDefinitions":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_eventDefinitions(ctx, field, obj)
-				return res
-			})
-		case "documents":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_documents(ctx, field, obj)
-				return res
-			})
-		case "apiDefinition":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_apiDefinition(ctx, field, obj)
-				return res
-			})
-		case "eventDefinition":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_eventDefinition(ctx, field, obj)
-				return res
-			})
-		case "document":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_document(ctx, field, obj)
-				return res
-			})
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var bundleInstanceAuthImplementors = []string{"BundleInstanceAuth"}
-
-func (ec *executionContext) _BundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, obj *BundleInstanceAuth) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, bundleInstanceAuthImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("BundleInstanceAuth")
-		case "id":
-			out.Values[i] = ec._BundleInstanceAuth_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "context":
-			out.Values[i] = ec._BundleInstanceAuth_context(ctx, field, obj)
-		case "inputParams":
-			out.Values[i] = ec._BundleInstanceAuth_inputParams(ctx, field, obj)
-		case "auth":
-			out.Values[i] = ec._BundleInstanceAuth_auth(ctx, field, obj)
-		case "status":
-			out.Values[i] = ec._BundleInstanceAuth_status(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var bundleInstanceAuthStatusImplementors = []string{"BundleInstanceAuthStatus"}
-
-func (ec *executionContext) _BundleInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, obj *BundleInstanceAuthStatus) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, bundleInstanceAuthStatusImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("BundleInstanceAuthStatus")
-		case "condition":
-			out.Values[i] = ec._BundleInstanceAuthStatus_condition(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "timestamp":
-			out.Values[i] = ec._BundleInstanceAuthStatus_timestamp(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "message":
-			out.Values[i] = ec._BundleInstanceAuthStatus_message(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "reason":
-			out.Values[i] = ec._BundleInstanceAuthStatus_reason(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var bundlePageImplementors = []string{"BundlePage", "Pageable"}
-
-func (ec *executionContext) _BundlePage(ctx context.Context, sel ast.SelectionSet, obj *BundlePage) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, bundlePageImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("BundlePage")
-		case "data":
-			out.Values[i] = ec._BundlePage_data(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "pageInfo":
-			out.Values[i] = ec._BundlePage_pageInfo(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "totalCount":
-			out.Values[i] = ec._BundlePage_totalCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23316,11 +23316,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v APIDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v APIDefinition) graphql.Marshaler {
 	return ec._APIDefinition(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v []*APIDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v []*APIDefinition) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -23344,7 +23344,7 @@ func (ec *executionContext) marshalNAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑin
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx, sel, v[i])
+			ret[i] = ec.marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -23357,7 +23357,7 @@ func (ec *executionContext) marshalNAPIDefinition2ᚕᚖgithubᚗcomᚋkymaᚑin
 	return ret
 }
 
-func (ec *executionContext) marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *APIDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *APIDefinition) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23367,23 +23367,23 @@ func (ec *executionContext) marshalNAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincub
 	return ec._APIDefinition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionInput(ctx context.Context, v interface{}) (APIDefinitionInput, error) {
+func (ec *executionContext) unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx context.Context, v interface{}) (APIDefinitionInput, error) {
 	return ec.unmarshalInputAPIDefinitionInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNAPIDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionInput(ctx context.Context, v interface{}) (*APIDefinitionInput, error) {
+func (ec *executionContext) unmarshalNAPIDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx context.Context, v interface{}) (*APIDefinitionInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionInput(ctx, v)
+	res, err := ec.unmarshalNAPIDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v APISpec) graphql.Marshaler {
+func (ec *executionContext) marshalNAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v APISpec) graphql.Marshaler {
 	return ec._APISpec(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v *APISpec) graphql.Marshaler {
+func (ec *executionContext) marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v *APISpec) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23393,12 +23393,12 @@ func (ec *executionContext) marshalNAPISpec2ᚖgithubᚗcomᚋkymaᚑincubator�
 	return ec._APISpec(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpecType(ctx context.Context, v interface{}) (APISpecType, error) {
+func (ec *executionContext) unmarshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecType(ctx context.Context, v interface{}) (APISpecType, error) {
 	var res APISpecType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpecType(ctx context.Context, sel ast.SelectionSet, v APISpecType) graphql.Marshaler {
+func (ec *executionContext) marshalNAPISpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecType(ctx context.Context, sel ast.SelectionSet, v APISpecType) graphql.Marshaler {
 	return v
 }
 
@@ -23425,11 +23425,11 @@ func (ec *executionContext) marshalNAny2interface(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v Application) graphql.Marshaler {
+func (ec *executionContext) marshalNApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v Application) graphql.Marshaler {
 	return ec._Application(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v []*Application) graphql.Marshaler {
+func (ec *executionContext) marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v []*Application) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -23453,7 +23453,7 @@ func (ec *executionContext) marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincu
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx, sel, v[i])
+			ret[i] = ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -23466,7 +23466,7 @@ func (ec *executionContext) marshalNApplication2ᚕᚖgithubᚗcomᚋkymaᚑincu
 	return ret
 }
 
-func (ec *executionContext) marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v *Application) graphql.Marshaler {
+func (ec *executionContext) marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v *Application) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23476,11 +23476,11 @@ func (ec *executionContext) marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubat
 	return ec._Application(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNApplicationEventingConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v ApplicationEventingConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationEventingConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v ApplicationEventingConfiguration) graphql.Marshaler {
 	return ec._ApplicationEventingConfiguration(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v *ApplicationEventingConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v *ApplicationEventingConfiguration) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23490,15 +23490,15 @@ func (ec *executionContext) marshalNApplicationEventingConfiguration2ᚖgithub�
 	return ec._ApplicationEventingConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNApplicationFromTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationFromTemplateInput(ctx context.Context, v interface{}) (ApplicationFromTemplateInput, error) {
+func (ec *executionContext) unmarshalNApplicationFromTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationFromTemplateInput(ctx context.Context, v interface{}) (ApplicationFromTemplateInput, error) {
 	return ec.unmarshalInputApplicationFromTemplateInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNApplicationPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationPage(ctx context.Context, sel ast.SelectionSet, v ApplicationPage) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationPage(ctx context.Context, sel ast.SelectionSet, v ApplicationPage) graphql.Marshaler {
 	return ec._ApplicationPage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationPage(ctx context.Context, sel ast.SelectionSet, v *ApplicationPage) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationPage(ctx context.Context, sel ast.SelectionSet, v *ApplicationPage) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23508,23 +23508,23 @@ func (ec *executionContext) marshalNApplicationPage2ᚖgithubᚗcomᚋkymaᚑinc
 	return ec._ApplicationPage(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationRegisterInput(ctx context.Context, v interface{}) (ApplicationRegisterInput, error) {
+func (ec *executionContext) unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx context.Context, v interface{}) (ApplicationRegisterInput, error) {
 	return ec.unmarshalInputApplicationRegisterInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationRegisterInput(ctx context.Context, v interface{}) (*ApplicationRegisterInput, error) {
+func (ec *executionContext) unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx context.Context, v interface{}) (*ApplicationRegisterInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationRegisterInput(ctx, v)
+	res, err := ec.unmarshalNApplicationRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNApplicationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatus(ctx context.Context, sel ast.SelectionSet, v ApplicationStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatus(ctx context.Context, sel ast.SelectionSet, v ApplicationStatus) graphql.Marshaler {
 	return ec._ApplicationStatus(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNApplicationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatus(ctx context.Context, sel ast.SelectionSet, v *ApplicationStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatus(ctx context.Context, sel ast.SelectionSet, v *ApplicationStatus) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23534,20 +23534,20 @@ func (ec *executionContext) marshalNApplicationStatus2ᚖgithubᚗcomᚋkymaᚑi
 	return ec._ApplicationStatus(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, v interface{}) (ApplicationStatusCondition, error) {
+func (ec *executionContext) unmarshalNApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, v interface{}) (ApplicationStatusCondition, error) {
 	var res ApplicationStatusCondition
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, sel ast.SelectionSet, v ApplicationStatusCondition) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, sel ast.SelectionSet, v ApplicationStatusCondition) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNApplicationTemplate2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplate) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationTemplate2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplate) graphql.Marshaler {
 	return ec._ApplicationTemplate(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNApplicationTemplate2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v []*ApplicationTemplate) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationTemplate2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v []*ApplicationTemplate) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -23571,7 +23571,7 @@ func (ec *executionContext) marshalNApplicationTemplate2ᚕᚖgithubᚗcomᚋkym
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx, sel, v[i])
+			ret[i] = ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -23584,7 +23584,7 @@ func (ec *executionContext) marshalNApplicationTemplate2ᚕᚖgithubᚗcomᚋkym
 	return ret
 }
 
-func (ec *executionContext) marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v *ApplicationTemplate) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v *ApplicationTemplate) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23594,24 +23594,24 @@ func (ec *executionContext) marshalNApplicationTemplate2ᚖgithubᚗcomᚋkyma�
 	return ec._ApplicationTemplate(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplateAccessLevel(ctx context.Context, v interface{}) (ApplicationTemplateAccessLevel, error) {
+func (ec *executionContext) unmarshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateAccessLevel(ctx context.Context, v interface{}) (ApplicationTemplateAccessLevel, error) {
 	var res ApplicationTemplateAccessLevel
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplateAccessLevel(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplateAccessLevel) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateAccessLevel(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplateAccessLevel) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplateInput(ctx context.Context, v interface{}) (ApplicationTemplateInput, error) {
+func (ec *executionContext) unmarshalNApplicationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateInput(ctx context.Context, v interface{}) (ApplicationTemplateInput, error) {
 	return ec.unmarshalInputApplicationTemplateInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNApplicationTemplatePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplatePage(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplatePage) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationTemplatePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplatePage(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplatePage) graphql.Marshaler {
 	return ec._ApplicationTemplatePage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNApplicationTemplatePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplatePage(ctx context.Context, sel ast.SelectionSet, v *ApplicationTemplatePage) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationTemplatePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplatePage(ctx context.Context, sel ast.SelectionSet, v *ApplicationTemplatePage) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23621,24 +23621,24 @@ func (ec *executionContext) marshalNApplicationTemplatePage2ᚖgithubᚗcomᚋky
 	return ec._ApplicationTemplatePage(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationUpdateInput(ctx context.Context, v interface{}) (ApplicationUpdateInput, error) {
+func (ec *executionContext) unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationUpdateInput(ctx context.Context, v interface{}) (ApplicationUpdateInput, error) {
 	return ec.unmarshalInputApplicationUpdateInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationWebhookType(ctx context.Context, v interface{}) (ApplicationWebhookType, error) {
+func (ec *executionContext) unmarshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx context.Context, v interface{}) (ApplicationWebhookType, error) {
 	var res ApplicationWebhookType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationWebhookType(ctx context.Context, sel ast.SelectionSet, v ApplicationWebhookType) graphql.Marshaler {
+func (ec *executionContext) marshalNApplicationWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWebhookType(ctx context.Context, sel ast.SelectionSet, v ApplicationWebhookType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNAutomaticScenarioAssignment2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v AutomaticScenarioAssignment) graphql.Marshaler {
+func (ec *executionContext) marshalNAutomaticScenarioAssignment2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v AutomaticScenarioAssignment) graphql.Marshaler {
 	return ec._AutomaticScenarioAssignment(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v []*AutomaticScenarioAssignment) graphql.Marshaler {
+func (ec *executionContext) marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v []*AutomaticScenarioAssignment) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -23662,7 +23662,7 @@ func (ec *executionContext) marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗc
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx, sel, v[i])
+			ret[i] = ec.marshalNAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -23675,7 +23675,7 @@ func (ec *executionContext) marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗc
 	return ret
 }
 
-func (ec *executionContext) marshalNAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v *AutomaticScenarioAssignment) graphql.Marshaler {
+func (ec *executionContext) marshalNAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v *AutomaticScenarioAssignment) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23685,7 +23685,7 @@ func (ec *executionContext) marshalNAutomaticScenarioAssignment2ᚖgithubᚗcom�
 	return ec._AutomaticScenarioAssignment(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx context.Context, v interface{}) (AutomaticScenarioAssignmentSetInput, error) {
+func (ec *executionContext) unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx context.Context, v interface{}) (AutomaticScenarioAssignmentSetInput, error) {
 	return ec.unmarshalInputAutomaticScenarioAssignmentSetInput(ctx, v)
 }
 
@@ -23703,11 +23703,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNDocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
-	return ec._Document(ctx, sel, &v)
+func (ec *executionContext) marshalNBundle2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v Bundle) graphql.Marshaler {
+	return ec._Bundle(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDocument2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v []*Document) graphql.Marshaler {
+func (ec *executionContext) marshalNBundle2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v []*Bundle) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -23731,7 +23731,7 @@ func (ec *executionContext) marshalNDocument2ᚕᚖgithubᚗcomᚋkymaᚑincubat
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx, sel, v[i])
+			ret[i] = ec.marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -23744,7 +23744,165 @@ func (ec *executionContext) marshalNDocument2ᚕᚖgithubᚗcomᚋkymaᚑincubat
 	return ret
 }
 
-func (ec *executionContext) marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v *Document) graphql.Marshaler {
+func (ec *executionContext) marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v *Bundle) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Bundle(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBundleCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx context.Context, v interface{}) (BundleCreateInput, error) {
+	return ec.unmarshalInputBundleCreateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNBundleCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx context.Context, v interface{}) (*BundleCreateInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNBundleCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalNBundleInstanceAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuth) graphql.Marshaler {
+	return ec._BundleInstanceAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBundleInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v []*BundleInstanceAuth) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *BundleInstanceAuth) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._BundleInstanceAuth(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBundleInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthRequestInput(ctx context.Context, v interface{}) (BundleInstanceAuthRequestInput, error) {
+	return ec.unmarshalInputBundleInstanceAuthRequestInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNBundleInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthSetInput(ctx context.Context, v interface{}) (BundleInstanceAuthSetInput, error) {
+	return ec.unmarshalInputBundleInstanceAuthSetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNBundleInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthSetStatusConditionInput(ctx context.Context, v interface{}) (BundleInstanceAuthSetStatusConditionInput, error) {
+	var res BundleInstanceAuthSetStatusConditionInput
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNBundleInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthSetStatusConditionInput(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuthSetStatusConditionInput) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNBundleInstanceAuthStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuthStatus) graphql.Marshaler {
+	return ec._BundleInstanceAuthStatus(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBundleInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v *BundleInstanceAuthStatus) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._BundleInstanceAuthStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBundleInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatusCondition(ctx context.Context, v interface{}) (BundleInstanceAuthStatusCondition, error) {
+	var res BundleInstanceAuthStatusCondition
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNBundleInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatusCondition(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuthStatusCondition) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNBundleUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleUpdateInput(ctx context.Context, v interface{}) (BundleUpdateInput, error) {
+	return ec.unmarshalInputBundleUpdateInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNDocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
+	return ec._Document(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDocument2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v []*Document) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v *Document) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23754,32 +23912,32 @@ func (ec *executionContext) marshalNDocument2ᚖgithubᚗcomᚋkymaᚑincubator�
 	return ec._Document(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNDocumentFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentFormat(ctx context.Context, v interface{}) (DocumentFormat, error) {
+func (ec *executionContext) unmarshalNDocumentFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentFormat(ctx context.Context, v interface{}) (DocumentFormat, error) {
 	var res DocumentFormat
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNDocumentFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentFormat(ctx context.Context, sel ast.SelectionSet, v DocumentFormat) graphql.Marshaler {
+func (ec *executionContext) marshalNDocumentFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentFormat(ctx context.Context, sel ast.SelectionSet, v DocumentFormat) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNDocumentInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentInput(ctx context.Context, v interface{}) (DocumentInput, error) {
+func (ec *executionContext) unmarshalNDocumentInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx context.Context, v interface{}) (DocumentInput, error) {
 	return ec.unmarshalInputDocumentInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNDocumentInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentInput(ctx context.Context, v interface{}) (*DocumentInput, error) {
+func (ec *executionContext) unmarshalNDocumentInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx context.Context, v interface{}) (*DocumentInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNDocumentInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentInput(ctx, v)
+	res, err := ec.unmarshalNDocumentInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNEventDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v EventDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNEventDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v EventDefinition) graphql.Marshaler {
 	return ec._EventDefinition(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v []*EventDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v []*EventDefinition) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -23803,7 +23961,7 @@ func (ec *executionContext) marshalNEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx, sel, v[i])
+			ret[i] = ec.marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -23816,7 +23974,7 @@ func (ec *executionContext) marshalNEventDefinition2ᚕᚖgithubᚗcomᚋkymaᚑ
 	return ret
 }
 
-func (ec *executionContext) marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v *EventDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v *EventDefinition) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23826,23 +23984,23 @@ func (ec *executionContext) marshalNEventDefinition2ᚖgithubᚗcomᚋkymaᚑinc
 	return ec._EventDefinition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionInput(ctx context.Context, v interface{}) (EventDefinitionInput, error) {
+func (ec *executionContext) unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx context.Context, v interface{}) (EventDefinitionInput, error) {
 	return ec.unmarshalInputEventDefinitionInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNEventDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionInput(ctx context.Context, v interface{}) (*EventDefinitionInput, error) {
+func (ec *executionContext) unmarshalNEventDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx context.Context, v interface{}) (*EventDefinitionInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionInput(ctx, v)
+	res, err := ec.unmarshalNEventDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNEventSpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v EventSpec) graphql.Marshaler {
+func (ec *executionContext) marshalNEventSpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v EventSpec) graphql.Marshaler {
 	return ec._EventSpec(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v *EventSpec) graphql.Marshaler {
+func (ec *executionContext) marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v *EventSpec) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23852,29 +24010,29 @@ func (ec *executionContext) marshalNEventSpec2ᚖgithubᚗcomᚋkymaᚑincubator
 	return ec._EventSpec(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpecType(ctx context.Context, v interface{}) (EventSpecType, error) {
+func (ec *executionContext) unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx context.Context, v interface{}) (EventSpecType, error) {
 	var res EventSpecType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpecType(ctx context.Context, sel ast.SelectionSet, v EventSpecType) graphql.Marshaler {
+func (ec *executionContext) marshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx context.Context, sel ast.SelectionSet, v EventSpecType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {
+func (ec *executionContext) unmarshalNFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {
 	var res FetchMode
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchMode(ctx context.Context, sel ast.SelectionSet, v FetchMode) graphql.Marshaler {
+func (ec *executionContext) marshalNFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx context.Context, sel ast.SelectionSet, v FetchMode) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNFetchRequestStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestStatus(ctx context.Context, sel ast.SelectionSet, v FetchRequestStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNFetchRequestStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestStatus(ctx context.Context, sel ast.SelectionSet, v FetchRequestStatus) graphql.Marshaler {
 	return ec._FetchRequestStatus(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNFetchRequestStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestStatus(ctx context.Context, sel ast.SelectionSet, v *FetchRequestStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNFetchRequestStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestStatus(ctx context.Context, sel ast.SelectionSet, v *FetchRequestStatus) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23884,20 +24042,20 @@ func (ec *executionContext) marshalNFetchRequestStatus2ᚖgithubᚗcomᚋkymaᚑ
 	return ec._FetchRequestStatus(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNFetchRequestStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestStatusCondition(ctx context.Context, v interface{}) (FetchRequestStatusCondition, error) {
+func (ec *executionContext) unmarshalNFetchRequestStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestStatusCondition(ctx context.Context, v interface{}) (FetchRequestStatusCondition, error) {
 	var res FetchRequestStatusCondition
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNFetchRequestStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestStatusCondition(ctx context.Context, sel ast.SelectionSet, v FetchRequestStatusCondition) graphql.Marshaler {
+func (ec *executionContext) marshalNFetchRequestStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestStatusCondition(ctx context.Context, sel ast.SelectionSet, v FetchRequestStatusCondition) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNHealthCheck2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheck(ctx context.Context, sel ast.SelectionSet, v HealthCheck) graphql.Marshaler {
+func (ec *executionContext) marshalNHealthCheck2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheck(ctx context.Context, sel ast.SelectionSet, v HealthCheck) graphql.Marshaler {
 	return ec._HealthCheck(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheck(ctx context.Context, sel ast.SelectionSet, v []*HealthCheck) graphql.Marshaler {
+func (ec *executionContext) marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheck(ctx context.Context, sel ast.SelectionSet, v []*HealthCheck) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -23921,7 +24079,7 @@ func (ec *executionContext) marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincu
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNHealthCheck2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheck(ctx, sel, v[i])
+			ret[i] = ec.marshalNHealthCheck2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheck(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -23934,7 +24092,7 @@ func (ec *executionContext) marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincu
 	return ret
 }
 
-func (ec *executionContext) marshalNHealthCheck2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheck(ctx context.Context, sel ast.SelectionSet, v *HealthCheck) graphql.Marshaler {
+func (ec *executionContext) marshalNHealthCheck2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheck(ctx context.Context, sel ast.SelectionSet, v *HealthCheck) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23944,11 +24102,11 @@ func (ec *executionContext) marshalNHealthCheck2ᚖgithubᚗcomᚋkymaᚑincubat
 	return ec._HealthCheck(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNHealthCheckPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckPage(ctx context.Context, sel ast.SelectionSet, v HealthCheckPage) graphql.Marshaler {
+func (ec *executionContext) marshalNHealthCheckPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckPage(ctx context.Context, sel ast.SelectionSet, v HealthCheckPage) graphql.Marshaler {
 	return ec._HealthCheckPage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNHealthCheckPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckPage(ctx context.Context, sel ast.SelectionSet, v *HealthCheckPage) graphql.Marshaler {
+func (ec *executionContext) marshalNHealthCheckPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckPage(ctx context.Context, sel ast.SelectionSet, v *HealthCheckPage) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -23958,21 +24116,21 @@ func (ec *executionContext) marshalNHealthCheckPage2ᚖgithubᚗcomᚋkymaᚑinc
 	return ec._HealthCheckPage(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNHealthCheckStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckStatusCondition(ctx context.Context, v interface{}) (HealthCheckStatusCondition, error) {
+func (ec *executionContext) unmarshalNHealthCheckStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckStatusCondition(ctx context.Context, v interface{}) (HealthCheckStatusCondition, error) {
 	var res HealthCheckStatusCondition
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNHealthCheckStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckStatusCondition(ctx context.Context, sel ast.SelectionSet, v HealthCheckStatusCondition) graphql.Marshaler {
+func (ec *executionContext) marshalNHealthCheckStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckStatusCondition(ctx context.Context, sel ast.SelectionSet, v HealthCheckStatusCondition) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckType(ctx context.Context, v interface{}) (HealthCheckType, error) {
+func (ec *executionContext) unmarshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckType(ctx context.Context, v interface{}) (HealthCheckType, error) {
 	var res HealthCheckType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckType(ctx context.Context, sel ast.SelectionSet, v HealthCheckType) graphql.Marshaler {
+func (ec *executionContext) marshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckType(ctx context.Context, sel ast.SelectionSet, v HealthCheckType) graphql.Marshaler {
 	return v
 }
 
@@ -24004,11 +24162,11 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalNIntegrationSystem2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v IntegrationSystem) graphql.Marshaler {
+func (ec *executionContext) marshalNIntegrationSystem2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v IntegrationSystem) graphql.Marshaler {
 	return ec._IntegrationSystem(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNIntegrationSystem2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v []*IntegrationSystem) graphql.Marshaler {
+func (ec *executionContext) marshalNIntegrationSystem2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v []*IntegrationSystem) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -24032,7 +24190,7 @@ func (ec *executionContext) marshalNIntegrationSystem2ᚕᚖgithubᚗcomᚋkyma�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx, sel, v[i])
+			ret[i] = ec.marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -24045,7 +24203,7 @@ func (ec *executionContext) marshalNIntegrationSystem2ᚕᚖgithubᚗcomᚋkyma�
 	return ret
 }
 
-func (ec *executionContext) marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v *IntegrationSystem) graphql.Marshaler {
+func (ec *executionContext) marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v *IntegrationSystem) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24055,15 +24213,15 @@ func (ec *executionContext) marshalNIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑi
 	return ec._IntegrationSystem(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystemInput(ctx context.Context, v interface{}) (IntegrationSystemInput, error) {
+func (ec *executionContext) unmarshalNIntegrationSystemInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemInput(ctx context.Context, v interface{}) (IntegrationSystemInput, error) {
 	return ec.unmarshalInputIntegrationSystemInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNIntegrationSystemPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystemPage(ctx context.Context, sel ast.SelectionSet, v IntegrationSystemPage) graphql.Marshaler {
+func (ec *executionContext) marshalNIntegrationSystemPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemPage(ctx context.Context, sel ast.SelectionSet, v IntegrationSystemPage) graphql.Marshaler {
 	return ec._IntegrationSystemPage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNIntegrationSystemPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystemPage(ctx context.Context, sel ast.SelectionSet, v *IntegrationSystemPage) graphql.Marshaler {
+func (ec *executionContext) marshalNIntegrationSystemPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystemPage(ctx context.Context, sel ast.SelectionSet, v *IntegrationSystemPage) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24073,11 +24231,11 @@ func (ec *executionContext) marshalNIntegrationSystemPage2ᚖgithubᚗcomᚋkyma
 	return ec._IntegrationSystemPage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLabel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabel(ctx context.Context, sel ast.SelectionSet, v Label) graphql.Marshaler {
+func (ec *executionContext) marshalNLabel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx context.Context, sel ast.SelectionSet, v Label) graphql.Marshaler {
 	return ec._Label(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabel(ctx context.Context, sel ast.SelectionSet, v *Label) graphql.Marshaler {
+func (ec *executionContext) marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx context.Context, sel ast.SelectionSet, v *Label) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24087,11 +24245,11 @@ func (ec *executionContext) marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋc
 	return ec._Label(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLabelDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v LabelDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNLabelDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v LabelDefinition) graphql.Marshaler {
 	return ec._LabelDefinition(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNLabelDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v []*LabelDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNLabelDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v []*LabelDefinition) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -24115,7 +24273,7 @@ func (ec *executionContext) marshalNLabelDefinition2ᚕᚖgithubᚗcomᚋkymaᚑ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx, sel, v[i])
+			ret[i] = ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -24128,7 +24286,7 @@ func (ec *executionContext) marshalNLabelDefinition2ᚕᚖgithubᚗcomᚋkymaᚑ
 	return ret
 }
 
-func (ec *executionContext) marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v *LabelDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v *LabelDefinition) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24138,39 +24296,39 @@ func (ec *executionContext) marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑinc
 	return ec._LabelDefinition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinitionInput(ctx context.Context, v interface{}) (LabelDefinitionInput, error) {
+func (ec *executionContext) unmarshalNLabelDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinitionInput(ctx context.Context, v interface{}) (LabelDefinitionInput, error) {
 	return ec.unmarshalInputLabelDefinitionInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNLabelFilter2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelFilter(ctx context.Context, v interface{}) (LabelFilter, error) {
+func (ec *executionContext) unmarshalNLabelFilter2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilter(ctx context.Context, v interface{}) (LabelFilter, error) {
 	return ec.unmarshalInputLabelFilter(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNLabelFilter2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelFilter(ctx context.Context, v interface{}) (*LabelFilter, error) {
+func (ec *executionContext) unmarshalNLabelFilter2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilter(ctx context.Context, v interface{}) (*LabelFilter, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNLabelFilter2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelFilter(ctx, v)
+	res, err := ec.unmarshalNLabelFilter2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilter(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelSelectorInput(ctx context.Context, v interface{}) (LabelSelectorInput, error) {
+func (ec *executionContext) unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx context.Context, v interface{}) (LabelSelectorInput, error) {
 	return ec.unmarshalInputLabelSelectorInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNLabelSelectorInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelSelectorInput(ctx context.Context, v interface{}) (*LabelSelectorInput, error) {
+func (ec *executionContext) unmarshalNLabelSelectorInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx context.Context, v interface{}) (*LabelSelectorInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelSelectorInput(ctx, v)
+	res, err := ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNOneTimeTokenForApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOneTimeTokenForApplication(ctx context.Context, sel ast.SelectionSet, v OneTimeTokenForApplication) graphql.Marshaler {
+func (ec *executionContext) marshalNOneTimeTokenForApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForApplication(ctx context.Context, sel ast.SelectionSet, v OneTimeTokenForApplication) graphql.Marshaler {
 	return ec._OneTimeTokenForApplication(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOneTimeTokenForApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOneTimeTokenForApplication(ctx context.Context, sel ast.SelectionSet, v *OneTimeTokenForApplication) graphql.Marshaler {
+func (ec *executionContext) marshalNOneTimeTokenForApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForApplication(ctx context.Context, sel ast.SelectionSet, v *OneTimeTokenForApplication) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24180,11 +24338,11 @@ func (ec *executionContext) marshalNOneTimeTokenForApplication2ᚖgithubᚗcom�
 	return ec._OneTimeTokenForApplication(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOneTimeTokenForRuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOneTimeTokenForRuntime(ctx context.Context, sel ast.SelectionSet, v OneTimeTokenForRuntime) graphql.Marshaler {
+func (ec *executionContext) marshalNOneTimeTokenForRuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForRuntime(ctx context.Context, sel ast.SelectionSet, v OneTimeTokenForRuntime) graphql.Marshaler {
 	return ec._OneTimeTokenForRuntime(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOneTimeTokenForRuntime(ctx context.Context, sel ast.SelectionSet, v *OneTimeTokenForRuntime) graphql.Marshaler {
+func (ec *executionContext) marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForRuntime(ctx context.Context, sel ast.SelectionSet, v *OneTimeTokenForRuntime) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24194,178 +24352,20 @@ func (ec *executionContext) marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkym
 	return ec._OneTimeTokenForRuntime(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNBundle2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v Bundle) graphql.Marshaler {
-	return ec._Bundle(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNBundle2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v []*Bundle) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v *Bundle) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Bundle(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNBundleCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleCreateInput(ctx context.Context, v interface{}) (BundleCreateInput, error) {
-	return ec.unmarshalInputBundleCreateInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNBundleCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleCreateInput(ctx context.Context, v interface{}) (*BundleCreateInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNBundleCreateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleCreateInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalNBundleInstanceAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuth) graphql.Marshaler {
-	return ec._BundleInstanceAuth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNBundleInstanceAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v []*BundleInstanceAuth) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *BundleInstanceAuth) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._BundleInstanceAuth(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNBundleInstanceAuthRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthRequestInput(ctx context.Context, v interface{}) (BundleInstanceAuthRequestInput, error) {
-	return ec.unmarshalInputBundleInstanceAuthRequestInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNBundleInstanceAuthSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthSetInput(ctx context.Context, v interface{}) (BundleInstanceAuthSetInput, error) {
-	return ec.unmarshalInputBundleInstanceAuthSetInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNBundleInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthSetStatusConditionInput(ctx context.Context, v interface{}) (BundleInstanceAuthSetStatusConditionInput, error) {
-	var res BundleInstanceAuthSetStatusConditionInput
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNBundleInstanceAuthSetStatusConditionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthSetStatusConditionInput(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuthSetStatusConditionInput) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) marshalNBundleInstanceAuthStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuthStatus) graphql.Marshaler {
-	return ec._BundleInstanceAuthStatus(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNBundleInstanceAuthStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatus(ctx context.Context, sel ast.SelectionSet, v *BundleInstanceAuthStatus) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._BundleInstanceAuthStatus(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNBundleInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatusCondition(ctx context.Context, v interface{}) (BundleInstanceAuthStatusCondition, error) {
-	var res BundleInstanceAuthStatusCondition
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNBundleInstanceAuthStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatusCondition(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuthStatusCondition) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalNBundleUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleUpdateInput(ctx context.Context, v interface{}) (BundleUpdateInput, error) {
-	return ec.unmarshalInputBundleUpdateInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {
+func (ec *executionContext) unmarshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {
 	var res PageCursor
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx context.Context, sel ast.SelectionSet, v PageCursor) graphql.Marshaler {
+func (ec *executionContext) marshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, sel ast.SelectionSet, v PageCursor) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v PageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v PageInfo) graphql.Marshaler {
 	return ec._PageInfo(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24375,11 +24375,11 @@ func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubator�
 	return ec._PageInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPlaceholderDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinition(ctx context.Context, sel ast.SelectionSet, v PlaceholderDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNPlaceholderDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinition(ctx context.Context, sel ast.SelectionSet, v PlaceholderDefinition) graphql.Marshaler {
 	return ec._PlaceholderDefinition(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPlaceholderDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinition(ctx context.Context, sel ast.SelectionSet, v []*PlaceholderDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNPlaceholderDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinition(ctx context.Context, sel ast.SelectionSet, v []*PlaceholderDefinition) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -24403,7 +24403,7 @@ func (ec *executionContext) marshalNPlaceholderDefinition2ᚕᚖgithubᚗcomᚋk
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPlaceholderDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinition(ctx, sel, v[i])
+			ret[i] = ec.marshalNPlaceholderDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -24416,7 +24416,7 @@ func (ec *executionContext) marshalNPlaceholderDefinition2ᚕᚖgithubᚗcomᚋk
 	return ret
 }
 
-func (ec *executionContext) marshalNPlaceholderDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinition(ctx context.Context, sel ast.SelectionSet, v *PlaceholderDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNPlaceholderDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinition(ctx context.Context, sel ast.SelectionSet, v *PlaceholderDefinition) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24426,23 +24426,23 @@ func (ec *executionContext) marshalNPlaceholderDefinition2ᚖgithubᚗcomᚋkyma
 	return ec._PlaceholderDefinition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPlaceholderDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinitionInput(ctx context.Context, v interface{}) (PlaceholderDefinitionInput, error) {
+func (ec *executionContext) unmarshalNPlaceholderDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInput(ctx context.Context, v interface{}) (PlaceholderDefinitionInput, error) {
 	return ec.unmarshalInputPlaceholderDefinitionInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNPlaceholderDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinitionInput(ctx context.Context, v interface{}) (*PlaceholderDefinitionInput, error) {
+func (ec *executionContext) unmarshalNPlaceholderDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInput(ctx context.Context, v interface{}) (*PlaceholderDefinitionInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNPlaceholderDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinitionInput(ctx, v)
+	res, err := ec.unmarshalNPlaceholderDefinitionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNRuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v Runtime) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v Runtime) graphql.Marshaler {
 	return ec._Runtime(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v []*Runtime) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v []*Runtime) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -24466,7 +24466,7 @@ func (ec *executionContext) marshalNRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubato
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx, sel, v[i])
+			ret[i] = ec.marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -24479,7 +24479,7 @@ func (ec *executionContext) marshalNRuntime2ᚕᚖgithubᚗcomᚋkymaᚑincubato
 	return ret
 }
 
-func (ec *executionContext) marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v *Runtime) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v *Runtime) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24489,11 +24489,11 @@ func (ec *executionContext) marshalNRuntime2ᚖgithubᚗcomᚋkymaᚑincubator�
 	return ec._Runtime(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRuntimeContext2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v RuntimeContext) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeContext2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v RuntimeContext) graphql.Marshaler {
 	return ec._RuntimeContext(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRuntimeContext2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v []*RuntimeContext) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeContext2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v []*RuntimeContext) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -24517,7 +24517,7 @@ func (ec *executionContext) marshalNRuntimeContext2ᚕᚖgithubᚗcomᚋkymaᚑi
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx, sel, v[i])
+			ret[i] = ec.marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -24530,7 +24530,7 @@ func (ec *executionContext) marshalNRuntimeContext2ᚕᚖgithubᚗcomᚋkymaᚑi
 	return ret
 }
 
-func (ec *executionContext) marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v *RuntimeContext) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v *RuntimeContext) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24540,15 +24540,15 @@ func (ec *executionContext) marshalNRuntimeContext2ᚖgithubᚗcomᚋkymaᚑincu
 	return ec._RuntimeContext(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNRuntimeContextInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContextInput(ctx context.Context, v interface{}) (RuntimeContextInput, error) {
+func (ec *executionContext) unmarshalNRuntimeContextInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextInput(ctx context.Context, v interface{}) (RuntimeContextInput, error) {
 	return ec.unmarshalInputRuntimeContextInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNRuntimeContextPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContextPage(ctx context.Context, sel ast.SelectionSet, v RuntimeContextPage) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeContextPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx context.Context, sel ast.SelectionSet, v RuntimeContextPage) graphql.Marshaler {
 	return ec._RuntimeContextPage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContextPage(ctx context.Context, sel ast.SelectionSet, v *RuntimeContextPage) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx context.Context, sel ast.SelectionSet, v *RuntimeContextPage) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24558,15 +24558,15 @@ func (ec *executionContext) marshalNRuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑ
 	return ec._RuntimeContextPage(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
+func (ec *executionContext) unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
 	return ec.unmarshalInputRuntimeInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNRuntimeMetadata2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeMetadata(ctx context.Context, sel ast.SelectionSet, v RuntimeMetadata) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeMetadata2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeMetadata(ctx context.Context, sel ast.SelectionSet, v RuntimeMetadata) graphql.Marshaler {
 	return ec._RuntimeMetadata(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRuntimeMetadata2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeMetadata(ctx context.Context, sel ast.SelectionSet, v *RuntimeMetadata) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeMetadata2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeMetadata(ctx context.Context, sel ast.SelectionSet, v *RuntimeMetadata) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24576,11 +24576,11 @@ func (ec *executionContext) marshalNRuntimeMetadata2ᚖgithubᚗcomᚋkymaᚑinc
 	return ec._RuntimeMetadata(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRuntimePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimePage(ctx context.Context, sel ast.SelectionSet, v RuntimePage) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimePage(ctx context.Context, sel ast.SelectionSet, v RuntimePage) graphql.Marshaler {
 	return ec._RuntimePage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRuntimePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimePage(ctx context.Context, sel ast.SelectionSet, v *RuntimePage) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimePage(ctx context.Context, sel ast.SelectionSet, v *RuntimePage) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24590,11 +24590,11 @@ func (ec *executionContext) marshalNRuntimePage2ᚖgithubᚗcomᚋkymaᚑincubat
 	return ec._RuntimePage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeStatus) graphql.Marshaler {
 	return ec._RuntimeStatus(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v *RuntimeStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v *RuntimeStatus) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24604,21 +24604,21 @@ func (ec *executionContext) marshalNRuntimeStatus2ᚖgithubᚗcomᚋkymaᚑincub
 	return ec._RuntimeStatus(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNRuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (RuntimeStatusCondition, error) {
+func (ec *executionContext) unmarshalNRuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (RuntimeStatusCondition, error) {
 	var res RuntimeStatusCondition
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNRuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v RuntimeStatusCondition) graphql.Marshaler {
+func (ec *executionContext) marshalNRuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v RuntimeStatusCondition) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {
+func (ec *executionContext) unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {
 	var res SpecFormat
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSpecFormat(ctx context.Context, sel ast.SelectionSet, v SpecFormat) graphql.Marshaler {
+func (ec *executionContext) marshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, sel ast.SelectionSet, v SpecFormat) graphql.Marshaler {
 	return v
 }
 
@@ -24636,11 +24636,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v SystemAuth) graphql.Marshaler {
+func (ec *executionContext) marshalNSystemAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v SystemAuth) graphql.Marshaler {
 	return ec._SystemAuth(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v *SystemAuth) graphql.Marshaler {
+func (ec *executionContext) marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v *SystemAuth) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24650,23 +24650,23 @@ func (ec *executionContext) marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubato
 	return ec._SystemAuth(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTemplateValueInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) (TemplateValueInput, error) {
+func (ec *executionContext) unmarshalNTemplateValueInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) (TemplateValueInput, error) {
 	return ec.unmarshalInputTemplateValueInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNTemplateValueInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) (*TemplateValueInput, error) {
+func (ec *executionContext) unmarshalNTemplateValueInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) (*TemplateValueInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNTemplateValueInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTemplateValueInput(ctx, v)
+	res, err := ec.unmarshalNTemplateValueInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v Tenant) graphql.Marshaler {
+func (ec *executionContext) marshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v Tenant) graphql.Marshaler {
 	return ec._Tenant(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v []*Tenant) graphql.Marshaler {
+func (ec *executionContext) marshalNTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v []*Tenant) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -24690,7 +24690,7 @@ func (ec *executionContext) marshalNTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubator
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTenant(ctx, sel, v[i])
+			ret[i] = ec.marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -24703,7 +24703,7 @@ func (ec *executionContext) marshalNTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubator
 	return ret
 }
 
-func (ec *executionContext) marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v *Tenant) graphql.Marshaler {
+func (ec *executionContext) marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v *Tenant) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24713,20 +24713,20 @@ func (ec *executionContext) marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋ
 	return ec._Tenant(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {
+func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {
 	var res Timestamp
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v Timestamp) graphql.Marshaler {
+func (ec *executionContext) marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v Timestamp) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNViewer2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐViewer(ctx context.Context, sel ast.SelectionSet, v Viewer) graphql.Marshaler {
+func (ec *executionContext) marshalNViewer2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewer(ctx context.Context, sel ast.SelectionSet, v Viewer) graphql.Marshaler {
 	return ec._Viewer(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNViewer2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐViewer(ctx context.Context, sel ast.SelectionSet, v *Viewer) graphql.Marshaler {
+func (ec *executionContext) marshalNViewer2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewer(ctx context.Context, sel ast.SelectionSet, v *Viewer) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24736,20 +24736,20 @@ func (ec *executionContext) marshalNViewer2ᚖgithubᚗcomᚋkymaᚑincubatorᚋ
 	return ec._Viewer(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNViewerType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐViewerType(ctx context.Context, v interface{}) (ViewerType, error) {
+func (ec *executionContext) unmarshalNViewerType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewerType(ctx context.Context, v interface{}) (ViewerType, error) {
 	var res ViewerType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNViewerType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐViewerType(ctx context.Context, sel ast.SelectionSet, v ViewerType) graphql.Marshaler {
+func (ec *executionContext) marshalNViewerType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐViewerType(ctx context.Context, sel ast.SelectionSet, v ViewerType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v Webhook) graphql.Marshaler {
+func (ec *executionContext) marshalNWebhook2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v Webhook) graphql.Marshaler {
 	return ec._Webhook(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v *Webhook) graphql.Marshaler {
+func (ec *executionContext) marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v *Webhook) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -24759,15 +24759,15 @@ func (ec *executionContext) marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubator�
 	return ec._Webhook(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) (WebhookInput, error) {
+func (ec *executionContext) unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) (WebhookInput, error) {
 	return ec.unmarshalInputWebhookInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNWebhookInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) (*WebhookInput, error) {
+func (ec *executionContext) unmarshalNWebhookInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) (*WebhookInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhookInput(ctx, v)
+	res, err := ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, v)
 	return &res, err
 }
 
@@ -24997,18 +24997,18 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) marshalOAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v APIDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalOAPIDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v APIDefinition) graphql.Marshaler {
 	return ec._APIDefinition(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *APIDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalOAPIDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinition(ctx context.Context, sel ast.SelectionSet, v *APIDefinition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._APIDefinition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionInput(ctx context.Context, v interface{}) ([]*APIDefinitionInput, error) {
+func (ec *executionContext) unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx context.Context, v interface{}) ([]*APIDefinitionInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -25020,7 +25020,7 @@ func (ec *executionContext) unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋky
 	var err error
 	res := make([]*APIDefinitionInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNAPIDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNAPIDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -25028,151 +25028,151 @@ func (ec *executionContext) unmarshalOAPIDefinitionInput2ᚕᚖgithubᚗcomᚋky
 	return res, nil
 }
 
-func (ec *executionContext) marshalOAPIDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v APIDefinitionPage) graphql.Marshaler {
+func (ec *executionContext) marshalOAPIDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v APIDefinitionPage) graphql.Marshaler {
 	return ec._APIDefinitionPage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *APIDefinitionPage) graphql.Marshaler {
+func (ec *executionContext) marshalOAPIDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPIDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *APIDefinitionPage) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._APIDefinitionPage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v APISpec) graphql.Marshaler {
+func (ec *executionContext) marshalOAPISpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v APISpec) graphql.Marshaler {
 	return ec._APISpec(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v *APISpec) graphql.Marshaler {
+func (ec *executionContext) marshalOAPISpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpec(ctx context.Context, sel ast.SelectionSet, v *APISpec) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._APISpec(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpecInput(ctx context.Context, v interface{}) (APISpecInput, error) {
+func (ec *executionContext) unmarshalOAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx context.Context, v interface{}) (APISpecInput, error) {
 	return ec.unmarshalInputAPISpecInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpecInput(ctx context.Context, v interface{}) (*APISpecInput, error) {
+func (ec *executionContext) unmarshalOAPISpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx context.Context, v interface{}) (*APISpecInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAPISpecInput(ctx, v)
+	res, err := ec.unmarshalOAPISpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAPISpecInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v Application) graphql.Marshaler {
+func (ec *executionContext) marshalOApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v Application) graphql.Marshaler {
 	return ec._Application(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v *Application) graphql.Marshaler {
+func (ec *executionContext) marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx context.Context, sel ast.SelectionSet, v *Application) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Application(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOApplicationEventingConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v ApplicationEventingConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalOApplicationEventingConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v ApplicationEventingConfiguration) graphql.Marshaler {
 	return ec._ApplicationEventingConfiguration(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v *ApplicationEventingConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalOApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v *ApplicationEventingConfiguration) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._ApplicationEventingConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, v interface{}) (ApplicationStatusCondition, error) {
+func (ec *executionContext) unmarshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, v interface{}) (ApplicationStatusCondition, error) {
 	var res ApplicationStatusCondition
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, sel ast.SelectionSet, v ApplicationStatusCondition) graphql.Marshaler {
+func (ec *executionContext) marshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, sel ast.SelectionSet, v ApplicationStatusCondition) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, v interface{}) (*ApplicationStatusCondition, error) {
+func (ec *executionContext) unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, v interface{}) (*ApplicationStatusCondition, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx, v)
+	res, err := ec.unmarshalOApplicationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, sel ast.SelectionSet, v *ApplicationStatusCondition) graphql.Marshaler {
+func (ec *executionContext) marshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx context.Context, sel ast.SelectionSet, v *ApplicationStatusCondition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOApplicationTemplate2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplate) graphql.Marshaler {
+func (ec *executionContext) marshalOApplicationTemplate2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v ApplicationTemplate) graphql.Marshaler {
 	return ec._ApplicationTemplate(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v *ApplicationTemplate) graphql.Marshaler {
+func (ec *executionContext) marshalOApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx context.Context, sel ast.SelectionSet, v *ApplicationTemplate) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._ApplicationTemplate(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v Auth) graphql.Marshaler {
+func (ec *executionContext) marshalOAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v Auth) graphql.Marshaler {
 	return ec._Auth(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v *Auth) graphql.Marshaler {
+func (ec *executionContext) marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v *Auth) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Auth(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (AuthInput, error) {
+func (ec *executionContext) unmarshalOAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (AuthInput, error) {
 	return ec.unmarshalInputAuthInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (*AuthInput, error) {
+func (ec *executionContext) unmarshalOAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (*AuthInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAuthInput(ctx, v)
+	res, err := ec.unmarshalOAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOAutomaticScenarioAssignment2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v AutomaticScenarioAssignment) graphql.Marshaler {
+func (ec *executionContext) marshalOAutomaticScenarioAssignment2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v AutomaticScenarioAssignment) graphql.Marshaler {
 	return ec._AutomaticScenarioAssignment(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v *AutomaticScenarioAssignment) graphql.Marshaler {
+func (ec *executionContext) marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx context.Context, sel ast.SelectionSet, v *AutomaticScenarioAssignment) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._AutomaticScenarioAssignment(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOAutomaticScenarioAssignmentPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignmentPage(ctx context.Context, sel ast.SelectionSet, v AutomaticScenarioAssignmentPage) graphql.Marshaler {
+func (ec *executionContext) marshalOAutomaticScenarioAssignmentPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentPage(ctx context.Context, sel ast.SelectionSet, v AutomaticScenarioAssignmentPage) graphql.Marshaler {
 	return ec._AutomaticScenarioAssignmentPage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOAutomaticScenarioAssignmentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐAutomaticScenarioAssignmentPage(ctx context.Context, sel ast.SelectionSet, v *AutomaticScenarioAssignmentPage) graphql.Marshaler {
+func (ec *executionContext) marshalOAutomaticScenarioAssignmentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentPage(ctx context.Context, sel ast.SelectionSet, v *AutomaticScenarioAssignmentPage) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._AutomaticScenarioAssignmentPage(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOBasicCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBasicCredentialDataInput(ctx context.Context, v interface{}) (BasicCredentialDataInput, error) {
+func (ec *executionContext) unmarshalOBasicCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBasicCredentialDataInput(ctx context.Context, v interface{}) (BasicCredentialDataInput, error) {
 	return ec.unmarshalInputBasicCredentialDataInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOBasicCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBasicCredentialDataInput(ctx context.Context, v interface{}) (*BasicCredentialDataInput, error) {
+func (ec *executionContext) unmarshalOBasicCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBasicCredentialDataInput(ctx context.Context, v interface{}) (*BasicCredentialDataInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOBasicCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBasicCredentialDataInput(ctx, v)
+	res, err := ec.unmarshalOBasicCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBasicCredentialDataInput(ctx, v)
 	return &res, err
 }
 
@@ -25199,104 +25199,169 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOCLOB2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx context.Context, v interface{}) (CLOB, error) {
+func (ec *executionContext) marshalOBundle2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v Bundle) graphql.Marshaler {
+	return ec._Bundle(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v *Bundle) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Bundle(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx context.Context, v interface{}) ([]*BundleCreateInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*BundleCreateInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNBundleCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOBundleInstanceAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuth) graphql.Marshaler {
+	return ec._BundleInstanceAuth(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *BundleInstanceAuth) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BundleInstanceAuth(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOBundleInstanceAuthStatusInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatusInput(ctx context.Context, v interface{}) (BundleInstanceAuthStatusInput, error) {
+	return ec.unmarshalInputBundleInstanceAuthStatusInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOBundleInstanceAuthStatusInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatusInput(ctx context.Context, v interface{}) (*BundleInstanceAuthStatusInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOBundleInstanceAuthStatusInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleInstanceAuthStatusInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOBundlePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundlePage(ctx context.Context, sel ast.SelectionSet, v BundlePage) graphql.Marshaler {
+	return ec._BundlePage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOBundlePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundlePage(ctx context.Context, sel ast.SelectionSet, v *BundlePage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BundlePage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOCLOB2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx context.Context, v interface{}) (CLOB, error) {
 	var res CLOB
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOCLOB2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx context.Context, sel ast.SelectionSet, v CLOB) graphql.Marshaler {
+func (ec *executionContext) marshalOCLOB2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx context.Context, sel ast.SelectionSet, v CLOB) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx context.Context, v interface{}) (*CLOB, error) {
+func (ec *executionContext) unmarshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx context.Context, v interface{}) (*CLOB, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOCLOB2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx, v)
+	res, err := ec.unmarshalOCLOB2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCLOB(ctx context.Context, sel ast.SelectionSet, v *CLOB) graphql.Marshaler {
+func (ec *executionContext) marshalOCLOB2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCLOB(ctx context.Context, sel ast.SelectionSet, v *CLOB) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOCSRFTokenCredentialRequestAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCSRFTokenCredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, v CSRFTokenCredentialRequestAuth) graphql.Marshaler {
+func (ec *executionContext) marshalOCSRFTokenCredentialRequestAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, v CSRFTokenCredentialRequestAuth) graphql.Marshaler {
 	return ec._CSRFTokenCredentialRequestAuth(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOCSRFTokenCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCSRFTokenCredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, v *CSRFTokenCredentialRequestAuth) graphql.Marshaler {
+func (ec *executionContext) marshalOCSRFTokenCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, v *CSRFTokenCredentialRequestAuth) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._CSRFTokenCredentialRequestAuth(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOCSRFTokenCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx context.Context, v interface{}) (CSRFTokenCredentialRequestAuthInput, error) {
+func (ec *executionContext) unmarshalOCSRFTokenCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx context.Context, v interface{}) (CSRFTokenCredentialRequestAuthInput, error) {
 	return ec.unmarshalInputCSRFTokenCredentialRequestAuthInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOCSRFTokenCredentialRequestAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx context.Context, v interface{}) (*CSRFTokenCredentialRequestAuthInput, error) {
+func (ec *executionContext) unmarshalOCSRFTokenCredentialRequestAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx context.Context, v interface{}) (*CSRFTokenCredentialRequestAuthInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOCSRFTokenCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx, v)
+	res, err := ec.unmarshalOCSRFTokenCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialData(ctx context.Context, sel ast.SelectionSet, v CredentialData) graphql.Marshaler {
+func (ec *executionContext) marshalOCredentialData2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialData(ctx context.Context, sel ast.SelectionSet, v CredentialData) graphql.Marshaler {
 	return ec._CredentialData(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalOCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialDataInput(ctx context.Context, v interface{}) (CredentialDataInput, error) {
+func (ec *executionContext) unmarshalOCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx context.Context, v interface{}) (CredentialDataInput, error) {
 	return ec.unmarshalInputCredentialDataInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialDataInput(ctx context.Context, v interface{}) (*CredentialDataInput, error) {
+func (ec *executionContext) unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx context.Context, v interface{}) (*CredentialDataInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialDataInput(ctx, v)
+	res, err := ec.unmarshalOCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOCredentialRequestAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, v CredentialRequestAuth) graphql.Marshaler {
+func (ec *executionContext) marshalOCredentialRequestAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, v CredentialRequestAuth) graphql.Marshaler {
 	return ec._CredentialRequestAuth(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, v *CredentialRequestAuth) graphql.Marshaler {
+func (ec *executionContext) marshalOCredentialRequestAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, v *CredentialRequestAuth) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._CredentialRequestAuth(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialRequestAuthInput(ctx context.Context, v interface{}) (CredentialRequestAuthInput, error) {
+func (ec *executionContext) unmarshalOCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialRequestAuthInput(ctx context.Context, v interface{}) (CredentialRequestAuthInput, error) {
 	return ec.unmarshalInputCredentialRequestAuthInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOCredentialRequestAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialRequestAuthInput(ctx context.Context, v interface{}) (*CredentialRequestAuthInput, error) {
+func (ec *executionContext) unmarshalOCredentialRequestAuthInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialRequestAuthInput(ctx context.Context, v interface{}) (*CredentialRequestAuthInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐCredentialRequestAuthInput(ctx, v)
+	res, err := ec.unmarshalOCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCredentialRequestAuthInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalODocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
+func (ec *executionContext) marshalODocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
 	return ec._Document(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v *Document) graphql.Marshaler {
+func (ec *executionContext) marshalODocument2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v *Document) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Document(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentInput(ctx context.Context, v interface{}) ([]*DocumentInput, error) {
+func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx context.Context, v interface{}) ([]*DocumentInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -25308,7 +25373,7 @@ func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑ
 	var err error
 	res := make([]*DocumentInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNDocumentInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNDocumentInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -25316,29 +25381,29 @@ func (ec *executionContext) unmarshalODocumentInput2ᚕᚖgithubᚗcomᚋkymaᚑ
 	return res, nil
 }
 
-func (ec *executionContext) marshalODocumentPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentPage(ctx context.Context, sel ast.SelectionSet, v DocumentPage) graphql.Marshaler {
+func (ec *executionContext) marshalODocumentPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx context.Context, sel ast.SelectionSet, v DocumentPage) graphql.Marshaler {
 	return ec._DocumentPage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalODocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐDocumentPage(ctx context.Context, sel ast.SelectionSet, v *DocumentPage) graphql.Marshaler {
+func (ec *executionContext) marshalODocumentPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocumentPage(ctx context.Context, sel ast.SelectionSet, v *DocumentPage) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._DocumentPage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOEventDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v EventDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalOEventDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v EventDefinition) graphql.Marshaler {
 	return ec._EventDefinition(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v *EventDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx context.Context, sel ast.SelectionSet, v *EventDefinition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._EventDefinition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOEventDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionInput(ctx context.Context, v interface{}) ([]*EventDefinitionInput, error) {
+func (ec *executionContext) unmarshalOEventDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx context.Context, v interface{}) ([]*EventDefinitionInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -25350,7 +25415,7 @@ func (ec *executionContext) unmarshalOEventDefinitionInput2ᚕᚖgithubᚗcomᚋ
 	var err error
 	res := make([]*EventDefinitionInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNEventDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNEventDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -25358,88 +25423,88 @@ func (ec *executionContext) unmarshalOEventDefinitionInput2ᚕᚖgithubᚗcomᚋ
 	return res, nil
 }
 
-func (ec *executionContext) marshalOEventDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v EventDefinitionPage) graphql.Marshaler {
+func (ec *executionContext) marshalOEventDefinitionPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v EventDefinitionPage) graphql.Marshaler {
 	return ec._EventDefinitionPage(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *EventDefinitionPage) graphql.Marshaler {
+func (ec *executionContext) marshalOEventDefinitionPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinitionPage(ctx context.Context, sel ast.SelectionSet, v *EventDefinitionPage) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._EventDefinitionPage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOEventSpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v EventSpec) graphql.Marshaler {
+func (ec *executionContext) marshalOEventSpec2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v EventSpec) graphql.Marshaler {
 	return ec._EventSpec(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v *EventSpec) graphql.Marshaler {
+func (ec *executionContext) marshalOEventSpec2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpec(ctx context.Context, sel ast.SelectionSet, v *EventSpec) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._EventSpec(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
+func (ec *executionContext) unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (EventSpecInput, error) {
 	return ec.unmarshalInputEventSpecInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (*EventSpecInput, error) {
+func (ec *executionContext) unmarshalOEventSpecInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx context.Context, v interface{}) (*EventSpecInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐEventSpecInput(ctx, v)
+	res, err := ec.unmarshalOEventSpecInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {
+func (ec *executionContext) unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx context.Context, v interface{}) (FetchMode, error) {
 	var res FetchMode
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchMode(ctx context.Context, sel ast.SelectionSet, v FetchMode) graphql.Marshaler {
+func (ec *executionContext) marshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx context.Context, sel ast.SelectionSet, v FetchMode) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchMode(ctx context.Context, v interface{}) (*FetchMode, error) {
+func (ec *executionContext) unmarshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx context.Context, v interface{}) (*FetchMode, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchMode(ctx, v)
+	res, err := ec.unmarshalOFetchMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchMode(ctx context.Context, sel ast.SelectionSet, v *FetchMode) graphql.Marshaler {
+func (ec *executionContext) marshalOFetchMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchMode(ctx context.Context, sel ast.SelectionSet, v *FetchMode) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOFetchRequest2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequest(ctx context.Context, sel ast.SelectionSet, v FetchRequest) graphql.Marshaler {
+func (ec *executionContext) marshalOFetchRequest2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequest(ctx context.Context, sel ast.SelectionSet, v FetchRequest) graphql.Marshaler {
 	return ec._FetchRequest(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequest(ctx context.Context, sel ast.SelectionSet, v *FetchRequest) graphql.Marshaler {
+func (ec *executionContext) marshalOFetchRequest2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequest(ctx context.Context, sel ast.SelectionSet, v *FetchRequest) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._FetchRequest(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOFetchRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestInput(ctx context.Context, v interface{}) (FetchRequestInput, error) {
+func (ec *executionContext) unmarshalOFetchRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestInput(ctx context.Context, v interface{}) (FetchRequestInput, error) {
 	return ec.unmarshalInputFetchRequestInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestInput(ctx context.Context, v interface{}) (*FetchRequestInput, error) {
+func (ec *executionContext) unmarshalOFetchRequestInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestInput(ctx context.Context, v interface{}) (*FetchRequestInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOFetchRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐFetchRequestInput(ctx, v)
+	res, err := ec.unmarshalOFetchRequestInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFetchRequestInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckType(ctx context.Context, v interface{}) ([]HealthCheckType, error) {
+func (ec *executionContext) unmarshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckType(ctx context.Context, v interface{}) ([]HealthCheckType, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -25451,7 +25516,7 @@ func (ec *executionContext) unmarshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑi
 	var err error
 	res := make([]HealthCheckType, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckType(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckType(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -25459,7 +25524,7 @@ func (ec *executionContext) unmarshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑi
 	return res, nil
 }
 
-func (ec *executionContext) marshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckType(ctx context.Context, sel ast.SelectionSet, v []HealthCheckType) graphql.Marshaler {
+func (ec *executionContext) marshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckType(ctx context.Context, sel ast.SelectionSet, v []HealthCheckType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -25486,7 +25551,7 @@ func (ec *executionContext) marshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑinc
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHealthCheckType(ctx, sel, v[i])
+			ret[i] = ec.marshalNHealthCheckType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckType(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -25499,52 +25564,52 @@ func (ec *executionContext) marshalOHealthCheckType2ᚕgithubᚗcomᚋkymaᚑinc
 	return ret
 }
 
-func (ec *executionContext) unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeaders(ctx context.Context, v interface{}) (HttpHeaders, error) {
+func (ec *executionContext) unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx context.Context, v interface{}) (HttpHeaders, error) {
 	var res HttpHeaders
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeaders(ctx context.Context, sel ast.SelectionSet, v HttpHeaders) graphql.Marshaler {
+func (ec *executionContext) marshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx context.Context, sel ast.SelectionSet, v HttpHeaders) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeaders(ctx context.Context, v interface{}) (*HttpHeaders, error) {
+func (ec *executionContext) unmarshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx context.Context, v interface{}) (*HttpHeaders, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeaders(ctx, v)
+	res, err := ec.unmarshalOHttpHeaders2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeaders(ctx context.Context, sel ast.SelectionSet, v *HttpHeaders) graphql.Marshaler {
+func (ec *executionContext) marshalOHttpHeaders2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeaders(ctx context.Context, sel ast.SelectionSet, v *HttpHeaders) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, v interface{}) (HttpHeadersSerialized, error) {
+func (ec *executionContext) unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, v interface{}) (HttpHeadersSerialized, error) {
 	tmp, err := graphql.UnmarshalString(v)
 	return HttpHeadersSerialized(tmp), err
 }
 
-func (ec *executionContext) marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v HttpHeadersSerialized) graphql.Marshaler {
+func (ec *executionContext) marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v HttpHeadersSerialized) graphql.Marshaler {
 	return graphql.MarshalString(string(v))
 }
 
-func (ec *executionContext) unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, v interface{}) (*HttpHeadersSerialized, error) {
+func (ec *executionContext) unmarshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, v interface{}) (*HttpHeadersSerialized, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
+	res, err := ec.unmarshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v *HttpHeadersSerialized) graphql.Marshaler {
+func (ec *executionContext) marshalOHttpHeadersSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx context.Context, sel ast.SelectionSet, v *HttpHeadersSerialized) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐHttpHeadersSerialized(ctx, sel, *v)
+	return ec.marshalOHttpHeadersSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHttpHeadersSerialized(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
@@ -25593,77 +25658,77 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
-func (ec *executionContext) marshalOIntegrationSystem2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v IntegrationSystem) graphql.Marshaler {
+func (ec *executionContext) marshalOIntegrationSystem2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v IntegrationSystem) graphql.Marshaler {
 	return ec._IntegrationSystem(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v *IntegrationSystem) graphql.Marshaler {
+func (ec *executionContext) marshalOIntegrationSystem2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐIntegrationSystem(ctx context.Context, sel ast.SelectionSet, v *IntegrationSystem) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._IntegrationSystem(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (JSON, error) {
+func (ec *executionContext) unmarshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (JSON, error) {
 	var res JSON
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v JSON) graphql.Marshaler {
+func (ec *executionContext) marshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v JSON) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (*JSON, error) {
+func (ec *executionContext) unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (*JSON, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSON(ctx, v)
+	res, err := ec.unmarshalOJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v *JSON) graphql.Marshaler {
+func (ec *executionContext) marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v *JSON) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOJSONSchema2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx context.Context, v interface{}) (JSONSchema, error) {
+func (ec *executionContext) unmarshalOJSONSchema2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx context.Context, v interface{}) (JSONSchema, error) {
 	var res JSONSchema
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOJSONSchema2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx context.Context, sel ast.SelectionSet, v JSONSchema) graphql.Marshaler {
+func (ec *executionContext) marshalOJSONSchema2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx context.Context, sel ast.SelectionSet, v JSONSchema) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx context.Context, v interface{}) (*JSONSchema, error) {
+func (ec *executionContext) unmarshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx context.Context, v interface{}) (*JSONSchema, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOJSONSchema2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx, v)
+	res, err := ec.unmarshalOJSONSchema2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐJSONSchema(ctx context.Context, sel ast.SelectionSet, v *JSONSchema) graphql.Marshaler {
+func (ec *executionContext) marshalOJSONSchema2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSONSchema(ctx context.Context, sel ast.SelectionSet, v *JSONSchema) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOLabelDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v LabelDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalOLabelDefinition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v LabelDefinition) graphql.Marshaler {
 	return ec._LabelDefinition(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v *LabelDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalOLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx context.Context, sel ast.SelectionSet, v *LabelDefinition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._LabelDefinition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelFilter(ctx context.Context, v interface{}) ([]*LabelFilter, error) {
+func (ec *executionContext) unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilter(ctx context.Context, v interface{}) ([]*LabelFilter, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -25675,7 +25740,7 @@ func (ec *executionContext) unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑin
 	var err error
 	res := make([]*LabelFilter, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNLabelFilter2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabelFilter(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNLabelFilter2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilter(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -25683,132 +25748,67 @@ func (ec *executionContext) unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑin
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx context.Context, v interface{}) (Labels, error) {
+func (ec *executionContext) unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx context.Context, v interface{}) (Labels, error) {
 	var res Labels
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx context.Context, sel ast.SelectionSet, v Labels) graphql.Marshaler {
+func (ec *executionContext) marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx context.Context, sel ast.SelectionSet, v Labels) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx context.Context, v interface{}) (*Labels, error) {
+func (ec *executionContext) unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx context.Context, v interface{}) (*Labels, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx, v)
+	res, err := ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐLabels(ctx context.Context, sel ast.SelectionSet, v *Labels) graphql.Marshaler {
+func (ec *executionContext) marshalOLabels2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx context.Context, sel ast.SelectionSet, v *Labels) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOOAuthCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOAuthCredentialDataInput(ctx context.Context, v interface{}) (OAuthCredentialDataInput, error) {
+func (ec *executionContext) unmarshalOOAuthCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx context.Context, v interface{}) (OAuthCredentialDataInput, error) {
 	return ec.unmarshalInputOAuthCredentialDataInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOAuthCredentialDataInput(ctx context.Context, v interface{}) (*OAuthCredentialDataInput, error) {
+func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx context.Context, v interface{}) (*OAuthCredentialDataInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOOAuthCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐOAuthCredentialDataInput(ctx, v)
+	res, err := ec.unmarshalOOAuthCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOBundle2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v Bundle) graphql.Marshaler {
-	return ec._Bundle(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundle(ctx context.Context, sel ast.SelectionSet, v *Bundle) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Bundle(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleCreateInput(ctx context.Context, v interface{}) ([]*BundleCreateInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*BundleCreateInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNBundleCreateInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleCreateInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOBundleInstanceAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v BundleInstanceAuth) graphql.Marshaler {
-	return ec._BundleInstanceAuth(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOBundleInstanceAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuth(ctx context.Context, sel ast.SelectionSet, v *BundleInstanceAuth) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._BundleInstanceAuth(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOBundleInstanceAuthStatusInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatusInput(ctx context.Context, v interface{}) (BundleInstanceAuthStatusInput, error) {
-	return ec.unmarshalInputBundleInstanceAuthStatusInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOBundleInstanceAuthStatusInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatusInput(ctx context.Context, v interface{}) (*BundleInstanceAuthStatusInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOBundleInstanceAuthStatusInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundleInstanceAuthStatusInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOBundlePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundlePage(ctx context.Context, sel ast.SelectionSet, v BundlePage) graphql.Marshaler {
-	return ec._BundlePage(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOBundlePage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐBundlePage(ctx context.Context, sel ast.SelectionSet, v *BundlePage) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._BundlePage(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {
+func (ec *executionContext) unmarshalOPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {
 	var res PageCursor
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx context.Context, sel ast.SelectionSet, v PageCursor) graphql.Marshaler {
+func (ec *executionContext) marshalOPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, sel ast.SelectionSet, v PageCursor) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (*PageCursor, error) {
+func (ec *executionContext) unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (*PageCursor, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx, v)
+	res, err := ec.unmarshalOPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPageCursor(ctx context.Context, sel ast.SelectionSet, v *PageCursor) graphql.Marshaler {
+func (ec *executionContext) marshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, sel ast.SelectionSet, v *PageCursor) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinitionInput(ctx context.Context, v interface{}) ([]*PlaceholderDefinitionInput, error) {
+func (ec *executionContext) unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInput(ctx context.Context, v interface{}) ([]*PlaceholderDefinitionInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -25820,7 +25820,7 @@ func (ec *executionContext) unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗ
 	var err error
 	res := make([]*PlaceholderDefinitionInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNPlaceholderDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐPlaceholderDefinitionInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNPlaceholderDefinitionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -25828,105 +25828,105 @@ func (ec *executionContext) unmarshalOPlaceholderDefinitionInput2ᚕᚖgithubᚗ
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOQueryParams2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParams(ctx context.Context, v interface{}) (QueryParams, error) {
+func (ec *executionContext) unmarshalOQueryParams2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx context.Context, v interface{}) (QueryParams, error) {
 	var res QueryParams
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOQueryParams2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParams(ctx context.Context, sel ast.SelectionSet, v QueryParams) graphql.Marshaler {
+func (ec *executionContext) marshalOQueryParams2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx context.Context, sel ast.SelectionSet, v QueryParams) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParams(ctx context.Context, v interface{}) (*QueryParams, error) {
+func (ec *executionContext) unmarshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx context.Context, v interface{}) (*QueryParams, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOQueryParams2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParams(ctx, v)
+	res, err := ec.unmarshalOQueryParams2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParams(ctx context.Context, sel ast.SelectionSet, v *QueryParams) graphql.Marshaler {
+func (ec *executionContext) marshalOQueryParams2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParams(ctx context.Context, sel ast.SelectionSet, v *QueryParams) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, v interface{}) (QueryParamsSerialized, error) {
+func (ec *executionContext) unmarshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, v interface{}) (QueryParamsSerialized, error) {
 	tmp, err := graphql.UnmarshalString(v)
 	return QueryParamsSerialized(tmp), err
 }
 
-func (ec *executionContext) marshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, sel ast.SelectionSet, v QueryParamsSerialized) graphql.Marshaler {
+func (ec *executionContext) marshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, sel ast.SelectionSet, v QueryParamsSerialized) graphql.Marshaler {
 	return graphql.MarshalString(string(v))
 }
 
-func (ec *executionContext) unmarshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, v interface{}) (*QueryParamsSerialized, error) {
+func (ec *executionContext) unmarshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, v interface{}) (*QueryParamsSerialized, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx, v)
+	res, err := ec.unmarshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, sel ast.SelectionSet, v *QueryParamsSerialized) graphql.Marshaler {
+func (ec *executionContext) marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx context.Context, sel ast.SelectionSet, v *QueryParamsSerialized) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐQueryParamsSerialized(ctx, sel, *v)
+	return ec.marshalOQueryParamsSerialized2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, sel, *v)
 }
 
-func (ec *executionContext) marshalORuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v Runtime) graphql.Marshaler {
+func (ec *executionContext) marshalORuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v Runtime) graphql.Marshaler {
 	return ec._Runtime(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v *Runtime) graphql.Marshaler {
+func (ec *executionContext) marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v *Runtime) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Runtime(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORuntimeContext2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v RuntimeContext) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeContext2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v RuntimeContext) graphql.Marshaler {
 	return ec._RuntimeContext(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalORuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v *RuntimeContext) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx context.Context, sel ast.SelectionSet, v *RuntimeContext) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._RuntimeContext(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORuntimeEventingConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v RuntimeEventingConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeEventingConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v RuntimeEventingConfiguration) graphql.Marshaler {
 	return ec._RuntimeEventingConfiguration(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalORuntimeEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v *RuntimeEventingConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v *RuntimeEventingConfiguration) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._RuntimeEventingConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (RuntimeStatusCondition, error) {
+func (ec *executionContext) unmarshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (RuntimeStatusCondition, error) {
 	var res RuntimeStatusCondition
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v RuntimeStatusCondition) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v RuntimeStatusCondition) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (*RuntimeStatusCondition, error) {
+func (ec *executionContext) unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, v interface{}) (*RuntimeStatusCondition, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatusCondition(ctx, v)
+	res, err := ec.unmarshalORuntimeStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v *RuntimeStatusCondition) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx context.Context, sel ast.SelectionSet, v *RuntimeStatusCondition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -25956,7 +25956,7 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return ec.marshalOString2string(ctx, sel, *v)
 }
 
-func (ec *executionContext) marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v []*SystemAuth) graphql.Marshaler {
+func (ec *executionContext) marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx context.Context, sel ast.SelectionSet, v []*SystemAuth) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -25983,7 +25983,7 @@ func (ec *executionContext) marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincub
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐSystemAuth(ctx, sel, v[i])
+			ret[i] = ec.marshalNSystemAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSystemAuth(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -25996,7 +25996,7 @@ func (ec *executionContext) marshalOSystemAuth2ᚕᚖgithubᚗcomᚋkymaᚑincub
 	return ret
 }
 
-func (ec *executionContext) unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) ([]*TemplateValueInput, error) {
+func (ec *executionContext) unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx context.Context, v interface{}) ([]*TemplateValueInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -26008,7 +26008,7 @@ func (ec *executionContext) unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋky
 	var err error
 	res := make([]*TemplateValueInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNTemplateValueInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐTemplateValueInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNTemplateValueInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTemplateValueInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -26016,30 +26016,30 @@ func (ec *executionContext) unmarshalOTemplateValueInput2ᚕᚖgithubᚗcomᚋky
 	return res, nil
 }
 
-func (ec *executionContext) marshalOVersion2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐVersion(ctx context.Context, sel ast.SelectionSet, v Version) graphql.Marshaler {
+func (ec *executionContext) marshalOVersion2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersion(ctx context.Context, sel ast.SelectionSet, v Version) graphql.Marshaler {
 	return ec._Version(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐVersion(ctx context.Context, sel ast.SelectionSet, v *Version) graphql.Marshaler {
+func (ec *executionContext) marshalOVersion2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersion(ctx context.Context, sel ast.SelectionSet, v *Version) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Version(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOVersionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐVersionInput(ctx context.Context, v interface{}) (VersionInput, error) {
+func (ec *executionContext) unmarshalOVersionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx context.Context, v interface{}) (VersionInput, error) {
 	return ec.unmarshalInputVersionInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐVersionInput(ctx context.Context, v interface{}) (*VersionInput, error) {
+func (ec *executionContext) unmarshalOVersionInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx context.Context, v interface{}) (*VersionInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOVersionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐVersionInput(ctx, v)
+	res, err := ec.unmarshalOVersionInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐVersionInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v []*Webhook) graphql.Marshaler {
+func (ec *executionContext) marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx context.Context, sel ast.SelectionSet, v []*Webhook) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -26066,7 +26066,7 @@ func (ec *executionContext) marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubato
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhook(ctx, sel, v[i])
+			ret[i] = ec.marshalNWebhook2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhook(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -26079,7 +26079,7 @@ func (ec *executionContext) marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubato
 	return ret
 }
 
-func (ec *executionContext) unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) ([]*WebhookInput, error) {
+func (ec *executionContext) unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx context.Context, v interface{}) ([]*WebhookInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -26091,7 +26091,7 @@ func (ec *executionContext) unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑi
 	var err error
 	res := make([]*WebhookInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNWebhookInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋbndlᚋgraphqlᚐWebhookInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNWebhookInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
