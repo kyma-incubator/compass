@@ -256,7 +256,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		t.Run("Get Application with Package when useBundles=false should succeed", func(t *testing.T) {
 			var actualAppWithPackage ApplicationWithPackagesExt
 			request := fixGetApplicationWithPackageRequest(appID, packageID)
-			err := tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, &actualApp)
+			err := tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, &actualAppWithPackage)
 
 			require.NoError(t, err)
 			require.NotEmpty(t, actualAppWithPackage.ID)
