@@ -22,7 +22,6 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
