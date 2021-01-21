@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -19,46 +20,8 @@ import (
 
 const ConsumerId = "134039be-840a-47f1-a962-d13410edf311"
 
-func TestAuditLog(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-
-		//GIVEN
-		graphqlResp := fixGraphQLResponse()
-		graphqlPayload, err := json.Marshal(&graphqlResp)
-		require.NoError(t, err)
-
-		claims := fixBearerHeader(t)
-		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(graphqlPayload))
-		req.Header = http.Header{
-			"Authorization": []string{claims},
-		}
-		resp := http.Response{
-			StatusCode:    http.StatusCreated,
-			Body:          ioutil.NopCloser(bytes.NewBuffer(graphqlPayload)),
-			ContentLength: (int64)(len(graphqlPayload)),
-		}
-
-		roundTripper := &automock.RoundTrip{}
-		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
-
-		auditlogSink := &automock.AuditlogService{}
-		auditlogSvc := &automock.PreAuditlogService{}
-		auditlogSink.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil)
-		auditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil)
-
-		transport := proxy.NewTransport(auditlogSink, auditlogSvc, roundTripper)
-
-		//WHEN
-		output, err := transport.RoundTrip(req)
-
-		//THEN
-		require.NoError(t, err)
-		require.NotNil(t, output)
-		roundTripper.AssertExpectations(t)
-		auditlogSvc.AssertExpectations(t)
-	})
-
-	t.Run("Success HTTP GET", func(t *testing.T) {
+func TestTransport(t *testing.T) {
+	t.Run("Succeeds on HTTP GET request", func(t *testing.T) {
 		//GIVEN
 		req := httptest.NewRequest("GET", "http://localhost", nil)
 
@@ -78,6 +41,118 @@ func TestAuditLog(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
+	})
+
+	t.Run("Succeeds on HTTP POST request", func(t *testing.T) {
+		//GIVEN
+		gqlResp := fixGraphQLResponse()
+		gqlPayload, err := json.Marshal(&gqlResp)
+		require.NoError(t, err)
+
+		claims := fixBearerHeader(t)
+		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(gqlPayload))
+		req.Header = http.Header{
+			"Authorization": []string{claims},
+		}
+		resp := http.Response{
+			StatusCode:    http.StatusCreated,
+			Body:          ioutil.NopCloser(bytes.NewBuffer(gqlPayload)),
+			ContentLength: (int64)(len(gqlPayload)),
+		}
+
+		roundTripper := &automock.RoundTrip{}
+		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
+
+		preAuditlogSvc := &automock.PreAuditlogService{}
+		preAuditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil).Once()
+
+		postAuditlogSvc := &automock.AuditlogService{}
+		postAuditlogSvc.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil).Once()
+
+		transport := proxy.NewTransport(postAuditlogSvc, preAuditlogSvc, roundTripper)
+
+		//WHEN
+		output, err := transport.RoundTrip(req)
+
+		//THEN
+		require.NoError(t, err)
+		require.NotNil(t, output)
+		roundTripper.AssertExpectations(t)
+		preAuditlogSvc.AssertExpectations(t)
+		postAuditlogSvc.AssertExpectations(t)
+	})
+
+	t.Run("Succeeds when post-audit log is not successful", func(t *testing.T) {
+		//GIVEN
+		gqlReq := fixGraphQLMutation()
+		gqlReqPayload, err := json.Marshal(&gqlReq)
+		require.NoError(t, err)
+
+		gqlResp := fixGraphQLResponse()
+		gqlRespPayload, err := json.Marshal(&gqlResp)
+		require.NoError(t, err)
+
+		claims := fixBearerHeader(t)
+		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(gqlReqPayload))
+		req.Header = http.Header{
+			"Authorization": []string{claims},
+		}
+		resp := http.Response{
+			StatusCode:    http.StatusCreated,
+			Body:          ioutil.NopCloser(bytes.NewBuffer(gqlRespPayload)),
+			ContentLength: (int64)(len(gqlRespPayload)),
+		}
+
+		roundTripper := &automock.RoundTrip{}
+		roundTripper.On("RoundTrip", req).Return(&resp, nil).Once()
+
+		preAuditlogSvc := &automock.PreAuditlogService{}
+		preAuditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil).Once()
+
+		postAuditlogSvc := &automock.AuditlogService{}
+		postAuditlogSvc.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(errors.New("auditlog issue")).Once()
+
+		transport := proxy.NewTransport(postAuditlogSvc, preAuditlogSvc, roundTripper)
+
+		//WHEN
+		output, err := transport.RoundTrip(req)
+
+		//THEN
+		require.NoError(t, err)
+		require.NotNil(t, output)
+		roundTripper.AssertExpectations(t)
+		preAuditlogSvc.AssertExpectations(t)
+		postAuditlogSvc.AssertExpectations(t)
+	})
+
+	t.Run("Fails when pre-audit log is not successful", func(t *testing.T) {
+		//GIVEN
+		gqlReq := fixGraphQLMutation()
+		gqlReqPayload, err := json.Marshal(&gqlReq)
+		require.NoError(t, err)
+
+		claims := fixBearerHeader(t)
+		req := httptest.NewRequest("POST", "http://localhost", bytes.NewBuffer(gqlReqPayload))
+		req.Header = http.Header{
+			"Authorization": []string{claims},
+		}
+
+		roundTripper := &automock.RoundTrip{}
+		postAuditlogSvc := &automock.AuditlogService{}
+
+		preAuditlogSvc := &automock.PreAuditlogService{}
+		preAuditlogSvc.On("PreLog", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(errors.New("auditlog issue"))
+
+		transport := proxy.NewTransport(postAuditlogSvc, preAuditlogSvc, roundTripper)
+
+		//WHEN
+		_, err = transport.RoundTrip(req)
+
+		//THEN
+		require.Error(t, err)
+		preAuditlogSvc.AssertExpectations(t)
+		postAuditlogSvc.AssertNotCalled(t, "Log")
+		roundTripper.AssertNotCalled(t, "RoundTrip")
 	})
 }
 
@@ -109,4 +184,10 @@ func fixGraphQLResponse() model.GraphqlResponse {
 		Errors: nil,
 		Data:   "payload",
 	}
+}
+
+func fixGraphQLMutation() map[string]interface{} {
+	gqlBody := make(map[string]interface{}, 0)
+	gqlBody["mutation"] = "some-mutation"
+	return gqlBody
 }
