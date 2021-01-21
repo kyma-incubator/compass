@@ -2,10 +2,11 @@ package osb
 
 import (
 	"fmt"
+	"testing"
+
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestConverter_Convert(t *testing.T) {
@@ -352,7 +353,8 @@ func TestConverter_Convert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := Converter{
-				baseURL: "http://specification.com",
+				baseURL:      "http://specification.com",
+				MapConverter: MapConverter{},
 			}
 			service, err := c.Convert(tt.app)
 			if tt.expectedErr != "" {
@@ -383,34 +385,41 @@ func generateExpectations(packagesCount, apiDefCount, eventDefCount int) []domai
 				Binding: domain.ServiceBindingSchema{},
 			},
 		}
-		specifications := make([]map[string]interface{}, 0, apiDefCount+eventDefCount)
 
+		apis := make([]map[string]interface{}, 0, 0)
 		for j := 0; j < apiDefCount; j++ {
-			apiDefSpec := map[string]interface{}{
-				"definition_id":          fmt.Sprintf("id%d", j),
-				"definition_name":        fmt.Sprintf("apiDef%d", j),
-				"specification_category": "api_definition",
-				"specification_type":     schema.APISpecTypeOdata,
-				"specification_format":   "application/json",
-				"specification_url":      fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j),
+			apiSpec := map[string]interface{}{
+				"id":         fmt.Sprintf("id%d", j),
+				"name":       fmt.Sprintf("apiDef%d", j),
+				"target_url": fmt.Sprintf("target-url-{%d}", j),
 			}
-			specifications = append(specifications, apiDefSpec)
+			specification := make(map[string]interface{})
+			specification["type"] = schema.APISpecTypeOdata
+			specification["format"] = "application/json"
+			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j)
+			apiSpec["specification"] = specification
+
+			apis = append(apis, apiSpec)
 		}
 
+		events := make([]map[string]interface{}, 0, 0)
 		for j := 0; j < eventDefCount; j++ {
-			eventDefSpec := map[string]interface{}{
-				"definition_id":          fmt.Sprintf("id%d", j),
-				"definition_name":        fmt.Sprintf("eventDef%d", j),
-				"specification_category": "event_definition",
-				"specification_type":     schema.EventSpecTypeAsyncAPI,
-				"specification_format":   "application/json",
-				"specification_url":      fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j),
+			eventSpec := map[string]interface{}{
+				"id":   fmt.Sprintf("id%d", j),
+				"name": fmt.Sprintf("eventDef%d", j),
 			}
-			specifications = append(specifications, eventDefSpec)
+			specification := make(map[string]interface{})
+			specification["type"] = schema.EventSpecTypeAsyncAPI
+			specification["format"] = "application/json"
+			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j)
+			eventSpec["specification"] = specification
+
+			events = append(events, eventSpec)
 		}
 
 		plan.Metadata.AdditionalMetadata = map[string]interface{}{
-			"specifications": specifications,
+			"api_specs":   apis,
+			"event_specs": events,
 		}
 		plans = append(plans, plan)
 	}
@@ -444,8 +453,9 @@ func generateAPIDefinitions(count int) schema.APIDefinitionPageExt {
 	for i := 0; i < count; i++ {
 		currentAPIDefinition := &schema.APIDefinitionExt{
 			APIDefinition: schema.APIDefinition{
-				ID:   fmt.Sprintf("id%d", i),
-				Name: fmt.Sprintf("apiDef%d", i),
+				ID:        fmt.Sprintf("id%d", i),
+				Name:      fmt.Sprintf("apiDef%d", i),
+				TargetURL: fmt.Sprintf("target-url-{%d}", i),
 			},
 			Spec: &schema.APISpecExt{
 				APISpec: schema.APISpec{
@@ -469,6 +479,7 @@ func generateEventDefinitions(count int) schema.EventAPIDefinitionPageExt {
 				ID:   fmt.Sprintf("id%d", i),
 				Name: fmt.Sprintf("eventDef%d", i),
 			},
+
 			Spec: &schema.EventAPISpecExt{
 				EventSpec: schema.EventSpec{
 					Format: schema.SpecFormatJSON,

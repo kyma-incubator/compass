@@ -96,7 +96,7 @@ func (h *SpecsHandler) FetchSpec(w http.ResponseWriter, req *http.Request) {
 	}
 
 	logger.Info("Successfully fetched package specifications")
-	content, err := SpecForamtToContentTypeHeader(specification.Format)
+	content, err := SpecFormatToContentTypeHeader(specification.Format)
 	if err != nil {
 		logger.WithError(err).Error("failed to prepare content type header")
 		h.respond(ctx, w, http.StatusInternalServerError, apiresponses.ErrorResponse{
@@ -138,7 +138,7 @@ func (h *SpecsHandler) respondWithContent(ctx context.Context, w http.ResponseWr
 
 }
 
-func SpecForamtToContentTypeHeader(format graphql.SpecFormat) (string, error) {
+func SpecFormatToContentTypeHeader(format graphql.SpecFormat) (string, error) {
 	switch format {
 	case graphql.SpecFormatJSON:
 		return "application/json", nil
