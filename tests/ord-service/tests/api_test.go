@@ -55,7 +55,7 @@ func TestORDService(t *testing.T) {
 						Description: ptr.String("api for adding comments"),
 						TargetURL:   "http://mywordpress.com/comments",
 						Group:       ptr.String("comments"),
-						Version:     bndl.FixDepracatedVersion(),
+						Version:     pkg.FixDepracatedVersion(),
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOpenAPI,
 							Format: directorSchema.SpecFormatYaml,
@@ -66,7 +66,7 @@ func TestORDService(t *testing.T) {
 						Name:        "reviews-v1",
 						Description: ptr.String("api for adding reviews"),
 						TargetURL:   "http://mywordpress.com/reviews",
-						Version:     bndl.FixActiveVersion(),
+						Version:     pkg.FixActiveVersion(),
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOdata,
 							Format: directorSchema.SpecFormatJSON,
@@ -76,7 +76,7 @@ func TestORDService(t *testing.T) {
 					{
 						Name:        "xml",
 						Description: ptr.String("xml api"),
-						Version:     bndl.FixDecomissionedVersion(),
+						Version:     pkg.FixDecomissionedVersion(),
 						TargetURL:   "http://mywordpress.com/xml",
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOdata,
@@ -89,7 +89,7 @@ func TestORDService(t *testing.T) {
 					{
 						Name:        "comments-v1",
 						Description: ptr.String("comments events"),
-						Version:     bndl.FixDepracatedVersion(),
+						Version:     pkg.FixDepracatedVersion(),
 						Group:       ptr.String("comments"),
 						Spec: &directorSchema.EventSpecInput{
 							Type:   directorSchema.EventSpecTypeAsyncAPI,
@@ -100,7 +100,7 @@ func TestORDService(t *testing.T) {
 					{
 						Name:        "reviews-v1",
 						Description: ptr.String("review events"),
-						Version:     bndl.FixActiveVersion(),
+						Version:     pkg.FixActiveVersion(),
 						Spec: &directorSchema.EventSpecInput{
 							Type:   directorSchema.EventSpecTypeAsyncAPI,
 							Format: directorSchema.SpecFormatYaml,
@@ -129,18 +129,18 @@ func TestORDService(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	app, err := bndl.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+	app, err := pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NoError(t, err)
 
-	defer bndl.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
 	t.Log("Create integration system")
-	intSys := bndl.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "test-int-system")
+	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "test-int-system")
 	require.NotEmpty(t, intSys)
-	defer bndl.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
+	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
 
-	intSystemCredentials := bndl.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
-	defer bndl.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
+	intSystemCredentials := pkg.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
+	defer pkg.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
 
 	unsecuredHttpClient := http.DefaultClient
 	unsecuredHttpClient.Transport = &http.Transport{
