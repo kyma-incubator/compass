@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// TODO: Delete after bundles are adopted
 package packagetobundles
 
 import (

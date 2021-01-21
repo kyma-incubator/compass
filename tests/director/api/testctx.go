@@ -49,9 +49,7 @@ func (tc *testContext) NewOperation(ctx context.Context) *Operation {
 	return &Operation{
 		ctx:    ctx,
 		tenant: testTenants.GetDefaultTenantID(),
-		queryParams: map[string]string{
-			"useBundles": "true", // TODO: Delete after bundles are adopted
-		},
+		queryParams: map[string]string{},
 		scopes:   tc.currentScopes,
 		consumer: &jwtbuilder.Consumer{},
 	}
@@ -106,7 +104,7 @@ func (o *Operation) Run(req *gcli.Request, resp interface{}) error {
 
 	query := url.Query()
 	for key, val := range o.queryParams {
-		query.Add(key, val)
+		query.Set(key, val)
 	}
 	url.RawQuery = query.Encode()
 
