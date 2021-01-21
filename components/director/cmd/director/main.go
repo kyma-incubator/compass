@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"

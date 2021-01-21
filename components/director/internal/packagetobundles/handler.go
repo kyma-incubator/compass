@@ -19,6 +19,12 @@ package packagetobundles
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"regexp"
+	"strings"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -30,11 +36,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/vektah/gqlparser/gqlerror"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"regexp"
-	"strings"
 )
 
 const useBundlesParam = "useBundles"
