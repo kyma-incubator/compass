@@ -320,7 +320,7 @@ func (ec *executionContext) _Mutation_generateApplicationToken(ctx context.Conte
 	res := resTmp.(*externalschema.Token)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋbndlᚋgraphqlᚋexternalschemaᚐToken(ctx, field.Selections, res)
+	return ec.marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋpkgᚋgraphqlᚋexternalschemaᚐToken(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_generateRuntimeToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -364,7 +364,7 @@ func (ec *executionContext) _Mutation_generateRuntimeToken(ctx context.Context, 
 	res := resTmp.(*externalschema.Token)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋbndlᚋgraphqlᚋexternalschemaᚐToken(ctx, field.Selections, res)
+	return ec.marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋpkgᚋgraphqlᚋexternalschemaᚐToken(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_isHealthy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2069,11 +2069,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋbndlᚋgraphqlᚋexternalschemaᚐToken(ctx context.Context, sel ast.SelectionSet, v externalschema.Token) graphql.Marshaler {
+func (ec *executionContext) marshalNToken2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋpkgᚋgraphqlᚋexternalschemaᚐToken(ctx context.Context, sel ast.SelectionSet, v externalschema.Token) graphql.Marshaler {
 	return ec._Token(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋbndlᚋgraphqlᚋexternalschemaᚐToken(ctx context.Context, sel ast.SelectionSet, v *externalschema.Token) graphql.Marshaler {
+func (ec *executionContext) marshalNToken2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋconnectorᚋpkgᚋgraphqlᚋexternalschemaᚐToken(ctx context.Context, sel ast.SelectionSet, v *externalschema.Token) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
