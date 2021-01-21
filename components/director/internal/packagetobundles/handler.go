@@ -69,22 +69,24 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 
 			useBundles := r.URL.Query().Get(useBundlesParam)
 			if useBundles == "true" {
-				log.C(ctx).Info("Will proceed with request without rewriting the request body. Bundles are adopted")
-				next.ServeHTTP(w, r)
-
 				consumerInfo, err := consumer.LoadFromContext(ctx)
 				if err != nil {
 					log.C(ctx).WithError(err).Error("Error determining request consumer")
 					appErr := apperrors.InternalErrorFrom(err, "while determining request consumer")
 					writeAppError(ctx, w, appErr, http.StatusInternalServerError)
-				}
-
-				if err := h.reconcileConsumerLabel(ctx, consumerInfo); err != nil {
-					writeAppError(ctx, w, err, http.StatusInternalServerError)
 					return
 				}
 
-				log.C(ctx).Infof("Returning request without rewriting the request body for consumer with ID %q and type %q", consumerInfo.ConsumerID, consumerInfo.ConsumerType)
+				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID %q and type %q", consumerInfo.ConsumerID, consumerInfo.ConsumerType)
+
+				next.ServeHTTP(w, r)
+
+				if consumerInfo.ConsumerType == consumer.Runtime {
+					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
+						log.C(ctx).WithError(err).Error("Error labelling runtime with bundles param")
+					}
+				}
+
 				return
 			}
 
@@ -167,11 +169,7 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 	}
 }
 
-func (h *Handler) reconcileConsumerLabel(ctx context.Context, consumerInfo consumer.Consumer) error {
-	if consumerInfo.ConsumerType != consumer.Runtime {
-		return nil
-	}
-
+func (h *Handler) labelRuntimeWithBundlesParam(ctx context.Context, consumerInfo consumer.Consumer) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Error determining request tenant")
