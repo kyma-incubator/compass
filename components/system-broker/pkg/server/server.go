@@ -61,7 +61,7 @@ func New(c *Config, middlewares []mux.MiddlewareFunc, routesProvider ...func(rou
 	router.HandleFunc(c.RootAPI+"/debug/pprof/symbol", pprof.Symbol)
 	router.HandleFunc(c.RootAPI+"/debug/pprof/trace", pprof.Trace)
 
-	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	router.Use(correlation.AttachCorrelationIDToContext())
 	router.Use(log.RequestLogger())
 	router.Use(panic_recovery.NewRecoveryMiddleware())
 
