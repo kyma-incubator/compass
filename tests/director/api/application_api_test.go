@@ -260,8 +260,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotEmpty(t, actualAppWithPackage.ID)
-			require.Len(t, actualAppWithPackage.Packages.Data, 1)
-			require.NotEmpty(t, actualAppWithPackage.Packages.Data[0].ID)
+			require.NotEmpty(t, actualAppWithPackage.Package.ID)
 		})
 
 		t.Run("Get Application with Package when useBundles=true should fail", func(t *testing.T) {
@@ -275,28 +274,41 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 			require.Empty(t, actualAppWithPackage.ID)
 		})
 
-		runtime := registerRuntime(t, ctx, "test-runtime")
+		runtimeInput := fixRuntimeInput("test-runtime")
+		(*runtimeInput.Labels)[scenariosLabel] = []string{"DEFAULT"}
+		runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+		require.NoError(t, err)
+		registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
+
+		runtime := graphql.Runtime{}
+		err = tc.RunOperation(ctx, registerRuntimeRequest, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 
 		defer unregisterRuntime(t, runtime.ID)
 
 		t.Run("Get ApplicationForRuntime with Package when useBundles=false should succeed", func(t *testing.T) {
-			var actualAppWithPackage ApplicationWithPackagesExt
+			applicationPage := struct {
+				Data []*ApplicationWithPackagesExt `json:"data"`
+			}{}
 			request := fixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
 			err := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
 				ID:   runtime.ID,
 				Type: jwtbuilder.RuntimeConsumer,
-			}).WithQueryParam("useBundles", "false").Run(request, &actualAppWithPackage)
+			}).WithQueryParam("useBundles", "false").Run(request, &applicationPage)
 
 			require.NoError(t, err)
+			require.Len(t, applicationPage.Data, 1)
+
+			actualAppWithPackage := applicationPage.Data[0]
+
 			require.NotEmpty(t, actualAppWithPackage.ID)
-			assert.Equal(t, actualAppWithPackage.Name, actualApp.Name)
-			assert.Equal(t, actualAppWithPackage.Description, actualApp.Description)
-			assert.Equal(t, actualAppWithPackage.HealthCheckURL, actualApp.HealthCheckURL)
-			assert.Equal(t, actualAppWithPackage.ProviderName, actualApp.ProviderName)
-			require.Len(t, len(actualAppWithPackage.Webhooks), len(actualApp.Webhooks))
-			require.Len(t, len(actualAppWithPackage.Packages.Data), len(actualApp.Packages.Data))
+			require.Equal(t, actualAppWithPackage.Name, "mp-"+actualApp.Name)
+			require.Equal(t, actualAppWithPackage.Description, actualApp.Description)
+			require.Equal(t, actualAppWithPackage.HealthCheckURL, actualApp.HealthCheckURL)
+			require.Equal(t, actualAppWithPackage.ProviderName, actualApp.ProviderName)
+			require.Equal(t, len(actualAppWithPackage.Webhooks), len(actualApp.Webhooks))
+			require.Equal(t, len(actualAppWithPackage.Packages.Data), len(actualApp.Packages.Data))
 		})
 
 		t.Run("Get ApplicationForRuntime with Package when useBundles=true should fail", func(t *testing.T) {
