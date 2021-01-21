@@ -34,10 +34,7 @@ func (c MapConverter) toApiDefMap(baseURL, appID, pkgID string, apiDef *graphql.
 		api["group"] = apiDef.Group
 	}
 	if apiDef.Version != nil {
-		versionMap, err := c.toVersionMap(apiDef.Version)
-		if err != nil {
-			return nil, fmt.Errorf("while converting version to map: %w", err)
-		}
+		versionMap := c.toVersionMap(apiDef.Version)
 		api["version"] = versionMap
 	}
 	return api, nil
@@ -66,16 +63,13 @@ func (c MapConverter) toEventDefMap(baseURL, appID, pkgID string, eventDef *grap
 		event["group"] = eventDef.Group
 	}
 	if eventDef.Version != nil {
-		versionMap, err := c.toVersionMap(eventDef.Version)
-		if err != nil {
-			return nil, fmt.Errorf("while converting version to map: %w", err)
-		}
+		versionMap := c.toVersionMap(eventDef.Version)
 		event["version"] = versionMap
 	}
 	return event, nil
 }
 
-func (c MapConverter) toVersionMap(version *graphql.Version) (map[string]interface{}, error) {
+func (c MapConverter) toVersionMap(version *graphql.Version) map[string]interface{} {
 	m := make(map[string]interface{})
 	m["value"] = version.Value
 	if version.Deprecated != nil {
@@ -85,7 +79,7 @@ func (c MapConverter) toVersionMap(version *graphql.Version) (map[string]interfa
 		m["deprecated_since"] = version.DeprecatedSince
 	}
 	if version.ForRemoval != nil {
-		m["deprecated"] = version.ForRemoval
+		m["for_removal"] = version.ForRemoval
 	}
-	return m, nil
+	return m
 }

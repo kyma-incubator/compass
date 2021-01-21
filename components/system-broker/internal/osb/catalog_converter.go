@@ -76,7 +76,7 @@ func (c *Converter) toPlans(appID string, packages []*graphql.PackageExt) ([]dom
 			ID:          p.ID,
 			Name:        p.Name,
 			Description: desc,
-			Bindable:    boolPtr(true),
+			Bindable:    boolToPtr(true),
 			Metadata:    metadata,
 			Schemas:     schemas,
 		}
@@ -157,6 +157,6 @@ func ptrStrToStr(s *string) string {
 	return *s
 }
 
-func boolPtr(in bool) *bool {
+func boolToPtr(in bool) *bool {
 	return &in
 }
