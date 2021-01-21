@@ -223,6 +223,101 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 	assertApplication(t, in, actualApp)
 }
 
+// TODO: Delete after bundles are adopted
+func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
+	ctx := context.Background()
+	expectedAppName := "create-app-with-packages"
+
+	type ApplicationWithPackagesExt struct {
+		graphql.Application
+		Labels                graphql.Labels                           `json:"labels"`
+		Webhooks              []graphql.Webhook                        `json:"webhooks"`
+		Auths                 []*graphql.SystemAuth                    `json:"auths"`
+		Package               graphql.BundleExt                        `json:"package"`
+		Packages              graphql.BundlePageExt                    `json:"packages"`
+		EventingConfiguration graphql.ApplicationEventingConfiguration `json:"eventingConfiguration"`
+	}
+
+	t.Run("Register Application with Packages when useBundles=false", func(t *testing.T) {
+		var actualApp ApplicationWithPackagesExt
+		request := fixRegisterApplicationWithPackagesRequest(expectedAppName)
+		err := tc.RunOperation(ctx, request, &actualApp)
+
+		appID := actualApp.ID
+		packageID := actualApp.Packages.Data[0].ID
+
+		require.NoError(t, err)
+		require.NotEmpty(t, appID)
+		require.NotEmpty(t, packageID)
+		require.Equal(t, expectedAppName, actualApp.Name)
+
+		defer unregisterApplication(t, actualApp.ID)
+
+		t.Run("Get Application with Package when useBundles=false should succeed", func(t *testing.T) {
+			var actualAppWithPackage ApplicationWithPackagesExt
+			request := fixGetApplicationWithPackageRequest(appID, packageID)
+			err := tc.RunOperation(ctx, request, &actualAppWithPackage)
+
+			require.NoError(t, err)
+			require.NotEmpty(t, actualAppWithPackage.ID)
+			require.Len(t, actualAppWithPackage.Packages.Data, 1)
+			require.NotEmpty(t, actualAppWithPackage.Packages.Data[0].ID)
+		})
+
+		t.Run("Get Application with Package when useBundles=true should fail", func(t *testing.T) {
+			var actualAppWithPackage ApplicationWithPackagesExt
+			request := fixGetApplicationWithPackageRequest(appID, packageID)
+			op := tc.NewOperation(ctx).WithQueryParam("useBundles", "true")
+			err := op.Run(request, &actualAppWithPackage)
+
+			require.Error(t, err)
+			require.Empty(t, actualAppWithPackage.ID)
+		})
+
+		runtime := registerRuntime(t, ctx, "test-runtime")
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
+
+		defer unregisterRuntime(t, runtime.ID)
+
+		t.Run("Get ApplicationForRuntime with Package when useBundles=false should succeed", func(t *testing.T) {
+			var actualAppWithPackage ApplicationWithPackagesExt
+			request := fixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
+			err := tc.RunOperation(ctx, request, &actualAppWithPackage)
+
+			require.NoError(t, err)
+			require.NotEmpty(t, actualAppWithPackage.ID)
+			assert.Equal(t, actualAppWithPackage.Name, actualApp.Name)
+			assert.Equal(t, actualAppWithPackage.Description, actualApp.Description)
+			assert.Equal(t, actualAppWithPackage.HealthCheckURL, actualApp.HealthCheckURL)
+			assert.Equal(t, actualAppWithPackage.ProviderName, actualApp.ProviderName)
+			require.Len(t, len(actualAppWithPackage.Webhooks), len(actualApp.Webhooks))
+			require.Len(t, len(actualAppWithPackage.Packages.Data), len(actualApp.Packages.Data))
+		})
+
+		t.Run("Get ApplicationForRuntime with Package when useBundles=true should fail", func(t *testing.T) {
+			var actualAppWithPackage ApplicationWithPackagesExt
+			request := fixGetApplicationWithPackageRequest(appID, packageID)
+			op := tc.NewOperation(ctx).WithQueryParam("useBundles", "true")
+			err := op.Run(request, &actualAppWithPackage)
+
+			require.Error(t, err)
+			require.Empty(t, actualAppWithPackage.ID)
+		})
+	})
+
+	t.Run("Register Application with Packages when useBundles=true should fail", func(t *testing.T) {
+		var actualApp ApplicationWithPackagesExt
+		request := fixRegisterApplicationWithPackagesRequest("failed-app-with-packages")
+		op := tc.NewOperation(ctx).WithQueryParam("useBundles", "true")
+		err := op.Run(request, &actualApp)
+
+		require.Error(t, err)
+		require.Empty(t, actualApp.ID)
+		require.Empty(t, actualApp.Name)
+	})
+}
+
 func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()

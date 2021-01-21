@@ -46,19 +46,21 @@ func newTestContext() (*testContext, error) {
 
 func (tc *testContext) NewOperation(ctx context.Context) *Operation {
 	return &Operation{
-		ctx:      ctx,
-		tenant:   testTenants.GetDefaultTenantID(),
-		scopes:   tc.currentScopes,
-		consumer: &jwtbuilder.Consumer{},
+		ctx:         ctx,
+		tenant:      testTenants.GetDefaultTenantID(),
+		queryParams: make(map[string]string, 0),
+		scopes:      tc.currentScopes,
+		consumer:    &jwtbuilder.Consumer{},
 	}
 }
 
 type Operation struct {
 	ctx context.Context
 
-	tenant   string
-	scopes   []string
-	consumer *jwtbuilder.Consumer
+	tenant      string
+	queryParams map[string]string
+	scopes      []string
+	consumer    *jwtbuilder.Consumer
 }
 
 func (o *Operation) WithTenant(tenant string) *Operation {
@@ -73,6 +75,16 @@ func (o *Operation) WithScopes(scopes []string) *Operation {
 
 func (o *Operation) WithConsumer(consumer *jwtbuilder.Consumer) *Operation {
 	o.consumer = consumer
+	return o
+}
+
+func (o *Operation) WithQueryParam(key, value string) *Operation {
+	o.queryParams[key] = value
+	return o
+}
+
+func (o *Operation) WithQueryParams(queryParams map[string]string) *Operation {
+	o.queryParams = queryParams
 	return o
 }
 
