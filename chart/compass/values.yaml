@@ -26,16 +26,16 @@ global:
       version: "PR-1693"
     gateway:
       dir:
-      version: "PR-1693"
+      version: "PR-1674"
     tenant_fetcher:
       dir:
-      version: "PR-1693"
+      version: "PR-1674"
     ord_service:
       dir:
       version: "PR-5"
     healthchecker:
       dir:
-      version: "PR-1693"
+      version: "PR-1674"
     schema_migrator:
       dir:
       version: "PR-1693"
@@ -46,7 +46,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1693"
+      version: "PR-1668"
     console:
       dir:
       version: "PR-14"
