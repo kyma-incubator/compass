@@ -24,7 +24,7 @@ mutation {
                 value: "v1"
                 deprecated: true
                 deprecatedSince: "v5"
-                forRemoval: true
+                forRemoval: false
               }
             }
             {
@@ -67,7 +67,7 @@ mutation {
                 value: "v1"
                 deprecated: true
                 deprecatedSince: "v5"
-                forRemoval: true
+                forRemoval: false
               }
             }
             {
@@ -139,7 +139,7 @@ mutation {
                 value: "v1"
                 deprecated: true
                 deprecatedSince: "v5"
-                forRemoval: true
+                forRemoval: false
               }
             }
             {
@@ -182,7 +182,7 @@ mutation {
                 value: "v1"
                 deprecated: true
                 deprecatedSince: "v5"
-                forRemoval: true
+                forRemoval: false
               }
             }
             {

@@ -19,6 +19,7 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -56,6 +57,61 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					tenantAttributeKey:   expectedExternalTenantID.String(),
+					oathkeeper.ScopesKey: prefixedScopes,
+					"extra": map[string]interface{}{
+						"unique": uniqueAttributeValue,
+					},
+				},
+			},
+		}
+
+		tenantMappingModel := &model.BusinessTenantMapping{
+			ID:             expectedTenantID.String(),
+			ExternalTenant: expectedExternalTenantID.String(),
+		}
+
+		tenantRepoMock := getTenantRepositoryMock()
+		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+
+		authn := &authenticator.Config{
+			TrustedIssuers: []authenticator.TrustedIssuer{{
+				ScopePrefix: scopePrefix,
+			}},
+			Attributes: authenticator.Attributes{
+				UniqueAttribute: authenticator.Attribute{
+					Key:   uniqueAttributeKey,
+					Value: uniqueAttributeValue,
+				},
+				TenantAttribute: authenticator.Attribute{
+					Key: tenantAttributeKey,
+				},
+			},
+		}
+
+		userAuthDetailsWithAuthenticator := jwtAuthDetails
+		userAuthDetailsWithAuthenticator.Authenticator = authn
+
+		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock)
+
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
+
+		require.NoError(t, err)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, username, objCtx.ConsumerID)
+		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
+	})
+
+	t.Run("returns tenant that is defined as a request header when it is missing from the the Extra map of ReqData", func(t *testing.T) {
+		uniqueAttributeKey := "extra.unique"
+		uniqueAttributeValue := "value"
+		tenantAttributeKey := "tenant"
+		header := http.Header{}
+		header.Add(oathkeeper.ExternalTenantKey, expectedExternalTenantID.String())
+		reqData := oathkeeper.ReqData{
+			Header: header,
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
 					oathkeeper.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
@@ -351,7 +407,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
-		require.EqualError(t, err, fmt.Sprintf("tenant attribute %q missing from %s authenticator token", tenantAttributeKey, authn.Name))
+		require.EqualError(t, err, fmt.Sprintf("tenant attribute %q missing from %s authenticator token and %q request header", tenantAttributeKey, authn.Name, oathkeeper.ExternalTenantKey))
 	})
 
 	t.Run("returns error when external tenant id that is defined in the Extra map of ReqData cannot be resolved", func(t *testing.T) {

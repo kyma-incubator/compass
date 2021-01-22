@@ -8,14 +8,13 @@ global:
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
-    - name: global
-      id: b2864e28-e321-11ea-87d0-0242ac130003
+
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1674"
+      version: "PR-1673"
     connectivity_adapter:
       dir:
       version: "PR-1674"
@@ -27,16 +26,19 @@ global:
       version: "PR-XXXX"
     gateway:
       dir:
-      version: "PR-1674"
+      version: "PR-1695"
     tenant_fetcher:
       dir:
       version: "PR-1674"
+    ord_service:
+      dir:
+      version: "PR-4"
     healthchecker:
       dir:
       version: "PR-1674"
     schema_migrator:
       dir:
-      version: "PR-1674"
+      version: "PR-1666"
     system_broker:
       dir:
       version: "PR-XXXX"
@@ -47,26 +49,29 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1674"
+      version: "PR-1668"
     console:
       dir:
-      version: "PR-11"
+      version: "PR-14"
     tests:
       director:
         dir:
-        version: "PR-1674"
+        version: "PR-1668"
       connector:
         dir:
         version: "PR-1674"
       connectivity_adapter:
         dir:
         version: "PR-1674"
-      system_broker:
-        dir:
-        version: "PR-XXXX"
       tenant_fetcher:
         dir:
         version: "PR-1674"
+      system_broker:
+        dir:
+        version: "PR-XXXX"
+      ord_service:
+        dir:
+        version: "PR-1691"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -93,6 +98,9 @@ global:
     secretName: "compass-gateway-auditlog-secret"
     script:
       configMapName: "auditlog-script"
+
+  testCredentials:
+    secretName: "test-credentials-secret"
 
   enableCompassDefaultScenarioAssignment: true
 
@@ -269,6 +277,12 @@ global:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
+
+  ordService:
+    host: compass-ord-service.compass-system.svc.cluster.local
+    prefix: /open-resource-discovery
+    port: 3000
+    defaultResponseType: "xml"
 
   tenantFetchers:
     job1:

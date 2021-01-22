@@ -15,30 +15,38 @@ spec:
     - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
   http:
     - match:
-        - uri:
-            prefix: {{ .Values.global.connector.prefix }}
+      - uri:
+          prefix: {{ .Values.global.connector.prefix }}
       route:
-        - destination:
-            host: {{ .Values.global.oathkeeper.host }}
-            port:
-              number: {{ .Values.global.oathkeeper.port }}
+      - destination:
+          host: {{ .Values.global.oathkeeper.host }}
+          port:
+            number: {{ .Values.global.oathkeeper.port }}
       headers:
         request:
           remove:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
-    {{- end }}
+            {{- end }}
     - match:
-        - uri:
-            prefix: {{ .Values.global.tenantFetcher.prefix }}
+      - uri:
+          prefix: {{ .Values.global.tenantFetcher.prefix }}
+      route:
+      - destination:
+          host: {{ .Values.global.tenantFetcher.host }}
+          port:
+            number: {{ .Values.global.tenantFetcher.port }}
+    - match:
+      - uri:
+          prefix: {{ .Values.global.ordService.prefix }}
       route:
         - destination:
-            host: {{ .Values.global.tenantFetcher.host }}
+            host: {{ .Values.global.oathkeeper.host }}
             port:
-              number: {{ .Values.global.tenantFetcher.port }}
+              number: {{ .Values.global.oathkeeper.port }}
     - match:
-        - uri:
-            exact: {{ .Values.global.director.prefix }}
+      - uri:
+          exact: {{ .Values.global.director.prefix }}
       redirect:
         uri: {{ .Values.global.director.prefix }}/
       headers:
@@ -46,7 +54,7 @@ spec:
           remove:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
-      {{- end }}
+            {{- end }}
       corsPolicy:
         allowOrigins:
           - regex: ".*"
@@ -57,8 +65,8 @@ spec:
         allowMethods:
           - "GET"
     - match:
-        - uri:
-            regex: /.*
+      - uri:
+          regex: /.*
       route:
         - destination:
             host: {{ .Values.global.oathkeeper.host }}
@@ -69,7 +77,7 @@ spec:
           remove:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
-      {{- end }}
+            {{- end }}
       corsPolicy:
         allowOrigins:
           - regex: ".*"

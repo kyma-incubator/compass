@@ -17,7 +17,7 @@ func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 					%s
 				}
 			}`,
-			applicationInGQL, tc.gqlFieldsProvider.ForApplication()))
+			applicationInGQL, tc.GQLFieldsProvider.ForApplication()))
 }
 
 func fixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
@@ -26,7 +26,7 @@ func fixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
   				result: updateApplication(id: "%s", in: %s) {
     					%s
 					}
-				}`, id, updateInputGQL, tc.gqlFieldsProvider.ForApplication()))
+				}`, id, updateInputGQL, tc.GQLFieldsProvider.ForApplication()))
 }
 
 func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Request {
@@ -36,7 +36,7 @@ func fixCreateIntegrationSystemRequest(integrationSystemInGQL string) *gcli.Requ
 					%s
 				}
 			}`,
-			integrationSystemInGQL, tc.gqlFieldsProvider.ForIntegrationSystem()))
+			integrationSystemInGQL, tc.GQLFieldsProvider.ForIntegrationSystem()))
 }
 
 func fixRegisterRuntimeRequest(runtimeInGQL string) *gcli.Request {
@@ -46,7 +46,7 @@ func fixRegisterRuntimeRequest(runtimeInGQL string) *gcli.Request {
 					%s
 				}
 			}`,
-			runtimeInGQL, tc.gqlFieldsProvider.ForRuntime()))
+			runtimeInGQL, tc.GQLFieldsProvider.ForRuntime()))
 }
 
 func fixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
@@ -56,7 +56,7 @@ func fixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.
 					%s
 				}
 			}`,
-			applicationTemplateInGQL, tc.gqlFieldsProvider.ForApplicationTemplate()))
+			applicationTemplateInGQL, tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
 
 func fixGetIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
@@ -66,7 +66,7 @@ func fixGetIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
 					%s
 				}
 			}`,
-			integrationSystemID, tc.gqlFieldsProvider.ForIntegrationSystem()))
+			integrationSystemID, tc.GQLFieldsProvider.ForIntegrationSystem()))
 }
 
 func fixGetViewerRequest() *gcli.Request {
@@ -76,7 +76,7 @@ func fixGetViewerRequest() *gcli.Request {
 					%s
 				}
 			}`,
-			tc.gqlFieldsProvider.ForViewer()))
+			tc.GQLFieldsProvider.ForViewer()))
 }
 
 // ADD
@@ -87,7 +87,7 @@ func fixAddAPIToPackageRequest(pkgID, APIInputGQL string) *gcli.Request {
 				%s
 			}
 		}
-		`, pkgID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+		`, pkgID, APIInputGQL, tc.GQLFieldsProvider.ForAPIDefinition()))
 }
 
 func fixPackageCreateInput(name string) graphql.PackageCreateInput {
@@ -101,7 +101,7 @@ func fixAddPackageRequest(appID, pkgCreateInput string) *gcli.Request {
 		fmt.Sprintf(`mutation {
 			result: addPackage(applicationID: "%s", in: %s) {
 				%s
-			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForPackage()))
+			}}`, appID, pkgCreateInput, tc.GQLFieldsProvider.ForPackage()))
 }
 
 // UPDATE
@@ -111,7 +111,7 @@ func fixGenerateClientCredentialsForIntegrationSystem(id string) *gcli.Request {
 				result: requestClientCredentialsForIntegrationSystem(id: "%s") {
 						%s
 					}
-				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
+				}`, id, tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 func fixRequestClientCredentialsForApplication(id string) *gcli.Request {
@@ -120,7 +120,7 @@ func fixRequestClientCredentialsForApplication(id string) *gcli.Request {
 				result: requestClientCredentialsForApplication(id: "%s") {
 						%s
 					}
-				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
+				}`, id, tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 func fixRequestClientCredentialsForRuntime(id string) *gcli.Request {
@@ -129,7 +129,7 @@ func fixRequestClientCredentialsForRuntime(id string) *gcli.Request {
 				result: requestClientCredentialsForRuntime(id: "%s") {
 						%s
 					}
-				}`, id, tc.gqlFieldsProvider.ForSystemAuth()))
+				}`, id, tc.GQLFieldsProvider.ForSystemAuth()))
 }
 
 // DELETE
@@ -139,7 +139,7 @@ func fixDeleteApplicationRequest(t *testing.T, id string) *gcli.Request {
 		unregisterApplication(id: "%s") {
 			%s
 		}	
-	}`, id, tc.gqlFieldsProvider.ForApplication()))
+	}`, id, tc.GQLFieldsProvider.ForApplication()))
 }
 
 func fixUnregisterRuntimeRequest(id string) *gcli.Request {
@@ -147,7 +147,7 @@ func fixUnregisterRuntimeRequest(id string) *gcli.Request {
 		fmt.Sprintf(`mutation{unregisterRuntime(id: "%s") {
 				%s
 			}
-		}`, id, tc.gqlFieldsProvider.ForRuntime()))
+		}`, id, tc.GQLFieldsProvider.ForRuntime()))
 }
 
 func fixUnregisterIntegrationSystem(intSysID string) *gcli.Request {
@@ -156,7 +156,7 @@ func fixUnregisterIntegrationSystem(intSysID string) *gcli.Request {
 			result: unregisterIntegrationSystem(id: "%s") {
 					%s
 				}
-			}`, intSysID, tc.gqlFieldsProvider.ForIntegrationSystem()))
+			}`, intSysID, tc.GQLFieldsProvider.ForIntegrationSystem()))
 }
 
 func fixGenerateOneTimeTokenForApplication(appID string) *gcli.Request {
@@ -165,7 +165,7 @@ func fixGenerateOneTimeTokenForApplication(appID string) *gcli.Request {
 			result: requestOneTimeTokenForApplication(id: "%s") {
 					%s
 				}
-			}`, appID, tc.gqlFieldsProvider.ForOneTimeTokenForApplication()))
+			}`, appID, tc.GQLFieldsProvider.ForOneTimeTokenForApplication()))
 }
 
 func fixGenerateOneTimeTokenForRuntime(runtimeID string) *gcli.Request {
@@ -183,7 +183,7 @@ func fixDeleteApplicationTemplateRequest(appTemplateID string) *gcli.Request {
 			result: deleteApplicationTemplate(id: "%s") {
 					%s
 				}
-			}`, appTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
+			}`, appTemplateID, tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
 
 func fixDeletePackageRequest(packageID string) *gcli.Request {
@@ -192,7 +192,7 @@ func fixDeletePackageRequest(packageID string) *gcli.Request {
 			result: deletePackage(id: "%s") {
 				%s
 			}
-		}`, packageID, tc.gqlFieldsProvider.ForPackage()))
+		}`, packageID, tc.GQLFieldsProvider.ForPackage()))
 }
 
 //GET
@@ -202,7 +202,7 @@ func fixGetApplicationRequest(applicationID string) *gcli.Request {
 			result: application(id: "%s") {
 					%s
 				}
-			}`, applicationID, tc.gqlFieldsProvider.ForApplication()))
+			}`, applicationID, tc.GQLFieldsProvider.ForApplication()))
 }
 
 func fixIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
@@ -212,7 +212,7 @@ func fixIntegrationSystemRequest(integrationSystemID string) *gcli.Request {
 					%s
 				}
 			}`,
-			integrationSystemID, tc.gqlFieldsProvider.ForIntegrationSystem()))
+			integrationSystemID, tc.GQLFieldsProvider.ForIntegrationSystem()))
 }
 
 func fixApplicationTemplateRequest(applicationTemplateID string) *gcli.Request {
@@ -221,7 +221,7 @@ func fixApplicationTemplateRequest(applicationTemplateID string) *gcli.Request {
 			result: applicationTemplate(id: "%s") {
 					%s
 				}
-			}`, applicationTemplateID, tc.gqlFieldsProvider.ForApplicationTemplate()))
+			}`, applicationTemplateID, tc.GQLFieldsProvider.ForApplicationTemplate()))
 }
 
 func fixRuntimeRequest(runtimeID string) *gcli.Request {
@@ -229,5 +229,5 @@ func fixRuntimeRequest(runtimeID string) *gcli.Request {
 		fmt.Sprintf(`query {
 			result: runtime(id: "%s") {
 					%s
-				}}`, runtimeID, tc.gqlFieldsProvider.ForRuntime()))
+				}}`, runtimeID, tc.GQLFieldsProvider.ForRuntime()))
 }

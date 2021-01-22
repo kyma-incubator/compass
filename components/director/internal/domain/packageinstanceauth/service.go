@@ -62,7 +62,7 @@ func (s *service) Create(ctx context.Context, packageID string, in model.Package
 
 	pkgInstAuth, err := in.ToPackageInstanceAuth(packageID, tnt, defaultAuth, nil)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "while setting creation status for PackageInstanceAuth with id %s", *in.ID)
 	}
 
 	err = s.setCreationStatusFromAuth(ctx, &pkgInstAuth, defaultAuth)

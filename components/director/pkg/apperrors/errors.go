@@ -103,6 +103,7 @@ func NewNotFoundError(resourceType resource.Type, objectID string) error {
 		errorCode: NotFound,
 		Message:   NotFoundMsg,
 		arguments: map[string]string{"object": string(resourceType), "ID": objectID},
+		parentErr: nil,
 	}
 }
 
@@ -111,6 +112,7 @@ func NewNotFoundErrorWithType(resourceType resource.Type) error {
 		errorCode: NotFound,
 		Message:   NotFoundMsg,
 		arguments: map[string]string{"object": string(resourceType)},
+		parentErr: nil,
 	}
 }
 
@@ -291,7 +293,7 @@ func IsCannotReadTenant(err error) bool {
 }
 
 func IsNewInvalidDataError(err error) bool {
-	return ErrorCode(err) == InvalidOperation
+	return ErrorCode(err) == InvalidData
 }
 
 func IsNotFoundError(err error) bool {

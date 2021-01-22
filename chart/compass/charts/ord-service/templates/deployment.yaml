@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
+  template:
+    metadata:
+      annotations:
+        {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.requests.memory }}
+        sidecar.istio.io/proxyMemory: {{ .Values.deployment.resourcesIstioProxy.requests.memory }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        sidecar.istio.io/proxyCPULimit: {{ .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.memory }}
+        sidecar.istio.io/proxyMemoryLimit: {{ .Values.deployment.resourcesIstioProxy.limits.memory }}
+      {{ end }}
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+    spec:
+      nodeSelector:
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.ord_service.dir }}compass-ord-service:{{ .Values.global.images.ord_service.version }}
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.deployment.args.containerPort }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          env:
+            - name: SERVER_PORT
+              value: "{{ .Values.deployment.args.containerPort }}"
+            - name: SERVER_SELF_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: SERVER_DEFAULT_RESPONSE_TYPE
+              value: {{ .Values.global.ordService.defaultResponseType }}
+            - name: ODATA_JPA_REQUEST_MAPPING_PATH
+              value: {{ .Values.global.ordService.prefix | trimPrefix "/" }}
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: SPRING_DATASOURCE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: SPRING_DATASOURCE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: SPRING_DATASOURCE_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+          livenessProbe:
+            httpGet:
+              port: {{.Values.deployment.args.containerPort }}
+              path: "/actuator/health"
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          volumeMounts:
+        {{if eq .Values.global.database.embedded.enabled false}}
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
+              readOnly: true
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.18.0-alpine
+          command: ["/cloud_sql_proxy",
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                    "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json",
+                    "-term_timeout=2s"]
+          resources:
+          {{- toYaml .Values.deployment.resourcesCloudsqlProxy | nindent 12 }}
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
+              readOnly: true
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{end}}
+      volumes:
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials
+        {{end}}

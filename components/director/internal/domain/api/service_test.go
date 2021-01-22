@@ -233,17 +233,17 @@ func TestService_ListForPackage(t *testing.T) {
 			},
 			PageSize:           0,
 			ExpectedResult:     apiDefinitionPage,
-			ExpectedErrMessage: "page size must be between 1 and 100",
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Return error when page size is bigger than 100",
+			Name: "Return error when page size is bigger than 200",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
 				return repo
 			},
-			PageSize:           101,
+			PageSize:           201,
 			ExpectedResult:     apiDefinitionPage,
-			ExpectedErrMessage: "page size must be between 1 and 100",
+			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
 			Name: "Returns error when APIDefinition listing failed",
@@ -371,7 +371,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil)
+				svc.On("HandleSpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -400,7 +400,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(&spec)
+				svc.On("HandleSpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(&spec)
 				return svc
 			},
 			Input:       modelInput,
@@ -476,7 +476,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(nil)
+				svc.On("HandleSpec", ctx, modelFr).Return(nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -504,7 +504,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil)
+				svc.On("HandleSpec", ctx, fixModelFetchRequest(frID, frURL, timestamp)).Return(nil)
 				return svc
 			},
 			Input:       modelInput,
@@ -617,7 +617,7 @@ func TestService_Update(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(nil)
+				svc.On("HandleSpec", ctx, modelFr).Return(nil)
 				return svc
 			},
 			InputID:     "foo",
@@ -639,14 +639,14 @@ func TestService_Update(t *testing.T) {
 
 				return repo
 			},
-			FetchRequestServiceFn: func() *automock.FetchRequestService {
-				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(nil)
-				return svc
-			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(frID).Once()
+				return svc
+			},
+			FetchRequestServiceFn: func() *automock.FetchRequestService {
+				svc := &automock.FetchRequestService{}
+				svc.On("HandleSpec", ctx, modelFr).Return(nil)
 				return svc
 			},
 			InputID:     "foo",
@@ -748,7 +748,7 @@ func TestService_Update(t *testing.T) {
 			},
 			FetchRequestServiceFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, modelFr).Return(nil)
+				svc.On("HandleSpec", ctx, modelFr).Return(nil)
 				return svc
 			},
 			InputID:     "foo",
@@ -863,7 +863,7 @@ func TestService_Delete(t *testing.T) {
 	})
 }
 
-func TestService_RefetchAPISpec(t *testing.T) {
+func TestService_RefetchSpec(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
@@ -932,7 +932,7 @@ func TestService_RefetchAPISpec(t *testing.T) {
 			},
 			FetchRequestSvcFn: func() *automock.FetchRequestService {
 				svc := &automock.FetchRequestService{}
-				svc.On("HandleAPISpec", ctx, fr).Return(&dataBytes)
+				svc.On("HandleSpec", ctx, fr).Return(&dataBytes)
 				return svc
 			},
 			ExpectedAPISpec: modelAPISpec,
@@ -1153,7 +1153,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 			fetchRequestRepo.AssertExpectations(t)
 		})
 	}
-
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// when

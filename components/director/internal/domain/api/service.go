@@ -38,7 +38,7 @@ type UIDService interface {
 
 //go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
 type FetchRequestService interface {
-	HandleAPISpec(ctx context.Context, fr *model.FetchRequest) *string
+	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
 type service struct {
@@ -50,7 +50,8 @@ type service struct {
 }
 
 func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
-	return &service{repo: repo,
+	return &service{
+		repo:                repo,
 		fetchRequestRepo:    fetchRequestRepo,
 		uidService:          uidService,
 		fetchRequestService: fetchRequestService,
@@ -64,8 +65,8 @@ func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize
 		return nil, err
 	}
 
-	if pageSize < 1 || pageSize > 100 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 100")
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
 	return s.repo.ListForPackage(ctx, tnt, packageID, pageSize, cursor)
@@ -110,7 +111,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 
 	err = s.repo.Create(ctx, api)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "while creating api")
 	}
 
 	if in.Spec != nil && in.Spec.FetchRequest != nil {
@@ -119,7 +120,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 			return "", errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
 
-		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
+		api.Spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 
 		err = s.repo.Update(ctx, api)
 		if err != nil {
@@ -153,7 +154,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 			return errors.Wrapf(err, "while creating FetchRequest for APIDefinition %s", id)
 		}
 
-		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fr)
+		api.Spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
 	}
 
 	err = s.repo.Update(ctx, api)
@@ -195,7 +196,7 @@ func (s *service) RefetchAPISpec(ctx context.Context, id string) (*model.APISpec
 	}
 
 	if fetchRequest != nil {
-		api.Spec.Data = s.fetchRequestService.HandleAPISpec(ctx, fetchRequest)
+		api.Spec.Data = s.fetchRequestService.HandleSpec(ctx, fetchRequest)
 	}
 
 	err = s.repo.Update(ctx, api)
