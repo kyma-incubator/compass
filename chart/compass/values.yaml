@@ -23,7 +23,7 @@ global:
       version: "PR-1674"
     director:
       dir:
-      version: "PR-XXXX"
+      version: "PR-1700"
     gateway:
       dir:
       version: "PR-1695"
@@ -41,7 +41,7 @@ global:
       version: "PR-1666"
     system_broker:
       dir:
-      version: "PR-XXXX"
+      version: "PR-1700"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -68,7 +68,7 @@ global:
         version: "PR-1674"
       system_broker:
         dir:
-        version: "PR-XXXX"
+        version: "PR-1700"
       ord_service:
         dir:
         version: "PR-1691"
