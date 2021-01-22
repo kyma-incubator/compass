@@ -17,22 +17,27 @@ DROP VIEW ord_labels;
 DROP VIEW tags;
 DROP VIEW countries;
 DROP VIEW package_links;
+DROP VIEW credential_request_strategies;
+
+ALTER TABLE api_definitions DROP CONSTRAINT api_definitions_package_id_fk;
+ALTER TABLE api_definitions DROP COLUMN package_id;
+
+ALTER TABLE event_api_definitions DROP CONSTRAINT event_api_definitions_package_id_fk;
+ALTER TABLE event_api_definitions DROP COLUMN package_id;
 
 DROP TABLE packages;
 
 ALTER TABLE bundles RENAME TO packages;
 
 ALTER TABLE packages
-    ADD COLUMN ord_id            VARCHAR(256), /* ORD Required, nullable due to backwards compatibility */
-    ADD COLUMN short_description VARCHAR(255), /* ORD Required, nullable due to backwards compatibility */
     ADD COLUMN version           VARCHAR(256), /* ORD Required, nullable due to backwards compatibility */
     ADD COLUMN package_links     JSONB,
-    ADD COLUMN links             JSONB,
     ADD COLUMN licence_type      VARCHAR(256),
     ADD COLUMN provider          JSONB,
     ADD COLUMN tags              JSONB,
-    ADD COLUMN countries         JSONB,
-    ADD COLUMN labels            JSONB;
+    ADD COLUMN countries         JSONB;
+
+ALTER TABLE packages DROP COLUMN credential_request_strategies;
 
 ALTER TABLE bundle_instance_auths RENAME TO package_instance_auths;
 
