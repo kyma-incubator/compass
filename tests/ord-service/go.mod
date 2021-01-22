@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/99designs/gqlgen v0.10.2 // indirect
-	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20210121133746-d2a1d973bbc1
 	github.com/kyma-incubator/compass/tests/director v0.0.0-20201230234453-c6824d9f3df6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
