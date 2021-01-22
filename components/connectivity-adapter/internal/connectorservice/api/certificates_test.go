@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 
 	mocks "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector/automock"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	schema "github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/sirupsen/logrus"

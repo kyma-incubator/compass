@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type SecuredConnectorClient interface {
+type SecuredConnectivityAdapterClient interface {
 	GetMgmInfo(t *testing.T, url string) (*ManagementInfoResponse, *Error)
 	RenewCertificate(t *testing.T, url string, csr string) (*CrtResponse, *Error)
 	RevokeCertificate(t *testing.T, url string) *Error
@@ -22,7 +22,7 @@ type securedConnectorClient struct {
 	tenant     string
 }
 
-func NewSecuredConnectorClient(skipVerify bool, key *rsa.PrivateKey, certs []byte, tenant string) SecuredConnectorClient {
+func NewSecuredConnectorClient(skipVerify bool, key *rsa.PrivateKey, certs []byte, tenant string) SecuredConnectivityAdapterClient {
 	client := NewTLSClientWithCert(skipVerify, key, certs)
 
 	return &securedConnectorClient{

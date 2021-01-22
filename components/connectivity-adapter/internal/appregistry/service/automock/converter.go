@@ -6,7 +6,7 @@ import (
 	graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	mock "github.com/stretchr/testify/mock"
 
-	model "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
+	model "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 
 	service "github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service"
 )
