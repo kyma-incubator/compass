@@ -317,6 +317,11 @@ func TestORDService(t *testing.T) {
 		}
 	})
 
+	t.Run("Requesting Packages returns empty", func(t *testing.T) {
+		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis,events&$format=json", testConfig.ORDServiceURL))
+		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
+	})
+
 	// Paging:
 	t.Run("Requesting paging of Bundles returns them as expected", func(t *testing.T) {
 		totalCount := len(appInput.Bundles)
