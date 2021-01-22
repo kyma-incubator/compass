@@ -20,5 +20,3 @@ func (g *GqlFakeServer) Close() {
 func (g *GqlFakeServer) URL() string {
 	return g.server.URL
 }
-
-

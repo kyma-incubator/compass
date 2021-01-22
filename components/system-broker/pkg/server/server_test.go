@@ -1,21 +1,20 @@
 package server_test
 
 import (
-	"net/http"
-	"net/url"
-	"testing"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"github.com/stretchr/testify/require"
+	"net/http"
+	"net/url"
+	"reflect"
+	"testing"
+	"unsafe"
 )
 
 func TestNewAddsAdditionalRoutes(t *testing.T) {
 	config := server.DefaultConfig()
-	uuid := uuid.NewService()
 
-	server := server.New(config, uuid, []mux.MiddlewareFunc{}, func(router *mux.Router) {
+	server := server.New(config, []mux.MiddlewareFunc{}, func(router *mux.Router) {
 		router.HandleFunc(config.RootAPI+"/test", func(writer http.ResponseWriter, request *http.Request) {
 			writer.WriteHeader(http.StatusOK)
 		})
@@ -26,7 +25,6 @@ func TestNewAddsAdditionalRoutes(t *testing.T) {
 
 func TestNewAddsSystemLivenessRoutes(t *testing.T) {
 	config := server.DefaultConfig()
-	uuid := uuid.NewService()
 
 	var tests = []struct {
 		Msg   string
@@ -44,7 +42,7 @@ func TestNewAddsSystemLivenessRoutes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Msg, func(t *testing.T) {
-			server := server.New(config, uuid, []mux.MiddlewareFunc{})
+			server := server.New(config, []mux.MiddlewareFunc{})
 			AssertRouteExists(t, server, test.Route)
 		})
 	}
@@ -52,7 +50,6 @@ func TestNewAddsSystemLivenessRoutes(t *testing.T) {
 
 func TestNewAddsSystemRoutes(t *testing.T) {
 	config := server.DefaultConfig()
-	uuid := uuid.NewService()
 
 	var tests = []struct {
 		Msg   string
@@ -86,14 +83,16 @@ func TestNewAddsSystemRoutes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Msg, func(t *testing.T) {
-			server := server.New(config, uuid, []mux.MiddlewareFunc{})
+			server := server.New(config, []mux.MiddlewareFunc{})
 			AssertRouteExists(t, server, config.RootAPI+test.Route)
 		})
 	}
 }
 
 func AssertRouteExists(t *testing.T, server *server.Server, path string) {
-	router, ok := server.Handler.(*mux.Router)
+	handler := server.Handler
+
+	router, ok := extractMuxRouter(handler)
 	require.True(t, ok)
 
 	match := &mux.RouteMatch{}
@@ -102,4 +101,15 @@ func AssertRouteExists(t *testing.T, server *server.Server, path string) {
 			Path: path,
 		},
 	}, match), match.MatchErr)
+}
+
+func extractMuxRouter(handler http.Handler) (*mux.Router, bool) {
+	innerHandlerValue := reflect.ValueOf(handler).Elem().FieldByName("h").Elem()
+	innerHandlerValue = innerHandlerValue.Elem().FieldByName("h").Elem()
+	innerHandlerValue = innerHandlerValue.Elem().FieldByName("handler").Elem()
+	innerHandlerValue = innerHandlerValue.Elem().FieldByName("h")
+	routerValue := reflect.NewAt(innerHandlerValue.Type(), unsafe.Pointer(innerHandlerValue.UnsafeAddr())).Elem()
+
+	router, ok := routerValue.Interface().(*mux.Router)
+	return router, ok
 }

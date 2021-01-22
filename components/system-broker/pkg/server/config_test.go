@@ -29,10 +29,10 @@ func TestConfig_Validate(t *testing.T) {
 			},
 		},
 		{
-			Msg: "Missing RequestTimeout should be invalid",
+			Msg: "Missing Timeout should be invalid",
 			ConfigProvider: func() *server.Config {
 				config := server.DefaultConfig()
-				config.RequestTimeout = 0
+				config.Timeout = 0
 				return config
 			},
 		},

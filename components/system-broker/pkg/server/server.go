@@ -25,8 +25,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/handler"
+
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/panic_recovery"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -39,7 +42,7 @@ type Server struct {
 	shutdownTimeout time.Duration
 }
 
-func New(c *Config, service log.UUIDService, middlewares []mux.MiddlewareFunc, routesProvider ...func(router *mux.Router)) *Server {
+func New(c *Config, middlewares []mux.MiddlewareFunc, routesProvider ...func(router *mux.Router)) *Server {
 	s := &Server{
 		shutdownTimeout: c.ShutdownTimeout,
 		routesProvider:  routesProvider,
@@ -58,7 +61,8 @@ func New(c *Config, service log.UUIDService, middlewares []mux.MiddlewareFunc, r
 	router.HandleFunc(c.RootAPI+"/debug/pprof/symbol", pprof.Symbol)
 	router.HandleFunc(c.RootAPI+"/debug/pprof/trace", pprof.Trace)
 
-	router.Use(log.RequestLogger(service))
+	router.Use(correlation.AttachCorrelationIDToContext())
+	router.Use(log.RequestLogger())
 	router.Use(panic_recovery.NewRecoveryMiddleware())
 
 	for _, m := range middlewares {
@@ -69,13 +73,18 @@ func New(c *Config, service log.UUIDService, middlewares []mux.MiddlewareFunc, r
 		applyRoutes(router)
 	}
 
+	handlerWithTimeout, err := handler.WithTimeout(router, c.Timeout)
+	if err != nil {
+		log.D().Fatalf("Could not create timeout handler: %v\n", err)
+	}
+
 	s.Server = &http.Server{
 		Addr:    ":" + strconv.Itoa(c.Port),
-		Handler: router,
+		Handler: handlerWithTimeout,
 
-		ReadTimeout:  c.RequestTimeout,
-		WriteTimeout: c.RequestTimeout,
-		IdleTimeout:  c.RequestTimeout,
+		ReadTimeout:  c.Timeout,
+		WriteTimeout: c.Timeout,
+		IdleTimeout:  c.Timeout,
 	}
 
 	return s

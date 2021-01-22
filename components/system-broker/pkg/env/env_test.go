@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"

@@ -18,21 +18,28 @@ package log
 
 import (
 	. "code.cloudfoundry.org/lager"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pivotal-cf/brokerapi/middlewares"
 	"github.com/sirupsen/logrus"
 )
 
-// LagerAdapter is used to adapt lager.Logger interface with logrus logger and kibana formatter
+const (
+	// FieldComponentName is the key of the component field in the log message.
+	FieldComponentName = "component"
+	FieldCorrelationID = "x-request-id"
+)
+
+// LagerAdapter is used to adapt log.Logger interface with logrus logger and kibana formatter
 type LagerAdapter struct {
 	entry *logrus.Entry
 }
 
 // NewDefaultLagerAdapter returns new LagerAdapter from logrus entity
 func NewDefaultLagerAdapter() *LagerAdapter {
-	return &LagerAdapter{entry: D()}
+	return &LagerAdapter{entry: log.D()}
 }
 
-// RegisterSink is not applicable for LagerAdapter, implemented to satisfy lager.Logger interface
+// RegisterSink is not applicable for LagerAdapter, implemented to satisfy log.Logger interface
 func (l *LagerAdapter) RegisterSink(Sink) {
 	if l.entry != nil {
 		l.entry.Error("LagerAdapter does not work with sinks.")
@@ -88,7 +95,7 @@ func (l *LagerAdapter) WithData(data Data) Logger {
 
 func (l *LagerAdapter) newWithData(data ...Data) *LagerAdapter {
 	if l.entry == nil {
-		l.entry = D()
+		l.entry = log.D()
 	}
 
 	e := copyEntry(l.entry)
@@ -107,4 +114,20 @@ func appendData(entry *logrus.Entry, data ...Data) {
 			}
 		}
 	}
+}
+
+func copyEntry(entry *logrus.Entry) *logrus.Entry {
+	entryData := make(logrus.Fields, len(entry.Data))
+	for k, v := range entry.Data {
+		entryData[k] = v
+	}
+
+	newEntry := logrus.NewEntry(entry.Logger)
+	newEntry.Level = entry.Level
+	newEntry.Data = entryData
+	newEntry.Time = entry.Time
+	newEntry.Message = entry.Message
+	newEntry.Buffer = entry.Buffer
+
+	return newEntry
 }

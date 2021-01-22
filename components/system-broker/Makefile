@@ -1,6 +1,6 @@
 APP_NAME = compass-system-broker
 APP_PATH = components/system-broker
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20201008-a3fab681
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20201208-f3aa8f74
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"

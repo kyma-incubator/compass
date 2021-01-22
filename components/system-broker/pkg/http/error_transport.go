@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 

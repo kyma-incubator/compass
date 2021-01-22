@@ -53,44 +53,12 @@ spec:
           env:
             - name: SERVER_PORT
               value: "{{ .Values.deployment.args.containerPort }}"
-            # - name: SERVER_REQUEST_TIMEOUT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: SERVER_SHUTDOWN_TIMEOUT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: SERVER_SELF_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT
               value: "http://{{ .Values.global.gateway.tls.host }}.{{ .Release.Namespace }}.svc.cluster.local:{{.Values.global.gateway.port }}/director/graphql"
-            # - name: GRAPHQL_CLIENT_ENABLE_LOGGING
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: LOG_LEVEL
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: LOG_FORMAT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: LOG_OUTPUT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: LOG_BOOTSTRAPCORRELATIONID
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: HTTP_CLIENT_TIMEOUT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: HTTP_CLIENT_TLS_HANDSHAKE_TIMEOUT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: HTTP_CLIENT_IDLE_CONN_TIMEOUT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: HTTP_CLIENT_RESPONSE_HEADER_TIMEOUT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: HTTP_CLIENT_DIAL_TIMEOUT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: HTTP_CLIENT_EXPECT_CONTINUE_TIMEOUT
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: HTTP_CLIENT_MAX_IDLE_CONS
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
-            # - name: HTTP_CLIENT_SKIP_SSL_VALIDATION
-            #   value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: HTTP_CLIENT_FORWARD_HEADERS
-              value: "{{ .Values.global.system_broker.forwardHeaders }}"
-            - name: HTTP_CLIENT_UNAUTHORIZED_STRING
-              value: {{ .Values.global.system_broker.unauthorizedString }}
+              value: "{{ .Values.global.system_broker.tokenProviderFromHeader.forwardHeaders }}"
           livenessProbe:
             httpGet:
               path: /healthz

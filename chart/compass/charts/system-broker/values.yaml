@@ -1,7 +1,7 @@
 deployment:
   replicaCount: 1
   image:
-    pullPolicy: Never
+    pullPolicy: IfNotPresent
   resources: {}
   args:
     containerPort: 5001

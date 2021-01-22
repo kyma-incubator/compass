@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pivotal-cf/brokerapi/domain/apiresponses"
 	"github.com/pkg/errors"
 )

@@ -17,31 +17,27 @@
 package http
 
 import (
+	"context"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/log"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 )
 
-func NewCorrelationIDTransport(roundTripper HTTPRoundTripper, uuidService uuid.Service) *CorrelationIDTransport {
+func NewCorrelationIDTransport(roundTripper HTTPRoundTripper) *CorrelationIDTransport {
 	return &CorrelationIDTransport{
 		roundTripper: roundTripper,
-		uuidService:  uuidService,
 	}
 }
 
 type CorrelationIDTransport struct {
 	roundTripper HTTPRoundTripper
-	uuidService  uuid.Service
 }
 
 func (c *CorrelationIDTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	ctx := r.Context()
-	entry := log.C(ctx)
-	if correlationID := log.CorrelationIDForRequest(r, c.uuidService); correlationID != "" {
-		entry = entry.WithField(log.FieldCorrelationID, correlationID)
-	}
-	ctx = log.ContextWithLogger(ctx, entry)
+	correlationHeaders := correlation.HeadersForRequest(r)
+
+	ctx = context.WithValue(ctx, correlation.HeadersContextKey, correlationHeaders)
 	r = r.WithContext(ctx)
 
 	return c.roundTripper.RoundTrip(r)

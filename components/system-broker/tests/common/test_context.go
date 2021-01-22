@@ -30,7 +30,6 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -74,7 +73,6 @@ func NewTestContextBuilder() *TestContextBuilder {
 			},
 			func(env env.Environment, servers map[string]FakeServer) {
 				env.Set("http_client.forward_headers", "Authorization")
-				env.Set("http_client.unauthorized_string", "insufficient scopes provided")
 			},
 		},
 		Servers: map[string]FakeServer{},
@@ -203,7 +201,7 @@ func newSystemBrokerServer(sbEnv env.Environment) FakeServer {
 	middlewares := []mux.MiddlewareFunc{
 		httputil.HeaderForwarder(cfg.HttpClient.ForwardHeaders),
 	}
-	sbServer := server.New(cfg.Server, uuid.NewService(), middlewares, osbApi, specsApi)
+	sbServer := server.New(cfg.Server, middlewares, osbApi, specsApi)
 
 	sbServer.Addr = "localhost:" + strconv.Itoa(cfg.Server.Port) // Needed to avoid annoying macOS permissions popup
 
