@@ -19,7 +19,7 @@ type SecuredClient interface {
 	RenewCertificate(t *testing.T, url string, csr string) (*CrtResponse, *Error)
 	RevokeCertificate(t *testing.T, url string) *Error
 
-	ListServices(t *testing.T, url string) (*ServicesResponse, *Error)
+	ListServices(t *testing.T, url string) ([]model.Service, *Error)
 	CreateService(t *testing.T, url string, service model.ServiceDetails) (*CreateServiceResponse, *Error)
 	GetService(t *testing.T, url string, id string) (*model.ServiceDetails, *Error)
 	UpdateService(t *testing.T, url string, id string, service model.ServiceDetails) (*model.ServiceDetails, *Error)
@@ -91,13 +91,13 @@ func (cc securedConnectorClient) RevokeCertificate(t *testing.T, url string) *Er
 	return cc.secureConnectorRequest(t, request, nil, http.StatusCreated)
 }
 
-func (cc securedConnectorClient) ListServices(t *testing.T, url string) (*ServicesResponse, *Error) {
+func (cc securedConnectorClient) ListServices(t *testing.T, url string) ([]model.Service, *Error) {
 	request := requestWithTenantHeaders(t, cc.tenant, url, http.MethodGet)
 
-	var servicesResponse ServicesResponse
-	errorResp := cc.secureConnectorRequest(t, request, &servicesResponse, http.StatusOK)
+	var services []model.Service
+	errorResp := cc.secureConnectorRequest(t, request, &services, http.StatusOK)
 
-	return &servicesResponse, errorResp
+	return services, errorResp
 }
 
 func (cc securedConnectorClient) CreateService(t *testing.T, url string, service model.ServiceDetails) (*CreateServiceResponse, *Error) {

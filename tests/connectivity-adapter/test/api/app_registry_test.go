@@ -103,9 +103,9 @@ func TestAppRegistry(t *testing.T) {
 
 		metadataURL := infoResponse.Api.MetadataURL
 
-		servicesResponse, errorResponse := adapterClient.ListServices(t, metadataURL)
+		services, errorResponse := adapterClient.ListServices(t, metadataURL)
 		require.Nil(t, errorResponse)
-		require.Len(t, servicesResponse.Services, 0)
+		require.Len(t, services, 0)
 
 		service := model.ServiceDetails{
 			Name:        "test-service",
@@ -148,16 +148,16 @@ func TestAppRegistry(t *testing.T) {
 		require.Nil(t, errorResponse)
 		require.Equal(t, service, updateServiceResponse)
 
-		servicesResponse, errorResponse = adapterClient.ListServices(t, metadataURL)
+		services, errorResponse = adapterClient.ListServices(t, metadataURL)
 		require.Nil(t, errorResponse)
-		require.Len(t, servicesResponse.Services, 1)
-		require.Equal(t, service, servicesResponse.Services[0])
+		require.Len(t, services, 1)
+		require.Equal(t, service, services[0])
 
 		errorResponse = adapterClient.DeleteService(t, metadataURL, createServiceResponse.ID)
 		require.Nil(t, errorResponse)
 
-		servicesResponse, errorResponse = adapterClient.ListServices(t, metadataURL)
+		services, errorResponse = adapterClient.ListServices(t, metadataURL)
 		require.Nil(t, errorResponse)
-		require.Len(t, servicesResponse.Services, 0)
+		require.Len(t, services, 0)
 	})
 }
