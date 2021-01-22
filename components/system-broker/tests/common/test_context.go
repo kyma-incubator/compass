@@ -28,7 +28,7 @@ import (
 	"github.com/gavv/httpexpect"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
-	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/lager"
+	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
 	"k8s.io/apimachinery/pkg/util/wait"
 )

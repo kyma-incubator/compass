@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package lager
+package log
 
 import (
 	. "code.cloudfoundry.org/lager"
@@ -29,7 +29,7 @@ const (
 	FieldCorrelationID = "x-request-id"
 )
 
-// LagerAdapter is used to adapt lager.Logger interface with logrus logger and kibana formatter
+// LagerAdapter is used to adapt log.Logger interface with logrus logger and kibana formatter
 type LagerAdapter struct {
 	entry *logrus.Entry
 }
@@ -39,7 +39,7 @@ func NewDefaultLagerAdapter() *LagerAdapter {
 	return &LagerAdapter{entry: log.D()}
 }
 
-// RegisterSink is not applicable for LagerAdapter, implemented to satisfy lager.Logger interface
+// RegisterSink is not applicable for LagerAdapter, implemented to satisfy log.Logger interface
 func (l *LagerAdapter) RegisterSink(Sink) {
 	if l.entry != nil {
 		l.entry.Error("LagerAdapter does not work with sinks.")

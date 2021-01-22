@@ -1,4 +1,4 @@
-package lager_test
+package log_test
 
 import (
 	"bytes"
@@ -9,14 +9,14 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	cflager "code.cloudfoundry.org/lager"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/lager"
+	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/log"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestLagerAdapter_Session(t *testing.T) {
 	session := "test-session"
-	adapter := lager.NewDefaultLagerAdapter()
+	adapter := sblog.NewDefaultLagerAdapter()
 	require.NotNil(t, adapter)
 	logger := adapter.Session(session)
 	require.Contains(t, logger.SessionName(), session)
@@ -30,7 +30,7 @@ type LagerAdapterSuite struct {
 	suite.Suite
 
 	buffer        *bytes.Buffer
-	adapter       *lager.LagerAdapter
+	adapter       *sblog.LagerAdapter
 	data          cflager.Data
 	inheritedData cflager.Data
 }
@@ -44,7 +44,7 @@ func (suite *LagerAdapterSuite) SetupTest() {
 
 	log.D().Logger.SetOutput(suite.buffer)
 
-	suite.adapter = lager.NewDefaultLagerAdapter()
+	suite.adapter = sblog.NewDefaultLagerAdapter()
 	suite.Require().NotNil(suite.adapter)
 
 	suite.data = cflager.Data{
