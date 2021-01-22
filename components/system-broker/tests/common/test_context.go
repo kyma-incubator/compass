@@ -73,7 +73,6 @@ func NewTestContextBuilder() *TestContextBuilder {
 			},
 			func(env env.Environment, servers map[string]FakeServer) {
 				env.Set("http_client.forward_headers", "Authorization")
-				env.Set("http_client.unauthorized_string", "insufficient scopes provided")
 			},
 		},
 		Servers: map[string]FakeServer{},

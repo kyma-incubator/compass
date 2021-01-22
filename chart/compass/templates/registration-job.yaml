@@ -1,4 +1,4 @@
-{{ if .Values.global.system_broker.enabled }}
+{{ if .Values.global.system_broker.tokenProviderFromSecret.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -61,7 +61,7 @@ spec:
               TOKEN_PAYLOAD='{"scopes": "'${SCOPES}'","tenant":"{{ .Values.global.defaultTenant }}"}'
               ENCODED_TOKEN_PAYLOAD=$(echo -e ${TOKEN_PAYLOAD} | base64 | tr -d \\n)
               INTERNAL_TOKEN="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.${ENCODED_TOKEN_PAYLOAD//=}."
-              SYSTEM_BROKER_SECRET_NAME={{ .Values.global.system_broker.secrets.integrationSystemCredentials.name }}
+              SYSTEM_BROKER_SECRET_NAME={{ .Values.global.system_broker.tokenProviderFromSecret.secrets.integrationSystemCredentials.name }}
 
               function wait_for_access_to_api_server() {
                 local cnt=0

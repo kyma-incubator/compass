@@ -138,10 +138,14 @@ global:
     enabled: true
     port: 5001
     prefix: /broker
-    forwardHeaders: Authorization
-    secrets:
-      integrationSystemCredentials:
-        name: compass-system-broker-credentials
+    tokenProviderFromHeader:
+      forwardHeaders: Authorization
+    tokenProviderFromSecret:
+      enabled: false
+      secrets:
+        integrationSystemCredentials:
+          name: compass-system-broker-credentials
+          namespace: compass-system
     testNamespace: kyma-system
 
   gateway:
