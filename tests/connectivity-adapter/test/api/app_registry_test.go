@@ -18,6 +18,8 @@ package api
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit"
@@ -25,7 +27,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit/director"
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestAppRegistry(t *testing.T) {

@@ -6,9 +6,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 
 	"github.com/stretchr/testify/require"
 )

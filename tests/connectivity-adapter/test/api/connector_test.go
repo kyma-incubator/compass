@@ -2,11 +2,12 @@ package api
 
 import (
 	"crypto/rsa"
-	connectivity_adapter "github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit/connectivity-adapter"
 	"net/http"
 	"net/url"
 	"strconv"
 	"testing"
+
+	connectivity_adapter "github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit/connectivity-adapter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 

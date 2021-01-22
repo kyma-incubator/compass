@@ -2,6 +2,7 @@ package connectivity_adapter
 
 import (
 	"crypto/x509"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 )
 
