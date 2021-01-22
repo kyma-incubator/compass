@@ -1,4 +1,4 @@
-package connector
+package connectivity_adapter
 
 import (
 	"bytes"
@@ -66,7 +66,7 @@ func (cc connectorClient) CreateToken(t *testing.T) TokenResponse {
 }
 
 func (cc connectorClient) GetInfo(t *testing.T, url string) (*InfoResponse, *Error) {
-	request := getRequestWithHeaders(t, cc.tenant, url)
+	request := requestWithTenantHeaders(t, cc.tenant, url, http.MethodGet)
 
 	response, err := cc.httpClient.Do(request)
 	require.NoError(t, err)
@@ -119,8 +119,15 @@ func (cc connectorClient) CreateCertChain(t *testing.T, csr, url string) (*CrtRe
 	return crtResponse, nil
 }
 
-func getRequestWithHeaders(t *testing.T, tenant, url string) *http.Request {
-	request, err := http.NewRequest(http.MethodGet, url, nil)
+func requestWithTenantHeaders(t *testing.T, tenant, url, method string) *http.Request {
+	return requestWithTenantHeadersAndBody(t, tenant, url, method, nil)
+}
+
+func requestWithTenantHeadersAndBody(t *testing.T, tenant, url, method string, rawBody interface{}) *http.Request {
+	jsonBody, err := json.Marshal(rawBody)
+	require.NoError(t, err)
+
+	request, err := http.NewRequest(method, url, bytes.NewBuffer(jsonBody))
 	require.NoError(t, err)
 
 	request.Header.Set("Tenant", tenant)

@@ -1,4 +1,4 @@
-package connector
+package connectivity_adapter
 
 import (
 	"crypto/rand"

@@ -1,20 +1,28 @@
-package connector
+package connectivity_adapter
 
 import (
 	"bytes"
 	"crypto/rsa"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-type SecuredConnectivityAdapterClient interface {
+type SecuredClient interface {
 	GetMgmInfo(t *testing.T, url string) (*ManagementInfoResponse, *Error)
 	RenewCertificate(t *testing.T, url string, csr string) (*CrtResponse, *Error)
 	RevokeCertificate(t *testing.T, url string) *Error
+
+	ListServices(t *testing.T, url string) (*ServicesResponse, *Error)
+	CreateService(t *testing.T, url string, service model.ServiceDetails) (*CreateServiceResponse, *Error)
+	GetService(t *testing.T, url string, id string) (*model.ServiceDetails, *Error)
+	UpdateService(t *testing.T, url string, id string, service model.ServiceDetails) (*model.ServiceDetails, *Error)
+	DeleteService(t *testing.T, url string, id string) *Error
 }
 
 type securedConnectorClient struct {
@@ -22,8 +30,8 @@ type securedConnectorClient struct {
 	tenant     string
 }
 
-func NewSecuredConnectorClient(skipVerify bool, key *rsa.PrivateKey, certs []byte, tenant string) SecuredConnectivityAdapterClient {
-	client := NewTLSClientWithCert(skipVerify, key, certs)
+func NewSecuredClient(skipVerify bool, key *rsa.PrivateKey, certs []byte, tenant string) SecuredClient {
+	client := newTLSClientWithCert(skipVerify, key, certs)
 
 	return &securedConnectorClient{
 		httpClient: client,
@@ -31,7 +39,7 @@ func NewSecuredConnectorClient(skipVerify bool, key *rsa.PrivateKey, certs []byt
 	}
 }
 
-func NewTLSClientWithCert(skipVerify bool, key *rsa.PrivateKey, certificate ...[]byte) *http.Client {
+func newTLSClientWithCert(skipVerify bool, key *rsa.PrivateKey, certificate ...[]byte) *http.Client {
 	tlsCert := tls.Certificate{
 		Certificate: certificate,
 		PrivateKey:  key,
@@ -53,7 +61,7 @@ func NewTLSClientWithCert(skipVerify bool, key *rsa.PrivateKey, certificate ...[
 }
 
 func (cc securedConnectorClient) GetMgmInfo(t *testing.T, url string) (*ManagementInfoResponse, *Error) {
-	request := getRequestWithHeaders(t, cc.tenant, url)
+	request := requestWithTenantHeaders(t, cc.tenant, url, http.MethodGet)
 
 	var mgmInfoResponse ManagementInfoResponse
 	errorResp := cc.secureConnectorRequest(t, request, &mgmInfoResponse, http.StatusOK)
@@ -79,9 +87,49 @@ func (cc securedConnectorClient) RevokeCertificate(t *testing.T, url string) *Er
 	require.NoError(t, err)
 	request.Close = true
 
-	errorResponse := cc.secureConnectorRequest(t, request, nil, http.StatusCreated)
+	return cc.secureConnectorRequest(t, request, nil, http.StatusCreated)
+}
 
-	return errorResponse
+func (cc securedConnectorClient) ListServices(t *testing.T, url string) (*ServicesResponse, *Error) {
+	request := requestWithTenantHeaders(t, cc.tenant, url, http.MethodGet)
+
+	var servicesResponse ServicesResponse
+	errorResp := cc.secureConnectorRequest(t, request, &servicesResponse, http.StatusOK)
+
+	return &servicesResponse, errorResp
+}
+
+func (cc securedConnectorClient) CreateService(t *testing.T, url string, service model.ServiceDetails) (*CreateServiceResponse, *Error) {
+	request := requestWithTenantHeadersAndBody(t, cc.tenant, url, http.MethodPost, service)
+
+	var createServiceResponse CreateServiceResponse
+	errorResp := cc.secureConnectorRequest(t, request, &createServiceResponse, http.StatusOK)
+
+	return &createServiceResponse, errorResp
+}
+
+func (cc securedConnectorClient) GetService(t *testing.T, url string, id string) (*model.ServiceDetails, *Error) {
+	request := requestWithTenantHeaders(t, cc.tenant, fmt.Sprintf("%s/%s", url, id), http.MethodGet)
+
+	var serviceDetails model.ServiceDetails
+	errorResp := cc.secureConnectorRequest(t, request, &serviceDetails, http.StatusOK)
+
+	return &serviceDetails, errorResp
+}
+
+func (cc securedConnectorClient) UpdateService(t *testing.T, url string, id string, service model.ServiceDetails) (*model.ServiceDetails, *Error) {
+	request := requestWithTenantHeadersAndBody(t, cc.tenant, fmt.Sprintf("%s/%s", url, id), http.MethodPut, service)
+
+	var serviceDetails model.ServiceDetails
+	errorResp := cc.secureConnectorRequest(t, request, &serviceDetails, http.StatusOK)
+
+	return &serviceDetails, errorResp
+}
+
+func (cc securedConnectorClient) DeleteService(t *testing.T, url string, id string) *Error {
+	request := requestWithTenantHeaders(t, cc.tenant, fmt.Sprintf("%s/%s", url, id), http.MethodDelete)
+
+	return cc.secureConnectorRequest(t, request, nil, http.StatusOK)
 }
 
 func (cc securedConnectorClient) secureConnectorRequest(t *testing.T, request *http.Request, data interface{}, expectedStatus int) *Error {

@@ -1,6 +1,9 @@
-package connector
+package connectivity_adapter
 
-import "crypto/x509"
+import (
+	"crypto/x509"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
+)
 
 type TokenResponse struct {
 	URL   string `json:"url"`
@@ -17,6 +20,14 @@ type ManagementInfoResponse struct {
 	URLs           ManagementInfoURLs        `json:"urls"`
 	ClientIdentity ApplicationClientIdentity `json:"clientIdentity"`
 	Certificate    CertInfo                  `json:"certificate"`
+}
+
+type ServicesResponse struct {
+	Services []model.Service `json:"services"`
+}
+
+type CreateServiceResponse struct {
+	ID string `json:"id"`
 }
 
 type ApplicationClientIdentity struct {
