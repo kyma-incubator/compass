@@ -39,7 +39,10 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-const acceptHeader = "Accept"
+const (
+	acceptHeader = "Accept"
+	tenantHeader = "Tenant"
+)
 
 func TestORDService(t *testing.T) {
 	appInput := directorSchema.ApplicationRegisterInput{
@@ -167,15 +170,15 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
-		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages", map[string][]string{acceptHeader: {"*/*"}})
+		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages", map[string][]string{acceptHeader: {"*/*"}, tenantHeader: {testConfig.DefaultTenant}})
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to response type specified by Accept header when it provides a specific type", func(t *testing.T) {
-		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages", map[string][]string{acceptHeader: {"application/json"}})
+		makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages", map[string][]string{acceptHeader: {"application/json"}, tenantHeader: {testConfig.DefaultTenant}})
 	})
 
 	t.Run("Requesting Packages returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json")
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 
 		require.Equal(t, len(appInput.Packages), len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, appInput.Packages[0].Name, gjson.Get(respBody, "value.0.title").String())
@@ -183,7 +186,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("Requesting APIs and their specs returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json")
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 
 		require.Equal(t, len(appInput.Packages[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
@@ -252,7 +255,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("Requesting Events and their specs returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json")
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 
 		require.Equal(t, len(appInput.Packages[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
@@ -321,32 +324,32 @@ func TestORDService(t *testing.T) {
 	t.Run("Requesting paging of Packages returns them as expected", func(t *testing.T) {
 		totalCount := len(appInput.Packages)
 
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$top=10&$skip=0&$format=json")
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$top=10&$skip=0&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, totalCount, len(gjson.Get(respBody, "value").Array()))
 
-		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$top=10&$skip=%d&$format=json", testConfig.ORDServiceURL, totalCount))
+		respBody = makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$top=10&$skip=%d&$format=json", testConfig.ORDServiceURL, totalCount), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 	})
 
 	t.Run("Requesting paging of Package APIs returns them as expected", func(t *testing.T) {
 		totalCount := len(appInput.Packages[0].APIDefinitions)
 
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=apis($top=10;$skip=0)&$format=json")
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=apis($top=10;$skip=0)&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.apis").Array()))
 
 		expectedItemCount := 1
-		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($top=10;$skip=%d)&$format=json", testConfig.ORDServiceURL, totalCount-expectedItemCount))
+		respBody = makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($top=10;$skip=%d)&$format=json", testConfig.ORDServiceURL, totalCount-expectedItemCount), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 	})
 
 	t.Run("Requesting paging of Package Events returns them as expected", func(t *testing.T) {
 		totalCount := len(appInput.Packages[0].EventDefinitions)
 
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=events($top=10;$skip=0)&$format=json")
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=events($top=10;$skip=0)&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.events").Array()))
 
 		expectedItemCount := 1
-		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($top=10;$skip=%d)&$format=json", testConfig.ORDServiceURL, totalCount-expectedItemCount))
+		respBody = makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($top=10;$skip=%d)&$format=json", testConfig.ORDServiceURL, totalCount-expectedItemCount), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 	})
 
@@ -355,11 +358,11 @@ func TestORDService(t *testing.T) {
 		pkgName := appInput.Packages[0].Name
 
 		escapedFilterValue := urlpkg.PathEscape(fmt.Sprintf("title eq '%s'", pkgName))
-		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$filter=(%s)&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
+		respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$filter=(%s)&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 
 		escapedFilterValue = urlpkg.PathEscape(fmt.Sprintf("title ne '%s'", pkgName))
-		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$filter=(%s)&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
+		respBody = makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$filter=(%s)&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 	})
 
@@ -368,11 +371,11 @@ func TestORDService(t *testing.T) {
 		apiName := appInput.Packages[0].APIDefinitions[0].Name
 
 		escapedFilterValue := urlpkg.PathEscape(fmt.Sprintf("title eq '%s'", apiName))
-		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
+		respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 
 		escapedFilterValue = urlpkg.PathEscape(fmt.Sprintf("title ne '%s'", apiName))
-		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
+		respBody = makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, totalCount-1, len(gjson.Get(respBody, "value.0.apis").Array()))
 	})
 
@@ -381,24 +384,24 @@ func TestORDService(t *testing.T) {
 		eventName := appInput.Packages[0].EventDefinitions[0].Name
 
 		escapedFilterValue := urlpkg.PathEscape(fmt.Sprintf("title eq '%s'", eventName))
-		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
+		respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 
 		escapedFilterValue = urlpkg.PathEscape(fmt.Sprintf("title ne '%s'", eventName))
-		respBody = makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue))
+		respBody = makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($filter=(%s))&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, totalCount-1, len(gjson.Get(respBody, "value.0.events").Array()))
 	})
 
 	// Projection:
 	t.Run("Requesting projection of Packages returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$select=title&$format=json")
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$select=title&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, appInput.Packages[0].Name, gjson.Get(respBody, "value.0.title").String())
 		require.Equal(t, false, gjson.Get(respBody, "value.0.description").Exists())
 	})
 
 	t.Run("Requesting projection of Package APIs returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=apis($select=title)&$format=json")
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=apis($select=title)&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 
 		apis := gjson.Get(respBody, "value.0.apis").Array()
 		require.Len(t, apis, len(appInput.Packages[0].APIDefinitions))
@@ -414,7 +417,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("Requesting projection of Package Events returns them as expected", func(t *testing.T) {
-		respBody := makeRequest(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=events($select=title)&$format=json")
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$expand=events($select=title)&$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 
 		events := gjson.Get(respBody, "value.0.events").Array()
 		require.Len(t, events, len(appInput.Packages[0].EventDefinitions))
@@ -432,7 +435,7 @@ func TestORDService(t *testing.T) {
 	//Ordering:
 	t.Run("Requesting ordering of Packages returns them as expected", func(t *testing.T) {
 		escapedOrderByValue := urlpkg.PathEscape("title asc,description desc")
-		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$orderby=%s&$format=json", testConfig.ORDServiceURL, escapedOrderByValue))
+		respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$orderby=%s&$format=json", testConfig.ORDServiceURL, escapedOrderByValue), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, appInput.Packages[0].Name, gjson.Get(respBody, "value.0.title").String())
 		require.Equal(t, *appInput.Packages[0].Description, gjson.Get(respBody, "value.0.description").String())
@@ -440,7 +443,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("Requesting ordering of Package APIs returns them as expected", func(t *testing.T) {
 		escapedOrderByValue := urlpkg.PathEscape("title asc,description desc")
-		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($orderby=%s)&$format=json", testConfig.ORDServiceURL, escapedOrderByValue))
+		respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=apis($orderby=%s)&$format=json", testConfig.ORDServiceURL, escapedOrderByValue), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 
 		apis := gjson.Get(respBody, "value.0.apis").Array()
 		require.Len(t, apis, len(appInput.Packages[0].APIDefinitions))
@@ -458,7 +461,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("Requesting ordering of Package Events returns them as expected", func(t *testing.T) {
 		escapedOrderByValue := urlpkg.PathEscape("title asc,description desc")
-		respBody := makeRequest(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($orderby=%s)&$format=json", testConfig.ORDServiceURL, escapedOrderByValue))
+		respBody := makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/packages?$expand=events($orderby=%s)&$format=json", testConfig.ORDServiceURL, escapedOrderByValue), map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
 
 		events := gjson.Get(respBody, "value.0.events").Array()
 		require.Len(t, events, len(appInput.Packages[0].EventDefinitions))
@@ -475,7 +478,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("Errors generate user-friendly message", func(t *testing.T) {
-		respBody := makeRequestWithStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/test?$format=json", http.StatusNotFound)
+		respBody := makeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusNotFound)
 
 		require.Contains(t, gjson.Get(respBody, "error.message").String(), "Use odata-debug query parameter with value one of the following formats: json,html,download for more information")
 	})
@@ -529,4 +532,19 @@ func makeRequestWithHeadersAndStatusExpect(t *testing.T, httpClient *http.Client
 	require.NoError(t, err)
 
 	return string(body)
+}
+
+func generateAppInputForDifferentTenants(appInput directorSchema.ApplicationRegisterInput, tenantName string) directorSchema.ApplicationRegisterInput {
+	for _, pkg := range appInput.Packages {
+		pkg.Name = pkg.Name + "-" + tenantName
+
+		for _, apiDef := range pkg.APIDefinitions {
+			apiDef.Name = apiDef.Name + "-" + tenantName
+		}
+
+		for _, eventDef := range pkg.EventDefinitions {
+			eventDef.Name = eventDef.Name + "-" + tenantName
+		}
+	}
+	return appInput
 }
