@@ -1,4 +1,4 @@
-APP_NAME = compass-connectivity-adapter
+APP_NAME = connectivity-adapter
 APP_PATH = components/connectivity-adapter
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20201208-f3aa8f74
