@@ -119,6 +119,12 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 			reqPackageModeGraphQLPattern := regexp.MustCompile(`(\s*)mode(\s*):(\s*)PACKAGE(\s*)`) // matches ` mode: PACKAGE `
 			body = reqPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}BUNDLE${4}")
 
+			body = strings.ReplaceAll(body, "PackageCreateInput", "BundleCreateInput")
+			body = strings.ReplaceAll(body, "PackageInstanceAuthRequestInput", "BundleInstanceAuthRequestInput")
+			body = strings.ReplaceAll(body, "PackageInstanceAuthSetInput", "BundleInstanceAuthSetInput")
+			body = strings.ReplaceAll(body, "PackageInstanceAuthStatusInput", "BundleInstanceAuthStatusInput")
+			body = strings.ReplaceAll(body, "PackageUpdateInput", "BundleUpdateInput")
+			
 			body = strings.ReplaceAll(body, "addPackage", "addBundle")
 			body = strings.ReplaceAll(body, "updatePackage", "updateBundle")
 			body = strings.ReplaceAll(body, "deletePackage", "deleteBundle")
