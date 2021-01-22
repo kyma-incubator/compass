@@ -292,8 +292,8 @@ func IsCannotReadTenant(err error) bool {
 	}
 }
 
-func IsNewInvalidDataError(err error) bool {
-	return ErrorCode(err) == InvalidData
+func IsNewInvalidOperationError(err error) bool {
+	return ErrorCode(err) == InvalidOperation
 }
 
 func IsNotFoundError(err error) bool {
