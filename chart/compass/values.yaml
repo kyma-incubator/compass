@@ -26,7 +26,7 @@ global:
       version: "PR-1693"
     gateway:
       dir:
-      version: "PR-1674"
+      version: "PR-1695"
     tenant_fetcher:
       dir:
       version: "PR-1674"
@@ -56,13 +56,13 @@ global:
         version: "PR-1693"
       connector:
         dir:
-        version: "PR-1693"
+        version: "PR-1674"
       connectivity_adapter:
         dir:
         version: "PR-1693"
       tenant_fetcher:
         dir:
-        version: "PR-1693"
+        version: "PR-1674"
       ord_service:
         dir:
         version: "PR-1693"
