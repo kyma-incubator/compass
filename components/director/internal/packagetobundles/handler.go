@@ -124,7 +124,7 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 			body = strings.ReplaceAll(body, "PackageInstanceAuthSetInput", "BundleInstanceAuthSetInput")
 			body = strings.ReplaceAll(body, "PackageInstanceAuthStatusInput", "BundleInstanceAuthStatusInput")
 			body = strings.ReplaceAll(body, "PackageUpdateInput", "BundleUpdateInput")
-			
+
 			body = strings.ReplaceAll(body, "addPackage", "addBundle")
 			body = strings.ReplaceAll(body, "updatePackage", "updateBundle")
 			body = strings.ReplaceAll(body, "deletePackage", "deleteBundle")
