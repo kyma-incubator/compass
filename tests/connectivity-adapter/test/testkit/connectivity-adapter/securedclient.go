@@ -130,7 +130,7 @@ func (cc securedConnectorClient) UpdateService(t *testing.T, url string, id stri
 func (cc securedConnectorClient) DeleteService(t *testing.T, url string, id string) *Error {
 	request := requestWithTenantHeaders(t, cc.tenant, fmt.Sprintf("%s/%s", url, id), http.MethodDelete)
 
-	return cc.secureConnectorRequest(t, request, nil, http.StatusOK)
+	return cc.secureConnectorRequest(t, request, nil, http.StatusNoContent)
 }
 
 func (cc securedConnectorClient) secureConnectorRequest(t *testing.T, request *http.Request, data interface{}, expectedStatus int) *Error {

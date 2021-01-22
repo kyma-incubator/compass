@@ -114,12 +114,6 @@ func TestAppRegistry(t *testing.T) {
 			Api: &model.API{
 				TargetUrl: "http://target.com",
 				Credentials: &model.CredentialsWithCSRF{
-					BasicWithCSRF: &model.BasicAuthWithCSRF{
-						BasicAuth: model.BasicAuth{
-							Username: "username",
-							Password: "password",
-						},
-					},
 					OauthWithCSRF: &model.OauthWithCSRF{
 						Oauth: model.Oauth{
 							URL:          "http://test.com/token",
@@ -129,8 +123,9 @@ func TestAppRegistry(t *testing.T) {
 					},
 				},
 			},
+			Labels: &map[string]string{},
 			Events: &model.Events{
-				Spec: json.RawMessage(`asyncapi: "1.2.0"`),
+				Spec: json.RawMessage(`{"asyncapi":"1.2.0"}`),
 			},
 		}
 
@@ -138,20 +133,24 @@ func TestAppRegistry(t *testing.T) {
 		require.Nil(t, errorResponse)
 		require.NotNil(t, createServiceResponse.ID)
 
+		expectedService := service
+		expectedService.Provider = ""
+
 		serviceResponse, errorResponse := adapterClient.GetService(t, metadataURL, createServiceResponse.ID)
 		require.Nil(t, errorResponse)
-		require.Equal(t, service, serviceResponse)
+		require.Equal(t, &expectedService, serviceResponse)
 
-		service.Api.TargetUrl = service.Api.TargetUrl + "/test"
+		expectedService.Api.TargetUrl = service.Api.TargetUrl + "/test"
 
 		updateServiceResponse, errorResponse := adapterClient.UpdateService(t, metadataURL, createServiceResponse.ID, service)
 		require.Nil(t, errorResponse)
-		require.Equal(t, service, updateServiceResponse)
+		require.Equal(t, &expectedService, updateServiceResponse)
 
 		services, errorResponse = adapterClient.ListServices(t, metadataURL)
 		require.Nil(t, errorResponse)
 		require.Len(t, services, 1)
-		require.Equal(t, service, services[0])
+		require.Equal(t, expectedService.Name, services[0].Name)
+		require.Equal(t, expectedService.Description, services[0].Description)
 
 		errorResponse = adapterClient.DeleteService(t, metadataURL, createServiceResponse.ID)
 		require.Nil(t, errorResponse)
