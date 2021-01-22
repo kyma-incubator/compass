@@ -17,7 +17,6 @@ import (
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit"
-	"github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit/connector"
 	"github.com/stretchr/testify/require"
 )
 
