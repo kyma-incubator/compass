@@ -17,23 +17,20 @@ type Worker struct {
 	collector       MetricCollector
 }
 
-func NewWorker(svc proxy.AuditlogService, auditlogChannel chan proxy.AuditlogMessage, done chan bool, collector MetricCollector) *Worker {
+func NewWorker(svc proxy.AuditlogService, auditlogChannel chan proxy.AuditlogMessage, collector MetricCollector) *Worker {
 	return &Worker{
 		svc:             svc,
 		auditlogChannel: auditlogChannel,
-		done:            done,
 		collector:       collector,
 	}
 }
 
-func (w *Worker) Start() {
-	ctx := context.Background()
+func (w *Worker) Start(ctx context.Context) {
 	logger := log.C(ctx)
 	for {
 		select {
-		case <-w.done:
+		case <-ctx.Done():
 			logger.Infoln("Worker for auditlog message processing has finished")
-			ctx.Done()
 			return
 		case msg := <-w.auditlogChannel:
 			logger.Debugf("Read from auditlog channel (size=%d, cap=%d)", len(w.auditlogChannel), cap(w.auditlogChannel))

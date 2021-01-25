@@ -11,7 +11,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/director/pkg/handler"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -23,7 +22,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
@@ -62,12 +60,11 @@ func main() {
 	exitOnError(err, "Failed to configure Logger")
 	logger := log.C(ctx)
 
-	done := make(chan bool)
 	var auditlogSink proxy.AuditlogService
 	var auditlogSvc proxy.AuditlogService
 	if cfg.AuditlogEnabled {
 		logger.Infoln("Auditlog is enabled")
-		auditlogSink, auditlogSvc, err = initAuditLogs(ctx, done, metricsCollector)
+		auditlogSink, auditlogSvc, err = initAuditLogs(ctx, metricsCollector)
 		exitOnError(err, "Error while initializing auditlog service")
 	} else {
 		logger.Infoln("Auditlog is disabled")
@@ -92,14 +89,11 @@ func main() {
 		}
 	})
 
-	handlerWithTimeout, err := handler.WithTimeout(router, cfg.ServerTimeout)
-	exitOnError(err, "Failed configuring timeout on handler")
-
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, handlerWithTimeout, "main", cfg.ServerTimeout)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, router, "main", cfg.ServerTimeout)
 
 	go func() {
 		<-ctx.Done()
@@ -147,7 +141,7 @@ func createServer(ctx context.Context, address string, handler http.Handler, nam
 
 	shutdownFn := func() {
 		logger.Infof("Shutting down %s server...", name)
-		if err := srv.Shutdown(context.Background()); err != nil {
+		if err := srv.Shutdown(ctx); err != nil {
 			logger.WithError(err).Errorf("%s HTTP server Shutdown", name)
 		}
 	}
@@ -164,7 +158,7 @@ func exitOnError(err error, context string) {
 
 // initAuditLogs creates proxy.AuditlogService instances, the first one is an asynchronous sink,
 // while the second one is a synchronous service with pre-logging functionality.
-func initAuditLogs(ctx context.Context, done chan bool, collector *metrics.AuditlogCollector) (proxy.AuditlogService, proxy.AuditlogService, error) {
+func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (proxy.AuditlogService, proxy.AuditlogService, error) {
 	cfg := auditlog.Config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
@@ -230,7 +224,7 @@ func initAuditLogs(ctx context.Context, done chan bool, collector *metrics.Audit
 	auditlogSvc := auditlog.NewService(auditlogClient, msgFactory)
 	msgChannel := make(chan proxy.AuditlogMessage, cfg.MsgChannelSize)
 	workers := make(chan bool, cfg.WriteWorkers)
-	initWorkers(ctx, workers, auditlogSvc, done, msgChannel, collector)
+	initWorkers(ctx, workers, auditlogSvc, msgChannel, collector)
 
 	log.C(ctx).Infof("Auditlog configured successfully, auth mode: %s", cfg.AuthMode)
 	return auditlog.NewSink(msgChannel, cfg.MsgChannelTimeout, collector), auditlogSvc, nil
@@ -245,23 +239,23 @@ func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
 	}
 }
 
-func initWorkers(ctx context.Context, workers chan bool, auditlogSvc proxy.AuditlogService, done chan bool, msgChannel chan proxy.AuditlogMessage, collector *metrics.AuditlogCollector) {
+func initWorkers(ctx context.Context, workers chan bool, auditlogSvc proxy.AuditlogService, msgChannel chan proxy.AuditlogMessage, collector *metrics.AuditlogCollector) {
 	logger := log.C(ctx)
 
-	go func(log *logrus.Entry) {
+	go func() {
 		for {
 			select {
-			case <-done:
-				log.Infoln("Worker starter goroutine finished")
+			case <-ctx.Done():
+				logger.Infoln("Worker starter goroutine finished")
 				return
 			case workers <- true:
 			}
-			worker := auditlog.NewWorker(auditlogSvc, msgChannel, done, collector)
+			worker := auditlog.NewWorker(auditlogSvc, msgChannel, collector)
 			go func() {
-				log.Infoln("Starting worker for auditlog message processing")
-				worker.Start()
+				logger.Infoln("Starting worker for auditlog message processing")
+				worker.Start(ctx)
 				<-workers
 			}()
 		}
-	}(logger)
+	}()
 }
