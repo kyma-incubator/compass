@@ -20,6 +20,7 @@ package packagetobundles
 import (
 	"context"
 	"encoding/json"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -64,7 +65,7 @@ func NewHandler(transact persistence.Transactioner) *Handler {
 	}
 }
 
-func (h *Handler) Handle() func(next http.Handler) http.Handler {
+func (h *Handler) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -85,7 +86,7 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 
 				if consumerInfo.ConsumerType == consumer.Runtime {
 					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
-						log.C(ctx).WithError(err).Error("Error labelling runtime with bundles param")
+						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q", useBundlesParam)
 					}
 				}
 
@@ -107,26 +108,7 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 			body := string(reqBody)
 			body = strings.ReplaceAll(body, "\\n", "") // removes unnecessary complexity from the next regexes
 
-			reqPackagesJSONPattern := regexp.MustCompile(`(\s*)packages(\s*:\s*\[)`) // matches ` packages:  [`
-			body = reqPackagesJSONPattern.ReplaceAllString(body, "${1}bundles${2}")
-
-			reqPackagesGraphQLPattern := regexp.MustCompile(`(\s*)packages(\s*\{)`) // matches ` packages {`
-			body = reqPackagesGraphQLPattern.ReplaceAllString(body, "${1}bundles${2}")
-
-			reqPackageGraphQLPattern := regexp.MustCompile(`(\s*)package(\s*\(\s*id\s*:\s*)`) // matches ` package ( id : `
-			body = reqPackageGraphQLPattern.ReplaceAllString(body, "${1}bundle${2}")
-
-			reqPackageModeGraphQLPattern := regexp.MustCompile(`(\s*)mode(\s*):(\s*)PACKAGE(\s*)`) // matches ` mode: PACKAGE `
-			body = reqPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}BUNDLE${4}")
-
-			body = strings.ReplaceAll(body, "packageID", "bundleID")
-
-			body = strings.ReplaceAll(body, "PackageCreateInput", "BundleCreateInput")
-			body = strings.ReplaceAll(body, "PackageInstanceAuthRequestInput", "BundleInstanceAuthRequestInput")
-			body = strings.ReplaceAll(body, "PackageInstanceAuthSetInput", "BundleInstanceAuthSetInput")
-			body = strings.ReplaceAll(body, "PackageInstanceAuthStatusInput", "BundleInstanceAuthStatusInput")
-			body = strings.ReplaceAll(body, "PackageUpdateInput", "BundleUpdateInput")
-
+			// rewrite Query/Mutation names
 			body = strings.ReplaceAll(body, "addPackage", "addBundle")
 			body = strings.ReplaceAll(body, "updatePackage", "updateBundle")
 			body = strings.ReplaceAll(body, "deletePackage", "deleteBundle")
@@ -137,6 +119,28 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 			body = strings.ReplaceAll(body, "deletePackageInstanceAuth", "deleteBundleInstanceAuth")
 			body = strings.ReplaceAll(body, "requestPackageInstanceAuthCreation", "requestBundleInstanceAuthCreation")
 			body = strings.ReplaceAll(body, "requestPackageInstanceAuthDeletion", "requestBundleInstanceAuthDeletion")
+
+			// rewrite Query/Mutation arguments
+			body = strings.ReplaceAll(body, "packageID", "bundleID")
+			body = strings.ReplaceAll(body, "PackageCreateInput", "BundleCreateInput")
+			body = strings.ReplaceAll(body, "PackageInstanceAuthRequestInput", "BundleInstanceAuthRequestInput")
+			body = strings.ReplaceAll(body, "PackageInstanceAuthSetInput", "BundleInstanceAuthSetInput")
+			body = strings.ReplaceAll(body, "PackageInstanceAuthStatusInput", "BundleInstanceAuthStatusInput")
+			body = strings.ReplaceAll(body, "PackageUpdateInput", "BundleUpdateInput")
+
+			// rewrite JSON input
+			reqPackagesJSONPattern := regexp.MustCompile(`(\s*)packages(\s*:\s*\[)`) // matches ` packages:  [`
+			body = reqPackagesJSONPattern.ReplaceAllString(body, "${1}bundles${2}")
+
+			// rewrite GQL output
+			reqPackagesGraphQLPattern := regexp.MustCompile(`(\s*)packages(\s*\{)`) // matches ` packages {`
+			body = reqPackagesGraphQLPattern.ReplaceAllString(body, "${1}bundles${2}")
+
+			reqPackageGraphQLPattern := regexp.MustCompile(`(\s*)package(\s*\(\s*id\s*:\s*)`) // matches ` package ( id : `
+			body = reqPackageGraphQLPattern.ReplaceAllString(body, "${1}bundle${2}")
+
+			reqPackageModeGraphQLPattern := regexp.MustCompile(`(\s*)mode(\s*):(\s*)PACKAGE(\s*)`) // matches ` mode: PACKAGE `
+			body = reqPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}BUNDLE${4}")
 
 			r.Body = ioutil.NopCloser(strings.NewReader(body))
 			r.ContentLength = int64(len(body))
@@ -182,14 +186,12 @@ func (h *Handler) Handle() func(next http.Handler) http.Handler {
 func (h *Handler) labelRuntimeWithBundlesParam(ctx context.Context, consumerInfo consumer.Consumer) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Error determining request tenant")
-		return apperrors.InternalErrorFrom(err, "while determining request tenant")
+		return errors.Wrap(err, "while determining request tenant")
 	}
 
 	tx, err := h.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Error("An error occurred while opening the db transaction.")
-		return apperrors.InternalErrorFrom(err, "while communicating with the database")
+		return errors.Wrap(err, "while opening db transaction")
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 
@@ -202,14 +204,11 @@ func (h *Handler) labelRuntimeWithBundlesParam(ctx context.Context, consumerInfo
 		ObjectID:   consumerInfo.ConsumerID,
 		ObjectType: model.LabelableObject(consumerInfo.ConsumerType),
 	}); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while upserting %q label", useBundlesParam)
-		return apperrors.InternalErrorFrom(err, "while executing database transaction")
+		return errors.Wrapf(err, "while upserting %q label", useBundlesParam)
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while finalizing upsert of %q label", useBundlesParam)
-		return apperrors.InternalErrorFrom(err, "while finalizing database transaction")
+	if err = tx.Commit(); err != nil {
+		return errors.Wrap(err, "while committing database transaction")
 	}
 
 	return nil

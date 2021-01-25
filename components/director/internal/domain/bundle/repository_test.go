@@ -244,7 +244,7 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 	instanceAuthID := "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
 
-	selectQuery := `^SELECT b.id, b.tenant_id, b.app_id, b.name, b.description, b.instance_auth_request_json_schema, b.default_instance_auth FROM public.bundles AS p JOIN public.bundle_instance_auths AS a on a.bundle_id=b.id where a.tenant_id=\$1 AND a.id=\$2`
+	selectQuery := `^SELECT b.id, b.tenant_id, b.app_id, b.name, b.description, b.instance_auth_request_json_schema, b.default_instance_auth FROM public.bundles AS b JOIN public.bundle_instance_auths AS a on a.bundle_id=b.id where a.tenant_id=\$1 AND a.id=\$2`
 
 	t.Run("Success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
