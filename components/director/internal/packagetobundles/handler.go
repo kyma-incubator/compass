@@ -20,12 +20,13 @@ package packagetobundles
 import (
 	"context"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
