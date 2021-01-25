@@ -18,6 +18,7 @@ package env
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -161,9 +162,13 @@ func (v *ViperEnv) setupConfigFile(ctx context.Context, onConfigChangeHandlers .
 	dynamicLogHandler := func(env Environment) func(event fsnotify.Event) {
 		return func(event fsnotify.Event) {
 			if strings.Contains(event.String(), "WRITE") || strings.Contains(event.String(), "CREATE") {
-				logLevel := env.Get("log.level").(string)
-				logFormat := env.Get("log.format").(string)
-				logOutput := env.Get("log.output").(string)
+				logLevel, lok := env.Get("log.level").(string)
+				logFormat, fok := env.Get("log.format").(string)
+				logOutput, ook := env.Get("log.output").(string)
+				if lok || fok || ook {
+					log.C(ctx).WithError(errors.New("conversion failed")).Errorf("Failed to convert environment variables")
+				}
+
 				bootstrapCorrelationID := log.Configuration().BootstrapCorrelationID
 
 				log.C(ctx).Warnf("Reconfiguring logrus logging using level %s and format %s", logLevel, logFormat)

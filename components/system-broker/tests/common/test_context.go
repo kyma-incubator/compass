@@ -158,7 +158,11 @@ func (tc *TestContext) ConfigureResponse(configURL, queryType, queryName, respon
 		return err
 	}
 
-	tc.HttpClient.Post(configURL, "application/json", bytes.NewReader(jsonBody))
+	_, err = tc.HttpClient.Post(configURL, "application/json", bytes.NewReader(jsonBody))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -245,7 +249,12 @@ func findFreePort() string {
 		panic(err)
 	}
 
-	defer listener.Close()
+	defer func() {
+		err := listener.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	hostString := listener.Addr().String()
 	_, port, err := net.SplitHostPort(hostString)

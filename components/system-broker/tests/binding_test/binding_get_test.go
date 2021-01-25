@@ -75,7 +75,8 @@ func (suite *BindGetTestSuite) SetupSuite() {
 }
 
 func (suite *BindGetTestSuite) SetupTest() {
-	http.DefaultClient.Post(suite.mockedDirectorURL+"/config/reset", "application/json", nil)
+	_, err := http.DefaultClient.Post(suite.mockedDirectorURL+"/config/reset", "application/json", nil)
+	assert.NoError(suite.T(), err)
 }
 
 func (suite *BindGetTestSuite) TearDownSuite() {

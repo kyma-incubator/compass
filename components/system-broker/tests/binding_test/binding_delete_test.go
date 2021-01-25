@@ -50,7 +50,8 @@ func (suite *UnbindTestSuite) SetupSuite() {
 }
 
 func (suite *UnbindTestSuite) SetupTest() {
-	http.DefaultClient.Post(suite.mockedDirectorURL+"/config/reset", "application/json", nil)
+	_, err := http.DefaultClient.Post(suite.mockedDirectorURL+"/config/reset", "application/json", nil)
+	assert.NoError(suite.T(), err)
 }
 
 func (suite *UnbindTestSuite) TearDownSuite() {

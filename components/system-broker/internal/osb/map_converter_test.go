@@ -3,6 +3,7 @@ package osb
 import (
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	log "github.com/sirupsen/logrus"
 )
 
 func addGroupAndVersionToPackage(ext *schema.PackageExt) *schema.PackageExt {
@@ -26,10 +27,18 @@ func addGroupAndVersionToPackage(ext *schema.PackageExt) *schema.PackageExt {
 
 func addGroupAndVersionToPlan(s domain.ServicePlan) domain.ServicePlan {
 	apiSpecs := s.Metadata.AdditionalMetadata["api_specs"]
-	apiSpecsSlice := apiSpecs.([]map[string]interface{})
+	apiSpecsSlice, ok := apiSpecs.([]map[string]interface{})
+	if !ok {
+		log.Printf("Failed to convert api specs")
+		return s
+	}
 
 	eventSpecs := s.Metadata.AdditionalMetadata["event_specs"]
-	eventSpecsSlice := eventSpecs.([]map[string]interface{})
+	eventSpecsSlice, ok := eventSpecs.([]map[string]interface{})
+	if !ok {
+		log.Printf("Failed to convert event specs")
+		return s
+	}
 
 	versionMap := make(map[string]interface{}, 0)
 	versionMap["value"] = "v1"

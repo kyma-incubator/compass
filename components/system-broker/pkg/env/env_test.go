@@ -223,8 +223,9 @@ func (suite *EnvSuite) TestNewWhenConfigFileFlagsAreProvided() {
 			Msg: "returns an err if config file loading fails",
 			TestFunc: func() {
 				suite.cfgFile.Format = "json"
-				suite.testFlags.Set(keyFileFormat, "json")
+				err := suite.testFlags.Set(keyFileFormat, "json")
 
+				suite.Require().NoError(err)
 				suite.Require().Error(suite.createEnv())
 			},
 		},
@@ -241,7 +242,8 @@ func (suite *EnvSuite) TestNewWhenConfigFileFlagsAreProvided() {
 				suite.Require().NotEqual(log.D().Logger.Out.(*os.File).Name(), newOutput)
 
 				f := suite.cfgFile.Location + string(filepath.Separator) + suite.cfgFile.Name + "." + suite.cfgFile.Format
-				fileContent := suite.cfgFile.content.(FlatOuter)
+				fileContent, ok := suite.cfgFile.content.(FlatOuter)
+				suite.Require().True(ok)
 				fileContent.Log = log.DefaultConfig()
 				fileContent.Log.Level = logrus.DebugLevel.String()
 				fileContent.Log.Output = newOutput
@@ -539,7 +541,8 @@ func (suite *EnvSuite) TestUnmarshalOverridePriorityOverPflagSetOverEnvironmentO
 	suite.verifyUnmarshallingIsCorrect(&str, &s{envValue})
 	suite.Require().Equal(suite.environment.Get(key), envValue)
 
-	suite.testFlags.Set(key, flagValue)
+	err := suite.testFlags.Set(key, flagValue)
+	suite.Require().NoError(err)
 	suite.verifyUnmarshallingIsCorrect(&str, &s{flagValue})
 
 	suite.environment.Set(key, overrideValue)
@@ -644,7 +647,8 @@ func (suite *EnvSuite) createEnv() error {
 
 func (suite *EnvSuite) cleanUpFile() {
 	f := suite.cfgFile.Location + string(filepath.Separator) + suite.cfgFile.Name + "." + suite.cfgFile.Format
-	os.Remove(f)
+	err := os.Remove(f)
+	suite.Require().NoError(err)
 }
 
 func (suite *EnvSuite) verifyUnmarshallingIsCorrect(actual, expected interface{}) {

@@ -53,7 +53,8 @@ func TestBindGet(t *testing.T) {
 		binding, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceCredentialsCallCount())
-		creds := binding.Credentials.(BindingCredentials)
+		creds, ok := binding.Credentials.(BindingCredentials)
+		assert.True(t, ok)
 		basicCreds := creds.AuthDetails.Credentials.ToCredentials().BasicAuth
 		assert.Equal(t, "username", basicCreds.Username)
 		assert.Equal(t, "password", basicCreds.Password)

@@ -102,7 +102,8 @@ func TestServicesReturnsErrorForInvalidApplications(t *testing.T) {
 		output.Result.Data = []*schema.ApplicationExt{nil}
 		fakeApplicationsLister.FetchApplicationsReturns(output, nil)
 
-		response, _ := endpoint.Services(context.Background())
+		response, err := endpoint.Services(context.Background())
+		assert.NoError(t, err)
 
 		assert.Equal(t, 0, len(response))
 		assert.Equal(t, 1, fakeApplicationsLister.FetchApplicationsCallCount())
@@ -115,7 +116,8 @@ func TestServicesReturnsErrorForInvalidApplications(t *testing.T) {
 		fakeApplicationsLister.FetchApplicationsReturns(output, nil)
 		fakeConverter.ConvertReturns(svc, nil)
 
-		response, _ := endpoint.Services(context.Background())
+		response, err := endpoint.Services(context.Background())
+		assert.NoError(t, err)
 
 		assert.Equal(t, []domain.Service{*svc}, response)
 		assert.Equal(t, 1, fakeApplicationsLister.FetchApplicationsCallCount())
@@ -130,7 +132,8 @@ func TestServicesReturnsErrorForInvalidApplications(t *testing.T) {
 		fakeApplicationsLister.FetchApplicationsReturns(output, nil)
 		fakeConverter.ConvertReturns(svc, nil)
 
-		response, _ := endpoint.Services(context.Background())
+		response, err := endpoint.Services(context.Background())
+		assert.NoError(t, err)
 
 		assert.Equal(t, []domain.Service{*svc}, response)
 		assert.Equal(t, 1, fakeApplicationsLister.FetchApplicationsCallCount())
@@ -145,7 +148,8 @@ func TestServicesReturnsErrorForInvalidApplications(t *testing.T) {
 		fakeApplicationsLister.FetchApplicationsReturns(output, nil)
 		fakeConverter.ConvertReturns(svc, nil)
 
-		response, _ := endpoint.Services(context.Background())
+		response, err := endpoint.Services(context.Background())
+		assert.NoError(t, err)
 
 		assert.Equal(t, []domain.Service{*svc, *svc}, response)
 		assert.Equal(t, 1, fakeApplicationsLister.FetchApplicationsCallCount())

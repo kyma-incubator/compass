@@ -23,7 +23,10 @@ type FakeServer interface {
 
 func writeError(w http.ResponseWriter, status int, err error) {
 	w.WriteHeader(status)
-	w.Write([]byte(fmt.Sprintf(`{"description": %q`, err.Error())))
+	_, werr := w.Write([]byte(fmt.Sprintf(`{"description": %q`, err.Error())))
+	if werr != nil {
+		panic(werr)
+	}
 }
 
 func writeGQLError(w http.ResponseWriter, errMsg string) {
