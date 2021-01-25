@@ -37,7 +37,7 @@ func fixModelDocument(id, bundleID string) *model.Document {
 func fixEntityDocument(id, bundleID string) *document.Entity {
 	return &document.Entity{
 		ID:          id,
-		PkgID:       bundleID,
+		BndlID:       bundleID,
 		TenantID:    docTenant,
 		Title:       docTitle,
 		DisplayName: docDisplayName,

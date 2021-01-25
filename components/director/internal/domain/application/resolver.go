@@ -604,13 +604,13 @@ func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first 
 		return nil, err
 	}
 
-	gqlPkgs, err := r.bndlConv.MultipleToGraphQL(bndlsPage.Data)
+	gqlBndls, err := r.bndlConv.MultipleToGraphQL(bndlsPage.Data)
 	if err != nil {
 		return nil, err
 	}
 
 	return &graphql.BundlePage{
-		Data:       gqlPkgs,
+		Data:       gqlBndls,
 		TotalCount: bndlsPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(bndlsPage.PageInfo.StartCursor),

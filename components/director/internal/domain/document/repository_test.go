@@ -107,7 +107,7 @@ func TestRepository_CreateMany(t *testing.T) {
 			expectedEntity := expected[i]
 			conv.On("ToEntity", *givenModel).Return(*expectedEntity, nil).Once()
 			dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-				expectedEntity.ID, expectedEntity.TenantID, expectedEntity.PkgID, expectedEntity.Title, expectedEntity.DisplayName, expectedEntity.Description, expectedEntity.Format, expectedEntity.Kind, expectedEntity.Data).WillReturnResult(sqlmock.NewResult(-1, 1))
+				expectedEntity.ID, expectedEntity.TenantID, expectedEntity.BndlID, expectedEntity.Title, expectedEntity.DisplayName, expectedEntity.Description, expectedEntity.Format, expectedEntity.Kind, expectedEntity.Data).WillReturnResult(sqlmock.NewResult(-1, 1))
 		}
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -139,9 +139,9 @@ func TestRepository_CreateMany(t *testing.T) {
 		conv.On("ToEntity", *given[0]).Return(*expected[0], nil).Once()
 		conv.On("ToEntity", *given[1]).Return(*expected[1], nil).Once()
 		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-			expected[0].ID, expected[0].TenantID, expected[0].PkgID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data).WillReturnResult(sqlmock.NewResult(-1, 1))
+			expected[0].ID, expected[0].TenantID, expected[0].BndlID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-			expected[1].ID, expected[1].TenantID, expected[1].PkgID, expected[1].Title, expected[1].DisplayName, expected[1].Description, expected[1].Format, expected[1].Kind, expected[1].Data).WillReturnError(givenError())
+			expected[1].ID, expected[1].TenantID, expected[1].BndlID, expected[1].Title, expected[1].DisplayName, expected[1].Description, expected[1].Format, expected[1].Kind, expected[1].Data).WillReturnError(givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := document.NewRepository(conv)
@@ -173,7 +173,7 @@ func TestRepository_CreateMany(t *testing.T) {
 		conv.On("ToEntity", *given[0]).Return(*expected[0], nil).Once()
 		conv.On("ToEntity", *given[1]).Return(document.Entity{}, givenError()).Once()
 		dbMock.ExpectExec(regexp.QuoteMeta(insertQuery)).WithArgs(
-			expected[0].ID, expected[0].TenantID, expected[0].PkgID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data).WillReturnResult(sqlmock.NewResult(-1, 1))
+			expected[0].ID, expected[0].TenantID, expected[0].BndlID, expected[0].Title, expected[0].DisplayName, expected[0].Description, expected[0].Format, expected[0].Kind, expected[0].Data).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		repo := document.NewRepository(conv)
@@ -206,8 +206,8 @@ func TestRepository_ListForBundle(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		rows := sqlmock.NewRows(columns).
-			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.PkgID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
-			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.PkgID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
+			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.BndlID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
+			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.BndlID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
@@ -260,8 +260,8 @@ func TestRepository_ListForBundle(t *testing.T) {
 	t.Run("Converter Error", func(t *testing.T) {
 		testErr := errors.New("test error")
 		rows := sqlmock.NewRows(columns).
-			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.PkgID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
-			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.PkgID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
+			AddRow(docEntity1.ID, docEntity1.TenantID, docEntity1.BndlID, docEntity1.Title, docEntity1.DisplayName, docEntity1.Description, docEntity1.Format, docEntity1.Kind, docEntity1.Data).
+			AddRow(docEntity2.ID, docEntity2.TenantID, docEntity2.BndlID, docEntity2.Title, docEntity2.DisplayName, docEntity2.Description, docEntity2.Format, docEntity2.Kind, docEntity2.Data)
 
 		conv := &automock.Converter{}
 		conv.On("FromEntity", *docEntity1).Return(model.Document{}, testErr).Once()

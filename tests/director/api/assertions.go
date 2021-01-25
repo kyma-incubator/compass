@@ -130,15 +130,15 @@ func assertDocuments(t *testing.T, in []*graphql.DocumentInput, actual []*graphq
 
 func assertBundles(t *testing.T, in []*graphql.BundleCreateInput, actual []*graphql.BundleExt) {
 	assert.Equal(t, len(in), len(actual))
-	for _, inPkg := range in {
+	for _, inBndl := range in {
 		found := false
-		for _, actPkg := range actual {
-			if inPkg.Name != actPkg.Name {
+		for _, actBndl := range actual {
+			if inBndl.Name != actBndl.Name {
 				continue
 			}
 			found = true
 
-			assertBundle(t, inPkg, actPkg)
+			assertBundle(t, inBndl, actBndl)
 		}
 		assert.True(t, found)
 	}

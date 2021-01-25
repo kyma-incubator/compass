@@ -153,7 +153,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.Service
-		PkgServiceFn    func() *automock.BundleService
+		BndlServiceFn    func() *automock.BundleService
 		ConverterFn     func() *automock.Converter
 		ExpectedResult  *graphql.BundleInstanceAuth
 		ExpectedErr     error
@@ -167,7 +167,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelInstanceAuth, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBundle, nil).Once()
 				return svc
@@ -188,7 +188,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				svc := &automock.Service{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				return svc
 			},
@@ -208,7 +208,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelInstanceAuth, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBundle, nil).Once()
 				return svc
@@ -228,7 +228,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				svc := &automock.Service{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(nil, testError).Once()
 				return svc
@@ -248,7 +248,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				svc.On("Create", txtest.CtxWithDBMatcher(), testBundleID, *modelRequestInput, modelInstanceAuth.Auth, modelInstanceAuth.InputParams).Return("", testError).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBundle, nil).Once()
 				return svc
@@ -270,7 +270,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), testBundleID).Return(modelBundle, nil).Once()
 				return svc
@@ -290,7 +290,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			// given
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
-			bndlSvc := testCase.PkgServiceFn()
+			bndlSvc := testCase.BndlServiceFn()
 			converter := testCase.ConverterFn()
 
 			resolver := bundleinstanceauth.NewResolver(transact, svc, bndlSvc, converter)
@@ -441,7 +441,7 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 	modelInstanceAuth := fixSimpleModelBundleInstanceAuth(id)
 	gqlInstanceAuth := fixSimpleGQLBundleInstanceAuth(id)
 
-	modelPkg := &model.Bundle{DefaultInstanceAuth: fixModelAuth()}
+	modelBndl := &model.Bundle{DefaultInstanceAuth: fixModelAuth()}
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -460,12 +460,12 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Once()
-				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(true, nil).Once()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelBndl.DefaultInstanceAuth).Return(true, nil).Once()
 				return svc
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {
@@ -482,12 +482,12 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Twice()
-				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(false, nil).Once()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelBndl.DefaultInstanceAuth).Return(false, nil).Once()
 				return svc
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {
@@ -540,12 +540,12 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Once()
-				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(false, testErr).Once()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelBndl.DefaultInstanceAuth).Return(false, testErr).Once()
 				return svc
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {
@@ -561,12 +561,12 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 				svc := &automock.Service{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
-				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(false, nil).Once()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelBndl.DefaultInstanceAuth).Return(false, nil).Once()
 				return svc
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {
@@ -596,12 +596,12 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelInstanceAuth, nil).Once()
-				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelPkg.DefaultInstanceAuth).Return(true, nil).Once()
+				svc.On("RequestDeletion", txtest.CtxWithDBMatcher(), modelInstanceAuth, modelBndl.DefaultInstanceAuth).Return(true, nil).Once()
 				return svc
 			},
 			BundleServiceFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
-				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelPkg, nil).Once()
+				svc.On("GetByInstanceAuthID", txtest.CtxWithDBMatcher(), id).Return(modelBndl, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.Converter {

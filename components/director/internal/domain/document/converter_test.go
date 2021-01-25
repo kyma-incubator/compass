@@ -171,7 +171,7 @@ func TestToEntity(t *testing.T) {
 		assert.Equal(t, document.Entity{
 			ID:          "givenID",
 			TenantID:    "givenTenant",
-			PkgID:       "givenBundleID",
+			BndlID:       "givenBundleID",
 			Title:       "givenTitle",
 			Description: "givenDescription",
 			DisplayName: "givenDisplayName",
@@ -198,7 +198,7 @@ func TestFromEntity(t *testing.T) {
 	entityWithRequiredFields := document.Entity{
 		ID:          "givenID",
 		TenantID:    "givenTenant",
-		PkgID:       "givenBundleID",
+		BndlID:       "givenBundleID",
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",

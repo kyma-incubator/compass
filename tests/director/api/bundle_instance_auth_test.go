@@ -157,10 +157,10 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	bndl, err := tc.graphqlizer.BundleCreateInputToGQL(bndlInput)
 	require.NoError(t, err)
 
-	addPkgRequest := fixAddBundleRequest(application.ID, bndl)
+	addBndlRequest := fixAddBundleRequest(application.ID, bndl)
 	bndlAddOutput := graphql.Bundle{}
 
-	err = tc.RunOperation(ctx, addPkgRequest, &bndlAddOutput)
+	err = tc.RunOperation(ctx, addBndlRequest, &bndlAddOutput)
 	defer deleteBundle(t, ctx, bndlAddOutput.ID)
 	require.NoError(t, err)
 

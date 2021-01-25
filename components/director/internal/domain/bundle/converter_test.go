@@ -317,34 +317,34 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 
 func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 	// given
-	gqlPkg1 := fixGQLBundleCreateInput("foo", "bar")
-	gqlPkg2 := fixGQLBundleCreateInput("bar", "baz")
+	gqlBndl1 := fixGQLBundleCreateInput("foo", "bar")
+	gqlBndl2 := fixGQLBundleCreateInput("bar", "baz")
 	input := []*graphql.BundleCreateInput{
-		&gqlPkg1,
-		&gqlPkg2,
+		&gqlBndl1,
+		&gqlBndl2,
 	}
 
-	modPkg1 := fixModelBundleCreateInput("foo", "bar")
-	modPkg2 := fixModelBundleCreateInput("bar", "baz")
+	modBndl1 := fixModelBundleCreateInput("foo", "bar")
+	modBndl2 := fixModelBundleCreateInput("bar", "baz")
 	expected := []*model.BundleCreateInput{
-		&modPkg1, &modPkg2,
+		&modBndl1, &modBndl2,
 	}
 
 	apiConv := &automock.APIConverter{}
-	apiConv.On("MultipleInputFromGraphQL", gqlPkg1.APIDefinitions).Return(modPkg1.APIDefinitions, nil).Once()
-	apiConv.On("MultipleInputFromGraphQL", gqlPkg2.APIDefinitions).Return(modPkg2.APIDefinitions, nil).Once()
+	apiConv.On("MultipleInputFromGraphQL", gqlBndl1.APIDefinitions).Return(modBndl1.APIDefinitions, nil).Once()
+	apiConv.On("MultipleInputFromGraphQL", gqlBndl2.APIDefinitions).Return(modBndl2.APIDefinitions, nil).Once()
 
 	eventConv := &automock.EventConverter{}
-	eventConv.On("MultipleInputFromGraphQL", gqlPkg1.EventDefinitions).Return(modPkg1.EventDefinitions, nil).Once()
-	eventConv.On("MultipleInputFromGraphQL", gqlPkg2.EventDefinitions).Return(modPkg2.EventDefinitions, nil).Once()
+	eventConv.On("MultipleInputFromGraphQL", gqlBndl1.EventDefinitions).Return(modBndl1.EventDefinitions, nil).Once()
+	eventConv.On("MultipleInputFromGraphQL", gqlBndl2.EventDefinitions).Return(modBndl2.EventDefinitions, nil).Once()
 
 	docConv := &automock.DocumentConverter{}
-	docConv.On("MultipleInputFromGraphQL", gqlPkg1.Documents).Return(modPkg1.Documents, nil).Once()
-	docConv.On("MultipleInputFromGraphQL", gqlPkg2.Documents).Return(modPkg2.Documents, nil).Once()
+	docConv.On("MultipleInputFromGraphQL", gqlBndl1.Documents).Return(modBndl1.Documents, nil).Once()
+	docConv.On("MultipleInputFromGraphQL", gqlBndl2.Documents).Return(modBndl2.Documents, nil).Once()
 
 	authConv := &automock.AuthConverter{}
-	authConv.On("InputFromGraphQL", gqlPkg1.DefaultInstanceAuth).Return(modPkg1.DefaultInstanceAuth, nil).Once()
-	authConv.On("InputFromGraphQL", gqlPkg2.DefaultInstanceAuth).Return(modPkg2.DefaultInstanceAuth, nil).Once()
+	authConv.On("InputFromGraphQL", gqlBndl1.DefaultInstanceAuth).Return(modBndl1.DefaultInstanceAuth, nil).Once()
+	authConv.On("InputFromGraphQL", gqlBndl2.DefaultInstanceAuth).Return(modBndl2.DefaultInstanceAuth, nil).Once()
 
 	converter := mp_bundle.NewConverter(authConv, apiConv, eventConv, docConv)
 

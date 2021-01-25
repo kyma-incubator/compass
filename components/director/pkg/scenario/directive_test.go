@@ -309,11 +309,11 @@ func TestHasScenario(t *testing.T) {
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		mockedPkg := &model.Bundle{ApplicationID: applicationID}
-		bndlRepo.On("GetByID", ctxWithTx, tenantID, bundleID).Return(mockedPkg, nil)
+		mockedBndl := &model.Bundle{ApplicationID: applicationID}
+		bndlRepo.On("GetByID", ctxWithTx, tenantID, bundleID).Return(mockedBndl, nil)
 
 		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
-		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
 
 		dummyResolver := &dummyResolver{}
@@ -355,8 +355,8 @@ func TestHasScenario(t *testing.T) {
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		mockedPkg := &model.Bundle{ApplicationID: applicationID}
-		bndlRepo.On("GetByID", ctxWithTx, tenantID, bundleID).Return(mockedPkg, nil)
+		mockedBndl := &model.Bundle{ApplicationID: applicationID}
+		bndlRepo.On("GetByID", ctxWithTx, tenantID, bundleID).Return(mockedBndl, nil)
 
 		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
 		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
@@ -406,14 +406,14 @@ func TestHasScenario(t *testing.T) {
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		mockedPkgAuth := &model.BundleInstanceAuth{BundleID: bundleID}
-		bndlAuthRepo.On("GetByID", ctxWithTx, tenantID, bndlAuthID).Return(mockedPkgAuth, nil)
+		mockedBndlAuth := &model.BundleInstanceAuth{BundleID: bundleID}
+		bndlAuthRepo.On("GetByID", ctxWithTx, tenantID, bndlAuthID).Return(mockedBndlAuth, nil)
 
-		mockedPkg := &model.Bundle{ApplicationID: applicationID}
-		bndlRepo.On("GetByID", ctxWithTx, tenantID, mockedPkgAuth.BundleID).Return(mockedPkg, nil)
+		mockedBndl := &model.Bundle{ApplicationID: applicationID}
+		bndlRepo.On("GetByID", ctxWithTx, tenantID, mockedBndlAuth.BundleID).Return(mockedBndl, nil)
 
 		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
-		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
 
 		dummyResolver := &dummyResolver{}
@@ -459,15 +459,15 @@ func TestHasScenario(t *testing.T) {
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		mockedPkgAuth := &model.BundleInstanceAuth{BundleID: bundleID}
-		bndlAuthRepo.On("GetByID", ctxWithTx, tenantID, bndlAuthID).Return(mockedPkgAuth, nil)
+		mockedBndlAuth := &model.BundleInstanceAuth{BundleID: bundleID}
+		bndlAuthRepo.On("GetByID", ctxWithTx, tenantID, bndlAuthID).Return(mockedBndlAuth, nil)
 
-		mockedPkg := &model.Bundle{ApplicationID: applicationID}
-		bndlRepo.On("GetByID", ctxWithTx, tenantID, mockedPkgAuth.BundleID).Return(mockedPkg, nil)
+		mockedBndl := &model.Bundle{ApplicationID: applicationID}
+		bndlRepo.On("GetByID", ctxWithTx, tenantID, mockedBndlAuth.BundleID).Return(mockedBndl, nil)
 
 		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
 		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
-		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByBundleInstanceAuth, bndlAuthIDField)

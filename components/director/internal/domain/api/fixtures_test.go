@@ -20,7 +20,7 @@ const (
 	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	bundleID         = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 )
 
 func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *model.APIDefinition {
@@ -241,7 +241,7 @@ func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) api.Entity {
 	return api.Entity{
 		ID:        id,
-		PkgID:     bndlID,
+		BndlID:     bndlID,
 		Name:      name,
 		TargetURL: targetUrl,
 	}
@@ -253,7 +253,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
 		ID:          apiDefID,
 		TenantID:    tenantID,
-		PkgID:       bundleID,
+		BndlID:       bundleID,
 		Name:        placeholder,
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		Group:       repo.NewValidNullableString("group_" + placeholder),

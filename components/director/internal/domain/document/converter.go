@@ -103,7 +103,7 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 
 	out := Entity{
 		ID:          in.ID,
-		PkgID:       in.BundleID,
+		BndlID:       in.BundleID,
 		TenantID:    in.Tenant,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,
@@ -122,7 +122,7 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 
 	out := model.Document{
 		ID:          in.ID,
-		BundleID:    in.PkgID,
+		BundleID:    in.BndlID,
 		Tenant:      in.TenantID,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,

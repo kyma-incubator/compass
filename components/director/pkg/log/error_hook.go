@@ -59,7 +59,7 @@ func (h *ErrorLocationHook) Fire(entry *logrus.Entry) error {
 
 	if stackErr != nil {
 		stackTrace := stackErr.StackTrace()
-		bndl := getPkgName(stackTrace)
+		bndl := getBndlName(stackTrace)
 		errSource := fmt.Sprintf("%s/%s:%d:%n", bndl, stackTrace[0], stackTrace[0], stackTrace[0])
 		entry.Data[errorSourceField] = errSource
 	} else {
@@ -69,7 +69,7 @@ func (h *ErrorLocationHook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
-func getPkgName(trace errors.StackTrace) string {
+func getBndlName(trace errors.StackTrace) string {
 	formattedTrace := fmt.Sprintf("%+s", trace[0])
 	split := strings.Split(formattedTrace, string(filepath.Separator))
 

@@ -132,7 +132,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
 		ID:          entity.ID,
-		BundleID:    entity.PkgID,
+		BundleID:    entity.BndlID,
 		Name:        entity.Name,
 		TargetURL:   entity.TargetURL,
 		Tenant:      entity.TenantID,
@@ -148,7 +148,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 	return Entity{
 		ID:          apiModel.ID,
 		TenantID:    apiModel.Tenant,
-		PkgID:       apiModel.BundleID,
+		BndlID:       apiModel.BundleID,
 		Name:        apiModel.Name,
 		Description: repo.NewNullableString(apiModel.Description),
 		Group:       repo.NewNullableString(apiModel.Group),

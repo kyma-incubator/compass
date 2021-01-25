@@ -192,14 +192,14 @@ func TestAPIDefinitionInBundle(t *testing.T) {
 
 	api := addAPIToBundle(t, ctx, bndl.ID)
 
-	queryApiForPkg := fixAPIDefinitionInBundleRequest(application.ID, bndl.ID, api.ID)
+	queryApiForBndl := fixAPIDefinitionInBundleRequest(application.ID, bndl.ID, api.ID)
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryApiForPkg, &app)
+	err := tc.RunOperation(ctx, queryApiForBndl, &app)
 	require.NoError(t, err)
 
 	actualApi := app.Bundle.APIDefinition
 	assert.Equal(t, api.ID, actualApi.ID)
-	saveExample(t, queryApiForPkg.Query(), "query api definition")
+	saveExample(t, queryApiForBndl.Query(), "query api definition")
 
 }
 
@@ -216,14 +216,14 @@ func TestEventDefinitionInBundle(t *testing.T) {
 
 	event := addEventToBundle(t, ctx, bndl.ID)
 
-	queryEventForPkg := fixEventDefinitionInBundleRequest(application.ID, bndl.ID, event.ID)
+	queryEventForBndl := fixEventDefinitionInBundleRequest(application.ID, bndl.ID, event.ID)
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryEventForPkg, &app)
+	err := tc.RunOperation(ctx, queryEventForBndl, &app)
 	require.NoError(t, err)
 
 	actualEvent := app.Bundle.EventDefinition
 	assert.Equal(t, event.ID, actualEvent.ID)
-	saveExample(t, queryEventForPkg.Query(), "query event definition")
+	saveExample(t, queryEventForBndl.Query(), "query event definition")
 
 }
 
@@ -240,14 +240,14 @@ func TestDocumentInBundle(t *testing.T) {
 
 	doc := addDocumentToBundle(t, ctx, bndl.ID)
 
-	queryDocForPkg := fixDocumentInBundleRequest(application.ID, bndl.ID, doc.ID)
+	queryDocForBndl := fixDocumentInBundleRequest(application.ID, bndl.ID, doc.ID)
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryDocForPkg, &app)
+	err := tc.RunOperation(ctx, queryDocForBndl, &app)
 	require.NoError(t, err)
 
 	actualDoc := app.Bundle.Document
 	assert.Equal(t, doc.ID, actualDoc.ID)
-	saveExample(t, queryDocForPkg.Query(), "query document")
+	saveExample(t, queryDocForBndl.Query(), "query document")
 }
 
 func TestAPIDefinitionsInBundle(t *testing.T) {
@@ -267,15 +267,15 @@ func TestAPIDefinitionsInBundle(t *testing.T) {
 	inputB := fixAPIDefinitionInputWithName("bar")
 	addAPIToBundleWithInput(t, ctx, bndl.ID, inputB)
 
-	queryApisForPkg := fixAPIDefinitionsInBundleRequest(application.ID, bndl.ID)
+	queryApisForBndl := fixAPIDefinitionsInBundleRequest(application.ID, bndl.ID)
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryApisForPkg, &app)
+	err := tc.RunOperation(ctx, queryApisForBndl, &app)
 	require.NoError(t, err)
 
 	apis := app.Bundle.APIDefinitions
 	require.Equal(t, 2, apis.TotalCount)
 	assertAPI(t, []*graphql.APIDefinitionInput{&inputA, &inputB}, apis.Data)
-	saveExample(t, queryApisForPkg.Query(), "query api definitions")
+	saveExample(t, queryApisForBndl.Query(), "query api definitions")
 }
 
 func TestEventDefinitionsInBundle(t *testing.T) {
@@ -295,16 +295,16 @@ func TestEventDefinitionsInBundle(t *testing.T) {
 	inputB := fixEventAPIDefinitionInputWithName("bar")
 	addEventToBundleWithInput(t, ctx, bndl.ID, inputB)
 
-	queryEventsForPkg := fixEventDefinitionsInBundleRequest(application.ID, bndl.ID)
+	queryEventsForBndl := fixEventDefinitionsInBundleRequest(application.ID, bndl.ID)
 
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryEventsForPkg, &app)
+	err := tc.RunOperation(ctx, queryEventsForBndl, &app)
 	require.NoError(t, err)
 
 	events := app.Bundle.EventDefinitions
 	require.Equal(t, 2, events.TotalCount)
 	assertEventsAPI(t, []*graphql.EventDefinitionInput{&inputA, &inputB}, events.Data)
-	saveExample(t, queryEventsForPkg.Query(), "query event definitions")
+	saveExample(t, queryEventsForBndl.Query(), "query event definitions")
 }
 
 func TestDocumentsInBundle(t *testing.T) {
@@ -324,16 +324,16 @@ func TestDocumentsInBundle(t *testing.T) {
 	inputB := fixDocumentInputWithName(t, "bar")
 	addDocumentToBundleWithInput(t, ctx, bndl.ID, inputB)
 
-	queryDocsForPkg := fixDocumentsInBundleRequest(application.ID, bndl.ID)
+	queryDocsForBndl := fixDocumentsInBundleRequest(application.ID, bndl.ID)
 
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryDocsForPkg, &app)
+	err := tc.RunOperation(ctx, queryDocsForBndl, &app)
 	require.NoError(t, err)
 
 	docs := app.Bundle.Documents
 	require.Equal(t, 2, docs.TotalCount)
 	assertDocuments(t, []*graphql.DocumentInput{&inputA, &inputB}, docs.Data)
-	saveExample(t, queryDocsForPkg.Query(), "query documents")
+	saveExample(t, queryDocsForBndl.Query(), "query documents")
 }
 
 func TestAddBundle(t *testing.T) {
@@ -346,12 +346,12 @@ func TestAddBundle(t *testing.T) {
 	bndl, err := tc.graphqlizer.BundleCreateInputToGQL(bndlInput)
 	require.NoError(t, err)
 
-	addPkgRequest := fixAddBundleRequest(application.ID, bndl)
+	addBndlRequest := fixAddBundleRequest(application.ID, bndl)
 	output := graphql.BundleExt{}
 
 	// WHEN
 	t.Log("Create bundle")
-	err = tc.RunOperation(ctx, addPkgRequest, &output)
+	err = tc.RunOperation(ctx, addBndlRequest, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -359,7 +359,7 @@ func TestAddBundle(t *testing.T) {
 	assertBundle(t, &bndlInput, &output)
 	defer deleteBundle(t, ctx, output.ID)
 
-	saveExample(t, addPkgRequest.Query(), "add bundle")
+	saveExample(t, addBndlRequest.Query(), "add bundle")
 
 	bundleRequest := fixBundleRequest(application.ID, output.ID)
 	bndlFromAPI := graphql.ApplicationExt{}
@@ -406,19 +406,19 @@ func TestUpdateBundle(t *testing.T) {
 	bndlUpdate, err := tc.graphqlizer.BundleUpdateInputToGQL(bndlUpdateInput)
 	require.NoError(t, err)
 
-	updatePkgReq := fixUpdateBundleRequest(bndl.ID, bndlUpdate)
+	updateBndlReq := fixUpdateBundleRequest(bndl.ID, bndlUpdate)
 	output := graphql.Bundle{}
 
 	// WHEN
 	t.Log("Update bundle")
-	err = tc.RunOperation(ctx, updatePkgReq, &output)
+	err = tc.RunOperation(ctx, updateBndlReq, &output)
 
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 
 	require.NotEmpty(t, output.Name)
-	saveExample(t, updatePkgReq.Query(), "update bundle")
+	saveExample(t, updateBndlReq.Query(), "update bundle")
 }
 
 func TestDeleteBundle(t *testing.T) {

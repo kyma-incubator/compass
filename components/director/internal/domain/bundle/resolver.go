@@ -195,13 +195,13 @@ func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.Bundl
 		return nil, err
 	}
 
-	gqlPkg, err := r.bundleConverter.ToGraphQL(bndl)
+	gqlBndl, err := r.bundleConverter.ToGraphQL(bndl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle with id %s to GraphQL", id)
 	}
 
 	log.C(ctx).Infof("Bundle with id %s successfully updated.", id)
-	return gqlPkg, nil
+	return gqlBndl, nil
 }
 
 func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle, error) {
@@ -230,13 +230,13 @@ func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle
 		return nil, err
 	}
 
-	deletedPkg, err := r.bundleConverter.ToGraphQL(bndl)
+	deletedBndl, err := r.bundleConverter.ToGraphQL(bndl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle with id %s to GraphQL", id)
 	}
 
 	log.C(ctx).Infof("Bundle with id %s successfully deleted.", id)
-	return deletedPkg, nil
+	return deletedBndl, nil
 }
 
 func (r *Resolver) InstanceAuth(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.BundleInstanceAuth, error) {

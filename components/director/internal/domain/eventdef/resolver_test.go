@@ -40,7 +40,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 		Name             string
 		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn        func() *automock.EventDefService
-		PkgServiceFn     func() *automock.BundleService
+		BndlServiceFn     func() *automock.BundleService
 		ConverterFn      func() *automock.EventDefConverter
 		ExpectedEventDef *graphql.EventDefinition
 		ExpectedErr      error
@@ -54,7 +54,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
@@ -75,7 +75,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 				svc := &automock.EventDefService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				return appSvc
 			},
@@ -93,7 +93,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 				svc := &automock.EventDefService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(false, nil)
 				return appSvc
@@ -113,7 +113,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 				svc := &automock.EventDefService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(false, testErr)
 				return appSvc
@@ -134,7 +134,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 				svc.On("CreateInBundle", contextParam, bundleID, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
@@ -156,7 +156,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
@@ -178,7 +178,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
@@ -199,7 +199,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 			persistance, tx := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
-			bndlSvc := testCase.PkgServiceFn()
+			bndlSvc := testCase.BndlServiceFn()
 
 			resolver := eventdef.NewResolver(tx, svc, nil, bndlSvc, converter, nil)
 

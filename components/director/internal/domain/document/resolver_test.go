@@ -39,7 +39,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 		PersistenceFn    func() *persistenceautomock.PersistenceTx
 		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn        func() *automock.DocumentService
-		PkgServiceFn     func() *automock.BundleService
+		BndlServiceFn     func() *automock.BundleService
 		ConverterFn      func() *automock.DocumentConverter
 		ExpectedDocument *graphql.Document
 		ExpectedErr      error
@@ -64,7 +64,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(modelDocument, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
@@ -95,7 +95,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 				svc := &automock.DocumentService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(false, nil)
 				return appSvc
@@ -126,7 +126,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 				svc := &automock.DocumentService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(false, testErr)
 				return appSvc
@@ -158,7 +158,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 				svc.On("CreateInBundle", contextParam, bundleID, *modelInput).Return("", testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
@@ -190,7 +190,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.BundleService {
+			BndlServiceFn: func() *automock.BundleService {
 				appSvc := &automock.BundleService{}
 				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
@@ -210,7 +210,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 			persistTx := testCase.PersistenceFn()
 			transact := testCase.TransactionerFn(persistTx)
 			svc := testCase.ServiceFn()
-			bndlSvc := testCase.PkgServiceFn()
+			bndlSvc := testCase.BndlServiceFn()
 			converter := testCase.ConverterFn()
 
 			resolver := document.NewResolver(transact, svc, nil, bndlSvc, nil)
