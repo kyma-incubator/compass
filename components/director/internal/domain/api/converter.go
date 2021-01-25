@@ -148,7 +148,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 	return Entity{
 		ID:          apiModel.ID,
 		TenantID:    apiModel.Tenant,
-		BndlID:       apiModel.BundleID,
+		BndlID:      apiModel.BundleID,
 		Name:        apiModel.Name,
 		Description: repo.NewNullableString(apiModel.Description),
 		Group:       repo.NewNullableString(apiModel.Group),

@@ -39,7 +39,7 @@ func TestResolver_AddDocumentToBundle(t *testing.T) {
 		PersistenceFn    func() *persistenceautomock.PersistenceTx
 		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn        func() *automock.DocumentService
-		BndlServiceFn     func() *automock.BundleService
+		BndlServiceFn    func() *automock.BundleService
 		ConverterFn      func() *automock.DocumentConverter
 		ExpectedDocument *graphql.Document
 		ExpectedErr      error

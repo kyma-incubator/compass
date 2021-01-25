@@ -148,7 +148,7 @@ func fixFullEventDef(id, placeholder string) eventdef.Entity {
 	v := fixVersionEntity()
 	return eventdef.Entity{
 		ID:          id,
-		BndlID:       bundleID,
+		BndlID:      bundleID,
 		TenantID:    tenantID,
 		Name:        placeholder,
 		GroupName:   repo.NewValidNullableString("group_" + placeholder),

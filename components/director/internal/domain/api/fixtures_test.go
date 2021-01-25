@@ -241,7 +241,7 @@ func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) api.Entity {
 	return api.Entity{
 		ID:        id,
-		BndlID:     bndlID,
+		BndlID:    bndlID,
 		Name:      name,
 		TargetURL: targetUrl,
 	}
@@ -253,7 +253,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
 		ID:          apiDefID,
 		TenantID:    tenantID,
-		BndlID:       bundleID,
+		BndlID:      bundleID,
 		Name:        placeholder,
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		Group:       repo.NewValidNullableString("group_" + placeholder),

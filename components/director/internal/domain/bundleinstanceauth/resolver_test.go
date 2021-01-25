@@ -153,7 +153,7 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.Service
-		BndlServiceFn    func() *automock.BundleService
+		BndlServiceFn   func() *automock.BundleService
 		ConverterFn     func() *automock.Converter
 		ExpectedResult  *graphql.BundleInstanceAuth
 		ExpectedErr     error

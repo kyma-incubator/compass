@@ -37,7 +37,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.APIService
-		BndlServiceFn    func() *automock.BundleService
+		BndlServiceFn   func() *automock.BundleService
 		ConverterFn     func() *automock.APIConverter
 		ExpectedAPI     *graphql.APIDefinition
 		ExpectedErr     error

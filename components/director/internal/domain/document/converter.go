@@ -103,7 +103,7 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 
 	out := Entity{
 		ID:          in.ID,
-		BndlID:       in.BundleID,
+		BndlID:      in.BundleID,
 		TenantID:    in.Tenant,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,

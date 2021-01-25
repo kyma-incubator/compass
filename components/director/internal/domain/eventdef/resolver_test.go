@@ -40,7 +40,7 @@ func TestResolver_AddEventAPIToBundle(t *testing.T) {
 		Name             string
 		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn        func() *automock.EventDefService
-		BndlServiceFn     func() *automock.BundleService
+		BndlServiceFn    func() *automock.BundleService
 		ConverterFn      func() *automock.EventDefConverter
 		ExpectedEventDef *graphql.EventDefinition
 		ExpectedErr      error
