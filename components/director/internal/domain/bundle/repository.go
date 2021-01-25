@@ -141,7 +141,7 @@ func (r *pgRepository) GetByInstanceAuthID(ctx context.Context, tenant string, i
 	}
 
 	prefixedFieldNames := str.PrefixStrings(bundleColumns, "b.")
-	stmt := fmt.Sprintf(`SELECT %s FROM %s AS p JOIN %s AS a on a.%s=b.id where a.tenant_id=$1 AND a.id=$2`,
+	stmt := fmt.Sprintf(`SELECT %s FROM %s AS b JOIN %s AS a on a.%s=b.id where a.tenant_id=$1 AND a.id=$2`,
 		strings.Join(prefixedFieldNames, ", "),
 		bundleTable,
 		bundleInstanceAuthTable,
