@@ -174,7 +174,7 @@ func fixGenerateOneTimeTokenForRuntime(runtimeID string) *gcli.Request {
 			result: requestOneTimeTokenForRuntime(id: "%s") {
 					%s
 				}
-			}`, runtimeID, tc.gqlFieldsProvider.ForOneTimeTokenForRuntime()))
+			}`, runtimeID, tc.GQLFieldsProvider.ForOneTimeTokenForRuntime()))
 }
 
 func fixDeleteApplicationTemplateRequest(appTemplateID string) *gcli.Request {
