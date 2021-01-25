@@ -35,5 +35,8 @@ ensure-local:
 dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
+gqlgen-local:
+	@echo ${SKIP_STEP_MESSAGE}
+
 build-local:
 	env go build -o bin/system-broker ./cmd/main.go
