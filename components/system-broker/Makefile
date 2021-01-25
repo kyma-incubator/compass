@@ -1,6 +1,7 @@
 APP_NAME = compass-system-broker
 APP_PATH = components/system-broker
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20201208-f3aa8f74
+ADDITIONAL_COMPONENTS = director connector
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
@@ -12,6 +13,15 @@ verify:: gqlgen check-gqlgen
 
 errcheck-local:
 	errcheck -blank -asserts -ignoregenerated ./...
+
+# System Broker component tests depend on the Director's schema.graphql file, so we had to redefine the
+# test target to also mount the Director folder.
+test:
+	@echo make test
+	$(eval container = $(shell docker create $(DOCKER_CREATE_OPTS) make test-local))
+	@docker cp $(COMPONENT_DIR)/. $(container):$(WORKSPACE_COMPONENT_DIR)/
+	@docker cp $(COMPONENT_DIR)/../director $(container):$(WORKSPACE_COMPONENT_DIR)/../director
+	@docker start $(DOCKER_INTERACTIVE_START) $(DOCKER_INTERACTIVE) $(container)
 
 test-local:
 	go test ./...
