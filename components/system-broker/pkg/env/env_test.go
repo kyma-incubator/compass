@@ -648,7 +648,9 @@ func (suite *EnvSuite) createEnv() error {
 func (suite *EnvSuite) cleanUpFile() {
 	f := suite.cfgFile.Location + string(filepath.Separator) + suite.cfgFile.Name + "." + suite.cfgFile.Format
 	err := os.Remove(f)
-	suite.Require().NoError(err)
+	if err != nil {
+		log.D().Errorf("Failed to cleanup file: %s", err.Error())
+	}
 }
 
 func (suite *EnvSuite) verifyUnmarshallingIsCorrect(actual, expected interface{}) {
