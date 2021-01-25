@@ -1,14 +1,15 @@
 package server_test
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/url"
 	"reflect"
 	"testing"
 	"unsafe"
+
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/server"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewAddsAdditionalRoutes(t *testing.T) {

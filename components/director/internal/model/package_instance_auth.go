@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/pkg/errors"
 )
