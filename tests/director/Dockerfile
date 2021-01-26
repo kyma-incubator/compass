@@ -1,4 +1,4 @@
-FROM golang:1.15.5-alpine3.12 as builder
+FROM golang:1.15.7-alpine3.12 as builder
 
 
 ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests/director
