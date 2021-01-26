@@ -2,7 +2,7 @@ package graphql
 
 type APIDefinition struct {
 	ID          string   `json:"id"`
-	PackageID   string   `json:"packageID"`
+	BundleID    string   `json:"bundleID"`
 	Name        string   `json:"name"`
 	Description *string  `json:"description"`
 	Spec        *APISpec `json:"spec"`

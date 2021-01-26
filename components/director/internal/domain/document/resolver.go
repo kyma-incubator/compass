@@ -15,7 +15,7 @@ import (
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore
 type DocumentService interface {
-	CreateInPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error)
+	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
 	Get(ctx context.Context, id string) (*model.Document, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, documentID string) (*model.FetchRequest, error)
@@ -40,31 +40,31 @@ type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
-type PackageService interface {
+//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+type BundleService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 type Resolver struct {
 	transact    persistence.Transactioner
 	svc         DocumentService
 	appSvc      ApplicationService
-	pkgSvc      PackageService
+	bndlSvc     BundleService
 	converter   DocumentConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc DocumentService, appSvc ApplicationService, pkgSvc PackageService, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc DocumentService, appSvc ApplicationService, bndlSvc BundleService, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
 		appSvc:      appSvc,
-		pkgSvc:      pkgSvc,
+		bndlSvc:     bndlSvc,
 		frConverter: frConverter,
 		converter:   &converter{frConverter: frConverter},
 	}
 }
 
-func (r *Resolver) AddDocumentToPackage(ctx context.Context, packageID string, in graphql.DocumentInput) (*graphql.Document, error) {
+func (r *Resolver) AddDocumentToBundle(ctx context.Context, bundleID string, in graphql.DocumentInput) (*graphql.Document, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -78,16 +78,16 @@ func (r *Resolver) AddDocumentToPackage(ctx context.Context, packageID string, i
 		return nil, errors.Wrap(err, "while converting DocumentInput from GraphQL")
 	}
 
-	found, err := r.pkgSvc.Exist(ctx, packageID)
+	found, err := r.bndlSvc.Exist(ctx, bundleID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while checking existence of Package")
+		return nil, errors.Wrapf(err, "while checking existence of Bundle")
 	}
 
 	if !found {
-		return nil, apperrors.NewInvalidDataError("cannot add Document to not existing Package")
+		return nil, apperrors.NewInvalidDataError("cannot add Document to not existing Bundle")
 	}
 
-	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
+	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn)
 	if err != nil {
 		return nil, err
 	}

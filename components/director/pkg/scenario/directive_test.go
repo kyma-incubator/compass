@@ -13,9 +13,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/99designs/gqlgen/graphql"
+	bndl_mock "github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
+	bndl_auth_mock "github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
 	lbl_mock "github.com/kyma-incubator/compass/components/director/internal/domain/label/automock"
-	pkg_mock "github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
-	pkg_auth_mock "github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -123,74 +123,74 @@ func TestHasScenario(t *testing.T) {
 		assert.Equal(t, res, nil)
 	})
 
-	t.Run("runtime requests package instance auth creation for non-existent package", func(t *testing.T) {
+	t.Run("runtime requests bundle instance auth creation for non-existent bundle", func(t *testing.T) {
 		// GIVEN
 		const (
-			packageIDField = "packageID"
-			tenantID       = "42"
-			packageID      = "24"
+			bundleIDField = "bundleID"
+			tenantID      = "42"
+			bundleID      = "24"
 		)
 
-		pkgRepo := &pkg_mock.PackageRepository{}
-		defer pkgRepo.AssertExpectations(t)
+		bndlRepo := &bndl_mock.BundleRepository{}
+		defer bndlRepo.AssertExpectations(t)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := scenario.NewDirective(mockedTransactioner, nil, pkgRepo, nil)
+		directive := scenario.NewDirective(mockedTransactioner, nil, bndlRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
-			Object:   "PackageInstanceAuth",
+			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
-			Args:     map[string]interface{}{packageIDField: packageID},
+			Args:     map[string]interface{}{bundleIDField: bundleID},
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Package)
-		pkgRepo.On("GetByID", ctxWithTx, tenantID, packageID).Return(nil, notFoundErr)
+		notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Bundle)
+		bndlRepo.On("GetByID", ctxWithTx, tenantID, bundleID).Return(nil, notFoundErr)
 		// WHEN
-		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackage, packageIDField)
+		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByBundle, bundleIDField)
 		// THEN
 		require.Error(t, err)
 		assert.Error(t, err, notFoundErr)
 		assert.Equal(t, res, nil)
 	})
 
-	t.Run("runtime requests package instance auth deletion for non-existent system auth ID", func(t *testing.T) {
+	t.Run("runtime requests bundle instance auth deletion for non-existent system auth ID", func(t *testing.T) {
 		// GIVEN
 		const (
-			pkgAuthIDField = "authID"
-			tenantID       = "42"
-			pkgAuthID      = "24"
+			bndlAuthIDField = "authID"
+			tenantID        = "42"
+			bndlAuthID      = "24"
 		)
 
-		pkgAuthRepo := &pkg_auth_mock.Repository{}
-		defer pkgAuthRepo.AssertExpectations(t)
+		bndlAuthRepo := &bndl_auth_mock.Repository{}
+		defer bndlAuthRepo.AssertExpectations(t)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := scenario.NewDirective(mockedTransactioner, nil, nil, pkgAuthRepo)
+		directive := scenario.NewDirective(mockedTransactioner, nil, nil, bndlAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
-			Object:   "PackageInstanceAuth",
+			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
-			Args:     map[string]interface{}{pkgAuthIDField: pkgAuthID},
+			Args:     map[string]interface{}{bndlAuthIDField: bndlAuthID},
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		notFoundErr := apperrors.NewNotFoundErrorWithType(resource.PackageInstanceAuth)
-		pkgAuthRepo.On("GetByID", ctxWithTx, tenantID, pkgAuthID).Return(nil, notFoundErr)
+		notFoundErr := apperrors.NewNotFoundErrorWithType(resource.BundleInstanceAuth)
+		bndlAuthRepo.On("GetByID", ctxWithTx, tenantID, bndlAuthID).Return(nil, notFoundErr)
 		// WHEN
-		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackageInstanceAuth, pkgAuthIDField)
+		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByBundleInstanceAuth, bndlAuthIDField)
 		// THEN
 		require.Error(t, err)
 		assert.Error(t, err, notFoundErr)
@@ -277,18 +277,18 @@ func TestHasScenario(t *testing.T) {
 		assert.Equal(t, res, nil)
 	})
 
-	t.Run("runtime is in formation with owning application in request package instance auth flow ", func(t *testing.T) {
+	t.Run("runtime is in formation with owning application in request bundle instance auth flow ", func(t *testing.T) {
 		// GIVEN
 		const (
-			packageIDField = "packageID"
-			tenantID       = "42"
-			packageID      = "24"
-			runtimeID      = "23"
-			applicationID  = "22"
+			bundleIDField = "bundleID"
+			tenantID      = "42"
+			bundleID      = "24"
+			runtimeID     = "23"
+			applicationID = "22"
 		)
 
-		pkgRepo := &pkg_mock.PackageRepository{}
-		defer pkgRepo.AssertExpectations(t)
+		bndlRepo := &bndl_mock.BundleRepository{}
+		defer bndlRepo.AssertExpectations(t)
 
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
@@ -297,44 +297,44 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, nil)
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
-			Object:   "PackageInstanceAuth",
+			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
-			Args:     map[string]interface{}{packageIDField: packageID},
+			Args:     map[string]interface{}{bundleIDField: bundleID},
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		mockedPkg := &model.Package{ApplicationID: applicationID}
-		pkgRepo.On("GetByID", ctxWithTx, tenantID, packageID).Return(mockedPkg, nil)
+		mockedBndl := &model.Bundle{ApplicationID: applicationID}
+		bndlRepo.On("GetByID", ctxWithTx, tenantID, bundleID).Return(mockedBndl, nil)
 
 		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
-		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
 
 		dummyResolver := &dummyResolver{}
 		// WHEN
-		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, scenario.GetApplicationIDByPackage, packageIDField)
+		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, scenario.GetApplicationIDByBundle, bundleIDField)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, res, mockedNextOutput())
 	})
-	t.Run("runtime is NOT in formation with owning application in request package instance auth flow ", func(t *testing.T) {
+	t.Run("runtime is NOT in formation with owning application in request bundle instance auth flow ", func(t *testing.T) {
 		// GIVEN
 		const (
-			packageIDField = "packageID"
-			tenantID       = "42"
-			packageID      = "24"
-			runtimeID      = "23"
-			applicationID  = "22"
+			bundleIDField = "bundleID"
+			tenantID      = "42"
+			bundleID      = "24"
+			runtimeID     = "23"
+			applicationID = "22"
 		)
 
-		pkgRepo := &pkg_mock.PackageRepository{}
-		defer pkgRepo.AssertExpectations(t)
+		bndlRepo := &bndl_mock.BundleRepository{}
+		defer bndlRepo.AssertExpectations(t)
 
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
@@ -343,49 +343,49 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, nil)
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, nil)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
-			Object:   "PackageInstanceAuth",
+			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
-			Args:     map[string]interface{}{packageIDField: packageID},
+			Args:     map[string]interface{}{bundleIDField: bundleID},
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		mockedPkg := &model.Package{ApplicationID: applicationID}
-		pkgRepo.On("GetByID", ctxWithTx, tenantID, packageID).Return(mockedPkg, nil)
+		mockedBndl := &model.Bundle{ApplicationID: applicationID}
+		bndlRepo.On("GetByID", ctxWithTx, tenantID, bundleID).Return(mockedBndl, nil)
 
 		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
 		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
 		// WHEN
-		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackage, packageIDField)
+		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByBundle, bundleIDField)
 		// THEN
 		require.Error(t, err)
 		assert.Error(t, err, scenario.ErrMissingScenario)
 		assert.Equal(t, res, nil)
 	})
 
-	t.Run("runtime is in formation with owning application in delete package instance auth flow", func(t *testing.T) {
+	t.Run("runtime is in formation with owning application in delete bundle instance auth flow", func(t *testing.T) {
 		// GIVEN
 		const (
-			pkgAuthIDField = "authID"
-			tenantID       = "42"
-			pkgAuthID      = "24"
-			runtimeID      = "23"
-			applicationID  = "22"
-			packageID      = "21"
+			bndlAuthIDField = "authID"
+			tenantID        = "42"
+			bndlAuthID      = "24"
+			runtimeID       = "23"
+			applicationID   = "22"
+			bundleID        = "21"
 		)
 
-		pkgAuthRepo := &pkg_auth_mock.Repository{}
-		defer pkgAuthRepo.AssertExpectations(t)
+		bndlAuthRepo := &bndl_auth_mock.Repository{}
+		defer bndlAuthRepo.AssertExpectations(t)
 
-		pkgRepo := &pkg_mock.PackageRepository{}
-		defer pkgRepo.AssertExpectations(t)
+		bndlRepo := &bndl_mock.BundleRepository{}
+		defer bndlRepo.AssertExpectations(t)
 
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
@@ -394,51 +394,51 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, pkgAuthRepo)
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, bndlAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
-			Object:   "PackageInstanceAuth",
+			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
-			Args:     map[string]interface{}{pkgAuthIDField: pkgAuthID},
+			Args:     map[string]interface{}{bndlAuthIDField: bndlAuthID},
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		mockedPkgAuth := &model.PackageInstanceAuth{PackageID: packageID}
-		pkgAuthRepo.On("GetByID", ctxWithTx, tenantID, pkgAuthID).Return(mockedPkgAuth, nil)
+		mockedBndlAuth := &model.BundleInstanceAuth{BundleID: bundleID}
+		bndlAuthRepo.On("GetByID", ctxWithTx, tenantID, bndlAuthID).Return(mockedBndlAuth, nil)
 
-		mockedPkg := &model.Package{ApplicationID: applicationID}
-		pkgRepo.On("GetByID", ctxWithTx, tenantID, mockedPkgAuth.PackageID).Return(mockedPkg, nil)
+		mockedBndl := &model.Bundle{ApplicationID: applicationID}
+		bndlRepo.On("GetByID", ctxWithTx, tenantID, mockedBndlAuth.BundleID).Return(mockedBndl, nil)
 
 		mockedLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
-		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedLabel, nil)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedLabel, nil)
 
 		dummyResolver := &dummyResolver{}
 		// WHEN
-		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, scenario.GetApplicationIDByPackageInstanceAuth, pkgAuthIDField)
+		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, scenario.GetApplicationIDByBundleInstanceAuth, bndlAuthIDField)
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, res, mockedNextOutput())
 	})
-	t.Run("runtime is NOT in formation with owning application in delete package instance auth flow", func(t *testing.T) {
+	t.Run("runtime is NOT in formation with owning application in delete bundle instance auth flow", func(t *testing.T) {
 		// GIVEN
 		const (
-			pkgAuthIDField = "authID"
-			tenantID       = "42"
-			pkgAuthID      = "24"
-			runtimeID      = "23"
-			applicationID  = "22"
-			packageID      = "21"
+			bndlAuthIDField = "authID"
+			tenantID        = "42"
+			bndlAuthID      = "24"
+			runtimeID       = "23"
+			applicationID   = "22"
+			bundleID        = "21"
 		)
 
-		pkgAuthRepo := &pkg_auth_mock.Repository{}
-		defer pkgAuthRepo.AssertExpectations(t)
+		bndlAuthRepo := &bndl_auth_mock.Repository{}
+		defer bndlAuthRepo.AssertExpectations(t)
 
-		pkgRepo := &pkg_mock.PackageRepository{}
-		defer pkgRepo.AssertExpectations(t)
+		bndlRepo := &bndl_mock.BundleRepository{}
+		defer bndlRepo.AssertExpectations(t)
 
 		lblRepo := &lbl_mock.LabelRepository{}
 		defer lblRepo.AssertExpectations(t)
@@ -447,30 +447,30 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := scenario.NewDirective(mockedTransactioner, lblRepo, pkgRepo, pkgAuthRepo)
+		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, bndlAuthRepo)
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
-			Object:   "PackageInstanceAuth",
+			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
-			Args:     map[string]interface{}{pkgAuthIDField: pkgAuthID},
+			Args:     map[string]interface{}{bndlAuthIDField: bndlAuthID},
 			IsMethod: false,
 		}
 		ctx = graphql.WithResolverContext(ctx, rCtx)
 		ctxWithTx := persistence.SaveToContext(ctx, mockedTx)
 
-		mockedPkgAuth := &model.PackageInstanceAuth{PackageID: packageID}
-		pkgAuthRepo.On("GetByID", ctxWithTx, tenantID, pkgAuthID).Return(mockedPkgAuth, nil)
+		mockedBndlAuth := &model.BundleInstanceAuth{BundleID: bundleID}
+		bndlAuthRepo.On("GetByID", ctxWithTx, tenantID, bndlAuthID).Return(mockedBndlAuth, nil)
 
-		mockedPkg := &model.Package{ApplicationID: applicationID}
-		pkgRepo.On("GetByID", ctxWithTx, tenantID, mockedPkgAuth.PackageID).Return(mockedPkg, nil)
+		mockedBndl := &model.Bundle{ApplicationID: applicationID}
+		bndlRepo.On("GetByID", ctxWithTx, tenantID, mockedBndlAuth.BundleID).Return(mockedBndl, nil)
 
 		mockedAppLabel := &model.Label{Value: []interface{}{"DEFAULT"}}
 		mockedRuntimeLabel := &model.Label{Value: []interface{}{"TEST"}}
-		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedPkg.ApplicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
+		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.ApplicationLabelableObject, mockedBndl.ApplicationID, model.ScenariosKey).Return(mockedAppLabel, nil)
 		lblRepo.On("GetByKey", ctxWithTx, tenantID, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey).Return(mockedRuntimeLabel, nil)
 		// WHEN
-		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByPackageInstanceAuth, pkgAuthIDField)
+		res, err := directive.HasScenario(ctx, nil, nil, scenario.GetApplicationIDByBundleInstanceAuth, bndlAuthIDField)
 		// THEN
 		require.Error(t, err)
 		assert.Error(t, err, scenario.ErrMissingScenario)

@@ -66,13 +66,13 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 
 			dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-			appName := "app-test-package"
+			appName := "app-test-bundle"
 			application := registerApplication(t, ctx, dexGraphQLClient, appName, tenant)
 			defer unregisterApplication(t, dexGraphQLClient, application.ID, tenant)
 
-			pkgName := "test-package"
-			pkgInput := graphql.PackageCreateInput{
-				Name: pkgName,
+			bndlName := "test-bundle"
+			bndlInput := graphql.BundleCreateInput{
+				Name: bndlName,
 				APIDefinitions: []*graphql.APIDefinitionInput{{
 					Name:      "test",
 					TargetURL: "https://target.url",
@@ -85,14 +85,14 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 				},
 			}
 
-			pkg := createPackageWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, pkgInput)
-			defer deletePackage(t, ctx, dexGraphQLClient, tenant, pkg.ID)
-			pkgID := pkg.ID
-			assertSpecInPackageNotNil(t, pkg)
-			spec := *pkg.APIDefinitions.Data[0].Spec.APISpec.Data
+			bndl := createBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
+			defer deleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+			bndlID := bndl.ID
+			assertSpecInBundleNotNil(t, bndl)
+			spec := *bndl.APIDefinitions.Data[0].Spec.APISpec.Data
 
 			var refetchedSpec graphql.APISpecExt
-			apiID := pkg.APIDefinitions.Data[0].ID
+			apiID := bndl.APIDefinitions.Data[0].ID
 			req := fixRefetchAPISpecRequest(apiID)
 
 			err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &refetchedSpec)
@@ -101,10 +101,10 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 			require.NotNil(t, refetchedSpec.APISpec.Data)
 			assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
 
-			pkg = getPackage(t, ctx, dexGraphQLClient, tenant, application.ID, pkgID)
+			bndl = getBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlID)
 
-			assertSpecInPackageNotNil(t, pkg)
-			assert.Equal(t, *refetchedSpec.APISpec.Data, *pkg.APIDefinitions.Data[0].Spec.Data)
+			assertSpecInBundleNotNil(t, bndl)
+			assert.Equal(t, *refetchedSpec.APISpec.Data, *bndl.APIDefinitions.Data[0].Spec.Data)
 
 		})
 	}
@@ -159,13 +159,13 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 
 			dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-			appName := "app-test-package"
+			appName := "app-test-bundle"
 			application := registerApplication(t, ctx, dexGraphQLClient, appName, tenant)
 			defer unregisterApplication(t, dexGraphQLClient, application.ID, tenant)
 
-			pkgName := "test-package"
-			pkgInput := graphql.PackageCreateInput{
-				Name: pkgName,
+			bndlName := "test-bundle"
+			bndlInput := graphql.BundleCreateInput{
+				Name: bndlName,
 				APIDefinitions: []*graphql.APIDefinitionInput{{
 					Name:      "test",
 					TargetURL: "https://target.url",
@@ -178,13 +178,13 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 				},
 			}
 
-			pkg := createPackageWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, pkgInput)
-			defer deletePackage(t, ctx, dexGraphQLClient, tenant, pkg.ID)
+			bndl := createBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
+			defer deleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-			assert.True(t, len(pkg.APIDefinitions.Data) > 0)
-			assert.NotNil(t, pkg.APIDefinitions.Data[0])
-			assert.NotNil(t, pkg.APIDefinitions.Data[0].Spec)
-			assert.Nil(t, pkg.APIDefinitions.Data[0].Spec.Data)
+			assert.True(t, len(bndl.APIDefinitions.Data) > 0)
+			assert.NotNil(t, bndl.APIDefinitions.Data[0])
+			assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec)
+			assert.Nil(t, bndl.APIDefinitions.Data[0].Spec.Data)
 		})
 	}
 }

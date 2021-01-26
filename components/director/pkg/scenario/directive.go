@@ -10,9 +10,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/packageinstanceauth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
+	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -26,9 +26,9 @@ import (
 )
 
 const (
-	GetApplicationID                      = "GetApplicationID"
-	GetApplicationIDByPackage             = "GetApplicationIDByPackage"
-	GetApplicationIDByPackageInstanceAuth = "GetApplicationIDByPackageInstanceAuth"
+	GetApplicationID                     = "GetApplicationID"
+	GetApplicationIDByBundle             = "GetApplicationIDByBundle"
+	GetApplicationIDByBundleInstanceAuth = "GetApplicationIDByBundleInstanceAuth"
 )
 
 var ErrMissingScenario = errors.New("Forbidden: Missing scenarios")
@@ -41,13 +41,13 @@ type directive struct {
 }
 
 // NewDirective returns a new scenario directive
-func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepository, packageRepo mp_package.PackageRepository, packageInstanceAuthRepo packageinstanceauth.Repository) *directive {
-	getApplicationIDByPackageFunc := func(ctx context.Context, tenantID, packageID string) (string, error) {
-		pkg, err := packageRepo.GetByID(ctx, tenantID, packageID)
+func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepository, bundleRepo mp_bundle.BundleRepository, bundleInstanceAuthRepo bundleinstanceauth.Repository) *directive {
+	getApplicationIDByBundleFunc := func(ctx context.Context, tenantID, bundleID string) (string, error) {
+		bndl, err := bundleRepo.GetByID(ctx, tenantID, bundleID)
 		if err != nil {
-			return "", errors.Wrapf(err, "while getting Package with id %s", packageID)
+			return "", errors.Wrapf(err, "while getting Bundle with id %s", bundleID)
 		}
-		return pkg.ApplicationID, nil
+		return bndl.ApplicationID, nil
 	}
 
 	return &directive{
@@ -57,14 +57,14 @@ func NewDirective(transact persistence.Transactioner, labelRepo label.LabelRepos
 			GetApplicationID: func(ctx context.Context, tenantID string, appID string) (string, error) {
 				return appID, nil
 			},
-			GetApplicationIDByPackage: getApplicationIDByPackageFunc,
-			GetApplicationIDByPackageInstanceAuth: func(ctx context.Context, tenantID, packageInstanceAuthID string) (string, error) {
-				packageInstanceAuth, err := packageInstanceAuthRepo.GetByID(ctx, tenantID, packageInstanceAuthID)
+			GetApplicationIDByBundle: getApplicationIDByBundleFunc,
+			GetApplicationIDByBundleInstanceAuth: func(ctx context.Context, tenantID, bundleInstanceAuthID string) (string, error) {
+				bundleInstanceAuth, err := bundleInstanceAuthRepo.GetByID(ctx, tenantID, bundleInstanceAuthID)
 				if err != nil {
-					return "", errors.Wrapf(err, "while getting Package instance auth with id %s", packageInstanceAuthID)
+					return "", errors.Wrapf(err, "while getting Bundle instance auth with id %s", bundleInstanceAuthID)
 				}
 
-				return getApplicationIDByPackageFunc(ctx, tenantID, packageInstanceAuth.PackageID)
+				return getApplicationIDByBundleFunc(ctx, tenantID, bundleInstanceAuth.BundleID)
 			},
 		},
 	}

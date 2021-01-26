@@ -26,37 +26,37 @@ spec:
       viewUrl: '/application/:appId'
       showInNavigation: true
 
-    - label: API Package Details
-      navigationPath: applications/details/:appId/apiPackage
+    - label: API Bundle Details
+      navigationPath: applications/details/:appId/apiBundle
       viewUrl: ''
       showInNavigation: false
-    - label: API Package Details
-      navigationPath: applications/details/:appId/apiPackage/:apiPackageId
-      viewUrl: '/application/:appId/apiPackage/:apiPackageId'
+    - label: API Bundle Details
+      navigationPath: applications/details/:appId/apiBundle/:apiBundleId
+      viewUrl: '/application/:appId/apiBundle/:apiBundleId'
       showInNavigation: true
 
     - label: API Details
-      navigationPath: applications/details/:appId/apiPackage/:apiPackageId/api
+      navigationPath: applications/details/:appId/apiBundle/:apiBundleId/api
       viewUrl: ''
       showInNavigation: false
     - label: API Details
-      navigationPath: applications/details/:appId/apiPackage/:apiPackageId/api/:apiId
-      viewUrl: '/application/:appId/apiPackage/:apiPackageId/api/:apiId'
+      navigationPath: applications/details/:appId/apiBundle/:apiBundleId/api/:apiId
+      viewUrl: '/application/:appId/apiBundle/:apiBundleId/api/:apiId'
       showInNavigation: true
     - label: Edit API
-      navigationPath: applications/details/:appId/apiPackage/:apiPackageId/api/:apiId/edit
-      viewUrl: '/application/:appId/apiPackage/:apiPackageId/api/:apiId/edit'
+      navigationPath: applications/details/:appId/apiBundle/:apiBundleId/api/:apiId/edit
+      viewUrl: '/application/:appId/apiBundle/:apiBundleId/api/:apiId/edit'
       showInNavigation: true
 
     - label: Event Details
-      navigationPath: applications/details/:appId/apiPackage/:apiPackageId/eventApi
+      navigationPath: applications/details/:appId/apiBundle/:apiBundleId/eventApi
       viewUrl: ''
       showInNavigation: false
     - label: Event Details
-      navigationPath: applications/details/:appId/apiPackage/:apiPackageId/eventApi/:eventApiId
-      viewUrl: '/application/:appId/apiPackage/:apiPackageId/eventApi/:eventApiId'
+      navigationPath: applications/details/:appId/apiBundle/:apiBundleId/eventApi/:eventApiId
+      viewUrl: '/application/:appId/apiBundle/:apiBundleId/eventApi/:eventApiId'
       showInNavigation: true
     - label: Edit Event
-      navigationPath: applications/details/:appId/apiPackage/:apiPackageId/eventApi/:eventApiId/edit
-      viewUrl: '/application/:appId/apiPackage/:apiPackageId/eventApi/:eventApiId/edit'
+      navigationPath: applications/details/:appId/apiBundle/:apiBundleId/eventApi/:eventApiId/edit
+      viewUrl: '/application/:appId/apiBundle/:apiBundleId/eventApi/:eventApiId/edit'
       showInNavigation: true

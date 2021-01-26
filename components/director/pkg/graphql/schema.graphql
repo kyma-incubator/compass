@@ -57,6 +57,24 @@ enum ApplicationWebhookType {
 	CONFIGURATION_CHANGED
 }
 
+enum BundleInstanceAuthSetStatusConditionInput {
+	SUCCEEDED
+	FAILED
+}
+
+enum BundleInstanceAuthStatusCondition {
+	"""
+	When creating, before Application sets the credentials
+	"""
+	PENDING
+	SUCCEEDED
+	FAILED
+	"""
+	When Runtime requests deletion and Application has to revoke the credentials
+	"""
+	UNUSED
+}
+
 enum DocumentFormat {
 	MARKDOWN
 }
@@ -67,7 +85,7 @@ enum EventSpecType {
 
 enum FetchMode {
 	SINGLE
-	PACKAGE
+	BUNDLE
 	INDEX
 }
 
@@ -84,24 +102,6 @@ enum HealthCheckStatusCondition {
 
 enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
-}
-
-enum PackageInstanceAuthSetStatusConditionInput {
-	SUCCEEDED
-	FAILED
-}
-
-enum PackageInstanceAuthStatusCondition {
-	"""
-	When creating, before Application sets the credentials
-	"""
-	PENDING
-	SUCCEEDED
-	FAILED
-	"""
-	When Runtime requests deletion and Application has to revoke the credentials
-	"""
-	UNUSED
 }
 
 enum RuntimeStatusCondition {
@@ -210,7 +210,7 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
-	packages: [PackageCreateInput!]
+	bundles: [BundleCreateInput!]
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 }
@@ -275,6 +275,80 @@ input AutomaticScenarioAssignmentSetInput {
 input BasicCredentialDataInput {
 	username: String!
 	password: String!
+}
+
+input BundleCreateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	name: String!
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	defaultInstanceAuth: AuthInput
+	apiDefinitions: [APIDefinitionInput!]
+	eventDefinitions: [EventDefinitionInput!]
+	documents: [DocumentInput!]
+}
+
+input BundleInstanceAuthRequestInput {
+	"""
+	Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
+	"""
+	context: JSON
+	"""
+	**Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
+	"""
+	inputParams: JSON
+}
+
+input BundleInstanceAuthSetInput {
+	"""
+	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
+	"""
+	auth: AuthInput
+	"""
+	**Validation:** Optional if the auth is provided.
+	If the status condition is "FAILED", auth must be empty.
+	"""
+	status: BundleInstanceAuthStatusInput
+}
+
+input BundleInstanceAuthStatusInput {
+	condition: BundleInstanceAuthSetStatusConditionInput! = SUCCEEDED
+	"""
+	**Validation:** required, if condition is FAILED
+	"""
+	message: String!
+	"""
+	Example reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	
+	   **Validation**: required, if condition is FAILED
+	"""
+	reason: String!
+}
+
+input BundleUpdateInput {
+	"""
+	**Validation:** ASCII printable characters, max=100
+	"""
+	name: String!
+	"""
+	**Validation:** max=2000
+	"""
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	"""
+	While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
+	"""
+	defaultInstanceAuth: AuthInput
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -434,80 +508,6 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
-input PackageCreateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	name: String!
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	instanceAuthRequestInputSchema: JSONSchema
-	defaultInstanceAuth: AuthInput
-	apiDefinitions: [APIDefinitionInput!]
-	eventDefinitions: [EventDefinitionInput!]
-	documents: [DocumentInput!]
-}
-
-input PackageInstanceAuthRequestInput {
-	"""
-	Context of PackageInstanceAuth - such as Runtime ID, namespace, etc.
-	"""
-	context: JSON
-	"""
-	**Validation:** JSON validated against package.instanceAuthRequestInputSchema
-	"""
-	inputParams: JSON
-}
-
-input PackageInstanceAuthSetInput {
-	"""
-	**Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
-	"""
-	auth: AuthInput
-	"""
-	**Validation:** Optional if the auth is provided.
-	If the status condition is "FAILED", auth must be empty.
-	"""
-	status: PackageInstanceAuthStatusInput
-}
-
-input PackageInstanceAuthStatusInput {
-	condition: PackageInstanceAuthSetStatusConditionInput! = SUCCEEDED
-	"""
-	**Validation:** required, if condition is FAILED
-	"""
-	message: String!
-	"""
-	Example reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	
-	   **Validation**: required, if condition is FAILED
-	"""
-	reason: String!
-}
-
-input PackageUpdateInput {
-	"""
-	**Validation:** ASCII printable characters, max=100
-	"""
-	name: String!
-	"""
-	**Validation:** max=2000
-	"""
-	description: String
-	instanceAuthRequestInputSchema: JSONSchema
-	"""
-	While updating defaultInstanceAuth, existing PackageInstanceAuths are NOT updated.
-	"""
-	defaultInstanceAuth: AuthInput
-}
-
 input PlaceholderDefinitionInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -616,8 +616,8 @@ type Application {
 	status: ApplicationStatus!
 	webhooks: [Webhook!]
 	healthCheckURL: String
-	packages(first: Int = 200, after: PageCursor): PackagePage
-	package(id: ID!): Package
+	bundles(first: Int = 200, after: PageCursor): BundlePage
+	bundle(id: ID!): Bundle
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
 }
@@ -675,6 +675,64 @@ type AutomaticScenarioAssignmentPage implements Pageable {
 type BasicCredentialData {
 	username: String!
 	password: String!
+}
+
+type Bundle {
+	id: ID!
+	name: String!
+	description: String
+	instanceAuthRequestInputSchema: JSONSchema
+	instanceAuth(id: ID!): BundleInstanceAuth
+	instanceAuths: [BundleInstanceAuth!]!
+	"""
+	When defined, all Auth requests fallback to defaultInstanceAuth.
+	"""
+	defaultInstanceAuth: Auth
+	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
+	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
+	documents(first: Int = 200, after: PageCursor): DocumentPage
+	apiDefinition(id: ID!): APIDefinition
+	eventDefinition(id: ID!): EventDefinition
+	document(id: ID!): Document
+}
+
+type BundleInstanceAuth {
+	id: ID!
+	"""
+	Context of BundleInstanceAuth - such as Runtime ID, namespace
+	"""
+	context: JSON
+	"""
+	User input while requesting Bundle Instance Auth
+	"""
+	inputParams: JSON
+	"""
+	It may be empty if status is PENDING.
+	Populated with `bundle.defaultAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
+	"""
+	auth: Auth
+	status: BundleInstanceAuthStatus!
+}
+
+type BundleInstanceAuthStatus {
+	condition: BundleInstanceAuthStatusCondition!
+	timestamp: Timestamp!
+	message: String!
+	"""
+	Possible reasons:
+	- PendingNotification
+	- NotificationSent
+	- CredentialsProvided
+	- CredentialsNotProvided
+	- PendingDeletion
+	"""
+	reason: String!
+}
+
+type BundlePage implements Pageable {
+	data: [Bundle!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type CSRFTokenCredentialRequestAuth {
@@ -811,64 +869,6 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	connectorURL: String!
 	raw: String
 	rawEncoded: String
-}
-
-type Package {
-	id: ID!
-	name: String!
-	description: String
-	instanceAuthRequestInputSchema: JSONSchema
-	instanceAuth(id: ID!): PackageInstanceAuth
-	instanceAuths: [PackageInstanceAuth!]!
-	"""
-	When defined, all Auth requests fallback to defaultInstanceAuth.
-	"""
-	defaultInstanceAuth: Auth
-	apiDefinitions(group: String, first: Int = 200, after: PageCursor): APIDefinitionPage
-	eventDefinitions(group: String, first: Int = 200, after: PageCursor): EventDefinitionPage
-	documents(first: Int = 200, after: PageCursor): DocumentPage
-	apiDefinition(id: ID!): APIDefinition
-	eventDefinition(id: ID!): EventDefinition
-	document(id: ID!): Document
-}
-
-type PackageInstanceAuth {
-	id: ID!
-	"""
-	Context of PackageInstanceAuth - such as Runtime ID, namespace
-	"""
-	context: JSON
-	"""
-	User input while requesting Package Instance Auth
-	"""
-	inputParams: JSON
-	"""
-	It may be empty if status is PENDING.
-	Populated with `package.defaultAuth` value if `package.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	"""
-	auth: Auth
-	status: PackageInstanceAuthStatus!
-}
-
-type PackageInstanceAuthStatus {
-	condition: PackageInstanceAuthStatusCondition!
-	timestamp: Timestamp!
-	message: String!
-	"""
-	Possible reasons:
-	- PendingNotification
-	- NotificationSent
-	- CredentialsProvided
-	- CredentialsNotProvided
-	- PendingDeletion
-	"""
-	reason: String!
-}
-
-type PackagePage implements Pageable {
-	data: [Package!]!
-	pageInfo: PageInfo!
-	totalCount: Int!
 }
 
 type PageInfo {
@@ -1063,7 +1063,7 @@ type Query {
 type Mutation {
 	"""
 	**Examples**
-	- [register application with packages](examples/register-application/register-application-with-packages.graphql)
+	- [register application with bundles](examples/register-application/register-application-with-bundles.graphql)
 	- [register application with status](examples/register-application/register-application-with-status.graphql)
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
@@ -1149,9 +1149,9 @@ type Mutation {
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	"""
 	**Examples**
-	- [add api definition to package](examples/add-api-definition-to-package/add-api-definition-to-package.graphql)
+	- [add api definition to bundle](examples/add-api-definition-to-bundle/add-api-definition-to-bundle.graphql)
 	"""
-	addAPIDefinitionToPackage(packageID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToPackage")
+	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle")
 	"""
 	**Examples**
 	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
@@ -1177,9 +1177,9 @@ type Mutation {
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
 	"""
 	**Examples**
-	- [add event definition to package](examples/add-event-definition-to-package/add-event-definition-to-package.graphql)
+	- [add event definition to bundle](examples/add-event-definition-to-bundle/add-event-definition-to-bundle.graphql)
 	"""
-	addEventDefinitionToPackage(packageID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToPackage")
+	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle")
 	"""
 	**Examples**
 	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
@@ -1193,9 +1193,9 @@ type Mutation {
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	"""
 	**Examples**
-	- [add document to package](examples/add-document-to-package/add-document-to-package.graphql)
+	- [add document to bundle](examples/add-document-to-bundle/add-document-to-bundle.graphql)
 	"""
-	addDocumentToPackage(packageID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToPackage")
+	addDocumentToBundle(bundleID: ID!, in: DocumentInput! @validate): Document! @hasScopes(path: "graphql.mutation.addDocumentToBundle")
 	"""
 	**Examples**
 	- [delete document](examples/delete-document/delete-document.graphql)
@@ -1241,48 +1241,48 @@ type Mutation {
 	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 	"""
-	When PackageInstanceAuth is not in pending state, the operation returns error.
+	When BundleInstanceAuth is not in pending state, the operation returns error.
 	
 	When used without error, the status of pending auth is set to success.
 	
 	**Examples**
-	- [set package instance auth](examples/set-package-instance-auth/set-package-instance-auth.graphql)
+	- [set bundle instance auth](examples/set-bundle-instance-auth/set-bundle-instance-auth.graphql)
 	"""
-	setPackageInstanceAuth(authID: ID!, in: PackageInstanceAuthSetInput! @validate): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.setPackageInstanceAuth")
+	setBundleInstanceAuth(authID: ID!, in: BundleInstanceAuthSetInput! @validate): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.setBundleInstanceAuth")
 	"""
 	**Examples**
-	- [delete package instance auth](examples/delete-package-instance-auth/delete-package-instance-auth.graphql)
+	- [delete bundle instance auth](examples/delete-bundle-instance-auth/delete-bundle-instance-auth.graphql)
 	"""
-	deletePackageInstanceAuth(authID: ID!): PackageInstanceAuth! @hasScopes(path: "graphql.mutation.deletePackageInstanceAuth")
+	deleteBundleInstanceAuth(authID: ID!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.deleteBundleInstanceAuth")
 	"""
-	When defaultInstanceAuth is set, it fires "createPackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to PENDING.
+	When defaultInstanceAuth is set, it fires "createBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to PENDING.
 	
 	**Examples**
-	- [request package instance auth creation](examples/request-package-instance-auth-creation/request-package-instance-auth-creation.graphql)
+	- [request bundle instance auth creation](examples/request-bundle-instance-auth-creation/request-bundle-instance-auth-creation.graphql)
 	"""
-	requestPackageInstanceAuthCreation(packageID: ID!, in: PackageInstanceAuthRequestInput! @validate): PackageInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByPackage", idField: "packageID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthCreation")
+	requestBundleInstanceAuthCreation(bundleID: ID!, in: BundleInstanceAuthRequestInput! @validate): BundleInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByBundle", idField: "bundleID") @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthCreation")
 	"""
-	When defaultInstanceAuth is set, it fires "deletePackageInstanceAuth" mutation. Otherwise, the status of the PackageInstanceAuth is set to UNUSED.
+	When defaultInstanceAuth is set, it fires "deleteBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to UNUSED.
 	
 	**Examples**
-	- [request package instance auth deletion](examples/request-package-instance-auth-deletion/request-package-instance-auth-deletion.graphql)
+	- [request bundle instance auth deletion](examples/request-bundle-instance-auth-deletion/request-bundle-instance-auth-deletion.graphql)
 	"""
-	requestPackageInstanceAuthDeletion(authID: ID!): PackageInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByPackageInstanceAuth", idField: "authID") @hasScopes(path: "graphql.mutation.requestPackageInstanceAuthDeletion")
-	"""
-	**Examples**
-	- [add package](examples/add-package/add-package.graphql)
-	"""
-	addPackage(applicationID: ID!, in: PackageCreateInput! @validate): Package! @hasScopes(path: "graphql.mutation.addPackage")
+	requestBundleInstanceAuthDeletion(authID: ID!): BundleInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByBundleInstanceAuth", idField: "authID") @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthDeletion")
 	"""
 	**Examples**
-	- [update package](examples/update-package/update-package.graphql)
+	- [add bundle](examples/add-bundle/add-bundle.graphql)
 	"""
-	updatePackage(id: ID!, in: PackageUpdateInput! @validate): Package! @hasScopes(path: "graphql.mutation.updatePackage")
+	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
 	"""
 	**Examples**
-	- [delete package](examples/delete-package/delete-package.graphql)
+	- [update bundle](examples/update-bundle/update-bundle.graphql)
 	"""
-	deletePackage(id: ID!): Package! @hasScopes(path: "graphql.mutation.deletePackage")
+	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
+	"""
+	**Examples**
+	- [delete bundle](examples/delete-bundle/delete-bundle.graphql)
+	"""
+	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle")
 	"""
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)

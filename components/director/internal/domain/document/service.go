@@ -17,8 +17,8 @@ import (
 type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
-	GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.Document, error)
-	ListForPackage(ctx context.Context, tenant string, packageID string, pageSize int, cursor string) (*model.DocumentPage, error)
+	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.Document, error)
+	ListForBundle(ctx context.Context, tenant string, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error)
 	Create(ctx context.Context, item *model.Document) error
 	Delete(ctx context.Context, tenant, id string) error
 }
@@ -65,13 +65,13 @@ func (s *service) Get(ctx context.Context, id string) (*model.Document, error) {
 	return document, nil
 }
 
-func (s *service) GetForPackage(ctx context.Context, id string, packageID string) (*model.Document, error) {
+func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	document, err := s.repo.GetForPackage(ctx, tnt, id, packageID)
+	document, err := s.repo.GetForBundle(ctx, tnt, id, bundleID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting Document")
 	}
@@ -79,16 +79,16 @@ func (s *service) GetForPackage(ctx context.Context, id string, packageID string
 	return document, nil
 }
 
-func (s *service) ListForPackage(ctx context.Context, packageID string, pageSize int, cursor string) (*model.DocumentPage, error) {
+func (s *service) ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	return s.repo.ListForPackage(ctx, tnt, packageID, pageSize, cursor)
+	return s.repo.ListForBundle(ctx, tnt, bundleID, pageSize, cursor)
 }
 
-func (s *service) CreateInPackage(ctx context.Context, packageID string, in model.DocumentInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -96,7 +96,7 @@ func (s *service) CreateInPackage(ctx context.Context, packageID string, in mode
 
 	id := s.uidService.Generate()
 
-	document := in.ToDocumentWithinPackage(id, tnt, packageID)
+	document := in.ToDocumentWithinBundle(id, tnt, bundleID)
 	err = s.repo.Create(ctx, document)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating Document")

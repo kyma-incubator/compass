@@ -1,8 +1,6 @@
 package service_test
 
-import (
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
-)
+import "github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 
 func fixAPIOpenAPIYAML() model.API {
 	spec := `openapi: 3.0.0

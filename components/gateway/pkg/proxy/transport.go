@@ -118,8 +118,9 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		Claims:               claims,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "while sending post-change auditlog message to auditlog service")
+		log.Printf("failed to send a post-change auditlog message to auditlog service: %v", err)
 	}
+
 	return resp, nil
 }
 

@@ -1,6 +1,5 @@
 package model
 
-
 type Application struct {
 	ID          string
 	Tenant      string

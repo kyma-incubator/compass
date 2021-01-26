@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/api/middlewares"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/connector"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/director"
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/connectorservice/model"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	"github.com/sirupsen/logrus"
 )
 

@@ -19,15 +19,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestResolver_AddAPIToPackage(t *testing.T) {
+func TestResolver_AddAPIToBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	packageID := "1"
+	bundleID := "1"
 
-	modelAPI := fixAPIDefinitionModel(id, packageID, "name", "bar")
-	gqlAPI := fixGQLAPIDefinition(id, packageID, "name", "bar")
+	modelAPI := fixAPIDefinitionModel(id, bundleID, "name", "bar")
+	gqlAPI := fixGQLAPIDefinition(id, bundleID, "name", "bar")
 	gqlAPIInput := fixGQLAPIDefinitionInput("name", "foo", "bar")
 	modelAPIInput := fixModelAPIDefinitionInput("name", "foo", "bar")
 
@@ -37,7 +37,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.APIService
-		PkgServiceFn    func() *automock.PackageService
+		BndlServiceFn   func() *automock.BundleService
 		ConverterFn     func() *automock.APIConverter
 		ExpectedAPI     *graphql.APIDefinition
 		ExpectedErr     error
@@ -47,13 +47,13 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), bundleID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(true, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -72,8 +72,8 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 				svc := &automock.APIService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -90,9 +90,9 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 				svc := &automock.APIService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(false, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), bundleID).Return(false, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -101,7 +101,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 				return conv
 			},
 			ExpectedAPI: nil,
-			ExpectedErr: errors.New("cannot add API to not existing package"),
+			ExpectedErr: errors.New("cannot add API to not existing bundle"),
 		},
 		{
 			Name:            "Returns error when application existence check failed",
@@ -110,9 +110,9 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 				svc := &automock.APIService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(false, testErr)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), bundleID).Return(false, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -128,12 +128,12 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), packageID, *modelAPIInput).Return("", testErr).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), bundleID, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(true, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -149,13 +149,13 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), bundleID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(true, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -171,13 +171,13 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInPackage", txtest.CtxWithDBMatcher(), packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", txtest.CtxWithDBMatcher(), bundleID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelAPI, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", txtest.CtxWithDBMatcher(), packageID).Return(true, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", txtest.CtxWithDBMatcher(), bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.APIConverter {
@@ -196,12 +196,12 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
-			pkgSvc := testCase.PkgServiceFn()
+			bndlSvc := testCase.BndlServiceFn()
 
-			resolver := api.NewResolver(transact, svc, nil, nil, pkgSvc, converter, nil)
+			resolver := api.NewResolver(transact, svc, nil, nil, bndlSvc, converter, nil)
 
 			// when
-			result, err := resolver.AddAPIDefinitionToPackage(context.TODO(), packageID, *gqlAPIInput)
+			result, err := resolver.AddAPIDefinitionToBundle(context.TODO(), bundleID, *gqlAPIInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedAPI, result)
@@ -215,7 +215,7 @@ func TestResolver_AddAPIToPackage(t *testing.T) {
 			persist.AssertExpectations(t)
 			transact.AssertExpectations(t)
 			svc.AssertExpectations(t)
-			pkgSvc.AssertExpectations(t)
+			bndlSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}
