@@ -15,7 +15,7 @@ import (
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	CreateInPackage(ctx context.Context, packageID string, in model.APIDefinitionInput) (string, error)
+	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
@@ -48,8 +48,8 @@ type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
-type PackageService interface {
+//go:generate mockery -name=BundleService -output=automock -outpkg=automock -case=underscore
+type BundleService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
@@ -57,32 +57,32 @@ type Resolver struct {
 	transact    persistence.Transactioner
 	svc         APIService
 	appSvc      ApplicationService
-	pkgSvc      PackageService
+	bndlSvc     BundleService
 	rtmSvc      RuntimeService
 	converter   APIConverter
 	frConverter FetchRequestConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, pkgSvc PackageService, converter APIConverter, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, bndlSvc BundleService, converter APIConverter, frConverter FetchRequestConverter) *Resolver {
 	return &Resolver{
 		transact:    transact,
 		svc:         svc,
 		appSvc:      appSvc,
 		rtmSvc:      rtmSvc,
-		pkgSvc:      pkgSvc,
+		bndlSvc:     bndlSvc,
 		converter:   converter,
 		frConverter: frConverter,
 	}
 }
 
-func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
-	log.C(ctx).Infof("Adding APIDefinition to package with id %s", packageID)
+	log.C(ctx).Infof("Adding APIDefinition to bundle with id %s", bundleID)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -91,18 +91,18 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 		return nil, errors.Wrap(err, "while converting GraphQL input to APIDefinition")
 	}
 
-	found, err := r.pkgSvc.Exist(ctx, packageID)
+	found, err := r.bndlSvc.Exist(ctx, bundleID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while checking existence of Package with id %s when adding APIDefinition", packageID)
+		return nil, errors.Wrapf(err, "while checking existence of Bundle with id %s when adding APIDefinition", bundleID)
 	}
 
 	if !found {
-		return nil, apperrors.NewInvalidDataError("cannot add API to not existing package")
+		return nil, apperrors.NewInvalidDataError("cannot add API to not existing bundle")
 	}
 
-	id, err := r.svc.CreateInPackage(ctx, packageID, *convertedIn)
+	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error occurred while creating APIDefinition in Package with id %s", packageID)
+		return nil, errors.Wrapf(err, "Error occurred while creating APIDefinition in Bundle with id %s", bundleID)
 	}
 
 	api, err := r.svc.Get(ctx, id)
@@ -117,7 +117,7 @@ func (r *Resolver) AddAPIDefinitionToPackage(ctx context.Context, packageID stri
 
 	gqlAPI := r.converter.ToGraphQL(api)
 
-	log.C(ctx).Infof("APIDefinition with id %s successfully added to Package with id %s", id, packageID)
+	log.C(ctx).Infof("APIDefinition with id %s successfully added to Bundle with id %s", id, bundleID)
 	return gqlAPI, nil
 }
 

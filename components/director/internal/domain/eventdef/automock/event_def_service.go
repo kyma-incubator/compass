@@ -15,20 +15,20 @@ type EventDefService struct {
 	mock.Mock
 }
 
-// CreateInPackage provides a mock function with given fields: ctx, packageID, in
-func (_m *EventDefService) CreateInPackage(ctx context.Context, packageID string, in model.EventDefinitionInput) (string, error) {
-	ret := _m.Called(ctx, packageID, in)
+// CreateInBundle provides a mock function with given fields: ctx, bundleID, in
+func (_m *EventDefService) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput) (string, error) {
+	ret := _m.Called(ctx, bundleID, in)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput) string); ok {
-		r0 = rf(ctx, packageID, in)
+		r0 = rf(ctx, bundleID, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.EventDefinitionInput) error); ok {
-		r1 = rf(ctx, packageID, in)
+		r1 = rf(ctx, bundleID, in)
 	} else {
 		r1 = ret.Error(1)
 	}

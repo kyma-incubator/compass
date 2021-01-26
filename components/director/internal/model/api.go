@@ -8,7 +8,7 @@ import (
 
 type APIDefinition struct {
 	ID          string
-	PackageID   string
+	BundleID    string
 	Tenant      string
 	Name        string
 	Description *string
@@ -59,14 +59,14 @@ type APIDefinitionPage struct {
 
 func (APIDefinitionPage) IsPageable() {}
 
-func (a *APIDefinitionInput) ToAPIDefinitionWithinPackage(id string, packageID string, tenant string) *APIDefinition {
+func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID string, tenant string) *APIDefinition {
 	if a == nil {
 		return nil
 	}
 
 	return &APIDefinition{
 		ID:          id,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Tenant:      tenant,
 		Name:        a.Name,
 		Description: a.Description,

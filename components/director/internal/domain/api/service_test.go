@@ -28,11 +28,11 @@ func TestService_Get(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	packageID := "foobar"
+	bundleID := "foobar"
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, packageID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, bundleID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -99,16 +99,16 @@ func TestService_Get(t *testing.T) {
 	})
 }
 
-func TestService_GetForPackage(t *testing.T) {
+func TestService_GetForBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	pkgID := "foobar"
+	bndlID := "foobar"
 	name := "foo"
 	desc := "bar"
 
-	apiDefinition := fixAPIDefinitionModel(id, pkgID, name, desc)
+	apiDefinition := fixAPIDefinitionModel(id, bndlID, name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -118,7 +118,7 @@ func TestService_GetForPackage(t *testing.T) {
 		RepositoryFn       func() *automock.APIRepository
 		Input              model.APIDefinitionInput
 		InputID            string
-		PackageID          string
+		BundleID           string
 		ExpectedAPI        *model.APIDefinition
 		ExpectedErrMessage string
 	}{
@@ -126,11 +126,11 @@ func TestService_GetForPackage(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetForPackage", ctx, tenantID, id, pkgID).Return(apiDefinition, nil).Once()
+				repo.On("GetForBundle", ctx, tenantID, id, bndlID).Return(apiDefinition, nil).Once()
 				return repo
 			},
 			InputID:            id,
-			PackageID:          pkgID,
+			BundleID:           bndlID,
 			ExpectedAPI:        apiDefinition,
 			ExpectedErrMessage: "",
 		},
@@ -138,11 +138,11 @@ func TestService_GetForPackage(t *testing.T) {
 			Name: "Returns error when APIDefinition retrieval failed",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("GetForPackage", ctx, tenantID, id, pkgID).Return(nil, testErr).Once()
+				repo.On("GetForBundle", ctx, tenantID, id, bndlID).Return(nil, testErr).Once()
 				return repo
 			},
 			InputID:            id,
-			PackageID:          pkgID,
+			BundleID:           bndlID,
 			ExpectedAPI:        nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -154,7 +154,7 @@ func TestService_GetForPackage(t *testing.T) {
 			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
-			api, err := svc.GetForPackage(ctx, testCase.InputID, testCase.PackageID)
+			api, err := svc.GetForBundle(ctx, testCase.InputID, testCase.BundleID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -171,26 +171,26 @@ func TestService_GetForPackage(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.GetForPackage(context.TODO(), "", "")
+		_, err := svc.GetForBundle(context.TODO(), "", "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
-func TestService_ListForPackage(t *testing.T) {
+func TestService_ListForBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	pkgID := "foobar"
+	bndlID := "foobar"
 	name := "foo"
 	desc := "bar"
 
 	apiDefinitions := []*model.APIDefinition{
-		fixAPIDefinitionModel(id, pkgID, name, desc),
-		fixAPIDefinitionModel(id, pkgID, name, desc),
-		fixAPIDefinitionModel(id, pkgID, name, desc),
+		fixAPIDefinitionModel(id, bndlID, name, desc),
+		fixAPIDefinitionModel(id, bndlID, name, desc),
+		fixAPIDefinitionModel(id, bndlID, name, desc),
 	}
 	apiDefinitionPage := &model.APIDefinitionPage{
 		Data:       apiDefinitions,
@@ -218,7 +218,7 @@ func TestService_ListForPackage(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("ListForPackage", ctx, tenantID, packageID, 2, after).Return(apiDefinitionPage, nil).Once()
+				repo.On("ListForBundle", ctx, tenantID, bundleID, 2, after).Return(apiDefinitionPage, nil).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -249,7 +249,7 @@ func TestService_ListForPackage(t *testing.T) {
 			Name: "Returns error when APIDefinition listing failed",
 			RepositoryFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("ListForPackage", ctx, tenantID, packageID, 2, after).Return(nil, testErr).Once()
+				repo.On("ListForBundle", ctx, tenantID, bundleID, 2, after).Return(nil, testErr).Once()
 				return repo
 			},
 			PageSize:           2,
@@ -265,7 +265,7 @@ func TestService_ListForPackage(t *testing.T) {
 			svc := api.NewService(repo, nil, nil, nil)
 
 			// when
-			docs, err := svc.ListForPackage(ctx, packageID, testCase.PageSize, after)
+			docs, err := svc.ListForBundle(ctx, bundleID, testCase.PageSize, after)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -282,19 +282,19 @@ func TestService_ListForPackage(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.ListForPackage(context.TODO(), "", 5, "")
+		_, err := svc.ListForBundle(context.TODO(), "", 5, "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
 
-func TestService_CreateToPackage(t *testing.T) {
+func TestService_CreateToBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	packageID := "pkgid"
+	bundleID := "bndlid"
 	name := "Foo"
 	targetUrl := "https://test-url.com"
 
@@ -318,7 +318,7 @@ func TestService_CreateToPackage(t *testing.T) {
 
 	modelAPIDefinition := &model.APIDefinition{
 		ID:        id,
-		PackageID: packageID,
+		BundleID:  bundleID,
 		Tenant:    tenantID,
 		Name:      name,
 		TargetURL: targetUrl,
@@ -328,7 +328,7 @@ func TestService_CreateToPackage(t *testing.T) {
 
 	modelAPIDefinitionWithSpec := &model.APIDefinition{
 		ID:        id,
-		PackageID: packageID,
+		BundleID:  bundleID,
 		Tenant:    tenantID,
 		Name:      name,
 		TargetURL: targetUrl,
@@ -524,7 +524,7 @@ func TestService_CreateToPackage(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.CreateInPackage(ctx, packageID, testCase.Input)
+			result, err := svc.CreateInBundle(ctx, bundleID, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -542,7 +542,7 @@ func TestService_CreateToPackage(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.CreateInPackage(context.TODO(), "", model.APIDefinitionInput{})
+		_, err := svc.CreateInBundle(context.TODO(), "", model.APIDefinitionInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

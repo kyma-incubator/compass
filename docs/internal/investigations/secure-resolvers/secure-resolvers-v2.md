@@ -7,19 +7,19 @@ The solution proposal includes limiting the access to operations for `applicatio
 ## Terminology
 
 * API Consumer - An API Consumer could be any of the following: application, runtime, integration system, or user.
-* Owner (or owning entity) - A top-level entity to which a given resource belongs. For example, an application is the owner of packages, api definitions, documents, and so on. In Compass, the following owner types are present: `application`, `runtime`, `integration system`, and `application template`.
+* Owner (or owning entity) - A top-level entity to which a given resource belongs. For example, an application is the owner of bundles, api definitions, documents, and so on. In Compass, the following owner types are present: `application`, `runtime`, `integration system`, and `application template`.
 
 ## Requirements
 
 When a user makes a query or mutation, the secured resolvers concept should not limit the user's access. Put simply, the user consumer type should not be affected by the secured resolvers concept.
 
-By default, an application must not be allowed to modify another application's metadata within the same tenant. This applies not only for the top-level application entity but also for all its related sub-entities such as: packages, API and event definitions, documents, and so on. For example, application X must not be allowed to insert API definitions in package Y when package Y belongs to application Z, even if both applications X and Z are in the same tenant.
+By default, an application must not be allowed to modify another application's metadata within the same tenant. This applies not only for the top-level application entity but also for all its related sub-entities such as: bundles, API and event definitions, documents, and so on. For example, application X must not be allowed to insert API definitions in bundle Y when bundle Y belongs to application Z, even if both applications X and Z are in the same tenant.
 
 By default, a runtime must not be allowed to modify another runtime's metadata within the same tenant. Additionally, a runtime must not be allowed to fetch applications that belong to other runtimes.
 
 By default, an integration system must not be allowed to modify another integration system's metadata.
 
-In general, integration systems can manage other systems and their metadata (such as applications, and runtimes). However, an integration system must be allowed to modify only entities that it has created, or entities to which it has been granted access for modifications. For example, if an integration system registers an application, later on, it can also register packages for this application. However, it cannot modify metadata for applications that other consumers registered, unless it has been explicitly granted access to do so. Another example is when a user registers an application via the UI. To get access to this application, the integration system either must be granted this access by the user via an API call to Director (grant access to the integration system for this application), or some automated procedures must be in place (a concept about stacking credentials via one time tokens is available in the further sections of this document). Although the given examples are related to applications, these requirements are also valid for application sub-entities, application templates, and runtimes managed by integration systems.
+In general, integration systems can manage other systems and their metadata (such as applications, and runtimes). However, an integration system must be allowed to modify only entities that it has created, or entities to which it has been granted access for modifications. For example, if an integration system registers an application, later on, it can also register bundles for this application. However, it cannot modify metadata for applications that other consumers registered, unless it has been explicitly granted access to do so. Another example is when a user registers an application via the UI. To get access to this application, the integration system either must be granted this access by the user via an API call to Director (grant access to the integration system for this application), or some automated procedures must be in place (a concept about stacking credentials via one time tokens is available in the further sections of this document). Although the given examples are related to applications, these requirements are also valid for application sub-entities, application templates, and runtimes managed by integration systems.
 
 Some integration systems (such as UI applications) require unrestricted access to the Director API. They should keep working properly having a global view/access.
 
@@ -31,9 +31,9 @@ Out-of-scope: Limit access to the `auths` field of each type to admin users only
 
 The following section analyzes the problem in all current queries and mutations, and groups them in sections providing a conceptual solution.
 
-The problem with securing resolvers is three dimensional. It features all three: mutations/queries; consumer, and owner. In total, there are about 40 mutations/queries that have to be secured, 4 consumer types, and 4 owner types. For specific queries/mutations there is always a single owner but obtaining the ID of that owner is not always straight forward. For example, in `getApplication(applicationID)` the owner ID is passed as input to the query, however, in `updatePackage(packageID)` some special code must be carried out to find the application ID from the package ID.
+The problem with securing resolvers is three dimensional. It features all three: mutations/queries; consumer, and owner. In total, there are about 40 mutations/queries that have to be secured, 4 consumer types, and 4 owner types. For specific queries/mutations there is always a single owner but obtaining the ID of that owner is not always straight forward. For example, in `getApplication(applicationID)` the owner ID is passed as input to the query, however, in `updateBundle(bundleID)` some special code must be carried out to find the application ID from the bundle ID.
 
-Why it is important who is the owner and what is the owner ID? Currently, with the help of the ORY integration, the Director API always receives an ID token, regardless of the actual authentication mechanism. Then, the details about the actual caller/consumer can be extracted from the ID token, and then, stored in the Go context. On a high level, it is necessary to ensure that the consumer from the Go context matches the owner of the requested resource. More broadly put (and required especially for integration systems), it is important to verify that the consumer can access the owner's resources. For example, if the owner is an application, the resources that must be accessible are the application details, packages, and so on.
+Why it is important who is the owner and what is the owner ID? Currently, with the help of the ORY integration, the Director API always receives an ID token, regardless of the actual authentication mechanism. Then, the details about the actual caller/consumer can be extracted from the ID token, and then, stored in the Go context. On a high level, it is necessary to ensure that the consumer from the Go context matches the owner of the requested resource. More broadly put (and required especially for integration systems), it is important to verify that the consumer can access the owner's resources. For example, if the owner is an application, the resources that must be accessible are the application details, bundles, and so on.
 
 ### Determining the Owner ID
 
@@ -45,21 +45,21 @@ Determining the owner ID during queries and mutations was researched by analyzin
 
 Queries and mutations which owner is an application are grouped in 8 categories, depending on the input provided to the query or mutation. In each category a different piece of code must be carried out to determine the owner ID.
 
-1. Queries and mutations that provide the owner ID as part of the client input (for example: `getApplication`, `updateApplication`, `addPackage`, etc). For these, the owner ID can be determined from the GraphQL arguments list.
-2. Queries and mutations that provide a `packageID` as part of the client input (for example: `updatePackage`, `deletePackage`, `addDocumentToPackage`, etc). For these, the owner ID can be determined by fetching the actual package with ID equal to the `packageID` from the GraphQL arguments list and getting its `applicationID`.
-3. Queries and mutations that provide the `documentID` as part of the client input (for example: `updateDocument`, `deleteDocument`). To get the owner, fetch the document with ID equal to the `documentID` from the GraphQL arguments list, then get its `packageID`, then fetch the package, and finally, get its `applicationID`, which is the owner ID.
-4. Queries and mutations that provide `APIDefinitionID` as part of the client input (for example: `updateAPIDefinition`, `deleteAPIDefinition`). To get the owner, fetch the api definition with ID equal to the `APIDefinitionID` from the GraphQL arguments, then get its `packageID`, then fetch the package, and finally, get its `applicationID`, which is the owner ID.
-5. Queries and mutations that provide `EventDefinitionID` as part of the client input (for example: `updateEventDefinition`, `deleteEventDefinition`). To get the owner, fetch the event definition with ID equal to the `EventDefinitionID` from the GraphQL arguments, then get its `packageID`, then fetch the package, and finally, get its `applicationID`, which is the owner ID.
+1. Queries and mutations that provide the owner ID as part of the client input (for example: `getApplication`, `updateApplication`, `addBundle`, etc). For these, the owner ID can be determined from the GraphQL arguments list.
+2. Queries and mutations that provide a `bundleID` as part of the client input (for example: `updateBundle`, `deleteBundle`, `addDocumentToBundle`, etc). For these, the owner ID can be determined by fetching the actual bundle with ID equal to the `bundleID` from the GraphQL arguments list and getting its `applicationID`.
+3. Queries and mutations that provide the `documentID` as part of the client input (for example: `updateDocument`, `deleteDocument`). To get the owner, fetch the document with ID equal to the `documentID` from the GraphQL arguments list, then get its `bundleID`, then fetch the bundle, and finally, get its `applicationID`, which is the owner ID.
+4. Queries and mutations that provide `APIDefinitionID` as part of the client input (for example: `updateAPIDefinition`, `deleteAPIDefinition`). To get the owner, fetch the api definition with ID equal to the `APIDefinitionID` from the GraphQL arguments, then get its `bundleID`, then fetch the bundle, and finally, get its `applicationID`, which is the owner ID.
+5. Queries and mutations that provide `EventDefinitionID` as part of the client input (for example: `updateEventDefinition`, `deleteEventDefinition`). To get the owner, fetch the event definition with ID equal to the `EventDefinitionID` from the GraphQL arguments, then get its `bundleID`, then fetch the bundle, and finally, get its `applicationID`, which is the owner ID.
 6. Queries and mutations that provide `webhookID` as part of the client input (for example: `updateWebhook`, `deleteWebhook`). To get the owner, fetch the webhook with ID equal to the `webhookID` from the GraphQL arguments, and then get its `applicationID`, which is the owner ID.
 7. Queries and mutations that provide `systemAuthID` as part of the client input (for example: `deleteSystemAuthForApplication`). To get the owner, fetch the system auth (or a record from a different table that contains both `applicationID` and `systemAuthID`), and then, get the `applicationID`, which is the owner ID.
-8. Queries and mutations that provide `packageInstanceAuthID` as part of the client input (for example: `setPackageInstanceAuth`, `deletePackageInstanceAuth`). To get the owner, fetch the package by `packageInstanceAuthID` taken from the GraphQL arguments, and then, get the package `applicationID`, which is the owner ID.
+8. Queries and mutations that provide `bundleInstanceAuthID` as part of the client input (for example: `setBundleInstanceAuth`, `deleteBundleInstanceAuth`). To get the owner, fetch the bundle by `bundleInstanceAuthID` taken from the GraphQL arguments, and then, get the bundle `applicationID`, which is the owner ID.
 
 #### Owner Type: Runtime
 
 1. Queries and mutations that provide the owner ID as part of the client input (for example: `getRuntime`, `updateRuntime`, `deleteRuntime`, etc). For these, the owner ID can be determined from the GraphQL arguments list.
 2. Cases in which the owner is of a different type (for example: `applicationsForRuntime`). For these, the `runtimeID` is provided as input and it can be used as ownerID to be compared against the consumerID in case the consumer is of type Runtime. However, additional checks based on scenarios are also performed, implented within the resolver code.
 
-Runtimes consuming APIs owned by different types (for example: `query application`, `requestPackageInstanceAuthCreation`) are outlined in a later section of this document.
+Runtimes consuming APIs owned by different types (for example: `query application`, `requestBundleInstanceAuthCreation`) are outlined in a later section of this document.
 
 #### Owner Type: Integration System
 
@@ -77,7 +77,7 @@ This owner type differs from the rest as there is no consumer of this type. This
 
 It is unclear why the previous implementors decided that the ownerID must be passed in as GraphQL argument in the examples outlined by the section one-s of the previous paragraphs. When the owner type matches the consumer type, and the consumed API response is directly identified by the owner ID (for example, when getApplication(appID) is called by the actual application), it is sufficient for the caller to provide its authentication details, from which the consumer ID is extracted. Forcing the caller to provide the owner ID as a GraphQL argument adds additional complexity to the API logic. That is, the API has to verify that the consumer provided an owner ID that matches its consumer ID. However, it is decided to not change the APIs as part of this design, so such extra check will remain.
 
-If the storage layer is extended with custom queries, it would be possible to calculate the owner ID with no more than 1 DB query in all cases. If not, there are cases when the calculation of ownerID requires 2 or 3 queries. For example, determining the owner id for `updateAPIDefinition` would require to fetch the API definition and also to fetch the package. If the consumer is an integration system, it might be needed to fetch the whole application entity as well, which is a third query.
+If the storage layer is extended with custom queries, it would be possible to calculate the owner ID with no more than 1 DB query in all cases. If not, there are cases when the calculation of ownerID requires 2 or 3 queries. For example, determining the owner id for `updateAPIDefinition` would require to fetch the API definition and also to fetch the bundle. If the consumer is an integration system, it might be needed to fetch the whole application entity as well, which is a third query.
 
 Another approach to determine the owner ID is to store it in each table. That is, each table, which is directly or transitively related to applications must store application_id. However, this adds complexity to the database schema. Additionally, the logic for calculating the owner ID would still be required but it will be implemented during the creation of the resources. Thus, duplicating the owner ID column everywhere does not simplify the overall implementation.
 
@@ -87,7 +87,7 @@ This section analyzed the APIs from the owner perspective. Basically, when the c
 
 When consumer and owner types match, determination of owner ID is straight forward and is outlined in the previous sections. However, not always the consumer and owner types match, which requires different mechanisms and different approach to the problem. For example, runtimes can consume APIs where the owner type is an application and integration systems can consume APIs where the owner type can vary.
 
-A determined owner ID simplifies solving the problems related to use cases, such as: allowing only application "X" to update its metadata; or allowing only application "X" to update its packages; or limiting runtime "R" to be the only runtime allowed to fetch its applications; or allowing only integration system "I" to update its own metadata. Anyway, there is more complexity when the consumer is of type integration system. The following section provides analysis of the various use cases of different consumer types (the consumer details are provided in the Go context).
+A determined owner ID simplifies solving the problems related to use cases, such as: allowing only application "X" to update its metadata; or allowing only application "X" to update its bundles; or limiting runtime "R" to be the only runtime allowed to fetch its applications; or allowing only integration system "I" to update its own metadata. Anyway, there is more complexity when the consumer is of type integration system. The following section provides analysis of the various use cases of different consumer types (the consumer details are provided in the Go context).
 
 #### Consumer Type: User
 
@@ -101,7 +101,7 @@ There is no valid use case for an application to consume APIs that belong to oth
 
 Runtimes can be a consumer in a few queries and mutations that belong to owner type application.
 
-* `query application`, `mutation requestPackageInstanceAuthCreation`, `mutation requestPackageInstanceAuthDeletion` - there should be a scenario check, implemented within the resolver code. Currently, such scenario check is missing. Therefore, instead of implementing a scenario check in all these places, it is better to try to fit these in the generic design of secured resolvers.
+* `query application`, `mutation requestBundleInstanceAuthCreation`, `mutation requestBundleInstanceAuthDeletion` - there should be a scenario check, implemented within the resolver code. Currently, such scenario check is missing. Therefore, instead of implementing a scenario check in all these places, it is better to try to fit these in the generic design of secured resolvers.
 * `query applicationsForRuntime` - It already performs a scenario check implemented within the code. However, as mentioned already in the document, this query also accepts a `runtime_id` as input parameter and only an "ownerID equals consumerID" check must be added.
 
 #### Consumer Type: Integration System
@@ -216,10 +216,10 @@ JOIN %s AS d on p.id=d.%s
 JOIN %s AS s on s.%s=a.id
 WHERE a.tenant_id=$1 AND d.id=$2 AND s.%s=$3`,
 		applicationTable,
-		packageTable,
+		bundleTable,
 		applicationRefField,
 		eventDefinitionsTable,
-		packageRefField,
+		bundleRefField,
 		systemAuthRestrictionsTable,
 		applicationRefField,
 		systemAuthRefField)
@@ -456,7 +456,7 @@ It is yet unclear if removing the pairing adapter is the best choice. It might m
 19. The integration system establishes trust with the LoB application.
 20. The integration system calls the Director with token and integration system credentials for credentials stacking.
 21. The Director verifies that it is a known token. Then, it grants system auth access to the integration system credentials for the application for which this token was issued. As a result, the system auths record that was created as part of the token issuing is now merged to the integration system credentials and can be deleted. Additionally, the Director may also return the application details (for example ID, etc) so that the integration system would know what it has been granted access for. Alternatively, this can be skipped if the application_id was encoded in the OTT.
-22. The integration system can now register packages, APIs and events for the application, and can set a webhook for credentials requests (package instance auth requests).
+22. The integration system can now register bundles, APIs and events for the application, and can set a webhook for credentials requests (bundle instance auth requests).
 
 Some benefits of the proposed approach:
 

@@ -98,11 +98,11 @@ type service struct {
 	labelUpsertService LabelUpsertService
 	scenariosService   ScenariosService
 	uidService         UIDService
-	pkgService         PackageService
+	bndlService        BundleService
 	timestampGen       timestamp.Generator
 }
 
-func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, pkgService PackageService, uidService UIDService) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService) *service {
 	return &service{
 		appNameNormalizer:  appNameNormalizer,
 		appHideCfgProvider: appHideCfgProvider,
@@ -113,7 +113,7 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 		intSystemRepo:      intSystemRepo,
 		labelUpsertService: labelUpsertService,
 		scenariosService:   scenariosService,
-		pkgService:         pkgService,
+		bndlService:        bndlService,
 		uidService:         uidService,
 		timestampGen:       timestamp.DefaultGenerator(),
 	}
@@ -282,10 +282,10 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", id)
 	}
 
-	if in.Packages != nil {
-		err = s.pkgService.CreateMultiple(ctx, id, in.Packages)
+	if in.Bundles != nil {
+		err = s.bndlService.CreateMultiple(ctx, id, in.Bundles)
 		if err != nil {
-			return "", errors.Wrapf(err, "while creating related Package resources for Application with id %s", id)
+			return "", errors.Wrapf(err, "while creating related Bundle resources for Application with id %s", id)
 		}
 	}
 

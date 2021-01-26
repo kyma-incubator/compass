@@ -11,7 +11,7 @@ import (
 func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 	// given
 	id := "foo"
-	pkgID := "bar"
+	bndlID := "bar"
 	desc := "Sample"
 	name := "sample"
 	group := "sampleGroup"
@@ -32,7 +32,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 			Expected: &model.EventDefinition{
 				ID:          id,
 				Tenant:      tenant,
-				PackageID:   pkgID,
+				BundleID:    bndlID,
 				Name:        name,
 				Description: &desc,
 				Group:       &group,
@@ -49,7 +49,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToEventDefinitionWithinPackage(id, pkgID, tenant)
+			result := testCase.Input.ToEventDefinitionWithinBundle(id, bndlID, tenant)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

@@ -16,7 +16,7 @@ Domain Resolver uses Services. To convert from domain model to GraphQL types, Do
 
 ### Service
 
-Service contains business logic related to a specific domain. Single Resolver can use multiple Services from different domain packages. To do CRUD operations, Service uses Repository.
+Service contains business logic related to a specific domain. Single Resolver can use multiple Services from different domain bundles. To do CRUD operations, Service uses Repository.
 
 ### Repository
 

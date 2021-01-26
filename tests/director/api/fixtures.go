@@ -116,15 +116,15 @@ func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	return appTemplateInput
 }
 
-func fixPackageCreateInput(name string) graphql.PackageCreateInput {
-	return graphql.PackageCreateInput{
+func fixBundleCreateInput(name string) graphql.BundleCreateInput {
+	return graphql.BundleCreateInput{
 		Name: name,
 	}
 }
 
-func fixPackageCreateInputWithRelatedObjects(t *testing.T, name string) graphql.PackageCreateInput {
+func fixBundleCreateInputWithRelatedObjects(t *testing.T, name string) graphql.BundleCreateInput {
 	desc := "Foo bar"
-	return graphql.PackageCreateInput{
+	return graphql.BundleCreateInput{
 		Name:        name,
 		Description: &desc,
 		APIDefinitions: []*graphql.APIDefinitionInput{
@@ -148,7 +148,7 @@ func fixPackageCreateInputWithRelatedObjects(t *testing.T, name string) graphql.
 					Format: graphql.SpecFormatJSON,
 					FetchRequest: &graphql.FetchRequestInput{
 						URL:    "http://mywordpress.com/apis",
-						Mode:   ptr.FetchMode(graphql.FetchModePackage),
+						Mode:   ptr.FetchMode(graphql.FetchModeBundle),
 						Filter: ptr.String("odata.json"),
 						Auth:   fixBasicAuth(t),
 					},
@@ -184,7 +184,7 @@ func fixPackageCreateInputWithRelatedObjects(t *testing.T, name string) graphql.
 					Format: graphql.SpecFormatYaml,
 					FetchRequest: &graphql.FetchRequestInput{
 						URL:    "http://mywordpress.com/events",
-						Mode:   ptr.FetchMode(graphql.FetchModePackage),
+						Mode:   ptr.FetchMode(graphql.FetchModeBundle),
 						Filter: ptr.String("async.json"),
 						Auth:   fixOauthAuth(),
 					},
@@ -199,7 +199,7 @@ func fixPackageCreateInputWithRelatedObjects(t *testing.T, name string) graphql.
 				DisplayName: "display-name",
 				FetchRequest: &graphql.FetchRequestInput{
 					URL:    "kyma-project.io",
-					Mode:   ptr.FetchMode(graphql.FetchModePackage),
+					Mode:   ptr.FetchMode(graphql.FetchModeBundle),
 					Filter: ptr.String("/docs/README.md"),
 					Auth:   fixBasicAuth(t),
 				},
@@ -215,15 +215,15 @@ func fixPackageCreateInputWithRelatedObjects(t *testing.T, name string) graphql.
 	}
 }
 
-func fixPackageCreateInputWithDefaultAuth(name string, authInput *graphql.AuthInput) graphql.PackageCreateInput {
-	return graphql.PackageCreateInput{
+func fixBundleCreateInputWithDefaultAuth(name string, authInput *graphql.AuthInput) graphql.BundleCreateInput {
+	return graphql.BundleCreateInput{
 		Name:                name,
 		DefaultInstanceAuth: authInput,
 	}
 }
 
-func fixPackageUpdateInput(name string) graphql.PackageUpdateInput {
-	return graphql.PackageUpdateInput{
+func fixBundleUpdateInput(name string) graphql.BundleUpdateInput {
+	return graphql.BundleUpdateInput{
 		Name: name,
 	}
 }
@@ -260,34 +260,34 @@ func fixDocumentInputWithName(t *testing.T, name string) graphql.DocumentInput {
 		DisplayName: "display-name",
 		FetchRequest: &graphql.FetchRequestInput{
 			URL:    "kyma-project.io",
-			Mode:   ptr.FetchMode(graphql.FetchModePackage),
+			Mode:   ptr.FetchMode(graphql.FetchModeBundle),
 			Filter: ptr.String("/docs/README.md"),
 			Auth:   fixBasicAuth(t),
 		},
 	}
 }
 
-func fixPackageInstanceAuthRequestInput(ctx, inputParams *graphql.JSON) graphql.PackageInstanceAuthRequestInput {
-	return graphql.PackageInstanceAuthRequestInput{
+func fixBundleInstanceAuthRequestInput(ctx, inputParams *graphql.JSON) graphql.BundleInstanceAuthRequestInput {
+	return graphql.BundleInstanceAuthRequestInput{
 		Context:     ctx,
 		InputParams: inputParams,
 	}
 }
 
-func fixPackageInstanceAuthSetInputSucceeded(auth *graphql.AuthInput) graphql.PackageInstanceAuthSetInput {
-	return graphql.PackageInstanceAuthSetInput{
+func fixBundleInstanceAuthSetInputSucceeded(auth *graphql.AuthInput) graphql.BundleInstanceAuthSetInput {
+	return graphql.BundleInstanceAuthSetInput{
 		Auth: auth,
 	}
 }
 
-func fixApplicationRegisterInputWithPackages(t *testing.T) graphql.ApplicationRegisterInput {
-	pkg1 := fixPackageCreateInputWithRelatedObjects(t, "foo")
-	pkg2 := fixPackageCreateInputWithRelatedObjects(t, "bar")
+func fixApplicationRegisterInputWithBundles(t *testing.T) graphql.ApplicationRegisterInput {
+	bndl1 := fixBundleCreateInputWithRelatedObjects(t, "foo")
+	bndl2 := fixBundleCreateInputWithRelatedObjects(t, "bar")
 	return graphql.ApplicationRegisterInput{
 		Name:         "create-application-with-documents",
 		ProviderName: ptr.String("compass"),
-		Packages: []*graphql.PackageCreateInput{
-			&pkg1, &pkg2,
+		Bundles: []*graphql.BundleCreateInput{
+			&bndl1, &bndl2,
 		},
 		Labels: &graphql.Labels{
 			"scenarios": []interface{}{"DEFAULT"},
