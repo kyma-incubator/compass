@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/gateway/internal/metrics"
@@ -92,19 +93,16 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
-	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, router, "main", cfg.ServerTimeout)
+	metricsServer := createServer(cfg.MetricsAddress, metricsHandler, cfg.ServerTimeout)
+	mainServer := createServer(cfg.Address, router, cfg.ServerTimeout)
 
-	go func() {
-		<-ctx.Done()
-		// Interrupt signal received - shut down the servers
-		shutdownMetricsSrv()
-		shutdownMainSrv()
-	}()
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
 
-	go runMetricsSrv()
-	runMainSrv()
+	go startServer(ctx, metricsServer, "metrics", wg)
+	go startServer(ctx, mainServer, "main", wg)
 
+	wg.Wait()
 }
 
 func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, middleware ...mux.MiddlewareFunc) error {
@@ -121,32 +119,53 @@ func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path str
 	return nil
 }
 
-func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
-	logger := log.C(ctx)
+func createServer(address string, handler http.Handler, timeout time.Duration) *http.Server {
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
 	exitOnError(err, "Error while configuring server handler")
 
-	srv := &http.Server{
+	return &http.Server{
 		Addr:              address,
 		Handler:           handlerWithTimeout,
 		ReadHeaderTimeout: timeout,
 	}
+}
 
-	runFn := func() {
-		logger.Infof("Running %s server on %s...", name, address)
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			logger.WithError(err).Errorf("%s HTTP server ListenAndServe", name)
-		}
+func startServer(parentCtx context.Context, server *http.Server, name string, wg *sync.WaitGroup) {
+	ctx, cancel := context.WithCancel(parentCtx)
+	defer cancel()
+
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		stopServer(server)
+	}()
+
+	log.C(ctx).Infof("Running %s server on %s...", name, server.Addr)
+
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		log.C(ctx).Fatalf("Could not listen on %s://%s: %v\n", "http", server.Addr, err)
 	}
+}
 
-	shutdownFn := func() {
-		logger.Infof("Shutting down %s server...", name)
-		if err := srv.Shutdown(ctx); err != nil {
-			logger.WithError(err).Errorf("%s HTTP server Shutdown", name)
+func stopServer(server *http.Server) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	go func(ctx context.Context) {
+		<-ctx.Done()
+
+		if ctx.Err() == context.Canceled {
+			return
+		} else if ctx.Err() == context.DeadlineExceeded {
+			log.C(ctx).Panic("Timeout while stopping the server, killing instance!")
 		}
-	}
+	}(ctx)
 
-	return runFn, shutdownFn
+	server.SetKeepAlivesEnabled(false)
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.C(ctx).Fatalf("Could not gracefully shutdown the server: %v\n", err)
+	}
 }
 
 func exitOnError(err error, context string) {
