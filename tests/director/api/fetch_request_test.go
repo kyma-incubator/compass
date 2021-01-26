@@ -18,7 +18,7 @@ func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: "test",
-		Packages: []*graphql.PackageCreateInput{{
+		Bundles: []*graphql.BundleCreateInput{{
 			Name: "test",
 			APIDefinitions: []*graphql.APIDefinitionInput{{
 				Name:      "test",
@@ -37,22 +37,22 @@ func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 	app := registerApplicationFromInput(t, ctx, appInput)
 	defer unregisterApplication(t, app.ID)
 
-	api := app.Packages.Data[0].APIDefinitions.Data[0]
+	api := app.Bundles.Data[0].APIDefinitions.Data[0]
 
 	assert.NotNil(t, api.Spec.Data)
 	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, api.Spec.FetchRequest.Status.Condition)
 }
 
-func Test_FetchRequestAddAPIToPackage(t *testing.T) {
+func Test_FetchRequestAddAPIToBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkg := createPackage(t, ctx, application.ID, pkgName)
-	defer deletePackage(t, ctx, pkg.ID)
+	bndlName := "test-bundle"
+	bndl := createBundle(t, ctx, application.ID, bndlName)
+	defer deleteBundle(t, ctx, bndl.ID)
 
 	apiInput := graphql.APIDefinitionInput{
 		Name:      "test",
@@ -65,21 +65,21 @@ func Test_FetchRequestAddAPIToPackage(t *testing.T) {
 			},
 		},
 	}
-	api := addAPIToPackageWithInput(t, ctx, pkg.ID, apiInput)
+	api := addAPIToBundleWithInput(t, ctx, bndl.ID, apiInput)
 	assert.NotNil(t, api.Spec.Data)
 	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, api.Spec.FetchRequest.Status.Condition)
 }
 
-func TestFetchRequestAddPackageWithAPI(t *testing.T) {
+func TestFetchRequestAddBundleWithAPI(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkgInput := graphql.PackageCreateInput{
-		Name: pkgName,
+	bndlName := "test-bundle"
+	bndlInput := graphql.BundleCreateInput{
+		Name: bndlName,
 		APIDefinitions: []*graphql.APIDefinitionInput{{
 			Name:      "test",
 			TargetURL: "https://target.url",
@@ -94,23 +94,23 @@ func TestFetchRequestAddPackageWithAPI(t *testing.T) {
 		},
 	}
 
-	pkg := createPackageWithInput(t, ctx, application.ID, pkgInput)
-	defer deletePackage(t, ctx, pkg.ID)
+	bndl := createBundleWithInput(t, ctx, application.ID, bndlInput)
+	defer deleteBundle(t, ctx, bndl.ID)
 
-	assert.NotNil(t, pkg.APIDefinitions.Data[0].Spec.Data)
-	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, pkg.APIDefinitions.Data[0].Spec.FetchRequest.Status.Condition)
+	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec.Data)
+	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, bndl.APIDefinitions.Data[0].Spec.FetchRequest.Status.Condition)
 }
 
 func TestRefetchAPISpec(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-package"
+	appName := "app-test-bundle"
 	application := registerApplication(t, ctx, appName)
 	defer unregisterApplication(t, application.ID)
 
-	pkgName := "test-package"
-	pkgInput := graphql.PackageCreateInput{
-		Name: pkgName,
+	bndlName := "test-bundle"
+	bndlInput := graphql.BundleCreateInput{
+		Name: bndlName,
 		APIDefinitions: []*graphql.APIDefinitionInput{{
 			Name:      "test",
 			TargetURL: "https://target.url",
@@ -125,13 +125,13 @@ func TestRefetchAPISpec(t *testing.T) {
 		},
 	}
 
-	pkg := createPackageWithInput(t, ctx, application.ID, pkgInput)
-	defer deletePackage(t, ctx, pkg.ID)
+	bndl := createBundleWithInput(t, ctx, application.ID, bndlInput)
+	defer deleteBundle(t, ctx, bndl.ID)
 
-	spec := pkg.APIDefinitions.Data[0].Spec.Data
+	spec := bndl.APIDefinitions.Data[0].Spec.Data
 
 	var refetchedSpec graphql.APISpecExt
-	req := fixRefetchAPISpecRequest(pkg.APIDefinitions.Data[0].ID)
+	req := fixRefetchAPISpecRequest(bndl.APIDefinitions.Data[0].ID)
 
 	err := tc.RunOperation(ctx, req, &refetchedSpec)
 	require.NoError(t, err)

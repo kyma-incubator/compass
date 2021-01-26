@@ -12,7 +12,6 @@ import (
 func main() {
 	connStr := "user=postgres password=mysecretpassword dbname=compass sslmode=disable"
 
-
 	db, err := gorm.Open("postgres", connStr)
 
 	if err != nil {

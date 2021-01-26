@@ -22,12 +22,12 @@ import (
 
 var contextParam = txtest.CtxWithDBMatcher()
 
-func TestResolver_AddEventAPIToPackage(t *testing.T) {
+func TestResolver_AddEventAPIToBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
 	id := "bar"
-	packageID := "1"
+	bundleID := "1"
 
 	modelAPI := fixMinModelEventAPIDefinition(id, "placeholder")
 	gqlAPI := fixGQLEventDefinition(id, "placeholder")
@@ -40,7 +40,7 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 		Name             string
 		TransactionerFn  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn        func() *automock.EventDefService
-		PkgServiceFn     func() *automock.PackageService
+		BndlServiceFn    func() *automock.BundleService
 		ConverterFn      func() *automock.EventDefConverter
 		ExpectedEventDef *graphql.EventDefinition
 		ExpectedErr      error
@@ -50,13 +50,13 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, bundleID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.EventDefConverter {
@@ -75,8 +75,8 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				svc := &automock.EventDefService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
 				return appSvc
 			},
 			ConverterFn: func() *automock.EventDefConverter {
@@ -93,9 +93,9 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				svc := &automock.EventDefService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(false, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(false, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.EventDefConverter {
@@ -104,7 +104,7 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				return conv
 			},
 			ExpectedEventDef: nil,
-			ExpectedErr:      errors.New("cannot add Event Definition to not existing Package"),
+			ExpectedErr:      errors.New("cannot add Event Definition to not existing Bundle"),
 		},
 		{
 			Name:            "Returns error when application existence check failed",
@@ -113,9 +113,9 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 				svc := &automock.EventDefService{}
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(false, testErr)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(false, testErr)
 				return appSvc
 			},
 			ConverterFn: func() *automock.EventDefConverter {
@@ -131,12 +131,12 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return("", testErr).Once()
+				svc.On("CreateInBundle", contextParam, bundleID, *modelAPIInput).Return("", testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.EventDefConverter {
@@ -152,13 +152,13 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, bundleID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(nil, testErr).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.EventDefConverter {
@@ -174,13 +174,13 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.EventDefService {
 				svc := &automock.EventDefService{}
-				svc.On("CreateInPackage", contextParam, packageID, *modelAPIInput).Return(id, nil).Once()
+				svc.On("CreateInBundle", contextParam, bundleID, *modelAPIInput).Return(id, nil).Once()
 				svc.On("Get", contextParam, id).Return(modelAPI, nil).Once()
 				return svc
 			},
-			PkgServiceFn: func() *automock.PackageService {
-				appSvc := &automock.PackageService{}
-				appSvc.On("Exist", contextParam, packageID).Return(true, nil)
+			BndlServiceFn: func() *automock.BundleService {
+				appSvc := &automock.BundleService{}
+				appSvc.On("Exist", contextParam, bundleID).Return(true, nil)
 				return appSvc
 			},
 			ConverterFn: func() *automock.EventDefConverter {
@@ -199,12 +199,12 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			persistance, tx := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
-			pkgSvc := testCase.PkgServiceFn()
+			bndlSvc := testCase.BndlServiceFn()
 
-			resolver := eventdef.NewResolver(tx, svc, nil, pkgSvc, converter, nil)
+			resolver := eventdef.NewResolver(tx, svc, nil, bndlSvc, converter, nil)
 
 			// when
-			result, err := resolver.AddEventDefinitionToPackage(context.TODO(), packageID, *gqlAPIInput)
+			result, err := resolver.AddEventDefinitionToBundle(context.TODO(), bundleID, *gqlAPIInput)
 
 			// then
 			assert.Equal(t, testCase.ExpectedEventDef, result)
@@ -217,7 +217,7 @@ func TestResolver_AddEventAPIToPackage(t *testing.T) {
 			persistance.AssertExpectations(t)
 			tx.AssertExpectations(t)
 			svc.AssertExpectations(t)
-			pkgSvc.AssertExpectations(t)
+			bndlSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}

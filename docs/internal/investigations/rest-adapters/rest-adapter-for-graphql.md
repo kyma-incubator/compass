@@ -79,7 +79,7 @@ Compass equivalent: `addApiDefinition` or `addEventDefinition`
 
 Challenges:
 
-- in the former API, there is a service which seems to be equivalent to API Package that is missing in Compass
+- in the former API, there is a service which seems to be equivalent to API Bundle that is missing in Compass
 - `identifier` has no mapping in the Compass API
 - you cannot label ServiceClass using Compass API
 - specificationURL, specificationCredentials, specificationRequestParameters can be mapped to FetchRequest, but it is not yet implemented

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/service"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +17,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 
 	type testCase struct {
 		given    model.ServiceDetails
-		expected graphql.PackageCreateInput
+		expected graphql.BundleCreateInput
 	}
 
 	conv := service.NewConverter()
@@ -25,7 +25,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 	for name, tc := range map[string]testCase{
 		"name and description propagated to api": {
 			given: model.ServiceDetails{Name: "name", Description: "description", Api: &model.API{}},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				Name:                "name",
 				Description:         ptrString("description"),
 				DefaultInstanceAuth: &graphql.AuthInput{},
@@ -43,7 +43,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					TargetUrl: "http://target.url",
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -59,7 +59,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					Credentials: &model.CredentialsWithCSRF{},
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -75,7 +75,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					ApiType:   "ODATA",
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -98,7 +98,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					ApiType: "anything else",
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -117,7 +117,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					Spec: json.RawMessage(`openapi: "3.0.0"`),
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -137,7 +137,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					Spec: json.RawMessage(`{"spec":"v0.0.1"}`),
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -157,7 +157,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					Spec: json.RawMessage(`<spec></spec>"`),
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -185,7 +185,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					},
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				Name: "foo",
 				DefaultInstanceAuth: &graphql.AuthInput{
 					AdditionalQueryParamsSerialized: &additionalQueryParamsSerialized,
@@ -211,7 +211,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					},
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{
 					AdditionalQueryParamsSerialized: &additionalQueryParamsSerialized,
 					AdditionalHeadersSerialized:     &additionalHeadersSerialized,
@@ -241,7 +241,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					},
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{
 					AdditionalQueryParamsSerialized: &additionalQueryParamsSerialized,
 					AdditionalHeadersSerialized:     &additionalHeadersSerialized,
@@ -265,7 +265,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					},
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Basic: &graphql.BasicCredentialDataInput{
@@ -307,7 +307,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					},
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{
 					Credential: &graphql.CredentialDataInput{
 						Oauth: &graphql.OAuthCredentialDataInput{
@@ -331,7 +331,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					SpecificationUrl: "http://specification.url",
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -358,7 +358,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					},
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -395,7 +395,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					},
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -435,7 +435,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					},
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				APIDefinitions: []*graphql.APIDefinitionInput{
 					{
@@ -461,7 +461,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 					Spec: json.RawMessage(`asyncapi: "1.2.0"`),
 				},
 			},
-			expected: graphql.PackageCreateInput{
+			expected: graphql.BundleCreateInput{
 				Name:                "foo",
 				DefaultInstanceAuth: &graphql.AuthInput{},
 				EventDefinitions: []*graphql.EventDefinitionInput{
@@ -490,7 +490,7 @@ func TestConverter_DetailsToGraphQLCreateInput(t *testing.T) {
 
 func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 	type testCase struct {
-		given    graphql.PackageExt
+		given    graphql.BundleExt
 		expected model.ServiceDetails
 	}
 	conv := service.NewConverter()
@@ -501,9 +501,9 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 	}
 
 	for name, tc := range map[string]testCase{
-		"name and description is loaded from Package": {
-			given: graphql.PackageExt{
-				Package: graphql.Package{Name: "foo", Description: ptrString("description")},
+		"name and description is loaded from Bundle": {
+			given: graphql.BundleExt{
+				Bundle: graphql.Bundle{Name: "foo", Description: ptrString("description")},
 				APIDefinitions: graphql.APIDefinitionPageExt{
 					Data: []*graphql.APIDefinitionExt{
 						{
@@ -520,7 +520,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 		},
 		"simple API": {
-			given: graphql.PackageExt{
+			given: graphql.BundleExt{
 				APIDefinitions: graphql.APIDefinitionPageExt{
 					Data: []*graphql.APIDefinitionExt{
 						{
@@ -539,8 +539,8 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 		},
 		"simple API with additional headers and query params": {
-			given: graphql.PackageExt{
-				Package: graphql.Package{
+			given: graphql.BundleExt{
+				Bundle: graphql.Bundle{
 					DefaultInstanceAuth: &graphql.Auth{
 						AdditionalQueryParams: &graphql.QueryParams{
 							"q1": []string{"a", "b"},
@@ -586,8 +586,8 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 		},
 		"simple API with Basic Auth": {
-			given: graphql.PackageExt{
-				Package: graphql.Package{
+			given: graphql.BundleExt{
+				Bundle: graphql.Bundle{
 					DefaultInstanceAuth: &graphql.Auth{
 						Credential: &graphql.BasicCredentialData{
 							Username: "username",
@@ -621,8 +621,8 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 		},
 		"simple API with Oauth": {
-			given: graphql.PackageExt{
-				Package: graphql.Package{
+			given: graphql.BundleExt{
+				Bundle: graphql.Bundle{
 					DefaultInstanceAuth: &graphql.Auth{
 						Credential: &graphql.OAuthCredentialData{
 							URL:          "http://oauth.url",
@@ -658,7 +658,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 		},
 		"simple API with FetchRequest (query params and headers)": {
-			given: graphql.PackageExt{
+			given: graphql.BundleExt{
 				APIDefinitions: graphql.APIDefinitionPageExt{
 					Data: []*graphql.APIDefinitionExt{
 						{
@@ -695,7 +695,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 		},
 		"simple API with Fetch Request protected with Basic Auth": {
-			given: graphql.PackageExt{
+			given: graphql.BundleExt{
 				APIDefinitions: graphql.APIDefinitionPageExt{
 					Data: []*graphql.APIDefinitionExt{
 						{
@@ -725,7 +725,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 		},
 		"simple API with Fetch Request protected with Oauth": {
-			given: graphql.PackageExt{
+			given: graphql.BundleExt{
 				APIDefinitions: graphql.APIDefinitionPageExt{
 					Data: []*graphql.APIDefinitionExt{
 						{
@@ -757,7 +757,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 			},
 		},
 		"events": {
-			given: graphql.PackageExt{
+			given: graphql.BundleExt{
 				EventDefinitions: graphql.EventAPIDefinitionPageExt{
 					Data: []*graphql.EventAPIDefinitionExt{{
 						Spec: &graphql.EventAPISpecExt{
@@ -786,7 +786,7 @@ func TestConverter_GraphQLToServiceDetails(t *testing.T) {
 	}
 
 	t.Run("identifier provided", func(t *testing.T) {
-		in := graphql.PackageExt{
+		in := graphql.BundleExt{
 			APIDefinitions: graphql.APIDefinitionPageExt{
 				Data: []*graphql.APIDefinitionExt{
 					{
@@ -848,13 +848,13 @@ func TestConverter_GraphQLCreateInputToUpdateInput(t *testing.T) {
 		Username: "foo",
 		Password: "bar",
 	}}}
-	in := graphql.PackageCreateInput{
+	in := graphql.BundleCreateInput{
 		Name:                           "foo",
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: &schema,
 		DefaultInstanceAuth:            &auth,
 	}
-	expected := graphql.PackageUpdateInput{
+	expected := graphql.BundleUpdateInput{
 		Name:                           "foo",
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: &schema,

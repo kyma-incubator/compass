@@ -25,7 +25,6 @@ func SaveToContext(ctx context.Context, persistOp PersistenceOp) context.Context
 
 // FromCtx extracts DatabaseOp interface from context
 func FromCtx(ctx context.Context) (PersistenceOp, error) {
-	log.C(ctx).Debug("Extracting DB from context...")
 	dbCtx := ctx.Value(PersistenceCtxKey)
 
 	if db, ok := dbCtx.(PersistenceOp); ok {

@@ -19,8 +19,8 @@ const eventAPIDefTable string = `"public"."event_api_definitions"`
 var (
 	idColumn      = "id"
 	tenantColumn  = "tenant_id"
-	packageColumn = "package_id"
-	apiDefColumns = []string{idColumn, tenantColumn, packageColumn, "name", "description", "group_name", "spec_data",
+	bundleColumn  = "bundle_id"
+	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "name", "description", "group_name", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal"}
 	idColumns        = []string{"id"}
@@ -77,12 +77,12 @@ func (r *pgRepository) GetByID(ctx context.Context, tenantID string, id string) 
 	return &eventAPIDefModel, nil
 }
 
-func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id string, packageID string) (*model.EventDefinition, error) {
+func (r *pgRepository) GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error) {
 	var ent Entity
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition(idColumn, id),
-		repo.NewEqualCondition(packageColumn, packageID),
+		repo.NewEqualCondition(bundleColumn, bundleID),
 	}
 	if err := r.singleGetter.Get(ctx, tenant, conditions, repo.NoOrderBy, &ent); err != nil {
 		return nil, err
@@ -96,9 +96,9 @@ func (r *pgRepository) GetForPackage(ctx context.Context, tenant string, id stri
 	return &eventAPIModel, nil
 }
 
-func (r *pgRepository) ListForPackage(ctx context.Context, tenantID string, packageID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
+func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error) {
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(packageColumn, packageID),
+		repo.NewEqualCondition(bundleColumn, bundleID),
 	}
 
 	return r.list(ctx, tenantID, pageSize, cursor, conditions)

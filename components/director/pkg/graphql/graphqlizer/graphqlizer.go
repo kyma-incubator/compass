@@ -36,10 +36,10 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .HealthCheckURL }}
 		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
-		{{- if .Packages }} 
-		packages: [
-			{{- range $i, $e := .Packages }} 
-				{{- if $i}}, {{- end}} {{- PackageCreateInputToGQL $e }}
+		{{- if .Bundles }} 
+		bundles: [
+			{{- range $i, $e := .Bundles }} 
+				{{- if $i}}, {{- end}} {{- BundleCreateInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
 		{{- if .IntegrationSystemID }}
@@ -384,7 +384,7 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 	}`)
 }
 
-func (g *Graphqlizer) PackageCreateInputToGQL(in graphql.PackageCreateInput) (string, error) {
+func (g *Graphqlizer) BundleCreateInputToGQL(in graphql.BundleCreateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{ .Name }}"
 		{{- if .Description }}
@@ -417,7 +417,7 @@ func (g *Graphqlizer) PackageCreateInputToGQL(in graphql.PackageCreateInput) (st
 	}`)
 }
 
-func (g *Graphqlizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (string, error) {
+func (g *Graphqlizer) BundleUpdateInputToGQL(in graphql.BundleUpdateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{ .Name }}"
 		{{- if .Description }}
@@ -432,7 +432,7 @@ func (g *Graphqlizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (st
 	}`)
 }
 
-func (g *Graphqlizer) PackageInstanceAuthStatusInputToGQL(in graphql.PackageInstanceAuthStatusInput) (string, error) {
+func (g *Graphqlizer) BundleInstanceAuthStatusInputToGQL(in graphql.BundleInstanceAuthStatusInput) (string, error) {
 	return g.genericToGQL(in, `{
 		condition: {{ .Condition }}
 		{{- if .Message }}
@@ -444,7 +444,7 @@ func (g *Graphqlizer) PackageInstanceAuthStatusInputToGQL(in graphql.PackageInst
 	}`)
 }
 
-func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageInstanceAuthRequestInput) (string, error) {
+func (g *Graphqlizer) BundleInstanceAuthRequestInputToGQL(in graphql.BundleInstanceAuthRequestInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .Context }}
 		context: {{ .Context }}
@@ -455,13 +455,13 @@ func (g *Graphqlizer) PackageInstanceAuthRequestInputToGQL(in graphql.PackageIns
 	}`)
 }
 
-func (g *Graphqlizer) PackageInstanceAuthSetInputToGQL(in graphql.PackageInstanceAuthSetInput) (string, error) {
+func (g *Graphqlizer) BundleInstanceAuthSetInputToGQL(in graphql.BundleInstanceAuthSetInput) (string, error) {
 	return g.genericToGQL(in, `{
 		{{- if .Auth }}
 		auth: {{- AuthInputToGQL .Auth}}
 		{{- end }}
 		{{- if .Status }}
-		status: {{- PackageInstanceAuthStatusInputToGQL .Status }}
+		status: {{- BundleInstanceAuthStatusInputToGQL .Status }}
 		{{- end }}
 	}`)
 }
@@ -530,8 +530,8 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["CredentialRequestAuthInputToGQL"] = g.CredentialRequestAuthInputToGQL
 	fm["PlaceholderDefinitionInputToGQL"] = g.PlaceholderDefinitionInputToGQL
 	fm["TemplateValueInput"] = g.TemplateValueInputToGQL
-	fm["PackageInstanceAuthStatusInputToGQL"] = g.PackageInstanceAuthStatusInputToGQL
-	fm["PackageCreateInputToGQL"] = g.PackageCreateInputToGQL
+	fm["BundleInstanceAuthStatusInputToGQL"] = g.BundleInstanceAuthStatusInputToGQL
+	fm["BundleCreateInputToGQL"] = g.BundleCreateInputToGQL
 	fm["LabelSelectorInputToGQL"] = g.LabelSelectorInputToGQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)

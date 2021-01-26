@@ -17,12 +17,10 @@ func (app *ApplicationDTO) TableName() string {
 	return "applications"
 }
 
-
-
 type APIDTO struct {
 	ID        string
 	AppID     string
-	TargetURL string	`gorm:"column:target_url"`
+	TargetURL string `gorm:"column:target_url"`
 }
 
 func (a *APIDTO) TableName() string {
@@ -41,7 +39,6 @@ func (d *DocumentDTO) TableName() string {
 	return "documents"
 }
 
-
 func (d *DocumentDTO) ToModel() model.Document {
 	return model.Document{
 		ID:     d.ID,
@@ -51,7 +48,7 @@ func (d *DocumentDTO) ToModel() model.Document {
 	}
 }
 
-func  DocumentFromModel(appID string, in model.Document) *DocumentDTO {
+func DocumentFromModel(appID string, in model.Document) *DocumentDTO {
 	return &DocumentDTO{
 		AppID:  appID,
 		Data:   in.Data,
@@ -68,7 +65,7 @@ func (a *APIDTO) ToModel() model.API {
 	}
 }
 
-func  APIFromModel(appID string, in model.API) *APIDTO {
+func APIFromModel(appID string, in model.API) *APIDTO {
 	return &APIDTO{
 		ID:        in.ID,
 		TargetURL: in.TargetURL,
