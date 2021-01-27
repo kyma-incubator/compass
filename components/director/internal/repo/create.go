@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -39,18 +41,6 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 		return apperrors.NewInternalError("item cannot be nil")
 	}
 
-	op, err := operation.FromCtx(ctx)
-	if err != nil {
-		return err
-	}
-
-	relatedResource := operation.RelatedResource{
-		ResourceType: c.tableName,
-		ResourceID:   "",
-	}
-
-	op.RelatedResources = append(op.RelatedResources, relatedResource)
-
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
@@ -61,10 +51,35 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 		values = append(values, fmt.Sprintf(":%s", c))
 	}
 
-	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
+	sqlQuery := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s ) RETURNING id;", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
-	log.C(ctx).Debugf("Executing DB query: %s", stmt)
-	_, err = persist.NamedExec(stmt, dbEntity)
+	stmt, err := persist.PrepareNamedContext(ctx, sqlQuery)
+	if err != nil {
+		return err
+	}
+
+	resultDto := &struct {
+		ID string `db:"id"`
+	}{}
+
+	log.C(ctx).Debugf("Executing DB query: %s", sqlQuery)
+	err = stmt.GetContext(ctx, resultDto, dbEntity)
+
+	opMode := operation.ModeFromCtx(ctx)
+	if opMode == graphql.OperationModeAsync {
+		op, err := operation.FromCtx(ctx)
+		if err != nil {
+			return err
+		}
+
+		relatedResource := operation.RelatedResource{
+			ResourceType: c.tableName,
+			ResourceID:   resultDto.ID,
+		}
+
+		op.RelatedResources = append(op.RelatedResources, relatedResource)
+		ctx = operation.SaveToContext(ctx, op)
+	}
 
 	return persistence.MapSQLError(ctx, err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
 }

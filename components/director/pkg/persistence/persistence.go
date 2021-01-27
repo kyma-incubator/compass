@@ -115,6 +115,7 @@ type PersistenceOp interface {
 
 	NamedExec(query string, arg interface{}) (sql.Result, error)
 	Exec(query string, args ...interface{}) (sql.Result, error)
+	PrepareNamedContext(ctx context.Context, query string) (*sqlx.NamedStmt, error)
 }
 
 // Configure returns the instance of the database
