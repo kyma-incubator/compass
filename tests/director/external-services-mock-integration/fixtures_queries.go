@@ -56,12 +56,12 @@ func unregisterApplication(t *testing.T, gqlClient *gcli.Client, id, tenant stri
 	require.NoError(t, tc.RunOperationWithCustomTenant(context.Background(), gqlClient, tenant, req, nil))
 }
 
-func createPackageWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, appID string, input graphql.PackageCreateInput) graphql.PackageExt {
-	in, err := tc.Graphqlizer.PackageCreateInputToGQL(input)
+func createBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, appID string, input graphql.BundleCreateInput) graphql.BundleExt {
+	in, err := tc.Graphqlizer.BundleCreateInputToGQL(input)
 	require.NoError(t, err)
 
-	req := fixAddPackageRequest(appID, in)
-	var resp graphql.PackageExt
+	req := fixAddBundleRequest(appID, in)
+	var resp graphql.BundleExt
 
 	err = tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &resp)
 	require.NoError(t, err)
@@ -69,15 +69,15 @@ func createPackageWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.C
 	return resp
 }
 
-func deletePackage(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
-	req := fixDeletePackageRequest(id)
+func deleteBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+	req := fixDeleteBundleRequest(id)
 
 	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
 }
 
-func getPackage(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, appID, pkgID string) graphql.PackageExt {
-	req := fixPackageRequest(appID, pkgID)
-	pkg := graphql.ApplicationExt{}
-	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &pkg))
-	return pkg.Package
+func getBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, appID, bndlID string) graphql.BundleExt {
+	req := fixBundleRequest(appID, bndlID)
+	bndl := graphql.ApplicationExt{}
+	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &bndl))
+	return bndl.Bundle
 }

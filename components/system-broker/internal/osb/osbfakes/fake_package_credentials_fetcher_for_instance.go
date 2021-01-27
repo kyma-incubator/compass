@@ -9,32 +9,32 @@ import (
 )
 
 type FakePackageCredentialsFetcherForInstance struct {
-	FetchPackageInstanceCredentialsStub        func(context.Context, *director.PackageInstanceInput) (*director.PackageInstanceCredentialsOutput, error)
+	FetchPackageInstanceCredentialsStub        func(context.Context, *director.BundleInstanceInput) (*director.BundleInstanceCredentialsOutput, error)
 	fetchPackageInstanceCredentialsMutex       sync.RWMutex
 	fetchPackageInstanceCredentialsArgsForCall []struct {
 		arg1 context.Context
-		arg2 *director.PackageInstanceInput
+		arg2 *director.BundleInstanceInput
 	}
 	fetchPackageInstanceCredentialsReturns struct {
-		result1 *director.PackageInstanceCredentialsOutput
+		result1 *director.BundleInstanceCredentialsOutput
 		result2 error
 	}
 	fetchPackageInstanceCredentialsReturnsOnCall map[int]struct {
-		result1 *director.PackageInstanceCredentialsOutput
+		result1 *director.BundleInstanceCredentialsOutput
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCredentials(arg1 context.Context, arg2 *director.PackageInstanceInput) (*director.PackageInstanceCredentialsOutput, error) {
+func (fake *FakePackageCredentialsFetcherForInstance) FetchBundleInstanceCredentials(arg1 context.Context, arg2 *director.BundleInstanceInput) (*director.BundleInstanceCredentialsOutput, error) {
 	fake.fetchPackageInstanceCredentialsMutex.Lock()
 	ret, specificReturn := fake.fetchPackageInstanceCredentialsReturnsOnCall[len(fake.fetchPackageInstanceCredentialsArgsForCall)]
 	fake.fetchPackageInstanceCredentialsArgsForCall = append(fake.fetchPackageInstanceCredentialsArgsForCall, struct {
 		arg1 context.Context
-		arg2 *director.PackageInstanceInput
+		arg2 *director.BundleInstanceInput
 	}{arg1, arg2})
-	fake.recordInvocation("FetchPackageInstanceCredentials", []interface{}{arg1, arg2})
+	fake.recordInvocation("FetchBundleInstanceCredentials", []interface{}{arg1, arg2})
 	fake.fetchPackageInstanceCredentialsMutex.Unlock()
 	if fake.FetchPackageInstanceCredentialsStub != nil {
 		return fake.FetchPackageInstanceCredentialsStub(arg1, arg2)
@@ -52,41 +52,41 @@ func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCreden
 	return len(fake.fetchPackageInstanceCredentialsArgsForCall)
 }
 
-func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCredentialsCalls(stub func(context.Context, *director.PackageInstanceInput) (*director.PackageInstanceCredentialsOutput, error)) {
+func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCredentialsCalls(stub func(context.Context, *director.BundleInstanceInput) (*director.BundleInstanceCredentialsOutput, error)) {
 	fake.fetchPackageInstanceCredentialsMutex.Lock()
 	defer fake.fetchPackageInstanceCredentialsMutex.Unlock()
 	fake.FetchPackageInstanceCredentialsStub = stub
 }
 
-func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCredentialsArgsForCall(i int) (context.Context, *director.PackageInstanceInput) {
+func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCredentialsArgsForCall(i int) (context.Context, *director.BundleInstanceInput) {
 	fake.fetchPackageInstanceCredentialsMutex.RLock()
 	defer fake.fetchPackageInstanceCredentialsMutex.RUnlock()
 	argsForCall := fake.fetchPackageInstanceCredentialsArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCredentialsReturns(result1 *director.PackageInstanceCredentialsOutput, result2 error) {
+func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCredentialsReturns(result1 *director.BundleInstanceCredentialsOutput, result2 error) {
 	fake.fetchPackageInstanceCredentialsMutex.Lock()
 	defer fake.fetchPackageInstanceCredentialsMutex.Unlock()
 	fake.FetchPackageInstanceCredentialsStub = nil
 	fake.fetchPackageInstanceCredentialsReturns = struct {
-		result1 *director.PackageInstanceCredentialsOutput
+		result1 *director.BundleInstanceCredentialsOutput
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCredentialsReturnsOnCall(i int, result1 *director.PackageInstanceCredentialsOutput, result2 error) {
+func (fake *FakePackageCredentialsFetcherForInstance) FetchPackageInstanceCredentialsReturnsOnCall(i int, result1 *director.BundleInstanceCredentialsOutput, result2 error) {
 	fake.fetchPackageInstanceCredentialsMutex.Lock()
 	defer fake.fetchPackageInstanceCredentialsMutex.Unlock()
 	fake.FetchPackageInstanceCredentialsStub = nil
 	if fake.fetchPackageInstanceCredentialsReturnsOnCall == nil {
 		fake.fetchPackageInstanceCredentialsReturnsOnCall = make(map[int]struct {
-			result1 *director.PackageInstanceCredentialsOutput
+			result1 *director.BundleInstanceCredentialsOutput
 			result2 error
 		})
 	}
 	fake.fetchPackageInstanceCredentialsReturnsOnCall[i] = struct {
-		result1 *director.PackageInstanceCredentialsOutput
+		result1 *director.BundleInstanceCredentialsOutput
 		result2 error
 	}{result1, result2}
 }

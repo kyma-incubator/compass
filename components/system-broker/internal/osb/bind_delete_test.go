@@ -17,12 +17,12 @@ func TestDeleteBinding(t *testing.T) {
 	bindingID := "bindingID"
 
 	var (
-		fakeCredentialsDeleter      *osbfakes.FakePackageCredentialsDeleteRequester
-		fakeCredentialsGetter       *osbfakes.FakePackageCredentialsFetcher
-		be                          *UnbindEndpoint
-		details                     domain.UnbindDetails
-		packageInstanceAuth         *director.PackageInstanceAuthOutput
-		packageInstanceAuthDeletion *director.PackageInstanceAuthDeletionOutput
+		fakeCredentialsDeleter     *osbfakes.FakePackageCredentialsDeleteRequester
+		fakeCredentialsGetter      *osbfakes.FakePackageCredentialsFetcher
+		be                         *UnbindEndpoint
+		details                    domain.UnbindDetails
+		bundleInstanceAuth         *director.BundleInstanceAuthOutput
+		bundleInstanceAuthDeletion *director.BundleInstanceAuthDeletionOutput
 	)
 
 	setup := func() {
@@ -39,7 +39,7 @@ func TestDeleteBinding(t *testing.T) {
 			PlanID:    "planID",
 		}
 
-		packageInstanceAuth = &director.PackageInstanceAuthOutput{
+		bundleInstanceAuth = &director.BundleInstanceAuthOutput{
 			InstanceAuth: &graphql.PackageInstanceAuth{
 				ID: "instanceAuthID",
 				Status: &graphql.PackageInstanceAuthStatus{
@@ -48,7 +48,7 @@ func TestDeleteBinding(t *testing.T) {
 			},
 		}
 
-		packageInstanceAuthDeletion = &director.PackageInstanceAuthDeletionOutput{
+		bundleInstanceAuthDeletion = &director.BundleInstanceAuthDeletionOutput{
 			ID: "instanceAuthID",
 		}
 	}
@@ -56,11 +56,11 @@ func TestDeleteBinding(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionReturns(
-			packageInstanceAuthDeletion,
+			bundleInstanceAuthDeletion,
 			nil,
 		)
 		binding, err := be.Unbind(context.TODO(), instanceID, bindingID, details, true)
@@ -94,9 +94,9 @@ func TestDeleteBinding(t *testing.T) {
 
 	t.Run("When credentials are already being deleted", func(t *testing.T) {
 		setup()
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionUnused
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionUnused
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.Unbind(context.TODO(), instanceID, bindingID, details, true)
@@ -108,7 +108,7 @@ func TestDeleteBinding(t *testing.T) {
 	t.Run("When credentials deleter returns not found", func(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionReturns(
@@ -125,7 +125,7 @@ func TestDeleteBinding(t *testing.T) {
 	t.Run("When credentials deleter returns error", func(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionReturns(

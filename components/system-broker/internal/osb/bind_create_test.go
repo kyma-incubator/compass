@@ -21,7 +21,7 @@ func TestBindCreate(t *testing.T) {
 		fakeCredentialsGetter  *osbfakes.FakePackageCredentialsFetcher
 		be                     *BindEndpoint
 		details                domain.BindDetails
-		packageInstanceAuth    *director.PackageInstanceAuthOutput
+		bundleInstanceAuth     *director.BundleInstanceAuthOutput
 	)
 
 	setup := func() {
@@ -38,7 +38,7 @@ func TestBindCreate(t *testing.T) {
 			PlanID:    "planID",
 		}
 
-		packageInstanceAuth = &director.PackageInstanceAuthOutput{
+		bundleInstanceAuth = &director.BundleInstanceAuthOutput{
 			InstanceAuth: &graphql.PackageInstanceAuth{
 				ID: "instanceAuthID",
 				Status: &graphql.PackageInstanceAuthStatus{
@@ -51,7 +51,7 @@ func TestBindCreate(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		binding, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)
@@ -69,9 +69,9 @@ func TestBindCreate(t *testing.T) {
 			nil,
 			&notFoundErr{},
 		)
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
 		fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		binding, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)
@@ -106,9 +106,9 @@ func TestBindCreate(t *testing.T) {
 			nil,
 			&notFoundErr{},
 		)
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
 		fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)
@@ -124,9 +124,9 @@ func TestBindCreate(t *testing.T) {
 			nil,
 			&notFoundErr{},
 		)
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
 		fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)
@@ -142,7 +142,7 @@ func TestBindCreate(t *testing.T) {
 			nil,
 			&notFoundErr{},
 		)
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
 		fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationReturns(
 			nil,
 			errors.New("some error"),
@@ -156,9 +156,9 @@ func TestBindCreate(t *testing.T) {
 
 	t.Run("When package instance auth status is failed", func(t *testing.T) {
 		setup()
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionFailed
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionFailed
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)

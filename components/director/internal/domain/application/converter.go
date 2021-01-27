@@ -18,11 +18,11 @@ import (
 type converter struct {
 	webhook WebhookConverter
 
-	pkg PackageConverter
+	bndl BundleConverter
 }
 
-func NewConverter(webhook WebhookConverter, pkgConverter PackageConverter) *converter {
-	return &converter{webhook: webhook, pkg: pkgConverter}
+func NewConverter(webhook WebhookConverter, bndlConverter BundleConverter) *converter {
+	return &converter{webhook: webhook, bndl: bndlConverter}
 }
 
 func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
@@ -108,10 +108,10 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Webhooks")
 	}
 
-	log.C(ctx).Debugf("Converting Packages from Application registration GraphQL input with name %s", in.Name)
-	packages, err := c.pkg.MultipleCreateInputFromGraphQL(in.Packages)
+	log.C(ctx).Debugf("Converting Bundles from Application registration GraphQL input with name %s", in.Name)
+	bundles, err := c.bndl.MultipleCreateInputFromGraphQL(in.Bundles)
 	if err != nil {
-		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Packages")
+		return model.ApplicationRegisterInput{}, errors.Wrap(err, "while converting Bundles")
 	}
 
 	return model.ApplicationRegisterInput{
@@ -123,7 +123,7 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 		StatusCondition:     c.statusConditionToModel(in.StatusCondition),
 		ProviderName:        in.ProviderName,
 		Webhooks:            webhooks,
-		Packages:            packages,
+		Bundles:             bundles,
 	}, nil
 }
 

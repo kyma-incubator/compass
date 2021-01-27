@@ -25,7 +25,7 @@ const (
 var (
 	bindingPath = fmt.Sprintf("/v2/service_instances/%s/service_bindings/%s", instanceID, bindingID)
 
-	packageInstanceAuthResponse = `{
+	bundleInstanceAuthResponse = `{
 	  "data": {
 		"result": {
 			"id": "%s",
@@ -91,7 +91,8 @@ func (suite *BindCreateTestSuite) TestBindWithoutAcceptsIncompleteHeaderShouldRe
 }
 
 func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", `{"error": "Test-error"}`)
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+		`{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.PUT(bindingPath).
@@ -102,7 +103,8 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnFindCredenti
 }
 
 func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsInsufficientScopesOnFindCredentialsShouldReturnUnauthorized() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", `{"error": "insufficient scopes provided"}`)
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+		`{"error": "insufficient scopes provided"}`)
 	assert.NoError(suite.T(), err)
 
 	resp := suite.testContext.SystemBroker.PUT(bindingPath).
@@ -115,8 +117,8 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsInsufficientScopesO
 }
 
 func (suite *BindCreateTestSuite) TestBindWhenDirectorOnFindCredentialsReturnsCredentialsWithMismatchedContextShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, "mismatched-id", bindingID))
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, "mismatched-id", bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.PUT(bindingPath).
@@ -127,10 +129,11 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorOnFindCredentialsReturnsCr
 }
 
 func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsErrorOnPackageInstanceCreationShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", notFoundResponse)
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+		notFoundResponse)
 	assert.NoError(suite.T(), err)
 
-	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthCreation", `{"error": "Test-error"}`)
+	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestBundleInstanceAuthCreation", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.PUT(bindingPath).
@@ -161,7 +164,7 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsAuthWithFailedCondi
 	assert.NoError(suite.T(), err)
 
 	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthCreation",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.PUT(bindingPath).
@@ -173,7 +176,7 @@ func (suite *BindCreateTestSuite) TestBindWhenDirectorReturnsAuthWithFailedCondi
 
 func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundWithFailedAuthShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.PUT(bindingPath).
@@ -185,7 +188,7 @@ func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundWithFaile
 
 func (suite *BindCreateTestSuite) TestBindWhenExistingCredentialIsFoundShouldReturnAccepted() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	resp := suite.testContext.SystemBroker.PUT(bindingPath).
@@ -202,7 +205,7 @@ func (suite *BindCreateTestSuite) TestBindWhenNewCredentialsAreCreatedShouldRetu
 	assert.NoError(suite.T(), err)
 
 	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthCreation",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	resp := suite.testContext.SystemBroker.PUT(bindingPath).

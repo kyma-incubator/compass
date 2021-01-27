@@ -58,15 +58,15 @@ func TestService_Create(t *testing.T) {
 		IntegrationSystemID: &intSysID,
 	}
 
-	packages := []*model.PackageCreateInput{
+	bundles := []*model.BundleCreateInput{
 		{
-			Name:             "pkg1",
+			Name:             "bndl1",
 			APIDefinitions:   APIDefinitions,
 			EventDefinitions: EventDefinitions,
 			Documents:        Documents,
 		},
 	}
-	modelInput.Packages = packages
+	modelInput.Bundles = bundles
 
 	normalizedModelInput := model.ApplicationRegisterInput{
 		Name: "mp-foo-bar-not",
@@ -80,7 +80,7 @@ func TestService_Create(t *testing.T) {
 		},
 		IntegrationSystemID: &intSysID,
 	}
-	normalizedModelInput.Packages = packages
+	normalizedModelInput.Bundles = bundles
 
 	defaultLabels := map[string]interface{}{
 		model.ScenariosKey:    model.ScenariosDefaultValue,
@@ -132,7 +132,7 @@ func TestService_Create(t *testing.T) {
 		IntSysRepoFn       func() *automock.IntegrationSystemRepository
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
-		PackageServiceFn   func() *automock.PackageService
+		BundleServiceFn    func() *automock.BundleService
 		UIDServiceFn       func() *automock.UIDService
 		Input              model.ApplicationRegisterInput
 		ExpectedErr        error
@@ -178,9 +178,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Packages).Return(nil).Once()
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -232,9 +232,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Packages).Return(nil).Once()
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -286,9 +286,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Packages).Return(nil).Once()
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -327,8 +327,8 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -379,9 +379,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultNormalizedLabels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
-				svc.On("CreateMultiple", ctx, id, normalizedModelInput.Packages).Return(nil).Once()
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("CreateMultiple", ctx, id, normalizedModelInput.Bundles).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -420,8 +420,8 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -465,8 +465,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -517,8 +517,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -563,8 +563,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -610,8 +610,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -653,8 +653,8 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -693,8 +693,8 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -733,8 +733,8 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -773,8 +773,8 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.LabelUpsertService{}
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -785,7 +785,7 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name:              "Returns error when creating packages",
+			Name:              "Returns error when creating bundles",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -825,9 +825,9 @@ func TestService_Create(t *testing.T) {
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabels).Return(nil).Once()
 				return svc
 			},
-			PackageServiceFn: func() *automock.PackageService {
-				svc := &automock.PackageService{}
-				svc.On("CreateMultiple", ctx, id, modelInput.Packages).Return(testErr).Once()
+			BundleServiceFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("CreateMultiple", ctx, id, modelInput.Bundles).Return(testErr).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -850,8 +850,8 @@ func TestService_Create(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			pkgSvc := testCase.PackageServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, pkgSvc, uidSvc)
+			bndlSvc := testCase.BundleServiceFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -872,7 +872,7 @@ func TestService_Create(t *testing.T) {
 			fetchRequestRepo.AssertExpectations(t)
 			scenariosSvc.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
-			pkgSvc.AssertExpectations(t)
+			bndlSvc.AssertExpectations(t)
 		})
 	}
 

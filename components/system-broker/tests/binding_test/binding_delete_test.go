@@ -20,7 +20,7 @@ var (
 	notFoundMutationResponse = `{
   "errors": [
 	{
-	  "message": "Object not found [object=PackageInstanceAuth]",
+	  "message": "Object not found [object=BundleInstanceAuth]",
 	  "path": [
 		"result"
 	  ],
@@ -118,7 +118,7 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundShouldReturnG
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsUnusedCredentialsShouldReturnAccepted() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	resp := suite.testContext.SystemBroker.DELETE(unbindPath).
@@ -132,7 +132,7 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsUnusedCredentialsShou
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnCredentialsDeletionShouldReturnError() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthDeletion", `{"error": "Test-error"}`)
@@ -147,7 +147,7 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsErrorOnCredentialsDel
 }
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsUnauthorizedOnCredentialsDeletionShouldReturnUnauthorized() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthDeletion", `{"error": "insufficient scopes provided"}`)
@@ -165,7 +165,7 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsUnauthorizedOnCredent
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundOnCredentialsDeletionShouldReturnGone() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthDeletion", notFoundMutationResponse)
@@ -181,11 +181,11 @@ func (suite *UnbindTestSuite) TestUnbindWhenDirectorReturnsNotFoundOnCredentials
 
 func (suite *UnbindTestSuite) TestUnbindWhenDirectorAcceptsCredentialsDeletionRequestShouldReturnAccepted() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	err = suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "mutation", "requestPackageInstanceAuthDeletion",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.DELETE(unbindPath).

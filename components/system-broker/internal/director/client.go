@@ -33,7 +33,7 @@ type Client interface {
 	Do(ctx context.Context, req *gcli.Request, res interface{}) error
 }
 
-//go:generate mockery -name=GqlFieldsProvider
+//go:generate mockery --name=GqlFieldsProvider
 type GqlFieldsProvider interface {
 	OmitForApplication(omit []string) string
 	ForApplication(ctx ...graphqlizer.FieldCtx) string
@@ -41,15 +41,15 @@ type GqlFieldsProvider interface {
 	ForDocument() string
 	ForEventDefinition() string
 	ForLabel() string
-	ForPackage(ctx ...graphqlizer.FieldCtx) string
-	ForPackageInstanceAuth() string
-	ForPackageInstanceAuthStatus() string
+	ForBundle(ctx ...graphqlizer.FieldCtx) string
+	ForBundleInstanceAuth() string
+	ForBundleInstanceAuthStatus() string
 	Page(item string) string
 }
 
-//go:generate mockery -name=GraphQLizer
+//go:generate mockery --name=GraphQLizer
 type GraphQLizer interface {
-	PackageInstanceAuthRequestInputToGQL(in schema.PackageInstanceAuthRequestInput) (string, error)
+	BundleInstanceAuthRequestInputToGQL(in schema.PackageInstanceAuthRequestInput) (string, error)
 }
 
 func NewGraphQLClient(gqlClient Client, gqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *GraphQLClient {
@@ -96,7 +96,7 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 	return &apps, nil
 }
 
-func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Context, in *PackageInstanceCredentialsInput) (*PackageInstanceAuthOutput, error) {
+func (c *GraphQLClient) RequestBundleInstanceCredentialsCreation(ctx context.Context, in *BundleInstanceCredentialsInput) (*BundleInstanceAuthOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -112,8 +112,8 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Co
 	}
 
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`mutation {
-			  result: requestPackageInstanceAuthCreation(
-				packageID: %q
+			  result: requestBundleInstanceAuthCreation(
+				bundleID: %q
 				in: {
 				  id: %q
 				  context: %s
@@ -127,9 +127,9 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Co
 					  reason
 					}
 			  	 }
-				}`, in.PackageID, in.AuthID, inContext, inputParams))
+				}`, in.BundleID, in.AuthID, inContext, inputParams))
 
-	var resp PackageInstanceAuthOutput
+	var resp BundleInstanceAuthOutput
 	if err = c.gcli.Do(ctx, gqlRequest, &resp); err != nil {
 		return nil, errors.Wrap(err, "while executing GraphQL call to create package instance auth")
 	}
@@ -137,7 +137,7 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsCreation(ctx context.Co
 	return &resp, nil
 }
 
-func (c *GraphQLClient) FetchPackageInstanceCredentials(ctx context.Context, in *PackageInstanceInput) (*PackageInstanceCredentialsOutput, error) {
+func (c *GraphQLClient) FetchBundleInstanceCredentials(ctx context.Context, in *BundleInstanceInput) (*BundleInstanceCredentialsOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -154,7 +154,7 @@ func (c *GraphQLClient) FetchPackageInstanceCredentials(ctx context.Context, in 
 				  %s
 				}
 			  }
-	}`, in.InstanceAuthID, in.InstanceAuthID, c.outputGraphqlizer.ForPackageInstanceAuth()))
+	}`, in.InstanceAuthID, in.InstanceAuthID, c.outputGraphqlizer.ForBundleInstanceAuth()))
 
 	var response struct {
 		Package *schema.PackageExt `json:"result"`
@@ -181,19 +181,19 @@ func (c *GraphQLClient) FetchPackageInstanceCredentials(ctx context.Context, in 
 		targetURLs[apiDefinition.Name] = apiDefinition.TargetURL
 	}
 
-	return &PackageInstanceCredentialsOutput{
+	return &BundleInstanceCredentialsOutput{
 		InstanceAuth: response.Package.InstanceAuth,
 		TargetURLs:   targetURLs,
 	}, nil
 }
 
-func (c *GraphQLClient) FetchPackageInstanceAuth(ctx context.Context, in *PackageInstanceInput) (*PackageInstanceAuthOutput, error) {
+func (c *GraphQLClient) FetchBundleInstanceAuth(ctx context.Context, in *BundleInstanceInput) (*BundleInstanceAuthOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
 
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
-			  result: packageInstanceAuth(id: %q) {
+			  result: bundleInstanceAuth(id: %q) {
 				id
 				context
 				status {
@@ -206,18 +206,18 @@ func (c *GraphQLClient) FetchPackageInstanceAuth(ctx context.Context, in *Packag
 	}`, in.InstanceAuthID))
 
 	var response struct {
-		PackageInstanceAuth *schema.PackageInstanceAuth `json:"result"`
+		BundleInstanceAuth *schema.PackageInstanceAuth `json:"result"`
 	}
 	if err := c.gcli.Do(ctx, gqlRequest, &response); err != nil {
 		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auth")
 	}
 
-	if response.PackageInstanceAuth == nil || response.PackageInstanceAuth.Context == nil {
+	if response.BundleInstanceAuth == nil || response.BundleInstanceAuth.Context == nil {
 		return nil, &NotFoundError{}
 	}
 
 	var authContext map[string]string
-	if err := json.Unmarshal([]byte(*response.PackageInstanceAuth.Context), &authContext); err != nil {
+	if err := json.Unmarshal([]byte(*response.BundleInstanceAuth.Context), &authContext); err != nil {
 		return nil, errors.Wrap(err, "while unmarshaling auth context")
 	}
 
@@ -225,18 +225,18 @@ func (c *GraphQLClient) FetchPackageInstanceAuth(ctx context.Context, in *Packag
 		return nil, errors.New("found binding with mismatched context coordinates")
 	}
 
-	return &PackageInstanceAuthOutput{
-		InstanceAuth: response.PackageInstanceAuth,
+	return &BundleInstanceAuthOutput{
+		InstanceAuth: response.BundleInstanceAuth,
 	}, nil
 }
 
-func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *PackageInstanceAuthDeletionInput) (*PackageInstanceAuthDeletionOutput, error) {
+func (c *GraphQLClient) RequestBundleInstanceCredentialsDeletion(ctx context.Context, in *BundleInstanceAuthDeletionInput) (*BundleInstanceAuthDeletionOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
 
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`mutation {
-			  result: requestPackageInstanceAuthDeletion(authID: %q) {
+			  result: requestBundleInstanceAuthDeletion(authID: %q) {
 						id
 						status {
 						  condition
@@ -248,7 +248,7 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Co
 					}`, in.InstanceAuthID))
 
 	var resp struct {
-		Result PackageInstanceAuthDeletionOutput `json:"result"`
+		Result BundleInstanceAuthDeletionOutput `json:"result"`
 	}
 
 	if err := c.gcli.Do(ctx, gqlRequest, &resp); err != nil {
@@ -262,7 +262,7 @@ func (c *GraphQLClient) RequestPackageInstanceCredentialsDeletion(ctx context.Co
 	return &resp.Result, nil
 }
 
-func (c *GraphQLClient) FindSpecification(ctx context.Context, in *PackageSpecificationInput) (*PackageSpecificationOutput, error) {
+func (c *GraphQLClient) FindSpecification(ctx context.Context, in *BundleSpecificationInput) (*BundleSpecificationOutput, error) {
 	if _, err := govalidator.ValidateStruct(in); err != nil {
 		return nil, errors.Wrap(err, "while validating input")
 	}
@@ -286,7 +286,7 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *PackageSpecif
 						  }
 						}
 					  }
-					}`, in.ApplicationID, in.PackageID, in.DefinitionID, in.DefinitionID))
+					}`, in.ApplicationID, in.BundleID, in.DefinitionID, in.DefinitionID))
 
 	var response struct {
 		Result schema.ApplicationExt `json:"result"`
@@ -297,7 +297,7 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *PackageSpecif
 
 	apidef := response.Result.Package.APIDefinition
 	if apidef.Spec != nil {
-		return &PackageSpecificationOutput{
+		return &BundleSpecificationOutput{
 			Name:        apidef.Name,
 			Description: apidef.Description,
 			Data:        apidef.Spec.Data,
@@ -309,7 +309,7 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *PackageSpecif
 
 	eventdef := response.Result.Package.EventDefinition
 	if eventdef.Spec != nil {
-		return &PackageSpecificationOutput{
+		return &BundleSpecificationOutput{
 			Name:        eventdef.Name,
 			Description: eventdef.Description,
 			Data:        eventdef.Spec.Data,

@@ -21,7 +21,7 @@ const (
 )
 
 type SpecsFetcher interface {
-	FindSpecification(ctx context.Context, in *director.PackageSpecificationInput) (*director.PackageSpecificationOutput, error)
+	FindSpecification(ctx context.Context, in *director.BundleSpecificationInput) (*director.BundleSpecificationOutput, error)
 }
 
 func API(rootAPI string, specsFetcher SpecsFetcher) func(router *mux.Router) {
@@ -82,9 +82,9 @@ func (h *SpecsHandler) FetchSpec(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	specification, err := h.specsFetcher.FindSpecification(ctx, &director.PackageSpecificationInput{
+	specification, err := h.specsFetcher.FindSpecification(ctx, &director.BundleSpecificationInput{
 		ApplicationID: appID,
-		PackageID:     packageID,
+		BundleID:      packageID,
 		DefinitionID:  definitionID,
 	})
 	if err != nil {

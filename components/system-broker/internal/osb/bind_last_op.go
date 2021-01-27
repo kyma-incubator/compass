@@ -28,7 +28,7 @@ import (
 )
 
 type BindLastOperationEndpoint struct {
-	credentialsGetter packageCredentialsFetcher
+	credentialsGetter bundleCredentialsFetcher
 }
 
 func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, instanceID, bindingID string, details domain.PollDetails) (domain.LastOperation, error) {
@@ -49,7 +49,7 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 	})
 
 	logger.Info("Fetching package instance credentials")
-	resp, err := b.credentialsGetter.FetchPackageInstanceAuth(ctx, &director.PackageInstanceInput{
+	resp, err := b.credentialsGetter.FetchBundleInstanceAuth(ctx, &director.BundleInstanceInput{
 		InstanceAuthID: authID,
 		Context: map[string]string{
 			"instance_id": instanceID,

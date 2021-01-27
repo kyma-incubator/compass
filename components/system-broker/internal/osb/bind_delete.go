@@ -28,8 +28,8 @@ import (
 )
 
 type UnbindEndpoint struct {
-	credentialsGetter  packageCredentialsFetcher
-	credentialsDeleter packageCredentialsDeleteRequester
+	credentialsGetter  bundleCredentialsFetcher
+	credentialsDeleter bundleCredentialsDeleteRequester
 }
 
 func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID string, details domain.UnbindDetails, asyncAllowed bool) (domain.UnbindSpec, error) {
@@ -50,7 +50,7 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 
 	logger.Info("Fetching package instance credentials")
 
-	resp, err := b.credentialsGetter.FetchPackageInstanceAuth(ctx, &director.PackageInstanceInput{
+	resp, err := b.credentialsGetter.FetchBundleInstanceAuth(ctx, &director.BundleInstanceInput{
 		InstanceAuthID: bindingID,
 		Context: map[string]string{
 			"instance_id": instanceID,
@@ -78,7 +78,7 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 	}
 
 	logger.Info("Package credentials for binding exist and are used. Requesting deletion")
-	deleteResp, err := b.credentialsDeleter.RequestPackageInstanceCredentialsDeletion(ctx, &director.PackageInstanceAuthDeletionInput{
+	deleteResp, err := b.credentialsDeleter.RequestBundleInstanceCredentialsDeletion(ctx, &director.BundleInstanceAuthDeletionInput{
 		InstanceAuthID: instanceAuth.ID,
 	})
 	if err != nil {

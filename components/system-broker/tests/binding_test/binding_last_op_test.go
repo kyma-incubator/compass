@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	packageInstanceAuthWithoutContextResponse = `{
+	bundleInstanceAuthWithoutContextResponse = `{
 	  "data": {
 		"result": {
 			"status": {
@@ -68,7 +68,8 @@ func (suite *BindLastOpTestSuite) TearDownTest() {
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", `{"error": "Test-error"}`)
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+		`{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -79,7 +80,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsErrorOnFindCreden
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsUnauthorizedOnFindCredentialsShouldReturnUnauthorized() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", `{"error": "insufficient scopes provided"}`)
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+		`{"error": "insufficient scopes provided"}`)
 	assert.NoError(suite.T(), err)
 
 	resp := suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -93,7 +95,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsUnauthorizedOnFin
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsNotFound() {
 	suite.Run("BindOpShouldReturnGone", func() {
-		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", notFoundResponse)
+		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+			notFoundResponse)
 		assert.NoError(suite.T(), err)
 
 		suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -103,7 +106,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsNotFound() {
 	})
 
 	suite.Run("UnbindOpShouldReturnSucceeded", func() {
-		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth", notFoundResponse)
+		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+			notFoundResponse)
 		assert.NoError(suite.T(), err)
 
 		suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -114,8 +118,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsNotFound() {
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithMissingContextShouldReturnNotFound() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthWithoutContextResponse, schema.PackageInstanceAuthStatusConditionPending))
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+		fmt.Sprintf(bundleInstanceAuthWithoutContextResponse, schema.PackageInstanceAuthStatusConditionPending))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -126,8 +130,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithMi
 }
 
 func (suite *BindLastOpTestSuite) TestLastOpWhenDirectorReturnsCredentialsWithDifferentInstanceAndBindingIDsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, "111", bindingID))
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, "111", bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -142,8 +146,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 
 	suite.Run("BindOp", func() {
 		suite.Run("Credentials succeeded condition should return succeeded state", func() {
-			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+				fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -153,8 +157,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 		})
 
 		suite.Run("Credentials pending condition should return in progress state", func() {
-			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
+			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+				fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -164,8 +168,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 		})
 
 		suite.Run("Credentials failed condition should return failed state", func() {
-			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
+			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+				fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -175,8 +179,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 		})
 
 		suite.Run("Credentials unused condition should return error", func() {
-			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
+			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+				fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -186,8 +190,8 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 		})
 
 		suite.Run("Credentials unknown condition should return error", func() {
-			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-				fmt.Sprintf(packageInstanceAuthResponse, bindingID, UnknownCondition, instanceID, bindingID))
+			err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleInstanceAuth",
+				fmt.Sprintf(bundleInstanceAuthResponse, bindingID, UnknownCondition, instanceID, bindingID))
 			assert.NoError(suite.T(), err)
 
 			suite.testContext.SystemBroker.GET(lastOperationBindingPath).
@@ -209,7 +213,7 @@ func (suite *BindLastOpTestSuite) TestLastOpWithStatus() {
 
 			for _, condition := range conditions {
 				err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageInstanceAuth",
-					fmt.Sprintf(packageInstanceAuthResponse, bindingID, condition, instanceID, bindingID))
+					fmt.Sprintf(bundleInstanceAuthResponse, bindingID, condition, instanceID, bindingID))
 				assert.NoError(suite.T(), err)
 
 				suite.testContext.SystemBroker.GET(lastOperationBindingPath).

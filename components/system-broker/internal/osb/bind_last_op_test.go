@@ -19,7 +19,7 @@ func TestBindLastOp(t *testing.T) {
 	var (
 		fakeCredentialsGetter *osbfakes.FakePackageCredentialsFetcher
 		be                    *BindLastOperationEndpoint
-		packageInstanceAuth   *director.PackageInstanceAuthOutput
+		bundleInstanceAuth    *director.BundleInstanceAuthOutput
 		details               domain.PollDetails
 	)
 
@@ -30,7 +30,7 @@ func TestBindLastOp(t *testing.T) {
 			credentialsGetter: fakeCredentialsGetter,
 		}
 
-		packageInstanceAuth = &director.PackageInstanceAuthOutput{
+		bundleInstanceAuth = &director.BundleInstanceAuthOutput{
 			InstanceAuth: &graphql.PackageInstanceAuth{
 				ID: "instanceAuthID",
 				Status: &graphql.PackageInstanceAuthStatus{
@@ -50,7 +50,7 @@ func TestBindLastOp(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		lastOp, err := be.LastBindingOperation(context.TODO(), instanceID, bindingID, details)
@@ -62,10 +62,10 @@ func TestBindLastOp(t *testing.T) {
 
 	t.Run("When credentials are pending", func(t *testing.T) {
 		setup()
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
-		packageInstanceAuth.InstanceAuth.Status.Message = "pending"
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
+		bundleInstanceAuth.InstanceAuth.Status.Message = "pending"
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		lastOp, err := be.LastBindingOperation(context.TODO(), instanceID, bindingID, details)
@@ -77,10 +77,10 @@ func TestBindLastOp(t *testing.T) {
 
 	t.Run("When credentials are failed", func(t *testing.T) {
 		setup()
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionFailed
-		packageInstanceAuth.InstanceAuth.Status.Message = "failed"
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionFailed
+		bundleInstanceAuth.InstanceAuth.Status.Message = "failed"
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		lastOp, err := be.LastBindingOperation(context.TODO(), instanceID, bindingID, details)
@@ -92,10 +92,10 @@ func TestBindLastOp(t *testing.T) {
 
 	t.Run("When credentials are unused", func(t *testing.T) {
 		setup()
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionUnused
-		packageInstanceAuth.InstanceAuth.Status.Message = "unused"
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionUnused
+		bundleInstanceAuth.InstanceAuth.Status.Message = "unused"
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.LastBindingOperation(context.TODO(), instanceID, bindingID, details)
@@ -143,7 +143,7 @@ func TestBindLastOp(t *testing.T) {
 	t.Run("When package instance auth is still existing for unbind", func(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		details.OperationData = string(UnbindOp)

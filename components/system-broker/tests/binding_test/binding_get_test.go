@@ -117,7 +117,7 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnauthorizedOnFindC
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsContextWithMismatchedInstanceOnFindCredentialsShouldReturnNotFound() {
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-		fmt.Sprintf(packageInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, "test", bindingID))
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, "test", bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(bindingPath).

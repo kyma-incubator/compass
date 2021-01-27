@@ -52,9 +52,9 @@ func TestService_HandleSpec(t *testing.T) {
 		Mode: model.FetchModeSingle,
 	}
 
-	modelInputPackage := model.FetchRequest{
+	modelInputBundle := model.FetchRequest{
 		ID:   "test",
-		Mode: model.FetchModePackage,
+		Mode: model.FetchModeBundle,
 	}
 
 	modelInputFilter := model.FetchRequest{
@@ -126,16 +126,16 @@ func TestService_HandleSpec(t *testing.T) {
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionSucceeded, nil, timestamp),
 		},
 		{
-			Name: "Nil when fetch request validation fails due to mode Package",
+			Name: "Nil when fetch request validation fails due to mode Bundle",
 			Client: func(t *testing.T) *http.Client {
 				return NewTestClient(func(req *http.Request) *http.Response {
 					return &http.Response{}
 				})
 			},
 
-			InputFr:        modelInputPackage,
+			InputFr:        modelInputBundle,
 			ExpectedResult: nil,
-			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr("Invalid data [reason=Unsupported fetch mode: PACKAGE]"), timestamp),
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr("Invalid data [reason=Unsupported fetch mode: BUNDLE]"), timestamp),
 		},
 		{
 			Name: "Nil when fetch request validation fails due to provided filter",

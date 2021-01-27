@@ -9,32 +9,32 @@ import (
 )
 
 type FakePackageCredentialsDeleteRequester struct {
-	RequestPackageInstanceCredentialsDeletionStub        func(context.Context, *director.PackageInstanceAuthDeletionInput) (*director.PackageInstanceAuthDeletionOutput, error)
+	RequestPackageInstanceCredentialsDeletionStub        func(context.Context, *director.BundleInstanceAuthDeletionInput) (*director.BundleInstanceAuthDeletionOutput, error)
 	requestPackageInstanceCredentialsDeletionMutex       sync.RWMutex
 	requestPackageInstanceCredentialsDeletionArgsForCall []struct {
 		arg1 context.Context
-		arg2 *director.PackageInstanceAuthDeletionInput
+		arg2 *director.BundleInstanceAuthDeletionInput
 	}
 	requestPackageInstanceCredentialsDeletionReturns struct {
-		result1 *director.PackageInstanceAuthDeletionOutput
+		result1 *director.BundleInstanceAuthDeletionOutput
 		result2 error
 	}
 	requestPackageInstanceCredentialsDeletionReturnsOnCall map[int]struct {
-		result1 *director.PackageInstanceAuthDeletionOutput
+		result1 *director.BundleInstanceAuthDeletionOutput
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredentialsDeletion(arg1 context.Context, arg2 *director.PackageInstanceAuthDeletionInput) (*director.PackageInstanceAuthDeletionOutput, error) {
+func (fake *FakePackageCredentialsDeleteRequester) RequestBundleInstanceCredentialsDeletion(arg1 context.Context, arg2 *director.BundleInstanceAuthDeletionInput) (*director.BundleInstanceAuthDeletionOutput, error) {
 	fake.requestPackageInstanceCredentialsDeletionMutex.Lock()
 	ret, specificReturn := fake.requestPackageInstanceCredentialsDeletionReturnsOnCall[len(fake.requestPackageInstanceCredentialsDeletionArgsForCall)]
 	fake.requestPackageInstanceCredentialsDeletionArgsForCall = append(fake.requestPackageInstanceCredentialsDeletionArgsForCall, struct {
 		arg1 context.Context
-		arg2 *director.PackageInstanceAuthDeletionInput
+		arg2 *director.BundleInstanceAuthDeletionInput
 	}{arg1, arg2})
-	fake.recordInvocation("RequestPackageInstanceCredentialsDeletion", []interface{}{arg1, arg2})
+	fake.recordInvocation("RequestBundleInstanceCredentialsDeletion", []interface{}{arg1, arg2})
 	fake.requestPackageInstanceCredentialsDeletionMutex.Unlock()
 	if fake.RequestPackageInstanceCredentialsDeletionStub != nil {
 		return fake.RequestPackageInstanceCredentialsDeletionStub(arg1, arg2)
@@ -52,41 +52,41 @@ func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredent
 	return len(fake.requestPackageInstanceCredentialsDeletionArgsForCall)
 }
 
-func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredentialsDeletionCalls(stub func(context.Context, *director.PackageInstanceAuthDeletionInput) (*director.PackageInstanceAuthDeletionOutput, error)) {
+func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredentialsDeletionCalls(stub func(context.Context, *director.BundleInstanceAuthDeletionInput) (*director.BundleInstanceAuthDeletionOutput, error)) {
 	fake.requestPackageInstanceCredentialsDeletionMutex.Lock()
 	defer fake.requestPackageInstanceCredentialsDeletionMutex.Unlock()
 	fake.RequestPackageInstanceCredentialsDeletionStub = stub
 }
 
-func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredentialsDeletionArgsForCall(i int) (context.Context, *director.PackageInstanceAuthDeletionInput) {
+func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredentialsDeletionArgsForCall(i int) (context.Context, *director.BundleInstanceAuthDeletionInput) {
 	fake.requestPackageInstanceCredentialsDeletionMutex.RLock()
 	defer fake.requestPackageInstanceCredentialsDeletionMutex.RUnlock()
 	argsForCall := fake.requestPackageInstanceCredentialsDeletionArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredentialsDeletionReturns(result1 *director.PackageInstanceAuthDeletionOutput, result2 error) {
+func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredentialsDeletionReturns(result1 *director.BundleInstanceAuthDeletionOutput, result2 error) {
 	fake.requestPackageInstanceCredentialsDeletionMutex.Lock()
 	defer fake.requestPackageInstanceCredentialsDeletionMutex.Unlock()
 	fake.RequestPackageInstanceCredentialsDeletionStub = nil
 	fake.requestPackageInstanceCredentialsDeletionReturns = struct {
-		result1 *director.PackageInstanceAuthDeletionOutput
+		result1 *director.BundleInstanceAuthDeletionOutput
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredentialsDeletionReturnsOnCall(i int, result1 *director.PackageInstanceAuthDeletionOutput, result2 error) {
+func (fake *FakePackageCredentialsDeleteRequester) RequestPackageInstanceCredentialsDeletionReturnsOnCall(i int, result1 *director.BundleInstanceAuthDeletionOutput, result2 error) {
 	fake.requestPackageInstanceCredentialsDeletionMutex.Lock()
 	defer fake.requestPackageInstanceCredentialsDeletionMutex.Unlock()
 	fake.RequestPackageInstanceCredentialsDeletionStub = nil
 	if fake.requestPackageInstanceCredentialsDeletionReturnsOnCall == nil {
 		fake.requestPackageInstanceCredentialsDeletionReturnsOnCall = make(map[int]struct {
-			result1 *director.PackageInstanceAuthDeletionOutput
+			result1 *director.BundleInstanceAuthDeletionOutput
 			result2 error
 		})
 	}
 	fake.requestPackageInstanceCredentialsDeletionReturnsOnCall[i] = struct {
-		result1 *director.PackageInstanceAuthDeletionOutput
+		result1 *director.BundleInstanceAuthDeletionOutput
 		result2 error
 	}{result1, result2}
 }

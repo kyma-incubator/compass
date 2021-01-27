@@ -18,7 +18,7 @@ func TestBindGet(t *testing.T) {
 	var (
 		fakeCredentialsGetter *osbfakes.FakePackageCredentialsFetcherForInstance
 		be                    *GetBindingEndpoint
-		packageInstanceAuth   *director.PackageInstanceCredentialsOutput
+		bundleInstanceAuth    *director.BundleInstanceCredentialsOutput
 	)
 
 	setup := func() {
@@ -28,7 +28,7 @@ func TestBindGet(t *testing.T) {
 			credentialsGetter: fakeCredentialsGetter,
 		}
 
-		packageInstanceAuth = &director.PackageInstanceCredentialsOutput{
+		bundleInstanceAuth = &director.BundleInstanceCredentialsOutput{
 			InstanceAuth: &graphql.PackageInstanceAuth{
 				Status: &graphql.PackageInstanceAuthStatus{
 					Condition: graphql.PackageInstanceAuthStatusConditionSucceeded,
@@ -47,7 +47,7 @@ func TestBindGet(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		binding, err := be.GetBinding(context.TODO(), instanceID, bindingID)
@@ -62,12 +62,12 @@ func TestBindGet(t *testing.T) {
 
 	t.Run("When credentials mapper returns an error", func(t *testing.T) {
 		setup()
-		packageInstanceAuth.InstanceAuth.Auth.Credential = graphql.BasicCredentialData{
+		bundleInstanceAuth.InstanceAuth.Auth.Credential = graphql.BasicCredentialData{
 			Username: "username",
 			Password: "password",
 		}
 		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
@@ -102,9 +102,9 @@ func TestBindGet(t *testing.T) {
 
 	t.Run("When credentials getter is in pending state", func(t *testing.T) {
 		setup()
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
 		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
@@ -115,9 +115,9 @@ func TestBindGet(t *testing.T) {
 
 	t.Run("When credentials getter is in unused state", func(t *testing.T) {
 		setup()
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionUnused
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionUnused
 		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
@@ -128,9 +128,9 @@ func TestBindGet(t *testing.T) {
 
 	t.Run("When credentials getter is in failed state", func(t *testing.T) {
 		setup()
-		packageInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionFailed
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionFailed
 		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
-			packageInstanceAuth,
+			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)

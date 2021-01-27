@@ -73,19 +73,19 @@ func (_m *GraphQLizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput
 	return r0, r1
 }
 
-// PackageCreateInputToGQL provides a mock function with given fields: in
-func (_m *GraphQLizer) PackageCreateInputToGQL(in graphql.PackageCreateInput) (string, error) {
+// BundleCreateInputToGQL provides a mock function with given fields: in
+func (_m *GraphQLizer) BundleCreateInputToGQL(in graphql.BundleCreateInput) (string, error) {
 	ret := _m.Called(in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(graphql.PackageCreateInput) string); ok {
+	if rf, ok := ret.Get(0).(func(graphql.BundleCreateInput) string); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(graphql.PackageCreateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(graphql.BundleCreateInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)
@@ -94,19 +94,19 @@ func (_m *GraphQLizer) PackageCreateInputToGQL(in graphql.PackageCreateInput) (s
 	return r0, r1
 }
 
-// PackageUpdateInputToGQL provides a mock function with given fields: in
-func (_m *GraphQLizer) PackageUpdateInputToGQL(in graphql.PackageUpdateInput) (string, error) {
+// BundleUpdateInputToGQL provides a mock function with given fields: in
+func (_m *GraphQLizer) BundleUpdateInputToGQL(in graphql.BundleUpdateInput) (string, error) {
 	ret := _m.Called(in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(graphql.PackageUpdateInput) string); ok {
+	if rf, ok := ret.Get(0).(func(graphql.BundleUpdateInput) string); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(graphql.PackageUpdateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(graphql.BundleUpdateInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

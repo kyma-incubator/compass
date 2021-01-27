@@ -18,10 +18,10 @@ package osb
 
 type GqlClientForBroker interface {
 	applicationsLister
-	packageCredentialsFetcher
-	packageCredentialsFetcherForInstance
-	packageCredentialsCreateRequester
-	packageCredentialsDeleteRequester
+	bundleCredentialsFetcher
+	bundleCredentialsFetcherForInstance
+	bundleCredentialsCreateRequester
+	bundleCredentialsDeleteRequester
 }
 
 func NewSystemBroker(client GqlClientForBroker, selfURL string) *SystemBroker {

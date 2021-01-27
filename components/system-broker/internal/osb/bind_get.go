@@ -30,7 +30,7 @@ import (
 )
 
 type GetBindingEndpoint struct {
-	credentialsGetter packageCredentialsFetcherForInstance
+	credentialsGetter bundleCredentialsFetcherForInstance
 }
 
 func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, bindingID string) (domain.GetBindingSpec, error) {
@@ -43,7 +43,7 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 
 	logger.Debug("Fetching package instance credentials")
 
-	resp, err := b.credentialsGetter.FetchPackageInstanceCredentials(ctx, &director.PackageInstanceInput{
+	resp, err := b.credentialsGetter.FetchBundleInstanceCredentials(ctx, &director.BundleInstanceInput{
 		InstanceAuthID: bindingID,
 		Context: map[string]string{
 			"instance_id": instanceID,
@@ -75,7 +75,7 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 	default:
 	}
 
-	bindingCredentials, err := mapPackageInstanceAuthToModel(*instanceAuth, resp.TargetURLs)
+	bindingCredentials, err := mapBundleInstanceAuthToModel(*instanceAuth, resp.TargetURLs)
 	if err != nil {
 		return domain.GetBindingSpec{}, errors.Wrap(err, "while mapping to binding credentials")
 	}

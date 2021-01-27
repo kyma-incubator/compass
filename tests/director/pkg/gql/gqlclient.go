@@ -11,7 +11,7 @@ import (
 )
 
 func NewAuthorizedGraphQLClient(bearerToken string) *gcli.Client {
-	return NewAuthorizedGraphQLClientWithCustomURL(bearerToken, getDirectorGraphQLURL())
+	return NewAuthorizedGraphQLClientWithCustomURL(bearerToken, GetDirectorGraphQLURL())
 }
 
 func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Client {
@@ -19,12 +19,13 @@ func NewAuthorizedGraphQLClientWithCustomURL(bearerToken, url string) *gcli.Clie
 	return gcli.NewClient(url, gcli.WithHTTPClient(authorizedClient))
 }
 
-func getDirectorGraphQLURL() string {
+func GetDirectorGraphQLURL() string {
 	url := os.Getenv("DIRECTOR_URL")
 	if url == "" {
 		url = "http://127.0.0.1:3000"
 	}
 	url = url + "/graphql"
+	url = url + "?useBundles=true" // TODO: Delete after bundles are adopted
 	return url
 }
 

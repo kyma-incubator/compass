@@ -30,23 +30,23 @@ type applicationsLister interface {
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsFetcher
-type packageCredentialsFetcher interface {
-	FetchPackageInstanceAuth(ctx context.Context, in *director.PackageInstanceInput) (*director.PackageInstanceAuthOutput, error)
+type bundleCredentialsFetcher interface {
+	FetchBundleInstanceAuth(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceAuthOutput, error)
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsFetcherForInstance
-type packageCredentialsFetcherForInstance interface {
-	FetchPackageInstanceCredentials(ctx context.Context, in *director.PackageInstanceInput) (*director.PackageInstanceCredentialsOutput, error)
+type bundleCredentialsFetcherForInstance interface {
+	FetchBundleInstanceCredentials(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceCredentialsOutput, error)
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsCreateRequester
-type packageCredentialsCreateRequester interface {
-	RequestPackageInstanceCredentialsCreation(ctx context.Context, in *director.PackageInstanceCredentialsInput) (*director.PackageInstanceAuthOutput, error)
+type bundleCredentialsCreateRequester interface {
+	RequestBundleInstanceCredentialsCreation(ctx context.Context, in *director.BundleInstanceCredentialsInput) (*director.BundleInstanceAuthOutput, error)
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsDeleteRequester
-type packageCredentialsDeleteRequester interface {
-	RequestPackageInstanceCredentialsDeletion(ctx context.Context, in *director.PackageInstanceAuthDeletionInput) (*director.PackageInstanceAuthDeletionOutput, error)
+type bundleCredentialsDeleteRequester interface {
+	RequestBundleInstanceCredentialsDeletion(ctx context.Context, in *director.BundleInstanceAuthDeletionInput) (*director.BundleInstanceAuthDeletionOutput, error)
 }
 
 type BrokerOperationType string
@@ -254,7 +254,7 @@ func (rp *RequestParameters) unpack() (*map[string][]string, *map[string][]strin
 	return rp.Headers, rp.QueryParameters
 }
 
-func mapPackageInstanceAuthToModel(instanceAuth schema.PackageInstanceAuth, targets map[string]string) (BindingCredentials, error) {
+func mapBundleInstanceAuthToModel(instanceAuth schema.PackageInstanceAuth, targets map[string]string) (BindingCredentials, error) {
 	var (
 		auth = instanceAuth.Auth
 		cfg  = AuthDetails{}

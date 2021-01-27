@@ -21,6 +21,1403 @@ func fixRegisterApplicationRequest(applicationInGQL string) *gcli.Request {
 			applicationInGQL, tc.gqlFieldsProvider.ForApplication()))
 }
 
+// TODO: Delete after bundles are adopted
+func fixRegisterApplicationWithPackagesRequest(name string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			  result: registerApplication(
+				in: {
+				  name: "%s"
+				  providerName: "compass"
+				  labels: { scenarios: ["DEFAULT"] }
+				  packages: [
+					{
+					  name: "foo"
+					  description: "Foo bar"
+					  apiDefinitions: [
+						{
+						  name: "comments-v1"
+						  description: "api for adding comments"
+						  targetURL: "http://mywordpress.com/comments"
+						  group: "comments"
+						  spec: {
+							data: "{\"openapi\":\"3.0.2\"}"
+							type: OPEN_API
+							format: YAML
+						  }
+						  version: {
+							value: "v1"
+							deprecated: true
+							deprecatedSince: "v5"
+							forRemoval: true
+						  }
+						}
+						{
+						  name: "reviews-v1"
+						  targetURL: "http://mywordpress.com/reviews"
+						  spec: {
+							type: ODATA
+							format: JSON
+							fetchRequest: {
+							  url: "http://mywordpress.com/apis"
+							  auth: {
+								credential: {
+								  basic: { username: "admin", password: "secret" }
+								}
+								additionalHeadersSerialized: "{\"header-A\":[\"ha1\",\"ha2\"],\"header-B\":[\"hb1\",\"hb2\"]}"
+								additionalQueryParamsSerialized: "{\"qA\":[\"qa1\",\"qa2\"],\"qB\":[\"qb1\",\"qb2\"]}"
+							  }
+							  mode: PACKAGE
+							  filter: "odata.json"
+							}
+						  }
+						}
+						{
+						  name: "xml"
+						  targetURL: "http://mywordpress.com/xml"
+						  spec: { data: "odata", type: ODATA, format: XML }
+						}
+					  ]
+					  eventDefinitions: [
+						{
+						  name: "comments-v1"
+						  description: "comments events"
+						  spec: {
+							data: "{\"asyncapi\":\"1.2.0\"}"
+							type: ASYNC_API
+							format: YAML
+						  }
+						  group: "comments"
+						  version: {
+							value: "v1"
+							deprecated: true
+							deprecatedSince: "v5"
+							forRemoval: true
+						  }
+						}
+						{
+						  name: "reviews-v1"
+						  description: "review events"
+						  spec: {
+							type: ASYNC_API
+							fetchRequest: {
+							  url: "http://mywordpress.com/events"
+							  auth: {
+								credential: {
+								  oauth: {
+									clientId: "clientid"
+									clientSecret: "grazynasecret"
+									url: "url.net"
+								  }
+								}
+							  }
+							  mode: PACKAGE
+							  filter: "async.json"
+							}
+							format: YAML
+						  }
+						}
+					  ]
+					  documents: [
+						{
+						  title: "Readme"
+						  displayName: "display-name"
+						  description: "Detailed description of project"
+						  format: MARKDOWN
+						  fetchRequest: {
+							url: "kyma-project.io"
+							auth: {
+							  credential: {
+								basic: { username: "admin", password: "secret" }
+							  }
+							  additionalHeadersSerialized: "{\"header-A\":[\"ha1\",\"ha2\"],\"header-B\":[\"hb1\",\"hb2\"]}"
+							  additionalQueryParamsSerialized: "{\"qA\":[\"qa1\",\"qa2\"],\"qB\":[\"qb1\",\"qb2\"]}"
+							}
+							mode: PACKAGE
+							filter: "/docs/README.md"
+						  }
+						}
+						{
+						  title: "Troubleshooting"
+						  displayName: "display-name"
+						  description: "Troubleshooting description"
+						  format: MARKDOWN
+						  data: "No problems, everything works on my machine"
+						}
+					  ]
+					}
+					{
+					  name: "bar"
+					  description: "Foo bar"
+					  apiDefinitions: [
+						{
+						  name: "comments-v1"
+						  description: "api for adding comments"
+						  targetURL: "http://mywordpress.com/comments"
+						  group: "comments"
+						  spec: {
+							data: "{\"openapi\":\"3.0.2\"}"
+							type: OPEN_API
+							format: YAML
+						  }
+						  version: {
+							value: "v1"
+							deprecated: true
+							deprecatedSince: "v5"
+							forRemoval: true
+						  }
+						}
+						{
+						  name: "reviews-v1"
+						  targetURL: "http://mywordpress.com/reviews"
+						  spec: {
+							type: ODATA
+							format: JSON
+							fetchRequest: {
+							  url: "http://mywordpress.com/apis"
+							  auth: {
+								credential: {
+								  basic: { username: "admin", password: "secret" }
+								}
+								additionalHeadersSerialized: "{\"header-A\":[\"ha1\",\"ha2\"],\"header-B\":[\"hb1\",\"hb2\"]}"
+								additionalQueryParamsSerialized: "{\"qA\":[\"qa1\",\"qa2\"],\"qB\":[\"qb1\",\"qb2\"]}"
+							  }
+							  mode: PACKAGE
+							  filter: "odata.json"
+							}
+						  }
+						}
+						{
+						  name: "xml"
+						  targetURL: "http://mywordpress.com/xml"
+						  spec: { data: "odata", type: ODATA, format: XML }
+						}
+					  ]
+					  eventDefinitions: [
+						{
+						  name: "comments-v1"
+						  description: "comments events"
+						  spec: {
+							data: "{\"asyncapi\":\"1.2.0\"}"
+							type: ASYNC_API
+							format: YAML
+						  }
+						  group: "comments"
+						  version: {
+							value: "v1"
+							deprecated: true
+							deprecatedSince: "v5"
+							forRemoval: true
+						  }
+						}
+						{
+						  name: "reviews-v1"
+						  description: "review events"
+						  spec: {
+							type: ASYNC_API
+							fetchRequest: {
+							  url: "http://mywordpress.com/events"
+							  auth: {
+								credential: {
+								  oauth: {
+									clientId: "clientid"
+									clientSecret: "grazynasecret"
+									url: "url.net"
+								  }
+								}
+							  }
+							  mode: PACKAGE
+							  filter: "async.json"
+							}
+							format: YAML
+						  }
+						}
+					  ]
+					  documents: [
+						{
+						  title: "Readme"
+						  displayName: "display-name"
+						  description: "Detailed description of project"
+						  format: MARKDOWN
+						  fetchRequest: {
+							url: "kyma-project.io"
+							auth: {
+							  credential: {
+								basic: { username: "admin", password: "secret" }
+							  }
+							  additionalHeadersSerialized: "{\"header-A\":[\"ha1\",\"ha2\"],\"header-B\":[\"hb1\",\"hb2\"]}"
+							  additionalQueryParamsSerialized: "{\"qA\":[\"qa1\",\"qa2\"],\"qB\":[\"qb1\",\"qb2\"]}"
+							}
+							mode: PACKAGE
+							filter: "/docs/README.md"
+						  }
+						}
+						{
+						  title: "Troubleshooting"
+						  displayName: "display-name"
+						  description: "Troubleshooting description"
+						  format: MARKDOWN
+						  data: "No problems, everything works on my machine"
+						}
+					  ]
+					}
+				  ]
+				}
+			  ) {
+				id
+				name
+				providerName
+				description
+				integrationSystemID
+				labels
+				status {
+				  condition
+				  timestamp
+				}
+				webhooks {
+				  id
+				  applicationID
+				  type
+				  url
+				  auth {
+					credential {
+					  ... on BasicCredentialData {
+						username
+						password
+					  }
+					  ... on OAuthCredentialData {
+						clientId
+						clientSecret
+						url
+					  }
+					}
+					additionalHeaders
+					additionalQueryParams
+					requestAuth {
+					  csrf {
+						tokenEndpointURL
+						credential {
+						  ... on BasicCredentialData {
+							username
+							password
+						  }
+						  ... on OAuthCredentialData {
+							clientId
+							clientSecret
+							url
+						  }
+						}
+						additionalHeaders
+						additionalQueryParams
+					  }
+					}
+				  }
+				}
+				healthCheckURL
+				packages {
+				  data {
+					id
+					name
+					description
+					instanceAuthRequestInputSchema
+					instanceAuths {
+					  id
+					  context
+					  inputParams
+					  auth {
+						credential {
+						  ... on BasicCredentialData {
+							username
+							password
+						  }
+						  ... on OAuthCredentialData {
+							clientId
+							clientSecret
+							url
+						  }
+						}
+						additionalHeaders
+						additionalQueryParams
+						requestAuth {
+						  csrf {
+							tokenEndpointURL
+							credential {
+							  ... on BasicCredentialData {
+								username
+								password
+							  }
+							  ... on OAuthCredentialData {
+								clientId
+								clientSecret
+								url
+							  }
+							}
+							additionalHeaders
+							additionalQueryParams
+						  }
+						}
+					  }
+					  status {
+						condition
+						timestamp
+						message
+						reason
+					  }
+					}
+					defaultInstanceAuth {
+					  credential {
+						... on BasicCredentialData {
+						  username
+						  password
+						}
+						... on OAuthCredentialData {
+						  clientId
+						  clientSecret
+						  url
+						}
+					  }
+					  additionalHeaders
+					  additionalQueryParams
+					  requestAuth {
+						csrf {
+						  tokenEndpointURL
+						  credential {
+							... on BasicCredentialData {
+							  username
+							  password
+							}
+							... on OAuthCredentialData {
+							  clientId
+							  clientSecret
+							  url
+							}
+						  }
+						  additionalHeaders
+						  additionalQueryParams
+						}
+					  }
+					}
+					apiDefinitions {
+					  data {
+						id
+						name
+						description
+						spec {
+						  data
+						  format
+						  type
+						  fetchRequest {
+							url
+							auth {
+							  credential {
+								... on BasicCredentialData {
+								  username
+								  password
+								}
+								... on OAuthCredentialData {
+								  clientId
+								  clientSecret
+								  url
+								}
+							  }
+							  additionalHeaders
+							  additionalQueryParams
+							  requestAuth {
+								csrf {
+								  tokenEndpointURL
+								  credential {
+									... on BasicCredentialData {
+									  username
+									  password
+									}
+									... on OAuthCredentialData {
+									  clientId
+									  clientSecret
+									  url
+									}
+								  }
+								  additionalHeaders
+								  additionalQueryParams
+								}
+							  }
+							}
+							mode
+							filter
+							status {
+							  condition
+							  message
+							  timestamp
+							}
+						  }
+						}
+						targetURL
+						group
+						version {
+						  value
+						  deprecated
+						  deprecatedSince
+						  forRemoval
+						}
+					  }
+					  pageInfo {
+						startCursor
+						endCursor
+						hasNextPage
+					  }
+					  totalCount
+					}
+					eventDefinitions {
+					  data {
+						id
+						name
+						description
+						group
+						spec {
+						  data
+						  type
+						  format
+						  fetchRequest {
+							url
+							auth {
+							  credential {
+								... on BasicCredentialData {
+								  username
+								  password
+								}
+								... on OAuthCredentialData {
+								  clientId
+								  clientSecret
+								  url
+								}
+							  }
+							  additionalHeaders
+							  additionalQueryParams
+							  requestAuth {
+								csrf {
+								  tokenEndpointURL
+								  credential {
+									... on BasicCredentialData {
+									  username
+									  password
+									}
+									... on OAuthCredentialData {
+									  clientId
+									  clientSecret
+									  url
+									}
+								  }
+								  additionalHeaders
+								  additionalQueryParams
+								}
+							  }
+							}
+							mode
+							filter
+							status {
+							  condition
+							  message
+							  timestamp
+							}
+						  }
+						}
+						version {
+						  value
+						  deprecated
+						  deprecatedSince
+						  forRemoval
+						}
+					  }
+					  pageInfo {
+						startCursor
+						endCursor
+						hasNextPage
+					  }
+					  totalCount
+					}
+					documents {
+					  data {
+						id
+						title
+						displayName
+						description
+						format
+						kind
+						data
+						fetchRequest {
+						  url
+						  auth {
+							credential {
+							  ... on BasicCredentialData {
+								username
+								password
+							  }
+							  ... on OAuthCredentialData {
+								clientId
+								clientSecret
+								url
+							  }
+							}
+							additionalHeaders
+							additionalQueryParams
+							requestAuth {
+							  csrf {
+								tokenEndpointURL
+								credential {
+								  ... on BasicCredentialData {
+									username
+									password
+								  }
+								  ... on OAuthCredentialData {
+									clientId
+									clientSecret
+									url
+								  }
+								}
+								additionalHeaders
+								additionalQueryParams
+							  }
+							}
+						  }
+						  mode
+						  filter
+						  status {
+							condition
+							message
+							timestamp
+						  }
+						}
+					  }
+					  pageInfo {
+						startCursor
+						endCursor
+						hasNextPage
+					  }
+					  totalCount
+					}
+				  }
+				  pageInfo {
+					startCursor
+					endCursor
+					hasNextPage
+				  }
+				  totalCount
+				}
+				auths {
+				  id
+				  auth {
+					credential {
+					  ... on BasicCredentialData {
+						username
+						password
+					  }
+					  ... on OAuthCredentialData {
+						clientId
+						clientSecret
+						url
+					  }
+					}
+					additionalHeaders
+					additionalQueryParams
+					requestAuth {
+					  csrf {
+						tokenEndpointURL
+						credential {
+						  ... on BasicCredentialData {
+							username
+							password
+						  }
+						  ... on OAuthCredentialData {
+							clientId
+							clientSecret
+							url
+						  }
+						}
+						additionalHeaders
+						additionalQueryParams
+					  }
+					}
+				  }
+				}
+				eventingConfiguration {
+				  defaultURL
+				}
+			  }
+			}
+		`, name))
+}
+
+// TODO: Delete after bundles are adopted
+func fixGetApplicationWithPackageRequest(appID, packageID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			  result: application(id: "%s") {
+				id
+				name
+				providerName
+				description
+				integrationSystemID
+				labels
+				status {
+				  condition
+				  timestamp
+				}
+				webhooks {
+				  id
+				  applicationID
+				  type
+				  url
+				  auth {
+					credential {
+					  ... on BasicCredentialData {
+						username
+						password
+					  }
+					  ... on OAuthCredentialData {
+						clientId
+						clientSecret
+						url
+					  }
+					}
+					additionalHeaders
+					additionalQueryParams
+					requestAuth {
+					  csrf {
+						tokenEndpointURL
+						credential {
+						  ... on BasicCredentialData {
+							username
+							password
+						  }
+						  ... on OAuthCredentialData {
+							clientId
+							clientSecret
+							url
+						  }
+						}
+						additionalHeaders
+						additionalQueryParams
+					  }
+					}
+				  }
+				}
+				healthCheckURL
+				package(id: "%s") {
+					id
+					name
+					description
+					instanceAuthRequestInputSchema
+					instanceAuths {
+					  id
+					  context
+					  inputParams
+					  auth {
+						credential {
+						  ... on BasicCredentialData {
+							username
+							password
+						  }
+						  ... on OAuthCredentialData {
+							clientId
+							clientSecret
+							url
+						  }
+						}
+						additionalHeaders
+						additionalQueryParams
+						requestAuth {
+						  csrf {
+							tokenEndpointURL
+							credential {
+							  ... on BasicCredentialData {
+								username
+								password
+							  }
+							  ... on OAuthCredentialData {
+								clientId
+								clientSecret
+								url
+							  }
+							}
+							additionalHeaders
+							additionalQueryParams
+						  }
+						}
+					  }
+					  status {
+						condition
+						timestamp
+						message
+						reason
+					  }
+					}
+					defaultInstanceAuth {
+					  credential {
+						... on BasicCredentialData {
+						  username
+						  password
+						}
+						... on OAuthCredentialData {
+						  clientId
+						  clientSecret
+						  url
+						}
+					  }
+					  additionalHeaders
+					  additionalQueryParams
+					  requestAuth {
+						csrf {
+						  tokenEndpointURL
+						  credential {
+							... on BasicCredentialData {
+							  username
+							  password
+							}
+							... on OAuthCredentialData {
+							  clientId
+							  clientSecret
+							  url
+							}
+						  }
+						  additionalHeaders
+						  additionalQueryParams
+						}
+					  }
+					}
+					apiDefinitions {
+					  data {
+						id
+						name
+						description
+						spec {
+						  data
+						  format
+						  type
+						  fetchRequest {
+							url
+							auth {
+							  credential {
+								... on BasicCredentialData {
+								  username
+								  password
+								}
+								... on OAuthCredentialData {
+								  clientId
+								  clientSecret
+								  url
+								}
+							  }
+							  additionalHeaders
+							  additionalQueryParams
+							  requestAuth {
+								csrf {
+								  tokenEndpointURL
+								  credential {
+									... on BasicCredentialData {
+									  username
+									  password
+									}
+									... on OAuthCredentialData {
+									  clientId
+									  clientSecret
+									  url
+									}
+								  }
+								  additionalHeaders
+								  additionalQueryParams
+								}
+							  }
+							}
+							mode
+							filter
+							status {
+							  condition
+							  message
+							  timestamp
+							}
+						  }
+						}
+						targetURL
+						group
+						version {
+						  value
+						  deprecated
+						  deprecatedSince
+						  forRemoval
+						}
+					  }
+					  pageInfo {
+						startCursor
+						endCursor
+						hasNextPage
+					  }
+					  totalCount
+					}
+					eventDefinitions {
+					  data {
+						id
+						name
+						description
+						group
+						spec {
+						  data
+						  type
+						  format
+						  fetchRequest {
+							url
+							auth {
+							  credential {
+								... on BasicCredentialData {
+								  username
+								  password
+								}
+								... on OAuthCredentialData {
+								  clientId
+								  clientSecret
+								  url
+								}
+							  }
+							  additionalHeaders
+							  additionalQueryParams
+							  requestAuth {
+								csrf {
+								  tokenEndpointURL
+								  credential {
+									... on BasicCredentialData {
+									  username
+									  password
+									}
+									... on OAuthCredentialData {
+									  clientId
+									  clientSecret
+									  url
+									}
+								  }
+								  additionalHeaders
+								  additionalQueryParams
+								}
+							  }
+							}
+							mode
+							filter
+							status {
+							  condition
+							  message
+							  timestamp
+							}
+						  }
+						}
+						version {
+						  value
+						  deprecated
+						  deprecatedSince
+						  forRemoval
+						}
+					  }
+					  pageInfo {
+						startCursor
+						endCursor
+						hasNextPage
+					  }
+					  totalCount
+					}
+					documents {
+					  data {
+						id
+						title
+						displayName
+						description
+						format
+						kind
+						data
+						fetchRequest {
+						  url
+						  auth {
+							credential {
+							  ... on BasicCredentialData {
+								username
+								password
+							  }
+							  ... on OAuthCredentialData {
+								clientId
+								clientSecret
+								url
+							  }
+							}
+							additionalHeaders
+							additionalQueryParams
+							requestAuth {
+							  csrf {
+								tokenEndpointURL
+								credential {
+								  ... on BasicCredentialData {
+									username
+									password
+								  }
+								  ... on OAuthCredentialData {
+									clientId
+									clientSecret
+									url
+								  }
+								}
+								additionalHeaders
+								additionalQueryParams
+							  }
+							}
+						  }
+						  mode
+						  filter
+						  status {
+							condition
+							message
+							timestamp
+						  }
+						}
+					  }
+					  pageInfo {
+						startCursor
+						endCursor
+						hasNextPage
+					  }
+					  totalCount
+					}
+				}
+				auths {
+				  id
+				  auth {
+					credential {
+					  ... on BasicCredentialData {
+						username
+						password
+					  }
+					  ... on OAuthCredentialData {
+						clientId
+						clientSecret
+						url
+					  }
+					}
+					additionalHeaders
+					additionalQueryParams
+					requestAuth {
+					  csrf {
+						tokenEndpointURL
+						credential {
+						  ... on BasicCredentialData {
+							username
+							password
+						  }
+						  ... on OAuthCredentialData {
+							clientId
+							clientSecret
+							url
+						  }
+						}
+						additionalHeaders
+						additionalQueryParams
+					  }
+					}
+				  }
+				}
+				eventingConfiguration {
+				  defaultURL
+				}
+			  }
+			}`, appID, packageID))
+}
+
+// TODO: Delete after bundles are adopted
+func fixApplicationsForRuntimeWithPackagesRequest(runtimeID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				  result: applicationsForRuntime(runtimeID: "%s") {
+					data {
+					  id
+					  name
+					  providerName
+					  description
+					  integrationSystemID
+					  labels
+					  status {
+						condition
+						timestamp
+					  }
+					  webhooks {
+						id
+						applicationID
+						type
+						url
+						auth {
+						  credential {
+							... on BasicCredentialData {
+							  username
+							  password
+							}
+							... on OAuthCredentialData {
+							  clientId
+							  clientSecret
+							  url
+							}
+						  }
+						  additionalHeaders
+						  additionalQueryParams
+						  requestAuth {
+							csrf {
+							  tokenEndpointURL
+							  credential {
+								... on BasicCredentialData {
+								  username
+								  password
+								}
+								... on OAuthCredentialData {
+								  clientId
+								  clientSecret
+								  url
+								}
+							  }
+							  additionalHeaders
+							  additionalQueryParams
+							}
+						  }
+						}
+					  }
+					  healthCheckURL
+					  packages {
+						data {
+						  id
+						  name
+						  description
+						  instanceAuthRequestInputSchema
+						  instanceAuths {
+							id
+							context
+							inputParams
+							auth {
+							  credential {
+								... on BasicCredentialData {
+								  username
+								  password
+								}
+								... on OAuthCredentialData {
+								  clientId
+								  clientSecret
+								  url
+								}
+							  }
+							  additionalHeaders
+							  additionalQueryParams
+							  requestAuth {
+								csrf {
+								  tokenEndpointURL
+								  credential {
+									... on BasicCredentialData {
+									  username
+									  password
+									}
+									... on OAuthCredentialData {
+									  clientId
+									  clientSecret
+									  url
+									}
+								  }
+								  additionalHeaders
+								  additionalQueryParams
+								}
+							  }
+							}
+							status {
+							  condition
+							  timestamp
+							  message
+							  reason
+							}
+						  }
+						  defaultInstanceAuth {
+							credential {
+							  ... on BasicCredentialData {
+								username
+								password
+							  }
+							  ... on OAuthCredentialData {
+								clientId
+								clientSecret
+								url
+							  }
+							}
+							additionalHeaders
+							additionalQueryParams
+							requestAuth {
+							  csrf {
+								tokenEndpointURL
+								credential {
+								  ... on BasicCredentialData {
+									username
+									password
+								  }
+								  ... on OAuthCredentialData {
+									clientId
+									clientSecret
+									url
+								  }
+								}
+								additionalHeaders
+								additionalQueryParams
+							  }
+							}
+						  }
+						  apiDefinitions {
+							data {
+							  id
+							  name
+							  description
+							  spec {
+								data
+								format
+								type
+								fetchRequest {
+								  url
+								  auth {
+									credential {
+									  ... on BasicCredentialData {
+										username
+										password
+									  }
+									  ... on OAuthCredentialData {
+										clientId
+										clientSecret
+										url
+									  }
+									}
+									additionalHeaders
+									additionalQueryParams
+									requestAuth {
+									  csrf {
+										tokenEndpointURL
+										credential {
+										  ... on BasicCredentialData {
+											username
+											password
+										  }
+										  ... on OAuthCredentialData {
+											clientId
+											clientSecret
+											url
+										  }
+										}
+										additionalHeaders
+										additionalQueryParams
+									  }
+									}
+								  }
+								  mode
+								  filter
+								  status {
+									condition
+									message
+									timestamp
+								  }
+								}
+							  }
+							  targetURL
+							  group
+							  version {
+								value
+								deprecated
+								deprecatedSince
+								forRemoval
+							  }
+							}
+							pageInfo {
+							  startCursor
+							  endCursor
+							  hasNextPage
+							}
+							totalCount
+						  }
+						  eventDefinitions {
+							data {
+							  id
+							  name
+							  description
+							  group
+							  spec {
+								data
+								type
+								format
+								fetchRequest {
+								  url
+								  auth {
+									credential {
+									  ... on BasicCredentialData {
+										username
+										password
+									  }
+									  ... on OAuthCredentialData {
+										clientId
+										clientSecret
+										url
+									  }
+									}
+									additionalHeaders
+									additionalQueryParams
+									requestAuth {
+									  csrf {
+										tokenEndpointURL
+										credential {
+										  ... on BasicCredentialData {
+											username
+											password
+										  }
+										  ... on OAuthCredentialData {
+											clientId
+											clientSecret
+											url
+										  }
+										}
+										additionalHeaders
+										additionalQueryParams
+									  }
+									}
+								  }
+								  mode
+								  filter
+								  status {
+									condition
+									message
+									timestamp
+								  }
+								}
+							  }
+							  version {
+								value
+								deprecated
+								deprecatedSince
+								forRemoval
+							  }
+							}
+							pageInfo {
+							  startCursor
+							  endCursor
+							  hasNextPage
+							}
+							totalCount
+						  }
+						  documents {
+							data {
+							  id
+							  title
+							  displayName
+							  description
+							  format
+							  kind
+							  data
+							  fetchRequest {
+								url
+								auth {
+								  credential {
+									... on BasicCredentialData {
+									  username
+									  password
+									}
+									... on OAuthCredentialData {
+									  clientId
+									  clientSecret
+									  url
+									}
+								  }
+								  additionalHeaders
+								  additionalQueryParams
+								  requestAuth {
+									csrf {
+									  tokenEndpointURL
+									  credential {
+										... on BasicCredentialData {
+										  username
+										  password
+										}
+										... on OAuthCredentialData {
+										  clientId
+										  clientSecret
+										  url
+										}
+									  }
+									  additionalHeaders
+									  additionalQueryParams
+									}
+								  }
+								}
+								mode
+								filter
+								status {
+								  condition
+								  message
+								  timestamp
+								}
+							  }
+							}
+							pageInfo {
+							  startCursor
+							  endCursor
+							  hasNextPage
+							}
+							totalCount
+						  }
+						}
+						pageInfo {
+						  startCursor
+						  endCursor
+						  hasNextPage
+						}
+						totalCount
+					  }
+					  auths {
+						id
+						auth {
+						  credential {
+							... on BasicCredentialData {
+							  username
+							  password
+							}
+							... on OAuthCredentialData {
+							  clientId
+							  clientSecret
+							  url
+							}
+						  }
+						  additionalHeaders
+						  additionalQueryParams
+						  requestAuth {
+							csrf {
+							  tokenEndpointURL
+							  credential {
+								... on BasicCredentialData {
+								  username
+								  password
+								}
+								... on OAuthCredentialData {
+								  clientId
+								  clientSecret
+								  url
+								}
+							  }
+							  additionalHeaders
+							  additionalQueryParams
+							}
+						  }
+						}
+					  }
+					  eventingConfiguration {
+						defaultURL
+					  }
+					}
+					pageInfo {
+					  startCursor
+					  endCursor
+					  hasNextPage
+					}
+					totalCount
+				  }
+				}`, runtimeID))
+}
+
 func fixUnregisterApplicationRequest(id string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -88,13 +1485,13 @@ func fixDeleteDocumentRequest(docID string) *gcli.Request {
 			}`, docID))
 }
 
-func fixAddDocumentToPackageRequest(packageID, documentInputInGQL string) *gcli.Request {
+func fixAddDocumentToBundleRequest(bundleID, documentInputInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addDocumentToPackage(packageID: "%s", in: %s) {
+		result: addDocumentToBundle(bundleID: "%s", in: %s) {
  				%s
 			}				
-		}`, packageID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
+		}`, bundleID, documentInputInGQL, tc.gqlFieldsProvider.ForDocument()))
 }
 
 func fixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
@@ -126,14 +1523,14 @@ func fixAddAPIRequest(appID, APIInputGQL string) *gcli.Request {
 		`, appID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
-func fixAddAPIToPackageRequest(pkgID, APIInputGQL string) *gcli.Request {
+func fixAddAPIToBundleRequest(bndlID, APIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addAPIDefinitionToPackage(packageID: "%s", in: %s) {
+		result: addAPIDefinitionToBundle(bundleID: "%s", in: %s) {
 				%s
 			}
 		}
-		`, pkgID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
+		`, bndlID, APIInputGQL, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
 func fixUpdateAPIRequest(apiID, APIInputGQL string) *gcli.Request {
@@ -165,14 +1562,14 @@ func fixAddEventAPIRequest(appID, eventAPIInputGQL string) *gcli.Request {
 		`, appID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
-func fixAddEventAPIToPackageRequest(pkgID, eventAPIInputGQL string) *gcli.Request {
+func fixAddEventAPIToBundleRequest(bndlID, eventAPIInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-		result: addEventDefinitionToPackage(packageID: "%s", in: %s) {
+		result: addEventDefinitionToBundle(bundleID: "%s", in: %s) {
 				%s
 			}
 		}
-		`, pkgID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
+		`, bndlID, eventAPIInputGQL, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
 func fixUpdateEventAPIRequest(eventAPIID, eventAPIInputGQL string) *gcli.Request {
@@ -623,165 +2020,165 @@ func fixSetDefaultEventingForApplication(appID string, runtimeID string) *gcli.R
 			runtimeID, appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
 }
 
-func fixAPIDefinitionInPackageRequest(appID, pkgID, apiID string) *gcli.Request {
+func fixAPIDefinitionInBundleRequest(appID, bndlID, apiID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							apiDefinition(id: "%s"){
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, apiID, tc.gqlFieldsProvider.ForAPIDefinition()))
+			}`, appID, bndlID, apiID, tc.gqlFieldsProvider.ForAPIDefinition()))
 }
 
-func fixEventDefinitionInPackageRequest(appID, pkgID, eventID string) *gcli.Request {
+func fixEventDefinitionInBundleRequest(appID, bndlID, eventID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							eventDefinition(id: "%s"){
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, eventID, tc.gqlFieldsProvider.ForEventDefinition()))
+			}`, appID, bndlID, eventID, tc.gqlFieldsProvider.ForEventDefinition()))
 }
 
-func fixDocumentInPackageRequest(appID, pkgID, docID string) *gcli.Request {
+func fixDocumentInBundleRequest(appID, bndlID, docID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							document(id: "%s"){
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, docID, tc.gqlFieldsProvider.ForDocument()))
+			}`, appID, bndlID, docID, tc.gqlFieldsProvider.ForDocument()))
 }
 
-func fixAPIDefinitionsInPackageRequest(appID, pkgID string) *gcli.Request {
+func fixAPIDefinitionsInBundleRequest(appID, bndlID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							apiDefinitions{
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForAPIDefinition())))
+			}`, appID, bndlID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForAPIDefinition())))
 
 }
 
-func fixEventDefinitionsInPackageRequest(appID, pkgID string) *gcli.Request {
+func fixEventDefinitionsInBundleRequest(appID, bndlID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							eventDefinitions{
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForEventDefinition())))
+			}`, appID, bndlID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForEventDefinition())))
 }
 
-func fixDocumentsInPackageRequest(appID, pkgID string) *gcli.Request {
+func fixDocumentsInBundleRequest(appID, bndlID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
-						package(id: "%s"){
+						bundle(id: "%s"){
 							documents{
 						%s
 						}					
 					}
 				}
-			}`, appID, pkgID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForDocument())))
+			}`, appID, bndlID, tc.gqlFieldsProvider.Page(tc.gqlFieldsProvider.ForDocument())))
 }
 
-func fixAddPackageRequest(appID, pkgCreateInput string) *gcli.Request {
+func fixAddBundleRequest(appID, bndlCreateInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: addPackage(applicationID: "%s", in: %s) {
+			result: addBundle(applicationID: "%s", in: %s) {
 				%s
-			}}`, appID, pkgCreateInput, tc.gqlFieldsProvider.ForPackage()))
+			}}`, appID, bndlCreateInput, tc.gqlFieldsProvider.ForBundle()))
 }
 
-func fixUpdatePackageRequest(packageID, pkgUpdateInput string) *gcli.Request {
+func fixUpdateBundleRequest(bundleID, bndlUpdateInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: updatePackage(id: "%s", in: %s) {
-				%s
-			}
-		}`, packageID, pkgUpdateInput, tc.gqlFieldsProvider.ForPackage()))
-}
-
-func fixDeletePackageRequest(packageID string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: deletePackage(id: "%s") {
+			result: updateBundle(id: "%s", in: %s) {
 				%s
 			}
-		}`, packageID, tc.gqlFieldsProvider.ForPackage()))
+		}`, bundleID, bndlUpdateInput, tc.gqlFieldsProvider.ForBundle()))
 }
 
-func fixSetPackageInstanceAuthRequest(authID, apiAuthInput string) *gcli.Request {
+func fixDeleteBundleRequest(bundleID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: setPackageInstanceAuth(authID: "%s", in: %s) {
+			result: deleteBundle(id: "%s") {
 				%s
 			}
-		}`, authID, apiAuthInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+		}`, bundleID, tc.gqlFieldsProvider.ForBundle()))
 }
 
-func fixDeletePackageInstanceAuthRequest(authID string) *gcli.Request {
+func fixSetBundleInstanceAuthRequest(authID, apiAuthInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: deletePackageInstanceAuth(authID: "%s") {
+			result: setBundleInstanceAuth(authID: "%s", in: %s) {
 				%s
 			}
-		}`, authID, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+		}`, authID, apiAuthInput, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
-func fixRequestPackageInstanceAuthCreationRequest(packageID, pkgInstanceAuthRequestInput string) *gcli.Request {
+func fixDeleteBundleInstanceAuthRequest(authID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: requestPackageInstanceAuthCreation(packageID: "%s", in: %s) {
+			result: deleteBundleInstanceAuth(authID: "%s") {
 				%s
 			}
-		}`, packageID, pkgInstanceAuthRequestInput, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+		}`, authID, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
-func fixRequestPackageInstanceAuthDeletionRequest(authID string) *gcli.Request {
+func fixRequestBundleInstanceAuthCreationRequest(bundleID, bndlInstanceAuthRequestInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-			result: requestPackageInstanceAuthDeletion(authID: "%s") {
+			result: requestBundleInstanceAuthCreation(bundleID: "%s", in: %s) {
 				%s
 			}
-		}`, authID, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+		}`, bundleID, bndlInstanceAuthRequestInput, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
-func fixPackageRequest(applicationID string, packageID string) *gcli.Request {
+func fixRequestBundleInstanceAuthDeletionRequest(authID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: requestBundleInstanceAuthDeletion(authID: "%s") {
+				%s
+			}
+		}`, authID, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
+}
+
+func fixBundleRequest(applicationID string, bundleID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
 				%s
 				}
 			}`, applicationID, tc.gqlFieldsProvider.ForApplication(graphqlizer.FieldCtx{
-			"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`, packageID, tc.gqlFieldsProvider.ForPackage()),
+			"Application.bundle": fmt.Sprintf(`bundle(id: "%s") {%s}`, bundleID, tc.gqlFieldsProvider.ForBundle()),
 		})))
 }
 
-func fixPackageByInstanceAuthIDRequest(packageInstanceAuthID string) *gcli.Request {
+func fixBundleByInstanceAuthIDRequest(packageInstanceAuthID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: packageByInstanceAuth(authID: "%s") {
 				%s
 				}
-			}`, packageInstanceAuthID, tc.gqlFieldsProvider.ForPackage()))
+			}`, packageInstanceAuthID, tc.gqlFieldsProvider.ForBundle()))
 }
 
 func fixAPIDefinitionRequest(applicationID string, apiID string) *gcli.Request {
@@ -806,7 +2203,7 @@ func fixEventDefinitionRequest(applicationID string, eventDefID string) *gcli.Re
 		})))
 }
 
-func fixPackageWithInstanceAuthRequest(applicationID string, packageID string, instanceAuthID string) *gcli.Request {
+func fixBundleWithInstanceAuthRequest(applicationID string, bundleID string, instanceAuthID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
@@ -814,17 +2211,17 @@ func fixPackageWithInstanceAuthRequest(applicationID string, packageID string, i
 				}
 			}`, applicationID,
 			tc.gqlFieldsProvider.ForApplication(
-				graphqlizer.FieldCtx{"Application.package": fmt.Sprintf(`package(id: "%s") {%s}`,
-					packageID,
-					tc.gqlFieldsProvider.ForPackage(graphqlizer.FieldCtx{
-						"Package.instanceAuth": fmt.Sprintf(`instanceAuth(id: "%s") {%s}`,
+				graphqlizer.FieldCtx{"Application.bundle": fmt.Sprintf(`bundle(id: "%s") {%s}`,
+					bundleID,
+					tc.gqlFieldsProvider.ForBundle(graphqlizer.FieldCtx{
+						"Bundle.instanceAuth": fmt.Sprintf(`instanceAuth(id: "%s") {%s}`,
 							instanceAuthID,
-							tc.gqlFieldsProvider.ForPackageInstanceAuth()),
+							tc.gqlFieldsProvider.ForBundleInstanceAuth()),
 					})),
 				})))
 }
 
-func fixPackagesRequest(applicationID string) *gcli.Request {
+func fixBundlesRequest(applicationID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: application(id: "%s") {
@@ -843,13 +2240,13 @@ func fixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
 			appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
 }
 
-func fixPackageInstanceAuthRequest(packageInstanceAuthID string) *gcli.Request {
+func fixBundleInstanceAuthRequest(packageInstanceAuthID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-			result: packageInstanceAuth(id: "%s") {
+			result: bundleInstanceAuth(id: "%s") {
 					%s
 				}
-			}`, packageInstanceAuthID, tc.gqlFieldsProvider.ForPackageInstanceAuth()))
+			}`, packageInstanceAuthID, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
 func fixCreateAutomaticScenarioAssignmentRequest(automaticScenarioAssignmentInput string) *gcli.Request {

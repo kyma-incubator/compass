@@ -28,8 +28,8 @@ type ApplicationsOutput struct {
 	Result *schema.ApplicationPageExt `json:"result"`
 }
 
-type PackageInstanceCredentialsInput struct {
-	PackageID   string `valid:"required"`
+type BundleInstanceCredentialsInput struct {
+	BundleID    string `valid:"required"`
 	AuthID      string `valid:"required"`
 	Context     Values
 	InputSchema Values
@@ -46,36 +46,36 @@ func (r *Values) MarshalToQGLJSON() (string, error) {
 	return strconv.Quote(string(input)), nil
 }
 
-type PackageInstanceCredentialsOutput struct {
+type BundleInstanceCredentialsOutput struct {
 	InstanceAuth *schema.PackageInstanceAuth
 	TargetURLs   map[string]string
 }
 
-type PackageInstanceInput struct {
+type BundleInstanceInput struct {
 	InstanceAuthID string `valid:"required"`
 	Context        map[string]string
 }
 
-type PackageInstanceAuthOutput struct {
+type BundleInstanceAuthOutput struct {
 	InstanceAuth *schema.PackageInstanceAuth `json:"result"`
 }
 
-type PackageInstanceAuthDeletionInput struct {
+type BundleInstanceAuthDeletionInput struct {
 	InstanceAuthID string `valid:"required"`
 }
 
-type PackageInstanceAuthDeletionOutput struct {
+type BundleInstanceAuthDeletionOutput struct {
 	ID     string                           `json:"id"`
 	Status schema.PackageInstanceAuthStatus `json:"status"`
 }
 
-type PackageSpecificationInput struct {
+type BundleSpecificationInput struct {
 	ApplicationID string `valid:"required"`
-	PackageID     string `valid:"required"`
+	BundleID      string `valid:"required"`
 	DefinitionID  string `valid:"required"`
 }
 
-type PackageSpecificationOutput struct {
+type BundleSpecificationOutput struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description,omitempty"`
 

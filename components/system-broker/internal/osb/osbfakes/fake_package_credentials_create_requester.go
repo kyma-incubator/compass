@@ -9,32 +9,32 @@ import (
 )
 
 type FakePackageCredentialsCreateRequester struct {
-	RequestPackageInstanceCredentialsCreationStub        func(context.Context, *director.PackageInstanceCredentialsInput) (*director.PackageInstanceAuthOutput, error)
+	RequestPackageInstanceCredentialsCreationStub        func(context.Context, *director.BundleInstanceCredentialsInput) (*director.BundleInstanceAuthOutput, error)
 	requestPackageInstanceCredentialsCreationMutex       sync.RWMutex
 	requestPackageInstanceCredentialsCreationArgsForCall []struct {
 		arg1 context.Context
-		arg2 *director.PackageInstanceCredentialsInput
+		arg2 *director.BundleInstanceCredentialsInput
 	}
 	requestPackageInstanceCredentialsCreationReturns struct {
-		result1 *director.PackageInstanceAuthOutput
+		result1 *director.BundleInstanceAuthOutput
 		result2 error
 	}
 	requestPackageInstanceCredentialsCreationReturnsOnCall map[int]struct {
-		result1 *director.PackageInstanceAuthOutput
+		result1 *director.BundleInstanceAuthOutput
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredentialsCreation(arg1 context.Context, arg2 *director.PackageInstanceCredentialsInput) (*director.PackageInstanceAuthOutput, error) {
+func (fake *FakePackageCredentialsCreateRequester) RequestBundleInstanceCredentialsCreation(arg1 context.Context, arg2 *director.BundleInstanceCredentialsInput) (*director.BundleInstanceAuthOutput, error) {
 	fake.requestPackageInstanceCredentialsCreationMutex.Lock()
 	ret, specificReturn := fake.requestPackageInstanceCredentialsCreationReturnsOnCall[len(fake.requestPackageInstanceCredentialsCreationArgsForCall)]
 	fake.requestPackageInstanceCredentialsCreationArgsForCall = append(fake.requestPackageInstanceCredentialsCreationArgsForCall, struct {
 		arg1 context.Context
-		arg2 *director.PackageInstanceCredentialsInput
+		arg2 *director.BundleInstanceCredentialsInput
 	}{arg1, arg2})
-	fake.recordInvocation("RequestPackageInstanceCredentialsCreation", []interface{}{arg1, arg2})
+	fake.recordInvocation("RequestBundleInstanceCredentialsCreation", []interface{}{arg1, arg2})
 	fake.requestPackageInstanceCredentialsCreationMutex.Unlock()
 	if fake.RequestPackageInstanceCredentialsCreationStub != nil {
 		return fake.RequestPackageInstanceCredentialsCreationStub(arg1, arg2)
@@ -52,41 +52,41 @@ func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredent
 	return len(fake.requestPackageInstanceCredentialsCreationArgsForCall)
 }
 
-func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredentialsCreationCalls(stub func(context.Context, *director.PackageInstanceCredentialsInput) (*director.PackageInstanceAuthOutput, error)) {
+func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredentialsCreationCalls(stub func(context.Context, *director.BundleInstanceCredentialsInput) (*director.BundleInstanceAuthOutput, error)) {
 	fake.requestPackageInstanceCredentialsCreationMutex.Lock()
 	defer fake.requestPackageInstanceCredentialsCreationMutex.Unlock()
 	fake.RequestPackageInstanceCredentialsCreationStub = stub
 }
 
-func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredentialsCreationArgsForCall(i int) (context.Context, *director.PackageInstanceCredentialsInput) {
+func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredentialsCreationArgsForCall(i int) (context.Context, *director.BundleInstanceCredentialsInput) {
 	fake.requestPackageInstanceCredentialsCreationMutex.RLock()
 	defer fake.requestPackageInstanceCredentialsCreationMutex.RUnlock()
 	argsForCall := fake.requestPackageInstanceCredentialsCreationArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredentialsCreationReturns(result1 *director.PackageInstanceAuthOutput, result2 error) {
+func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredentialsCreationReturns(result1 *director.BundleInstanceAuthOutput, result2 error) {
 	fake.requestPackageInstanceCredentialsCreationMutex.Lock()
 	defer fake.requestPackageInstanceCredentialsCreationMutex.Unlock()
 	fake.RequestPackageInstanceCredentialsCreationStub = nil
 	fake.requestPackageInstanceCredentialsCreationReturns = struct {
-		result1 *director.PackageInstanceAuthOutput
+		result1 *director.BundleInstanceAuthOutput
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredentialsCreationReturnsOnCall(i int, result1 *director.PackageInstanceAuthOutput, result2 error) {
+func (fake *FakePackageCredentialsCreateRequester) RequestPackageInstanceCredentialsCreationReturnsOnCall(i int, result1 *director.BundleInstanceAuthOutput, result2 error) {
 	fake.requestPackageInstanceCredentialsCreationMutex.Lock()
 	defer fake.requestPackageInstanceCredentialsCreationMutex.Unlock()
 	fake.RequestPackageInstanceCredentialsCreationStub = nil
 	if fake.requestPackageInstanceCredentialsCreationReturnsOnCall == nil {
 		fake.requestPackageInstanceCredentialsCreationReturnsOnCall = make(map[int]struct {
-			result1 *director.PackageInstanceAuthOutput
+			result1 *director.BundleInstanceAuthOutput
 			result2 error
 		})
 	}
 	fake.requestPackageInstanceCredentialsCreationReturnsOnCall[i] = struct {
-		result1 *director.PackageInstanceAuthOutput
+		result1 *director.BundleInstanceAuthOutput
 		result2 error
 	}{result1, result2}
 }
