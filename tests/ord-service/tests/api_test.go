@@ -129,19 +129,19 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service api specification do not have tenant header", func(t *testing.T) {
-		makeRequestWithStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/api/spec-id/specification", http.StatusBadRequest)
+		makeRequestWithStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service event specification do not have tenant header", func(t *testing.T) {
-		makeRequestWithStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/event/spec-id/specification", http.StatusBadRequest)
+		makeRequestWithStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service api specification have wrong tenant header", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/api/spec-id/specification", map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, testConfig.ORDServiceURL+"/event/spec-id/specification", map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
