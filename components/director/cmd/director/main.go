@@ -77,7 +77,8 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Address string `envconfig:"default=127.0.0.1:3000"`
+	Address     string `envconfig:"default=127.0.0.1:3000"`
+	DirectorURL string `envconfig:"APP_DIRECTOR_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
@@ -169,7 +170,7 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			Async:       operation.NewDirective(transact, nil).HandleOperation,
+			Async:       operation.NewDirective(transact, operation.DefaultScheduler{}).HandleOperation,
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultBundleRepo(), defaultBundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -207,6 +208,7 @@ func main() {
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema,
+		handler.RequestMiddleware(operation.NewMiddleware(cfg.DirectorURL).Handler),
 		handler.ErrorPresenter(presenter.Do),
 		handler.RecoverFunc(panic_handler.RecoverFn))))
 

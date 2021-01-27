@@ -22,3 +22,21 @@ type Scheduler interface {
 	FetchStatus(resourceID, resourceType string) (string, error)
 	Watch() error
 }
+
+type DefaultScheduler struct{}
+
+func (d DefaultScheduler) Schedule(_ Operation) (string, error) {
+	return "", nil
+}
+
+func (d DefaultScheduler) Fetch(_ string) (Operation, error) {
+	return Operation{}, nil
+}
+
+func (d DefaultScheduler) FetchStatus(_, _ string) (string, error) {
+	return "", nil
+}
+
+func (d DefaultScheduler) Watch() error {
+	return nil
+}

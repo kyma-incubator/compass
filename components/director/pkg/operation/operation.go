@@ -19,7 +19,6 @@ package operation
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -46,19 +45,25 @@ type RelatedResource struct {
 }
 
 // SaveToContext saves Operation to the context
-func SaveToContext(ctx context.Context, op Operation) context.Context {
-	return context.WithValue(ctx, OpCtxKey, op)
+func SaveToContext(ctx context.Context, operations *[]*Operation) context.Context {
+	operationsFromCtx, exists := FromCtx(ctx)
+	if exists {
+		*operationsFromCtx = append(*operationsFromCtx, *operations...)
+		return ctx
+	}
+
+	return context.WithValue(ctx, OpCtxKey, operations)
 }
 
 // FromCtx extracts Operation from context
-func FromCtx(ctx context.Context) (Operation, error) {
+func FromCtx(ctx context.Context) (*[]*Operation, bool) {
 	opCtx := ctx.Value(OpCtxKey)
 
-	if op, ok := opCtx.(Operation); ok {
-		return op, nil
+	if operations, ok := opCtx.(*[]*Operation); ok {
+		return operations, true
 	}
 
-	return Operation{}, apperrors.NewInternalError("unable to fetch operation from context")
+	return nil, false
 }
 
 // SaveModeToContext saves operation mode to the context

@@ -67,10 +67,12 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 
 	opMode := operation.ModeFromCtx(ctx)
 	if opMode == graphql.OperationModeAsync {
-		op, err := operation.FromCtx(ctx)
-		if err != nil {
-			return err
+		operations, exists := operation.FromCtx(ctx)
+		if !exists {
+			return apperrors.NewInternalError("unable to fetch operations from context")
 		}
+
+		op := (*operations)[len(*operations)-1]
 
 		relatedResource := operation.RelatedResource{
 			ResourceType: c.tableName,
@@ -78,7 +80,6 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 		}
 
 		op.RelatedResources = append(op.RelatedResources, relatedResource)
-		ctx = operation.SaveToContext(ctx, op)
 	}
 
 	return persistence.MapSQLError(ctx, err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
