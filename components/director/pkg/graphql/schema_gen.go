@@ -50,6 +50,8 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	Async func(ctx context.Context, obj interface{}, next graphql.Resolver, op OperationType) (res interface{}, err error)
+
 	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
 
 	HasScopes func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
@@ -319,7 +321,7 @@ type ComplexityRoot struct {
 		DeleteWebhook                                 func(childComplexity int, webhookID string) int
 		RefetchAPISpec                                func(childComplexity int, apiID string) int
 		RefetchEventDefinitionSpec                    func(childComplexity int, eventID string) int
-		RegisterApplication                           func(childComplexity int, in ApplicationRegisterInput) int
+		RegisterApplication                           func(childComplexity int, in ApplicationRegisterInput, mode *OperationMode) int
 		RegisterApplicationFromTemplate               func(childComplexity int, in ApplicationFromTemplateInput) int
 		RegisterIntegrationSystem                     func(childComplexity int, in IntegrationSystemInput) int
 		RegisterRuntime                               func(childComplexity int, in RuntimeInput) int
@@ -335,12 +337,12 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
-		UnregisterApplication                         func(childComplexity int, id string) int
+		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
 		UnregisterRuntime                             func(childComplexity int, id string) int
 		UnregisterRuntimeContext                      func(childComplexity int, id string) int
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
-		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
+		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput, mode *OperationMode) int
 		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateInput) int
 		UpdateBundle                                  func(childComplexity int, id string, in BundleUpdateInput) int
 		UpdateEventDefinition                         func(childComplexity int, id string, in EventDefinitionInput) int
@@ -515,9 +517,9 @@ type IntegrationSystemResolver interface {
 	Auths(ctx context.Context, obj *IntegrationSystem) ([]*SystemAuth, error)
 }
 type MutationResolver interface {
-	RegisterApplication(ctx context.Context, in ApplicationRegisterInput) (*Application, error)
-	UpdateApplication(ctx context.Context, id string, in ApplicationUpdateInput) (*Application, error)
-	UnregisterApplication(ctx context.Context, id string) (*Application, error)
+	RegisterApplication(ctx context.Context, in ApplicationRegisterInput, mode *OperationMode) (*Application, error)
+	UpdateApplication(ctx context.Context, id string, in ApplicationUpdateInput, mode *OperationMode) (*Application, error)
+	UnregisterApplication(ctx context.Context, id string, mode *OperationMode) (*Application, error)
 	CreateApplicationTemplate(ctx context.Context, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	RegisterApplicationFromTemplate(ctx context.Context, in ApplicationFromTemplateInput) (*Application, error)
 	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateInput) (*ApplicationTemplate, error)
@@ -1964,7 +1966,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RegisterApplication(childComplexity, args["in"].(ApplicationRegisterInput)), true
+		return e.complexity.Mutation.RegisterApplication(childComplexity, args["in"].(ApplicationRegisterInput), args["mode"].(*OperationMode)), true
 
 	case "Mutation.registerApplicationFromTemplate":
 		if e.complexity.Mutation.RegisterApplicationFromTemplate == nil {
@@ -2156,7 +2158,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnregisterApplication(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.UnregisterApplication(childComplexity, args["id"].(string), args["mode"].(*OperationMode)), true
 
 	case "Mutation.unregisterIntegrationSystem":
 		if e.complexity.Mutation.UnregisterIntegrationSystem == nil {
@@ -2216,7 +2218,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateApplication(childComplexity, args["id"].(string), args["in"].(ApplicationUpdateInput)), true
+		return e.complexity.Mutation.UpdateApplication(childComplexity, args["id"].(string), args["in"].(ApplicationUpdateInput), args["mode"].(*OperationMode)), true
 
 	case "Mutation.updateApplicationTemplate":
 		if e.complexity.Mutation.UpdateApplicationTemplate == nil {
@@ -2991,7 +2993,8 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `"""
+	&ast.Source{Name: "schema.graphql", Input: `directive @async(op: OperationType!) on FIELD_DEFINITION
+"""
 HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
 """
 directive @hasScenario(applicationProvider: String!, idField: String!) on FIELD_DEFINITION
@@ -3095,6 +3098,17 @@ enum HealthCheckStatusCondition {
 
 enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
+}
+
+enum OperationMode {
+	SYNC
+	ASYNC
+}
+
+enum OperationType {
+	CREATE
+	UPDATE
+	DELETE
 }
 
 enum RuntimeStatusCondition {
@@ -4061,17 +4075,17 @@ type Mutation {
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
-	registerApplication(in: ApplicationRegisterInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplication")
+	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(op: CREATE)
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
 	"""
-	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
+	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.updateApplication") @async(op: UPDATE)
 	"""
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
-	unregisterApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.unregisterApplication")
+	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(op: DELETE)
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -4299,6 +4313,20 @@ type Mutation {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_async_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 OperationType
+	if tmp, ok := rawArgs["op"]; ok {
+		arg0, err = ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["op"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) dir_hasScenario_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -5085,6 +5113,14 @@ func (ec *executionContext) field_Mutation_registerApplication_args(ctx context.
 		}
 	}
 	args["in"] = arg0
+	var arg1 *OperationMode
+	if tmp, ok := rawArgs["mode"]; ok {
+		arg1, err = ec.unmarshalOOperationMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["mode"] = arg1
 	return args, nil
 }
 
@@ -5411,6 +5447,14 @@ func (ec *executionContext) field_Mutation_unregisterApplication_args(ctx contex
 		}
 	}
 	args["id"] = arg0
+	var arg1 *OperationMode
+	if tmp, ok := rawArgs["mode"]; ok {
+		arg1, err = ec.unmarshalOOperationMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["mode"] = arg1
 	return args, nil
 }
 
@@ -5555,6 +5599,14 @@ func (ec *executionContext) field_Mutation_updateApplication_args(ctx context.Co
 		}
 	}
 	args["in"] = arg1
+	var arg2 *OperationMode
+	if tmp, ok := rawArgs["mode"]; ok {
+		arg2, err = ec.unmarshalOOperationMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["mode"] = arg2
 	return args, nil
 }
 
@@ -11228,7 +11280,7 @@ func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().RegisterApplication(rctx, args["in"].(ApplicationRegisterInput))
+			return ec.resolvers.Mutation().RegisterApplication(rctx, args["in"].(ApplicationRegisterInput), args["mode"].(*OperationMode))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.registerApplication")
@@ -11237,8 +11289,15 @@ func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, f
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			op, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "CREATE")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.Async(ctx, nil, directive1, op)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -11292,7 +11351,7 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateApplication(rctx, args["id"].(string), args["in"].(ApplicationUpdateInput))
+			return ec.resolvers.Mutation().UpdateApplication(rctx, args["id"].(string), args["in"].(ApplicationUpdateInput), args["mode"].(*OperationMode))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateApplication")
@@ -11301,8 +11360,15 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			op, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "UPDATE")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.Async(ctx, nil, directive1, op)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -11356,7 +11422,7 @@ func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UnregisterApplication(rctx, args["id"].(string))
+			return ec.resolvers.Mutation().UnregisterApplication(rctx, args["id"].(string), args["mode"].(*OperationMode))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unregisterApplication")
@@ -11365,8 +11431,15 @@ func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context,
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			op, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "DELETE")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.Async(ctx, nil, directive1, op)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -24352,6 +24425,15 @@ func (ec *executionContext) marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkym
 	return ec._OneTimeTokenForRuntime(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx context.Context, v interface{}) (OperationType, error) {
+	var res OperationType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx context.Context, sel ast.SelectionSet, v OperationType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {
 	var res PageCursor
 	return res, res.UnmarshalGQL(v)
@@ -25782,6 +25864,30 @@ func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcom�
 	}
 	res, err := ec.unmarshalOOAuthCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) unmarshalOOperationMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx context.Context, v interface{}) (OperationMode, error) {
+	var res OperationMode
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOOperationMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx context.Context, sel ast.SelectionSet, v OperationMode) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOOperationMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx context.Context, v interface{}) (*OperationMode, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOOperationMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOOperationMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx context.Context, sel ast.SelectionSet, v *OperationMode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOPageCursor2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx context.Context, v interface{}) (PageCursor, error) {
