@@ -27,8 +27,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  strToPtrStr("description"),
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackages(1, 1, 1),
+				Bundles: schema.BundlePageExt{
+					Data: generateBundles(1, 1, 1),
 				},
 				EventingConfiguration: schema.ApplicationEventingConfiguration{},
 			},
@@ -59,8 +59,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  strToPtrStr("description"),
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackages(2, 3, 4),
+				Bundles: schema.BundlePageExt{
+					Data: generateBundles(2, 3, 4),
 				},
 				EventingConfiguration: schema.ApplicationEventingConfiguration{},
 			},
@@ -82,7 +82,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "Application with no packages",
+			name: "Application with no bundles",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -91,8 +91,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  strToPtrStr("description"),
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackages(0, 0, 0),
+				Bundles: schema.BundlePageExt{
+					Data: generateBundles(0, 0, 0),
 				},
 				EventingConfiguration: schema.ApplicationEventingConfiguration{},
 			},
@@ -114,7 +114,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "Application with one package without definitions",
+			name: "Application with one bundle without definitions",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -123,8 +123,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  strToPtrStr("description"),
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackages(1, 0, 0),
+				Bundles: schema.BundlePageExt{
+					Data: generateBundles(1, 0, 0),
 				},
 				EventingConfiguration: schema.ApplicationEventingConfiguration{},
 			},
@@ -155,8 +155,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  nil,
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackages(1, 1, 1),
+				Bundles: schema.BundlePageExt{
+					Data: generateBundles(1, 1, 1),
 				},
 				EventingConfiguration: schema.ApplicationEventingConfiguration{},
 			},
@@ -178,7 +178,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "Error is returned when package has invalid schema",
+			name: "Error is returned when bundle has invalid schema",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -187,8 +187,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  nil,
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackageWithModification(func(s *schema.PackageExt) *schema.PackageExt {
+				Bundles: schema.BundlePageExt{
+					Data: generateBundleWithModification(func(s *schema.BundleExt) *schema.BundleExt {
 						faultySchema := schema.JSONSchema(`NOT A JSON`)
 						s.InstanceAuthRequestInputSchema = &faultySchema
 						return s
@@ -209,8 +209,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  nil,
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackageWithModification(func(ext *schema.PackageExt) *schema.PackageExt {
+				Bundles: schema.BundlePageExt{
+					Data: generateBundleWithModification(func(ext *schema.BundleExt) *schema.BundleExt {
 						ext.Description = nil
 						return ext
 					}),
@@ -226,7 +226,7 @@ func TestConverter_Convert(t *testing.T) {
 				BindingsRetrievable:  true,
 				PlanUpdatable:        false,
 				Plans: generatePlansWithModification(func(s domain.ServicePlan) domain.ServicePlan {
-					s.Description = fmt.Sprintf("plan generated from package with name %s", s.Name)
+					s.Description = fmt.Sprintf("plan generated from bundle with name %s", s.Name)
 					return s
 				}),
 				Metadata: &domain.ServiceMetadata{
@@ -247,8 +247,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  nil,
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackageWithModification(func(ext *schema.PackageExt) *schema.PackageExt {
+				Bundles: schema.BundlePageExt{
+					Data: generateBundleWithModification(func(ext *schema.BundleExt) *schema.BundleExt {
 						ext.APIDefinitions.Data[0].Spec.Format = "application/I_AM_NOT_A_JSON"
 						return ext
 					}),
@@ -268,8 +268,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  nil,
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackageWithModification(func(ext *schema.PackageExt) *schema.PackageExt {
+				Bundles: schema.BundlePageExt{
+					Data: generateBundleWithModification(func(ext *schema.BundleExt) *schema.BundleExt {
 						ext.EventDefinitions.Data[0].Spec.Format = "application/I_AM_NOT_A_JSON"
 						return ext
 					}),
@@ -289,8 +289,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  nil,
 				},
 				Labels: nil,
-				Packages: schema.PackagePageExt{
-					Data: generatePackages(1, 1, 1),
+				Bundles: schema.BundlePageExt{
+					Data: generateBundles(1, 1, 1),
 				},
 				EventingConfiguration: schema.ApplicationEventingConfiguration{},
 			},
@@ -312,7 +312,7 @@ func TestConverter_Convert(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "Package instance auth request input schema is nil",
+			name: "Bundle instance auth request input schema is nil",
 			app: &schema.ApplicationExt{
 				Application: schema.Application{
 					ID:           "id",
@@ -321,8 +321,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  strToPtrStr("description"),
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackageWithModification(func(ext *schema.PackageExt) *schema.PackageExt {
+				Bundles: schema.BundlePageExt{
+					Data: generateBundleWithModification(func(ext *schema.BundleExt) *schema.BundleExt {
 						ext.InstanceAuthRequestInputSchema = nil
 						return ext
 					}),
@@ -359,8 +359,8 @@ func TestConverter_Convert(t *testing.T) {
 					Description:  strToPtrStr("description"),
 				},
 				Labels: schema.Labels{"key": "value"},
-				Packages: schema.PackagePageExt{
-					Data: generatePackageWithModification(addGroupAndVersionToPackage),
+				Bundles: schema.BundlePageExt{
+					Data: generateBundleWithModification(addGroupAndVersionToBundle),
 				},
 				EventingConfiguration: schema.ApplicationEventingConfiguration{},
 			},
@@ -399,12 +399,12 @@ func TestConverter_Convert(t *testing.T) {
 	}
 }
 
-func generateExpectations(packagesCount, apiDefCount, eventDefCount int) []domain.ServicePlan {
-	plans := make([]domain.ServicePlan, 0, packagesCount)
-	for i := 0; i < packagesCount; i++ {
+func generateExpectations(bundlesCount, apiDefCount, eventDefCount int) []domain.ServicePlan {
+	plans := make([]domain.ServicePlan, 0, bundlesCount)
+	for i := 0; i < bundlesCount; i++ {
 		plan := domain.ServicePlan{
 			ID:          fmt.Sprintf("id%d", i),
-			Name:        fmt.Sprintf("package%d", i),
+			Name:        fmt.Sprintf("bundle%d", i),
 			Description: "description",
 			Bindable:    boolToPtr(true),
 			Metadata:    &domain.ServicePlanMetadata{},
@@ -429,7 +429,7 @@ func generateExpectations(packagesCount, apiDefCount, eventDefCount int) []domai
 			specification := make(map[string]interface{})
 			specification["type"] = schema.APISpecTypeOdata
 			specification["format"] = "application/json"
-			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j)
+			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&bundle_id=id%d&definition_id=id%d", i, j)
 			apiSpec["specification"] = specification
 
 			apis = append(apis, apiSpec)
@@ -445,7 +445,7 @@ func generateExpectations(packagesCount, apiDefCount, eventDefCount int) []domai
 			specification := make(map[string]interface{})
 			specification["type"] = schema.EventSpecTypeAsyncAPI
 			specification["format"] = "application/json"
-			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&package_id=id%d&definition_id=id%d", i, j)
+			specification["url"] = fmt.Sprintf("http://specification.com/specifications?app_id=id&bundle_id=id%d&definition_id=id%d", i, j)
 			eventSpec["specification"] = specification
 
 			events = append(events, eventSpec)
@@ -463,23 +463,23 @@ func generateExpectations(packagesCount, apiDefCount, eventDefCount int) []domai
 	return plans
 }
 
-func generatePackages(packagesCount, apiDefCount, eventDefCount int) []*schema.PackageExt {
-	packages := make([]*schema.PackageExt, 0, packagesCount)
-	for i := 0; i < packagesCount; i++ {
+func generateBundles(bundlesCount, apiDefCount, eventDefCount int) []*schema.BundleExt {
+	bundles := make([]*schema.BundleExt, 0, bundlesCount)
+	for i := 0; i < bundlesCount; i++ {
 		instanceAuthSchema := schema.JSONSchema(`{"param":"string"}`)
-		currentPackage := &schema.PackageExt{
-			Package: schema.Package{
+		currentBundle := &schema.BundleExt{
+			Bundle: schema.Bundle{
 				ID:                             fmt.Sprintf("id%d", i),
-				Name:                           fmt.Sprintf("package%d", i),
+				Name:                           fmt.Sprintf("bundle%d", i),
 				Description:                    strToPtrStr("description"),
 				InstanceAuthRequestInputSchema: &instanceAuthSchema,
 			},
 			APIDefinitions:   generateAPIDefinitions(apiDefCount),
 			EventDefinitions: generateEventDefinitions(eventDefCount),
 		}
-		packages = append(packages, currentPackage)
+		bundles = append(bundles, currentBundle)
 	}
-	return packages
+	return bundles
 }
 
 func generateAPIDefinitions(count int) schema.APIDefinitionPageExt {
@@ -537,8 +537,8 @@ func generatePlansWithModification(f func(plan domain.ServicePlan) domain.Servic
 	return expectations
 }
 
-func generatePackageWithModification(f func(*schema.PackageExt) *schema.PackageExt) []*schema.PackageExt {
-	pkg := generatePackages(1, 1, 1)
+func generateBundleWithModification(f func(*schema.BundleExt) *schema.BundleExt) []*schema.BundleExt {
+	pkg := generateBundles(1, 1, 1)
 	pkg[0] = f(pkg[0])
 	return pkg
 }

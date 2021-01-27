@@ -47,7 +47,7 @@ func (r *Values) MarshalToQGLJSON() (string, error) {
 }
 
 type BundleInstanceCredentialsOutput struct {
-	InstanceAuth *schema.PackageInstanceAuth
+	InstanceAuth *schema.BundleInstanceAuth
 	TargetURLs   map[string]string
 }
 
@@ -57,7 +57,7 @@ type BundleInstanceInput struct {
 }
 
 type BundleInstanceAuthOutput struct {
-	InstanceAuth *schema.PackageInstanceAuth `json:"result"`
+	InstanceAuth *schema.BundleInstanceAuth `json:"result"`
 }
 
 type BundleInstanceAuthDeletionInput struct {
@@ -65,8 +65,8 @@ type BundleInstanceAuthDeletionInput struct {
 }
 
 type BundleInstanceAuthDeletionOutput struct {
-	ID     string                           `json:"id"`
-	Status schema.PackageInstanceAuthStatus `json:"status"`
+	ID     string                          `json:"id"`
+	Status schema.BundleInstanceAuthStatus `json:"status"`
 }
 
 type BundleSpecificationInput struct {

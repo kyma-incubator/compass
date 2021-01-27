@@ -17,16 +17,16 @@ func TestBindCreate(t *testing.T) {
 	bindingID := "bindingID"
 
 	var (
-		fakeCredentialsCreator *osbfakes.FakePackageCredentialsCreateRequester
-		fakeCredentialsGetter  *osbfakes.FakePackageCredentialsFetcher
+		fakeCredentialsCreator *osbfakes.FakeBundleCredentialsCreateRequester
+		fakeCredentialsGetter  *osbfakes.FakeBundleCredentialsFetcher
 		be                     *BindEndpoint
 		details                domain.BindDetails
 		bundleInstanceAuth     *director.BundleInstanceAuthOutput
 	)
 
 	setup := func() {
-		fakeCredentialsCreator = &osbfakes.FakePackageCredentialsCreateRequester{}
-		fakeCredentialsGetter = &osbfakes.FakePackageCredentialsFetcher{}
+		fakeCredentialsCreator = &osbfakes.FakeBundleCredentialsCreateRequester{}
+		fakeCredentialsGetter = &osbfakes.FakeBundleCredentialsFetcher{}
 
 		be = &BindEndpoint{
 			credentialsCreator: fakeCredentialsCreator,
@@ -39,10 +39,10 @@ func TestBindCreate(t *testing.T) {
 		}
 
 		bundleInstanceAuth = &director.BundleInstanceAuthOutput{
-			InstanceAuth: &graphql.PackageInstanceAuth{
+			InstanceAuth: &graphql.BundleInstanceAuth{
 				ID: "instanceAuthID",
-				Status: &graphql.PackageInstanceAuthStatus{
-					Condition: graphql.PackageInstanceAuthStatusConditionSucceeded,
+				Status: &graphql.BundleInstanceAuthStatus{
+					Condition: graphql.BundleInstanceAuthStatusConditionSucceeded,
 				},
 			},
 		}
@@ -50,34 +50,34 @@ func TestBindCreate(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			bundleInstanceAuth,
 			nil,
 		)
 		binding, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationCallCount())
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceAuthCallCount())
+		assert.Equal(t, 0, fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())
 		assert.Equal(t, "bind_operation", binding.OperationData)
 	})
 
-	t.Run("When no package instance auth exists", func(t *testing.T) {
+	t.Run("When no bundle instance auth exists", func(t *testing.T) {
 		setup()
 		details.RawContext = []byte(`{"org_guid": "orgID"}`)
 		details.RawParameters = []byte(`{}`)
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
 			&notFoundErr{},
 		)
-		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
-		fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationReturns(
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionPending
+		fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationReturns(
 			bundleInstanceAuth,
 			nil,
 		)
 		binding, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationCallCount())
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceAuthCallCount())
+		assert.Equal(t, 1, fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())
 		assert.Equal(t, "bind_operation", binding.OperationData)
 	})
 
@@ -90,24 +90,24 @@ func TestBindCreate(t *testing.T) {
 
 	t.Run("When credentials getter returns an error", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
 			errors.New("some error"),
 		)
 		_, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "while getting package instance credentials from director")
+		assert.Contains(t, err.Error(), "while getting bundle instance credentials from director")
 	})
 
 	t.Run("When raw parameters are not JSON", func(t *testing.T) {
 		setup()
 		details.RawParameters = []byte(`not a json`)
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
 			&notFoundErr{},
 		)
-		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
-		fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationReturns(
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionPending
+		fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationReturns(
 			bundleInstanceAuth,
 			nil,
 		)
@@ -120,12 +120,12 @@ func TestBindCreate(t *testing.T) {
 		setup()
 		details.RawParameters = []byte(`{}`)
 		details.RawContext = []byte(`not a json`)
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
 			&notFoundErr{},
 		)
-		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
-		fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationReturns(
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionPending
+		fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationReturns(
 			bundleInstanceAuth,
 			nil,
 		)
@@ -134,37 +134,37 @@ func TestBindCreate(t *testing.T) {
 		assert.Contains(t, err.Error(), "while unmarshaling raw context")
 	})
 
-	t.Run("When package instance credential requester returns an error", func(t *testing.T) {
+	t.Run("When bundle instance credential requester returns an error", func(t *testing.T) {
 		setup()
 		details.RawContext = []byte(`{"org_guid": "orgID"}`)
 		details.RawParameters = []byte(`{}`)
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
 			&notFoundErr{},
 		)
-		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
-		fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationReturns(
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionPending
+		fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationReturns(
 			nil,
 			errors.New("some error"),
 		)
 		_, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "while requesting package instance credentials creation from director")
-		assert.Equal(t, 1, fakeCredentialsCreator.RequestPackageInstanceCredentialsCreationCallCount())
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceAuthCallCount())
+		assert.Contains(t, err.Error(), "while requesting bundle instance credentials creation from director")
+		assert.Equal(t, 1, fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())
 	})
 
-	t.Run("When package instance auth status is failed", func(t *testing.T) {
+	t.Run("When bundle instance auth status is failed", func(t *testing.T) {
 		setup()
-		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionFailed
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionFailed
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.Bind(context.TODO(), instanceID, bindingID, details, true)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "requesting package instance credentials from director failed, got status")
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceAuthCallCount())
+		assert.Contains(t, err.Error(), "requesting bundle instance credentials from director failed, got status")
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())
 	})
 }
 

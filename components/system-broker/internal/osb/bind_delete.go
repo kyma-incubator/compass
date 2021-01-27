@@ -40,15 +40,15 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 	}
 
 	appID := details.ServiceID
-	packageID := details.PlanID
+	bundleID := details.PlanID
 	logger := log.C(ctx).WithFields(map[string]interface{}{
 		"appID":      appID,
-		"packageID":  packageID,
+		"bundleID":   bundleID,
 		"instanceID": instanceID,
 		"bindingID":  bindingID,
 	})
 
-	logger.Info("Fetching package instance credentials")
+	logger.Info("Fetching bundle instance credentials")
 
 	resp, err := b.credentialsGetter.FetchBundleInstanceAuth(ctx, &director.BundleInstanceInput{
 		InstanceAuthID: bindingID,
@@ -58,11 +58,11 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 		},
 	})
 	if err != nil && !IsNotFoundError(err) {
-		return domain.UnbindSpec{}, errors.Wrapf(err, "while getting package instance credentials from director")
+		return domain.UnbindSpec{}, errors.Wrapf(err, "while getting bundle instance credentials from director")
 	}
 
 	if IsNotFoundError(err) {
-		logger.Info("Package credentials for binding are already gone")
+		logger.Info("Bundle credentials for binding are already gone")
 		return domain.UnbindSpec{}, apiresponses.ErrBindingDoesNotExist
 	}
 
@@ -70,30 +70,30 @@ func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID strin
 
 	status := instanceAuth.Status
 	if IsUnused(status) {
-		logger.Info("Package credentials for binding exist and are not used. Deletion is already in progress")
+		logger.Info("Bundle credentials for binding exist and are not used. Deletion is already in progress")
 		return domain.UnbindSpec{
 			IsAsync:       true,
 			OperationData: string(UnbindOp),
 		}, nil
 	}
 
-	logger.Info("Package credentials for binding exist and are used. Requesting deletion")
+	logger.Info("Bundle credentials for binding exist and are used. Requesting deletion")
 	deleteResp, err := b.credentialsDeleter.RequestBundleInstanceCredentialsDeletion(ctx, &director.BundleInstanceAuthDeletionInput{
 		InstanceAuthID: instanceAuth.ID,
 	})
 	if err != nil {
 		if IsNotFoundError(err) {
-			logger.Info("Package credentials for binding are already gone")
+			logger.Info("Bundle credentials for binding are already gone")
 			return domain.UnbindSpec{}, apiresponses.ErrBindingDoesNotExist
 		}
 
-		return domain.UnbindSpec{}, errors.Wrapf(err, "while requesting package instance credentials deletion from director")
+		return domain.UnbindSpec{}, errors.Wrapf(err, "while requesting bundle instance credentials deletion from director")
 	}
 
 	status = &deleteResp.Status
-	logger.Infof("package instance credentials have status %+v", *status)
+	logger.Infof("bundle instance credentials have status %+v", *status)
 
-	logger.Info("Successfully requested deletion of package instance credentials")
+	logger.Info("Successfully requested deletion of bundle instance credentials")
 
 	return domain.UnbindSpec{
 		IsAsync:       true,

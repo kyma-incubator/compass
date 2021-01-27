@@ -13,18 +13,18 @@ type GraphQLizer struct {
 }
 
 // BundleInstanceAuthRequestInputToGQL provides a mock function with given fields: in
-func (_m *GraphQLizer) BundleInstanceAuthRequestInputToGQL(in graphql.PackageInstanceAuthRequestInput) (string, error) {
+func (_m *GraphQLizer) BundleInstanceAuthRequestInputToGQL(in graphql.BundleInstanceAuthRequestInput) (string, error) {
 	ret := _m.Called(in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(graphql.PackageInstanceAuthRequestInput) string); ok {
+	if rf, ok := ret.Get(0).(func(graphql.BundleInstanceAuthRequestInput) string); ok {
 		r0 = rf(in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(graphql.PackageInstanceAuthRequestInput) error); ok {
+	if rf, ok := ret.Get(1).(func(graphql.BundleInstanceAuthRequestInput) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

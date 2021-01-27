@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func addGroupAndVersionToPackage(ext *schema.PackageExt) *schema.PackageExt {
+func addGroupAndVersionToBundle(ext *schema.BundleExt) *schema.BundleExt {
 	ext.APIDefinitions.Data[0].Group = strToPtrStr("group")
 	ext.APIDefinitions.Data[0].Version = &schema.Version{
 		Value:           "v1",

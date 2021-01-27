@@ -41,7 +41,7 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 		"bindingID":  bindingID,
 	})
 
-	logger.Debug("Fetching package instance credentials")
+	logger.Debug("Fetching bundle instance credentials")
 
 	resp, err := b.credentialsGetter.FetchBundleInstanceCredentials(ctx, &director.BundleInstanceInput{
 		InstanceAuthID: bindingID,
@@ -52,25 +52,25 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 	})
 
 	if err != nil && !IsNotFoundError(err) {
-		return domain.GetBindingSpec{}, errors.Wrapf(err, "while getting package instance credentials from director")
+		return domain.GetBindingSpec{}, errors.Wrapf(err, "while getting bundle instance credentials from director")
 	}
 
 	if IsNotFoundError(err) {
-		logger.Debug("Package credentials for binding were not found")
+		logger.Debug("Bundle credentials for binding were not found")
 		return domain.GetBindingSpec{}, apiresponses.ErrBindingNotFound
 	}
 
 	instanceAuth := resp.InstanceAuth
 
 	switch instanceAuth.Status.Condition {
-	case schema.PackageInstanceAuthStatusConditionPending:
-		logger.Info("Package credentials for binding are still pending")
+	case schema.BundleInstanceAuthStatusConditionPending:
+		logger.Info("Bundle credentials for binding are still pending")
 		return domain.GetBindingSpec{}, apiresponses.ErrBindingNotFound
-	case schema.PackageInstanceAuthStatusConditionUnused:
-		logger.Info("Package credentials for binding are unused")
+	case schema.BundleInstanceAuthStatusConditionUnused:
+		logger.Info("Bundle credentials for binding are unused")
 		return domain.GetBindingSpec{}, apiresponses.ErrBindingNotFound
-	case schema.PackageInstanceAuthStatusConditionFailed:
-		logger.Info("Package credentials for binding are in failed state")
+	case schema.BundleInstanceAuthStatusConditionFailed:
+		logger.Info("Bundle credentials for binding are in failed state")
 		return domain.GetBindingSpec{}, errors.Errorf("credentials status is not success: %+v", *instanceAuth.Status)
 	default:
 	}
@@ -80,7 +80,7 @@ func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, binding
 		return domain.GetBindingSpec{}, errors.Wrap(err, "while mapping to binding credentials")
 	}
 
-	logger.Info("Successfully obtained binding details for package instance credentials")
+	logger.Info("Successfully obtained binding details for bundle instance credentials")
 
 	return domain.GetBindingSpec{
 		Credentials: bindingCredentials,

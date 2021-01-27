@@ -24,7 +24,7 @@ func (c MapConverter) toApiDefMap(baseURL, appID, pkgID string, apiDef *graphql.
 		specification["type"] = apiDef.Spec.Type
 		specification["format"] = specsFormatHeader
 		specification["url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
-			baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.PackageIDParameter, pkgID, specs.DefinitionIDParameter, apiDef.ID)
+			baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.BundleIDParameter, pkgID, specs.DefinitionIDParameter, apiDef.ID)
 		api["specification"] = specification
 	}
 	if apiDef.Description != nil && *apiDef.Description != "" {
@@ -53,7 +53,7 @@ func (c MapConverter) toEventDefMap(baseURL, appID, pkgID string, eventDef *grap
 		specification["type"] = eventDef.Spec.Type
 		specification["format"] = specsFormatHeader
 		specification["url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
-			baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.PackageIDParameter, pkgID, specs.DefinitionIDParameter, eventDef.ID)
+			baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.BundleIDParameter, pkgID, specs.DefinitionIDParameter, eventDef.ID)
 		event["specification"] = specification
 	}
 	if eventDef.Description != nil && *eventDef.Description != "" {

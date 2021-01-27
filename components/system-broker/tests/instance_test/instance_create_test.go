@@ -27,7 +27,7 @@ var (
 		  "name": "varkes",
      	  "providerName": "",
     	  "description": "",
-		  "packages": {
+		  "bundles": {
 			"data": [
 			  {
 				"id": "%s",

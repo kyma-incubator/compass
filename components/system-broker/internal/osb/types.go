@@ -29,22 +29,22 @@ type applicationsLister interface {
 	FetchApplications(ctx context.Context) (*director.ApplicationsOutput, error)
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsFetcher
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsFetcher
 type bundleCredentialsFetcher interface {
 	FetchBundleInstanceAuth(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceAuthOutput, error)
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsFetcherForInstance
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsFetcherForInstance
 type bundleCredentialsFetcherForInstance interface {
 	FetchBundleInstanceCredentials(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceCredentialsOutput, error)
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsCreateRequester
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsCreateRequester
 type bundleCredentialsCreateRequester interface {
 	RequestBundleInstanceCredentialsCreation(ctx context.Context, in *director.BundleInstanceCredentialsInput) (*director.BundleInstanceAuthOutput, error)
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . packageCredentialsDeleteRequester
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsDeleteRequester
 type bundleCredentialsDeleteRequester interface {
 	RequestBundleInstanceCredentialsDeletion(ctx context.Context, in *director.BundleInstanceAuthDeletionInput) (*director.BundleInstanceAuthDeletionOutput, error)
 }
@@ -71,41 +71,41 @@ func IsNotFoundError(err error) bool {
 	return ok && nfe.NotFound()
 }
 
-func IsSucceeded(status *schema.PackageInstanceAuthStatus) bool {
+func IsSucceeded(status *schema.BundleInstanceAuthStatus) bool {
 	if status == nil {
 		return false
 	}
-	if status.Condition == schema.PackageInstanceAuthStatusConditionSucceeded {
+	if status.Condition == schema.BundleInstanceAuthStatusConditionSucceeded {
 		return true
 	}
 	return false
 }
 
-func IsFailed(status *schema.PackageInstanceAuthStatus) bool {
+func IsFailed(status *schema.BundleInstanceAuthStatus) bool {
 	if status == nil {
 		return false
 	}
-	if status.Condition == schema.PackageInstanceAuthStatusConditionFailed {
+	if status.Condition == schema.BundleInstanceAuthStatusConditionFailed {
 		return true
 	}
 	return false
 }
 
-func IsInProgress(status *schema.PackageInstanceAuthStatus) bool {
+func IsInProgress(status *schema.BundleInstanceAuthStatus) bool {
 	if status == nil {
 		return false
 	}
-	if status.Condition == schema.PackageInstanceAuthStatusConditionPending {
+	if status.Condition == schema.BundleInstanceAuthStatusConditionPending {
 		return true
 	}
 	return false
 }
 
-func IsUnused(status *schema.PackageInstanceAuthStatus) bool {
+func IsUnused(status *schema.BundleInstanceAuthStatus) bool {
 	if status == nil {
 		return false
 	}
-	if status.Condition == schema.PackageInstanceAuthStatusConditionUnused {
+	if status.Condition == schema.BundleInstanceAuthStatusConditionUnused {
 		return true
 	}
 	return false
@@ -254,7 +254,7 @@ func (rp *RequestParameters) unpack() (*map[string][]string, *map[string][]strin
 	return rp.Headers, rp.QueryParameters
 }
 
-func mapBundleInstanceAuthToModel(instanceAuth schema.PackageInstanceAuth, targets map[string]string) (BindingCredentials, error) {
+func mapBundleInstanceAuthToModel(instanceAuth schema.BundleInstanceAuth, targets map[string]string) (BindingCredentials, error) {
 	var (
 		auth = instanceAuth.Auth
 		cfg  = AuthDetails{}

@@ -35,20 +35,20 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 	log.C(ctx).Infof("LastBindingOperation instanceID: %s bindingID: %s details: %+v", instanceID, bindingID, details)
 
 	opType := details.OperationData
-	appID := details.ServiceID  // may be empty per OSB spec
-	packageID := details.PlanID // may be empty per OSB spec
+	appID := details.ServiceID // may be empty per OSB spec
+	bundleID := details.PlanID // may be empty per OSB spec
 	authID := bindingID
 
 	logger := log.C(ctx).WithFields(map[string]interface{}{
 		"opType":     opType,
 		"appID":      appID,
-		"packageID":  packageID,
+		"bundleID":   bundleID,
 		"authID":     authID,
 		"instanceID": instanceID,
 		"bindingID":  bindingID,
 	})
 
-	logger.Info("Fetching package instance credentials")
+	logger.Info("Fetching bundle instance credentials")
 	resp, err := b.credentialsGetter.FetchBundleInstanceAuth(ctx, &director.BundleInstanceInput{
 		InstanceAuthID: authID,
 		Context: map[string]string{
@@ -57,7 +57,7 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 		},
 	})
 	if err != nil && !IsNotFoundError(err) {
-		return domain.LastOperation{}, errors.Wrapf(err, "while getting package instance credentials from director")
+		return domain.LastOperation{}, errors.Wrapf(err, "while getting bundle instance credentials from director")
 	}
 
 	if IsNotFoundError(err) {
@@ -67,27 +67,27 @@ func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, in
 				Description: "credentials were successfully deleted",
 			}, nil
 		}
-		logger.Error("Package instance credentials not found")
+		logger.Error("Bundle instance credentials not found")
 		return domain.LastOperation{}, apiresponses.ErrBindingNotFound
 	}
 
 	instanceAuth := resp.InstanceAuth
 
-	logger.Infof("Found package credentials during poll last op with status %+v", *instanceAuth.Status)
+	logger.Infof("Found bundle credentials during poll last op with status %+v", *instanceAuth.Status)
 
 	var state domain.LastOperationState
 	var opErr error
 	switch opType {
 	case string(BindOp):
 		switch instanceAuth.Status.Condition {
-		case schema.PackageInstanceAuthStatusConditionSucceeded: // success
+		case schema.BundleInstanceAuthStatusConditionSucceeded: // success
 			state = domain.Succeeded
-		case schema.PackageInstanceAuthStatusConditionPending: // in progress
+		case schema.BundleInstanceAuthStatusConditionPending: // in progress
 			state = domain.InProgress
-		case schema.PackageInstanceAuthStatusConditionFailed: // failed
+		case schema.BundleInstanceAuthStatusConditionFailed: // failed
 			// this would trigger orphan mitigation
 			state = domain.Failed
-		case schema.PackageInstanceAuthStatusConditionUnused: // error
+		case schema.BundleInstanceAuthStatusConditionUnused: // error
 			fallthrough
 		default:
 			// this should force platform to continue polling, should be the more flexiable approach

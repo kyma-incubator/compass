@@ -17,8 +17,8 @@ func TestDeleteBinding(t *testing.T) {
 	bindingID := "bindingID"
 
 	var (
-		fakeCredentialsDeleter     *osbfakes.FakePackageCredentialsDeleteRequester
-		fakeCredentialsGetter      *osbfakes.FakePackageCredentialsFetcher
+		fakeCredentialsDeleter     *osbfakes.FakeBundleCredentialsDeleteRequester
+		fakeCredentialsGetter      *osbfakes.FakeBundleCredentialsFetcher
 		be                         *UnbindEndpoint
 		details                    domain.UnbindDetails
 		bundleInstanceAuth         *director.BundleInstanceAuthOutput
@@ -26,8 +26,8 @@ func TestDeleteBinding(t *testing.T) {
 	)
 
 	setup := func() {
-		fakeCredentialsDeleter = &osbfakes.FakePackageCredentialsDeleteRequester{}
-		fakeCredentialsGetter = &osbfakes.FakePackageCredentialsFetcher{}
+		fakeCredentialsDeleter = &osbfakes.FakeBundleCredentialsDeleteRequester{}
+		fakeCredentialsGetter = &osbfakes.FakeBundleCredentialsFetcher{}
 
 		be = &UnbindEndpoint{
 			credentialsDeleter: fakeCredentialsDeleter,
@@ -40,10 +40,10 @@ func TestDeleteBinding(t *testing.T) {
 		}
 
 		bundleInstanceAuth = &director.BundleInstanceAuthOutput{
-			InstanceAuth: &graphql.PackageInstanceAuth{
+			InstanceAuth: &graphql.BundleInstanceAuth{
 				ID: "instanceAuthID",
-				Status: &graphql.PackageInstanceAuthStatus{
-					Condition: graphql.PackageInstanceAuthStatusConditionSucceeded,
+				Status: &graphql.BundleInstanceAuthStatus{
+					Condition: graphql.BundleInstanceAuthStatusConditionSucceeded,
 				},
 			},
 		}
@@ -55,35 +55,35 @@ func TestDeleteBinding(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			bundleInstanceAuth,
 			nil,
 		)
-		fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionReturns(
+		fakeCredentialsDeleter.RequestBundleInstanceCredentialsDeletionReturns(
 			bundleInstanceAuthDeletion,
 			nil,
 		)
 		binding, err := be.Unbind(context.TODO(), instanceID, bindingID, details, true)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceAuthCallCount())
-		assert.Equal(t, 1, fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())
+		assert.Equal(t, 1, fakeCredentialsDeleter.RequestBundleInstanceCredentialsDeletionCallCount())
 		assert.Equal(t, "unbind_operation", binding.OperationData)
 	})
 
 	t.Run("When credentials getter returns an error", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
 			errors.New("some error"),
 		)
 		_, err := be.Unbind(context.TODO(), instanceID, bindingID, details, true)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "while getting package instance credentials from director")
+		assert.Contains(t, err.Error(), "while getting bundle instance credentials from director")
 	})
 
 	t.Run("When credentials are not found", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
 			&notFoundErr{},
 		)
@@ -94,49 +94,49 @@ func TestDeleteBinding(t *testing.T) {
 
 	t.Run("When credentials are already being deleted", func(t *testing.T) {
 		setup()
-		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionUnused
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionUnused
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.Unbind(context.TODO(), instanceID, bindingID, details, true)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceAuthCallCount())
-		assert.Equal(t, 0, fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())
+		assert.Equal(t, 0, fakeCredentialsDeleter.RequestBundleInstanceCredentialsDeletionCallCount())
 	})
 
 	t.Run("When credentials deleter returns not found", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			bundleInstanceAuth,
 			nil,
 		)
-		fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionReturns(
+		fakeCredentialsDeleter.RequestBundleInstanceCredentialsDeletionReturns(
 			nil,
 			&notFoundErr{},
 		)
 		_, err := be.Unbind(context.TODO(), instanceID, bindingID, details, true)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "binding does not exist")
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceAuthCallCount())
-		assert.Equal(t, 1, fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())
+		assert.Equal(t, 1, fakeCredentialsDeleter.RequestBundleInstanceCredentialsDeletionCallCount())
 	})
 
 	t.Run("When credentials deleter returns error", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceAuthReturns(
+		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			bundleInstanceAuth,
 			nil,
 		)
-		fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionReturns(
+		fakeCredentialsDeleter.RequestBundleInstanceCredentialsDeletionReturns(
 			nil,
 			errors.New("some error"),
 		)
 		_, err := be.Unbind(context.TODO(), instanceID, bindingID, details, true)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "while requesting package instance credentials deletion from director")
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceAuthCallCount())
-		assert.Equal(t, 1, fakeCredentialsDeleter.RequestPackageInstanceCredentialsDeletionCallCount())
+		assert.Contains(t, err.Error(), "while requesting bundle instance credentials deletion from director")
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())
+		assert.Equal(t, 1, fakeCredentialsDeleter.RequestBundleInstanceCredentialsDeletionCallCount())
 	})
 
 	t.Run("When async is not supported by platform", func(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 const (
 	SpecsAPI              = "/specifications"
 	AppIDParameter        = "app_id"
-	PackageIDParameter    = "package_id"
+	BundleIDParameter     = "bundle_id"
 	DefinitionIDParameter = "definition_id"
 )
 
@@ -44,16 +44,16 @@ func (h *SpecsHandler) Routes(router *mux.Router) {
 func (h *SpecsHandler) FetchSpec(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	appID := req.FormValue(AppIDParameter)
-	packageID := req.FormValue(PackageIDParameter)
+	bundleID := req.FormValue(BundleIDParameter)
 	definitionID := req.FormValue(DefinitionIDParameter)
 
 	logger := C(ctx).WithFields(map[string]interface{}{
 		"appID":        appID,
-		"packageID":    packageID,
+		"bundleID":     bundleID,
 		"definitionID": definitionID,
 	})
 
-	logger.Info("Fetching package specifications")
+	logger.Info("Fetching bundle specifications")
 
 	if appID == "" {
 		err := errors.New("app id cannot be empty")
@@ -64,8 +64,8 @@ func (h *SpecsHandler) FetchSpec(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if packageID == "" {
-		err := errors.New("package id cannot be empty")
+	if bundleID == "" {
+		err := errors.New("bundle id cannot be empty")
 		logger.WithError(err).Error("input validation error")
 		h.respond(ctx, w, http.StatusBadRequest, apiresponses.ErrorResponse{
 			Description: err.Error(),
@@ -84,7 +84,7 @@ func (h *SpecsHandler) FetchSpec(w http.ResponseWriter, req *http.Request) {
 
 	specification, err := h.specsFetcher.FindSpecification(ctx, &director.BundleSpecificationInput{
 		ApplicationID: appID,
-		BundleID:      packageID,
+		BundleID:      bundleID,
 		DefinitionID:  definitionID,
 	})
 	if err != nil {
@@ -95,7 +95,7 @@ func (h *SpecsHandler) FetchSpec(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	logger.Info("Successfully fetched package specifications")
+	logger.Info("Successfully fetched bundle specifications")
 	content, err := SpecFormatToContentTypeHeader(specification.Format)
 	if err != nil {
 		logger.WithError(err).Error("failed to prepare content type header")

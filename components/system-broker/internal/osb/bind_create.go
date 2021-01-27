@@ -46,16 +46,16 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 	}
 
 	appID := details.ServiceID
-	packageID := details.PlanID
+	bundleID := details.PlanID
 	logger := log.C(ctx).WithFields(map[string]interface{}{
 		"appID":      appID,
-		"packageID":  packageID,
+		"bundleID":   bundleID,
 		"instanceID": instanceID,
 		"bindingID":  bindingID,
 	})
 
-	logger.Info("Fetching package instance credentials")
-	var instanceAuth *schema.PackageInstanceAuth
+	logger.Info("Fetching bundle instance credentials")
+	var instanceAuth *schema.BundleInstanceAuth
 	getResp, err := b.credentialsGetter.FetchBundleInstanceAuth(ctx, &director.BundleInstanceInput{
 		InstanceAuthID: bindingID,
 		Context: map[string]string{
@@ -64,11 +64,11 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 		},
 	})
 	if err != nil && !IsNotFoundError(err) {
-		return domain.Binding{}, errors.Wrapf(err, "while getting package instance credentials from director")
+		return domain.Binding{}, errors.Wrapf(err, "while getting bundle instance credentials from director")
 	}
 	exists := !IsNotFoundError(err)
 	if !exists {
-		logger.Info("Package credentials for binding do not exist. Requesting new credentials")
+		logger.Info("Bundle credentials for binding do not exist. Requesting new credentials")
 
 		rawParams := director.Values{}
 		if details.RawParameters != nil {
@@ -88,26 +88,27 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 		rawContext["binding_id"] = bindingID
 
 		createResp, err := b.credentialsCreator.RequestBundleInstanceCredentialsCreation(ctx, &director.BundleInstanceCredentialsInput{
-			BundleID:    packageID,
+			BundleID:    bundleID,
 			AuthID:      bindingID,
 			Context:     rawContext,
 			InputSchema: rawParams,
 		})
 		if err != nil {
-			return domain.Binding{}, errors.Wrap(err, "while requesting package instance credentials creation from director")
+			return domain.Binding{}, errors.Wrap(err, "while requesting bundle instance credentials creation from director")
 		}
 		instanceAuth = createResp.InstanceAuth
 	} else {
 		instanceAuth = getResp.InstanceAuth
 	}
 
-	logger.Infof("package instance credentials have status %s", instanceAuth.Status.Condition)
+	logger.Infof("bundle instance credentials have status %s", instanceAuth.Status.Condition)
 
 	if IsFailed(instanceAuth.Status) {
-		return domain.Binding{}, errors.Errorf("requesting package instance credentials from director failed, got status %+v", *instanceAuth.Status)
+		return domain.Binding{}, errors.Errorf("requesting bundle instance credentials from director failed, "+
+			"got status %+v", *instanceAuth.Status)
 	}
 
-	logger.Info("Successfully found package instance credentials")
+	logger.Info("Successfully found bundle instance credentials")
 
 	return domain.Binding{
 		IsAsync:       true,

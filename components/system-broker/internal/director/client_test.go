@@ -107,7 +107,7 @@ func TestGraphQLClient_RequestBundleInstanceCredentialsCreation(t *testing.T) {
 		{
 			name:        "when gql client returns an error",
 			GQLClient:   getGCLI(t, "", errors.New("some error")),
-			expectedErr: "while executing GraphQL call to create package instance auth: some error",
+			expectedErr: "while executing GraphQL call to create bundle instance auth: some error",
 		},
 	}
 
@@ -146,7 +146,7 @@ func TestGraphQLClient_FetchBundleInstanceCredentials(t *testing.T) {
 			credentialsInput: &director.BundleInstanceInput{
 				InstanceAuthID: "authID",
 			},
-			expectedQuery: "query{\n\t\t\t  result:packageByInstanceAuth(authID:\"authID\"){\n\t\t\t\tapiDefinitions{\n\t\t\t\t  data{\n\t\t\t\t\tname\n\t\t\t\t\ttargetURL\n\t\t\t\t  }\n\t\t\t\t}\n\t\t\t\tinstanceAuth(id: \"authID\"){\n\t\t\t\t  \n\t\tid\n\t\tcontext\n\t\tinputParams\n\t\tauth {credential {\n\t\t\t\t... on BasicCredentialData {\n\t\t\t\t\tusername\n\t\t\t\t\tpassword\n\t\t\t\t}\n\t\t\t\t...  on OAuthCredentialData {\n\t\t\t\t\tclientId\n\t\t\t\t\tclientSecret\n\t\t\t\t\turl\n\t\t\t\t\t\n\t\t\t\t}\n\t\t\t}\n\t\t\tadditionalHeaders\n\t\t\tadditionalQueryParams\n\t\t\trequestAuth { \n\t\t\t  csrf {\n\t\t\t\ttokenEndpointURL\n\t\t\t\tcredential {\n\t\t\t\t  ... on BasicCredentialData {\n\t\t\t\t  \tusername\n\t\t\t\t\tpassword\n\t\t\t\t  }\n\t\t\t\t  ...  on OAuthCredentialData {\n\t\t\t\t\tclientId\n\t\t\t\t\tclientSecret\n\t\t\t\t\turl\n\t\t\t\t\t\n\t\t\t\t  }\n\t\t\t    }\n\t\t\t\tadditionalHeaders\n\t\t\t\tadditionalQueryParams\n\t\t\t}\n\t\t\t}\n\t\t}\n\t\tstatus {\n\t\tcondition\n\t\ttimestamp\n\t\tmessage\n\t\treason}\n\t\t\t\t}\n\t\t\t  }\n\t}",
+			expectedQuery: "query{\n\t\t\t  result:bundleByInstanceAuth(authID:\"authID\"){\n\t\t\t\tapiDefinitions{\n\t\t\t\t  data{\n\t\t\t\t\tname\n\t\t\t\t\ttargetURL\n\t\t\t\t  }\n\t\t\t\t}\n\t\t\t\tinstanceAuth(id: \"authID\"){\n\t\t\t\t  \n\t\tid\n\t\tcontext\n\t\tinputParams\n\t\tauth {credential {\n\t\t\t\t... on BasicCredentialData {\n\t\t\t\t\tusername\n\t\t\t\t\tpassword\n\t\t\t\t}\n\t\t\t\t...  on OAuthCredentialData {\n\t\t\t\t\tclientId\n\t\t\t\t\tclientSecret\n\t\t\t\t\turl\n\t\t\t\t\t\n\t\t\t\t}\n\t\t\t}\n\t\t\tadditionalHeaders\n\t\t\tadditionalQueryParams\n\t\t\trequestAuth { \n\t\t\t  csrf {\n\t\t\t\ttokenEndpointURL\n\t\t\t\tcredential {\n\t\t\t\t  ... on BasicCredentialData {\n\t\t\t\t  \tusername\n\t\t\t\t\tpassword\n\t\t\t\t  }\n\t\t\t\t  ...  on OAuthCredentialData {\n\t\t\t\t\tclientId\n\t\t\t\t\tclientSecret\n\t\t\t\t\turl\n\t\t\t\t\t\n\t\t\t\t  }\n\t\t\t    }\n\t\t\t\tadditionalHeaders\n\t\t\t\tadditionalQueryParams\n\t\t\t}\n\t\t\t}\n\t\t}\n\t\tstatus {\n\t\tcondition\n\t\ttimestamp\n\t\tmessage\n\t\treason}\n\t\t\t\t}\n\t\t\t  }\n\t}",
 		},
 		{
 			name:      "when gql client returns an error",
@@ -154,10 +154,10 @@ func TestGraphQLClient_FetchBundleInstanceCredentials(t *testing.T) {
 			credentialsInput: &director.BundleInstanceInput{
 				InstanceAuthID: "authID",
 			},
-			expectedErr: "while executing GraphQL call to get package instance auth: some error",
+			expectedErr: "while executing GraphQL call to get bundle instance auth: some error",
 		},
 		{
-			name:      "when no package is returned",
+			name:      "when no bundle is returned",
 			GQLClient: getGCLI(t, `{}`, nil),
 			credentialsInput: &director.BundleInstanceInput{
 				InstanceAuthID: "authID",
@@ -165,7 +165,7 @@ func TestGraphQLClient_FetchBundleInstanceCredentials(t *testing.T) {
 			expectedErr: "NotFound",
 		},
 		{
-			name:      "when no package instance auth is returned",
+			name:      "when no bundle instance auth is returned",
 			GQLClient: getGCLI(t, `{"result":{}}`, nil),
 			credentialsInput: &director.BundleInstanceInput{
 				InstanceAuthID: "authID",
@@ -173,7 +173,7 @@ func TestGraphQLClient_FetchBundleInstanceCredentials(t *testing.T) {
 			expectedErr: "NotFound",
 		},
 		{
-			name:      "when no package instance auth context is returned",
+			name:      "when no bundle instance auth context is returned",
 			GQLClient: getGCLI(t, `{"result":{"instanceAuth":{}}}`, nil),
 			credentialsInput: &director.BundleInstanceInput{
 				InstanceAuthID: "authID",
@@ -181,7 +181,7 @@ func TestGraphQLClient_FetchBundleInstanceCredentials(t *testing.T) {
 			expectedErr: "NotFound",
 		},
 		{
-			name:      "when package instance auth context is not a JSON",
+			name:      "when bundle instance auth context is not a JSON",
 			GQLClient: getGCLI(t, `{"result":{"instanceAuth":{"context":"not a json"}}}`, nil),
 			credentialsInput: &director.BundleInstanceInput{
 				InstanceAuthID: "authID",
@@ -244,10 +244,10 @@ func TestGraphQLClient_FetchBundleInstanceAuth(t *testing.T) {
 			credentialsInput: &director.BundleInstanceInput{
 				InstanceAuthID: "authID",
 			},
-			expectedErr: "while executing GraphQL call to get package instance auth: some error",
+			expectedErr: "while executing GraphQL call to get bundle instance auth: some error",
 		},
 		{
-			name:      "when no package instance auth is returned",
+			name:      "when no bundle instance auth is returned",
 			GQLClient: getGCLI(t, `{}`, nil),
 			credentialsInput: &director.BundleInstanceInput{
 				InstanceAuthID: "authID",
@@ -255,7 +255,7 @@ func TestGraphQLClient_FetchBundleInstanceAuth(t *testing.T) {
 			expectedErr: "NotFound",
 		},
 		{
-			name: "when no package instance auth context is returned",
+			name: "when no bundle instance auth context is returned",
 			GQLClient: getGCLI(t, `{
 							"result": {}
 						}`, nil),
@@ -265,7 +265,7 @@ func TestGraphQLClient_FetchBundleInstanceAuth(t *testing.T) {
 			expectedErr: "NotFound",
 		},
 		{
-			name: "when package instance auth context is not a JSON",
+			name: "when bundle instance auth context is not a JSON",
 			GQLClient: getGCLI(t, `{
 							"result": {
 								"context": "not a json"
@@ -348,7 +348,7 @@ func TestGraphQLClient_RequestBundleInstanceCredentialsDeletion(t *testing.T) {
 			credentialsInput: &director.BundleInstanceAuthDeletionInput{
 				InstanceAuthID: "instanceAuthID",
 			},
-			expectedErr: "while executing GraphQL call to delete the package instance auth: some error",
+			expectedErr: "while executing GraphQL call to delete the bundle instance auth: some error",
 		},
 		{
 			name:      "when gql client returns object not found",
@@ -400,7 +400,7 @@ func TestGraphQLClient_FindSpecification(t *testing.T) {
 			name: "success when api spec",
 			GQLClient: getGCLI(t, `{
 							"result": {
-								"package": {
+								"bundle": {
 									"apiDefinition": {
 										"name": "apiDefName",
 										"spec": {
@@ -418,16 +418,16 @@ func TestGraphQLClient_FindSpecification(t *testing.T) {
 			},
 			credentialsInput: &director.BundleSpecificationInput{
 				ApplicationID: "appID",
-				BundleID:      "packageID",
+				BundleID:      "bundleID",
 				DefinitionID:  "defID",
 			},
-			expectedQuery: "query {\n\t\t\t  result: application(id: \"appID\") {\n\t\t\t\t\t\tpackage(id: \"packageID\") {\n\t\t\t\t\t\t  apiDefinition(id: \"defID\") {\n\t\t\t\t\t\t\t  spec {\n\t\t\t\t\t\t\t\tdata\n\t\t\t\t\t\t\t\ttype\n\t\t\t\t\t\t\t\tformat\n\t\t\t\t\t\t\t  }\n\t\t\t\t\t\t  }\n\t\t\t\t\t\t  eventDefinition(id: \"defID\") {\n\t\t\t\t\t\t\t  spec {\n\t\t\t\t\t\t\t\tdata\n\t\t\t\t\t\t\t\ttype\n\t\t\t\t\t\t\t\tformat\n\t\t\t\t\t\t\t  }\n\t\t\t\t\t\t  }\n\t\t\t\t\t\t}\n\t\t\t\t\t  }\n\t\t\t\t\t}",
+			expectedQuery: "query {\n\t\t\t  result: application(id: \"appID\") {\n\t\t\t\t\t\tbundle(id: \"bundleID\") {\n\t\t\t\t\t\t  apiDefinition(id: \"defID\") {\n\t\t\t\t\t\t\t  spec {\n\t\t\t\t\t\t\t\tdata\n\t\t\t\t\t\t\t\ttype\n\t\t\t\t\t\t\t\tformat\n\t\t\t\t\t\t\t  }\n\t\t\t\t\t\t  }\n\t\t\t\t\t\t  eventDefinition(id: \"defID\") {\n\t\t\t\t\t\t\t  spec {\n\t\t\t\t\t\t\t\tdata\n\t\t\t\t\t\t\t\ttype\n\t\t\t\t\t\t\t\tformat\n\t\t\t\t\t\t\t  }\n\t\t\t\t\t\t  }\n\t\t\t\t\t\t}\n\t\t\t\t\t  }\n\t\t\t\t\t}",
 		},
 		{
 			name: "success when event spec",
 			GQLClient: getGCLI(t, `{
 							"result": {
-								"package": {
+								"bundle": {
 									"eventDefinition": {
 										"name": "eventDefName",
 										"spec": {
@@ -445,20 +445,20 @@ func TestGraphQLClient_FindSpecification(t *testing.T) {
 			},
 			credentialsInput: &director.BundleSpecificationInput{
 				ApplicationID: "appID",
-				BundleID:      "packageID",
+				BundleID:      "bundleID",
 				DefinitionID:  "defID",
 			},
-			expectedQuery: "query {\n\t\t\t  result: application(id: \"appID\") {\n\t\t\t\t\t\tpackage(id: \"packageID\") {\n\t\t\t\t\t\t  apiDefinition(id: \"defID\") {\n\t\t\t\t\t\t\t  spec {\n\t\t\t\t\t\t\t\tdata\n\t\t\t\t\t\t\t\ttype\n\t\t\t\t\t\t\t\tformat\n\t\t\t\t\t\t\t  }\n\t\t\t\t\t\t  }\n\t\t\t\t\t\t  eventDefinition(id: \"defID\") {\n\t\t\t\t\t\t\t  spec {\n\t\t\t\t\t\t\t\tdata\n\t\t\t\t\t\t\t\ttype\n\t\t\t\t\t\t\t\tformat\n\t\t\t\t\t\t\t  }\n\t\t\t\t\t\t  }\n\t\t\t\t\t\t}\n\t\t\t\t\t  }\n\t\t\t\t\t}",
+			expectedQuery: "query {\n\t\t\t  result: application(id: \"appID\") {\n\t\t\t\t\t\tbundle(id: \"bundleID\") {\n\t\t\t\t\t\t  apiDefinition(id: \"defID\") {\n\t\t\t\t\t\t\t  spec {\n\t\t\t\t\t\t\t\tdata\n\t\t\t\t\t\t\t\ttype\n\t\t\t\t\t\t\t\tformat\n\t\t\t\t\t\t\t  }\n\t\t\t\t\t\t  }\n\t\t\t\t\t\t  eventDefinition(id: \"defID\") {\n\t\t\t\t\t\t\t  spec {\n\t\t\t\t\t\t\t\tdata\n\t\t\t\t\t\t\t\ttype\n\t\t\t\t\t\t\t\tformat\n\t\t\t\t\t\t\t  }\n\t\t\t\t\t\t  }\n\t\t\t\t\t\t}\n\t\t\t\t\t  }\n\t\t\t\t\t}",
 		},
 		{
 			name:      "when gql client returns an error",
 			GQLClient: getGCLI(t, "", errors.New("some error")),
 			credentialsInput: &director.BundleSpecificationInput{
 				ApplicationID: "appID",
-				BundleID:      "packageID",
+				BundleID:      "bundleID",
 				DefinitionID:  "defID",
 			},
-			expectedErr: "while executing GraphQL call to get package instance auth: some error",
+			expectedErr: "while executing GraphQL call to get bundle instance auth: some error",
 		},
 	}
 

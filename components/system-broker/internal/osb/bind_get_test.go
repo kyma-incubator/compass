@@ -16,22 +16,22 @@ func TestBindGet(t *testing.T) {
 	bindingID := "bindingID"
 
 	var (
-		fakeCredentialsGetter *osbfakes.FakePackageCredentialsFetcherForInstance
+		fakeCredentialsGetter *osbfakes.FakeBundleCredentialsFetcherForInstance
 		be                    *GetBindingEndpoint
 		bundleInstanceAuth    *director.BundleInstanceCredentialsOutput
 	)
 
 	setup := func() {
-		fakeCredentialsGetter = &osbfakes.FakePackageCredentialsFetcherForInstance{}
+		fakeCredentialsGetter = &osbfakes.FakeBundleCredentialsFetcherForInstance{}
 
 		be = &GetBindingEndpoint{
 			credentialsGetter: fakeCredentialsGetter,
 		}
 
 		bundleInstanceAuth = &director.BundleInstanceCredentialsOutput{
-			InstanceAuth: &graphql.PackageInstanceAuth{
-				Status: &graphql.PackageInstanceAuthStatus{
-					Condition: graphql.PackageInstanceAuthStatusConditionSucceeded,
+			InstanceAuth: &graphql.BundleInstanceAuth{
+				Status: &graphql.BundleInstanceAuthStatus{
+					Condition: graphql.BundleInstanceAuthStatusConditionSucceeded,
 				},
 				Auth: &graphql.Auth{
 					Credential: &graphql.BasicCredentialData{
@@ -46,13 +46,13 @@ func TestBindGet(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
+		fakeCredentialsGetter.FetchBundleInstanceCredentialsReturns(
 			bundleInstanceAuth,
 			nil,
 		)
 		binding, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceCredentialsCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceCredentialsCallCount())
 		creds, ok := binding.Credentials.(BindingCredentials)
 		assert.True(t, ok)
 		basicCreds := creds.AuthDetails.Credentials.ToCredentials().BasicAuth
@@ -66,76 +66,76 @@ func TestBindGet(t *testing.T) {
 			Username: "username",
 			Password: "password",
 		}
-		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
+		fakeCredentialsGetter.FetchBundleInstanceCredentialsReturns(
 			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "while mapping to binding credentials: got unknown credential type")
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceCredentialsCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceCredentialsCallCount())
 	})
 
 	t.Run("When credentials getter returns an error", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
+		fakeCredentialsGetter.FetchBundleInstanceCredentialsReturns(
 			nil,
 			errors.New("some-error"),
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "while getting package instance credentials from director")
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceCredentialsCallCount())
+		assert.Contains(t, err.Error(), "while getting bundle instance credentials from director")
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceCredentialsCallCount())
 	})
 
 	t.Run("When credentials getter returns not found", func(t *testing.T) {
 		setup()
-		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
+		fakeCredentialsGetter.FetchBundleInstanceCredentialsReturns(
 			nil,
 			&notFoundErr{},
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "binding cannot be fetched")
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceCredentialsCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceCredentialsCallCount())
 	})
 
 	t.Run("When credentials getter is in pending state", func(t *testing.T) {
 		setup()
-		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionPending
-		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionPending
+		fakeCredentialsGetter.FetchBundleInstanceCredentialsReturns(
 			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "binding cannot be fetched")
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceCredentialsCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceCredentialsCallCount())
 	})
 
 	t.Run("When credentials getter is in unused state", func(t *testing.T) {
 		setup()
-		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionUnused
-		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionUnused
+		fakeCredentialsGetter.FetchBundleInstanceCredentialsReturns(
 			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "binding cannot be fetched")
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceCredentialsCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceCredentialsCallCount())
 	})
 
 	t.Run("When credentials getter is in failed state", func(t *testing.T) {
 		setup()
-		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.PackageInstanceAuthStatusConditionFailed
-		fakeCredentialsGetter.FetchPackageInstanceCredentialsReturns(
+		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionFailed
+		fakeCredentialsGetter.FetchBundleInstanceCredentialsReturns(
 			bundleInstanceAuth,
 			nil,
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "credentials status is not success")
-		assert.Equal(t, 1, fakeCredentialsGetter.FetchPackageInstanceCredentialsCallCount())
+		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceCredentialsCallCount())
 	})
 }

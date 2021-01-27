@@ -32,7 +32,7 @@ type Converter struct {
 }
 
 func (c Converter) Convert(app *schema.ApplicationExt) (*domain.Service, error) {
-	plans, err := c.toPlans(app.ID, app.Packages.Data)
+	plans, err := c.toPlans(app.ID, app.Bundles.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -55,16 +55,16 @@ func (c Converter) Convert(app *schema.ApplicationExt) (*domain.Service, error) 
 	}, nil
 }
 
-func (c *Converter) toPlans(appID string, packages []*graphql.PackageExt) ([]domain.ServicePlan, error) {
+func (c *Converter) toPlans(appID string, bundles []*graphql.BundleExt) ([]domain.ServicePlan, error) {
 	var plans []domain.ServicePlan
-	for _, p := range packages {
+	for _, p := range bundles {
 		schemas, err := c.toSchemas(p)
 		if err != nil {
 			return nil, err
 		}
 		desc := ptrStrToStr(p.Description)
 		if desc == "" {
-			desc = fmt.Sprintf("plan generated from package with name %s", p.Name)
+			desc = fmt.Sprintf("plan generated from bundle with name %s", p.Name)
 		}
 
 		metadata, err := c.toPlanMetadata(appID, p)
@@ -87,7 +87,7 @@ func (c *Converter) toPlans(appID string, packages []*graphql.PackageExt) ([]dom
 }
 
 //TODO these are probably too hidden, should be abstracted away
-func (c *Converter) toPlanMetadata(appID string, pkg *graphql.PackageExt) (*domain.ServicePlanMetadata, error) {
+func (c *Converter) toPlanMetadata(appID string, pkg *graphql.BundleExt) (*domain.ServicePlanMetadata, error) {
 	metadata := &domain.ServicePlanMetadata{
 		AdditionalMetadata: make(map[string]interface{}),
 	}
@@ -128,7 +128,7 @@ func (c *Converter) toServiceMetadata(app *schema.ApplicationExt) *domain.Servic
 	}
 }
 
-func (c *Converter) toSchemas(pkg *graphql.PackageExt) (*domain.ServiceSchemas, error) {
+func (c *Converter) toSchemas(pkg *graphql.BundleExt) (*domain.ServiceSchemas, error) {
 	if pkg.InstanceAuthRequestInputSchema == nil {
 		return nil, nil
 	}

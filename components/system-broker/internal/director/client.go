@@ -49,7 +49,7 @@ type GqlFieldsProvider interface {
 
 //go:generate mockery --name=GraphQLizer
 type GraphQLizer interface {
-	BundleInstanceAuthRequestInputToGQL(in schema.PackageInstanceAuthRequestInput) (string, error)
+	BundleInstanceAuthRequestInputToGQL(in schema.BundleInstanceAuthRequestInput) (string, error)
 }
 
 func NewGraphQLClient(gqlClient Client, gqlizer GraphQLizer, gqlFieldsProvider GqlFieldsProvider) *GraphQLClient {
@@ -75,10 +75,10 @@ func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOut
 		"auths",
 		"webhooks",
 		"status",
-		"packages.instanceAuths",
-		"packages.documents",
-		"packages.apiDefinitions.spec.fetchRequest",
-		"packages.eventDefinitions.spec.fetchRequest",
+		"bundles.instanceAuths",
+		"bundles.documents",
+		"bundles.apiDefinitions.spec.fetchRequest",
+		"bundles.eventDefinitions.spec.fetchRequest",
 	})))
 
 	apps := ApplicationsOutput{}
@@ -131,7 +131,7 @@ func (c *GraphQLClient) RequestBundleInstanceCredentialsCreation(ctx context.Con
 
 	var resp BundleInstanceAuthOutput
 	if err = c.gcli.Do(ctx, gqlRequest, &resp); err != nil {
-		return nil, errors.Wrap(err, "while executing GraphQL call to create package instance auth")
+		return nil, errors.Wrap(err, "while executing GraphQL call to create bundle instance auth")
 	}
 
 	return &resp, nil
@@ -143,7 +143,7 @@ func (c *GraphQLClient) FetchBundleInstanceCredentials(ctx context.Context, in *
 	}
 
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query{
-			  result:packageByInstanceAuth(authID:%q){
+			  result:bundleByInstanceAuth(authID:%q){
 				apiDefinitions{
 				  data{
 					name
@@ -157,18 +157,18 @@ func (c *GraphQLClient) FetchBundleInstanceCredentials(ctx context.Context, in *
 	}`, in.InstanceAuthID, in.InstanceAuthID, c.outputGraphqlizer.ForBundleInstanceAuth()))
 
 	var response struct {
-		Package *schema.PackageExt `json:"result"`
+		Bundle *schema.BundleExt `json:"result"`
 	}
 	if err := c.gcli.Do(ctx, gqlRequest, &response); err != nil {
-		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auth")
+		return nil, errors.Wrap(err, "while executing GraphQL call to get bundle instance auth")
 	}
 
-	if response.Package == nil || response.Package.InstanceAuth == nil || response.Package.InstanceAuth.Context == nil {
+	if response.Bundle == nil || response.Bundle.InstanceAuth == nil || response.Bundle.InstanceAuth.Context == nil {
 		return nil, &NotFoundError{}
 	}
 
 	var authContext map[string]string
-	if err := json.Unmarshal([]byte(*response.Package.InstanceAuth.Context), &authContext); err != nil {
+	if err := json.Unmarshal([]byte(*response.Bundle.InstanceAuth.Context), &authContext); err != nil {
 		return nil, errors.Wrap(err, "while unmarshaling auth context")
 	}
 
@@ -176,13 +176,13 @@ func (c *GraphQLClient) FetchBundleInstanceCredentials(ctx context.Context, in *
 		return nil, errors.New("found binding with mismatched context coordinates")
 	}
 
-	targetURLs := make(map[string]string, response.Package.APIDefinitions.TotalCount)
-	for _, apiDefinition := range response.Package.APIDefinitions.Data {
+	targetURLs := make(map[string]string, response.Bundle.APIDefinitions.TotalCount)
+	for _, apiDefinition := range response.Bundle.APIDefinitions.Data {
 		targetURLs[apiDefinition.Name] = apiDefinition.TargetURL
 	}
 
 	return &BundleInstanceCredentialsOutput{
-		InstanceAuth: response.Package.InstanceAuth,
+		InstanceAuth: response.Bundle.InstanceAuth,
 		TargetURLs:   targetURLs,
 	}, nil
 }
@@ -206,10 +206,10 @@ func (c *GraphQLClient) FetchBundleInstanceAuth(ctx context.Context, in *BundleI
 	}`, in.InstanceAuthID))
 
 	var response struct {
-		BundleInstanceAuth *schema.PackageInstanceAuth `json:"result"`
+		BundleInstanceAuth *schema.BundleInstanceAuth `json:"result"`
 	}
 	if err := c.gcli.Do(ctx, gqlRequest, &response); err != nil {
-		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auth")
+		return nil, errors.Wrap(err, "while executing GraphQL call to get bundle instance auth")
 	}
 
 	if response.BundleInstanceAuth == nil || response.BundleInstanceAuth.Context == nil {
@@ -256,7 +256,7 @@ func (c *GraphQLClient) RequestBundleInstanceCredentialsDeletion(ctx context.Con
 			return nil, &NotFoundError{}
 		}
 
-		return nil, errors.Wrap(err, "while executing GraphQL call to delete the package instance auth")
+		return nil, errors.Wrap(err, "while executing GraphQL call to delete the bundle instance auth")
 	}
 
 	return &resp.Result, nil
@@ -269,7 +269,7 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *BundleSpecifi
 
 	gqlRequest := gcli.NewRequest(fmt.Sprintf(`query {
 			  result: application(id: %q) {
-						package(id: %q) {
+						bundle(id: %q) {
 						  apiDefinition(id: %q) {
 							  spec {
 								data
@@ -292,10 +292,10 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *BundleSpecifi
 		Result schema.ApplicationExt `json:"result"`
 	}
 	if err := c.gcli.Do(ctx, gqlRequest, &response); err != nil {
-		return nil, errors.Wrap(err, "while executing GraphQL call to get package instance auth")
+		return nil, errors.Wrap(err, "while executing GraphQL call to get bundle instance auth")
 	}
 
-	apidef := response.Result.Package.APIDefinition
+	apidef := response.Result.Bundle.APIDefinition
 	if apidef.Spec != nil {
 		return &BundleSpecificationOutput{
 			Name:        apidef.Name,
@@ -307,7 +307,7 @@ func (c *GraphQLClient) FindSpecification(ctx context.Context, in *BundleSpecifi
 		}, nil
 	}
 
-	eventdef := response.Result.Package.EventDefinition
+	eventdef := response.Result.Bundle.EventDefinition
 	if eventdef.Spec != nil {
 		return &BundleSpecificationOutput{
 			Name:        eventdef.Name,

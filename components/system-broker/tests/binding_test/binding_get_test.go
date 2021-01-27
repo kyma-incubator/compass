@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	packageWithAPIsResp = `{
+	bundleWithAPIsResp = `{
 	"data": {
 		"result": {
 			"id": "76ad2c2b-7a33-49fb-b412-daz67d50b922",
@@ -96,7 +96,7 @@ func (suite *BindGetTestSuite) TearDownTest() {
 }
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsErrorOnFindCredentialsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth", `{"error": "Test-error"}`)
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth", `{"error": "Test-error"}`)
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(bindingPath).
@@ -105,7 +105,7 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsErrorOnFindCredenti
 }
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnauthorizedOnFindCredentialsShouldReturnUnauthorized() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth", `{"error": "insufficient scopes provided"}`)
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth", `{"error": "insufficient scopes provided"}`)
 	assert.NoError(suite.T(), err)
 
 	resp := suite.testContext.SystemBroker.GET(bindingPath).
@@ -116,8 +116,8 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnauthorizedOnFindC
 }
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsContextWithMismatchedInstanceOnFindCredentialsShouldReturnNotFound() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.PackageInstanceAuthStatusConditionPending, "test", bindingID))
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth",
+		fmt.Sprintf(bundleInstanceAuthResponse, bindingID, schema.BundleInstanceAuthStatusConditionPending, "test", bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(bindingPath).
@@ -126,8 +126,8 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsContextWithMismatch
 }
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsFailedConditionCredentialsShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-		fmt.Sprintf(packageWithAPIsResp, basicAuth, schema.PackageInstanceAuthStatusConditionFailed, instanceID, bindingID))
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth",
+		fmt.Sprintf(bundleWithAPIsResp, basicAuth, schema.BundleInstanceAuthStatusConditionFailed, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(bindingPath).
@@ -136,8 +136,8 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsFailedConditionCred
 }
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnknownCredentialTypeShouldReturnCredentialsWithNoAuth() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-		fmt.Sprintf(packageWithAPIsResp, unknownAuth, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth",
+		fmt.Sprintf(bundleWithAPIsResp, unknownAuth, schema.BundleInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	resp := suite.testContext.SystemBroker.GET(bindingPath).
@@ -152,8 +152,8 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnknownCredentialTy
 }
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnusedCredentialShouldReturnError() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-		fmt.Sprintf(packageWithAPIsResp, basicAuth, schema.PackageInstanceAuthStatusConditionUnused, instanceID, bindingID))
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth",
+		fmt.Sprintf(bundleWithAPIsResp, basicAuth, schema.BundleInstanceAuthStatusConditionUnused, instanceID, bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(bindingPath).
@@ -162,8 +162,8 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsUnusedCredentialSho
 }
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnedCredentialsWithMismatchedContextInstanceShouldReturnNotFound() {
-	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-		fmt.Sprintf(packageWithAPIsResp, basicAuth, schema.PackageInstanceAuthStatusConditionFailed, "test", bindingID))
+	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth",
+		fmt.Sprintf(bundleWithAPIsResp, basicAuth, schema.BundleInstanceAuthStatusConditionFailed, "test", bindingID))
 	assert.NoError(suite.T(), err)
 
 	suite.testContext.SystemBroker.GET(bindingPath).
@@ -173,8 +173,8 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnedCredentialsWithMis
 
 func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsShouldReturnCredentials() {
 	suite.Run("Basic Authentication", func() {
-		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-			fmt.Sprintf(packageWithAPIsResp, basicAuth, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth",
+			fmt.Sprintf(bundleWithAPIsResp, basicAuth, schema.BundleInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 		assert.NoError(suite.T(), err)
 
 		resp := suite.testContext.SystemBroker.GET(bindingPath).
@@ -190,8 +190,8 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsSho
 	})
 
 	suite.Run("OAuth", func() {
-		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-			fmt.Sprintf(packageWithAPIsResp, oAuth, schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth",
+			fmt.Sprintf(bundleWithAPIsResp, oAuth, schema.BundleInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 		assert.NoError(suite.T(), err)
 
 		resp := suite.testContext.SystemBroker.GET(bindingPath).
@@ -208,8 +208,8 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsSho
 	})
 
 	suite.Run("None", func() {
-		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-			fmt.Sprintf(packageWithAPIsResp, "", schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth",
+			fmt.Sprintf(bundleWithAPIsResp, "", schema.BundleInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 		assert.NoError(suite.T(), err)
 
 		resp := suite.testContext.SystemBroker.GET(bindingPath).
@@ -224,8 +224,8 @@ func (suite *BindGetTestSuite) TestBindGetWhenDirectorReturnsValidCredentialsSho
 	})
 
 	suite.Run("Additional Headers, Query Params and CSRFConfig are provided", func() {
-		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "packageByInstanceAuth",
-			fmt.Sprintf(packageWithAPIsResp, fmt.Sprintf(`%s, %s, %s, %s`, basicAuth, additionalHeadersSerialized, additionalQueryParamsSerialized, requestAuth), schema.PackageInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
+		err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "bundleByInstanceAuth",
+			fmt.Sprintf(bundleWithAPIsResp, fmt.Sprintf(`%s, %s, %s, %s`, basicAuth, additionalHeadersSerialized, additionalQueryParamsSerialized, requestAuth), schema.BundleInstanceAuthStatusConditionSucceeded, instanceID, bindingID))
 		assert.NoError(suite.T(), err)
 
 		resp := suite.testContext.SystemBroker.GET(bindingPath).

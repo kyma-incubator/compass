@@ -83,8 +83,8 @@ func (suite *OSBCatalogTestSuite) TestWhenDirectorReturnsUnauthorizedShouldRetur
 		JSON().Object().Value("description").String().Contains("unauthorized: insufficient scopes")
 }
 
-func testCatalog(suite *OSBCatalogTestSuite, apps, packages, apiDefs, eventDefs, docs int) {
-	mockedApps := genMockApps(apps, packages, apiDefs, eventDefs, docs)
+func testCatalog(suite *OSBCatalogTestSuite, apps, bundles, apiDefs, eventDefs, docs int) {
+	mockedApps := genMockApps(apps, bundles, apiDefs, eventDefs, docs)
 	mockedAppsResponse := toDirectorResponse(suite.T(), mockedApps)
 	expectedCatalog := toCatalog(suite.T(), mockedApps)
 	err := suite.testContext.ConfigureResponse(suite.mockedDirectorURL+"/config", "query", "applications", mockedAppsResponse)
@@ -125,7 +125,7 @@ func toCatalog(t *testing.T, mockApp director.ApplicationsOutput) interface{} {
 	return catalogObj
 }
 
-func genMockApps(n, packages, apiDefs, eventDefs, docs int) director.ApplicationsOutput {
+func genMockApps(n, bundles, apiDefs, eventDefs, docs int) director.ApplicationsOutput {
 	result := director.ApplicationsOutput{
 		Result: &graphql.ApplicationPageExt{
 			ApplicationPage: graphql.ApplicationPage{
@@ -136,32 +136,32 @@ func genMockApps(n, packages, apiDefs, eventDefs, docs int) director.Application
 	}
 
 	for i := 0; i < n; i++ {
-		result.Result.Data = append(result.Result.Data, genMockApp(packages, apiDefs, eventDefs, docs))
+		result.Result.Data = append(result.Result.Data, genMockApp(bundles, apiDefs, eventDefs, docs))
 	}
 	return result
 }
 
-func genMockApp(packages, apiDefs, eventDefs, docs int) *graphql.ApplicationExt {
+func genMockApp(bundles, apiDefs, eventDefs, docs int) *graphql.ApplicationExt {
 	id := uuid.New().String()
 	result := &graphql.ApplicationExt{
 		Application: graphql.Application{
 			ID:   id,
 			Name: "name-" + id,
 		},
-		Packages: graphql.PackagePageExt{
-			Data: []*graphql.PackageExt{},
+		Bundles: graphql.BundlePageExt{
+			Data: []*graphql.BundleExt{},
 		},
 	}
-	for i := 0; i < packages; i++ {
-		result.Packages.Data = append(result.Packages.Data, genMockPackage(apiDefs, eventDefs, docs))
+	for i := 0; i < bundles; i++ {
+		result.Bundles.Data = append(result.Bundles.Data, genMockBundle(apiDefs, eventDefs, docs))
 	}
 	return result
 }
 
-func genMockPackage(apiDefs, eventDefs, docs int) *graphql.PackageExt {
+func genMockBundle(apiDefs, eventDefs, docs int) *graphql.BundleExt {
 	id := uuid.New().String()
-	result := &graphql.PackageExt{
-		Package: graphql.Package{
+	result := &graphql.BundleExt{
+		Bundle: graphql.Bundle{
 			ID:   id,
 			Name: "name-" + id,
 		},
