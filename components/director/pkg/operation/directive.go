@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -45,6 +47,8 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, errors.New(fmt.Sprint("Could not get mode parameter"))
 	}
 
+	ctx = SaveModeToContext(ctx, mode)
+
 	if mode == graphql.OperationModeSync {
 		return next(ctx)
 	}
@@ -52,10 +56,8 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	operation := Operation{
 		OperationType:     op,
 		OperationCategory: resCtx.Field.Name,
-		//CorrelationID:     "", TODO
-		//WebhookID:         "", TODO
-		RelatedResources: make([]RelatedResource, 0),
-		//RequestData:       "", TODO
+		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
+		RelatedResources:  make([]RelatedResource, 0),
 	}
 	ctx = SaveToContext(ctx, operation)
 

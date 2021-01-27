@@ -35,6 +35,10 @@ var headerKeys = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-p
 
 type Headers map[string]string
 
+func CorrelationIDForRequest(request *http.Request) string {
+	return HeadersForRequest(request)[RequestIDHeaderKey]
+}
+
 //AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
 func AttachCorrelationIDToContext() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

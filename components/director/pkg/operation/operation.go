@@ -23,7 +23,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const OpCtxKey = "OperationCtx"
+const (
+	OpCtxKey  = "OperationCtx"
+	OpModeKey = "OperationModeCtx"
+)
 
 type Operation struct {
 	OperationID       string                `json:"id"`
@@ -56,4 +59,20 @@ func FromCtx(ctx context.Context) (Operation, error) {
 	}
 
 	return Operation{}, apperrors.NewInternalError("unable to fetch operation from context")
+}
+
+// SaveModeToContext saves operation mode to the context
+func SaveModeToContext(ctx context.Context, opMode graphql.OperationMode) context.Context {
+	return context.WithValue(ctx, OpModeKey, opMode)
+}
+
+// ModeFromCtx extracts operation mode from context
+func ModeFromCtx(ctx context.Context) graphql.OperationMode {
+	opCtx := ctx.Value(OpModeKey)
+
+	if opMode, ok := opCtx.(graphql.OperationMode); ok {
+		return opMode
+	}
+
+	return graphql.OperationModeSync
 }
