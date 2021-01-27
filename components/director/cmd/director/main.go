@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
@@ -167,6 +169,7 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
+			Async:       operation.NewDirective(transact, nil).HandleOperation,
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultBundleRepo(), defaultBundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,

@@ -1083,6 +1083,90 @@ func (e HealthCheckType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type OperationMode string
+
+const (
+	OperationModeSync  OperationMode = "SYNC"
+	OperationModeAsync OperationMode = "ASYNC"
+)
+
+var AllOperationMode = []OperationMode{
+	OperationModeSync,
+	OperationModeAsync,
+}
+
+func (e OperationMode) IsValid() bool {
+	switch e {
+	case OperationModeSync, OperationModeAsync:
+		return true
+	}
+	return false
+}
+
+func (e OperationMode) String() string {
+	return string(e)
+}
+
+func (e *OperationMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OperationMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OperationMode", str)
+	}
+	return nil
+}
+
+func (e OperationMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OperationType string
+
+const (
+	OperationTypeCreate OperationType = "CREATE"
+	OperationTypeUpdate OperationType = "UPDATE"
+	OperationTypeDelete OperationType = "DELETE"
+)
+
+var AllOperationType = []OperationType{
+	OperationTypeCreate,
+	OperationTypeUpdate,
+	OperationTypeDelete,
+}
+
+func (e OperationType) IsValid() bool {
+	switch e {
+	case OperationTypeCreate, OperationTypeUpdate, OperationTypeDelete:
+		return true
+	}
+	return false
+}
+
+func (e OperationType) String() string {
+	return string(e)
+}
+
+func (e *OperationType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OperationType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OperationType", str)
+	}
+	return nil
+}
+
+func (e OperationType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type RuntimeStatusCondition string
 
 const (

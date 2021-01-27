@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -36,6 +38,18 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
+
+	op, err := operation.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	relatedResource := operation.RelatedResource{
+		ResourceType: c.tableName,
+		ResourceID:   "",
+	}
+
+	op.RelatedResources = append(op.RelatedResources, relatedResource)
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
