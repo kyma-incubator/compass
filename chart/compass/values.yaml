@@ -26,7 +26,7 @@ global:
       version: "PR-1693"
     gateway:
       dir:
-      version: "PR-1698"
+      version: "PR-1692"
     tenant_fetcher:
       dir:
       version: "PR-1698"
