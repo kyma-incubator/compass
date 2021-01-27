@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
@@ -42,24 +41,24 @@ func NewDirective(transact persistence.Transactioner, scheduler Scheduler) *dire
 
 func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, op graphql.OperationType) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
-	mode, ok := resCtx.Args["mode"].(graphql.OperationMode)
+	mode, ok := resCtx.Args["mode"].(*graphql.OperationMode)
 	if !ok {
 		return nil, errors.New(fmt.Sprint("Could not get mode parameter"))
 	}
 
-	ctx = SaveModeToContext(ctx, mode)
+	ctx = SaveModeToContext(ctx, *mode)
 
-	if mode == graphql.OperationModeSync {
+	if *mode == graphql.OperationModeSync {
 		return next(ctx)
 	}
 
-	operation := Operation{
+	operation := &Operation{
 		OperationType:     op,
 		OperationCategory: resCtx.Field.Name,
 		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
 		RelatedResources:  make([]RelatedResource, 0),
 	}
-	ctx = SaveToContext(ctx, operation)
+	ctx = SaveToContext(ctx, &[]*Operation{operation})
 
 	tx, err := d.transact.Begin()
 	if err != nil {
@@ -74,11 +73,6 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, err
 	}
 
-	operation, err = FromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	if len(operation.RelatedResources) == 0 {
 		return nil, errors.New("related resources cannot be empty")
 	}
@@ -86,7 +80,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	operation.ResourceID = operation.RelatedResources[0].ResourceID
 	operation.ResourceType = operation.RelatedResources[0].ResourceType
 
-	operationID, err := d.scheduler.Schedule(operation)
+	operationID, err := d.scheduler.Schedule(*operation)
 	if err != nil {
 		return nil, err
 	}
