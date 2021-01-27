@@ -30,7 +30,7 @@ spec:
     url: "http://{{ .Values.global.ordService.host }}:{{ .Values.global.ordService.port }}"
   match:
     methods: ["GET"]
-    url: <http|https>://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.ordService.prefix }}/<.*>
+    url: <http|https>://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>}<{{ .Values.global.ordService.prefix }}|{{ .Values.global.ordService.staticPrefix }}>/<.*>
   authenticators:
     - handler: oauth2_introspection
   authorizer:

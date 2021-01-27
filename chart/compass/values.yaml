@@ -260,7 +260,9 @@ global:
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
-    prefix: /open-resource-discovery
+    prefix: /open-resource-discovery-service
+    docsPrefix: /open-resource-discovery-docs
+    staticPrefix: /open-resource-discovery-static
     port: 3000
     defaultResponseType: "xml"
 
