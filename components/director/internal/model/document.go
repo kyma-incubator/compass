@@ -5,7 +5,7 @@ import (
 )
 
 type Document struct {
-	PackageID   string
+	BundleID    string
 	ID          string
 	Tenant      string
 	Title       string
@@ -39,13 +39,13 @@ type DocumentPage struct {
 	TotalCount int
 }
 
-func (d *DocumentInput) ToDocumentWithinPackage(id, tenant string, packageID string) *Document {
+func (d *DocumentInput) ToDocumentWithinBundle(id, tenant string, bundleID string) *Document {
 	if d == nil {
 		return nil
 	}
 
 	return &Document{
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		ID:          id,
 		Tenant:      tenant,
 		Title:       d.Title,

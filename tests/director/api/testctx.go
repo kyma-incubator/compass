@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -46,19 +47,21 @@ func newTestContext() (*testContext, error) {
 
 func (tc *testContext) NewOperation(ctx context.Context) *Operation {
 	return &Operation{
-		ctx:      ctx,
-		tenant:   testTenants.GetDefaultTenantID(),
-		scopes:   tc.currentScopes,
-		consumer: &jwtbuilder.Consumer{},
+		ctx:         ctx,
+		tenant:      testTenants.GetDefaultTenantID(),
+		queryParams: map[string]string{},
+		scopes:      tc.currentScopes,
+		consumer:    &jwtbuilder.Consumer{},
 	}
 }
 
 type Operation struct {
 	ctx context.Context
 
-	tenant   string
-	scopes   []string
-	consumer *jwtbuilder.Consumer
+	tenant      string
+	queryParams map[string]string
+	scopes      []string
+	consumer    *jwtbuilder.Consumer
 }
 
 func (o *Operation) WithTenant(tenant string) *Operation {
@@ -76,6 +79,16 @@ func (o *Operation) WithConsumer(consumer *jwtbuilder.Consumer) *Operation {
 	return o
 }
 
+func (o *Operation) WithQueryParam(key, value string) *Operation {
+	o.queryParams[key] = value
+	return o
+}
+
+func (o *Operation) WithQueryParams(queryParams map[string]string) *Operation {
+	o.queryParams = queryParams
+	return o
+}
+
 func (o *Operation) Run(req *gcli.Request, resp interface{}) error {
 	m := resultMapperFor(&resp)
 
@@ -84,7 +97,18 @@ func (o *Operation) Run(req *gcli.Request, resp interface{}) error {
 		return errors.Wrap(err, "while building JWT token")
 	}
 
-	cli := gql.NewAuthorizedGraphQLClient(token)
+	url, err := url.Parse(gql.GetDirectorGraphQLURL())
+	if err != nil {
+		return err
+	}
+
+	query := url.Query()
+	for key, val := range o.queryParams {
+		query.Set(key, val)
+	}
+	url.RawQuery = query.Encode()
+
+	cli := gql.NewAuthorizedGraphQLClientWithCustomURL(token, url.String())
 
 	return withRetryOnTemporaryConnectionProblems(func() error {
 		return cli.Run(o.ctx, req, &m)

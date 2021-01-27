@@ -59,8 +59,8 @@ func (h *ErrorLocationHook) Fire(entry *logrus.Entry) error {
 
 	if stackErr != nil {
 		stackTrace := stackErr.StackTrace()
-		pkg := getPkgName(stackTrace)
-		errSource := fmt.Sprintf("%s/%s:%d:%n", pkg, stackTrace[0], stackTrace[0], stackTrace[0])
+		bndl := getPkgName(stackTrace)
+		errSource := fmt.Sprintf("%s/%s:%d:%n", bndl, stackTrace[0], stackTrace[0], stackTrace[0])
 		entry.Data[errorSourceField] = errSource
 	} else {
 		entry.Data[errorSourceField] = errorSourceFieldUnavailable

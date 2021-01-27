@@ -4,8 +4,8 @@ Copied from https://github.com/kyma-project/kyma/tree/master/components/applicat
 package validation
 
 import (
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/internal/appregistry/model"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 
 	"gopkg.in/asaskevich/govalidator.v9"
 )

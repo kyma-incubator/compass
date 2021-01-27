@@ -10,7 +10,7 @@ import (
 
 func TestDocumentInput_ToDocument(t *testing.T) {
 	// given
-	packageID := "foo"
+	bundleID := "foo"
 	id := "bar"
 	tenant := "baz"
 	kind := "fookind"
@@ -37,7 +37,7 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				},
 			},
 			Expected: &model.Document{
-				PackageID:   packageID,
+				BundleID:    bundleID,
 				ID:          id,
 				Tenant:      tenant,
 				Title:       title,
@@ -60,7 +60,7 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				FetchRequest: nil,
 			},
 			Expected: &model.Document{
-				PackageID:   packageID,
+				BundleID:    bundleID,
 				ID:          id,
 				Tenant:      tenant,
 				Title:       title,
@@ -75,9 +75,9 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 			Name:  "Empty",
 			Input: &model.DocumentInput{},
 			Expected: &model.Document{
-				PackageID: packageID,
-				ID:        id,
-				Tenant:    tenant,
+				BundleID: bundleID,
+				ID:       id,
+				Tenant:   tenant,
 			},
 		},
 		{
@@ -91,7 +91,7 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 
 			// when
-			result := testCase.Input.ToDocumentWithinPackage(id, tenant, packageID)
+			result := testCase.Input.ToDocumentWithinBundle(id, tenant, bundleID)
 
 			// then
 			assert.Equal(t, testCase.Expected, result)

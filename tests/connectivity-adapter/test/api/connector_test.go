@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"testing"
 
+	connectivity_adapter "github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit/connectivity-adapter"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
@@ -16,7 +18,6 @@ import (
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit"
-	"github.com/kyma-incubator/compass/tests/connectivity-adapter/test/testkit/connector"
 	"github.com/stretchr/testify/require"
 )
 
@@ -102,9 +103,9 @@ func TestConnector(t *testing.T) {
 }
 
 func certificateGenerationSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration) {
-	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+	client := connectivity_adapter.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
-	clientKey := connector.CreateKey(t)
+	clientKey := connectivity_adapter.CreateKey(t)
 
 	t.Run("should create client certificate", func(t *testing.T) {
 		// when
@@ -114,11 +115,11 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, crtResponse.CRTChain)
 
 		// when
-		certificates := connector.DecodeAndParseCerts(t, crtResponse)
+		certificates := connectivity_adapter.DecodeAndParseCerts(t, crtResponse)
 
 		// then
 		clientsCrt := certificates.CRTChain[0]
-		connector.CheckIfSubjectEquals(t, infoResponse.Certificate.Subject, clientsCrt)
+		connectivity_adapter.CheckIfSubjectEquals(t, infoResponse.Certificate.Subject, clientsCrt)
 	})
 
 	t.Run("should create two certificates in a chain", func(t *testing.T) {
@@ -129,7 +130,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, crtResponse.CRTChain)
 
 		// when
-		certificates := connector.DecodeAndParseCerts(t, crtResponse)
+		certificates := connectivity_adapter.DecodeAndParseCerts(t, crtResponse)
 
 		// then
 		require.Equal(t, 2, len(certificates.CRTChain))
@@ -143,10 +144,10 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, crtResponse.CRTChain)
 
 		// when
-		certificates := connector.DecodeAndParseCerts(t, crtResponse)
+		certificates := connectivity_adapter.DecodeAndParseCerts(t, crtResponse)
 
 		//then
-		connector.CheckIfCertIsSigned(t, certificates.CRTChain)
+		connectivity_adapter.CheckIfCertIsSigned(t, certificates.CRTChain)
 	})
 
 	t.Run("should respond with client certificate together with CA crt", func(t *testing.T) {
@@ -157,11 +158,11 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, crtResponse.CRTChain)
 
 		// when
-		certificates := connector.DecodeAndParseCerts(t, crtResponse)
+		certificates := connectivity_adapter.DecodeAndParseCerts(t, crtResponse)
 
 		// then
 		clientsCrt := certificates.CRTChain[0]
-		connector.CheckIfSubjectEquals(t, infoResponse.Certificate.Subject, clientsCrt)
+		connectivity_adapter.CheckIfSubjectEquals(t, infoResponse.Certificate.Subject, clientsCrt)
 		require.Equal(t, certificates.ClientCRT, clientsCrt)
 
 		caCrt := certificates.CRTChain[1]
@@ -186,8 +187,8 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 
 		// given
 		infoResponse.Certificate.Subject = "subject=OU=Test,O=Test,L=Wrong,ST=Wrong,C=PL,CN=Wrong"
-		csr := connector.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
-		csrBase64 := connector.EncodeBase64(csr)
+		csr := connectivity_adapter.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
+		csrBase64 := connectivity_adapter.EncodeBase64(csr)
 
 		// when
 		_, err := client.CreateCertChain(t, csrBase64, infoResponse.CertURL)
@@ -282,7 +283,7 @@ func certificateGenerationSuite(t *testing.T, directorClient director.Client, ap
 func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
 	t.Run("should use default values to build CSR info response", func(t *testing.T) {
 		// given
-		client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+		client := connectivity_adapter.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 		expectedMetadataURL := config.ConnectivityAdapterMtlsUrl
 		expectedEventsURL := config.EventsBaseURL
 
@@ -317,9 +318,9 @@ func appCsrInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 }
 
 func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration, appName string, appNameLabelExists, shouldNormalizeEventURL bool) {
-	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+	client := connectivity_adapter.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
 
-	clientKey := connector.CreateKey(t)
+	clientKey := connectivity_adapter.CreateKey(t)
 
 	t.Run("should use default values to build management info", func(t *testing.T) {
 		// given
@@ -346,8 +347,8 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		require.NotEmpty(t, crtResponse.CRTChain)
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 
-		certificates := connector.DecodeAndParseCerts(t, crtResponse)
-		client := connector.NewSecuredConnectorClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		certificates := connectivity_adapter.DecodeAndParseCerts(t, crtResponse)
+		client := connectivity_adapter.NewSecuredClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
 
 		// when
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
@@ -364,8 +365,8 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 		}
 
 		assert.NotEmpty(t, mgmInfoResponse.Certificate.Subject)
-		assert.Equal(t, connector.Extensions, mgmInfoResponse.Certificate.Extensions)
-		assert.Equal(t, connector.KeyAlgorithm, mgmInfoResponse.Certificate.KeyAlgorithm)
+		assert.Equal(t, connectivity_adapter.Extensions, mgmInfoResponse.Certificate.Extensions)
+		assert.Equal(t, connectivity_adapter.KeyAlgorithm, mgmInfoResponse.Certificate.KeyAlgorithm)
 
 		assert.Empty(t, mgmInfoResponse.ClientIdentity.Group)
 
@@ -375,8 +376,8 @@ func appMgmInfoEndpointSuite(t *testing.T, directorClient director.Client, appID
 }
 
 func certificateRotationSuite(t *testing.T, directorClient director.Client, appID string, config testkit.Configuration) {
-	client := connector.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
-	clientKey := connector.CreateKey(t)
+	client := connectivity_adapter.NewConnectorClient(directorClient, appID, config.Tenant, config.SkipSslVerify)
+	clientKey := connectivity_adapter.CreateKey(t)
 
 	t.Run("should renew client certificate", func(t *testing.T) {
 		// when
@@ -385,8 +386,8 @@ func certificateRotationSuite(t *testing.T, directorClient director.Client, appI
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 		require.NotEmpty(t, infoResponse.Certificate)
 
-		certificates := connector.DecodeAndParseCerts(t, crtResponse)
-		client := connector.NewSecuredConnectorClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		certificates := connectivity_adapter.DecodeAndParseCerts(t, crtResponse)
+		client := connectivity_adapter.NewSecuredClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)
@@ -394,16 +395,16 @@ func certificateRotationSuite(t *testing.T, directorClient director.Client, appI
 		require.NotEmpty(t, mgmInfoResponse.Certificate)
 		require.Equal(t, infoResponse.Certificate, mgmInfoResponse.Certificate)
 
-		csr := connector.CreateCsr(t, mgmInfoResponse.Certificate.Subject, clientKey)
-		csrBase64 := connector.EncodeBase64(csr)
+		csr := connectivity_adapter.CreateCsr(t, mgmInfoResponse.Certificate.Subject, clientKey)
+		csrBase64 := connectivity_adapter.EncodeBase64(csr)
 
 		certificateResponse, errorResponse := client.RenewCertificate(t, mgmInfoResponse.URLs.RenewCertURL, csrBase64)
 
 		// then
 		require.Nil(t, errorResponse)
 
-		certificates = connector.DecodeAndParseCerts(t, certificateResponse)
-		clientWithRenewedCert := connector.NewSecuredConnectorClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
+		certificates = connectivity_adapter.DecodeAndParseCerts(t, certificateResponse)
+		clientWithRenewedCert := connectivity_adapter.NewSecuredClient(config.SkipSslVerify, clientKey, certificates.ClientCRT.Raw, config.Tenant)
 
 		mgmInfoResponse, errorResponse = clientWithRenewedCert.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 		require.Nil(t, errorResponse)
@@ -411,9 +412,9 @@ func certificateRotationSuite(t *testing.T, directorClient director.Client, appI
 }
 
 func certificateRevocationSuite(t *testing.T, directorClient director.Client, appID, tenant string, skipVerify bool) {
-	client := connector.NewConnectorClient(directorClient, appID, tenant, skipVerify)
+	client := connectivity_adapter.NewConnectorClient(directorClient, appID, tenant, skipVerify)
 
-	clientKey := connector.CreateKey(t)
+	clientKey := connectivity_adapter.CreateKey(t)
 
 	t.Run("should revoke client certificate with external API", func(t *testing.T) {
 		// when
@@ -424,8 +425,8 @@ func certificateRevocationSuite(t *testing.T, directorClient director.Client, ap
 		require.NotEmpty(t, infoResponse.Api.ManagementInfoURL)
 
 		// when
-		certificates := connector.DecodeAndParseCerts(t, crtResponse)
-		client := connector.NewSecuredConnectorClient(skipVerify, clientKey, certificates.ClientCRT.Raw, tenant)
+		certificates := connectivity_adapter.DecodeAndParseCerts(t, crtResponse)
+		client := connectivity_adapter.NewSecuredClient(skipVerify, clientKey, certificates.ClientCRT.Raw, tenant)
 
 		mgmInfoResponse, errorResponse := client.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
 
@@ -440,8 +441,8 @@ func certificateRevocationSuite(t *testing.T, directorClient director.Client, ap
 		require.Nil(t, errorResponse)
 
 		// when
-		csr := connector.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
-		csrBase64 := connector.EncodeBase64(csr)
+		csr := connectivity_adapter.CreateCsr(t, infoResponse.Certificate.Subject, clientKey)
+		csrBase64 := connectivity_adapter.EncodeBase64(csr)
 
 		_, errorResponse = client.RenewCertificate(t, mgmInfoResponse.URLs.RenewCertURL, csrBase64)
 
@@ -451,7 +452,7 @@ func certificateRevocationSuite(t *testing.T, directorClient director.Client, ap
 	})
 }
 
-func createCertificateChain(t *testing.T, connectorClient connector.ConnectorClient, key *rsa.PrivateKey) (*connector.CrtResponse, *connector.InfoResponse) {
+func createCertificateChain(t *testing.T, connectorClient connectivity_adapter.ConnectorClient, key *rsa.PrivateKey) (*connectivity_adapter.CrtResponse, *connectivity_adapter.InfoResponse) {
 	// when
 	tokenResponse := connectorClient.CreateToken(t)
 
@@ -468,8 +469,8 @@ func createCertificateChain(t *testing.T, connectorClient connector.ConnectorCli
 	require.Equal(t, "rsa2048", infoResponse.Certificate.KeyAlgorithm)
 
 	// given
-	csr := connector.CreateCsr(t, infoResponse.Certificate.Subject, key)
-	csrBase64 := connector.EncodeBase64(csr)
+	csr := connectivity_adapter.CreateCsr(t, infoResponse.Certificate.Subject, key)
+	csrBase64 := connectivity_adapter.EncodeBase64(csr)
 
 	// when
 	crtResponse, errorResponse := connectorClient.CreateCertChain(t, csrBase64, infoResponse.CertURL)

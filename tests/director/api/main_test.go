@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -17,7 +18,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	transact, closeFunc, err := persistence.Configure(log.StandardLogger(), dbCfg)
+	transact, closeFunc, err := persistence.Configure(context.TODO(), dbCfg)
 
 	defer func() {
 		err := closeFunc()

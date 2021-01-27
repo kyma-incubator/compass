@@ -41,13 +41,13 @@ func TestAppError(t *testing.T) {
 
 	t.Run("should append apperrors without changing error code", func(t *testing.T) {
 		//given
-		createdInternalErr := Internal("Some Internal apperror, %s", "Some pkg err")
-		createdNotFoundErr := NotFound("Some NotFound apperror, %s", "Some pkg err")
-		createdAlreadyExistsErr := AlreadyExists("Some AlreadyExists apperror, %s", "Some pkg err")
-		createdWrongInputErr := WrongInput("Some WrongInput apperror, %s", "Some pkg err")
-		createdUpstreamServerCallFailedErr := UpstreamServerCallFailed("Some UpstreamServerCallFailed apperror, %s", "Some pkg err")
-		createdForbiddenErr := Forbidden("Some Forbidden apperror, %s", "Some pkg err")
-		createdBadRequestErr := BadRequest("Some BadRequest apperror, %s", "Some pkg err")
+		createdInternalErr := Internal("Some Internal apperror, %s", "Some bndl err")
+		createdNotFoundErr := NotFound("Some NotFound apperror, %s", "Some bndl err")
+		createdAlreadyExistsErr := AlreadyExists("Some AlreadyExists apperror, %s", "Some bndl err")
+		createdWrongInputErr := WrongInput("Some WrongInput apperror, %s", "Some bndl err")
+		createdUpstreamServerCallFailedErr := UpstreamServerCallFailed("Some UpstreamServerCallFailed apperror, %s", "Some bndl err")
+		createdForbiddenErr := Forbidden("Some Forbidden apperror, %s", "Some bndl err")
+		createdBadRequestErr := BadRequest("Some BadRequest apperror, %s", "Some bndl err")
 
 		//when
 		appendedInternalErr := createdInternalErr.Append("Some additional message")
@@ -70,13 +70,13 @@ func TestAppError(t *testing.T) {
 
 	t.Run("should append apperrors and chain messages correctly", func(t *testing.T) {
 		//given
-		createdInternalErr := Internal("Some Internal apperror, %s", "Some pkg err")
-		createdNotFoundErr := NotFound("Some NotFound apperror, %s", "Some pkg err")
-		createdAlreadyExistsErr := AlreadyExists("Some AlreadyExists apperror, %s", "Some pkg err")
-		createdWrongInputErr := WrongInput("Some WrongInput apperror, %s", "Some pkg err")
-		createdUpstreamServerCallFailedErr := UpstreamServerCallFailed("Some UpstreamServerCallFailed apperror, %s", "Some pkg err")
-		createdForbiddenErr := Forbidden("Some Forbidden apperror, %s", "Some pkg err")
-		createdBadRequestErr := BadRequest("Some BadRequest apperror, %s", "Some pkg err")
+		createdInternalErr := Internal("Some Internal apperror, %s", "Some bndl err")
+		createdNotFoundErr := NotFound("Some NotFound apperror, %s", "Some bndl err")
+		createdAlreadyExistsErr := AlreadyExists("Some AlreadyExists apperror, %s", "Some bndl err")
+		createdWrongInputErr := WrongInput("Some WrongInput apperror, %s", "Some bndl err")
+		createdUpstreamServerCallFailedErr := UpstreamServerCallFailed("Some UpstreamServerCallFailed apperror, %s", "Some bndl err")
+		createdForbiddenErr := Forbidden("Some Forbidden apperror, %s", "Some bndl err")
+		createdBadRequestErr := BadRequest("Some BadRequest apperror, %s", "Some bndl err")
 
 		//when
 		appendedInternalErr := createdInternalErr.Append("Some additional message: %s", "error")
@@ -88,12 +88,12 @@ func TestAppError(t *testing.T) {
 		appendedBadRequestErr := createdBadRequestErr.Append("Some additional message: %s", "error")
 
 		//then
-		assert.Equal(t, "Some additional message: error, Some Internal apperror, Some pkg err", appendedInternalErr.Error())
-		assert.Equal(t, "Some additional message: error, Some NotFound apperror, Some pkg err", appendedNotFoundErr.Error())
-		assert.Equal(t, "Some additional message: error, Some AlreadyExists apperror, Some pkg err", appendedAlreadyExistsErr.Error())
-		assert.Equal(t, "Some additional message: error, Some WrongInput apperror, Some pkg err", appendedWrongInputErr.Error())
-		assert.Equal(t, "Some additional message: error, Some UpstreamServerCallFailed apperror, Some pkg err", appendedUpstreamServerCallFailedErr.Error())
-		assert.Equal(t, "Some additional message: error, Some Forbidden apperror, Some pkg err", appendedForbiddenErr.Error())
-		assert.Equal(t, "Some additional message: error, Some BadRequest apperror, Some pkg err", appendedBadRequestErr.Error())
+		assert.Equal(t, "Some additional message: error, Some Internal apperror, Some bndl err", appendedInternalErr.Error())
+		assert.Equal(t, "Some additional message: error, Some NotFound apperror, Some bndl err", appendedNotFoundErr.Error())
+		assert.Equal(t, "Some additional message: error, Some AlreadyExists apperror, Some bndl err", appendedAlreadyExistsErr.Error())
+		assert.Equal(t, "Some additional message: error, Some WrongInput apperror, Some bndl err", appendedWrongInputErr.Error())
+		assert.Equal(t, "Some additional message: error, Some UpstreamServerCallFailed apperror, Some bndl err", appendedUpstreamServerCallFailedErr.Error())
+		assert.Equal(t, "Some additional message: error, Some Forbidden apperror, Some bndl err", appendedForbiddenErr.Error())
+		assert.Equal(t, "Some additional message: error, Some BadRequest apperror, Some bndl err", appendedBadRequestErr.Error())
 	})
 }

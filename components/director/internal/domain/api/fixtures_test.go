@@ -20,13 +20,13 @@ const (
 	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 )
 
-func fixAPIDefinitionModel(id string, pkgID string, name, targetURL string) *model.APIDefinition {
+func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:        id,
-		PackageID: pkgID,
+		BundleID:  bndlID,
 		Name:      name,
 		TargetURL: targetURL,
 	}
@@ -52,7 +52,7 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	return model.APIDefinition{
 		ID:          apiDefID,
 		Tenant:      tenantID,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
@@ -62,10 +62,10 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 	}
 }
 
-func fixGQLAPIDefinition(id string, pkgId string, name, targetURL string) *graphql.APIDefinition {
+func fixGQLAPIDefinition(id string, bndlId string, name, targetURL string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
 		ID:        id,
-		PackageID: pkgId,
+		BundleID:  bndlId,
 		Name:      name,
 		TargetURL: targetURL,
 	}
@@ -94,7 +94,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 
 	return &graphql.APIDefinition{
 		ID:          apiDefID,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
@@ -238,10 +238,10 @@ func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 	}
 }
 
-func fixEntityAPIDefinition(id string, pkgID string, name, targetUrl string) api.Entity {
+func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) api.Entity {
 	return api.Entity{
 		ID:        id,
-		PkgID:     pkgID,
+		BndlID:    bndlID,
 		Name:      name,
 		TargetURL: targetUrl,
 	}
@@ -253,7 +253,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
 		ID:          apiDefID,
 		TenantID:    tenantID,
-		PkgID:       packageID,
+		BndlID:      bundleID,
 		Name:        placeholder,
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		Group:       repo.NewValidNullableString("group_" + placeholder),
@@ -273,19 +273,19 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 }
 
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "package_id", "name", "description", "group_name", "target_url", "spec_data",
+	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated",
 		"version_deprecated_since", "version_for_removal"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		fmt.Sprintf("https://%s.com", placeholder), "spec_data_" + placeholder, "YAML", "OPEN_API",
 		"v1.1", false, "v1.0", false}
 }
 
 func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, packageID, api.Name, api.Description, api.Group,
+	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
 		api.TargetURL, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
 		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
 		api.Version.ForRemoval}

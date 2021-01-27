@@ -155,7 +155,7 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
-		Packages: []*model.PackageCreateInput{
+		Bundles: []*model.BundleCreateInput{
 			{
 				Name: "foo",
 				APIDefinitions: []*model.APIDefinitionInput{
@@ -208,7 +208,7 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 			{URL: "webhook1.foo.bar"},
 			{URL: "webhook2.foo.bar"},
 		},
-		Packages: []*graphql.PackageCreateInput{
+		Bundles: []*graphql.BundleCreateInput{
 			{
 				Name: "foo",
 				APIDefinitions: []*graphql.APIDefinitionInput{
@@ -245,14 +245,14 @@ var (
 	docCLOB  = graphql.CLOB(docData)
 )
 
-func fixModelDocument(packageID, id string) *model.Document {
+func fixModelDocument(bundleID, id string) *model.Document {
 	return &model.Document{
-		PackageID: packageID,
-		ID:        id,
-		Title:     docTitle,
-		Format:    model.DocumentFormatMarkdown,
-		Kind:      &docKind,
-		Data:      &docData,
+		BundleID: bundleID,
+		ID:       id,
+		Title:    docTitle,
+		Format:   model.DocumentFormatMarkdown,
+		Kind:     &docKind,
+		Data:     &docData,
 	}
 }
 
@@ -333,10 +333,10 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 	}
 }
 
-func fixModelEventAPIDefinition(id string, appId, packageID string, name, description string, group string) *model.EventDefinition {
+func fixModelEventAPIDefinition(id string, appId, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
 		ID:          id,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -344,12 +344,12 @@ func fixModelEventAPIDefinition(id string, appId, packageID string, name, descri
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
 	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		PackageID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
+		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
 }
-func fixGQLEventDefinition(id string, appId, packageID string, name, description string, group string) *graphql.EventDefinition {
+func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:          id,
-		PackageID:   packageID,
+		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -399,8 +399,8 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 	}
 }
 
-func fixModelPackage(id, tenantID, appId, name, description string) *model.Package {
-	return &model.Package{
+func fixModelBundle(id, tenantID, appId, name, description string) *model.Bundle {
+	return &model.Bundle{
 		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  appId,
@@ -411,8 +411,8 @@ func fixModelPackage(id, tenantID, appId, name, description string) *model.Packa
 	}
 }
 
-func fixGQLPackage(id, appId, name, description string) *graphql.Package {
-	return &graphql.Package{
+func fixGQLBundle(id, appId, name, description string) *graphql.Bundle {
+	return &graphql.Bundle{
 		ID:                             id,
 		Name:                           name,
 		Description:                    &description,
@@ -421,26 +421,26 @@ func fixGQLPackage(id, appId, name, description string) *graphql.Package {
 	}
 }
 
-func fixGQLPackagePage(packages []*graphql.Package) *graphql.PackagePage {
-	return &graphql.PackagePage{
-		Data: packages,
+func fixGQLBundlePage(bundles []*graphql.Bundle) *graphql.BundlePage {
+	return &graphql.BundlePage{
+		Data: bundles,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: "start",
 			EndCursor:   "end",
 			HasNextPage: false,
 		},
-		TotalCount: len(packages),
+		TotalCount: len(bundles),
 	}
 }
 
-func fixPackagePage(packages []*model.Package) *model.PackagePage {
-	return &model.PackagePage{
-		Data: packages,
+func fixBundlePage(bundles []*model.Bundle) *model.BundlePage {
+	return &model.BundlePage{
+		Data: bundles,
 		PageInfo: &pagination.Page{
 			StartCursor: "start",
 			EndCursor:   "end",
 			HasNextPage: false,
 		},
-		TotalCount: len(packages),
+		TotalCount: len(bundles),
 	}
 }
