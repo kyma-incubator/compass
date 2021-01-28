@@ -4,13 +4,18 @@ The System Broker exposes OSB API as well as an endpoint for fetching specificat
 
 ## Development
 
-System broker can be rum locally by the run.sh script:
+### Local
+
+The System Broker component can be run locally using the `run.sh` script.
 
 ```bash
 ./run.sh
 ```
 
-By default, the system broker API is accessible at `locahost:8080/broker`. **Authorization** and **X-Broker-API-Version** headers should be added. The following token canbe used for authorization:
+By default, the System Broker API is accessible at `locahost:8080/broker`. 
+
+Calls made to the API should provide **Authorization** and **X-Broker-API-Version** headers.  The following token 
+can be used for authorization:
 
 `eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0.`
 
@@ -18,13 +23,19 @@ Thus, an example call to local broker would be:
 
 `curl -H "X-Broker-API-Version: 2.15" -H "Authorization: Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0." localhost:8080/broker/v2/catalog`
 
-In order to run full Kyma on minikube and Compass with system broker:
+#### Note
+The System Broker makes API calls to the Director component, so in order to successfully use the System Broker, a 
+Director component should be also started. Go to the `compass/components/director/` directory and run the `run.sh` 
+script.
 
-1. Checkout `system-broker`, navigate to `compass/installation/cmd` and execute `./run.sh --kyma-installation full`. Specify `--kyma-installation minimal` if you want to run just Compass with minimal Kyma dependencies.
-2. When the installer prints out `Status: InProgress, description: install component compass` navigate to the `system-broker` directory and execute `make deploy-on-minikube`
-3. Checkout `global_applications` branch, navigate to the `director` directory and execute `make deploy-on-minikube` 
+### Minikube
 
-By default, the system broker API is accessible at `https://compass-gateway.kyma.local/broker`.
+The System Broker is a component that is part of the Compass installation, so it's enough to start Compass on `minikube`.
+
+Steps:
+
+1. Navigate to `compass/installation/cmd` and execute `./run.sh --kyma-installation full` which starts Compass on top of a fully-featured Kyma cluster (or use the `--kyma-installation minimal` flag if you want to run Compass with minimal Kyma dependencies).
+2. Access the System Broker API at `https://compass-gateway-mtls.kyma.local/broker`.
 
 ## Configuration
 
