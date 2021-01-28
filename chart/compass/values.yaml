@@ -32,7 +32,7 @@ global:
       version: "PR-1698"
     ord_service:
       dir:
-      version: "PR-8"
+      version: "PR-10"
     healthchecker:
       dir:
       version: "PR-1698"
