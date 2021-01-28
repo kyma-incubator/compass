@@ -129,19 +129,19 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service api specification do not have tenant header", func(t *testing.T) {
-		makeRequestWithStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), http.StatusBadRequest)
+		makeRequestWithStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service event specification do not have tenant header", func(t *testing.T) {
-		makeRequestWithStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), http.StatusBadRequest)
+		makeRequestWithStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service api specification have wrong tenant header", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
@@ -244,7 +244,7 @@ func TestORDService(t *testing.T) {
 
 				specURL := specs[0].Get("url").String()
 				specPath := fmt.Sprintf("/api/%s/specification", apiID)
-				require.Equal(t, testConfig.ORDServiceURL+specPath, specURL)
+				require.Equal(t, testConfig.ORDServiceStaticURL+specPath, specURL)
 
 				respBody := makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testData.tenant}})
 
@@ -310,7 +310,7 @@ func TestORDService(t *testing.T) {
 
 				specURL := specs[0].Get("url").String()
 				specPath := fmt.Sprintf("/event/%s/specification", eventID)
-				require.Equal(t, testConfig.ORDServiceURL+specPath, specURL)
+				require.Equal(t, testConfig.ORDServiceStaticURL+specPath, specURL)
 
 				respBody := makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testData.tenant}})
 
@@ -477,13 +477,13 @@ func TestORDService(t *testing.T) {
 	}
 
 	t.Run("404 when request to ORD Service for api spec have another tenant header value", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
 	})
 
 	t.Run("404 when request to ORD Service for event spec have another tenant header value", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
 	})
 
 	t.Run("Errors generate user-friendly message", func(t *testing.T) {

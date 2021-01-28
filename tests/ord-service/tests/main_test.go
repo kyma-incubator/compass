@@ -31,6 +31,7 @@ type config struct {
 	Tenant                        string
 	DirectorURL                   string
 	ORDServiceURL                 string
+	ORDServiceStaticURL           string
 	ORDServiceDefaultResponseType string
 }
 
