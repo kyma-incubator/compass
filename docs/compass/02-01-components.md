@@ -15,7 +15,7 @@ Application represents any external system that you want to register to Compass 
 
 ## Management Plane
 
-Management Plan is the cluster on which Compass, Cockpit, and Runtime Provisioner components are deployed.
+Management Plane is the cluster on which Compass, Cockpit, and Runtime Provisioner components are deployed.
 
 ## Kyma Runtime
 

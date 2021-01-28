@@ -38,7 +38,17 @@ spec:
             number: {{ .Values.global.tenantFetcher.port }}
     - match:
       - uri:
+          prefix:  {{ .Values.global.ordService.docsPrefix }}
+      route:
+      - destination:
+          host: {{ .Values.global.ordService.host }}
+          port:
+            number: {{ .Values.global.ordService.port }}
+    - match:
+      - uri:
           prefix: {{ .Values.global.ordService.prefix }}
+      - uri:
+          prefix: {{ .Values.global.ordService.staticPrefix }}
       route:
         - destination:
             host: {{ .Values.global.oathkeeper.host }}
