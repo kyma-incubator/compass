@@ -27,17 +27,17 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . converter
-type converter interface {
+type Converter interface {
 	Convert(app *schema.ApplicationExt) (*domain.Service, error)
 }
 
 type CatalogEndpoint struct {
-	lister    applicationsLister
-	converter converter
+	lister    ApplicationsLister
+	converter Converter
 }
 
-func NewCatalogEndpoint(l applicationsLister, c converter) *CatalogEndpoint {
-	return &CatalogEndpoint{lister: l, converter: c}
+func NewCatalogEndpoint(l ApplicationsLister, c Converter) *CatalogEndpoint {
+	return &CatalogEndpoint{l, c}
 }
 
 func (b *CatalogEndpoint) Services(ctx context.Context) ([]domain.Service, error) {

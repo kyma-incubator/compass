@@ -17,41 +17,25 @@
 package osb
 
 type GqlClientForBroker interface {
-	applicationsLister
-	bundleCredentialsFetcher
-	bundleCredentialsFetcherForInstance
-	bundleCredentialsCreateRequester
-	bundleCredentialsDeleteRequester
+	ApplicationsLister
+	BundleCredentialsFetcher
+	BundleCredentialsFetcherForInstance
+	BundleCredentialsCreateRequester
+	BundleCredentialsDeleteRequester
 }
 
 func NewSystemBroker(client GqlClientForBroker, selfURL string) *SystemBroker {
 	return &SystemBroker{
-		CatalogEndpoint: &CatalogEndpoint{
-			lister: client,
-			converter: &Converter{
-				baseURL:      selfURL,
-				MapConverter: MapConverter{},
-			},
-		},
-		ProvisionEndpoint:             &ProvisionEndpoint{},
-		DeprovisionEndpoint:           &DeprovisionEndpoint{},
-		UpdateInstanceEndpoint:        &UpdateInstanceEndpoint{},
-		GetInstanceEndpoint:           &GetInstanceEndpoint{},
-		InstanceLastOperationEndpoint: &InstanceLastOperationEndpoint{},
-		BindEndpoint: &BindEndpoint{
-			credentialsCreator: client,
-			credentialsGetter:  client,
-		},
-		UnbindEndpoint: &UnbindEndpoint{
-			credentialsDeleter: client,
-			credentialsGetter:  client,
-		},
-		GetBindingEndpoint: &GetBindingEndpoint{
-			credentialsGetter: client,
-		},
-		BindLastOperationEndpoint: &BindLastOperationEndpoint{
-			credentialsGetter: client,
-		},
+		CatalogEndpoint:               NewCatalogEndpoint(client, &CatalogConverter{BaseURL: selfURL}),
+		ProvisionEndpoint:             NewProvisionEndpoint(),
+		DeprovisionEndpoint:           NewDeprovisionEndpoint(),
+		UpdateInstanceEndpoint:        NewUpdateInstanceEndpoint(),
+		GetInstanceEndpoint:           NewGetInstanceEndpoint(),
+		InstanceLastOperationEndpoint: NewInstanceLastOperationEndpoint(),
+		BindEndpoint:                  NewBindEndpoint(client, client),
+		UnbindEndpoint:                NewUnbindEndpoint(client, client),
+		GetBindingEndpoint:            NewGetBindingEndpoint(client),
+		BindLastOperationEndpoint:     NewBindLastOperationEndpoint(client),
 	}
 }
 

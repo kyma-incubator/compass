@@ -26,6 +26,10 @@ import (
 type ProvisionEndpoint struct {
 }
 
+func NewProvisionEndpoint() *ProvisionEndpoint {
+	return &ProvisionEndpoint{}
+}
+
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
 	log.C(ctx).Infof("Provision instance with instanceID: %s, serviceID: %s, planID: %s, parameters: %s context: %s asyncAllowed: %t", instanceID, details.ServiceID, details.PlanID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
 

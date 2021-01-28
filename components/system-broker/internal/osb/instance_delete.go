@@ -26,6 +26,10 @@ import (
 type DeprovisionEndpoint struct {
 }
 
+func NewDeprovisionEndpoint() *DeprovisionEndpoint {
+	return &DeprovisionEndpoint{}
+}
+
 func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string, details domain.DeprovisionDetails, asyncAllowed bool) (domain.DeprovisionServiceSpec, error) {
 	log.C(ctx).Infof("Deprovision instance with instanceID: %s, serviceID: %s, planID %s, asyncAllowed: %t force: %t", instanceID, details.ServiceID, details.PlanID, asyncAllowed, details.Force)
 

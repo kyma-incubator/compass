@@ -28,7 +28,13 @@ import (
 )
 
 type BindLastOperationEndpoint struct {
-	credentialsGetter bundleCredentialsFetcher
+	credentialsGetter BundleCredentialsFetcher
+}
+
+func NewBindLastOperationEndpoint(credentialsGetter BundleCredentialsFetcher) *BindLastOperationEndpoint {
+	return &BindLastOperationEndpoint{
+		credentialsGetter: credentialsGetter,
+	}
 }
 
 func (b *BindLastOperationEndpoint) LastBindingOperation(ctx context.Context, instanceID, bindingID string, details domain.PollDetails) (domain.LastOperation, error) {

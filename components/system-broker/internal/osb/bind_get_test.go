@@ -1,4 +1,4 @@
-package osb
+package osb_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb/osbfakes"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -17,16 +18,14 @@ func TestBindGet(t *testing.T) {
 
 	var (
 		fakeCredentialsGetter *osbfakes.FakeBundleCredentialsFetcherForInstance
-		be                    *GetBindingEndpoint
+		be                    *osb.GetBindingEndpoint
 		bundleInstanceAuth    *director.BundleInstanceCredentialsOutput
 	)
 
 	setup := func() {
 		fakeCredentialsGetter = &osbfakes.FakeBundleCredentialsFetcherForInstance{}
 
-		be = &GetBindingEndpoint{
-			credentialsGetter: fakeCredentialsGetter,
-		}
+		be = osb.NewGetBindingEndpoint(fakeCredentialsGetter)
 
 		bundleInstanceAuth = &director.BundleInstanceCredentialsOutput{
 			InstanceAuth: &graphql.BundleInstanceAuth{
@@ -53,7 +52,7 @@ func TestBindGet(t *testing.T) {
 		binding, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceCredentialsCallCount())
-		creds, ok := binding.Credentials.(BindingCredentials)
+		creds, ok := binding.Credentials.(osb.BindingCredentials)
 		assert.True(t, ok)
 		basicCreds := creds.AuthDetails.Credentials.ToCredentials().BasicAuth
 		assert.Equal(t, "username", basicCreds.Username)
@@ -92,7 +91,7 @@ func TestBindGet(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchBundleInstanceCredentialsReturns(
 			nil,
-			&notFoundErr{},
+			&NotFoundErr{},
 		)
 		_, err := be.GetBinding(context.TODO(), instanceID, bindingID)
 		assert.Error(t, err)

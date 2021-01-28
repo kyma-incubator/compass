@@ -30,14 +30,17 @@ import (
 )
 
 type BindEndpoint struct {
-	credentialsCreator bundleCredentialsCreateRequester
-	credentialsGetter  bundleCredentialsFetcher
+	credentialsCreator BundleCredentialsCreateRequester
+	credentialsGetter  BundleCredentialsFetcher
 }
 
-// option 1 - have a storage for operations and spawn a go routine during provision that will eventually update the op status, poll last op api just fetches op from storage; benefit - no switch case in last op handler
-// option 2 - have naming pattern on operation id; no operation storage and no go routine during provision, instead, fetch creds during poll last op (op_id returned to platform returns all credential coordinates so that during poll last op we can see the credentials status); drawback - magic op_id pattern, switch case in last op handler
-// option 3 - have a storage for operations and operations also store credential coordinates (appid,packageid), in provision op in inserted, in poll last op, op is fetched and based on coords creds are fetched and status is checked - drawbacks - storage is needed, we still have a switch on poll last op
-// preferred option is 2 - requires less cpu/memory (no extra background go routines) and also does not need persistent storage
+func NewBindEndpoint(credentialsCreator BundleCredentialsCreateRequester, credentialsGetter BundleCredentialsFetcher) *BindEndpoint {
+	return &BindEndpoint{
+		credentialsCreator: credentialsCreator,
+		credentialsGetter:  credentialsGetter,
+	}
+}
+
 func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, details domain.BindDetails, asyncAllowed bool) (domain.Binding, error) {
 	log.C(ctx).Infof("Bind instanceID: %s bindingID: %s parameters: %s context: %s asyncAllowed: %t", instanceID, bindingID, string(details.RawParameters), string(details.RawContext), asyncAllowed)
 

@@ -30,7 +30,13 @@ import (
 )
 
 type GetBindingEndpoint struct {
-	credentialsGetter bundleCredentialsFetcherForInstance
+	credentialsGetter BundleCredentialsFetcherForInstance
+}
+
+func NewGetBindingEndpoint(credentialsGetter BundleCredentialsFetcherForInstance) *GetBindingEndpoint {
+	return &GetBindingEndpoint{
+		credentialsGetter: credentialsGetter,
+	}
 }
 
 func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, bindingID string) (domain.GetBindingSpec, error) {

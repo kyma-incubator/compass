@@ -27,6 +27,10 @@ import (
 type UpdateInstanceEndpoint struct {
 }
 
+func NewUpdateInstanceEndpoint() *UpdateInstanceEndpoint {
+	return &UpdateInstanceEndpoint{}
+}
+
 func (b *UpdateInstanceEndpoint) Update(ctx context.Context, instanceID string, details domain.UpdateDetails, asyncAllowed bool) (domain.UpdateServiceSpec, error) {
 	log.C(ctx).Infof("Update instanceID: %s details: %+v asyncAllowed: %v", instanceID, details, asyncAllowed)
 

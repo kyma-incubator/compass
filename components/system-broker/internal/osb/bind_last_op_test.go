@@ -1,4 +1,4 @@
-package osb
+package osb_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb/osbfakes"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
@@ -18,7 +19,7 @@ func TestBindLastOp(t *testing.T) {
 
 	var (
 		fakeCredentialsGetter *osbfakes.FakeBundleCredentialsFetcher
-		be                    *BindLastOperationEndpoint
+		be                    *osb.BindLastOperationEndpoint
 		bundleInstanceAuth    *director.BundleInstanceAuthOutput
 		details               domain.PollDetails
 	)
@@ -26,9 +27,7 @@ func TestBindLastOp(t *testing.T) {
 	setup := func() {
 		fakeCredentialsGetter = &osbfakes.FakeBundleCredentialsFetcher{}
 
-		be = &BindLastOperationEndpoint{
-			credentialsGetter: fakeCredentialsGetter,
-		}
+		be = osb.NewBindLastOperationEndpoint(fakeCredentialsGetter)
 
 		bundleInstanceAuth = &director.BundleInstanceAuthOutput{
 			InstanceAuth: &graphql.BundleInstanceAuth{
@@ -43,7 +42,7 @@ func TestBindLastOp(t *testing.T) {
 		details = domain.PollDetails{
 			ServiceID:     "serviceID",
 			PlanID:        "planID",
-			OperationData: string(BindOp),
+			OperationData: string(osb.BindOp),
 		}
 	}
 
@@ -108,7 +107,7 @@ func TestBindLastOp(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
-			&notFoundErr{},
+			&NotFoundErr{},
 		)
 		_, err := be.LastBindingOperation(context.TODO(), instanceID, bindingID, details)
 		assert.Error(t, err)
@@ -131,9 +130,9 @@ func TestBindLastOp(t *testing.T) {
 		setup()
 		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
-			&notFoundErr{},
+			&NotFoundErr{},
 		)
-		details.OperationData = string(UnbindOp)
+		details.OperationData = string(osb.UnbindOp)
 		lastOp, err := be.LastBindingOperation(context.TODO(), instanceID, bindingID, details)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())
@@ -146,7 +145,7 @@ func TestBindLastOp(t *testing.T) {
 			bundleInstanceAuth,
 			nil,
 		)
-		details.OperationData = string(UnbindOp)
+		details.OperationData = string(osb.UnbindOp)
 		lastOp, err := be.LastBindingOperation(context.TODO(), instanceID, bindingID, details)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, fakeCredentialsGetter.FetchBundleInstanceAuthCallCount())

@@ -1,16 +1,17 @@
-package osb
+package osb_test
 
 import (
 	"fmt"
 	"testing"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConverter_Convert(t *testing.T) {
-
 	tests := []struct {
 		name             string
 		app              *schema.ApplicationExt
@@ -384,9 +385,8 @@ func TestConverter_Convert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := Converter{
-				baseURL:      "http://specification.com",
-				MapConverter: MapConverter{},
+			c := osb.CatalogConverter{
+				BaseURL: "http://specification.com",
 			}
 			service, err := c.Convert(tt.app)
 			if tt.expectedErr != "" {
@@ -406,7 +406,7 @@ func generateExpectations(bundlesCount, apiDefCount, eventDefCount int) []domain
 			ID:          fmt.Sprintf("id%d", i),
 			Name:        fmt.Sprintf("bundle%d", i),
 			Description: "description",
-			Bindable:    boolToPtr(true),
+			Bindable:    func(b bool) *bool { return &b }(true),
 			Metadata:    &domain.ServicePlanMetadata{},
 			Schemas: &domain.ServiceSchemas{
 				Instance: domain.ServiceInstanceSchema{
@@ -461,6 +461,58 @@ func generateExpectations(bundlesCount, apiDefCount, eventDefCount int) []domain
 		return nil
 	}
 	return plans
+}
+
+func addGroupAndVersionToBundle(ext *schema.BundleExt) *schema.BundleExt {
+	ext.APIDefinitions.Data[0].Group = strToPtrStr("group")
+	ext.APIDefinitions.Data[0].Version = &schema.Version{
+		Value:           "v1",
+		Deprecated:      func(b bool) *bool { return &b }(true),
+		DeprecatedSince: strToPtrStr("01.01.2021"),
+		ForRemoval:      func(b bool) *bool { return &b }(false),
+	}
+
+	ext.EventDefinitions.Data[0].Group = strToPtrStr("group")
+	ext.EventDefinitions.Data[0].Version = &schema.Version{
+		Value:           "v1",
+		Deprecated:      func(b bool) *bool { return &b }(true),
+		DeprecatedSince: strToPtrStr("01.01.2021"),
+		ForRemoval:      func(b bool) *bool { return &b }(false),
+	}
+	return ext
+}
+
+func addGroupAndVersionToPlan(s domain.ServicePlan) domain.ServicePlan {
+	apiSpecs := s.Metadata.AdditionalMetadata["api_specs"]
+	apiSpecsSlice, ok := apiSpecs.([]map[string]interface{})
+	if !ok {
+		log.Printf("Failed to convert api specs")
+		return s
+	}
+
+	eventSpecs := s.Metadata.AdditionalMetadata["event_specs"]
+	eventSpecsSlice, ok := eventSpecs.([]map[string]interface{})
+	if !ok {
+		log.Printf("Failed to convert event specs")
+		return s
+	}
+
+	versionMap := make(map[string]interface{}, 0)
+	versionMap["value"] = "v1"
+	versionMap["deprecated"] = func(b bool) *bool { return &b }(true)
+	versionMap["deprecated_since"] = strToPtrStr("01.01.2021")
+	versionMap["for_removal"] = func(b bool) *bool { return &b }(false)
+
+	apiSpecsSlice[0]["group"] = strToPtrStr("group")
+	eventSpecsSlice[0]["group"] = strToPtrStr("group")
+
+	apiSpecsSlice[0]["version"] = versionMap
+	eventSpecsSlice[0]["version"] = versionMap
+
+	s.Metadata.AdditionalMetadata["event_specs"] = eventSpecsSlice
+	s.Metadata.AdditionalMetadata["api_specs"] = apiSpecsSlice
+
+	return s
 }
 
 func generateBundles(bundlesCount, apiDefCount, eventDefCount int) []*schema.BundleExt {

@@ -22,17 +22,17 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/specs"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 )
 
-type Converter struct {
-	baseURL string
-	MapConverter
+type CatalogConverter struct {
+	BaseURL string
 }
 
-func (c Converter) Convert(app *schema.ApplicationExt) (*domain.Service, error) {
-	plans, err := c.toPlans(app.ID, app.Bundles.Data)
+func (c CatalogConverter) Convert(app *schema.ApplicationExt) (*domain.Service, error) {
+	plans, err := toPlans(c.BaseURL, app.ID, app.Bundles.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -51,14 +51,14 @@ func (c Converter) Convert(app *schema.ApplicationExt) (*domain.Service, error) 
 		BindingsRetrievable:  true,
 		PlanUpdatable:        false,
 		Plans:                plans,
-		Metadata:             c.toServiceMetadata(app),
+		Metadata:             toServiceMetadata(app),
 	}, nil
 }
 
-func (c *Converter) toPlans(appID string, bundles []*graphql.BundleExt) ([]domain.ServicePlan, error) {
+func toPlans(baseURL, appID string, bundles []*graphql.BundleExt) ([]domain.ServicePlan, error) {
 	var plans []domain.ServicePlan
 	for _, p := range bundles {
-		schemas, err := c.toSchemas(p)
+		schemas, err := toSchemas(p)
 		if err != nil {
 			return nil, err
 		}
@@ -67,7 +67,7 @@ func (c *Converter) toPlans(appID string, bundles []*graphql.BundleExt) ([]domai
 			desc = fmt.Sprintf("plan generated from bundle with name %s", p.Name)
 		}
 
-		metadata, err := c.toPlanMetadata(appID, p)
+		metadata, err := toPlanMetadata(baseURL, appID, p)
 		if err != nil {
 			return nil, err
 		}
@@ -86,8 +86,7 @@ func (c *Converter) toPlans(appID string, bundles []*graphql.BundleExt) ([]domai
 	return plans, nil
 }
 
-//TODO these are probably too hidden, should be abstracted away
-func (c *Converter) toPlanMetadata(appID string, pkg *graphql.BundleExt) (*domain.ServicePlanMetadata, error) {
+func toPlanMetadata(baseURL, appID string, pkg *graphql.BundleExt) (*domain.ServicePlanMetadata, error) {
 	metadata := &domain.ServicePlanMetadata{
 		AdditionalMetadata: make(map[string]interface{}),
 	}
@@ -95,7 +94,7 @@ func (c *Converter) toPlanMetadata(appID string, pkg *graphql.BundleExt) (*domai
 	apis := make([]map[string]interface{}, 0, 0)
 
 	for _, apiDef := range pkg.APIDefinitions.Data {
-		api, err := c.toApiDefMap(c.baseURL, appID, pkg.ID, apiDef)
+		api, err := toApiDefMap(baseURL, appID, pkg.ID, apiDef)
 		if err != nil {
 			return nil, fmt.Errorf("while converting apidef to map: %w", err)
 		}
@@ -105,7 +104,7 @@ func (c *Converter) toPlanMetadata(appID string, pkg *graphql.BundleExt) (*domai
 
 	events := make([]map[string]interface{}, 0, 0)
 	for _, eventDef := range pkg.EventDefinitions.Data {
-		event, err := c.toEventDefMap(c.baseURL, appID, pkg.ID, eventDef)
+		event, err := toEventDefMap(baseURL, appID, pkg.ID, eventDef)
 		if err != nil {
 			return nil, fmt.Errorf("while converting eventdef to map: %w", err)
 		}
@@ -116,7 +115,7 @@ func (c *Converter) toPlanMetadata(appID string, pkg *graphql.BundleExt) (*domai
 	return metadata, nil
 }
 
-func (c *Converter) toServiceMetadata(app *schema.ApplicationExt) *domain.ServiceMetadata {
+func toServiceMetadata(app *schema.ApplicationExt) *domain.ServiceMetadata {
 	if app.Labels == nil {
 		app.Labels = map[string]interface{}{}
 	}
@@ -128,7 +127,7 @@ func (c *Converter) toServiceMetadata(app *schema.ApplicationExt) *domain.Servic
 	}
 }
 
-func (c *Converter) toSchemas(pkg *graphql.BundleExt) (*domain.ServiceSchemas, error) {
+func toSchemas(pkg *graphql.BundleExt) (*domain.ServiceSchemas, error) {
 	if pkg.InstanceAuthRequestInputSchema == nil {
 		return nil, nil
 	}
@@ -148,6 +147,80 @@ func (c *Converter) toSchemas(pkg *graphql.BundleExt) (*domain.ServiceSchemas, e
 		Binding: domain.ServiceBindingSchema{},
 	}, nil
 
+}
+
+func toApiDefMap(baseURL, appID, pkgID string, apiDef *graphql.APIDefinitionExt) (map[string]interface{}, error) {
+	api := make(map[string]interface{})
+	api["id"] = apiDef.ID
+	api["name"] = apiDef.Name
+	api["target_url"] = apiDef.TargetURL
+	if apiDef.Spec != nil {
+		specsFormatHeader, err := specs.SpecFormatToContentTypeHeader(apiDef.Spec.Format)
+		if err != nil {
+			return nil, err
+		}
+		specification := make(map[string]interface{})
+		specification["type"] = apiDef.Spec.Type
+		specification["format"] = specsFormatHeader
+		specification["url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
+			baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.BundleIDParameter, pkgID, specs.DefinitionIDParameter, apiDef.ID)
+		api["specification"] = specification
+	}
+	if apiDef.Description != nil && *apiDef.Description != "" {
+		api["description"] = apiDef.Description
+	}
+	if apiDef.Group != nil && *apiDef.Group != "" {
+		api["group"] = apiDef.Group
+	}
+	if apiDef.Version != nil {
+		versionMap := toVersionMap(apiDef.Version)
+		api["version"] = versionMap
+	}
+	return api, nil
+}
+
+func toEventDefMap(baseURL, appID, pkgID string, eventDef *graphql.EventAPIDefinitionExt) (map[string]interface{}, error) {
+	event := make(map[string]interface{})
+	event["id"] = eventDef.ID
+	event["name"] = eventDef.Name
+	if eventDef.Spec != nil {
+		specsFormatHeader, err := specs.SpecFormatToContentTypeHeader(eventDef.Spec.Format)
+		if err != nil {
+			return nil, err
+		}
+		specification := make(map[string]interface{})
+		specification["type"] = eventDef.Spec.Type
+		specification["format"] = specsFormatHeader
+		specification["url"] = fmt.Sprintf("%s%s?%s=%s&%s=%s&%s=%s",
+			baseURL, specs.SpecsAPI, specs.AppIDParameter, appID, specs.BundleIDParameter, pkgID, specs.DefinitionIDParameter, eventDef.ID)
+		event["specification"] = specification
+	}
+	if eventDef.Description != nil && *eventDef.Description != "" {
+		event["description"] = eventDef.Description
+	}
+	if eventDef.Group != nil && *eventDef.Group != "" {
+		event["group"] = eventDef.Group
+	}
+	if eventDef.Version != nil {
+		versionMap := toVersionMap(eventDef.Version)
+		event["version"] = versionMap
+	}
+	return event, nil
+}
+
+func toVersionMap(version *graphql.Version) map[string]interface{} {
+	m := make(map[string]interface{})
+	m["value"] = version.Value
+	if version.Deprecated != nil {
+		m["deprecated"] = version.Deprecated
+	}
+	if version.DeprecatedSince != nil {
+		m["deprecated_since"] = version.DeprecatedSince
+	}
+	if version.ForRemoval != nil {
+		m["for_removal"] = version.ForRemoval
+	}
+	return m
 }
 
 func ptrStrToStr(s *string) string {

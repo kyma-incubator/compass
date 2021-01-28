@@ -25,27 +25,27 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . applicationsLister
-type applicationsLister interface {
+type ApplicationsLister interface {
 	FetchApplications(ctx context.Context) (*director.ApplicationsOutput, error)
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsFetcher
-type bundleCredentialsFetcher interface {
+type BundleCredentialsFetcher interface {
 	FetchBundleInstanceAuth(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceAuthOutput, error)
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsFetcherForInstance
-type bundleCredentialsFetcherForInstance interface {
+type BundleCredentialsFetcherForInstance interface {
 	FetchBundleInstanceCredentials(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceCredentialsOutput, error)
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsCreateRequester
-type bundleCredentialsCreateRequester interface {
+type BundleCredentialsCreateRequester interface {
 	RequestBundleInstanceCredentialsCreation(ctx context.Context, in *director.BundleInstanceCredentialsInput) (*director.BundleInstanceAuthOutput, error)
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsDeleteRequester
-type bundleCredentialsDeleteRequester interface {
+type BundleCredentialsDeleteRequester interface {
 	RequestBundleInstanceCredentialsDeletion(ctx context.Context, in *director.BundleInstanceAuthDeletionInput) (*director.BundleInstanceAuthDeletionOutput, error)
 }
 

@@ -26,6 +26,10 @@ import (
 type InstanceLastOperationEndpoint struct {
 }
 
+func NewInstanceLastOperationEndpoint() *InstanceLastOperationEndpoint {
+	return &InstanceLastOperationEndpoint{}
+}
+
 func (b *InstanceLastOperationEndpoint) LastOperation(ctx context.Context, instanceID string, details domain.PollDetails) (domain.LastOperation, error) {
 	log.C(ctx).Infof("LastInstanceOperation instanceID: %s details: %+v", instanceID, details)
 

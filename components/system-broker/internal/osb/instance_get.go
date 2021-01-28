@@ -28,6 +28,10 @@ import (
 type GetInstanceEndpoint struct {
 }
 
+func NewGetInstanceEndpoint() *GetInstanceEndpoint {
+	return &GetInstanceEndpoint{}
+}
+
 func (b *GetInstanceEndpoint) GetInstance(ctx context.Context, instanceID string) (domain.GetInstanceDetailsSpec, error) {
 	log.C(ctx).Infof("GetInstanceEndpoint instanceID: %s", instanceID)
 

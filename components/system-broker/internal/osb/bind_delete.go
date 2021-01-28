@@ -28,8 +28,15 @@ import (
 )
 
 type UnbindEndpoint struct {
-	credentialsGetter  bundleCredentialsFetcher
-	credentialsDeleter bundleCredentialsDeleteRequester
+	credentialsGetter  BundleCredentialsFetcher
+	credentialsDeleter BundleCredentialsDeleteRequester
+}
+
+func NewUnbindEndpoint(credentialsGetter BundleCredentialsFetcher, credentialsDeleter BundleCredentialsDeleteRequester) *UnbindEndpoint {
+	return &UnbindEndpoint{
+		credentialsGetter:  credentialsGetter,
+		credentialsDeleter: credentialsDeleter,
+	}
 }
 
 func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID string, details domain.UnbindDetails, asyncAllowed bool) (domain.UnbindSpec, error) {

@@ -31,7 +31,7 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 	runtimeToken := director.GenerateOneTimeTokenForRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtime.ID)
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
 
-	logrus.Infof("generation certificate fot runtime with id: %s", runtime.ID)
+	logrus.Infof("generation certificate for runtime with id: %s", runtime.ID)
 	certResult, configuration := connector.GenerateRuntimeCertificate(t, oneTimeToken, testCtx.ConnectorTokenSecuredClient, testCtx.ClientKey)
 	certChain := connectorTestkit.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := createCertClient(testCtx.ClientKey, certChain...)

@@ -1,4 +1,4 @@
-package osb
+package osb_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb/osbfakes"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
@@ -19,7 +20,7 @@ func TestBindCreate(t *testing.T) {
 	var (
 		fakeCredentialsCreator *osbfakes.FakeBundleCredentialsCreateRequester
 		fakeCredentialsGetter  *osbfakes.FakeBundleCredentialsFetcher
-		be                     *BindEndpoint
+		be                     *osb.BindEndpoint
 		details                domain.BindDetails
 		bundleInstanceAuth     *director.BundleInstanceAuthOutput
 	)
@@ -28,10 +29,7 @@ func TestBindCreate(t *testing.T) {
 		fakeCredentialsCreator = &osbfakes.FakeBundleCredentialsCreateRequester{}
 		fakeCredentialsGetter = &osbfakes.FakeBundleCredentialsFetcher{}
 
-		be = &BindEndpoint{
-			credentialsCreator: fakeCredentialsCreator,
-			credentialsGetter:  fakeCredentialsGetter,
-		}
+		be = osb.NewBindEndpoint(fakeCredentialsCreator, fakeCredentialsGetter)
 
 		details = domain.BindDetails{
 			ServiceID: "serviceID",
@@ -67,7 +65,7 @@ func TestBindCreate(t *testing.T) {
 		details.RawParameters = []byte(`{}`)
 		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
-			&notFoundErr{},
+			&NotFoundErr{},
 		)
 		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionPending
 		fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationReturns(
@@ -104,7 +102,7 @@ func TestBindCreate(t *testing.T) {
 		details.RawParameters = []byte(`not a json`)
 		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
-			&notFoundErr{},
+			&NotFoundErr{},
 		)
 		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionPending
 		fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationReturns(
@@ -122,7 +120,7 @@ func TestBindCreate(t *testing.T) {
 		details.RawContext = []byte(`not a json`)
 		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
-			&notFoundErr{},
+			&NotFoundErr{},
 		)
 		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionPending
 		fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationReturns(
@@ -140,7 +138,7 @@ func TestBindCreate(t *testing.T) {
 		details.RawParameters = []byte(`{}`)
 		fakeCredentialsGetter.FetchBundleInstanceAuthReturns(
 			nil,
-			&notFoundErr{},
+			&NotFoundErr{},
 		)
 		bundleInstanceAuth.InstanceAuth.Status.Condition = graphql.BundleInstanceAuthStatusConditionPending
 		fakeCredentialsCreator.RequestBundleInstanceCredentialsCreationReturns(
@@ -168,12 +166,12 @@ func TestBindCreate(t *testing.T) {
 	})
 }
 
-type notFoundErr struct{}
+type NotFoundErr struct{}
 
-func (e *notFoundErr) Error() string {
+func (e *NotFoundErr) Error() string {
 	return "fake not found error"
 }
 
-func (e *notFoundErr) NotFound() bool {
+func (e *NotFoundErr) NotFound() bool {
 	return true
 }
