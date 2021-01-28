@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -64,7 +65,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		return nil, err
 	}
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(requestBody))
-	defer httpcommon.CloseBody(req.Body)
+	defer httpcommon.CloseBody(req.Context(), req.Body)
 
 	correlationHeaders := correlation.HeadersForRequest(req)
 
@@ -74,7 +75,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 	}
 
 	if !isMutation && err != emptyQuery {
-		log.Println("Will not send auditlog message for queries")
+		log.C(req.Context()).Debugln("Will not send auditlog message for queries")
 		return t.RoundTripper.RoundTrip(req)
 	}
 
@@ -109,7 +110,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		return nil, err
 	}
 	resp.Body = ioutil.NopCloser(bytes.NewReader(responseBody))
-	defer httpcommon.CloseBody(resp.Body)
+	defer httpcommon.CloseBody(req.Context(), resp.Body)
 
 	err = t.auditlogSink.Log(req.Context(), AuditlogMessage{
 		CorrelationIDHeaders: correlationHeaders,
@@ -118,7 +119,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		Claims:               claims,
 	})
 	if err != nil {
-		log.Printf("failed to send a post-change auditlog message to auditlog service: %v", err)
+		log.C(ctx).WithError(err).Errorf("failed to send a post-change auditlog message to auditlog service")
 	}
 
 	return resp, nil

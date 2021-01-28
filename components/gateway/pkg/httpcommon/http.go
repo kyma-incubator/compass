@@ -1,12 +1,14 @@
 package httpcommon
 
 import (
+	"context"
 	"io"
-	"log"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-func CloseBody(body io.ReadCloser) {
+func CloseBody(ctx context.Context, body io.ReadCloser) {
 	if err := body.Close(); err != nil {
-		log.Printf("while closing body %+v\n", err)
+		log.C(ctx).WithError(err).Errorf("while closing body")
 	}
 }

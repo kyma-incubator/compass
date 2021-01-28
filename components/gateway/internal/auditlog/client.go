@@ -5,11 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/httpcommon"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
@@ -57,7 +57,7 @@ func (c *Client) LogConfigurationChange(ctx context.Context, change model.Config
 		return errors.Wrap(err, "while creating request")
 	}
 
-	return c.sendAuditLog(req)
+	return c.sendAuditLog(ctx, req)
 }
 
 func (c *Client) LogSecurityEvent(ctx context.Context, event model.SecurityEvent) error {
@@ -71,23 +71,24 @@ func (c *Client) LogSecurityEvent(ctx context.Context, event model.SecurityEvent
 		return errors.Wrap(err, "while creating request")
 	}
 
-	return c.sendAuditLog(req)
+	return c.sendAuditLog(ctx, req)
 }
 
-func (c *Client) sendAuditLog(req *http.Request) error {
+func (c *Client) sendAuditLog(ctx context.Context, req *http.Request) error {
+	logger := log.C(ctx)
 	response, err := c.httpClient.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "while sending auditlog to: %s", req.URL.String())
 	}
-	defer httpcommon.CloseBody(response.Body)
+	defer httpcommon.CloseBody(ctx, response.Body)
 
 	if response.StatusCode != http.StatusCreated {
-		log.Printf("Got different status code: %d\n", response.StatusCode)
+		logger.Infof("Got different status code: %d\n", response.StatusCode)
 		output, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			return errors.Wrap(err, "while reading response from auditlog")
 		}
-		log.Println(string(output))
+		logger.Infoln(string(output))
 		return errors.Errorf("Write to auditlog failed with status code: %d", response.StatusCode)
 	}
 	return nil
