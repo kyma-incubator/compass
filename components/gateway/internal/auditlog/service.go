@@ -3,9 +3,10 @@ package auditlog
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
@@ -32,10 +33,10 @@ func NewSink(logsChannel chan proxy.AuditlogMessage, timeout time.Duration, coll
 	}
 }
 
-func (sink *Sink) Log(_ context.Context, msg proxy.AuditlogMessage) error {
+func (sink *Sink) Log(ctx context.Context, msg proxy.AuditlogMessage) error {
 	select {
 	case sink.logsChannel <- msg:
-		log.Printf("Successfully registered auditlog message for processing to the queue (size=%d, capacity=%d)",
+		log.C(ctx).Debugf("Successfully registered auditlog message for processing to the queue (size=%d, capacity=%d)",
 			len(sink.logsChannel), cap(sink.logsChannel))
 		sink.collector.SetChannelSize(len(sink.logsChannel))
 	case <-time.After(sink.timeout):
