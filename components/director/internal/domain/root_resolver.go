@@ -330,7 +330,7 @@ type mutationResolver struct {
 func (r *mutationResolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput, _ *graphql.OperationMode) (*graphql.Application, error) {
 	return r.app.RegisterApplication(ctx, in)
 }
-func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput, _ *graphql.OperationMode) (*graphql.Application, error) {
+func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
 	return r.app.UpdateApplication(ctx, id, in)
 }
 func (r *mutationResolver) UnregisterApplication(ctx context.Context, id string, _ *graphql.OperationMode) (*graphql.Application, error) {
