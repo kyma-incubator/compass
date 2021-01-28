@@ -20,19 +20,19 @@ global:
       version: "PR-1693"
     pairing_adapter:
       dir:
-      version: "PR-1693"
+      version: "PR-1698"
     director:
       dir:
       version: "PR-1693"
     gateway:
       dir:
-      version: "PR-1698"
+      version: "PR-1692"
     tenant_fetcher:
       dir:
       version: "PR-1698"
     ord_service:
       dir:
-      version: "PR-5"
+      version: "PR-8"
     healthchecker:
       dir:
       version: "PR-1698"

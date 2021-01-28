@@ -342,7 +342,7 @@ type ComplexityRoot struct {
 		UnregisterRuntime                             func(childComplexity int, id string) int
 		UnregisterRuntimeContext                      func(childComplexity int, id string) int
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
-		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput, mode *OperationMode) int
+		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
 		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateInput) int
 		UpdateBundle                                  func(childComplexity int, id string, in BundleUpdateInput) int
 		UpdateEventDefinition                         func(childComplexity int, id string, in EventDefinitionInput) int
@@ -518,7 +518,7 @@ type IntegrationSystemResolver interface {
 }
 type MutationResolver interface {
 	RegisterApplication(ctx context.Context, in ApplicationRegisterInput, mode *OperationMode) (*Application, error)
-	UpdateApplication(ctx context.Context, id string, in ApplicationUpdateInput, mode *OperationMode) (*Application, error)
+	UpdateApplication(ctx context.Context, id string, in ApplicationUpdateInput) (*Application, error)
 	UnregisterApplication(ctx context.Context, id string, mode *OperationMode) (*Application, error)
 	CreateApplicationTemplate(ctx context.Context, in ApplicationTemplateInput) (*ApplicationTemplate, error)
 	RegisterApplicationFromTemplate(ctx context.Context, in ApplicationFromTemplateInput) (*Application, error)
@@ -2218,7 +2218,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateApplication(childComplexity, args["id"].(string), args["in"].(ApplicationUpdateInput), args["mode"].(*OperationMode)), true
+		return e.complexity.Mutation.UpdateApplication(childComplexity, args["id"].(string), args["in"].(ApplicationUpdateInput)), true
 
 	case "Mutation.updateApplicationTemplate":
 		if e.complexity.Mutation.UpdateApplicationTemplate == nil {
@@ -4080,7 +4080,7 @@ type Mutation {
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
 	"""
-	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.updateApplication") @async(op: UPDATE)
+	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	"""
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
@@ -5599,14 +5599,6 @@ func (ec *executionContext) field_Mutation_updateApplication_args(ctx context.Co
 		}
 	}
 	args["in"] = arg1
-	var arg2 *OperationMode
-	if tmp, ok := rawArgs["mode"]; ok {
-		arg2, err = ec.unmarshalOOperationMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["mode"] = arg2
 	return args, nil
 }
 
@@ -11351,7 +11343,7 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateApplication(rctx, args["id"].(string), args["in"].(ApplicationUpdateInput), args["mode"].(*OperationMode))
+			return ec.resolvers.Mutation().UpdateApplication(rctx, args["id"].(string), args["in"].(ApplicationUpdateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateApplication")
@@ -11360,15 +11352,8 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			op, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "UPDATE")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.Async(ctx, nil, directive1, op)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}

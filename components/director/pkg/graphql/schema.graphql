@@ -1085,7 +1085,7 @@ type Mutation {
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
 	"""
-	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.updateApplication") @async(op: UPDATE)
+	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
 	"""
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
