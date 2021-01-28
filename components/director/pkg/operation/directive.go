@@ -27,6 +27,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
+const modeParam = "mode"
+
 type directive struct {
 	transact  persistence.Transactioner
 	scheduler Scheduler
@@ -41,9 +43,9 @@ func NewDirective(transact persistence.Transactioner, scheduler Scheduler) *dire
 
 func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, op graphql.OperationType) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
-	mode, ok := resCtx.Args["mode"].(*graphql.OperationMode)
+	mode, ok := resCtx.Args[modeParam].(*graphql.OperationMode)
 	if !ok {
-		return nil, errors.New(fmt.Sprint("Could not get mode parameter"))
+		return nil, errors.New(fmt.Sprintf("could not get %s parameter", modeParam))
 	}
 
 	ctx = SaveModeToContext(ctx, *mode)

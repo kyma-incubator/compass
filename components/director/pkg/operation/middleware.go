@@ -29,8 +29,8 @@ type middleware struct {
 	directorURL string
 }
 
-func NewMiddleware(directorURL string) middleware {
-	return middleware{
+func NewMiddleware(directorURL string) *middleware {
+	return &middleware{
 		directorURL: directorURL,
 	}
 }
@@ -50,7 +50,7 @@ func (m *middleware) Handler(ctx context.Context, next func(ctx context.Context)
 	if len(locations) > 0 {
 		reqCtx := gqlgen.GetRequestContext(ctx)
 		if err := reqCtx.RegisterExtension("locations", locations); err != nil {
-			panic(err)
+			return []byte(`{"error": "unable to finalize operation location"}`)
 		}
 
 		jsonPropsToDelete := make([]string, 0)
@@ -59,7 +59,7 @@ func (m *middleware) Handler(ctx context.Context, next func(ctx context.Context)
 				gqlField := gqlSelection.(*ast.Field)
 				mutationAlias := gqlField.Alias
 				for _, gqlArgument := range gqlField.Arguments {
-					if gqlArgument.Name == "mode" && gqlArgument.Value.Raw == string(graphql.OperationModeAsync) {
+					if gqlArgument.Name == modeParam && gqlArgument.Value.Raw == string(graphql.OperationModeAsync) {
 						jsonPropsToDelete = append(jsonPropsToDelete, mutationAlias)
 					}
 				}
@@ -70,7 +70,7 @@ func (m *middleware) Handler(ctx context.Context, next func(ctx context.Context)
 			var err error
 			resp, err = sjson.DeleteBytes(resp, prop)
 			if err != nil {
-				panic(err)
+				return []byte(`{"error": "failed to prepare response body"}`)
 			}
 
 		}
