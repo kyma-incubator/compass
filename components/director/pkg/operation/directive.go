@@ -48,8 +48,26 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 	ctx = SaveModeToContext(ctx, *mode)
 
+	tx, err := d.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer d.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	if *mode == graphql.OperationModeSync {
-		return next(ctx)
+		resp, err := next(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return nil, err
+		}
+
+		return resp, nil
 	}
 
 	operation := &Operation{
@@ -59,14 +77,6 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		RelatedResources:  make([]RelatedResource, 0),
 	}
 	ctx = SaveToContext(ctx, &[]*Operation{operation})
-
-	tx, err := d.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer d.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
 
 	resp, err := next(ctx)
 	if err != nil {
@@ -92,6 +102,5 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, err
 	}
 
-	//log.C(ctx).Infof("Runtime with ID %s is in scenario with the owning application entity", runtimeID)
 	return resp, nil
 }

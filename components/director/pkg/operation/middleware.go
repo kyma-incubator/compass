@@ -20,6 +20,9 @@ import (
 	"context"
 	"fmt"
 	gqlgen "github.com/99designs/gqlgen/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/tidwall/sjson"
+	"github.com/vektah/gqlparser/ast"
 )
 
 type middleware struct {
@@ -48,6 +51,28 @@ func (m *middleware) Handler(ctx context.Context, next func(ctx context.Context)
 		reqCtx := gqlgen.GetRequestContext(ctx)
 		if err := reqCtx.RegisterExtension("locations", locations); err != nil {
 			panic(err)
+		}
+
+		jsonPropsToDelete := make([]string, 0)
+		for _, gqlOperation := range reqCtx.Doc.Operations {
+			for _, gqlSelection := range gqlOperation.SelectionSet {
+				gqlField := gqlSelection.(*ast.Field)
+				mutationAlias := gqlField.Alias
+				for _, gqlArgument := range gqlField.Arguments {
+					if gqlArgument.Name == "mode" && gqlArgument.Value.Raw == string(graphql.OperationModeAsync) {
+						jsonPropsToDelete = append(jsonPropsToDelete, mutationAlias)
+					}
+				}
+			}
+		}
+
+		for _, prop := range jsonPropsToDelete {
+			var err error
+			resp, err = sjson.DeleteBytes(resp, prop)
+			if err != nil {
+				panic(err)
+			}
+
 		}
 	}
 

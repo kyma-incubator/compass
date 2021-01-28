@@ -203,12 +203,14 @@ func main() {
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
+	operationMiddleware := operation.NewMiddleware(cfg.DirectorURL)
+
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema,
-		handler.RequestMiddleware(operation.NewMiddleware(cfg.DirectorURL).Handler),
+		handler.RequestMiddleware(operationMiddleware.Handler),
 		handler.ErrorPresenter(presenter.Do),
 		handler.RecoverFunc(panic_handler.RecoverFn))))
 
