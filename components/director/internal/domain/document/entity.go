@@ -2,6 +2,7 @@ package document
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Entity struct {
@@ -14,10 +15,23 @@ type Entity struct {
 	Format      string         `db:"format"`
 	Kind        sql.NullString `db:"kind"`
 	Data        sql.NullString `db:"data"`
+	Ready       bool           `db:"ready"`
+	CreatedAt   time.Time      `db:"created_at"`
+	UpdatedAt   time.Time      `db:"updated_at"`
+	DeletedAt   time.Time      `db:"deleted_at"`
+	Error       sql.NullString `db:"error"`
 }
 
 type Collection []Entity
 
 func (r Collection) Len() int {
 	return len(r)
+}
+
+func (e *Entity) SetCreatedAt(t time.Time) {
+	e.CreatedAt = t
+}
+
+func (e *Entity) SetUpdatedAt(t time.Time) {
+	e.UpdatedAt = t
 }

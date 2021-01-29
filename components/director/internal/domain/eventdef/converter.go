@@ -39,6 +39,11 @@ func (c *converter) ToGraphQL(in *model.EventDefinition) *graphql.EventDefinitio
 		Group:       in.Group,
 		Spec:        c.eventAPISpecToGraphQL(in.ID, in.Spec),
 		Version:     c.vc.ToGraphQL(in.Version),
+		Ready:       in.Ready,
+		CreatedAt:   graphql.Timestamp(in.CreatedAt),
+		UpdatedAt:   graphql.Timestamp(in.UpdatedAt),
+		DeletedAt:   graphql.Timestamp(in.DeletedAt),
+		Error:       in.Error,
 	}
 }
 
@@ -134,6 +139,11 @@ func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 		Group:       repo.StringPtrFromNullableString(entity.GroupName),
 		Version:     c.vc.FromEntity(entity.Version),
 		Spec:        c.apiSpecFromEntity(entity.EntitySpec),
+		Ready:       entity.Ready,
+		CreatedAt:   entity.CreatedAt,
+		UpdatedAt:   entity.UpdatedAt,
+		DeletedAt:   entity.DeletedAt,
+		Error:       repo.StringPtrFromNullableString(entity.Error),
 	}, nil
 }
 

@@ -22,10 +22,10 @@ var (
 	bundleColumn  = "bundle_id"
 	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "name", "description", "group_name", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"name", "description", "group_name", "spec_data", "spec_format", "spec_type",
-		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
 //go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore

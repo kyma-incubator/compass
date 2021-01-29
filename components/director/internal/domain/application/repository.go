@@ -3,11 +3,12 @@ package application
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -22,6 +23,7 @@ const applicationTable string = `public.applications`
 
 var (
 	applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn       = "tenant_id"
 )
 
@@ -50,7 +52,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		lister:          repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		creator:         repo.NewCreator(resource.Application, applicationTable, applicationColumns),
-		updater:         repo.NewUpdater(resource.Application, applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "ready", "created_at", "updated_at", "deleted_at", "error"}, tenantColumn, []string{"id"}),
+		updater:         repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}
 }

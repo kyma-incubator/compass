@@ -18,7 +18,7 @@ import (
 const documentTable = "public.documents"
 
 var (
-	documentColumns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data"}
+	documentColumns = []string{"id", "tenant_id", "bundle_id", "title", "display_name", "description", "format", "kind", "data", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn    = "tenant_id"
 )
 
@@ -45,8 +45,7 @@ func NewRepository(conv Converter) *repository {
 		deleter:         repo.NewDeleter(resource.Document, documentTable, tenantColumn),
 		pageableQuerier: repo.NewPageableQuerier(resource.Document, documentTable, tenantColumn, documentColumns),
 		creator:         repo.NewCreator(resource.Document, documentTable, documentColumns),
-
-		conv: conv,
+		conv:            conv,
 	}
 }
 

@@ -36,6 +36,11 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 		Format:      graphql.DocumentFormat(in.Format),
 		Kind:        in.Kind,
 		Data:        clob,
+		Ready:       in.Ready,
+		CreatedAt:   graphql.Timestamp(in.CreatedAt),
+		UpdatedAt:   graphql.Timestamp(in.UpdatedAt),
+		DeletedAt:   graphql.Timestamp(in.DeletedAt),
+		Error:       in.Error,
 	}
 }
 
@@ -130,6 +135,11 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		Format:      model.DocumentFormat(in.Format),
 		Kind:        kind,
 		Data:        data,
+		Ready:       in.Ready,
+		CreatedAt:   in.CreatedAt,
+		UpdatedAt:   in.UpdatedAt,
+		DeletedAt:   in.DeletedAt,
+		Error:       repo.StringPtrFromNullableString(in.Error),
 	}
 	return out, nil
 }
