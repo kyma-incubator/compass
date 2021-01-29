@@ -38,6 +38,8 @@ spec:
               value: "http://compass-connector.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.connector.graphql.external.port }}/healthz"
             - name: SYSTEM_BROKER_HEALTHZ_URL
               value: "http://compass-system-broker.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.system_broker.port }}/healthz"
+            - name: DOMAIN
+              value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT
               value: "{{ .Values.global.defaultTenant }}"
             - name: APP_SYSTEM_BROKER_URL
