@@ -11,12 +11,12 @@ import (
 func TestWebhookInput_Validate_Type(t *testing.T) {
 	testCases := []struct {
 		Name          string
-		Value         graphql.ApplicationWebhookType
+		Value         graphql.WebhookType
 		ExpectedValid bool
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         graphql.ApplicationWebhookTypeConfigurationChanged,
+			Value:         graphql.WebhookTypeConfigurationChanged,
 			ExpectedValid: true,
 		},
 		{
@@ -136,7 +136,7 @@ func TestWebhookInput_Validate_Auth(t *testing.T) {
 
 func fixValidWebhookInput() graphql.WebhookInput {
 	return graphql.WebhookInput{
-		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+		Type: graphql.WebhookTypeConfigurationChanged,
 		URL:  inputvalidationtest.ValidURL,
 	}
 }

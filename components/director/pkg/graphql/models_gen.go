@@ -596,8 +596,17 @@ type Webhook struct {
 type WebhookInput struct {
 	Type WebhookType `json:"type"`
 	// **Validation:** valid URL, max=256
-	URL  string     `json:"url"`
-	Auth *AuthInput `json:"auth"`
+	URL              string      `json:"url"`
+	Auth             *AuthInput  `json:"auth"`
+	Mode             WebhookMode `json:"mode"`
+	CorrelationIDKey *string     `json:"correlationIdKey"`
+	RetryInterval    int         `json:"retryInterval"`
+	Timeout          int         `json:"timeout"`
+	URLTemplate      string      `json:"urlTemplate"`
+	InputTemplate    string      `json:"inputTemplate"`
+	HeaderTemplate   string      `json:"headerTemplate"`
+	OutputTemplate   string      `json:"outputTemplate"`
+	StatusTemplate   *string     `json:"statusTemplate"`
 }
 
 type APISpecType string

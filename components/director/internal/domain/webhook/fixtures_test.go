@@ -9,7 +9,7 @@ func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:            id,
 		ApplicationID: appID,
-		Tenant:        tenant,
+		TenantID:      tenant,
 		Type:          model.WebhookTypeConfigurationChanged,
 		URL:           url,
 		Auth:          &model.Auth{},
@@ -19,8 +19,8 @@ func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:            id,
-		ApplicationID: appID,
-		Type:          graphql.ApplicationWebhookTypeConfigurationChanged,
+		ApplicationID: &appID,
+		Type:          graphql.WebhookTypeConfigurationChanged,
 		URL:           url,
 		Auth:          &graphql.Auth{},
 	}
@@ -36,7 +36,7 @@ func fixModelWebhookInput(url string) *model.WebhookInput {
 
 func fixGQLWebhookInput(url string) *graphql.WebhookInput {
 	return &graphql.WebhookInput{
-		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+		Type: graphql.WebhookTypeConfigurationChanged,
 		URL:  url,
 		Auth: &graphql.AuthInput{},
 	}

@@ -392,20 +392,20 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 		defer mockConv.AssertExpectations(t)
 		mockConv.On("FromEntity",
 			webhook.Entity{ID: givenID(),
-				TenantID: givenTenant(),
-				AppID:    givenApplicationID(),
-				Type:     string(model.WebhookTypeConfigurationChanged),
-				URL:      "http://kyma.io"}).
+				TenantID:      givenTenant(),
+				ApplicationID: givenApplicationID(),
+				Type:          string(model.WebhookTypeConfigurationChanged),
+				URL:           "http://kyma.io"}).
 			Return(model.Webhook{
 				ID: givenID(),
 			}, nil)
 
 		mockConv.On("FromEntity",
 			webhook.Entity{ID: anotherID(),
-				TenantID: givenTenant(),
-				AppID:    givenApplicationID(),
-				Type:     string(model.WebhookTypeConfigurationChanged),
-				URL:      "http://kyma2.io"}).
+				TenantID:      givenTenant(),
+				ApplicationID: givenApplicationID(),
+				Type:          string(model.WebhookTypeConfigurationChanged),
+				URL:           "http://kyma2.io"}).
 			Return(model.Webhook{ID: anotherID()}, nil)
 
 		sut := webhook.NewRepository(mockConv)
@@ -508,11 +508,11 @@ func givenApplicationID() string {
 
 func givenEntity() webhook.Entity {
 	return webhook.Entity{
-		ID:       givenID(),
-		TenantID: givenTenant(),
-		AppID:    givenApplicationID(),
-		Type:     string(model.WebhookTypeConfigurationChanged),
-		URL:      "http://kyma.io",
+		ID:            givenID(),
+		TenantID:      givenTenant(),
+		ApplicationID: givenApplicationID(),
+		Type:          string(model.WebhookTypeConfigurationChanged),
+		URL:           "http://kyma.io",
 	}
 }
 
@@ -531,7 +531,7 @@ func givenAuthAsAString(t *testing.T) string {
 func givenModel() model.Webhook {
 	return model.Webhook{
 		ID:            givenID(),
-		Tenant:        givenTenant(),
+		TenantID:      givenTenant(),
 		ApplicationID: givenApplicationID(),
 		Type:          model.WebhookTypeConfigurationChanged,
 		URL:           "http://kyma.io",

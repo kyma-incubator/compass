@@ -594,6 +594,15 @@ input WebhookInput {
 	"""
 	url: String!
 	auth: AuthInput
+	mode: WebhookMode!
+	correlationIdKey: String
+	retryInterval: Int!
+	timeout: Int!
+	urlTemplate: String!
+	inputTemplate: String!
+	headerTemplate: String!
+	outputTemplate: String!
+	statusTemplate: String
 }
 
 type APIDefinition {

@@ -303,7 +303,7 @@ func fixModelWebhook(appID, id string) *model.Webhook {
 func fixGQLWebhook(id string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:   id,
-		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+		Type: graphql.WebhookTypeConfigurationChanged,
 		URL:  "foourl",
 		Auth: &graphql.Auth{},
 	}

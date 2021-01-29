@@ -33,7 +33,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 			Expected: &model.Webhook{
 				ApplicationID: applicationID,
 				ID:            id,
-				Tenant:        tenant,
+				TenantID:      tenant,
 				Type:          model.WebhookTypeConfigurationChanged,
 				URL:           "foourl",
 				Auth: &model.Auth{
@@ -50,7 +50,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 			Expected: &model.Webhook{
 				ApplicationID: applicationID,
 				ID:            id,
-				Tenant:        tenant,
+				TenantID:      tenant,
 			},
 		},
 		{

@@ -36,11 +36,22 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 	}
 
 	return &graphql.Webhook{
-		ID:            in.ID,
-		ApplicationID: in.ApplicationID,
-		Type:          graphql.ApplicationWebhookType(in.Type),
-		URL:           in.URL,
-		Auth:          auth,
+		ID:                  in.ID,
+		ApplicationID:       &in.ApplicationID,
+		RuntimeID:           &in.RuntimeID,
+		IntegrationSystemID: &in.IntegrationSystemID,
+		Type:                graphql.WebhookType(in.Type),
+		Mode:                graphql.WebhookMode(in.Mode),
+		URL:                 in.URL,
+		Auth:                auth,
+		CorrelationIDKey:    &in.CorrelationIDKey,
+		RetryInterval:       in.RetryInterval,
+		Timeout:             in.Timeout,
+		URLTemplate:         in.URLTemplate,
+		InputTemplate:       in.InputTemplate,
+		HeaderTemplate:      in.HeaderTemplate,
+		OutputTemplate:      in.OutputTemplate,
+		StatusTemplate:      &in.StatusTemplate,
 	}, nil
 }
 
@@ -67,15 +78,28 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookIn
 		return nil, nil
 	}
 
+	if err := in.Validate(); err != nil {
+		return nil, err
+	}
+
 	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Auth input")
 	}
 
 	return &model.WebhookInput{
-		Type: model.WebhookType(in.Type),
-		URL:  in.URL,
-		Auth: auth,
+		Type:             model.WebhookType(in.Type),
+		URL:              in.URL,
+		Auth:             auth,
+		Mode:             model.WebhookMode(in.Mode),
+		CorrelationIDKey: *in.CorrelationIDKey,
+		RetryInterval:    in.RetryInterval,
+		Timeout:          in.Timeout,
+		URLTemplate:      in.URLTemplate,
+		InputTemplate:    in.InputTemplate,
+		HeaderTemplate:   in.HeaderTemplate,
+		OutputTemplate:   in.OutputTemplate,
+		StatusTemplate:   *in.StatusTemplate,
 	}, nil
 }
 
@@ -103,12 +127,23 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 	}
 
 	return Entity{
-		ID:       in.ID,
-		Type:     string(in.Type),
-		TenantID: in.Tenant,
-		URL:      in.URL,
-		AppID:    in.ApplicationID,
-		Auth:     optionalAuth,
+		ID:                  in.ID,
+		TenantID:            in.TenantID,
+		ApplicationID:       in.ApplicationID,
+		RuntimeID:           in.RuntimeID,
+		IntegrationSystemID: in.IntegrationSystemID,
+		CollectionIDKey:     in.CorrelationIDKey,
+		Type:                string(in.Type),
+		URL:                 in.URL,
+		Auth:                optionalAuth,
+		Mode:                string(in.Mode),
+		RetryInterval:       in.RetryInterval,
+		Timeout:             in.Timeout,
+		URLTemplate:         in.URLTemplate,
+		InputTemplate:       in.InputTemplate,
+		HeaderTemplate:      in.HeaderTemplate,
+		OutputTemplate:      in.OutputTemplate,
+		StatusTemplate:      in.StatusTemplate,
 	}, nil
 }
 
@@ -135,12 +170,23 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 		return model.Webhook{}, err
 	}
 	return model.Webhook{
-		ID:            in.ID,
-		Type:          model.WebhookType(in.Type),
-		Tenant:        in.TenantID,
-		URL:           in.URL,
-		ApplicationID: in.AppID,
-		Auth:          auth,
+		ID:                  in.ID,
+		TenantID:            in.TenantID,
+		ApplicationID:       in.ApplicationID,
+		RuntimeID:           in.RuntimeID,
+		IntegrationSystemID: in.IntegrationSystemID,
+		CorrelationIDKey:    in.CollectionIDKey,
+		Type:                model.WebhookType(in.Type),
+		URL:                 in.URL,
+		Auth:                auth,
+		Mode:                model.WebhookMode(in.Mode),
+		RetryInterval:       in.RetryInterval,
+		Timeout:             in.Timeout,
+		URLTemplate:         in.URLTemplate,
+		InputTemplate:       in.InputTemplate,
+		HeaderTemplate:      in.HeaderTemplate,
+		OutputTemplate:      in.OutputTemplate,
+		StatusTemplate:      in.StatusTemplate,
 	}, nil
 }
 

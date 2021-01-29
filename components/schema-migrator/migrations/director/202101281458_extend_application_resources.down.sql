@@ -71,6 +71,8 @@ ALTER TABLE webhooks
     DROP COLUMN runtime_id,
     DROP COLUMN integration_system_id;
 
+ALTER TABLE webhooks ALTER COLUMN app_id uuid NOT NULL;
+
 DROP TYPE webhook_mode;
 
 COMMIT;
