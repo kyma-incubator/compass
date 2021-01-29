@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"time"
 )
 
 type EventDefinition struct {
@@ -13,6 +14,11 @@ type EventDefinition struct {
 	Group       *string
 	Spec        *EventSpec
 	Version     *Version
+	Ready       bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   time.Time
+	Error       *string
 }
 
 type EventSpecType string

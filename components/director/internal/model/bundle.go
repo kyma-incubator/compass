@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"time"
 )
 
 type Bundle struct {
@@ -12,6 +13,11 @@ type Bundle struct {
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
+	Ready                          bool
+	CreatedAt                      time.Time
+	UpdatedAt                      time.Time
+	DeletedAt                      time.Time
+	Error                          *string
 }
 
 func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {

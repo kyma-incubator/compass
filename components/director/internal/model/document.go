@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"time"
 )
 
 type Document struct {
@@ -13,8 +14,13 @@ type Document struct {
 	Description string
 	Format      DocumentFormat
 	// for example Service Class, API etc
-	Kind *string
-	Data *string
+	Kind      *string
+	Data      *string
+	Ready     bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt time.Time
+	Error     *string
 }
 
 type DocumentInput struct {

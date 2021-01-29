@@ -77,6 +77,11 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 		Description:                    repo.StringPtrFromNullableString(entity.Description),
 		DefaultInstanceAuth:            defaultInstanceAuth,
 		InstanceAuthRequestInputSchema: repo.StringPtrFromNullableString(entity.InstanceAuthRequestJSONSchema),
+		Ready:                          entity.Ready,
+		CreatedAt:                      entity.CreatedAt,
+		UpdatedAt:                      entity.UpdatedAt,
+		DeletedAt:                      entity.DeletedAt,
+		Error:                          repo.StringPtrFromNullableString(entity.Error),
 	}
 
 	return output, nil
@@ -98,6 +103,11 @@ func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.strPtrToJSONSchemaPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
+		Ready:                          in.Ready,
+		CreatedAt:                      graphql.Timestamp(in.CreatedAt),
+		UpdatedAt:                      graphql.Timestamp(in.UpdatedAt),
+		DeletedAt:                      graphql.Timestamp(in.DeletedAt),
+		Error:                          in.Error,
 	}, nil
 }
 

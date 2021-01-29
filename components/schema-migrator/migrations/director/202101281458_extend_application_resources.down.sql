@@ -35,6 +35,21 @@ ALTER TABLE documents
     DROP COLUMN deleted_at,
     DROP COLUMN error;
 
+ALTER TABLE bundles
+    DROP CONSTRAINT bundle_id_ready_unique,
+    DROP CONSTRAINT bundles_applications_ready_fk;
+
+ALTER TABLE api_definitions
+    DROP CONSTRAINT api_id_ready_unique,
+    DROM CONSTRAINT api_definitions_applications_ready_fk;
+
+ALTER TABLE event_api_definitions
+    DROP CONSTRAINT event_api_id_ready_unique,
+    DROM CONSTRAINT event_api_definitions_applications_ready_fk;
+
+ALTER TABLE documents
+    DROP CONSTRAINT document_id_ready_unique,
+    DROM CONSTRAINT documents_applications_ready_fk;
 
 ALTER TYPE webhook_type RENAME TO webhook_type_old;
 CREATE TYPE webhook_type AS ENUM (

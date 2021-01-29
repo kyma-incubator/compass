@@ -54,10 +54,6 @@ enum ApplicationTemplateAccessLevel {
 	GLOBAL
 }
 
-enum ApplicationWebhookType {
-	CONFIGURATION_CHANGED
-}
-
 enum BundleInstanceAuthSetStatusConditionInput {
 	SUCCEEDED
 	FAILED
@@ -134,6 +130,17 @@ enum ViewerType {
 	APPLICATION
 	INTEGRATION_SYSTEM
 	USER
+}
+
+enum WebhookMode {
+	SYNC
+	ASYNC
+}
+
+enum WebhookType {
+	CONFIGURATION_CHANGED
+	REGISTER_APPLICATION
+	DELETE_APPLICATION
 }
 
 interface OneTimeToken {
@@ -581,7 +588,7 @@ input VersionInput {
 }
 
 input WebhookInput {
-	type: ApplicationWebhookType!
+	type: WebhookType!
 	"""
 	**Validation:** valid URL, max=256
 	"""
@@ -600,6 +607,11 @@ type APIDefinition {
 	"""
 	group: String
 	version: Version
+	ready: Boolean!
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
 }
 
 type APIDefinitionPage implements Pageable {
@@ -632,6 +644,11 @@ type Application {
 	bundle(id: ID!): Bundle
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
+	ready: Boolean!
+	createdAt: Timestamp
+	updatedAt: Timestamp
+	deletedAt: Timestamp
+	error: String
 }
 
 type ApplicationEventingConfiguration {
@@ -706,6 +723,11 @@ type Bundle {
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
 	document(id: ID!): Document
+	ready: Boolean!
+	createdAt: Timestamp
+	updatedAt: Timestamp
+	deletedAt: Timestamp
+	error: String
 }
 
 type BundleInstanceAuth {
@@ -772,6 +794,11 @@ type Document {
 	kind: String
 	data: CLOB
 	fetchRequest: FetchRequest
+	ready: Boolean!
+	createdAt: Timestamp
+	updatedAt: Timestamp
+	deletedAt: Timestamp
+	error: String
 }
 
 type DocumentPage implements Pageable {
@@ -790,6 +817,11 @@ type EventDefinition {
 	group: String
 	spec: EventSpec
 	version: Version
+	ready: Boolean!
+	createdAt: Timestamp
+	updatedAt: Timestamp
+	deletedAt: Timestamp
+	error: String
 }
 
 type EventDefinitionPage implements Pageable {
@@ -975,10 +1007,21 @@ type Viewer {
 
 type Webhook {
 	id: ID!
-	applicationID: ID!
-	type: ApplicationWebhookType!
+	applicationID: ID
+	runtimeID: ID
+	integrationSystemID: ID
+	type: WebhookType!
+	mode: WebhookMode!
+	correlationIdKey: String
+	retryInterval: Int!
+	timeout: Int!
 	url: String!
 	auth: Auth
+	urlTemplate: String!
+	inputTemplate: String!
+	headerTemplate: String!
+	outputTemplate: String!
+	statusTemplate: String
 }
 
 type Query {

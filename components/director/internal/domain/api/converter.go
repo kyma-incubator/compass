@@ -42,6 +42,11 @@ func (c *converter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
 		TargetURL:   in.TargetURL,
 		Group:       in.Group,
 		Version:     c.version.ToGraphQL(in.Version),
+		Ready:       in.Ready,
+		CreatedAt:   graphql.Timestamp(in.CreatedAt),
+		UpdatedAt:   graphql.Timestamp(in.UpdatedAt),
+		DeletedAt:   graphql.Timestamp(in.DeletedAt),
+		Error:       in.Error,
 	}
 }
 
@@ -140,6 +145,11 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		Group:       repo.StringPtrFromNullableString(entity.Group),
 		Spec:        c.apiSpecFromEntity(entity.EntitySpec),
 		Version:     c.version.FromEntity(entity.Version),
+		Ready:       entity.Ready,
+		CreatedAt:   entity.CreatedAt,
+		UpdatedAt:   entity.UpdatedAt,
+		DeletedAt:   entity.DeletedAt,
+		Error:       repo.StringPtrFromNullableString(entity.Error),
 	}
 }
 

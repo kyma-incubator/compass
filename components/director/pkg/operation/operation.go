@@ -35,13 +35,7 @@ type Operation struct {
 	ResourceType      string                `json:"resource_type"`
 	CorrelationID     string                `json:"correlation_id"`
 	WebhookID         string                `json:"webhook_id"`
-	RelatedResources  []RelatedResource     `json:"related_resources"`
 	RequestData       string                `json:"request_data"`
-}
-
-type RelatedResource struct {
-	ResourceType string
-	ResourceID   string
 }
 
 // SaveToContext saves Operation to the context

@@ -15,8 +15,13 @@ type APIDefinition struct {
 	Spec        *APISpec
 	TargetURL   string
 	//  group allows you to find the same API but in different version
-	Group   *string
-	Version *Version
+	Group     *string
+	Version   *Version
+	Ready     bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt time.Time
+	Error     *string
 }
 
 type APISpec struct {

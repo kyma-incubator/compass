@@ -575,15 +575,26 @@ type Viewer struct {
 }
 
 type Webhook struct {
-	ID            string                 `json:"id"`
-	ApplicationID string                 `json:"applicationID"`
-	Type          ApplicationWebhookType `json:"type"`
-	URL           string                 `json:"url"`
-	Auth          *Auth                  `json:"auth"`
+	ID                  string      `json:"id"`
+	ApplicationID       *string     `json:"applicationID"`
+	RuntimeID           *string     `json:"runtimeID"`
+	IntegrationSystemID *string     `json:"integrationSystemID"`
+	Type                WebhookType `json:"type"`
+	Mode                WebhookMode `json:"mode"`
+	CorrelationIDKey    *string     `json:"correlationIdKey"`
+	RetryInterval       int         `json:"retryInterval"`
+	Timeout             int         `json:"timeout"`
+	URL                 string      `json:"url"`
+	Auth                *Auth       `json:"auth"`
+	URLTemplate         string      `json:"urlTemplate"`
+	InputTemplate       string      `json:"inputTemplate"`
+	HeaderTemplate      string      `json:"headerTemplate"`
+	OutputTemplate      string      `json:"outputTemplate"`
+	StatusTemplate      *string     `json:"statusTemplate"`
 }
 
 type WebhookInput struct {
-	Type ApplicationWebhookType `json:"type"`
+	Type WebhookType `json:"type"`
 	// **Validation:** valid URL, max=256
 	URL  string     `json:"url"`
 	Auth *AuthInput `json:"auth"`
@@ -709,45 +720,6 @@ func (e *ApplicationTemplateAccessLevel) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ApplicationTemplateAccessLevel) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type ApplicationWebhookType string
-
-const (
-	ApplicationWebhookTypeConfigurationChanged ApplicationWebhookType = "CONFIGURATION_CHANGED"
-)
-
-var AllApplicationWebhookType = []ApplicationWebhookType{
-	ApplicationWebhookTypeConfigurationChanged,
-}
-
-func (e ApplicationWebhookType) IsValid() bool {
-	switch e {
-	case ApplicationWebhookTypeConfigurationChanged:
-		return true
-	}
-	return false
-}
-
-func (e ApplicationWebhookType) String() string {
-	return string(e)
-}
-
-func (e *ApplicationWebhookType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ApplicationWebhookType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ApplicationWebhookType", str)
-	}
-	return nil
-}
-
-func (e ApplicationWebhookType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1297,5 +1269,89 @@ func (e *ViewerType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ViewerType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type WebhookMode string
+
+const (
+	WebhookModeSync  WebhookMode = "SYNC"
+	WebhookModeAsync WebhookMode = "ASYNC"
+)
+
+var AllWebhookMode = []WebhookMode{
+	WebhookModeSync,
+	WebhookModeAsync,
+}
+
+func (e WebhookMode) IsValid() bool {
+	switch e {
+	case WebhookModeSync, WebhookModeAsync:
+		return true
+	}
+	return false
+}
+
+func (e WebhookMode) String() string {
+	return string(e)
+}
+
+func (e *WebhookMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WebhookMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WebhookMode", str)
+	}
+	return nil
+}
+
+func (e WebhookMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type WebhookType string
+
+const (
+	WebhookTypeConfigurationChanged WebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeRegisterApplication  WebhookType = "REGISTER_APPLICATION"
+	WebhookTypeDeleteApplication    WebhookType = "DELETE_APPLICATION"
+)
+
+var AllWebhookType = []WebhookType{
+	WebhookTypeConfigurationChanged,
+	WebhookTypeRegisterApplication,
+	WebhookTypeDeleteApplication,
+}
+
+func (e WebhookType) IsValid() bool {
+	switch e {
+	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeDeleteApplication:
+		return true
+	}
+	return false
+}
+
+func (e WebhookType) String() string {
+	return string(e)
+}
+
+func (e *WebhookType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WebhookType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WebhookType", str)
+	}
+	return nil
+}
+
+func (e WebhookType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -51,36 +48,19 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 		values = append(values, fmt.Sprintf(":%s", c))
 	}
 
-	sqlQuery := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s ) RETURNING id;", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
+	entity, ok := dbEntity.(TimestampableEntity)
+	if ok {
+		now := time.Now()
+		entity.SetCreatedAt(now)
+		entity.SetUpdatedAt(now)
 
-	stmt, err := persist.PrepareNamedContext(ctx, sqlQuery)
-	if err != nil {
-		return err
+		dbEntity = entity
 	}
 
-	resultDto := &struct {
-		ID string `db:"id"`
-	}{}
+	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
-	log.C(ctx).Debugf("Executing DB query: %s", sqlQuery)
-	err = stmt.GetContext(ctx, resultDto, dbEntity)
-
-	opMode := operation.ModeFromCtx(ctx)
-	if opMode == graphql.OperationModeAsync {
-		operations, exists := operation.FromCtx(ctx)
-		if !exists {
-			return apperrors.NewInternalError("unable to fetch operations from context")
-		}
-
-		op := (*operations)[len(*operations)-1]
-
-		relatedResource := operation.RelatedResource{
-			ResourceType: c.tableName,
-			ResourceID:   resultDto.ID,
-		}
-
-		op.RelatedResources = append(op.RelatedResources, relatedResource)
-	}
+	log.C(ctx).Debugf("Executing DB query: %s", stmt)
+	_, err = persist.NamedExec(stmt, dbEntity)
 
 	return persistence.MapSQLError(ctx, err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
 }

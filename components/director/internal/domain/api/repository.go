@@ -16,10 +16,10 @@ const apiDefTable string = `"public"."api_definitions"`
 var (
 	tenantColumn  = "tenant_id"
 	apiDefColumns = []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "spec_data",
-		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"name", "description", "group_name", "target_url", "spec_data", "spec_format", "spec_type",
-		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
 //go:generate mockery -name=APIDefinitionConverter -output=automock -outpkg=automock -case=underscore

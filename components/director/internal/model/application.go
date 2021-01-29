@@ -15,6 +15,11 @@ type Application struct {
 	Status              *ApplicationStatus
 	HealthCheckURL      *string
 	IntegrationSystemID *string
+	Ready               bool
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	DeletedAt           time.Time
+	Error               *string
 }
 
 func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timestamp time.Time) {

@@ -8,6 +8,11 @@ type Application struct {
 	Description         *string            `json:"description"`
 	Status              *ApplicationStatus `json:"status"`
 	HealthCheckURL      *string            `json:"healthCheckURL"`
+	Ready               bool               `json:"ready"`
+	CreatedAt           Timestamp          `json:"createdAt"`
+	UpdatedAt           Timestamp          `json:"updatedAt"`
+	DeletedAt           Timestamp          `json:"deletedAt"`
+	Error               *string            `json:"error"`
 }
 
 // Extended types used by external API

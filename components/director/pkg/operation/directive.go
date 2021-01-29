@@ -76,7 +76,6 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		OperationType:     op,
 		OperationCategory: resCtx.Field.Name,
 		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
-		RelatedResources:  make([]RelatedResource, 0),
 	}
 	ctx = SaveToContext(ctx, &[]*Operation{operation})
 
@@ -84,13 +83,6 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	if err != nil {
 		return nil, err
 	}
-
-	if len(operation.RelatedResources) == 0 {
-		return nil, errors.New("related resources cannot be empty")
-	}
-
-	operation.ResourceID = operation.RelatedResources[0].ResourceID
-	operation.ResourceType = operation.RelatedResources[0].ResourceType
 
 	operationID, err := d.scheduler.Schedule(*operation)
 	if err != nil {
