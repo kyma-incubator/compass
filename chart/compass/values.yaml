@@ -32,13 +32,13 @@ global:
       version: "PR-1698"
     ord_service:
       dir:
-      version: "PR-9"
+      version: "PR-12"
     healthchecker:
       dir:
       version: "PR-1698"
     schema_migrator:
       dir:
-      version: "PR-1693"
+      version: "PR-1713"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -65,7 +65,7 @@ global:
         version: "PR-1698"
       ord_service:
         dir:
-        version: "PR-1705"
+        version: "PR-1713"
   isLocalEnv: false
   oauth2:
     host: oauth2
