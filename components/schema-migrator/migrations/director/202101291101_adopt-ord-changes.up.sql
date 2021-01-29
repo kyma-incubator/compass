@@ -135,7 +135,7 @@ FROM event_api_definitions,
      jsonb_array_elements_text(event_api_definitions.part_of_products) AS elements;
 
 -------------------------------------------------------------------
--------------------------- Generic Views -------------------------- -- TODO: Validate views
+-------------------------- Generic Views --------------------------
 
 CREATE VIEW line_of_businesses AS
 SELECT *
