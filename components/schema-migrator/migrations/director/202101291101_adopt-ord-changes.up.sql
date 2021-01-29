@@ -129,7 +129,7 @@ ALTER TABLE event_api_definitions
     ADD COLUMN industry         JSONB;
 
 CREATE VIEW event_product AS
-SELECT event_api_definitions.id AS event_api_definition_id,
+SELECT event_api_definitions.id AS event_definition_id,
        elements.value           AS product_id
 FROM event_api_definitions,
      jsonb_array_elements_text(event_api_definitions.part_of_products) AS elements;
