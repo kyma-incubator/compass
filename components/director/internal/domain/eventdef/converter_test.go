@@ -1,8 +1,10 @@
 package eventdef_test
 
 import (
+	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
@@ -21,10 +23,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var createdAt = time.Now()
+
 func TestConverter_ToGraphQL(t *testing.T) {
 	// GIVEN
-	modelEventAPIDefinition := fixFullModelEventDefinition("foo", "placeholder")
-	gqlEventAPIDefinition := fixDetailedGQLEventDefinition("foo", "placeholder")
+	modelEventAPIDefinition := fixFullModelEventDefinitionWithTimestamp("foo", "placeholder", createdAt)
+	gqlEventAPIDefinition := fixDetailedGQLEventDefinitionWithTimestamp("foo", "placeholder", createdAt)
 	emptyModelEventAPIDefinition := &model.EventDefinition{}
 	emptyGraphQLEventDefinition := &graphql.EventDefinition{}
 
@@ -311,9 +315,11 @@ func TestEventApiSpecDataConversionNilStaysNil(t *testing.T) {
 
 func TestConverter_ToEntity(t *testing.T) {
 	t.Run("success when all nullable properties filled and converted", func(t *testing.T) {
+		testErr := "test-err"
 		//GIVEN
 		id := "id"
-		eventModel := fixFullModelEventDefinition(id, "placeholder")
+		eventModel := fixFullModelEventDefinitionWithTimestamp(id, "placeholder", createdAt)
+		eventModel.Error = &testErr
 		versionConv := &automock.VersionConverter{}
 		versionConv.On("ToEntity", fixVersionModel()).Return(fixVersionEntity()).Once()
 		conv := eventdef.NewConverter(nil, versionConv)
@@ -321,7 +327,12 @@ func TestConverter_ToEntity(t *testing.T) {
 		eventAPIEnt, err := conv.ToEntity(eventModel)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixFullEventDef(id, "placeholder"), eventAPIEnt)
+		expectedEventDef := fixFullEventDefWithTimestamp(id, "placeholder", createdAt)
+		expectedEventDef.Error = sql.NullString{
+			String: testErr,
+			Valid:  true,
+		}
+		assert.Equal(t, expectedEventDef, eventAPIEnt)
 		versionConv.AssertExpectations(t)
 	})
 
@@ -345,16 +356,23 @@ func TestConverter_FromEntity(t *testing.T) {
 	t.Run("success when all nullable properties filled and converted", func(t *testing.T) {
 		//GIVEN
 		id := "id"
-		eventEntity := fixFullEventDef(id, "placeholder")
+		testErr := "test-err"
+		eventEntity := fixFullEventDefWithTimestamp(id, "placeholder", createdAt)
+		eventEntity.Error = sql.NullString{
+			String: testErr,
+			Valid:  true,
+		}
 		versionConv := &automock.VersionConverter{}
-		exptectedModel := fixVersionModel()
-		versionConv.On("FromEntity", fixVersionEntity()).Return(&exptectedModel).Once()
+		expectedModel := fixVersionModel()
+		versionConv.On("FromEntity", fixVersionEntity()).Return(&expectedModel).Once()
 		conv := eventdef.NewConverter(nil, versionConv)
 		//WHEN
-		eventModel, err := conv.FromEntity(eventEntity)
+		eventModel, err := conv.FromEntity(*eventEntity)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, eventModel, fixFullModelEventDefinition(id, "placeholder"))
+		expectedEventDef := fixFullModelEventDefinitionWithTimestamp(id, "placeholder", createdAt)
+		expectedEventDef.Error = &testErr
+		assert.Equal(t, expectedEventDef, eventModel)
 		versionConv.AssertExpectations(t)
 	})
 
@@ -366,7 +384,7 @@ func TestConverter_FromEntity(t *testing.T) {
 		versionConv.On("FromEntity", version.Version{}).Return(nil).Once()
 		conv := eventdef.NewConverter(nil, versionConv)
 		//WHEN
-		eventModel, err := conv.FromEntity(eventEntity)
+		eventModel, err := conv.FromEntity(*eventEntity)
 		//THEN
 		require.NoError(t, err)
 		expectedModel := fixMinModelEventAPIDefinition(id, "placeholder")

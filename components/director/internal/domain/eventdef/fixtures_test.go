@@ -1,6 +1,7 @@
 package eventdef_test
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"time"
 
@@ -34,6 +35,10 @@ func fixGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
 }
 
 func fixFullModelEventDefinition(id, placeholder string) model.EventDefinition {
+	return fixFullModelEventDefinitionWithTimestamp(id, placeholder, time.Now())
+}
+
+func fixFullModelEventDefinitionWithTimestamp(id, placeholder string, createdAt time.Time) model.EventDefinition {
 	spec := &model.EventSpec{
 		Data:   str.Ptr("data"),
 		Format: model.SpecFormatJSON,
@@ -50,10 +55,18 @@ func fixFullModelEventDefinition(id, placeholder string) model.EventDefinition {
 		Group:       str.Ptr("group_" + placeholder),
 		Spec:        spec,
 		Version:     &v,
+		Ready:       true,
+		Error:       nil,
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
+		DeletedAt:   time.Time{},
 	}
 }
-
 func fixDetailedGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
+	return fixDetailedGQLEventDefinitionWithTimestamp(id, placeholder, time.Now())
+}
+
+func fixDetailedGQLEventDefinitionWithTimestamp(id, placeholder string, createdAt time.Time) *graphql.EventDefinition {
 	data := graphql.CLOB("data")
 	format := graphql.SpecFormatJSON
 
@@ -82,6 +95,11 @@ func fixDetailedGQLEventDefinition(id, placeholder string) *graphql.EventDefinit
 		Spec:        spec,
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
+		Ready:       true,
+		Error:       nil,
+		CreatedAt:   graphql.Timestamp(createdAt),
+		UpdatedAt:   graphql.Timestamp(createdAt),
+		DeletedAt:   graphql.Timestamp(time.Time{}),
 	}
 }
 
@@ -144,9 +162,13 @@ func fixGQLEventDefinitionInput() *graphql.EventDefinitionInput {
 	}
 }
 
-func fixFullEventDef(id, placeholder string) eventdef.Entity {
+func fixFullEventDef(id, placeholder string) *eventdef.Entity {
+	return fixFullEventDefWithTimestamp(id, placeholder, time.Now())
+}
+
+func fixFullEventDefWithTimestamp(id, placeholder string, createdAt time.Time) *eventdef.Entity {
 	v := fixVersionEntity()
-	return eventdef.Entity{
+	return &eventdef.Entity{
 		ID:          id,
 		BndlID:      bundleID,
 		TenantID:    tenantID,
@@ -158,12 +180,17 @@ func fixFullEventDef(id, placeholder string) eventdef.Entity {
 			SpecType:   repo.NewValidNullableString(string(model.EventSpecTypeAsyncAPI)),
 			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatJSON)),
 		},
-		Version: v,
+		Version:   v,
+		Ready:     true,
+		Error:     sql.NullString{},
+		CreatedAt: createdAt,
+		UpdatedAt: createdAt,
+		DeletedAt: time.Time{},
 	}
 }
 
-func fixMinEntityEventDef(id, placeholder string) eventdef.Entity {
-	return eventdef.Entity{ID: id, TenantID: tenantID,
+func fixMinEntityEventDef(id, placeholder string) *eventdef.Entity {
+	return &eventdef.Entity{ID: id, TenantID: tenantID,
 		BndlID: bundleID, Name: placeholder}
 }
 
@@ -190,18 +217,22 @@ func fixVersionEntity() version.Version {
 func fixEventDefinitionColumns() []string {
 	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated",
-		"version_deprecated_since", "version_for_removal"}
+		"version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
-		"data", "JSON", "ASYNC_API", "v1.1", false, "v1.0", false}
+	return fixEventDefinitionRowWithTimestamp(id, placeholder, time.Now())
 }
 
-func fixEventCreateArgs(id string, api model.EventDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
-		api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type), api.Version.Value, api.Version.Deprecated,
-		api.Version.DeprecatedSince, api.Version.ForRemoval}
+func fixEventDefinitionRowWithTimestamp(id, placeholder string, createdAt time.Time) []driver.Value {
+	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
+		"data", "JSON", "ASYNC_API", "v1.1", false, "v1.0", false, true, createdAt, createdAt, time.Time{}, nil}
+}
+
+func fixEventCreateArgs(id string, event model.EventDefinition) []driver.Value {
+	return []driver.Value{id, tenantID, bundleID, event.Name, event.Description, event.Group,
+		event.Spec.Data, string(event.Spec.Format), string(event.Spec.Type), event.Version.Value, event.Version.Deprecated,
+		event.Version.DeprecatedSince, event.Version.ForRemoval, event.Ready, event.CreatedAt, event.UpdatedAt, event.DeletedAt, event.Error}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {

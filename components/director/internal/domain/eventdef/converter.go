@@ -157,6 +157,11 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) (*Entity, error) 
 		GroupName:   repo.NewNullableString(eventModel.Group),
 		Version:     c.convertVersionToEntity(eventModel.Version),
 		EntitySpec:  c.apiSpecToEntity(eventModel.Spec),
+		Ready:       eventModel.Ready,
+		CreatedAt:   eventModel.CreatedAt,
+		UpdatedAt:   eventModel.UpdatedAt,
+		DeletedAt:   eventModel.DeletedAt,
+		Error:       repo.NewNullableString(eventModel.Error),
 	}, nil
 }
 
