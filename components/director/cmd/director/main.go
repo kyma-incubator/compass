@@ -88,6 +88,7 @@ type config struct {
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
+	OperationEndpoint             string `envconfig:"default=/operations"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
 	ConfigurationFile             string
 	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
@@ -231,6 +232,8 @@ func main() {
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
+
+	mainRouter.HandleFunc(cfg.OperationEndpoint, operation.NewHandler(transact).ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())

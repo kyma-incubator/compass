@@ -215,7 +215,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 		op := (*operations)[len(*operations)-1]
 
 		op.ResourceID = model.ID
-		op.ResourceType = "public.applications"
+		op.ResourceType = string(resource.Application)
 	}
 
 	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)

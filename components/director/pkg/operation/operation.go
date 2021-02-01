@@ -27,6 +27,14 @@ const (
 	OpModeKey = "OperationModeCtx"
 )
 
+type OperationStatus string
+
+const (
+	OperationStatusSucceeded  OperationStatus = "SUCCEEDED"
+	OperationStatusFailed     OperationStatus = "FAILED"
+	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
+)
+
 type Operation struct {
 	OperationID       string                `json:"id"`
 	OperationType     graphql.OperationType `json:"type"`
