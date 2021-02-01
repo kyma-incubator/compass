@@ -1,6 +1,7 @@
 package application_test
 
 import (
+	"database/sql"
 	"net/url"
 	"testing"
 	"time"
@@ -86,14 +87,18 @@ func fixGQLApplication(id, name, description string) *graphql.Application {
 }
 
 func fixDetailedModelApplication(t *testing.T, id, tenant, name, description string) *model.Application {
-	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	return fixDetailedModelApplicationWithTimestamp(t, id, tenant, name, description, time.Now())
+}
+
+func fixDetailedModelApplicationWithTimestamp(t *testing.T, id, tenant, name, description string, createdAt time.Time) *model.Application {
+	appStatusTimestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
 	return &model.Application{
 		ID: id,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
-			Timestamp: time,
+			Timestamp: appStatusTimestamp,
 		},
 		Name:                name,
 		Description:         &description,
@@ -101,28 +106,46 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
+		Ready:               true,
+		Error:               nil,
+		CreatedAt:           createdAt,
+		UpdatedAt:           createdAt,
+		DeletedAt:           time.Time{},
 	}
 }
 
 func fixDetailedGQLApplication(t *testing.T, id, name, description string) *graphql.Application {
-	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	return fixDetailedGQLApplicationWithTimestamp(t, id, name, description, createdAt)
+}
+
+func fixDetailedGQLApplicationWithTimestamp(t *testing.T, id, name, description string, createdAt time.Time) *graphql.Application {
+	appStatusTimestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
 	return &graphql.Application{
 		ID: id,
 		Status: &graphql.ApplicationStatus{
 			Condition: graphql.ApplicationStatusConditionInitial,
-			Timestamp: graphql.Timestamp(time),
+			Timestamp: graphql.Timestamp(appStatusTimestamp),
 		},
 		Name:                name,
 		Description:         &description,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        str.Ptr("provider name"),
+		Ready:               true,
+		Error:               nil,
+		CreatedAt:           graphql.Timestamp(createdAt),
+		UpdatedAt:           graphql.Timestamp(createdAt),
+		DeletedAt:           graphql.Timestamp(time.Time{}),
 	}
 }
 
 func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description string) *application.Entity {
+	return fixDetailedEntityApplicationWithTimestamp(t, id, tenant, name, description, time.Now())
+}
+
+func fixDetailedEntityApplicationWithTimestamp(t *testing.T, id, tenant, name, description string, createdAt time.Time) *application.Entity {
 	ts, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
@@ -136,6 +159,11 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		HealthCheckURL:      repo.NewValidNullableString(testURL),
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
 		ProviderName:        repo.NewNullableString(&providerName),
+		Ready:               true,
+		Error:               sql.NullString{},
+		CreatedAt:           createdAt,
+		UpdatedAt:           createdAt,
+		DeletedAt:           time.Time{},
 	}
 }
 

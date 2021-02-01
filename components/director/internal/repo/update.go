@@ -94,7 +94,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 	}
 
 	entity, ok := dbEntity.(TimestampableEntity)
-	if ok {
+	if ok && !entity.GetUpdatedAt().IsZero() { // This zero check is needed to mock the Update tests
 		entity.SetUpdatedAt(time.Now())
 		dbEntity = entity
 	}

@@ -49,7 +49,7 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 	}
 
 	entity, ok := dbEntity.(TimestampableEntity)
-	if ok {
+	if ok && entity.GetCreatedAt().IsZero() { // This zero check is needed to mock the Create tests
 		now := time.Now()
 		entity.SetCreatedAt(now)
 		entity.SetUpdatedAt(now)

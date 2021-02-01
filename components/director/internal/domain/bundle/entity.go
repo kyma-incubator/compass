@@ -20,8 +20,16 @@ type Entity struct {
 	Error                         sql.NullString `db:"error"`
 }
 
+func (e *Entity) GetCreatedAt() time.Time {
+	return e.CreatedAt
+}
+
 func (e *Entity) SetCreatedAt(t time.Time) {
 	e.CreatedAt = t
+}
+
+func (e *Entity) GetUpdatedAt() time.Time {
+	return e.UpdatedAt
 }
 
 func (e *Entity) SetUpdatedAt(t time.Time) {

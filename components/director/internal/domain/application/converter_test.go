@@ -2,9 +2,8 @@ package application_test
 
 import (
 	"context"
-	"testing"
-
 	"github.com/google/uuid"
+	"testing"
 
 	"github.com/stretchr/testify/require"
 
@@ -26,8 +25,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixDetailedModelApplication(t, givenID(), givenTenant(), "Foo", "Lorem ipsum"),
-			Expected: fixDetailedGQLApplication(t, givenID(), "Foo", "Lorem ipsum"),
+			Input:    fixDetailedModelApplicationWithTimestamp(t, givenID(), givenTenant(), "Foo", "Lorem ipsum", createdAt),
+			Expected: fixDetailedGQLApplicationWithTimestamp(t, givenID(), "Foo", "Lorem ipsum", createdAt),
 		},
 		{
 			Name:  "Empty",

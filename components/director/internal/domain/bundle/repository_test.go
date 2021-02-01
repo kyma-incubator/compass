@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -21,13 +22,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var createdAt = time.Now()
+
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
 	name := "foo"
 	desc := "bar"
 
-	bndlModel := fixBundleModel(t, name, desc)
-	bndlEntity := fixEntityBundle(bundleID, name, desc)
+	bndlModel := fixBundleModelWithTimestamp(t, name, desc, createdAt)
+	bndlEntity := fixEntityBundleWithTimestamp(bundleID, name, desc, createdAt)
 	insertQuery := `^INSERT INTO public.bundles \(.+\) VALUES \(.+\)$`
 
 	t.Run("success", func(t *testing.T) {
@@ -79,18 +82,22 @@ func TestPgRepository_Create(t *testing.T) {
 
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?,
-		default_instance_auth = ? WHERE tenant_id = ? AND id = ?`)
+		default_instance_auth = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE tenant_id = ? AND id = ?`)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		bndl := fixBundleModel(t, "foo", "update")
+		bndl.CreatedAt = time.Time{}
+		bndl.UpdatedAt = time.Time{}
 		entity := fixEntityBundle(bundleID, "foo", "update")
+		entity.CreatedAt = time.Time{}
+		entity.UpdatedAt = time.Time{}
 
 		convMock := &automock.EntityConverter{}
 		convMock.On("ToEntity", bndl).Return(entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, tenantID, entity.ID).
+			WithArgs(entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		pgRepository := mp_bundle.NewRepository(convMock)
@@ -167,14 +174,14 @@ func TestPgRepository_Exists(t *testing.T) {
 
 func TestPgRepository_GetByID(t *testing.T) {
 	// given
-	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
+	bndlEntity := fixEntityBundleWithTimestamp(bundleID, "foo", "bar", createdAt)
 
 	selectQuery := `^SELECT (.+) FROM public.bundles WHERE tenant_id = \$1 AND id = \$2$`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows(fixBundleColumns()).
-			AddRow(fixBundleRow(bundleID, "placeholder")...)
+			AddRow(fixBundleRowWithTimestamp(bundleID, "placeholder", createdAt)...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, bundleID).
@@ -219,7 +226,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 		rows := sqlmock.NewRows(fixBundleColumns()).
-			AddRow(fixBundleRow(bundleID, "placeholder")...)
+			AddRow(fixBundleRowWithTimestamp(bundleID, "placeholder", createdAt)...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, bundleID).
@@ -242,14 +249,14 @@ func TestPgRepository_GetByID(t *testing.T) {
 func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 	// given
 	instanceAuthID := "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
+	bndlEntity := fixEntityBundleWithTimestamp(bundleID, "foo", "bar", createdAt)
 
-	selectQuery := `^SELECT b.id, b.tenant_id, b.app_id, b.name, b.description, b.instance_auth_request_json_schema, b.default_instance_auth FROM public.bundles AS b JOIN public.bundle_instance_auths AS a on a.bundle_id=b.id where a.tenant_id=\$1 AND a.id=\$2`
+	selectQuery := `^SELECT b.id, b.tenant_id, b.app_id, b.name, b.description, b.instance_auth_request_json_schema, b.default_instance_auth, b.ready, b.created_at, b.updated_at, b.deleted_at, b.error FROM public.bundles AS b JOIN public.bundle_instance_auths AS a on a.bundle_id=b.id where a.tenant_id=\$1 AND a.id=\$2`
 
 	t.Run("Success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows(fixBundleColumns()).
-			AddRow(fixBundleRow(bundleID, "placeholder")...)
+			AddRow(fixBundleRowWithTimestamp(bundleID, "placeholder", createdAt)...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, instanceAuthID).
@@ -295,7 +302,7 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 		rows := sqlmock.NewRows(fixBundleColumns()).
-			AddRow(fixBundleRow(bundleID, "placeholder")...)
+			AddRow(fixBundleRowWithTimestamp(bundleID, "placeholder", createdAt)...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, instanceAuthID).
@@ -317,14 +324,14 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 
 func TestPgRepository_GetForApplication(t *testing.T) {
 	// given
-	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
+	bndlEntity := fixEntityBundleWithTimestamp(bundleID, "foo", "bar", createdAt)
 
 	selectQuery := `^SELECT (.+) FROM public.bundles WHERE tenant_id = \$1 AND id = \$2 AND app_id = \$3`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows(fixBundleColumns()).
-			AddRow(fixBundleRow(bundleID, "placeholder")...)
+			AddRow(fixBundleRowWithTimestamp(bundleID, "placeholder", createdAt)...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, bundleID, appID).
@@ -370,7 +377,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 		rows := sqlmock.NewRows(fixBundleColumns()).
-			AddRow(fixBundleRow(bundleID, "placeholder")...)
+			AddRow(fixBundleRowWithTimestamp(bundleID, "placeholder", createdAt)...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, bundleID, appID).
@@ -399,9 +406,9 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	inputCursor := ""
 	totalCount := 2
 	firstBndlID := "111111111-1111-1111-1111-111111111111"
-	firstBndlEntity := fixEntityBundle(firstBndlID, "foo", "bar")
+	firstBndlEntity := fixEntityBundleWithTimestamp(firstBndlID, "foo", "bar", createdAt)
 	secondBndlID := "222222222-2222-2222-2222-222222222222"
-	secondBndlEntity := fixEntityBundle(secondBndlID, "foo", "bar")
+	secondBndlEntity := fixEntityBundleWithTimestamp(secondBndlID, "foo", "bar", createdAt)
 
 	selectQuery := fmt.Sprintf(`^SELECT (.+) FROM public.bundles
 		WHERE tenant_id = \$1 AND app_id = \$2
@@ -414,8 +421,8 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		rows := sqlmock.NewRows(fixBundleColumns()).
-			AddRow(fixBundleRow(firstBndlID, "placeholder")...).
-			AddRow(fixBundleRow(secondBndlID, "placeholder")...)
+			AddRow(fixBundleRowWithTimestamp(firstBndlID, "placeholder", createdAt)...).
+			AddRow(fixBundleRowWithTimestamp(secondBndlID, "placeholder", createdAt)...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, appID).
@@ -467,7 +474,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testErr := errors.New("test error")
 		rows := sqlmock.NewRows(fixBundleColumns()).
-			AddRow(fixBundleRow(firstBndlID, "foo")...)
+			AddRow(fixBundleRowWithTimestamp(firstBndlID, "foo", createdAt)...)
 
 		sqlMock.ExpectQuery(selectQuery).
 			WithArgs(tenantID, appID).

@@ -54,6 +54,11 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 		Description:                   repo.NewNullableString(in.Description),
 		DefaultInstanceAuth:           repo.NewNullableString(defaultInstanceAuth),
 		InstanceAuthRequestJSONSchema: repo.NewNullableString(in.InstanceAuthRequestInputSchema),
+		Ready:                         in.Ready,
+		CreatedAt:                     in.CreatedAt,
+		UpdatedAt:                     in.UpdatedAt,
+		DeletedAt:                     in.DeletedAt,
+		Error:                         repo.NewNullableString(in.Error),
 	}
 
 	return output, nil

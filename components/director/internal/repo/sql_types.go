@@ -7,7 +7,10 @@ import (
 
 // TimestampableEntity denotes an DB-layer entity which can be timestamp with created_at and updated_at values
 type TimestampableEntity interface {
+	GetCreatedAt() time.Time
 	SetCreatedAt(t time.Time)
+
+	GetUpdatedAt() time.Time
 	SetUpdatedAt(t time.Time)
 }
 

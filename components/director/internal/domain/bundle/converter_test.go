@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 
@@ -27,7 +28,10 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		desc := "bar"
-		bndlModel := fixBundleModel(t, name, desc)
+		testErrMsg := "test-err"
+		createdAt := time.Now()
+		bndlModel := fixBundleModelWithTimestamp(t, name, desc, createdAt)
+		bndlModel.Error = &testErrMsg
 		require.NotNil(t, bndlModel)
 		authConv := auth.NewConverter()
 		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
@@ -35,7 +39,13 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		entity, err := conv.ToEntity(bndlModel)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixEntityBundle(bundleID, name, desc), entity)
+
+		expectedBndl := fixEntityBundleWithTimestamp(bundleID, name, desc, createdAt)
+		expectedBndl.Error = sql.NullString{
+			String: testErrMsg,
+			Valid:  true,
+		}
+		assert.Equal(t, expectedBndl, entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
@@ -76,14 +86,22 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		desc := "bar"
-		entity := fixEntityBundle(bundleID, name, desc)
+		createdAt := time.Now()
+		testErrMsg := "test-err"
+		entity := fixEntityBundleWithTimestamp(bundleID, name, desc, createdAt)
+		entity.Error = sql.NullString{
+			String: testErrMsg,
+			Valid:  true,
+		}
 		authConv := auth.NewConverter()
 		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		bndlModel, err := conv.FromEntity(entity)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixBundleModel(t, name, desc), bndlModel)
+		expectedBdnl := fixBundleModelWithTimestamp(t, name, desc, createdAt)
+		expectedBdnl.Error = &testErrMsg
+		assert.Equal(t, expectedBdnl, bndlModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
@@ -122,8 +140,9 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	id := bundleID
 	name := "foo"
 	desc := "bar"
-	modelBundle := fixBundleModel(t, name, desc)
-	gqlBundle := fixGQLBundle(id, name, desc)
+	createdAt := time.Now()
+	modelBundle := fixBundleModelWithTimestamp(t, name, desc, createdAt)
+	gqlBundle := fixGQLBundleWithTimestamp(id, name, desc, createdAt)
 	emptyModelBundle := &model.Bundle{}
 	emptyGraphQLBundle := &graphql.Bundle{}
 
@@ -193,16 +212,17 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	name1 := "foo"
 	name2 := "bar"
 	desc := "1"
+	createdAt := time.Now()
 	input := []*model.Bundle{
-		fixBundleModel(t, name1, desc),
-		fixBundleModel(t, name2, desc),
+		fixBundleModelWithTimestamp(t, name1, desc, createdAt),
+		fixBundleModelWithTimestamp(t, name2, desc, createdAt),
 		{},
 		nil,
 	}
 
 	expected := []*graphql.Bundle{
-		fixGQLBundle(bundleID, name1, desc),
-		fixGQLBundle(bundleID, name2, desc),
+		fixGQLBundleWithTimestamp(bundleID, name1, desc, createdAt),
+		fixGQLBundleWithTimestamp(bundleID, name2, desc, createdAt),
 		{},
 	}
 
