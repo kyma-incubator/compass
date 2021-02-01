@@ -25,7 +25,7 @@ var (
 //go:generate mockery -name=APIDefinitionConverter -output=automock -outpkg=automock -case=underscore
 type APIDefinitionConverter interface {
 	FromEntity(entity Entity) model.APIDefinition
-	ToEntity(apiModel model.APIDefinition) Entity
+	ToEntity(apiModel model.APIDefinition) *Entity
 }
 
 type pgRepository struct {

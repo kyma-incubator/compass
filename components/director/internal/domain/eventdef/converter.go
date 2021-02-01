@@ -147,8 +147,8 @@ func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 	}, nil
 }
 
-func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
-	return Entity{
+func (c *converter) ToEntity(eventModel model.EventDefinition) (*Entity, error) {
+	return &Entity{
 		ID:          eventModel.ID,
 		TenantID:    eventModel.Tenant,
 		BndlID:      eventModel.BundleID,

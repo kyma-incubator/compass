@@ -102,11 +102,11 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*mo
 	return inputs, nil
 }
 
-func (c *converter) ToEntity(in model.Document) (Entity, error) {
+func (c *converter) ToEntity(in model.Document) (*Entity, error) {
 	kind := repo.NewNullableString(in.Kind)
 	data := repo.NewNullableString(in.Data)
 
-	out := Entity{
+	out := &Entity{
 		ID:          in.ID,
 		BndlID:      in.BundleID,
 		TenantID:    in.Tenant,

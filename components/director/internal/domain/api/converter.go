@@ -153,9 +153,9 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 	}
 }
 
-func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
+func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 
-	return Entity{
+	return &Entity{
 		ID:          apiModel.ID,
 		TenantID:    apiModel.Tenant,
 		BndlID:      apiModel.BundleID,

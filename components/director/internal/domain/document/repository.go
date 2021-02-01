@@ -24,7 +24,7 @@ var (
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	ToEntity(in model.Document) (Entity, error)
+	ToEntity(in model.Document) (*Entity, error)
 	FromEntity(in Entity) (model.Document, error)
 }
 
