@@ -17,8 +17,10 @@
 package operation
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -34,41 +36,19 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
-	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 )
 
+type ResourceFetcherFunc func(ctx context.Context, tenant, id string) (*model.Application, error)
+
 type Handler struct {
-	appRepo  application.ApplicationRepository
-	transact persistence.Transactioner
+	resourceFetcherFunc ResourceFetcherFunc
+	transact            persistence.Transactioner
 }
 
-func NewHandler(transact persistence.Transactioner) Handler {
-	authConverter := auth.NewConverter()
-
-	versionConverter := version.NewConverter()
-	frConverter := fetchrequest.NewConverter(authConverter)
-
-	apiConverter := api.NewConverter(frConverter, versionConverter)
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
-	docConverter := document.NewConverter(frConverter)
-
-	webhookConverter := webhook.NewConverter(authConverter)
-	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
-
-	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-
+func NewHandler(transact persistence.Transactioner, resourceFetcherFunc ResourceFetcherFunc) Handler {
 	return Handler{
-		appRepo:  application.NewRepository(appConverter),
-		transact: transact,
+		resourceFetcherFunc: resourceFetcherFunc,
+		transact:            transact,
 	}
 }
 
@@ -111,7 +91,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	app, err := h.appRepo.GetByID(ctx, tenantID, inputParams.ResourceID)
+	app, err := h.resourceFetcherFunc(ctx, tenantID, inputParams.ResourceID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while fetching application from database: %s", err.Error())
 		http.Error(writer, "Unable to execute database operation", http.StatusInternalServerError)

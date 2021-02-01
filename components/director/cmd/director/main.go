@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"net/http"
 	"os"
 	"time"
@@ -233,7 +235,9 @@ func main() {
 
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
-	mainRouter.HandleFunc(cfg.OperationEndpoint, operation.NewHandler(transact).ServeHTTP)
+	appRepo := defaultApplicationRepo()
+	operationHandler := operation.NewHandler(transact, appRepo.GetByID)
+	mainRouter.HandleFunc(cfg.OperationEndpoint, operationHandler.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
@@ -421,4 +425,22 @@ func defaultBundleRepo() mp_bundle.BundleRepository {
 	apiConverter := api.NewConverter(frConverter, versionConverter)
 
 	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
+}
+
+func defaultApplicationRepo() application.ApplicationRepository {
+	authConverter := auth.NewConverter()
+
+	versionConverter := version.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+
+	apiConverter := api.NewConverter(frConverter, versionConverter)
+	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	docConverter := document.NewConverter(frConverter)
+
+	webhookConverter := webhook.NewConverter(authConverter)
+	bundleConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+
+	return application.NewRepository(appConverter)
 }
