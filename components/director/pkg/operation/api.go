@@ -20,8 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -58,7 +60,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while retrieving tenant from context: %s", err.Error())
-		http.Error(writer, "Unable to determine tenant for request", http.StatusInternalServerError)
+		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to determine tenant for request"), http.StatusInternalServerError)
 		return
 	}
 
@@ -84,7 +86,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %s", err.Error())
-		http.Error(writer, "Unable to established connection with database", http.StatusInternalServerError)
+		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to established connection with database"), http.StatusInternalServerError)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
@@ -94,26 +96,28 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	app, err := h.resourceFetcherFunc(ctx, tenantID, inputParams.ResourceID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while fetching application from database: %s", err.Error())
-		http.Error(writer, "Unable to execute database operation", http.StatusInternalServerError)
+		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to execute database operation"), http.StatusInternalServerError)
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
-		http.Error(writer, "Unable to finalize database operation", http.StatusInternalServerError)
+		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to finalize database operation"), http.StatusInternalServerError)
 		return
 	}
 
 	type operationResponse struct {
 		*Operation
 		Status OperationStatus `json:"status"`
+		Error  *string         `json:"error"`
 	}
 
-	opResponse := operationResponse{
+	opResponse := &operationResponse{
 		Operation: &Operation{
 			ResourceID:   inputParams.ResourceID,
 			ResourceType: inputParams.ResourceType,
 		},
+		Error: app.Error,
 	}
 
 	if !app.DeletedAt.IsZero() {

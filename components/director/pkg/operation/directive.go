@@ -18,8 +18,9 @@ package operation
 
 import (
 	"context"
-	"errors"
 	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
@@ -45,7 +46,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	resCtx := gqlgen.GetResolverContext(ctx)
 	mode, ok := resCtx.Args[modeParam].(*graphql.OperationMode)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("could not get %s parameter", modeParam))
+		return nil, apperrors.NewInternalError(fmt.Sprintf("could not get %s parameter", modeParam))
 	}
 
 	ctx = SaveModeToContext(ctx, *mode)
@@ -66,7 +67,8 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 		err = tx.Commit()
 		if err != nil {
-			return nil, err
+			log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
+			return nil, apperrors.NewInternalError("Unable to finalize database operation")
 		}
 
 		return resp, nil
@@ -81,19 +83,22 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 	resp, err := next(ctx)
 	if err != nil {
-		return nil, err
+		log.C(ctx).WithError(err).Errorf("An error occurred while processing operation: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to process operation")
 	}
 
 	operationID, err := d.scheduler.Schedule(*operation)
 	if err != nil {
-		return nil, err
+		log.C(ctx).WithError(err).Errorf("An error occurred while scheduling operation: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to schedule operation")
 	}
 
 	operation.OperationID = operationID
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, err
+		log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to finalize database operation")
 	}
 
 	return resp, nil
