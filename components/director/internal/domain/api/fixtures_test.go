@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"time"
@@ -33,6 +34,10 @@ func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *mo
 }
 
 func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
+	return fixFullAPIDefinitionModelWithTimestamp(placeholder, time.Now())
+}
+
+func fixFullAPIDefinitionModelWithTimestamp(placeholder string, createdAt time.Time) model.APIDefinition {
 	spec := &model.APISpec{
 		Data:   str.Ptr("spec_data_" + placeholder),
 		Format: model.SpecFormatYaml,
@@ -59,6 +64,11 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
+		Ready:       true,
+		Error:       nil,
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
+		DeletedAt:   time.Time{},
 	}
 }
 
@@ -72,6 +82,10 @@ func fixGQLAPIDefinition(id string, bndlId string, name, targetURL string) *grap
 }
 
 func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
+	return fixFullGQLAPIDefinitionWithTimestamp(placeholder, createdAt)
+}
+
+func fixFullGQLAPIDefinitionWithTimestamp(placeholder string, createdAt time.Time) *graphql.APIDefinition {
 	data := graphql.CLOB("spec_data_" + placeholder)
 	format := graphql.SpecFormatYaml
 
@@ -101,6 +115,11 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
+		Ready:       true,
+		Error:       nil,
+		CreatedAt:   graphql.Timestamp(createdAt),
+		UpdatedAt:   graphql.Timestamp(createdAt),
+		DeletedAt:   graphql.Timestamp(time.Time{}),
 	}
 }
 
@@ -238,8 +257,8 @@ func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
 	}
 }
 
-func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) api.Entity {
-	return api.Entity{
+func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) *api.Entity {
+	return &api.Entity{
 		ID:        id,
 		BndlID:    bndlID,
 		Name:      name,
@@ -247,10 +266,14 @@ func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) ap
 	}
 }
 
-func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
+func fixFullEntityAPIDefinition(apiDefID, placeholder string) *api.Entity {
+	return fixFullEntityAPIDefinitionWithTimestamp(apiDefID, placeholder, time.Now())
+}
+
+func fixFullEntityAPIDefinitionWithTimestamp(apiDefID, placeholder string, createdAt time.Time) *api.Entity {
 	boolPlaceholder := false
 
-	return api.Entity{
+	return &api.Entity{
 		ID:          apiDefID,
 		TenantID:    tenantID,
 		BndlID:      bundleID,
@@ -269,26 +292,35 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
 			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
+		Ready:     true,
+		Error:     sql.NullString{},
+		CreatedAt: createdAt,
+		UpdatedAt: createdAt,
+		DeletedAt: time.Time{},
 	}
 }
 
 func fixAPIDefinitionColumns() []string {
 	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "spec_data",
 		"spec_format", "spec_type", "version_value", "version_deprecated",
-		"version_deprecated_since", "version_for_removal"}
+		"version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
+	return fixAPIDefinitionRowWithTimestamp(id, placeholder, time.Now())
+}
+
+func fixAPIDefinitionRowWithTimestamp(id, placeholder string, createdAt time.Time) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		fmt.Sprintf("https://%s.com", placeholder), "spec_data_" + placeholder, "YAML", "OPEN_API",
-		"v1.1", false, "v1.0", false}
+		"v1.1", false, "v1.0", false, true, createdAt, createdAt, time.Time{}, nil}
 }
 
 func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
 		api.TargetURL, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
 		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
-		api.Version.ForRemoval}
+		api.Version.ForRemoval, api.Ready, api.CreatedAt, api.UpdatedAt, api.DeletedAt, api.Error}
 }
 
 func fixDefaultAuth() string {

@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"database/sql"
 	"fmt"
 	"testing"
 
@@ -20,8 +21,8 @@ import (
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	placeholder := "test"
-	modelAPIDefinition := fixFullAPIDefinitionModel(placeholder)
-	gqlAPIDefinition := fixFullGQLAPIDefinition(placeholder)
+	modelAPIDefinition := fixFullAPIDefinitionModelWithTimestamp(placeholder, createdAt)
+	gqlAPIDefinition := fixFullGQLAPIDefinitionWithTimestamp(placeholder, createdAt)
 	emptyModelAPIDefinition := &model.APIDefinition{}
 	emptyGraphQLAPIDefinition := &graphql.APIDefinition{}
 
@@ -307,15 +308,22 @@ func TestApiSpecDataConversionNilStaysNil(t *testing.T) {
 
 func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
+		testErr := "test-err"
 		//GIVEN
-		apiModel := fixFullAPIDefinitionModel("foo")
+		apiModel := fixFullAPIDefinitionModelWithTimestamp("foo", createdAt)
+		apiModel.Error = &testErr
 		require.NotNil(t, apiModel)
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, versionConv)
 		//WHEN
 		entity := conv.ToEntity(apiModel)
 		//THEN
-		assert.Equal(t, fixFullEntityAPIDefinition(apiDefID, "foo"), entity)
+		expectedAPIModel := fixFullEntityAPIDefinitionWithTimestamp(apiDefID, "foo", createdAt)
+		expectedAPIModel.Error = sql.NullString{
+			String: testErr,
+			Valid:  true,
+		}
+		assert.Equal(t, expectedAPIModel, entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
@@ -332,14 +340,21 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 
 func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties filled", func(t *testing.T) {
+		testErr := "test-err"
 		//GIVEN
-		entity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
+		entity := fixFullEntityAPIDefinitionWithTimestamp(apiDefID, "placeholder", createdAt)
+		entity.Error = sql.NullString{
+			String: testErr,
+			Valid:  true,
+		}
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, versionConv)
 		//WHEN
-		apiModel := conv.FromEntity(entity)
+		apiModel := conv.FromEntity(*entity)
 		//THEN
-		assert.Equal(t, fixFullAPIDefinitionModel("placeholder"), apiModel)
+		expectedAPIModel := fixFullAPIDefinitionModelWithTimestamp("placeholder", createdAt)
+		expectedAPIModel.Error = &testErr
+		assert.Equal(t, expectedAPIModel, apiModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
@@ -347,7 +362,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(nil, versionConv)
 		//WHEN
-		apiModel := conv.FromEntity(entity)
+		apiModel := conv.FromEntity(*entity)
 		//THEN
 		expectedModel := fixAPIDefinitionModel("id", "bndl_id", "name", "target_url")
 		require.NotNil(t, expectedModel)

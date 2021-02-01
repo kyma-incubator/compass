@@ -166,6 +166,11 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 
 		EntitySpec: c.apiSpecToEntity(apiModel.Spec),
 		Version:    c.convertVersionToEntity(apiModel.Version),
+		Ready:      apiModel.Ready,
+		CreatedAt:  apiModel.CreatedAt,
+		UpdatedAt:  apiModel.UpdatedAt,
+		DeletedAt:  apiModel.DeletedAt,
+		Error:      repo.NewNullableString(apiModel.Error),
 	}
 }
 
