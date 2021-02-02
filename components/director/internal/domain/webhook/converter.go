@@ -3,6 +3,7 @@ package webhook
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -37,21 +38,21 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 
 	return &graphql.Webhook{
 		ID:                  in.ID,
-		ApplicationID:       &in.ApplicationID,
-		RuntimeID:           &in.RuntimeID,
-		IntegrationSystemID: &in.IntegrationSystemID,
+		ApplicationID:       in.ApplicationID,
+		RuntimeID:           in.RuntimeID,
+		IntegrationSystemID: in.IntegrationSystemID,
 		Type:                graphql.WebhookType(in.Type),
 		Mode:                graphql.WebhookMode(in.Mode),
 		URL:                 in.URL,
 		Auth:                auth,
-		CorrelationIDKey:    &in.CorrelationIDKey,
+		CorrelationIDKey:    in.CorrelationIDKey,
 		RetryInterval:       in.RetryInterval,
 		Timeout:             in.Timeout,
 		URLTemplate:         in.URLTemplate,
 		InputTemplate:       in.InputTemplate,
 		HeaderTemplate:      in.HeaderTemplate,
 		OutputTemplate:      in.OutputTemplate,
-		StatusTemplate:      &in.StatusTemplate,
+		StatusTemplate:      in.StatusTemplate,
 	}, nil
 }
 
@@ -92,14 +93,14 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookIn
 		URL:              in.URL,
 		Auth:             auth,
 		Mode:             model.WebhookMode(in.Mode),
-		CorrelationIDKey: *in.CorrelationIDKey,
+		CorrelationIDKey: nullableString(in.CorrelationIDKey),
 		RetryInterval:    in.RetryInterval,
 		Timeout:          in.Timeout,
 		URLTemplate:      in.URLTemplate,
 		InputTemplate:    in.InputTemplate,
 		HeaderTemplate:   in.HeaderTemplate,
 		OutputTemplate:   in.OutputTemplate,
-		StatusTemplate:   *in.StatusTemplate,
+		StatusTemplate:   in.StatusTemplate,
 	}, nil
 }
 
@@ -129,10 +130,10 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 	return Entity{
 		ID:                  in.ID,
 		TenantID:            in.TenantID,
-		ApplicationID:       in.ApplicationID,
-		RuntimeID:           in.RuntimeID,
-		IntegrationSystemID: in.IntegrationSystemID,
-		CollectionIDKey:     in.CorrelationIDKey,
+		ApplicationID:       repo.NewNullableString(in.ApplicationID),
+		RuntimeID:           repo.NewNullableString(in.RuntimeID),
+		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
+		CollectionIDKey:     repo.NewNullableString(in.CorrelationIDKey),
 		Type:                string(in.Type),
 		URL:                 in.URL,
 		Auth:                optionalAuth,
@@ -143,7 +144,7 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 		InputTemplate:       in.InputTemplate,
 		HeaderTemplate:      in.HeaderTemplate,
 		OutputTemplate:      in.OutputTemplate,
-		StatusTemplate:      in.StatusTemplate,
+		StatusTemplate:      repo.NewNullableString(in.StatusTemplate),
 	}, nil
 }
 
@@ -172,10 +173,10 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 	return model.Webhook{
 		ID:                  in.ID,
 		TenantID:            in.TenantID,
-		ApplicationID:       in.ApplicationID,
-		RuntimeID:           in.RuntimeID,
-		IntegrationSystemID: in.IntegrationSystemID,
-		CorrelationIDKey:    in.CollectionIDKey,
+		ApplicationID:       repo.StringPtrFromNullableString(in.ApplicationID),
+		RuntimeID:           repo.StringPtrFromNullableString(in.RuntimeID),
+		IntegrationSystemID: repo.StringPtrFromNullableString(in.IntegrationSystemID),
+		CorrelationIDKey:    repo.StringPtrFromNullableString(in.CollectionIDKey),
 		Type:                model.WebhookType(in.Type),
 		URL:                 in.URL,
 		Auth:                auth,
@@ -186,7 +187,7 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 		InputTemplate:       in.InputTemplate,
 		HeaderTemplate:      in.HeaderTemplate,
 		OutputTemplate:      in.OutputTemplate,
-		StatusTemplate:      in.StatusTemplate,
+		StatusTemplate:      repo.StringPtrFromNullableString(in.StatusTemplate),
 	}, nil
 }
 
@@ -210,4 +211,11 @@ func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
 	}
 
 	return auth, nil
+}
+
+func nullableString(text *string) string {
+	if text != nil {
+		return *text
+	}
+	return ""
 }

@@ -3,6 +3,7 @@ package webhook_test
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -14,6 +15,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 )
+
+var givenAppID = "givenApplicationID"
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
@@ -91,28 +94,32 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		Name     string
 		Input    *graphql.WebhookInput
 		Expected *model.WebhookInput
+		Error    error
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixGQLWebhookInput("foo"),
-			Expected: fixModelWebhookInput("foo"),
+			Input:    fixGQLWebhookInput("https://test-domain.com"),
+			Expected: fixModelWebhookInput("https://test-domain.com"),
+			Error:    nil,
 		},
 		{
 			Name:     "Empty",
 			Input:    &graphql.WebhookInput{},
 			Expected: &model.WebhookInput{},
+			Error:    errors.New("cannot be blank"),
 		},
 		{
 			Name:     "Nil",
 			Input:    nil,
 			Expected: nil,
+			Error:    nil,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			authConv := &automock.AuthConverter{}
-			if testCase.Input != nil {
+			if testCase.Input != nil && testCase.Error == nil {
 				authConv.On("InputFromGraphQL", testCase.Input.Auth).Return(testCase.Expected.Auth, nil)
 			}
 			converter := webhook.NewConverter(authConv)
@@ -121,8 +128,12 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			res, err := converter.InputFromGraphQL(testCase.Input)
 
 			// then
-			assert.NoError(t, err)
-			assert.Equal(t, testCase.Expected, res)
+			if testCase.Error == nil {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.Expected, res)
+			} else {
+				assert.Error(t, err, testCase.Error)
+			}
 			authConv.AssertExpectations(t)
 		})
 	}
@@ -131,19 +142,16 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 	// given
 	input := []*graphql.WebhookInput{
-		fixGQLWebhookInput("foo"),
-		fixGQLWebhookInput("bar"),
-		{},
+		fixGQLWebhookInput("https://test-domain.com"),
+		fixGQLWebhookInput("https://test-domain.com"),
 		nil,
 	}
 	expected := []*model.WebhookInput{
-		fixModelWebhookInput("foo"),
-		fixModelWebhookInput("bar"),
-		{},
+		fixModelWebhookInput("https://test-domain.com"),
+		fixModelWebhookInput("https://test-domain.com"),
 	}
 	authConv := &automock.AuthConverter{}
 	authConv.On("InputFromGraphQL", input[0].Auth).Return(expected[0].Auth, nil)
-	authConv.On("InputFromGraphQL", (*graphql.AuthInput)(nil)).Return(nil, nil)
 	converter := webhook.NewConverter(authConv)
 
 	// when
@@ -169,15 +177,15 @@ func TestConverter_ToEntity(t *testing.T) {
 		"success when Auth not provided": {
 			in: model.Webhook{
 				ID:            "givenID",
-				ApplicationID: "givenApplicationID",
-				URL:           "givenURL",
+				ApplicationID: &givenAppID,
+				URL:           "https://test-domain.com",
 				TenantID:      "givenTenant",
 				Type:          model.WebhookTypeConfigurationChanged,
 			},
 			expected: webhook.Entity{
 				ID:            "givenID",
-				ApplicationID: "givenApplicationID",
-				URL:           "givenURL",
+				ApplicationID: repo.NewValidNullableString(givenAppID),
+				URL:           "https://test-domain.com",
 				TenantID:      "givenTenant",
 				Type:          "CONFIGURATION_CHANGED",
 				Auth:          sql.NullString{Valid: false},
@@ -221,15 +229,15 @@ func TestConverter_FromEntity(t *testing.T) {
 				ID:            "givenID",
 				TenantID:      "givenTenant",
 				Type:          "CONFIGURATION_CHANGED",
-				URL:           "givenURL",
-				ApplicationID: "givenAppID",
+				URL:           "https://test-domain.com",
+				ApplicationID: repo.NewValidNullableString(givenAppID),
 			},
 			expectedModel: model.Webhook{
 				ID:            "givenID",
 				TenantID:      "givenTenant",
 				Type:          "CONFIGURATION_CHANGED",
-				URL:           "givenURL",
-				ApplicationID: "givenAppID",
+				URL:           "https://test-domain.com",
+				ApplicationID: &givenAppID,
 				Auth:          nil,
 			},
 		},

@@ -3,10 +3,10 @@ package model
 type Webhook struct {
 	ID                  string
 	TenantID            string
-	ApplicationID       string
-	RuntimeID           string
-	IntegrationSystemID string
-	CorrelationIDKey    string
+	ApplicationID       *string
+	RuntimeID           *string
+	IntegrationSystemID *string
+	CorrelationIDKey    *string
 	Type                WebhookType
 	URL                 string
 	Auth                *Auth
@@ -17,7 +17,7 @@ type Webhook struct {
 	InputTemplate       string
 	HeaderTemplate      string
 	OutputTemplate      string
-	StatusTemplate      string
+	StatusTemplate      *string
 }
 
 type WebhookInput struct {
@@ -32,7 +32,7 @@ type WebhookInput struct {
 	InputTemplate    string
 	HeaderTemplate   string
 	OutputTemplate   string
-	StatusTemplate   string
+	StatusTemplate   *string
 }
 
 type WebhookType string
@@ -58,7 +58,7 @@ func (i *WebhookInput) ToWebhook(id, tenant, applicationID string) *Webhook {
 	return &Webhook{
 		ID:             id,
 		TenantID:       tenant,
-		ApplicationID:  applicationID,
+		ApplicationID:  &applicationID,
 		Type:           i.Type,
 		URL:            i.URL,
 		Auth:           i.Auth.ToAuth(),

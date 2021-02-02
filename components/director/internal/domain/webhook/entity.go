@@ -5,10 +5,10 @@ import "database/sql"
 type Entity struct {
 	ID                  string         `db:"id"`
 	TenantID            string         `db:"tenant_id"`
-	ApplicationID       string         `db:"app_id"`
-	RuntimeID           string         `db:"runtime_id"`
-	IntegrationSystemID string         `db:"integration_system_id"`
-	CollectionIDKey     string         `db:"correlation_id_key"`
+	ApplicationID       sql.NullString `db:"app_id"`
+	RuntimeID           sql.NullString `db:"runtime_id"`
+	IntegrationSystemID sql.NullString `db:"integration_system_id"`
+	CollectionIDKey     sql.NullString `db:"correlation_id_key"`
 	Type                string         `db:"type"`
 	Mode                string         `db:"mode"`
 	URL                 string         `db:"url"`
@@ -19,7 +19,7 @@ type Entity struct {
 	InputTemplate       string         `db:"input_template"`
 	HeaderTemplate      string         `db:"header_template"`
 	OutputTemplate      string         `db:"output_template"`
-	StatusTemplate      string         `db:"status_template"`
+	StatusTemplate      sql.NullString `db:"status_template"`
 }
 
 type Collection []Entity

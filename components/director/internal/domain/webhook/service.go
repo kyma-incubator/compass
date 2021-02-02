@@ -80,7 +80,7 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	webhook = in.ToWebhook(id, webhook.TenantID, webhook.ApplicationID)
+	webhook = in.ToWebhook(id, webhook.TenantID, *webhook.ApplicationID)
 
 	err = s.repo.Update(ctx, webhook)
 	if err != nil {
