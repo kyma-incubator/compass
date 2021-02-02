@@ -19,6 +19,7 @@ package operation
 import (
 	"context"
 	"fmt"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/tidwall/sjson"

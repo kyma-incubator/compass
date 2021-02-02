@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/stretchr/testify/mock"
 

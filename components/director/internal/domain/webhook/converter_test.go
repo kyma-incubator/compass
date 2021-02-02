@@ -3,8 +3,9 @@ package webhook_test
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"

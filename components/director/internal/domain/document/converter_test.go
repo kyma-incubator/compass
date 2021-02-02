@@ -2,9 +2,10 @@ package document_test
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
