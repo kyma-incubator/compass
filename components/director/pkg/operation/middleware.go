@@ -57,7 +57,11 @@ func (m *middleware) Handler(ctx context.Context, next func(ctx context.Context)
 		jsonPropsToDelete := make([]string, 0)
 		for _, gqlOperation := range reqCtx.Doc.Operations {
 			for _, gqlSelection := range gqlOperation.SelectionSet {
-				gqlField := gqlSelection.(*ast.Field)
+				gqlField, ok := gqlSelection.(*ast.Field)
+				if !ok {
+					return []byte(`{"error": "unable to prepare final response"}`)
+				}
+
 				mutationAlias := gqlField.Alias
 				for _, gqlArgument := range gqlField.Arguments {
 					if gqlArgument.Name == modeParam && gqlArgument.Value.Raw == string(graphql.OperationModeAsync) {
