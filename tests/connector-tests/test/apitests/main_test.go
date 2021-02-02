@@ -2,8 +2,6 @@ package apitests
 
 import (
 	"crypto/rsa"
-	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -62,27 +60,6 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	configmapCleaner = testkit.NewConfigMapCleaner(configmapInterface, config.RevocationConfigMapName)
-
-	// Wait for sidecar to initialize
-	logrus.Infoln("Waiting for sidecar to initialize and access to API...")
-	err = testkit.WaitForFunction(apiAccessInterval, apiAccessTimeout, func() bool {
-		resp, err := http.Get(fmt.Sprintf("%s/%s", config.HydratorURL, "health"))
-		if err != nil {
-			logrus.Infof("Failed to access health endpoint, retrying in %f: %s", apiAccessInterval.Seconds(), err.Error())
-			return false
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			logrus.Infof("Health endpoint responded with %s status, retrying in %f", resp.Status, apiAccessInterval.Seconds())
-			return false
-		}
-
-		return true
-	})
-	if err != nil {
-		logrus.Errorf("Error while waiting for access to API: %s", err.Error())
-		os.Exit(1)
-	}
 
 	exitCode := m.Run()
 
