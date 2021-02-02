@@ -3,6 +3,7 @@ module github.com/kyma-incubator/compass/components/tenant-fetcher
 go 1.15
 
 require (
+	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20201209084831-cc615400e480
 	github.com/pkg/errors v0.9.1
