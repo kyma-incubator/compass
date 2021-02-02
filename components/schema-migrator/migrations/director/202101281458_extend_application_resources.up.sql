@@ -93,7 +93,7 @@ ALTER TABLE webhooks
     ADD COLUMN runtime_id uuid,
     ADD COLUMN integration_system_id uuid;
 
-ALTER TABLE webhooks ALTER COLUMN app_id uuid NULL;
+ALTER TABLE webhooks ALTER COLUMN app_id DROP NOT NULL;
 
 ALTER TABLE webhooks
     ADD CONSTRAINT webhooks_runtime_id_fkey FOREIGN KEY (tenant_id, runtime_id) REFERENCES runtimes (tenant_id, id) ON DELETE CASCADE,
