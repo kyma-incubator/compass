@@ -19,11 +19,12 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
