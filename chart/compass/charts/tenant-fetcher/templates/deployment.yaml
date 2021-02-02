@@ -58,6 +58,40 @@ spec:
               value: "{{ .Values.server.handlerEndpoint }}"
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.server.tenantPathParam }}"
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+            - name: APP_DB_MAX_OPEN_CONNECTIONS
+              value: "{{.Values.deployment.dbPool.maxOpenConnections}}"
+            - name: APP_DB_MAX_IDLE_CONNECTIONS
+              value: "{{.Values.deployment.dbPool.maxIdleConnections}}"
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
