@@ -72,10 +72,7 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
-	tx, err := transact.Begin()
 	exitOnError(err, "error while beginning db transaction")
-
-	ctx = persistence.SaveToContext(ctx, tx)
 
 	defer func() {
 		err := closeFunc()
@@ -84,6 +81,7 @@ func main() {
 
 	converter := tenant.NewConverter()
 	repo := tenant.NewRepository(converter)
+	service := tenant.NewService(repo, transact)
 
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
@@ -93,10 +91,10 @@ func main() {
 	subrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
 	logger.Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(cfg.TenantPathParam)).Methods(http.MethodPut)
+	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(service, cfg.TenantPathParam)).Methods(http.MethodPut)
 
 	logger.Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(cfg.TenantPathParam)).Methods(http.MethodDelete)
+	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(service, cfg.TenantPathParam)).Methods(http.MethodDelete)
 
 	logger.Infof("Registering readiness endpoint...")
 	subrouter.HandleFunc("/readyz", newReadinessHandler())
@@ -104,22 +102,10 @@ func main() {
 	logger.Infof("Registering liveness endpoint...")
 	subrouter.HandleFunc("/healthz", newReadinessHandler())
 
-	log.C(ctx).Infoln("execute create")
-	if err := repo.Create(ctx, model.TenantModel{UserId: "userIdhere", GlobalAccountGUID: "a2"}); err != nil {
-		log.C(ctx).Errorf("%v", err)
-	}
-
-	if err := repo.DeleteByTenant(ctx, "a2"); err != nil {
-		log.C(ctx).Errorf("%v", err)
-	}
-
-	tx.Commit()
-
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, subrouter, "main")
 
 	go func() {
 		<-ctx.Done()
-		transact.RollbackUnlessCommitted(ctx, tx)
 
 		// Interrupt signal received - shut down the servers
 		shutdownMainSrv()
@@ -167,7 +153,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func getOnboardingHandlerFunc(tenantPathParam string) func(writer http.ResponseWriter, request *http.Request) {
+func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam string) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		logger := log.C(request.Context())
 
@@ -183,6 +169,13 @@ func getOnboardingHandlerFunc(tenantPathParam string) func(writer http.ResponseW
 		if err := json.Unmarshal(body, &tenant); err != nil {
 			logger.Error(errors.Wrapf(err, "while unmarshalling body"))
 			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if err := svc.Create(request.Context(), tenant); err != nil {
+			logger.Error(errors.Wrapf(err, "while creating tenant"))
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		writer.Header().Set("Content-Type", "text/plain")
@@ -195,19 +188,29 @@ func getOnboardingHandlerFunc(tenantPathParam string) func(writer http.ResponseW
 	}
 }
 
-func getDecommissioningHandlerFunc(tenantPathParam string) func(writer http.ResponseWriter, request *http.Request) {
+func getDecommissioningHandlerFunc(svc tenant.TenantService, tenantPathParam string) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		logger := log.C(request.Context())
 
 		logHandlerRequest("decommissioning", tenantPathParam, request)
-		//if err := logBody(request, writer); err != nil {
-		//	logger.Error(errors.Wrapf(err, "while logging request body"))
-		//	writer.WriteHeader(http.StatusInternalServerError)
-		//	return
-		//}
+
+		body, err := extractBody(request, writer)
+
+		var tenant model.TenantModel
+		if err := json.Unmarshal(body, &tenant); err != nil {
+			logger.Error(errors.Wrapf(err, "while unmarshalling body"))
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if err := svc.DeleteByTenant(request.Context(), tenant.GlobalAccountGUID); err != nil {
+			logger.Error(errors.Wrapf(err, "while deleting tenant"))
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		writer.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(writer).Encode(map[string]interface{}{})
+		err = json.NewEncoder(writer).Encode(map[string]interface{}{})
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "while writing to response body"))
 			writer.WriteHeader(http.StatusInternalServerError)

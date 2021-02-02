@@ -14,7 +14,7 @@ import (
 )
 
 const tableName string = `public.business_tenant_mappings`
-const providerName string = "cis"
+const providerName string = "saas-manager"
 const (
 	idColumn                  = "id"
 	externalNameColumn        = "external_name"
@@ -26,6 +26,13 @@ const (
 
 var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}
 
+//go:generate mockery -name=TenantRepository -output=automock -outpkg=automock -case=underscore
+type TenantRepository interface {
+	Create(ctx context.Context, item model.TenantModel) error
+	DeleteByTenant(ctx context.Context, tenantId string) error
+}
+
+//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
 	ToEntity(in *model.TenantModel) *Entity
 	FromEntity(in *Entity) *model.TenantModel

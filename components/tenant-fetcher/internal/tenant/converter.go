@@ -13,11 +13,11 @@ func (c *converter) ToEntity(in *model.TenantModel) *Entity {
 		return nil
 	}
 	return &Entity{
-		ID:             nil,
-		Name:           in.UserId,
+		ID:             "",
+		Name:           in.GlobalAccountGUID,
 		ExternalTenant: in.GlobalAccountGUID,
-		ProviderName:   nil,
-		Status:         nil,
+		ProviderName:   "",
+		Status:         "",
 	}
 }
 
