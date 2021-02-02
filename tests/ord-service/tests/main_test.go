@@ -28,8 +28,10 @@ import (
 
 type config struct {
 	DefaultTenant                 string
+	Tenant                        string
 	DirectorURL                   string
 	ORDServiceURL                 string
+	ORDServiceStaticURL           string
 	ORDServiceDefaultResponseType string
 }
 

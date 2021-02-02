@@ -32,7 +32,7 @@ global:
       version: "PR-1698"
     ord_service:
       dir:
-      version: "PR-8"
+      version: "PR-12"
     healthchecker:
       dir:
       version: "PR-1698"
@@ -49,7 +49,7 @@ global:
       version: "PR-1698"
     console:
       dir:
-      version: "PR-14"
+      version: "PR-12"
     tests:
       director:
         dir:
@@ -65,7 +65,7 @@ global:
         version: "PR-1698"
       ord_service:
         dir:
-        version: "PR-1693"
+        version: "PR-1713"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -260,7 +260,9 @@ global:
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
-    prefix: /open-resource-discovery
+    prefix: /open-resource-discovery-service/v0
+    docsPrefix: /open-resource-discovery-docs
+    staticPrefix: /open-resource-discovery-static/v0
     port: 3000
     defaultResponseType: "xml"
 

@@ -30,11 +30,17 @@ spec:
     url: "http://{{ .Values.global.ordService.host }}:{{ .Values.global.ordService.port }}"
   match:
     methods: ["GET"]
-    url: <http|https>://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.ordService.prefix }}/<.*>
+    url: <http|https>://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?><{{ .Values.global.ordService.prefix }}|{{ .Values.global.ordService.staticPrefix }}>/<.*>
   authenticators:
     - handler: oauth2_introspection
   authorizer:
     handler: allow
+  mutators:
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: id_token
+    config:
+      claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
 ---
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
