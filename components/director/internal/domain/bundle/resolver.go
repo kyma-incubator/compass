@@ -50,9 +50,9 @@ type APIService interface {
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
 type APIConverter interface {
-	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
-	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
-	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, error)
+	ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graphql.APIDefinition, error)
+	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec) ([]*graphql.APIDefinition, error)
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error)
 }
 
 //go:generate mockery -name=EventService -output=automock -outpkg=automock -case=underscore
@@ -63,9 +63,9 @@ type EventService interface {
 
 //go:generate mockery -name=EventConverter -output=automock -outpkg=automock -case=underscore
 type EventConverter interface {
-	ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition
-	MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition
-	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, error)
+	ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition,error)
+	MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec) ([]*graphql.EventDefinition, error)
+	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error)
 }
 
 //go:generate mockery -name=DocumentService -output=automock -outpkg=automock -case=underscore

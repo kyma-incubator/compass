@@ -9,8 +9,7 @@ type Entity struct {
 	ID              string         `db:"id"`
 	TenantID        string         `db:"tenant_id"`
 	URL             string         `db:"url"`
-	APIDefID        sql.NullString `db:"api_def_id"`
-	EventAPIDefID   sql.NullString `db:"event_api_def_id"`
+	SpecID          sql.NullString `db:"spec_id"`
 	DocumentID      sql.NullString `db:"document_id"`
 	Mode            string         `db:"mode"`
 	Auth            sql.NullString `db:"auth"`

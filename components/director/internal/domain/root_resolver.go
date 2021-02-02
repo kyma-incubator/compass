@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
@@ -96,8 +97,9 @@ func NewRootResolver(
 	versionConverter := version.NewConverter()
 	docConverter := document.NewConverter(frConverter)
 	webhookConverter := webhook.NewConverter(authConverter)
-	apiConverter := api.NewConverter(frConverter, versionConverter)
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	specConverter := spec.NewConverter(frConverter)
+	apiConverter := api.NewConverter(frConverter, versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter, specConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
 	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
@@ -120,6 +122,7 @@ func NewRootResolver(
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
+	specRepo := spec.NewRepository(specConverter)
 	docRepo := document.NewRepository(docConverter)
 	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
@@ -137,8 +140,9 @@ func NewRootResolver(
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, uidSvc)
 
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
-	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc, specSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc, fetchRequestSvc, specSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)
@@ -161,8 +165,8 @@ func NewRootResolver(
 		appNameNormalizer:  appNameNormalizer,
 		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter),
 		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter),
-		api:                api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, bundleSvc, apiConverter, frConverter),
-		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, appSvc, bundleSvc, eventAPIConverter, frConverter),
+		api:                api.NewResolver(transact, apiSvc, appSvc, runtimeSvc, bundleSvc, apiConverter, frConverter, specSvc, specConverter),
+		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, appSvc, bundleSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc),

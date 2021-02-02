@@ -44,7 +44,7 @@ func NewRepository(conv Converter) *repository {
 		getter:       repo.NewSingleGetter(resource.Specification, specificationsTable, tenantColumn, specificationsColumns),
 		lister:       repo.NewLister(resource.Specification, specificationsTable, tenantColumn, specificationsColumns),
 		deleter:      repo.NewDeleter(resource.Specification, specificationsTable, tenantColumn),
-		updater:      repo.NewUpdater(resource.Specification, specificationsTable, []string{"spec_data"}, tenantColumn, []string{"id"}),
+		updater:      repo.NewUpdater(resource.Specification, specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, tenantColumn, []string{"id"}),
 		existQuerier: repo.NewExistQuerier(resource.Specification, specificationsTable, tenantColumn),
 		conv:         conv,
 	}
@@ -78,6 +78,7 @@ func (r *repository) Create(ctx context.Context, item *model.Spec) error {
 	return r.creator.Create(ctx, entity)
 }
 
+// TODO: set order_by
 func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {

@@ -83,14 +83,12 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 	filter := repo.NewNullableString(in.Filter)
 	message := repo.NewNullableString(in.Status.Message)
 	refID := repo.NewValidNullableString(in.ObjectID)
-	var apiDefID sql.NullString
-	var eventAPIDefID sql.NullString
+	var specID sql.NullString
+
 	var documentID sql.NullString
 	switch in.ObjectType {
-	case model.EventAPIFetchRequestReference:
-		eventAPIDefID = refID
-	case model.APIFetchRequestReference:
-		apiDefID = refID
+	case model.SpecFetchRequestReference:
+		specID = refID
 	case model.DocumentFetchRequestReference:
 		documentID = refID
 	}
@@ -100,8 +98,7 @@ func (c *converter) ToEntity(in model.FetchRequest) (Entity, error) {
 		TenantID:        in.Tenant,
 		URL:             in.URL,
 		Auth:            auth,
-		APIDefID:        apiDefID,
-		EventAPIDefID:   eventAPIDefID,
+		SpecID:          specID,
 		DocumentID:      documentID,
 		Mode:            string(in.Mode),
 		Filter:          filter,
@@ -195,17 +192,13 @@ func (c *converter) authToModel(in sql.NullString) (*model.Auth, error) {
 }
 
 func (c *converter) objectReferenceFromEntity(in Entity) (string, model.FetchRequestReferenceObjectType, error) {
-	if in.APIDefID.Valid {
-		return in.APIDefID.String, model.APIFetchRequestReference, nil
-	}
-
-	if in.EventAPIDefID.Valid {
-		return in.EventAPIDefID.String, model.EventAPIFetchRequestReference, nil
+	if in.SpecID.Valid {
+		return in.SpecID.String, model.SpecFetchRequestReference, nil
 	}
 
 	if in.DocumentID.Valid {
 		return in.DocumentID.String, model.DocumentFetchRequestReference, nil
 	}
 
-	return "", "", fmt.Errorf("Incorrect Object Reference ID and its type for Entity with ID '%s'", in.ID)
+	return "", "", fmt.Errorf("incorrect Object Reference ID and its type for Entity with ID %q", in.ID)
 }

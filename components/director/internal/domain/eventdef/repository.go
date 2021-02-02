@@ -20,11 +20,10 @@ var (
 	idColumn      = "id"
 	tenantColumn  = "tenant_id"
 	bundleColumn  = "bundle_id"
-	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "name", "description", "group_name", "spec_data",
-		"spec_format", "spec_type", "version_value", "version_deprecated", "version_deprecated_since",
+	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "name", "description", "group_name", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal"}
 	idColumns        = []string{"id"}
-	updatableColumns = []string{"name", "description", "group_name", "spec_data", "spec_format", "spec_type",
+	updatableColumns = []string{"name", "description", "group_name",
 		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
 )
 

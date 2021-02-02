@@ -123,7 +123,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 		return model.BundleCreateInput{}, errors.Wrap(err, "while converting DefaultInstanceAuth input")
 	}
 
-	apiDefs, err := c.api.MultipleInputFromGraphQL(in.APIDefinitions)
+	apiDefs, apiSpecs, err := c.api.MultipleInputFromGraphQL(in.APIDefinitions)
 	if err != nil {
 		return model.BundleCreateInput{}, errors.Wrap(err, "while converting APIDefinitions input")
 	}
@@ -133,7 +133,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 		return model.BundleCreateInput{}, errors.Wrap(err, "while converting Documents input")
 	}
 
-	eventDefs, err := c.event.MultipleInputFromGraphQL(in.EventDefinitions)
+	eventDefs, eventSpecs, err := c.event.MultipleInputFromGraphQL(in.EventDefinitions)
 	if err != nil {
 		return model.BundleCreateInput{}, errors.Wrap(err, "while converting EventDefinitions input")
 	}
