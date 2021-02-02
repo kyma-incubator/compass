@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 	"strings"
@@ -26,13 +25,13 @@ const (
 
 var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, providerNameColumn, statusColumn}
 
-//go:generate mockery -name=TenantRepository -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
 type TenantRepository interface {
-	Create(ctx context.Context, item model.TenantModel) error
+	Create(ctx context.Context, item model.TenantModel, id string) error
 	DeleteByTenant(ctx context.Context, tenantId string) error
 }
 
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
 	ToEntity(in *model.TenantModel) *Entity
 	FromEntity(in *Entity) *model.TenantModel
@@ -52,14 +51,14 @@ func NewRepository(conv Converter) *repository {
 	}
 }
 
-func (r *repository) Create(ctx context.Context, item model.TenantModel) error {
+func (r *repository) Create(ctx context.Context, item model.TenantModel, id string) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
 	dbEntity := r.converter.ToEntity(&item)
-	dbEntity.ID = uuid.New().String()
+	dbEntity.ID = id
 	dbEntity.Status = Active
 	dbEntity.ProviderName = providerName
 

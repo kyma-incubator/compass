@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
+	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/uuid"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -79,9 +80,10 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
+	uidSvc := uuid.NewService()
 	converter := tenant.NewConverter()
 	repo := tenant.NewRepository(converter)
-	service := tenant.NewService(repo, transact)
+	service := tenant.NewService(repo, transact, uidSvc)
 
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
