@@ -1,6 +1,7 @@
 package document_test
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -21,6 +22,10 @@ var (
 )
 
 func fixModelDocument(id, bundleID string) *model.Document {
+	return fixModelDocumentWithTimestamp(id, bundleID, time.Now())
+}
+
+func fixModelDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *model.Document {
 	return &model.Document{
 		ID:          id,
 		BundleID:    bundleID,
@@ -31,10 +36,19 @@ func fixModelDocument(id, bundleID string) *model.Document {
 		Format:      model.DocumentFormatMarkdown,
 		Kind:        &docKind,
 		Data:        &docData,
+		Ready:       true,
+		Error:       nil,
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
+		DeletedAt:   time.Time{},
 	}
 }
 
 func fixEntityDocument(id, bundleID string) *document.Entity {
+	return fixEntityDocumentWithTimestamp(id, bundleID, time.Now())
+}
+
+func fixEntityDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *document.Entity {
 	return &document.Entity{
 		ID:          id,
 		BndlID:      bundleID,
@@ -45,10 +59,19 @@ func fixEntityDocument(id, bundleID string) *document.Entity {
 		Format:      string(model.DocumentFormatMarkdown),
 		Kind:        repo.NewValidNullableString(docKind),
 		Data:        repo.NewValidNullableString(docData),
+		Ready:       true,
+		Error:       sql.NullString{},
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
+		DeletedAt:   time.Time{},
 	}
 }
 
 func fixGQLDocument(id, bundleID string) *graphql.Document {
+	return fixGQLDocumentWithTimestamp(id, bundleID, time.Now())
+}
+
+func fixGQLDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *graphql.Document {
 	return &graphql.Document{
 		ID:          id,
 		BundleID:    bundleID,
@@ -58,6 +81,11 @@ func fixGQLDocument(id, bundleID string) *graphql.Document {
 		Format:      graphql.DocumentFormatMarkdown,
 		Kind:        &docKind,
 		Data:        &docCLOB,
+		Ready:       true,
+		Error:       nil,
+		CreatedAt:   graphql.Timestamp(createdAt),
+		UpdatedAt:   graphql.Timestamp(createdAt),
+		DeletedAt:   graphql.Timestamp(time.Time{}),
 	}
 }
 

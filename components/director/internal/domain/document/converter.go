@@ -116,6 +116,11 @@ func (c *converter) ToEntity(in model.Document) (*Entity, error) {
 		Format:      string(in.Format),
 		Kind:        kind,
 		Data:        data,
+		Ready:       in.Ready,
+		CreatedAt:   in.CreatedAt,
+		UpdatedAt:   in.UpdatedAt,
+		DeletedAt:   in.DeletedAt,
+		Error:       repo.NewNullableString(in.Error),
 	}
 
 	return out, nil

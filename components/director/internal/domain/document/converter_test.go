@@ -2,7 +2,9 @@ package document_test
 
 import (
 	"database/sql"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -15,6 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var createdAt = time.Now()
+
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	testCases := []struct {
@@ -24,8 +28,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelDocument("1", "foo"),
-			Expected: fixGQLDocument("1", "foo"),
+			Input:    fixModelDocumentWithTimestamp("1", "foo", createdAt),
+			Expected: fixGQLDocumentWithTimestamp("1", "foo", createdAt),
 		},
 		{
 			Name:     "Empty",
@@ -57,14 +61,14 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Document{
-		fixModelDocument("1", "foo"),
-		fixModelDocument("2", "bar"),
+		fixModelDocumentWithTimestamp("1", "foo", createdAt),
+		fixModelDocumentWithTimestamp("2", "bar", createdAt),
 		{},
 		nil,
 	}
 	expected := []*graphql.Document{
-		fixGQLDocument("1", "foo"),
-		fixGQLDocument("2", "bar"),
+		fixGQLDocumentWithTimestamp("1", "foo", createdAt),
+		fixGQLDocumentWithTimestamp("2", "bar", createdAt),
 		{},
 	}
 	frConv := &automock.FetchRequestConverter{}
@@ -160,6 +164,11 @@ func TestToEntity(t *testing.T) {
 		Description: "givenDescription",
 		DisplayName: "givenDisplayName",
 		Format:      "givenFormat",
+		Ready:       true,
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
+		DeletedAt:   time.Time{},
+		Error:       nil,
 	}
 
 	t.Run("only required fields", func(t *testing.T) {
@@ -168,14 +177,19 @@ func TestToEntity(t *testing.T) {
 		actual, err := sut.ToEntity(givenModel)
 		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, document.Entity{
-			ID:          "givenID",
-			TenantID:    "givenTenant",
-			BndlID:      "givenBundleID",
-			Title:       "givenTitle",
-			Description: "givenDescription",
-			DisplayName: "givenDisplayName",
-			Format:      "givenFormat",
+		assert.Equal(t, &document.Entity{
+			ID:          givenModel.ID,
+			TenantID:    givenModel.Tenant,
+			BndlID:      givenModel.BundleID,
+			Title:       givenModel.Title,
+			Description: givenModel.Description,
+			DisplayName: givenModel.DisplayName,
+			Format:      string(givenModel.Format),
+			Ready:       givenModel.Ready,
+			CreatedAt:   givenModel.CreatedAt,
+			UpdatedAt:   givenModel.UpdatedAt,
+			DeletedAt:   givenModel.DeletedAt,
+			Error:       repo.NewNullableString(givenModel.Error),
 		}, actual)
 	})
 
