@@ -144,7 +144,9 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
 		APIDefinitions:                 apiDefs,
+		APISpecs:                       apiSpecs,
 		EventDefinitions:               eventDefs,
+		EventSpecs:                     eventSpecs,
 		Documents:                      documents,
 	}, nil
 }

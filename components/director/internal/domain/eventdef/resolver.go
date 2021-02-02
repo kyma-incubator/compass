@@ -35,7 +35,6 @@ type EventDefConverter interface {
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
-	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
 //go:generate mockery -name=ApplicationService -output=automock -outpkg=automock -case=underscore

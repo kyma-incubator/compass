@@ -46,6 +46,7 @@ type BundleInstanceAuthConverter interface {
 type APIService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
+	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec model.SpecInput) (string, error)
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
@@ -59,11 +60,12 @@ type APIConverter interface {
 type EventService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
+	CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec model.SpecInput) (string, error)
 }
 
 //go:generate mockery -name=EventConverter -output=automock -outpkg=automock -case=underscore
 type EventConverter interface {
-	ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition,error)
+	ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition, error)
 	MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec) ([]*graphql.EventDefinition, error)
 	MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error)
 }
@@ -72,6 +74,7 @@ type EventConverter interface {
 type DocumentService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.DocumentPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error)
+	CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error)
 }
 
 //go:generate mockery -name=DocumentConverter -output=automock -outpkg=automock -case=underscore
@@ -79,6 +82,20 @@ type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
 	MultipleToGraphQL(in []*model.Document) []*graphql.Document
 	MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*model.DocumentInput, error)
+}
+
+//go:generate mockery -name=SpecService -output=automock -outpkg=automock -case=underscore
+type SpecService interface {
+	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
+	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
+	ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
+}
+
+//go:generate mockery -name=SpecConverter -output=automock -outpkg=automock -case=underscore
+type SpecConverter interface {
+	ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error)
+	InputFromGraphQLAPISpec(in *graphql.APISpecInput) (*model.SpecInput, error)
 }
 
 type Resolver struct {
@@ -95,6 +112,9 @@ type Resolver struct {
 	apiConverter                APIConverter
 	eventConverter              EventConverter
 	documentConverter           DocumentConverter
+
+	specService   SpecService
+	specConverter SpecConverter
 }
 
 func NewResolver(
@@ -108,7 +128,9 @@ func NewResolver(
 	bundleInstanceAuthConverter BundleInstanceAuthConverter,
 	apiConv APIConverter,
 	eventConv EventConverter,
-	documentConv DocumentConverter) *Resolver {
+	documentConv DocumentConverter,
+	specSerice SpecService,
+	specConverter SpecConverter) *Resolver {
 	return &Resolver{
 		transact:                    transact,
 		bundleConverter:             bundleConverter,
@@ -121,6 +143,8 @@ func NewResolver(
 		apiConverter:                apiConv,
 		eventConverter:              eventConv,
 		documentConverter:           documentConv,
+		specService:                 specSerice,
+		specConverter:               specConverter,
 	}
 }
 
@@ -150,14 +174,14 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
 	gqlBundle, err := r.bundleConverter.ToGraphQL(bndl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle with id %s to GraphQL", id)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	log.C(ctx).Infof("Bundle with id %s successfully added to Application with id %s", id, applicationID)
@@ -190,14 +214,14 @@ func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.Bundl
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
 	gqlBndl, err := r.bundleConverter.ToGraphQL(bndl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle with id %s to GraphQL", id)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	log.C(ctx).Infof("Bundle with id %s successfully updated.", id)
@@ -225,14 +249,14 @@ func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
 	deletedBndl, err := r.bundleConverter.ToGraphQL(bndl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle with id %s to GraphQL", id)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	log.C(ctx).Infof("Bundle with id %s successfully deleted.", id)
@@ -311,12 +335,22 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id st
 		return nil, err
 	}
 
+	specs, err := r.specService.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	}
+
+	gqlAPI, err := r.apiConverter.ToGraphQL(api, specs[0])
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	return r.apiConverter.ToGraphQL(api), nil
+	return gqlAPI, nil
 }
 
 func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.APIDefinitionPage, error) {
@@ -342,12 +376,25 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Bundle, grou
 		return nil, err
 	}
 
+	apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
+	for _, api := range apisPage.Data {
+		specs, err := r.specService.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+		}
+
+		apiSpecs = append(apiSpecs, specs[0])
+	}
+
+	gqlApis, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting apis")
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
-
-	gqlApis := r.apiConverter.MultipleToGraphQL(apisPage.Data)
 
 	return &graphql.APIDefinitionPage{
 		Data:       gqlApis,
@@ -377,12 +424,22 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id 
 		return nil, err
 	}
 
+	specs, err := r.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, eventAPI.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventAPI.ID)
+	}
+
+	gqlEvent, err := r.eventConverter.ToGraphQL(eventAPI, specs[0])
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", eventAPI.ID)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	return r.eventConverter.ToGraphQL(eventAPI), nil
+	return gqlEvent, nil
 }
 
 func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Bundle, group *string, first *int, after *graphql.PageCursor) (*graphql.EventDefinitionPage, error) {
@@ -407,15 +464,28 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Bundle, gr
 		return nil, err
 	}
 
+	eventSpecs := make([]*model.Spec, 0, len(eventAPIPage.Data))
+	for _, event := range eventAPIPage.Data {
+		specs, err := r.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
+		}
+
+		eventSpecs = append(eventSpecs, specs[0])
+	}
+
+	gqlEvents, err := r.eventConverter.MultipleToGraphQL(eventAPIPage.Data, eventSpecs)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting events")
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	gqlApis := r.eventConverter.MultipleToGraphQL(eventAPIPage.Data)
-
 	return &graphql.EventDefinitionPage{
-		Data:       gqlApis,
+		Data:       gqlEvents,
 		TotalCount: eventAPIPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(eventAPIPage.PageInfo.StartCursor),

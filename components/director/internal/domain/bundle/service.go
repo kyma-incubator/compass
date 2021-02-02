@@ -25,58 +25,28 @@ type BundleRepository interface {
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
 }
 
-//go:generate mockery -name=APIRepository -output=automock -outpkg=automock -case=underscore
-type APIRepository interface {
-	Create(ctx context.Context, item *model.APIDefinition) error
-	Update(ctx context.Context, item *model.APIDefinition) error
-}
-
-//go:generate mockery -name=EventAPIRepository -output=automock -outpkg=automock -case=underscore
-type EventAPIRepository interface {
-	Create(ctx context.Context, items *model.EventDefinition) error
-}
-
-//go:generate mockery -name=DocumentRepository -output=automock -outpkg=automock -case=underscore
-type DocumentRepository interface {
-	Create(ctx context.Context, item *model.Document) error
-}
-
-//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
-type FetchRequestRepository interface {
-	Create(ctx context.Context, item *model.FetchRequest) error
-}
-
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
 }
 
-//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
-type FetchRequestService interface {
-	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
-}
-
 type service struct {
 	bndlRepo         BundleRepository
-	apiRepo          APIRepository
-	eventAPIRepo     EventAPIRepository
-	documentRepo     DocumentRepository
-	fetchRequestRepo FetchRequestRepository
+	apiSvc           APIService
+	eventSvc         EventService
+	documentSvc      DocumentService
 
 	uidService          UIDService
-	fetchRequestService FetchRequestService
 	timestampGen        timestamp.Generator
 }
 
-func NewService(bndlRepo BundleRepository, apiRepo APIRepository, eventAPIRepo EventAPIRepository, documentRepo DocumentRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService) *service {
+func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventService, documentSvc DocumentService, uidService UIDService) *service {
 	return &service{
 		bndlRepo:            bndlRepo,
-		apiRepo:             apiRepo,
-		eventAPIRepo:        eventAPIRepo,
-		documentRepo:        documentRepo,
-		fetchRequestRepo:    fetchRequestRepo,
+		apiSvc:              apiSvc,
+		eventSvc:            eventSvc,
+		documentSvc:         documentSvc,
 		uidService:          uidService,
-		fetchRequestService: fetchRequestService,
 		timestampGen:        timestamp.DefaultGenerator(),
 	}
 }
@@ -228,109 +198,26 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 }
 
 func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, tenant string, bundleID string) error {
-	err := s.createAPIs(ctx, bundleID, tenant, in.APIDefinitions)
-	if err != nil {
-		return errors.Wrapf(err, "while creating APIs for application")
-	}
-
-	err = s.createEvents(ctx, bundleID, tenant, in.EventDefinitions)
-	if err != nil {
-		return errors.Wrapf(err, "while creating Events for application")
-	}
-
-	err = s.createDocuments(ctx, bundleID, tenant, in.Documents)
-	if err != nil {
-		return errors.Wrapf(err, "while creating Documents for application")
-	}
-
-	return nil
-}
-
-func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis []*model.APIDefinitionInput) error {
-	var err error
-	for _, item := range apis {
-		apiDefID := s.uidService.Generate()
-
-		api := item.ToAPIDefinitionWithinBundle(apiDefID, bundleID, tenant)
-
-		err = s.apiRepo.Create(ctx, api)
+	for i := range in.APIDefinitions {
+		_, err := s.apiSvc.CreateInBundle(ctx, bundleID, *in.APIDefinitions[i], *in.APISpecs[i])
 		if err != nil {
-			return errors.Wrapf(err, "while creating APIDefinition with id %s within Bundle with id %s", apiDefID, bundleID)
+			return errors.Wrapf(err, "while creating APIs for bundle with id %q", bundleID)
 		}
-		log.C(ctx).Infof("Successfully created APIDefinition with id %s within Bundle with id %s", apiDefID, bundleID)
-
-		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
-			if err != nil {
-				return errors.Wrap(err, "while creating FetchRequest for application")
-			}
-
-			api.Spec.Data = s.fetchRequestService.HandleSpec(ctx, fr)
-			err = s.apiRepo.Update(ctx, api)
-			if err != nil {
-				return errors.Wrap(err, "while updating api with api spec")
-			}
-		}
-
 	}
 
-	return nil
-}
-
-func (s *service) createEvents(ctx context.Context, bundleID, tenant string, events []*model.EventDefinitionInput) error {
-	var err error
-	for _, item := range events {
-		eventID := s.uidService.Generate()
-
-		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinBundle(eventID, bundleID, tenant))
+	for i := range in.EventDefinitions {
+		_, err := s.eventSvc.CreateInBundle(ctx, bundleID, *in.EventDefinitions[i], *in.EventSpecs[i])
 		if err != nil {
-			return errors.Wrapf(err, "while creating EventDefinition with id %s in Bundle with id %s", eventID, bundleID)
-		}
-		log.C(ctx).Infof("Successfully created EventDefinition with id %s in Bundle with id %s", eventID, bundleID)
-
-		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventID)
-			if err != nil {
-				return errors.Wrap(err, "while creating FetchRequest for application")
-			}
+			return errors.Wrapf(err, "while creating Event for bundle with id %q", bundleID)
 		}
 	}
-	return nil
-}
 
-func (s *service) createDocuments(ctx context.Context, bundleID, tenant string, events []*model.DocumentInput) error {
-	var err error
-	for _, item := range events {
-		documentID := s.uidService.Generate()
-
-		err = s.documentRepo.Create(ctx, item.ToDocumentWithinBundle(documentID, tenant, bundleID))
+	for _, document := range in.Documents {
+		_, err := s.documentSvc.CreateInBundle(ctx, bundleID, *document)
 		if err != nil {
-			return errors.Wrapf(err, "while creating Document with id %s in Bundle with id %s", documentID, bundleID)
-		}
-		log.C(ctx).Infof("Successfully created Document with id %s in Bundle with id %s", documentID, bundleID)
-
-		if item.FetchRequest != nil {
-			_, err = s.createFetchRequest(ctx, tenant, item.FetchRequest, model.DocumentFetchRequestReference, documentID)
-			if err != nil {
-				return err
-			}
+			return errors.Wrapf(err, "while creating Document for bundle with id %q", bundleID)
 		}
 	}
+
 	return nil
-}
-
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error) {
-	if in == nil {
-		return nil, nil
-	}
-
-	id := s.uidService.Generate()
-	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, objectType, objectID)
-
-	err := s.fetchRequestRepo.Create(ctx, fr)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while creating FetchRequest with id %s for %s with id %s", id, objectType, objectID)
-	}
-	log.C(ctx).Infof("Successfully created FetchRequest with id %s for type %s with id %s", id, objectType, objectID)
-	return fr, nil
 }

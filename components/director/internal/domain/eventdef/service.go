@@ -29,17 +29,11 @@ type EventAPIRepository interface {
 type FetchRequestRepository interface {
 	Create(ctx context.Context, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
-	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
-}
-
-//go:generate mockery -name=FetchRequestService -output=automock -outpkg=automock -case=underscore
-type FetchRequestService interface {
-	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
 }
 
 //go:generate mockery -name=SpecService -output=automock -outpkg=automock -case=underscore
@@ -54,17 +48,15 @@ type service struct {
 	eventAPIRepo        EventAPIRepository
 	fetchRequestRepo    FetchRequestRepository
 	uidService          UIDService
-	fetchRequestService FetchRequestService
 	specService         SpecService
 	timestampGen        timestamp.Generator
 }
 
-func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService, specService SpecService) *service {
+func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, specService SpecService) *service {
 	return &service{
 		eventAPIRepo:        eventAPIRepo,
 		fetchRequestRepo:    fetchRequestRepo,
 		uidService:          uidService,
-		fetchRequestService: fetchRequestService,
 		specService:         specService,
 		timestampGen:        timestamp.DefaultGenerator(),
 	}
