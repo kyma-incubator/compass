@@ -320,7 +320,7 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 
 func fixModelWebhook(appID, id string) *model.Webhook {
 	return &model.Webhook{
-		ApplicationID: appID,
+		ApplicationID: &appID,
 		ID:            id,
 		Type:          model.WebhookTypeConfigurationChanged,
 		URL:           "foourl",

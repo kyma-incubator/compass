@@ -31,7 +31,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 				},
 			},
 			Expected: &model.Webhook{
-				ApplicationID: applicationID,
+				ApplicationID: &applicationID,
 				ID:            id,
 				TenantID:      tenant,
 				Type:          model.WebhookTypeConfigurationChanged,
@@ -48,7 +48,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 			Name:  "Empty",
 			Input: &model.WebhookInput{},
 			Expected: &model.Webhook{
-				ApplicationID: applicationID,
+				ApplicationID: &applicationID,
 				ID:            id,
 				TenantID:      tenant,
 			},
