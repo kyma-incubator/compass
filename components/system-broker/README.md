@@ -12,48 +12,50 @@ The System Broker component can be run locally using the `run.sh` script.
 ./run.sh
 ```
 
-By default, the System Broker API is accessible at `locahost:8080/broker`. 
+By default, the System Broker API is accessible at: `locahost:8080/broker`. 
 
 Calls made to the API should provide **Authorization** and **X-Broker-API-Version** headers.  The following token 
 can be used for authorization:
 
 `eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0.`
 
-Thus, an example call to local broker would be:
+Thus, an example call to the local broker looks like the following:
 
 `curl -H "X-Broker-API-Version: 2.15" -H "Authorization: Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzY29wZXMiOiJhcHBsaWNhdGlvbjpyZWFkIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OndyaXRlIGF1dG9tYXRpY19zY2VuYXJpb19hc3NpZ25tZW50OnJlYWQgaGVhbHRoX2NoZWNrczpyZWFkIGFwcGxpY2F0aW9uOndyaXRlIHJ1bnRpbWU6d3JpdGUgbGFiZWxfZGVmaW5pdGlvbjp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOnJlYWQgcnVudGltZTpyZWFkIHRlbmFudDpyZWFkIiwidGVuYW50IjoiM2U2NGViYWUtMzhiNS00NmEwLWIxZWQtOWNjZWUxNTNhMGFlIn0." localhost:8080/broker/v2/catalog`
 
 #### Note
-The System Broker makes API calls to the Director component, so in order to successfully use the System Broker, a 
-Director component should be also started. Go to the `compass/components/director/` directory and run the `run.sh` 
+The System Broker makes API calls to the Director component. Therefore, to use the System Broker successfully, the 
+Director component must be started, too. To do this, go to the `compass/components/director/` directory and run the `run.sh` 
 script.
 
 ### Minikube
 
-The System Broker is a component that is part of the Compass installation, so it's enough to start Compass on `minikube`.
+The System Broker is a component that is part of the Compass installation, so it is enough to start Compass on `minikube`.
 
-Steps:
+To do this, perform the following procedure:
 
-1. Navigate to `compass/installation/cmd` and execute `./run.sh --kyma-installation full` which starts Compass on top of a fully-featured Kyma cluster (or use the `--kyma-installation minimal` flag if you want to run Compass with minimal Kyma dependencies).
-2. Access the System Broker API at `https://compass-gateway-mtls.kyma.local/broker`.
+1. Navigate to `compass/installation/cmd`.
+2. Execute `./run.sh --kyma-installation full`.
+This script starts Compass on top of a fully-featured Kyma cluster. Alternativey, if you want to run Compass with minimal Kyma dependencies, you can use the `--kyma-installation minimal` argument.
+3. Access the System Broker API at the following URL: `https://compass-gateway-mtls.kyma.local/broker`.
 
 ## Configuration
 
-The System Broker binary allows to override some configuration parameters. You can specify following as command line flags or as environment variables.
+The System Broker binary allows to override some configuration parameters. You can specify the following as command line arguments or as environment variables.
 
-[Config struct](https://github.com/kyma-incubator/compass/blob/0f0eeb38e7a5d8db655b6870138e5add257ebb1d/components/system-broker/internal/config/config.go#L30) is self descriptive. Default values can be found in `DefaultConfig` method. 
-Example for using env variables can be found in the [helm charts](https://github.com/kyma-incubator/compass/blob/4b49dae2cce65f0efa98d0a9e664ae65c0f059f8/chart/compass/charts/system-broker/templates/deployment.yaml#L53).
+The configuration structure ([config.go](https://github.com/kyma-incubator/compass/blob/0f0eeb38e7a5d8db655b6870138e5add257ebb1d/components/system-broker/internal/config/config.go#L30) is self descriptive. Default values can be found in the `DefaultConfig` method. 
+You can find an example for using environment variables in the following Helm charts at: [deployment.yaml](https://github.com/kyma-incubator/compass/blob/4b49dae2cce65f0efa98d0a9e664ae65c0f059f8/chart/compass/charts/system-broker/templates/deployment.yaml#L53).
 
 ## Usage
 
-Provision and deprovision are async and require `accepts_incomplete=true`. Bind and unbind are sync.
+Provision and deprovision are asynchronous and require `accepts_incomplete=true`. Bind and unbind are synchronous.
 
 ### Specifications
 
-URLs pointing to the specs API are included in the OSB plan metadata as part of the catalog response.
-Specs API returns a single JSON, XML or YAML document containing the specification of the api or event definition defined by the specified query parameters.
+URLs pointing to the specifications API are included in the OSB plan metadata as part of the catalog response.
+Specifications API returns a single JSON, XML, or YAML document containing the specification of the API, or event definition defined by the specified query parameters.
 
-Example link to a specification file:
+Example link to a specifications file:
  `https://compass-gateway.kyma.local/broker/specifications?app_id=53acc071-42ec-4561-962d-bf3dbc286cb7&package_id=b2bb4664-930b-491f-a922-8ac586ec84f9&definition_id=0c17b77e-530b-47d8-a23f-ad462ed4ee0a`
 
 Example catalog containing specifications metadata:
@@ -154,4 +156,4 @@ Example OSB bind response:
 }
 ```
 
-For the example above, the package instance auth credentials were set with the [following mutation](https://github.com/kyma-incubator/compass/blob/1c4490318bfd39cbab5e6b2b1c9a78f3ec0ce10d/components/director/examples/set-package-instance-auth/set-package-instance-auth.graphql).
+For the example above, the package instance auth credentials were set with the following mutation: [set-package-instance-auth.graphql](https://github.com/kyma-incubator/compass/blob/1c4490318bfd39cbab5e6b2b1c9a78f3ec0ce10d/components/director/examples/set-package-instance-auth/set-package-instance-auth.graphql).
