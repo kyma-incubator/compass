@@ -40,3 +40,6 @@ gqlgen-local:
 
 build-local:
 	env go build -o bin/system-broker ./cmd/main.go
+	
+alabala-target:
+	@echo ${SKIP_STEP_MESSAGE}
