@@ -48,6 +48,10 @@ type Operation struct {
 
 // SaveToContext saves Operation to the context
 func SaveToContext(ctx context.Context, operations *[]*Operation) context.Context {
+	if operations == nil {
+		return ctx
+	}
+
 	operationsFromCtx, exists := FromCtx(ctx)
 	if exists {
 		*operationsFromCtx = append(*operationsFromCtx, *operations...)
