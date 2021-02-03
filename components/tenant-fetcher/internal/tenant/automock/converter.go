@@ -30,16 +30,14 @@ func (_m *Converter) FromEntity(in *tenant.Entity) *model.TenantModel {
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *Converter) ToEntity(in *model.TenantModel) *tenant.Entity {
+func (_m *Converter) ToEntity(in model.TenantModel) tenant.Entity {
 	ret := _m.Called(in)
 
-	var r0 *tenant.Entity
-	if rf, ok := ret.Get(0).(func(*model.TenantModel) *tenant.Entity); ok {
+	var r0 tenant.Entity
+	if rf, ok := ret.Get(0).(func(model.TenantModel) tenant.Entity); ok {
 		r0 = rf(in)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tenant.Entity)
-		}
+		r0 = ret.Get(0).(tenant.Entity)
 	}
 
 	return r0

@@ -33,7 +33,7 @@ type TenantRepository interface {
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in *model.TenantModel) *Entity
+	ToEntity(in model.TenantModel) Entity
 	FromEntity(in *Entity) *model.TenantModel
 }
 
@@ -57,7 +57,7 @@ func (r *repository) Create(ctx context.Context, item model.TenantModel, id stri
 		return err
 	}
 
-	dbEntity := r.converter.ToEntity(&item)
+	dbEntity := r.converter.ToEntity(item)
 	dbEntity.ID = id
 	dbEntity.Status = Active
 	dbEntity.ProviderName = providerName

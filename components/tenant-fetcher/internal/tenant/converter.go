@@ -8,11 +8,8 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-func (c *converter) ToEntity(in *model.TenantModel) *Entity {
-	if in == nil {
-		return nil
-	}
-	return &Entity{
+func (c *converter) ToEntity(in model.TenantModel) Entity {
+	return Entity{
 		ID:             "",
 		Name:           in.GlobalAccountGUID,
 		ExternalTenant: in.GlobalAccountGUID,
