@@ -80,10 +80,6 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookIn
 		return nil, nil
 	}
 
-	if err := in.Validate(); err != nil {
-		return nil, err
-	}
-
 	auth, err := c.authConverter.InputFromGraphQL(in.Auth)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting Auth input")

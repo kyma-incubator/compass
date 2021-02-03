@@ -107,7 +107,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			Name:     "Empty",
 			Input:    &graphql.WebhookInput{},
 			Expected: &model.WebhookInput{},
-			Error:    errors.New("cannot be blank"),
+			Error:    nil,
 		},
 		{
 			Name:     "Nil",

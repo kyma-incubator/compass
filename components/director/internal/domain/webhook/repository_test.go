@@ -215,11 +215,11 @@ func TestRepositoryCreateMany(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"one", "{}", nil, "{}", "{}", nil, nil, nil, "{}", nil, 0, 0, "{}", "{}", "{}", "{}", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"one", "", nil, "", "", nil, nil, nil, "", nil, 0, 0, "", "", "", "", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"two", "{}", nil, "{}", "{}", nil, nil, nil, "{}", nil, 0, 0, "{}", "{}", "{}", "{}", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"two", "", nil, "", "", nil, nil, nil, "", nil, 0, 0, "", "", "", "", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"three", "{}", nil, "{}", "{}", nil, nil, nil, "{}", nil, 0, 0, "{}", "{}", "{}", "{}", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"three", "", nil, "", "", nil, nil, nil, "", nil, 0, 0, "", "", "", "", nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
