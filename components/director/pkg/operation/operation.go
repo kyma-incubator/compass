@@ -46,6 +46,12 @@ type Operation struct {
 	RequestData       string                `json:"request_data"`
 }
 
+type OperationResponse struct {
+	*Operation
+	Status OperationStatus `json:"status"`
+	Error  *string         `json:"error"`
+}
+
 // SaveToContext saves Operation to the context
 func SaveToContext(ctx context.Context, operations *[]*Operation) context.Context {
 	if operations == nil {

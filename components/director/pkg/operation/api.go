@@ -40,21 +40,24 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 )
 
+const ResourceIDParam = "resource_id"
+const ResourceTypeParam = "resource_type"
+
 type ResourceFetcherFunc func(ctx context.Context, tenant, id string) (*model.Application, error)
 
-type Handler struct {
-	resourceFetcherFunc ResourceFetcherFunc
+type handler struct {
 	transact            persistence.Transactioner
+	resourceFetcherFunc ResourceFetcherFunc
 }
 
-func NewHandler(transact persistence.Transactioner, resourceFetcherFunc ResourceFetcherFunc) Handler {
-	return Handler{
-		resourceFetcherFunc: resourceFetcherFunc,
+func NewHandler(transact persistence.Transactioner, resourceFetcherFunc ResourceFetcherFunc) handler {
+	return handler{
 		transact:            transact,
+		resourceFetcherFunc: resourceFetcherFunc,
 	}
 }
 
-func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	tenantID, err := tenant.LoadFromContext(ctx)
@@ -70,15 +73,15 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		ResourceID   string
 		ResourceType string
 	}{
-		ResourceID:   queryParams.Get("resource_id"),
-		ResourceType: queryParams.Get("resource_type"),
+		ResourceID:   queryParams.Get(ResourceIDParam),
+		ResourceType: queryParams.Get(ResourceTypeParam),
 	}
 
 	log.C(ctx).Infof("Executing Operation API with resourceType: %s and resourceID: %s", inputParams.ResourceType, inputParams.ResourceID)
 
 	if err := validation.ValidateStruct(&inputParams,
 		validation.Field(&inputParams.ResourceID, is.UUID),
-		validation.Field(&inputParams.ResourceType, validation.Required, validation.In(resource.Application))); err != nil {
+		validation.Field(&inputParams.ResourceType, validation.Required, validation.In(string(resource.Application)))); err != nil {
 		http.Error(writer, fmt.Sprintf("Unexpected resource type and/or ID"), http.StatusBadRequest)
 		return
 	}
@@ -86,7 +89,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %s", err.Error())
-		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to established connection with database"), http.StatusInternalServerError)
+		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to establish connection with database"), http.StatusInternalServerError)
 		return
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
@@ -106,13 +109,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	type operationResponse struct {
-		*Operation
-		Status OperationStatus `json:"status"`
-		Error  *string         `json:"error"`
-	}
-
-	opResponse := &operationResponse{
+	opResponse := &OperationResponse{
 		Operation: &Operation{
 			ResourceID:   inputParams.ResourceID,
 			ResourceType: inputParams.ResourceType,
