@@ -2172,6 +2172,15 @@ func fixBundleRequest(applicationID string, bundleID string) *gcli.Request {
 		})))
 }
 
+func fixBundleByInstanceAuthIDRequest(packageInstanceAuthID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: packageByInstanceAuth(authID: "%s") {
+				%s
+				}
+			}`, packageInstanceAuthID, tc.gqlFieldsProvider.ForBundle()))
+}
+
 func fixAPIDefinitionRequest(applicationID string, apiID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -2229,6 +2238,15 @@ func fixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
 					}
 				}`,
 			appID, tc.gqlFieldsProvider.ForEventingConfiguration()))
+}
+
+func fixBundleInstanceAuthRequest(packageInstanceAuthID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: bundleInstanceAuth(id: "%s") {
+					%s
+				}
+			}`, packageInstanceAuthID, tc.gqlFieldsProvider.ForBundleInstanceAuth()))
 }
 
 func fixCreateAutomaticScenarioAssignmentRequest(automaticScenarioAssignmentInput string) *gcli.Request {

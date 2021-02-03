@@ -26,7 +26,7 @@ global:
       version: "PR-1698"
     director:
       dir:
-      version: "PR-1693"
+      version: "PR-1700"
     gateway:
       dir:
       version: "PR-1692"
@@ -42,6 +42,9 @@ global:
     schema_migrator:
       dir:
       version: "PR-1713"
+    system_broker:
+      dir:
+      version: "PR-1700"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -66,6 +69,9 @@ global:
       tenant_fetcher:
         dir:
         version: "PR-1698"
+      system_broker:
+        dir:
+        version: "PR-1700"
       ord_service:
         dir:
         version: "PR-1713"
@@ -138,6 +144,20 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
+
+  system_broker:
+    enabled: true
+    port: 5001
+    prefix: /broker
+    tokenProviderFromHeader:
+      forwardHeaders: Authorization
+    tokenProviderFromSecret:
+      enabled: false
+      secrets:
+        integrationSystemCredentials:
+          name: compass-system-broker-credentials
+          namespace: compass-system
+    testNamespace: kyma-system
 
   gateway:
     port: 3000

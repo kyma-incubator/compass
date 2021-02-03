@@ -3,6 +3,8 @@ package bundleinstanceauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -33,24 +35,83 @@ type BundleService interface {
 	GetByInstanceAuthID(ctx context.Context, instanceAuthID string) (*model.Bundle, error)
 }
 
+//go:generate mockery -name=PackageConverter -output=automock -outpkg=automock -case=underscore
+type BundleConverter interface {
+	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
+}
+
 type Resolver struct {
 	transact persistence.Transactioner
 	svc      Service
 	bndlSvc  BundleService
 	conv     Converter
+	bndlConv BundleConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc Service, bndlSvc BundleService, conv Converter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc Service, bndlSvc BundleService, conv Converter, bndlConv BundleConverter) *Resolver {
 	return &Resolver{
 		transact: transact,
 		svc:      svc,
 		bndlSvc:  bndlSvc,
 		conv:     conv,
+		bndlConv: bndlConv,
 	}
 }
 
-var mockRequestTypeKey = "type"
-var mockBundleID = "db5d3b2a-cf30-498b-9a66-29e60247c66b"
+func (r *Resolver) BundleByInstanceAuth(ctx context.Context, authID string) (*graphql.Bundle, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	bndlInstanceAuth, err := r.svc.Get(ctx, authID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	pkg, err := r.bndlSvc.Get(ctx, bndlInstanceAuth.BundleID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bndlConv.ToGraphQL(pkg)
+}
+
+func (r *Resolver) BundleInstanceAuth(ctx context.Context, id string) (*graphql.BundleInstanceAuth, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	bndlInstanceAuth, err := r.svc.Get(ctx, id)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(bndlInstanceAuth)
+}
 
 func (r *Resolver) DeleteBundleInstanceAuth(ctx context.Context, authID string) (*graphql.BundleInstanceAuth, error) {
 	tx, err := r.transact.Begin()
