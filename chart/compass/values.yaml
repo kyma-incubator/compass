@@ -12,6 +12,9 @@ global:
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
+    async_operations:
+      dir:
+      version: "PR-1717"
     connector:
       dir:
       version: "PR-1693"

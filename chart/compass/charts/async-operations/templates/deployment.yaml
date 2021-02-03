@@ -31,7 +31,7 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-async-operations:{{ .Values.global.images.connector.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-async-operations:{{ .Values.global.images.async_operations.version }}
           ports:
             - name: metrics
               containerPort: 9090
