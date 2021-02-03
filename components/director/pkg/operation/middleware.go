@@ -64,7 +64,7 @@ func (m *middleware) Handler(ctx context.Context, next func(ctx context.Context)
 
 				mutationAlias := gqlField.Alias
 				for _, gqlArgument := range gqlField.Arguments {
-					if gqlArgument.Name == modeParam && gqlArgument.Value.Raw == string(graphql.OperationModeAsync) {
+					if gqlArgument.Name == ModeParam && gqlArgument.Value.Raw == string(graphql.OperationModeAsync) {
 						jsonPropsToDelete = append(jsonPropsToDelete, mutationAlias)
 					}
 				}

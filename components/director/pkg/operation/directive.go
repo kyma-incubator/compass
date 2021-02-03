@@ -28,7 +28,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
-const modeParam = "mode"
+const ModeParam = "mode"
 
 type directive struct {
 	transact  persistence.Transactioner
@@ -44,16 +44,17 @@ func NewDirective(transact persistence.Transactioner, scheduler Scheduler) *dire
 
 func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, op graphql.OperationType) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
-	mode, ok := resCtx.Args[modeParam].(*graphql.OperationMode)
+	mode, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)
 	if !ok {
-		return nil, apperrors.NewInternalError(fmt.Sprintf("could not get %s parameter", modeParam))
+		return nil, apperrors.NewInternalError(fmt.Sprintf("could not get %s parameter", ModeParam))
 	}
 
 	ctx = SaveModeToContext(ctx, *mode)
 
 	tx, err := d.transact.Begin()
 	if err != nil {
-		return nil, err
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening database transaction: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to initialize database operation")
 	}
 	defer d.transact.RollbackUnlessCommitted(ctx, tx)
 

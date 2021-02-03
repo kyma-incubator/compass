@@ -16,27 +16,13 @@
 
 package operation
 
+//go:generate mockery -name=Scheduler -output=automock -outpkg=automock -case=underscore
 type Scheduler interface {
 	Schedule(operation Operation) (string, error)
-	Fetch(operationID string) (Operation, error)
-	FetchStatus(resourceID, resourceType string) (string, error)
-	Watch() error
 }
 
 type DefaultScheduler struct{}
 
 func (d DefaultScheduler) Schedule(_ Operation) (string, error) {
 	return "", nil
-}
-
-func (d DefaultScheduler) Fetch(_ string) (Operation, error) {
-	return Operation{}, nil
-}
-
-func (d DefaultScheduler) FetchStatus(_, _ string) (string, error) {
-	return "", nil
-}
-
-func (d DefaultScheduler) Watch() error {
-	return nil
 }
