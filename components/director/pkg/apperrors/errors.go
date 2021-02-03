@@ -62,7 +62,7 @@ func ErrorCode(err error) ErrorType {
 func NewNotNullViolationError(resourceType resource.Type) error {
 	return Error{
 		errorCode: EmptyData,
-		Message:   emptyDataMsg,
+		Message:   EmptyDataMsg,
 		arguments: map[string]string{"object": string(resourceType)},
 	}
 }
@@ -70,7 +70,7 @@ func NewNotNullViolationError(resourceType resource.Type) error {
 func NewCheckViolationError(resourceType resource.Type) error {
 	return Error{
 		errorCode: InconsistentData,
-		Message:   inconsistentDataMsg,
+		Message:   InconsistentDataMsg,
 		arguments: map[string]string{"object": string(resourceType)},
 	}
 }
@@ -78,14 +78,14 @@ func NewCheckViolationError(resourceType resource.Type) error {
 func NewOperationTimeoutError() error {
 	return Error{
 		errorCode: OperationTimeout,
-		Message:   operationTimeoutMsg,
+		Message:   OperationTimeoutMsg,
 	}
 }
 
 func NewNotUniqueError(resourceType resource.Type) error {
 	return Error{
 		errorCode: NotUnique,
-		Message:   notUniqueMsg,
+		Message:   NotUniqueMsg,
 		arguments: map[string]string{"object": string(resourceType)},
 	}
 }
@@ -93,7 +93,7 @@ func NewNotUniqueError(resourceType resource.Type) error {
 func NewNotUniqueNameError(resourceType resource.Type) error {
 	return Error{
 		errorCode: NotUniqueName,
-		Message:   notUniqueNameMsg,
+		Message:   NotUniqueNameMsg,
 		arguments: map[string]string{"object": string(resourceType)},
 	}
 }
@@ -101,23 +101,25 @@ func NewNotUniqueNameError(resourceType resource.Type) error {
 func NewNotFoundError(resourceType resource.Type, objectID string) error {
 	return Error{
 		errorCode: NotFound,
-		Message:   notFoundMsg,
+		Message:   NotFoundMsg,
 		arguments: map[string]string{"object": string(resourceType), "ID": objectID},
+		parentErr: nil,
 	}
 }
 
 func NewNotFoundErrorWithType(resourceType resource.Type) error {
 	return Error{
 		errorCode: NotFound,
-		Message:   notFoundMsg,
+		Message:   NotFoundMsg,
 		arguments: map[string]string{"object": string(resourceType)},
+		parentErr: nil,
 	}
 }
 
 func NewInvalidDataError(msg string, args ...interface{}) error {
 	return Error{
 		errorCode: InvalidData,
-		Message:   invalidDataMsg,
+		Message:   InvalidDataMsg,
 		arguments: map[string]string{"reason": fmt.Sprintf(msg, args...)},
 	}
 }
@@ -129,7 +131,7 @@ func NewInvalidDataErrorWithFields(fields map[string]error, objType string) erro
 
 	err := Error{
 		errorCode: InvalidData,
-		Message:   fmt.Sprintf("%s %s", invalidDataMsg, objType),
+		Message:   fmt.Sprintf("%s %s", InvalidDataMsg, objType),
 		arguments: map[string]string{},
 	}
 
@@ -143,7 +145,7 @@ func NewInternalError(msg string, args ...interface{}) error {
 	errMsg := fmt.Sprintf(msg, args...)
 	return Error{
 		errorCode: InternalError,
-		Message:   fmt.Sprintf(internalServerErrMsgF, errMsg),
+		Message:   fmt.Sprintf(InternalServerErrMsgF, errMsg),
 		arguments: map[string]string{},
 	}
 }
@@ -152,7 +154,7 @@ func InternalErrorFrom(err error, msg string, args ...interface{}) error {
 	errMsg := fmt.Sprintf(msg, args...)
 	return Error{
 		errorCode: InternalError,
-		Message:   fmt.Sprintf(internalServerErrMsgF, errMsg),
+		Message:   fmt.Sprintf(InternalServerErrMsgF, errMsg),
 		arguments: map[string]string{},
 		parentErr: err,
 	}
@@ -161,7 +163,7 @@ func InternalErrorFrom(err error, msg string, args ...interface{}) error {
 func NewTenantNotFoundError(externalTenant string) error {
 	return Error{
 		errorCode: TenantNotFound,
-		Message:   tenantNotFoundMsg,
+		Message:   TenantNotFoundMsg,
 		arguments: map[string]string{"externalTenant": externalTenant},
 	}
 }
@@ -169,7 +171,7 @@ func NewTenantNotFoundError(externalTenant string) error {
 func NewTenantRequiredError() error {
 	return Error{
 		errorCode: TenantRequired,
-		Message:   tenantRequiredMsg,
+		Message:   TenantRequiredMsg,
 		arguments: map[string]string{},
 	}
 }
@@ -177,7 +179,7 @@ func NewTenantRequiredError() error {
 func NewInvalidOperationError(reason string) error {
 	return Error{
 		errorCode: InvalidOperation,
-		Message:   invalidOperationMsg,
+		Message:   InvalidOperationMsg,
 		arguments: map[string]string{"reason": reason},
 	}
 }
@@ -193,7 +195,7 @@ func NewForeignKeyInvalidOperationError(sqlOperation resource.SQLOperation, reso
 
 	return Error{
 		errorCode: InvalidOperation,
-		Message:   invalidOperationMsg,
+		Message:   InvalidOperationMsg,
 		arguments: map[string]string{"reason": reason, "object": string(resourceType)},
 	}
 }
@@ -211,7 +213,7 @@ func NewValueNotFoundInConfigurationError() error {
 func NewNoScopesInContextError() error {
 	return Error{
 		errorCode: NotFound,
-		Message:   noScopesInContextMsg,
+		Message:   NoScopesInContextMsg,
 		arguments: map[string]string{},
 	}
 }
@@ -219,7 +221,7 @@ func NewNoScopesInContextError() error {
 func NewRequiredScopesNotDefinedError() error {
 	return Error{
 		errorCode: InsufficientScopes,
-		Message:   noRequiredScopesInContextMsg,
+		Message:   NoRequiredScopesInContextMsg,
 		arguments: map[string]string{},
 	}
 }
@@ -227,7 +229,7 @@ func NewRequiredScopesNotDefinedError() error {
 func NewKeyDoesNotExistError(key string) error {
 	return Error{
 		errorCode: NotFound,
-		Message:   keyDoesNotExistMsg,
+		Message:   KeyDoesNotExistMsg,
 		arguments: map[string]string{"key": key},
 	}
 }
@@ -235,7 +237,7 @@ func NewKeyDoesNotExistError(key string) error {
 func NewInsufficientScopesError(requiredScopes, actualScopes []string) error {
 	return Error{
 		errorCode: InsufficientScopes,
-		Message:   insufficientScopesMsg,
+		Message:   InsufficientScopesMsg,
 		arguments: map[string]string{"required": strings.Join(requiredScopes, ";"),
 			"actual": strings.Join(actualScopes, ";")},
 		parentErr: nil,
@@ -245,7 +247,7 @@ func NewInsufficientScopesError(requiredScopes, actualScopes []string) error {
 func NewCannotReadTenantError() error {
 	return Error{
 		errorCode: InternalError,
-		Message:   cannotReadTenantMsg,
+		Message:   CannotReadTenantMsg,
 		arguments: map[string]string{},
 	}
 }
@@ -253,7 +255,7 @@ func NewCannotReadTenantError() error {
 func NewCannotReadClientUserError() error {
 	return Error{
 		errorCode: InternalError,
-		Message:   cannotReadClientUserMsg,
+		Message:   CannotReadClientUserMsg,
 		arguments: map[string]string{},
 	}
 }
@@ -261,7 +263,7 @@ func NewCannotReadClientUserError() error {
 func NewUnauthorizedError(msg string) error {
 	return Error{
 		errorCode: Unauthorized,
-		Message:   unauthorizedMsg,
+		Message:   UnauthorizedMsg,
 		arguments: map[string]string{"reason": msg},
 	}
 }
@@ -276,7 +278,7 @@ func IsValueNotFoundInConfiguration(err error) bool {
 
 func IsKeyDoesNotExist(err error) bool {
 	if customErr, ok := err.(Error); ok {
-		return customErr.errorCode == NotFound && customErr.Message == keyDoesNotExistMsg
+		return customErr.errorCode == NotFound && customErr.Message == KeyDoesNotExistMsg
 	} else {
 		return false
 	}
@@ -284,13 +286,13 @@ func IsKeyDoesNotExist(err error) bool {
 
 func IsCannotReadTenant(err error) bool {
 	if customErr, ok := err.(Error); ok {
-		return customErr.errorCode == InternalError && customErr.Message == cannotReadTenantMsg
+		return customErr.errorCode == InternalError && customErr.Message == CannotReadTenantMsg
 	} else {
 		return false
 	}
 }
 
-func IsNewInvalidDataError(err error) bool {
+func IsNewInvalidOperationError(err error) bool {
 	return ErrorCode(err) == InvalidOperation
 }
 

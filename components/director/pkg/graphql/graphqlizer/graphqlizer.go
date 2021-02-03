@@ -446,6 +446,9 @@ func (g *Graphqlizer) BundleInstanceAuthStatusInputToGQL(in graphql.BundleInstan
 
 func (g *Graphqlizer) BundleInstanceAuthRequestInputToGQL(in graphql.BundleInstanceAuthRequestInput) (string, error) {
 	return g.genericToGQL(in, `{
+		{{- if .ID }}
+		id: "{{ .ID }}"
+		{{- end }}		
 		{{- if .Context }}
 		context: {{ .Context }}
 		{{- end }}

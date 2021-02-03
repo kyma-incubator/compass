@@ -64,6 +64,7 @@ func (c *converter) MultipleToGraphQL(in []*model.BundleInstanceAuth) ([]*graphq
 
 func (c *converter) RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequestInput) model.BundleInstanceAuthRequestInput {
 	return model.BundleInstanceAuthRequestInput{
+		ID:          in.ID,
 		Context:     c.jsonPtrToStrPtr(in.Context),
 		InputParams: c.jsonPtrToStrPtr(in.InputParams),
 	}

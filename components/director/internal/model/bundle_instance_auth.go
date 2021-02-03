@@ -68,6 +68,7 @@ const (
 
 // Input type for requestBundleInstanceAuthCreation
 type BundleInstanceAuthRequestInput struct {
+	ID          *string
 	Context     *string
 	InputParams *string
 }

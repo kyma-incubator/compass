@@ -305,9 +305,15 @@ func assertBundle(t *testing.T, in *graphql.BundleCreateInput, actual *graphql.B
 	assertAuth(t, in.DefaultInstanceAuth, actual.DefaultInstanceAuth)
 }
 
-func assertBundleInstanceAuth(t *testing.T, expectedAuth graphql.BundleInstanceAuthRequestInput, actualAuth graphql.BundleInstanceAuth) {
+func assertBundleInstanceAuthInput(t *testing.T, expectedAuth graphql.BundleInstanceAuthRequestInput, actualAuth graphql.BundleInstanceAuth) {
 	assertGraphQLJSON(t, expectedAuth.Context, actualAuth.Context)
 	assertGraphQLJSON(t, expectedAuth.InputParams, actualAuth.InputParams)
+}
+
+func assertBundleInstanceAuth(t *testing.T, expectedAuth graphql.BundleInstanceAuth, actualAuth graphql.BundleInstanceAuth) {
+	assert.Equal(t, expectedAuth.ID, actualAuth.ID)
+	assert.Equal(t, expectedAuth.Context, actualAuth.Context)
+	assert.Equal(t, expectedAuth.InputParams, actualAuth.InputParams)
 }
 
 func assertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql.JSON) {

@@ -19,6 +19,7 @@ func TestBundleInstanceAuthRequestInput_ToBundleInstanceAuth(t *testing.T) {
 	testTenant := "baz"
 
 	input := BundleInstanceAuthRequestInput{
+		ID:          str.Ptr(`"foo"'`),
 		Context:     str.Ptr(`"test"`),
 		InputParams: str.Ptr(`"test"`),
 	}

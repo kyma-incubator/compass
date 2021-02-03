@@ -1,14 +1,10 @@
 package apitests
 
 import (
-	"crypto/rsa"
-	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
 	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,7 +24,7 @@ func TestTokens(t *testing.T) {
 
 		//then
 		require.NoError(t, e)
-		assertConfiguration(t, config)
+		connector.AssertConfiguration(t, config)
 	})
 
 	t.Run("should return valid response on Configuration query for Runtime token", func(t *testing.T) {
@@ -43,7 +39,7 @@ func TestTokens(t *testing.T) {
 
 		//then
 		require.NoError(t, e)
-		assertConfiguration(t, config)
+		connector.AssertConfiguration(t, config)
 	})
 
 	t.Run("should not accept invalid token on Configuration query", func(t *testing.T) {
@@ -94,15 +90,15 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return client certificate with valid subject and signed with CA certificate", func(t *testing.T) {
 		// when
-		certResult, configuration := generateCertificate(t, appID, clientKey)
+		certResult, configuration := connector.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
 
 		// then
-		assertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certResult)
+		connector.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certResult)
 	})
 
 	t.Run("should return error when CSR subject is invalid", func(t *testing.T) {
 		// given
-		configuration := getConfiguration(t, appID)
+		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
 		wrongSubject := "subject=OU=Test,O=Test,L=Wrong,ST=Wrong,C=PL,CN=Wrong"
@@ -120,10 +116,10 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when different Common Name provided", func(t *testing.T) {
 		// given
-		configuration := getConfiguration(t, appID)
+		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
 
 		certToken := configuration.Token.Token
-		differentSubject := changeCommonName(configuration.CertificateSigningRequestInfo.Subject, "12y36g45-b340-418d-b653-d95b5e347d74")
+		differentSubject := connector.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, "12y36g45-b340-418d-b653-d95b5e347d74")
 
 		csr, e := testkit.CreateCsr(differentSubject, clientKey)
 		require.NoError(t, e)
@@ -138,7 +134,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with invalid token", func(t *testing.T) {
 		// given
-		configuration := getConfiguration(t, appID)
+		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
 		certInfo := configuration.CertificateSigningRequestInfo
 
 		csr, e := testkit.CreateCsr(certInfo.Subject, clientKey)
@@ -156,7 +152,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when signing certificate with already used token", func(t *testing.T) {
 		// given
-		configuration := getConfiguration(t, appID)
+		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
 		certInfo := configuration.CertificateSigningRequestInfo
 
 		csr, err := testkit.CreateCsr(certInfo.Subject, clientKey)
@@ -164,7 +160,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 		cert, err := connectorClient.SignCSR(csr, configuration.Token.Token)
 		require.NoError(t, err)
-		assertCertificate(t, certInfo.Subject, cert)
+		connector.AssertCertificate(t, certInfo.Subject, cert)
 
 		// when
 		secondCert, err := connectorClient.SignCSR(csr, configuration.Token.Token)
@@ -176,7 +172,7 @@ func TestCertificateGeneration(t *testing.T) {
 
 	t.Run("should return error when invalid CSR provided for signing", func(t *testing.T) {
 		// given
-		configuration := getConfiguration(t, appID)
+		configuration := connector.GetConfiguration(t, internalClient, connectorClient, appID)
 		certToken := configuration.Token.Token
 		wrongCSR := "wrongCSR"
 
@@ -193,10 +189,10 @@ func TestFullConnectorFlow(t *testing.T) {
 	appID := "54f83a73-b340-418d-b653-d95b5e347d76"
 
 	t.Log("Generating certificate...")
-	certificationResult, configuration := generateCertificate(t, appID, clientKey)
-	assertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certificationResult)
+	certificationResult, configuration := connector.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
+	connector.AssertCertificate(t, configuration.CertificateSigningRequestInfo.Subject, certificationResult)
 
-	defer cleanup(t, certificationResult)
+	defer connector.Cleanup(t, configmapCleaner, certificationResult)
 
 	t.Log("Certificate generated. Creating secured client...")
 	certChain := testkit.DecodeCertChain(t, certificationResult.CertificateChain)
@@ -213,7 +209,7 @@ func TestFullConnectorFlow(t *testing.T) {
 
 	renewalResult, err := securedClient.SignCSR(csr)
 	require.NoError(t, err)
-	assertCertificate(t, configWithCert.CertificateSigningRequestInfo.Subject, renewalResult)
+	connector.AssertCertificate(t, configWithCert.CertificateSigningRequestInfo.Subject, renewalResult)
 
 	t.Log("Renewing certificate...")
 	renewedCertChain := testkit.DecodeCertChain(t, certificationResult.CertificateChain)
@@ -236,80 +232,4 @@ func TestFullConnectorFlow(t *testing.T) {
 	require.Nil(t, configWithRevokedCert.Token)
 	require.Nil(t, configWithRevokedCert.CertificateSigningRequestInfo)
 	require.Nil(t, configWithRevokedCert.ManagementPlaneInfo)
-}
-
-func getConfiguration(t *testing.T, appID string) externalschema.Configuration {
-	token, err := internalClient.GenerateApplicationToken(appID)
-	require.NoError(t, err)
-
-	configuration, err := connectorClient.Configuration(token.Token)
-	require.NoError(t, err)
-	assertConfiguration(t, configuration)
-
-	return configuration
-}
-
-func generateCertificate(t *testing.T, appID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
-	token, err := internalClient.GenerateApplicationToken(appID)
-	require.NoError(t, err)
-
-	return generateCertificateForToken(t, token.Token, clientKey)
-}
-
-func generateCertificateForToken(t *testing.T, token string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
-	configuration, err := connectorClient.Configuration(token)
-	require.NoError(t, err)
-	assertConfiguration(t, configuration)
-
-	certToken := configuration.Token.Token
-	subject := configuration.CertificateSigningRequestInfo.Subject
-
-	csr, err := testkit.CreateCsr(subject, clientKey)
-	require.NoError(t, err)
-
-	result, err := connectorClient.SignCSR(csr, certToken)
-	require.NoError(t, err)
-
-	return result, configuration
-}
-
-func assertConfiguration(t *testing.T, configuration externalschema.Configuration) {
-	require.NotEmpty(t, configuration)
-	require.NotNil(t, configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL)
-	require.NotNil(t, configuration.ManagementPlaneInfo.DirectorURL)
-
-	require.Equal(t, testkit.RSAKey, configuration.CertificateSigningRequestInfo.KeyAlgorithm)
-}
-
-func assertCertificate(t *testing.T, expectedSubject string, certificationResult externalschema.CertificationResult) {
-	clientCert := certificationResult.ClientCertificate
-	certChain := certificationResult.CertificateChain
-	caCert := certificationResult.CaCertificate
-
-	require.NotEmpty(t, clientCert)
-	require.NotEmpty(t, certChain)
-	require.NotEmpty(t, caCert)
-
-	testkit.CheckIfSubjectEquals(t, expectedSubject, clientCert)
-	testkit.CheckIfChainContainsTwoCertificates(t, certChain)
-	testkit.CheckCertificateChainOrder(t, certChain)
-	testkit.CheckIfCertIsSigned(t, clientCert, caCert)
-}
-
-func changeCommonName(subject, commonName string) string {
-	splitSubject := testkit.ParseSubject(subject)
-
-	splitSubject.CommonName = commonName
-
-	return splitSubject.String()
-}
-
-func createCertDataHeader(subject, hash string) string {
-	return fmt.Sprintf(`By=spiffe://cluster.local/ns/kyma-system/sa/default;Hash=%s;Subject="%s";URI=`, hash, subject)
-}
-
-func cleanup(t *testing.T, certificationResult externalschema.CertificationResult) {
-	hash := testkit.GetCertificateHash(t, certificationResult.ClientCertificate)
-	err := configmapCleaner.CleanRevocationList(hash)
-	assert.NoError(t, err)
 }
