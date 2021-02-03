@@ -100,7 +100,7 @@ func NewRootResolver(
 	webhookConverter := webhook.NewConverter(authConverter)
 	specConverter := spec.NewConverter(frConverter)
 	apiConverter := api.NewConverter(versionConverter, specConverter)
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
 	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)

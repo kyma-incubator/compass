@@ -29,8 +29,8 @@ var (
 
 //go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore
 type EventAPIDefinitionConverter interface {
-	FromEntity(entity Entity) (model.EventDefinition, error)
-	ToEntity(apiModel model.EventDefinition) (Entity, error)
+	FromEntity(entity Entity) model.EventDefinition
+	ToEntity(apiModel model.EventDefinition) Entity
 }
 
 type pgRepository struct {
