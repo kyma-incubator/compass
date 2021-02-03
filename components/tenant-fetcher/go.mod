@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.1.5
 	github.com/gophercloud/gophercloud v0.1.0 // indirect
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210202150643-acb481d32fce
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210203121941-06c769e27c35
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/stretchr/testify v1.7.0
