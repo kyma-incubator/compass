@@ -43,7 +43,7 @@ This script starts Compass on top of a fully-featured Kyma cluster. Alternativey
 
 The System Broker binary allows to override some configuration parameters. You can specify the following as command line arguments or as environment variables.
 
-The configuration structure ([config.go])(https://github.com/kyma-incubator/compass/blob/0f0eeb38e7a5d8db655b6870138e5add257ebb1d/components/system-broker/internal/config/config.go#L30) is self descriptive. Default values can be found in the `DefaultConfig` method. 
+The configuration structure ([config.go](https://github.com/kyma-incubator/compass/blob/0f0eeb38e7a5d8db655b6870138e5add257ebb1d/components/system-broker/internal/config/config.go#L30)) is self descriptive. Default values can be found in the `DefaultConfig` method. 
 You can find an example for using environment variables in the following Helm charts at: [deployment.yaml](https://github.com/kyma-incubator/compass/blob/4b49dae2cce65f0efa98d0a9e664ae65c0f059f8/chart/compass/charts/system-broker/templates/deployment.yaml#L53).
 
 ## Usage
