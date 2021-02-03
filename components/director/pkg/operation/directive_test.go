@@ -320,17 +320,14 @@ func TestHandleOperation(t *testing.T) {
 
 type dummyResolver struct {
 	finalCtx context.Context
-	called   bool
 }
 
 func (d *dummyResolver) SuccessResolve(ctx context.Context) (res interface{}, err error) {
-	d.called = true
 	d.finalCtx = ctx
 	return mockedNextOutput(), nil
 }
 
 func (d *dummyResolver) ErrorResolve(ctx context.Context) (res interface{}, err error) {
-	d.called = true
 	d.finalCtx = ctx
 	return nil, mockedError()
 }

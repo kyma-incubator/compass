@@ -19,12 +19,14 @@ package operation
 import (
 	"context"
 	"fmt"
-
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/tidwall/sjson"
 	"github.com/vektah/gqlparser/ast"
 )
+
+const LocationsParam = "locations"
 
 type middleware struct {
 	directorURL string
@@ -36,7 +38,7 @@ func NewMiddleware(directorURL string) *middleware {
 	}
 }
 
-func (m *middleware) Handler(ctx context.Context, next func(ctx context.Context) []byte) []byte {
+func (m *middleware) ExtensionHandler(ctx context.Context, next func(ctx context.Context) []byte) []byte {
 	operations := make([]*Operation, 0)
 	ctx = SaveToContext(ctx, &operations)
 
@@ -50,7 +52,8 @@ func (m *middleware) Handler(ctx context.Context, next func(ctx context.Context)
 
 	if len(locations) > 0 {
 		reqCtx := gqlgen.GetRequestContext(ctx)
-		if err := reqCtx.RegisterExtension("locations", locations); err != nil {
+		if err := reqCtx.RegisterExtension(LocationsParam, locations); err != nil {
+			log.C(ctx).Infof("Unable to attach %s extension: %s", LocationsParam, err.Error())
 			return []byte(`{"error": "unable to finalize operation location"}`)
 		}
 

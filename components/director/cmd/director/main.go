@@ -214,7 +214,7 @@ func main() {
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema,
-		handler.RequestMiddleware(operationMiddleware.Handler),
+		handler.RequestMiddleware(operationMiddleware.ExtensionHandler),
 		handler.ErrorPresenter(presenter.Do),
 		handler.RecoverFunc(panic_handler.RecoverFn))))
 
