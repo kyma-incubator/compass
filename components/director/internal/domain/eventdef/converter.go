@@ -23,13 +23,12 @@ type SpecConverter interface {
 }
 
 type converter struct {
-	fr FetchRequestConverter
 	vc VersionConverter
 	sc SpecConverter
 }
 
-func NewConverter(fr FetchRequestConverter, vc VersionConverter, sc SpecConverter) *converter {
-	return &converter{fr: fr, vc: vc, sc: sc}
+func NewConverter(vc VersionConverter, sc SpecConverter) *converter {
+	return &converter{vc: vc, sc: sc}
 }
 
 func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition, error) {
@@ -110,7 +109,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 	}, spec, nil
 }
 
-func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
+func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 	return model.EventDefinition{
 		ID:          entity.ID,
 		Tenant:      entity.TenantID,
@@ -119,10 +118,10 @@ func (c *converter) FromEntity(entity Entity) (model.EventDefinition, error) {
 		Description: repo.StringPtrFromNullableString(entity.Description),
 		Group:       repo.StringPtrFromNullableString(entity.GroupName),
 		Version:     c.vc.FromEntity(entity.Version),
-	}, nil
+	}
 }
 
-func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
+func (c *converter) ToEntity(eventModel model.EventDefinition) Entity {
 	return Entity{
 		ID:          eventModel.ID,
 		TenantID:    eventModel.Tenant,
@@ -131,7 +130,7 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) (Entity, error) {
 		Description: repo.NewNullableString(eventModel.Description),
 		GroupName:   repo.NewNullableString(eventModel.Group),
 		Version:     c.convertVersionToEntity(eventModel.Version),
-	}, nil
+	}
 }
 
 func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version {

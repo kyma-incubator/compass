@@ -235,12 +235,12 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 		return nil, err
 	}
 
-	err = tx.Commit()
+	converted, err := r.specConverter.ToGraphQLEventSpec(spec)
 	if err != nil {
 		return nil, err
 	}
 
-	converted, err := r.specConverter.ToGraphQLEventSpec(spec)
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +272,7 @@ func (r *Resolver) FetchRequest(ctx context.Context, obj *graphql.EventSpec) (*g
 	}
 
 	if fr == nil {
-		return nil, tx.Commit()
+		return nil, nil
 	}
 
 	err = tx.Commit()

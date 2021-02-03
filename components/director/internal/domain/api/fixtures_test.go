@@ -66,15 +66,6 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 	}, spec
 }
 
-func fixGQLAPIDefinition(id string, bndlId string, name, targetURL string) *graphql.APIDefinition {
-	return &graphql.APIDefinition{
-		ID:        id,
-		BundleID:  bndlId,
-		Name:      name,
-		TargetURL: targetURL,
-	}
-}
-
 func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	data := graphql.CLOB("spec_data_" + placeholder)
 
@@ -169,78 +160,6 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	}
 }
 
-func fixModelAuthInput(headers map[string][]string) *model.AuthInput {
-	return &model.AuthInput{
-		AdditionalHeaders: headers,
-	}
-}
-
-func fixGQLAuthInput(headers map[string][]string) *graphql.AuthInput {
-	httpHeaders := graphql.HttpHeaders(headers)
-
-	return &graphql.AuthInput{
-		AdditionalHeaders: &httpHeaders,
-	}
-}
-
-func fixModelAuth() *model.Auth {
-	return &model.Auth{
-		Credential: model.CredentialData{
-			Basic: &model.BasicCredentialData{
-				Username: "foo",
-				Password: "bar",
-			},
-		},
-		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
-		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-		RequestAuth: &model.CredentialRequestAuth{
-			Csrf: &model.CSRFTokenCredentialRequestAuth{
-				TokenEndpointURL: "foo.url",
-				Credential: model.CredentialData{
-					Basic: &model.BasicCredentialData{
-						Username: "boo",
-						Password: "far",
-					},
-				},
-				AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
-				AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-			},
-		},
-	}
-}
-
-func fixGQLAuth() *graphql.Auth {
-	return &graphql.Auth{
-		Credential: &graphql.BasicCredentialData{
-			Username: "foo",
-			Password: "bar",
-		},
-		AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-		AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
-		RequestAuth: &graphql.CredentialRequestAuth{
-			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
-				TokenEndpointURL: "foo.url",
-				Credential: &graphql.BasicCredentialData{
-					Username: "boo",
-					Password: "far",
-				},
-				AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-				AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
-			},
-		},
-	}
-}
-
-func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
-	return &model.APIRuntimeAuth{
-		ID:        str.Ptr("foo"),
-		TenantID:  "tnt",
-		RuntimeID: id,
-		APIDefID:  "api_id",
-		Value:     auth,
-	}
-}
-
 func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) api.Entity {
 	return api.Entity{
 		ID:        id,
@@ -286,10 +205,6 @@ func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
 		api.Version.ForRemoval}
 }
 
-func fixDefaultAuth() string {
-	return `{"Credential":{"Basic":null,"Oauth":null},"AdditionalHeaders":{"testHeader":["hval1","hval2"]},"AdditionalQueryParams":null,"RequestAuth":null}`
-}
-
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
 	return &model.FetchRequest{
 		ID:     id,
@@ -300,23 +215,6 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 		Filter: nil,
 		Status: &model.FetchRequestStatus{
 			Condition: model.FetchRequestStatusConditionInitial,
-			Timestamp: timestamp,
-		},
-		ObjectType: model.SpecFetchRequestReference,
-		ObjectID:   specID,
-	}
-}
-
-func fixModelFetchRequestWithCondition(id, url string, timestamp time.Time, condition model.FetchRequestStatusCondition) *model.FetchRequest {
-	return &model.FetchRequest{
-		ID:     id,
-		Tenant: tenantID,
-		URL:    url,
-		Auth:   nil,
-		Mode:   "SINGLE",
-		Filter: nil,
-		Status: &model.FetchRequestStatus{
-			Condition: condition,
 			Timestamp: timestamp,
 		},
 		ObjectType: model.SpecFetchRequestReference,
