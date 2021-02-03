@@ -29,6 +29,11 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 						"bar": {"bar", "foo"},
 					},
 				},
+				Mode:           model.WebhookModeSync,
+				URLTemplate:    `{}`,
+				InputTemplate:  `{}`,
+				HeaderTemplate: `{}`,
+				OutputTemplate: `{}`,
 			},
 			Expected: &model.Webhook{
 				ApplicationID: &applicationID,
@@ -42,6 +47,11 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 						"bar": {"bar", "foo"},
 					},
 				},
+				Mode:           model.WebhookModeSync,
+				URLTemplate:    `{}`,
+				InputTemplate:  `{}`,
+				HeaderTemplate: `{}`,
+				OutputTemplate: `{}`,
 			},
 		},
 		{
