@@ -66,6 +66,25 @@ func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.
 	return s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
+// Until now APIs and Events had embedded specification in them, we will model this behavior by relying that the first created spec is the one which GraphQL expects
+func (s *service) GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	specs, err := s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(specs) > 0 {
+		return specs[0], nil
+	}
+
+	return nil, nil
+}
+
 func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -99,6 +118,7 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 
 	return id, nil
 }
+
 func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

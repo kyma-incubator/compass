@@ -199,14 +199,14 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 
 func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID string) error {
 	for i := range in.APIDefinitions {
-		_, err := s.apiSvc.CreateInBundle(ctx, bundleID, *in.APIDefinitions[i], *in.APISpecs[i])
+		_, err := s.apiSvc.CreateInBundle(ctx, bundleID, *in.APIDefinitions[i], in.APISpecs[i])
 		if err != nil {
 			return errors.Wrapf(err, "while creating APIs for bundle with id %q", bundleID)
 		}
 	}
 
 	for i := range in.EventDefinitions {
-		_, err := s.eventSvc.CreateInBundle(ctx, bundleID, *in.EventDefinitions[i], *in.EventSpecs[i])
+		_, err := s.eventSvc.CreateInBundle(ctx, bundleID, *in.EventDefinitions[i], in.EventSpecs[i])
 		if err != nil {
 			return errors.Wrapf(err, "while creating Event for bundle with id %q", bundleID)
 		}

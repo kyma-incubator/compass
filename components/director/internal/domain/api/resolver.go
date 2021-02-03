@@ -15,8 +15,8 @@ import (
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec model.SpecInput) (string, error)
-	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec model.SpecInput) error
+	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
@@ -102,8 +102,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, apperrors.NewInvalidDataError("cannot add API to not existing bundle")
 	}
 
-	// TODO: try creating APIDef with no specs
-	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn, *convertedSpec)
+	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error occurred while creating APIDefinition in Bundle with id %s", bundleID)
 	}
@@ -113,12 +112,12 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, err
 	}
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
 
-	gqlAPI, err := r.converter.ToGraphQL(api, specs[0])
+	gqlAPI, err := r.converter.ToGraphQL(api, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
@@ -148,7 +147,7 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 		return nil, errors.Wrapf(err, "while converting GraphQL input to APIDefinition with id %s", id)
 	}
 
-	err = r.svc.Update(ctx, id, *convertedIn, *convertedSpec)
+	err = r.svc.Update(ctx, id, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -158,12 +157,12 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 		return nil, err
 	}
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
 
-	gqlAPI, err := r.converter.ToGraphQL(api, specs[0])
+	gqlAPI, err := r.converter.ToGraphQL(api, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
@@ -192,12 +191,12 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 		return nil, err
 	}
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
 
-	gqlAPI, err := r.converter.ToGraphQL(api, specs[0])
+	gqlAPI, err := r.converter.ToGraphQL(api, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
@@ -227,12 +226,16 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.APISpecReference, apiID)
+	dbSpec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, apiID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", apiID)
 	}
 
-	spec, err := r.specService.RefetchSpec(ctx, specs[0].ID)
+	if dbSpec == nil {
+		return nil, errors.Errorf("spec for API with id %q not found", apiID)
+	}
+
+	spec, err := r.specService.RefetchSpec(ctx, dbSpec.ID)
 	if err != nil {
 		return nil, err
 	}

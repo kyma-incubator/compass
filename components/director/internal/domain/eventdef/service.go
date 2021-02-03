@@ -40,25 +40,25 @@ type UIDService interface {
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
-	ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 }
 
 type service struct {
-	eventAPIRepo        EventAPIRepository
-	fetchRequestRepo    FetchRequestRepository
-	uidService          UIDService
-	specService         SpecService
-	timestampGen        timestamp.Generator
+	eventAPIRepo     EventAPIRepository
+	fetchRequestRepo FetchRequestRepository
+	uidService       UIDService
+	specService      SpecService
+	timestampGen     timestamp.Generator
 }
 
 func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, specService SpecService) *service {
 	return &service{
-		eventAPIRepo:        eventAPIRepo,
-		fetchRequestRepo:    fetchRequestRepo,
-		uidService:          uidService,
-		specService:         specService,
-		timestampGen:        timestamp.DefaultGenerator(),
+		eventAPIRepo:     eventAPIRepo,
+		fetchRequestRepo: fetchRequestRepo,
+		uidService:       uidService,
+		specService:      specService,
+		timestampGen:     timestamp.DefaultGenerator(),
 	}
 }
 
@@ -103,7 +103,7 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return eventAPI, nil
 }
 
-func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec model.SpecInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -117,15 +117,17 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 		return "", err
 	}
 
-	_, err = s.specService.CreateByReferenceObjectID(ctx, spec, model.EventSpecReference, eventAPI.ID)
-	if err != nil {
-		return "", err
+	if spec != nil {
+		_, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.EventSpecReference, eventAPI.ID)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return id, nil
 }
 
-func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, spec model.SpecInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -143,14 +145,18 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		return errors.Wrapf(err, "while updating EventDefinition with id %s", id)
 	}
 
-	specs, err := s.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
-	}
+	if specIn != nil {
+		dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
+		}
 
-	err = s.specService.UpdateByReferenceObjectID(ctx, specs[0].ID, spec, model.EventSpecReference, event.ID)
-	if err != nil {
-		return err
+		if dbSpec == nil {
+			_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.EventSpecReference, event.ID)
+			return err
+		}
+
+		return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.EventSpecReference, event.ID)
 	}
 
 	return nil
@@ -184,17 +190,20 @@ func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*m
 		return nil, fmt.Errorf("event definition with id %s doesn't exist", eventAPIDefID)
 	}
 
-	specs, err := s.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, eventAPIDefID)
+	spec, err := s.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventAPIDefID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventAPIDefID)
 	}
 
-	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, specs[0].ID)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+	var fetchRequest *model.FetchRequest
+	if spec != nil {
+		fetchRequest, err = s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return nil, nil
+			}
+			return nil, errors.Wrapf(err, "while getting FetchRequest by Event Definition with id %q", eventAPIDefID)
 		}
-		return nil, errors.Wrapf(err, "while getting FetchRequest by Event Definition with id %q", eventAPIDefID)
 	}
 
 	return fetchRequest, nil

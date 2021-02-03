@@ -46,7 +46,7 @@ type BundleInstanceAuthConverter interface {
 type APIService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error)
-	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 }
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
@@ -60,7 +60,7 @@ type APIConverter interface {
 type EventService interface {
 	ListForBundle(ctx context.Context, bundleID string, pageSize int, cursor string) (*model.EventDefinitionPage, error)
 	GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error)
-	CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec model.SpecInput) (string, error)
+	CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
 }
 
 //go:generate mockery -name=EventConverter -output=automock -outpkg=automock -case=underscore
@@ -88,7 +88,7 @@ type DocumentConverter interface {
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
-	ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 }
 
@@ -335,12 +335,12 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id st
 		return nil, err
 	}
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
 
-	gqlAPI, err := r.apiConverter.ToGraphQL(api, specs[0])
+	gqlAPI, err := r.apiConverter.ToGraphQL(api, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
@@ -378,12 +378,12 @@ func (r *Resolver) APIDefinitions(ctx context.Context, obj *graphql.Bundle, grou
 
 	apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
 	for _, api := range apisPage.Data {
-		specs, err := r.specService.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+		spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 		}
 
-		apiSpecs = append(apiSpecs, specs[0])
+		apiSpecs = append(apiSpecs, spec)
 	}
 
 	gqlApis, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs)
@@ -424,12 +424,12 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id 
 		return nil, err
 	}
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, eventAPI.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventAPI.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventAPI.ID)
 	}
 
-	gqlEvent, err := r.eventConverter.ToGraphQL(eventAPI, specs[0])
+	gqlEvent, err := r.eventConverter.ToGraphQL(eventAPI, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", eventAPI.ID)
 	}
@@ -466,12 +466,12 @@ func (r *Resolver) EventDefinitions(ctx context.Context, obj *graphql.Bundle, gr
 
 	eventSpecs := make([]*model.Spec, 0, len(eventAPIPage.Data))
 	for _, event := range eventAPIPage.Data {
-		specs, err := r.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+		spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 		}
 
-		eventSpecs = append(eventSpecs, specs[0])
+		eventSpecs = append(eventSpecs, spec)
 	}
 
 	gqlEvents, err := r.eventConverter.MultipleToGraphQL(eventAPIPage.Data, eventSpecs)

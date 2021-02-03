@@ -45,7 +45,7 @@ type FetchRequestService interface {
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
-	ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 }
 
@@ -110,7 +110,7 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return apiDefinition, nil
 }
 
-func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec model.SpecInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -124,14 +124,16 @@ func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.
 		return "", errors.Wrap(err, "while creating api")
 	}
 
-	_, err = s.specService.CreateByReferenceObjectID(ctx, spec, model.APISpecReference, api.ID)
-	if err != nil {
-		return "", err
+	if spec != nil {
+		_, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.APISpecReference, api.ID)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return id, nil
 }
-func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, spec model.SpecInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
@@ -149,14 +151,18 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return errors.Wrapf(err, "while updating APIDefinition with id %s", id)
 	}
 
-	specs, err := s.specService.ListByReferenceObjectID(ctx, model.APISpecReference, api.ID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
-	}
+	if specIn != nil {
+		dbSpec, err := s.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+		}
 
-	err = s.specService.UpdateByReferenceObjectID(ctx, specs[0].ID, spec, model.APISpecReference, api.ID)
-	if err != nil {
-		return err
+		if dbSpec == nil {
+			_, err = s.specService.CreateByReferenceObjectID(ctx, *specIn, model.APISpecReference, api.ID)
+			return err
+		}
+
+		return s.specService.UpdateByReferenceObjectID(ctx, dbSpec.ID, *specIn, model.APISpecReference, api.ID)
 	}
 
 	return nil
@@ -176,7 +182,6 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-
 func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -191,17 +196,20 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 		return nil, fmt.Errorf("API Definition with id %s doesn't exist", apiDefID)
 	}
 
-	specs, err := s.specService.ListByReferenceObjectID(ctx, model.APISpecReference, apiDefID)
+	spec, err := s.specService.GetByReferenceObjectID(ctx, model.APISpecReference, apiDefID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", apiDefID)
 	}
 
-	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, specs[0].ID)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
+	var fetchRequest *model.FetchRequest
+	if spec != nil {
+		fetchRequest, err = s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return nil, nil
+			}
+			return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition with id %q", apiDefID)
 		}
-		return nil, errors.Wrapf(err, "while getting FetchRequest by API Definition with id %q", apiDefID)
 	}
 
 	return fetchRequest, nil

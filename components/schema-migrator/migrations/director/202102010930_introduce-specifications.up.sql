@@ -142,7 +142,7 @@ ALTER TABLE tombstones
 CREATE TABLE specifications
 (
     id                UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    tenant_id         UUID NOT NULL,
+    tenant_id         UUID      NOT NULL,
     api_def_id        UUID,
     event_def_id      UUID,
     FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings (id) ON DELETE CASCADE,
@@ -153,11 +153,12 @@ CREATE TABLE specifications
     api_spec_type     api_spec_type,
     event_spec_format event_api_spec_format,
     event_spec_type   event_api_spec_type,
-    custom_type       VARCHAR(256)
-        CONSTRAINT valid_refs CHECK ((api_def_id IS NOT NULL AND api_spec_format IS NOT NULL AND
-                                      api_spec_type IS NOT NULL) OR
-                                     (event_def_id IS NOT NULL AND event_spec_format IS NOT NULL AND
-                                      event_spec_type IS NOT NULL))
+    custom_type       VARCHAR(256),
+    created_at        TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+    CONSTRAINT valid_refs CHECK ((api_def_id IS NOT NULL AND api_spec_format IS NOT NULL AND
+                                  api_spec_type IS NOT NULL) OR
+                                 (event_def_id IS NOT NULL AND event_spec_format IS NOT NULL AND
+                                  event_spec_type IS NOT NULL))
 );
 
 CREATE INDEX ON specifications (tenant_id);
@@ -233,8 +234,9 @@ ALTER TABLE fetch_requests
     ADD CONSTRAINT valid_refs
         CHECK (document_id IS NOT NULL OR spec_id IS NOT NULL);
 
-CREATE UNIQUE INDEX fetch_requests_tenant_id_coalesce_coalesce1_coalesce2_idx ON fetch_requests (tenant_id, coalesce(document_id, '00000000-0000-0000-0000-000000000000'),
-                                       coalesce(spec_id, '00000000-0000-0000-0000-000000000000'));
+CREATE UNIQUE INDEX fetch_requests_tenant_id_coalesce_coalesce1_coalesce2_idx ON fetch_requests (tenant_id,
+                                                                                                 coalesce(document_id, '00000000-0000-0000-0000-000000000000'),
+                                                                                                 coalesce(spec_id, '00000000-0000-0000-0000-000000000000'));
 
 ALTER TABLE api_definitions
     DROP COLUMN spec_data,

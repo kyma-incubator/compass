@@ -17,8 +17,8 @@ import (
 
 //go:generate mockery -name=EventDefService -output=automock -outpkg=automock -case=underscore
 type EventDefService interface {
-	CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec model.SpecInput) (string, error)
-	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec model.SpecInput) error
+	CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error)
+	Update(ctx context.Context, id string, in model.EventDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.EventDefinition, error)
 	Delete(ctx context.Context, id string) error
 	GetFetchRequest(ctx context.Context, eventAPIDefID string) (*model.FetchRequest, error)
@@ -96,7 +96,7 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 		return nil, apperrors.NewInvalidDataError("cannot add Event Definition to not existing Bundle")
 	}
 
-	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn, *convertedSpec)
+	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating EventDefinition in Bundle with id %s", bundleID)
 	}
@@ -106,12 +106,12 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 		return nil, err
 	}
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
 
-	gqlEvent, err := r.converter.ToGraphQL(event, specs[0])
+	gqlEvent, err := r.converter.ToGraphQL(event, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
@@ -141,7 +141,7 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 		return nil, errors.Wrapf(err, "while converting GraphQL input to EventDefinition with id %s", id)
 	}
 
-	err = r.svc.Update(ctx, id, *convertedIn, *convertedSpec)
+	err = r.svc.Update(ctx, id, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -151,12 +151,12 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 		return nil, err
 	}
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
 
-	gqlEvent, err := r.converter.ToGraphQL(event, specs[0])
+	gqlEvent, err := r.converter.ToGraphQL(event, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
@@ -186,12 +186,12 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, event.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", event.ID)
 	}
 
-	gqlEvent, err := r.converter.ToGraphQL(event, specs[0])
+	gqlEvent, err := r.converter.ToGraphQL(event, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
@@ -221,12 +221,16 @@ func (r *Resolver) RefetchEventDefinitionSpec(ctx context.Context, eventID strin
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	specs, err := r.specService.ListByReferenceObjectID(ctx, model.EventSpecReference, eventID)
+	dbSpec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventID)
 	}
 
-	spec, err := r.specService.RefetchSpec(ctx, specs[0].ID)
+	if dbSpec == nil {
+		return nil, errors.Errorf("spec for Event with id %q not found", eventID)
+	}
+
+	spec, err := r.specService.RefetchSpec(ctx, dbSpec.ID)
 	if err != nil {
 		return nil, err
 	}
