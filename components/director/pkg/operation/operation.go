@@ -27,6 +27,7 @@ const (
 	OpModeKey = "OperationModeCtx"
 )
 
+// OperationStatus denotes the different statuses that an Operation can be in
 type OperationStatus string
 
 const (
@@ -35,6 +36,10 @@ const (
 	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
 )
 
+// Operation represents a GraphQL mutation which has associated HTTP requests (Webhooks) that need to be executed
+// for the request to be completed fully. Objects of type Operation are meant to be constructed, enriched throughout
+// the flow of the original mutation with information such as ResourceID and ResourceType and finally scheduled through
+// a dedicated Scheduler implementation.
 type Operation struct {
 	OperationID       string                `json:"id"`
 	OperationType     graphql.OperationType `json:"type"`
@@ -46,6 +51,7 @@ type Operation struct {
 	RequestData       string                `json:"request_data"`
 }
 
+// OperationResponse defines the expected response format for the Operations API
 type OperationResponse struct {
 	*Operation
 	Status OperationStatus `json:"status"`

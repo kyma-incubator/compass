@@ -33,12 +33,14 @@ type middleware struct {
 	directorURL string
 }
 
+// NewMiddleware creates a new handler struct responsible for enriching the response of Async mutations with Operation URL location information
 func NewMiddleware(directorURL string) *middleware {
 	return &middleware{
 		directorURL: directorURL,
 	}
 }
 
+// ExtensionHandler enriches Async mutation responses with Operation URL location information and also empties the data property of the graphql response for such requests
 func (m *middleware) ExtensionHandler(ctx context.Context, next func(ctx context.Context) []byte) []byte {
 	operations := make([]*Operation, 0)
 	ctx = SaveToContext(ctx, &operations)

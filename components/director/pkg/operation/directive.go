@@ -35,6 +35,7 @@ type directive struct {
 	scheduler Scheduler
 }
 
+// NewDirective creates a new handler struct responsible for the Async directive business logic
 func NewDirective(transact persistence.Transactioner, scheduler Scheduler) *directive {
 	return &directive{
 		transact:  transact,
@@ -42,6 +43,7 @@ func NewDirective(transact persistence.Transactioner, scheduler Scheduler) *dire
 	}
 }
 
+// HandleOperation enriches the request with an Operation information when the requesting mutation is annotated with the Async directive
 func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, op graphql.OperationType) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
 	mode, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)

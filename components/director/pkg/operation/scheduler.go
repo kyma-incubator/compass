@@ -16,13 +16,16 @@
 
 package operation
 
+// Scheduler is responsible for scheduling any provided Operation entity for later processing
 //go:generate mockery -name=Scheduler -output=automock -outpkg=automock -case=underscore
 type Scheduler interface {
 	Schedule(operation Operation) (string, error)
 }
 
+// DefaultScheduler defines an initial Scheduler implementation
 type DefaultScheduler struct{}
 
+// Schedule is responsible for scheduling any provided Operation
 func (d DefaultScheduler) Schedule(_ Operation) (string, error) {
 	return "", nil
 }

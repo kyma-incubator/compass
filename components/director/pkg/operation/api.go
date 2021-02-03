@@ -43,6 +43,7 @@ import (
 const ResourceIDParam = "resource_id"
 const ResourceTypeParam = "resource_type"
 
+// ResourceFetcherFunc defines a function which fetches an particular application by tenant and app ID
 type ResourceFetcherFunc func(ctx context.Context, tenant, id string) (*model.Application, error)
 
 type handler struct {
@@ -50,6 +51,7 @@ type handler struct {
 	resourceFetcherFunc ResourceFetcherFunc
 }
 
+// NewHandler creates a new handler struct associated with the Operations API
 func NewHandler(transact persistence.Transactioner, resourceFetcherFunc ResourceFetcherFunc) handler {
 	return handler{
 		transact:            transact,
@@ -57,6 +59,7 @@ func NewHandler(transact persistence.Transactioner, resourceFetcherFunc Resource
 	}
 }
 
+// ServeHTTP handles the Operations API requests
 func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 

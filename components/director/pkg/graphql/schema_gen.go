@@ -3309,7 +3309,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `directive @async(op: OperationType!) on FIELD_DEFINITION
+	&ast.Source{Name: "schema.graphql", Input: `"""
+Async directive is added to mutations which are capable of being executed in asynchronious matter
+"""
+directive @async(op: OperationType!) on FIELD_DEFINITION
 """
 HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
 """
