@@ -34,6 +34,7 @@ func (i BundleUpdateInput) Validate() error {
 func (i BundleInstanceAuthRequestInput) Validate() error {
 	// Validation of inputParams against JSON schema is done in Service
 	return validation.ValidateStruct(&i,
+		validation.Field(&i.ID, is.UUIDv4),
 		validation.Field(&i.Context, validation.NilOrNotEmpty),
 		validation.Field(&i.InputParams, validation.NilOrNotEmpty),
 	)

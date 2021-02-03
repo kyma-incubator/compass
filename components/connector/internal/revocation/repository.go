@@ -16,7 +16,7 @@ type Manager interface {
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
 
-//go:generate mockery -name=RevokedCertificatesRepository
+//go:generate mockery --name=RevokedCertificatesRepository
 type RevokedCertificatesRepository interface {
 	Insert(ctx context.Context, hash string) error
 	Contains(hash string) bool
