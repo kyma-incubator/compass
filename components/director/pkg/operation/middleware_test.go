@@ -19,13 +19,14 @@ package operation_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser/ast"
-	"testing"
 )
 
 const (

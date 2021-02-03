@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
@@ -28,7 +30,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser/ast"
-	"testing"
 )
 
 func TestHandleOperation(t *testing.T) {
