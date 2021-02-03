@@ -24,13 +24,12 @@ type SpecConverter interface {
 }
 
 type converter struct {
-	fr            FetchRequestConverter
 	version       VersionConverter
 	specConverter SpecConverter
 }
 
-func NewConverter(fr FetchRequestConverter, version VersionConverter, specConverter SpecConverter) *converter {
-	return &converter{fr: fr, version: version, specConverter: specConverter}
+func NewConverter(version VersionConverter, specConverter SpecConverter) *converter {
+	return &converter{version: version, specConverter: specConverter}
 }
 
 func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graphql.APIDefinition, error) {

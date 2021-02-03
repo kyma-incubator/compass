@@ -31,23 +31,23 @@ type UIDService interface {
 }
 
 type service struct {
-	bndlRepo         BundleRepository
-	apiSvc           APIService
-	eventSvc         EventService
-	documentSvc      DocumentService
+	bndlRepo    BundleRepository
+	apiSvc      APIService
+	eventSvc    EventService
+	documentSvc DocumentService
 
-	uidService          UIDService
-	timestampGen        timestamp.Generator
+	uidService   UIDService
+	timestampGen timestamp.Generator
 }
 
 func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventService, documentSvc DocumentService, uidService UIDService) *service {
 	return &service{
-		bndlRepo:            bndlRepo,
-		apiSvc:              apiSvc,
-		eventSvc:            eventSvc,
-		documentSvc:         documentSvc,
-		uidService:          uidService,
-		timestampGen:        timestamp.DefaultGenerator(),
+		bndlRepo:     bndlRepo,
+		apiSvc:       apiSvc,
+		eventSvc:     eventSvc,
+		documentSvc:  documentSvc,
+		uidService:   uidService,
+		timestampGen: timestamp.DefaultGenerator(),
 	}
 }
 

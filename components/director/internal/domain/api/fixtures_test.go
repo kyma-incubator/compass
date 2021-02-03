@@ -18,6 +18,7 @@ import (
 
 const (
 	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	specID           = "sssssssss-ssss-ssss-ssss-ssssssssssss"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
@@ -32,11 +33,15 @@ func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *mo
 	}
 }
 
-func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
-	spec := &model.APISpec{
-		Data:   str.Ptr("spec_data_" + placeholder),
-		Format: model.SpecFormatYaml,
-		Type:   model.APISpecTypeOpenAPI,
+func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.Spec) {
+	apiType := model.APISpecTypeOpenAPI
+	spec := model.Spec{
+		ID:         specID,
+		Data:       str.Ptr("spec_data_" + placeholder),
+		Format:     model.SpecFormatYaml,
+		ObjectType: model.APISpecReference,
+		ObjectID:   apiDefID,
+		APIType:    &apiType,
 	}
 
 	deprecated := false
@@ -55,11 +60,10 @@ func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
-		Spec:        spec,
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
-	}
+	}, spec
 }
 
 func fixGQLAPIDefinition(id string, bndlId string, name, targetURL string) *graphql.APIDefinition {
@@ -73,11 +77,10 @@ func fixGQLAPIDefinition(id string, bndlId string, name, targetURL string) *grap
 
 func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	data := graphql.CLOB("spec_data_" + placeholder)
-	format := graphql.SpecFormatYaml
 
 	spec := &graphql.APISpec{
 		Data:         &data,
-		Format:       format,
+		Format:       graphql.SpecFormatYaml,
 		Type:         graphql.APISpecTypeOpenAPI,
 		DefinitionID: apiDefID,
 	}
@@ -104,12 +107,13 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	}
 }
 
-func fixModelAPIDefinitionInput(name, description string, group string) *model.APIDefinitionInput {
+func fixModelAPIDefinitionInput(name, description string, group string) (*model.APIDefinitionInput, *model.SpecInput) {
 	data := "data"
+	apiType := model.APISpecTypeOpenAPI
 
-	spec := &model.APISpecInput{
+	spec := &model.SpecInput{
 		Data:         &data,
-		Type:         model.APISpecTypeOpenAPI,
+		APIType:      &apiType,
 		Format:       model.SpecFormatYaml,
 		FetchRequest: &model.FetchRequestInput{},
 	}
@@ -130,9 +134,8 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 		Description: &description,
 		TargetURL:   "https://test-url.com",
 		Group:       &group,
-		Spec:        spec,
 		Version:     v,
-	}
+	}, spec
 }
 
 func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.APIDefinitionInput {
@@ -251,43 +254,35 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	boolPlaceholder := false
 
 	return api.Entity{
-		ID:          apiDefID,
-		TenantID:    tenantID,
-		BndlID:      bundleID,
-		Name:        placeholder,
-		Description: repo.NewValidNullableString("desc_" + placeholder),
-		Group:       repo.NewValidNullableString("group_" + placeholder),
-		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
-		EntitySpec: api.EntitySpec{
-			SpecData:   repo.NewValidNullableString("spec_data_" + placeholder),
-			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatYaml)),
-			SpecType:   repo.NewValidNullableString(string(model.APISpecTypeOpenAPI)),
-		},
-		Version: version.Version{
-			VersionValue:           repo.NewNullableString(str.Ptr("v1.1")),
-			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
-			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
-			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
-		},
-	}
+			ID:          apiDefID,
+			TenantID:    tenantID,
+			BndlID:      bundleID,
+			Name:        placeholder,
+			Description: repo.NewValidNullableString("desc_" + placeholder),
+			Group:       repo.NewValidNullableString("group_" + placeholder),
+			TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
+			Version: version.Version{
+				VersionValue:           repo.NewNullableString(str.Ptr("v1.1")),
+				VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
+				VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
+				VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
+			},
+		}
 }
 
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "spec_data",
-		"spec_format", "spec_type", "version_value", "version_deprecated",
+	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "version_value", "version_deprecated",
 		"version_deprecated_since", "version_for_removal"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
-		fmt.Sprintf("https://%s.com", placeholder), "spec_data_" + placeholder, "YAML", "OPEN_API",
-		"v1.1", false, "v1.0", false}
+		fmt.Sprintf("https://%s.com", placeholder), "v1.1", false, "v1.0", false}
 }
 
 func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
-		api.TargetURL, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
-		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
+		api.TargetURL, api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
 		api.Version.ForRemoval}
 }
 
@@ -307,8 +302,8 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 			Condition: model.FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,
 		},
-		ObjectType: model.APIFetchRequestReference,
-		ObjectID:   "foo",
+		ObjectType: model.SpecFetchRequestReference,
+		ObjectID:   specID,
 	}
 }
 
@@ -324,8 +319,8 @@ func fixModelFetchRequestWithCondition(id, url string, timestamp time.Time, cond
 			Condition: condition,
 			Timestamp: timestamp,
 		},
-		ObjectType: model.APIFetchRequestReference,
-		ObjectID:   "foo",
+		ObjectType: model.SpecFetchRequestReference,
+		ObjectID:   specID,
 	}
 }
 

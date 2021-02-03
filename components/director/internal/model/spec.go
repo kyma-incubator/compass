@@ -77,7 +77,6 @@ type SpecInput struct {
 	FetchRequest *FetchRequestInput
 }
 
-// TODO: Tests
 func (s *SpecInput) ToSpec(id, tenant string, objectType SpecReferenceObjectType, objectID string) (*Spec, error) {
 	if s == nil {
 		return nil, nil

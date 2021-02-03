@@ -53,17 +53,15 @@ type service struct {
 	repo                APIRepository
 	fetchRequestRepo    FetchRequestRepository
 	uidService          UIDService
-	fetchRequestService FetchRequestService
 	specService         SpecService
 	timestampGen        timestamp.Generator
 }
 
-func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, fetchRequestService FetchRequestService, specService SpecService) *service {
+func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, specService SpecService) *service {
 	return &service{
 		repo:                repo,
 		fetchRequestRepo:    fetchRequestRepo,
 		uidService:          uidService,
-		fetchRequestService: fetchRequestService,
 		specService:         specService,
 		timestampGen:        timestamp.DefaultGenerator(),
 	}
@@ -213,15 +211,4 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 	}
 
 	return fetchRequest, nil
-}
-
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {
-	id := s.uidService.Generate()
-	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, model.SpecFetchRequestReference, parentObjectID)
-	err := s.fetchRequestRepo.Create(ctx, fr)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while creating FetchRequest for %q with ID %s", model.SpecFetchRequestReference, parentObjectID)
-	}
-
-	return fr, nil
 }

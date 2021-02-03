@@ -17,7 +17,6 @@ const fetchRequestTable string = `public.fetch_requests`
 const documentIDColumn = "document_id"
 const specIDColumn = "spec_id"
 
-
 var (
 	fetchRequestColumns = []string{"id", "tenant_id", documentIDColumn, "url", "auth", "mode", "filter", "status_condition", "status_message", "status_timestamp", specIDColumn}
 	tenantColumn        = "tenant_id"

@@ -240,12 +240,12 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 		return nil, err
 	}
 
-	err = tx.Commit()
+	converted, err := r.specConverter.ToGraphQLAPISpec(spec)
 	if err != nil {
 		return nil, err
 	}
 
-	converted, err := r.specConverter.ToGraphQLAPISpec(spec)
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}

@@ -23,8 +23,8 @@ type SpecConverter interface {
 }
 
 type converter struct {
-	fr            FetchRequestConverter
-	vc            VersionConverter
+	fr FetchRequestConverter
+	vc VersionConverter
 	sc SpecConverter
 }
 
@@ -32,7 +32,7 @@ func NewConverter(fr FetchRequestConverter, vc VersionConverter, sc SpecConverte
 	return &converter{fr: fr, vc: vc, sc: sc}
 }
 
-func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition,error) {
+func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition, error) {
 	if in == nil {
 		return nil, nil
 	}

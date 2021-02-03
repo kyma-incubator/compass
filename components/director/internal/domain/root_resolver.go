@@ -2,8 +2,9 @@ package domain
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
@@ -98,7 +99,7 @@ func NewRootResolver(
 	docConverter := document.NewConverter(frConverter)
 	webhookConverter := webhook.NewConverter(authConverter)
 	specConverter := spec.NewConverter(frConverter)
-	apiConverter := api.NewConverter(frConverter, versionConverter, specConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
 	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter, specConverter)
 	labelDefConverter := labeldef.NewConverter()
 	labelConverter := label.NewConverter()
@@ -141,7 +142,7 @@ func NewRootResolver(
 
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, fetchRequestSvc, specSvc)
+	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, specSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc, specSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
