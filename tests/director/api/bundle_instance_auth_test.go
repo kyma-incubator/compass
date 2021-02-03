@@ -33,7 +33,7 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	assertBundleInstanceAuth(t, bndlInstanceAuthRequestInput, output)
+	assertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, output)
 
 	saveExample(t, bndlInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
 
@@ -103,7 +103,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 		// THEN
 		require.NoError(t, err)
-		assertBundleInstanceAuth(t, bndlInstanceAuthRequestInput, output)
+		assertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, output)
 
 		// Fetch Application with bundles
 		bundlesForApplicationReq := fixBundlesRequest(application.ID)

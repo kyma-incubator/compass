@@ -313,6 +313,7 @@ input BundleCreateInput {
 }
 
 input BundleInstanceAuthRequestInput {
+	id: ID
 	"""
 	Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
 	"""
@@ -1088,6 +1089,8 @@ type Query {
 	- [query label definition](examples/query-label-definition/query-label-definition.graphql)
 	"""
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
+	bundleByInstanceAuth(authID: ID!): Bundle @hasScopes(path: "graphql.query.bundleByInstanceAuth")
+	bundleInstanceAuth(id: ID!): BundleInstanceAuth @hasScopes(path: "graphql.query.bundleInstanceAuth")
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 200, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
 	Maximum `first` parameter value is 100

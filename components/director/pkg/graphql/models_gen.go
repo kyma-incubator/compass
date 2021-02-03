@@ -211,6 +211,7 @@ type BundleInstanceAuth struct {
 }
 
 type BundleInstanceAuthRequestInput struct {
+	ID *string `json:"id"`
 	// Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
 	Context *JSON `json:"context"`
 	// **Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
