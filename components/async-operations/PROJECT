@@ -1,0 +1,7 @@
+domain: compass
+repo: github.com/kyma-incubator/compass/components/async-operations
+resources:
+- group: operations
+  kind: Operation
+  version: v0
+version: "2"
