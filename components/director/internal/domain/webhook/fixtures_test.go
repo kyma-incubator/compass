@@ -7,22 +7,32 @@ import (
 
 func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	return &model.Webhook{
-		ID:            id,
-		ApplicationID: &appID,
-		TenantID:      tenant,
-		Type:          model.WebhookTypeConfigurationChanged,
-		URL:           url,
-		Auth:          &model.Auth{},
+		ID:             id,
+		ApplicationID:  &appID,
+		TenantID:       tenant,
+		Type:           model.WebhookTypeConfigurationChanged,
+		URL:            url,
+		Auth:           &model.Auth{},
+		Mode:           model.WebhookModeSync,
+		URLTemplate:    `{}`,
+		InputTemplate:  `{}`,
+		HeaderTemplate: `{}`,
+		OutputTemplate: `{}`,
 	}
 }
 
 func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 	return &graphql.Webhook{
-		ID:            id,
-		ApplicationID: &appID,
-		Type:          graphql.WebhookTypeConfigurationChanged,
-		URL:           url,
-		Auth:          &graphql.Auth{},
+		ID:             id,
+		ApplicationID:  &appID,
+		Type:           graphql.WebhookTypeConfigurationChanged,
+		URL:            url,
+		Auth:           &graphql.Auth{},
+		Mode:           graphql.WebhookModeSync,
+		URLTemplate:    `{}`,
+		InputTemplate:  `{}`,
+		HeaderTemplate: `{}`,
+		OutputTemplate: `{}`,
 	}
 }
 
