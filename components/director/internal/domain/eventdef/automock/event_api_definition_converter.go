@@ -15,7 +15,7 @@ type EventAPIDefinitionConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EventAPIDefinitionConverter) FromEntity(entity eventdef.Entity) (model.EventDefinition, error) {
+func (_m *EventAPIDefinitionConverter) FromEntity(entity eventdef.Entity) model.EventDefinition {
 	ret := _m.Called(entity)
 
 	var r0 model.EventDefinition
@@ -25,18 +25,11 @@ func (_m *EventAPIDefinitionConverter) FromEntity(entity eventdef.Entity) (model
 		r0 = ret.Get(0).(model.EventDefinition)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(eventdef.Entity) error); ok {
-		r1 = rf(entity)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // ToEntity provides a mock function with given fields: apiModel
-func (_m *EventAPIDefinitionConverter) ToEntity(apiModel model.EventDefinition) (eventdef.Entity, error) {
+func (_m *EventAPIDefinitionConverter) ToEntity(apiModel model.EventDefinition) eventdef.Entity {
 	ret := _m.Called(apiModel)
 
 	var r0 eventdef.Entity
@@ -46,12 +39,5 @@ func (_m *EventAPIDefinitionConverter) ToEntity(apiModel model.EventDefinition) 
 		r0 = ret.Get(0).(eventdef.Entity)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(model.EventDefinition) error); ok {
-		r1 = rf(apiModel)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }

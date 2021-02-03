@@ -409,9 +409,9 @@ func defaultBundleRepo() mp_bundle.BundleRepository {
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
 	specConverter := spec.NewConverter(frConverter)
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	docConverter := document.NewConverter(frConverter)
-	apiConverter := api.NewConverter(frConverter, versionConverter, specConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
 
 	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }
