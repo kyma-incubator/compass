@@ -323,7 +323,6 @@ func TestHasScenario(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, res, mockedNextOutput())
 	})
-
 	t.Run("runtime is NOT in formation with owning application in request bundle instance auth flow ", func(t *testing.T) {
 		// GIVEN
 		const (
@@ -374,12 +373,12 @@ func TestHasScenario(t *testing.T) {
 	t.Run("runtime is in formation with owning application in delete bundle instance auth flow", func(t *testing.T) {
 		// GIVEN
 		const (
-			modeField     = "mode"
-			tenantID      = "42"
-			bndlAuthID    = "24"
-			runtimeID     = "23"
-			applicationID = "22"
-			bundleID      = "21"
+			bndlAuthIDField = "authID"
+			tenantID        = "42"
+			bndlAuthID      = "24"
+			runtimeID       = "23"
+			applicationID   = "22"
+			bundleID        = "21"
 		)
 
 		bndlAuthRepo := &bndl_auth_mock.Repository{}
@@ -399,7 +398,7 @@ func TestHasScenario(t *testing.T) {
 		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.ResolverContext{
-			Object:   "RegisterApplication",
+			Object:   "BundleInstanceAuth",
 			Field:    graphql.CollectedField{},
 			Args:     map[string]interface{}{bndlAuthIDField: bndlAuthID},
 			IsMethod: false,
@@ -424,7 +423,6 @@ func TestHasScenario(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, res, mockedNextOutput())
 	})
-
 	t.Run("runtime is NOT in formation with owning application in delete bundle instance auth flow", func(t *testing.T) {
 		// GIVEN
 		const (
