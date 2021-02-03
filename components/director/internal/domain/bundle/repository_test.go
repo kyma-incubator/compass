@@ -88,11 +88,8 @@ func TestPgRepository_Update(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		bndl := fixBundleModel(t, "foo", "update")
-		bndl.CreatedAt = time.Time{}
-		bndl.UpdatedAt = time.Time{}
 		entity := fixEntityBundle(bundleID, "foo", "update")
-		entity.CreatedAt = time.Time{}
-		entity.UpdatedAt = time.Time{}
+		entity.DeletedAt = time.Now() // This is needed as workaround so that updatedAt timestamp is not updated
 
 		convMock := &automock.EntityConverter{}
 		convMock.On("ToEntity", bndl).Return(entity, nil)

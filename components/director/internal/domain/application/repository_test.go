@@ -9,6 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/pkg/errors"
@@ -48,7 +53,7 @@ func TestRepository_Exists(t *testing.T) {
 }
 
 func TestRepository_Delete(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
+	var executeDeleteFunc = func(ctx context.Context) {
 		// given
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -56,7 +61,7 @@ func TestRepository_Delete(t *testing.T) {
 		dbMock.ExpectExec(regexp.QuoteMeta("DELETE FROM public.applications WHERE tenant_id = $1 AND id = $2")).WithArgs(
 			givenTenant(), givenID()).WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		ctx := persistence.SaveToContext(context.TODO(), db)
+		ctx = persistence.SaveToContext(ctx, db)
 		repo := application.NewRepository(nil)
 
 		// when
@@ -64,6 +69,85 @@ func TestRepository_Delete(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		executeDeleteFunc(context.Background())
+	})
+
+	t.Run("Success when operation mode is set to sync explicitly and no operation in the context", func(t *testing.T) {
+		ctx := context.Background()
+		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeSync)
+
+		executeDeleteFunc(ctx)
+	})
+
+	t.Run("Success when operation mode is set to async explicitly and operation is in the context", func(t *testing.T) {
+		ctx := context.Background()
+		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
+
+		op := &operation.Operation{
+			OperationType:     graphql.OperationTypeDelete,
+			OperationCategory: "unregisterApplication",
+		}
+		ctx = operation.SaveToContext(ctx, &[]*operation.Operation{op})
+
+		deletedAt := time.Now()
+
+		appModel := fixDetailedModelApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
+		appModel.Ready = false
+		appModel.DeletedAt = deletedAt
+		appEntity := fixDetailedEntityApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
+
+		tenantID := givenTenant()
+		appID := givenID()
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		// GetByID
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "ready", "created_at", "updated_at", "deleted_at", "error"}).
+			AddRow(givenID(), givenTenant(), appEntity.Name, appEntity.Description, appEntity.StatusCondition, appEntity.StatusTimestamp, appEntity.HealthCheckURL, appEntity.IntegrationSystemID, appEntity.ProviderName, appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error)
+
+		dbMock.ExpectQuery(`^SELECT (.+) FROM public.applications WHERE tenant_id = \$1 AND id = \$2$`).
+			WithArgs(tenantID, appID).
+			WillReturnRows(rows)
+
+		mockConverter := &automock.EntityConverter{}
+		mockConverter.On("FromEntity", appEntity).Return(appModel, nil).Once()
+
+		appEntityWithDeletedTimestamp := *appEntity
+		appEntityWithDeletedTimestamp.Ready = false
+		appEntityWithDeletedTimestamp.DeletedAt = deletedAt
+		mockConverter.On("ToEntity", appModel).Return(appEntityWithDeletedTimestamp, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		updateStmt := `UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_name = \?, ready = \?, created_at = \?, updated_at = \?, deleted_at = \?, error = \? WHERE tenant_id = \? AND id = \?`
+
+		dbMock.ExpectExec(updateStmt).
+			WithArgs(appEntityWithDeletedTimestamp.Name, appEntityWithDeletedTimestamp.Description, appEntityWithDeletedTimestamp.StatusCondition, appEntityWithDeletedTimestamp.StatusTimestamp, appEntityWithDeletedTimestamp.HealthCheckURL, appEntityWithDeletedTimestamp.IntegrationSystemID, appEntityWithDeletedTimestamp.ProviderName, appEntityWithDeletedTimestamp.Ready, appEntityWithDeletedTimestamp.CreatedAt, appEntityWithDeletedTimestamp.UpdatedAt, appEntityWithDeletedTimestamp.DeletedAt, appEntityWithDeletedTimestamp.Error, tenantID, appID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx = persistence.SaveToContext(ctx, db)
+
+		repo := application.NewRepository(mockConverter)
+
+		// when
+		err := repo.Delete(ctx, tenantID, appID)
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("Failure when operation mode is set to async explicitly and operation is not in the context", func(t *testing.T) {
+
+	})
+
+	t.Run("Failure when operation mode is set to async, operation is in the context but fetch application fails", func(t *testing.T) {
+
+	})
+
+	t.Run("Failure when operation mode is set to async, operation is in the context but update application fails", func(t *testing.T) {
+
 	})
 
 	t.Run("Error", func(t *testing.T) {
@@ -86,30 +170,78 @@ func TestRepository_Delete(t *testing.T) {
 }
 
 func TestRepository_Create(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
+	var executeCreateFunc = func(ctx context.Context, appID string, mode graphql.OperationMode, operationError error) {
 		// given
 		appModel := fixDetailedModelApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
 		appEntity := fixDetailedEntityApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
+
+		if mode == graphql.OperationModeAsync {
+			appModel.Ready = false
+			appEntity.Ready = false
+		}
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
-		db, dbMock := testdb.MockDatabase(t)
-		defer dbMock.AssertExpectations(t)
+		if operationError == nil {
+			db, dbMock := testdb.MockDatabase(t)
+			defer dbMock.AssertExpectations(t)
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.applications ( id, tenant_id, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, ready, created_at, updated_at, deleted_at, error ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
-			WithArgs(givenID(), givenTenant(), appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
+			dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.applications ( id, tenant_id, name, description, status_condition, status_timestamp, healthcheck_url, integration_system_id, provider_name, ready, created_at, updated_at, deleted_at, error ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`)).
+				WithArgs(appID, givenTenant(), appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error).
+				WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		ctx := persistence.SaveToContext(context.TODO(), db)
+			ctx = persistence.SaveToContext(ctx, db)
+		}
+
 		repo := application.NewRepository(mockConverter)
 
 		// when
 		err := repo.Create(ctx, appModel)
 
 		// then
-		assert.NoError(t, err)
+		if operationError != nil {
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), operationError.Error())
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		executeCreateFunc(context.Background(), givenID(), graphql.OperationModeSync, nil)
+	})
+
+	t.Run("Success when operation mode is set to sync explicitly and no operation in the context", func(t *testing.T) {
+		ctx := context.Background()
+		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeSync)
+
+		executeCreateFunc(ctx, givenID(), graphql.OperationModeSync, nil)
+	})
+
+	t.Run("Success when operation mode is set to async explicitly and operation is in the context", func(t *testing.T) {
+		ctx := context.Background()
+		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
+
+		op := &operation.Operation{
+			OperationType:     graphql.OperationTypeCreate,
+			OperationCategory: "registerApplication",
+		}
+		ctx = operation.SaveToContext(ctx, &[]*operation.Operation{op})
+
+		appID := givenID()
+		executeCreateFunc(ctx, appID, graphql.OperationModeAsync, nil)
+
+		assert.Equal(t, appID, op.ResourceID)
+		assert.Equal(t, string(resource.Application), op.ResourceType)
+	})
+
+	t.Run("Failure when operation mode is set to async explicitly and operation is not in the context", func(t *testing.T) {
+		ctx := context.Background()
+		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
+
+		executeCreateFunc(ctx, givenID(), graphql.OperationModeAsync, errors.New("unable to fetch operations from context"))
 	})
 
 	t.Run("DB Error", func(t *testing.T) {
@@ -159,11 +291,8 @@ func TestRepository_Update(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// given
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		appModel.CreatedAt = time.Time{}
-		appModel.UpdatedAt = time.Time{}
 		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		appEntity.CreatedAt = time.Time{}
-		appEntity.UpdatedAt = time.Time{}
+		appEntity.DeletedAt = time.Now() // This is needed as workaround so that updatedAt timestamp is not updated
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
@@ -173,7 +302,7 @@ func TestRepository_Update(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec(updateStmt).
-			WithArgs(appModel.Name, appModel.Description, appModel.Status.Condition, appModel.Status.Timestamp, appModel.HealthCheckURL, appModel.IntegrationSystemID, appModel.ProviderName, appModel.Ready, appModel.CreatedAt, appModel.UpdatedAt, appModel.DeletedAt, appModel.Error, givenTenant(), givenID()).
+			WithArgs(appEntity.Name, appEntity.Description, appEntity.StatusCondition, appEntity.StatusTimestamp, appEntity.HealthCheckURL, appEntity.IntegrationSystemID, appEntity.ProviderName, appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error, givenTenant(), givenID()).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)

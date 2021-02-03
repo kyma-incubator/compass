@@ -423,6 +423,7 @@ func TestPgRepository_Update(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		eventAPIModel := fixFullModelEventDefinitionWithTimestamp(eventAPIID, "update", time.Time{})
 		entity := fixFullEventDefWithTimestamp(eventAPIID, "update", time.Time{})
+		entity.DeletedAt = time.Now() // This is needed as workaround so that updatedAt timestamp is not updated
 
 		convMock := &automock.EventAPIDefinitionConverter{}
 		convMock.On("ToEntity", eventAPIModel).Return(entity, nil)

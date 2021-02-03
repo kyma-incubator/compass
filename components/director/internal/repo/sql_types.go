@@ -12,6 +12,9 @@ type TimestampableEntity interface {
 
 	GetUpdatedAt() time.Time
 	SetUpdatedAt(t time.Time)
+
+	GetDeletedAt() time.Time
+	SetDeletedAt(t time.Time)
 }
 
 func NewNullableString(text *string) sql.NullString {

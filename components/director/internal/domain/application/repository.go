@@ -64,13 +64,19 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 	opMode := operation.ModeFromCtx(ctx)
 	if opMode == graphql.OperationModeAsync {
+		if err := updateOperationContext(ctx, id); err != nil {
+			return err
+		}
+
 		app, err := r.GetByID(ctx, tenant, id)
 		if err != nil {
 			return err
 		}
 
 		app.Ready = false
-		app.DeletedAt = time.Now()
+		if app.DeletedAt.IsZero() { // Needed for the tests but might be useful for the production also
+			app.DeletedAt = time.Now()
+		}
 
 		return r.Update(ctx, app)
 	}
@@ -207,15 +213,9 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 	if opMode == graphql.OperationModeAsync {
 		appEnt.Ready = false
 
-		operations, exists := operation.FromCtx(ctx)
-		if !exists {
-			return apperrors.NewInternalError("unable to fetch operations from context")
+		if err := updateOperationContext(ctx, model.ID); err != nil {
+			return err
 		}
-
-		op := (*operations)[len(*operations)-1]
-
-		op.ResourceID = model.ID
-		op.ResourceType = string(resource.Application)
 	}
 
 	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)
@@ -244,4 +244,18 @@ func (r *pgRepository) multipleFromEntities(entities EntityCollection) ([]*model
 		items = append(items, m)
 	}
 	return items, nil
+}
+
+func updateOperationContext(ctx context.Context, appID string) error {
+	operations, exists := operation.FromCtx(ctx)
+	if !exists {
+		return apperrors.NewInternalError("unable to fetch operations from context")
+	}
+
+	op := (*operations)[len(*operations)-1]
+
+	op.ResourceID = appID
+	op.ResourceType = string(resource.Application)
+
+	return nil
 }

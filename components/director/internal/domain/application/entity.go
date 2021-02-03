@@ -43,3 +43,11 @@ func (e *Entity) GetUpdatedAt() time.Time {
 func (e *Entity) SetUpdatedAt(t time.Time) {
 	e.UpdatedAt = t
 }
+
+func (e *Entity) GetDeletedAt() time.Time {
+	return e.DeletedAt
+}
+
+func (e *Entity) SetDeletedAt(t time.Time) {
+	e.DeletedAt = t
+}
