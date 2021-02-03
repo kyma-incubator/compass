@@ -67,7 +67,7 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Bun
 	log.C(ctx).Infof("Successfully created a Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
 
 	log.C(ctx).Infof("Creating related resources in Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
-	err = s.createRelatedResources(ctx, in, tnt, id)
+	err = s.createRelatedResources(ctx, in, id)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating related resources for Application with id %s", applicationID)
 	}
@@ -197,7 +197,7 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	return s.bndlRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
-func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, tenant string, bundleID string) error {
+func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID string) error {
 	for i := range in.APIDefinitions {
 		_, err := s.apiSvc.CreateInBundle(ctx, bundleID, *in.APIDefinitions[i], *in.APISpecs[i])
 		if err != nil {

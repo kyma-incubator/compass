@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -55,6 +56,10 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec) ([]*graphql.APIDefinition, error) {
+	if len(in) != len(specs) {
+		return nil, errors.New("different apis and specs count provided")
+	}
+
 	var apis []*graphql.APIDefinition
 	for i, a := range in {
 		if a == nil {

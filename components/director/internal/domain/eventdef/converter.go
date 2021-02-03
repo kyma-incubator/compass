@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=VersionConverter -output=automock -outpkg=automock -case=underscore
@@ -53,6 +54,10 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*gra
 }
 
 func (c *converter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec) ([]*graphql.EventDefinition, error) {
+	if len(in) != len(specs) {
+		return nil, errors.New("different events and specs count provided")
+	}
+
 	var events []*graphql.EventDefinition
 	for i, e := range in {
 		if e == nil {
