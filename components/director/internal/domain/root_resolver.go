@@ -4,10 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -26,6 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -40,6 +37,7 @@ import (
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -177,7 +175,7 @@ func NewRootResolver(
 		viewer:             viewer.NewViewerResolver(),
 		tenant:             tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpBundle:           bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter),
-		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv),
+		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv),
 	}
 }
@@ -296,6 +294,12 @@ func (r *queryResolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelD
 }
 func (r *queryResolver) LabelDefinition(ctx context.Context, key string) (*graphql.LabelDefinition, error) {
 	return r.labelDef.LabelDefinition(ctx, key)
+}
+func (r *queryResolver) BundleByInstanceAuth(ctx context.Context, authID string) (*graphql.Bundle, error) {
+	return r.bundleInstanceAuth.BundleByInstanceAuth(ctx, authID)
+}
+func (r *queryResolver) BundleInstanceAuth(ctx context.Context, id string) (*graphql.BundleInstanceAuth, error) {
+	return r.bundleInstanceAuth.BundleInstanceAuth(ctx, id)
 }
 func (r *queryResolver) HealthChecks(ctx context.Context, types []graphql.HealthCheckType, origin *string, first *int, after *graphql.PageCursor) (*graphql.HealthCheckPage, error) {
 	return r.healthCheck.HealthChecks(ctx, types, origin, first, after)

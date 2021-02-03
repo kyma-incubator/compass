@@ -113,15 +113,15 @@ To install Compass as central Management Plane on a cluster, follow these steps:
 
 1. Select installation option for Compass and Kyma. ​There are three possible installation options:
 
-    | Installation option     	| Value to use with the installation command   	| Example value          	|
-    |-------------------------	|-------------------	|-------------------------	|
-    | From the Compass `master` branch 	| `master`          	| `master`                	|
-    | From a specific commit on the Compass `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
-    | From a specific PR on the Compass repository       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
+   | Installation option     	| Value to use with the installation command   	| Example value          	|
+       |-------------------------	|-------------------	|-------------------------	|
+   | From the Compass `master` branch 	| `master`          	| `master`                	|
+   | From a specific commit on the Compass `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+   | From a specific PR on the Compass repository       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
 
-    The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
+   The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
 
-    Once you decide on the installation option, use this command:
+   Once you decide on the installation option, use this command:
 
     ```bash
     export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION_HERE}
@@ -139,18 +139,18 @@ To install Compass as central Management Plane on a cluster, follow these steps:
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/kyma-installer.yaml"
     ```
 1. Check the Kyma installation progress. To do so, download the script and check the progress of the installation:
-    
+
     ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-kyma-installed.sh")
     ```
 1. Perform Kyma post-installation steps for a cluster [with the `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-post-installation-steps) or [with a custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-configure-dns-for-the-cluster-load-balancer).
-1. Install Compass with the following command: 
+1. Install Compass with the following command:
 
     ```bash
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
     ```​   
 1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
-   
+
      ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
     ```
@@ -210,27 +210,27 @@ To install Compass and Runtime components on a single cluster, follow these step
     EOF
     ```
 
-    > **NOTE:** If you installed Kyma on a cluster with a custom domain, remember to apply global overrides to the `compass-installer` Namespace as well. To do that, run this command:
+   > **NOTE:** If you installed Kyma on a cluster with a custom domain, remember to apply global overrides to the `compass-installer` Namespace as well. To do that, run this command:
 
     ```bash
     kubectl get configmap -n kyma-installer {OVERRIDE_NAME} -oyaml --export | kubectl apply -n compass-installer -f -
     ```
 1. Install Compass. ​There are three possible installation options:
 
-    | Installation option     	| Value to use with the installation command   	| Example value          	|
-    |-------------------------	|-------------------	|-------------------------	|
-    | From the `master` branch 	| `master`          	| `master`                	|
-    | From a specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
-    | From a specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
+   | Installation option     	| Value to use with the installation command   	| Example value          	|
+       |-------------------------	|-------------------	|-------------------------	|
+   | From the `master` branch 	| `master`          	| `master`                	|
+   | From a specific commit on the `master` branch 	| `master-{COMMIT_HASH}` 	| `master-34edf09a` 	|
+   | From a specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
 
-    Once you decide on the installation option, use these commands:
-    
+   Once you decide on the installation option, use these commands:
+
     ```bash
     export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION}
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
     ```
 1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
-    
+
     ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
     ```

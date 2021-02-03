@@ -364,6 +364,13 @@ func createBundleWithInput(t *testing.T, ctx context.Context, appID string, inpu
 	return resp
 }
 
+func getBundleByInstanceAuthID(t *testing.T, ctx context.Context, bndlInstanceAuthID string) graphql.BundleExt {
+	req := fixBundleByInstanceAuthIDRequest(bndlInstanceAuthID)
+	bndl := graphql.BundleExt{}
+	require.NoError(t, tc.RunOperation(ctx, req, &bndl))
+	return bndl
+}
+
 func getBundle(t *testing.T, ctx context.Context, appID, bndlID string) graphql.BundleExt {
 	req := fixBundleRequest(appID, bndlID)
 	bndl := graphql.ApplicationExt{}
@@ -420,6 +427,13 @@ func addDocumentToBundleWithInput(t *testing.T, ctx context.Context, bndlID stri
 
 func addDocumentToBundle(t *testing.T, ctx context.Context, bndlID string) graphql.DocumentExt {
 	return addDocumentToBundleWithInput(t, ctx, bndlID, fixDocumentInput(t))
+}
+
+func getBundleInstanceAuth(t *testing.T, ctx context.Context, id string) graphql.BundleInstanceAuth {
+	bndlInstanceAuthRequest := fixBundleInstanceAuthRequest(id)
+	bndlInstanceAuth := graphql.BundleInstanceAuth{}
+	require.NoError(t, tc.RunOperation(ctx, bndlInstanceAuthRequest, &bndlInstanceAuth))
+	return bndlInstanceAuth
 }
 
 func createBundleInstanceAuth(t *testing.T, ctx context.Context, bndlID string) graphql.BundleInstanceAuth {
