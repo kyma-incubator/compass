@@ -5,20 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
-	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
-	"github.com/stretchr/testify/assert"
-
+	"github.com/DATA-DOG/go-sqlmock"
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
-
-	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"regexp"
+	"testing"
 )
 
 func TestPgRepository_Create(t *testing.T) {

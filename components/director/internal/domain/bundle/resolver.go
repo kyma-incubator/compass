@@ -92,12 +92,6 @@ type SpecService interface {
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
 }
 
-//go:generate mockery -name=SpecConverter -output=automock -outpkg=automock -case=underscore
-type SpecConverter interface {
-	ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error)
-	InputFromGraphQLAPISpec(in *graphql.APISpecInput) (*model.SpecInput, error)
-}
-
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -114,7 +108,6 @@ type Resolver struct {
 	documentConverter           DocumentConverter
 
 	specService   SpecService
-	specConverter SpecConverter
 }
 
 func NewResolver(
@@ -129,8 +122,7 @@ func NewResolver(
 	apiConv APIConverter,
 	eventConv EventConverter,
 	documentConv DocumentConverter,
-	specSerice SpecService,
-	specConverter SpecConverter) *Resolver {
+	specSerice SpecService) *Resolver {
 	return &Resolver{
 		transact:                    transact,
 		bundleConverter:             bundleConverter,
@@ -144,7 +136,6 @@ func NewResolver(
 		eventConverter:              eventConv,
 		documentConverter:           documentConv,
 		specService:                 specSerice,
-		specConverter:               specConverter,
 	}
 }
 

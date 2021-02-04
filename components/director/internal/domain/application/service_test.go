@@ -33,18 +33,6 @@ func TestService_Create(t *testing.T) {
 		{Title: "foo", Description: "test", FetchRequest: &model.FetchRequestInput{URL: "doc.foo.bar"}},
 		{Title: "bar", Description: "test"},
 	}
-	APIDefinitions := []*model.APIDefinitionInput{
-		{
-			Name: "foo",
-			Spec: &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
-		}, {Name: "bar"},
-	}
-	EventDefinitions := []*model.EventDefinitionInput{
-		{
-			Name: "foo",
-			Spec: &model.EventSpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
-		}, {Name: "bar"},
-	}
 	modelInput := model.ApplicationRegisterInput{
 		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
@@ -61,8 +49,34 @@ func TestService_Create(t *testing.T) {
 	bundles := []*model.BundleCreateInput{
 		{
 			Name:             "bndl1",
-			APIDefinitions:   APIDefinitions,
-			EventDefinitions: EventDefinitions,
+			APIDefinitions: []*model.APIDefinitionInput{
+				{
+					Name: "foo",
+				},
+				{
+					Name: "bar",
+				},
+			},
+			APISpecs: []*model.SpecInput{
+				{
+					FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"},
+				},
+				nil,
+			},
+			EventDefinitions: []*model.EventDefinitionInput{
+				{
+					Name: "foo",
+				},
+				{
+					Name: "bar",
+				},
+			},
+			EventSpecs: []*model.SpecInput{
+				{
+					FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"},
+				},
+				nil,
+			},
 			Documents:        Documents,
 		},
 	}
