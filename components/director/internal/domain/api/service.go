@@ -44,18 +44,18 @@ type SpecService interface {
 }
 
 type service struct {
-	repo                APIRepository
-	uidService          UIDService
-	specService         SpecService
-	timestampGen        timestamp.Generator
+	repo         APIRepository
+	uidService   UIDService
+	specService  SpecService
+	timestampGen timestamp.Generator
 }
 
 func NewService(repo APIRepository, uidService UIDService, specService SpecService) *service {
 	return &service{
-		repo:                repo,
-		uidService:          uidService,
-		specService:         specService,
-		timestampGen:        timestamp.DefaultGenerator(),
+		repo:         repo,
+		uidService:   uidService,
+		specService:  specService,
+		timestampGen: timestamp.DefaultGenerator(),
 	}
 }
 

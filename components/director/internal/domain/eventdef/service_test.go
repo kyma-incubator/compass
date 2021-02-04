@@ -3,6 +3,9 @@ package eventdef_test
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	event "github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -14,8 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestService_Get(t *testing.T) {
@@ -294,8 +295,8 @@ func TestService_CreateInBundle(t *testing.T) {
 	spec := "test"
 
 	modelInput := model.EventDefinitionInput{
-		Name:      name,
-		Version:   &model.VersionInput{},
+		Name:    name,
+		Version: &model.VersionInput{},
 	}
 
 	modelSpecInput := model.SpecInput{
@@ -306,11 +307,11 @@ func TestService_CreateInBundle(t *testing.T) {
 	}
 
 	modelEventDefinition := &model.EventDefinition{
-		ID:        id,
-		BundleID:  bundleID,
-		Tenant:    tenantID,
-		Name:      name,
-		Version:   &model.Version{},
+		ID:       id,
+		BundleID: bundleID,
+		Tenant:   tenantID,
+		Name:     name,
+		Version:  &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -433,8 +434,8 @@ func TestService_Update(t *testing.T) {
 	spec := "spec"
 
 	modelInput := model.EventDefinitionInput{
-		Name:      "Foo",
-		Version:   &model.VersionInput{},
+		Name:    "Foo",
+		Version: &model.VersionInput{},
 	}
 
 	modelSpecInput := model.SpecInput{
@@ -457,8 +458,8 @@ func TestService_Update(t *testing.T) {
 	})
 
 	eventDefinitionModel := &model.EventDefinition{
-		Name:      "Bar",
-		Version:   &model.Version{},
+		Name:    "Bar",
+		Version: &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -825,7 +826,7 @@ func TestService_GetFetchRequest(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			specService := testCase.SpecServiceFn()
 
-			svc := event.NewService(repo,nil, specService)
+			svc := event.NewService(repo, nil, specService)
 
 			// when
 			l, err := svc.GetFetchRequest(ctx, testCase.InputEventDefID)

@@ -2,6 +2,9 @@ package api_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,8 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestResolver_AddAPIToBundle(t *testing.T) {

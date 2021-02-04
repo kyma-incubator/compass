@@ -2,6 +2,7 @@ package spec_test
 
 import (
 	"database/sql/driver"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -9,10 +10,10 @@ import (
 )
 
 const (
-	specID  = "specID"
-	tenant  = "tenant"
-	apiID   = "apiID"
-	eventID = "eventID"
+	specID         = "specID"
+	tenant         = "tenant"
+	apiID          = "apiID"
+	eventID        = "eventID"
 	externalTenant = "externalTenant"
 )
 

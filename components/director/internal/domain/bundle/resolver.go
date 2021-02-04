@@ -107,7 +107,7 @@ type Resolver struct {
 	eventConverter              EventConverter
 	documentConverter           DocumentConverter
 
-	specService   SpecService
+	specService SpecService
 }
 
 func NewResolver(

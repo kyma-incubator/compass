@@ -2,6 +2,9 @@ package spec_test
 
 import (
 	"context"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec/automock"
@@ -10,8 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
 )
 
 func TestRepository_GetByID(t *testing.T) {

@@ -1,6 +1,8 @@
 package spec_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -8,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestConverter_ToGraphQLAPISpec(t *testing.T) {

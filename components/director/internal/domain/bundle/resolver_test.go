@@ -2,6 +2,8 @@ package mp_bundle_test
 
 import (
 	"context"
+	"testing"
+
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -13,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestResolver_API(t *testing.T) {
@@ -444,7 +445,7 @@ func TestResolver_Event(t *testing.T) {
 			ConverterFn     func() *automock.EventConverter
 			InputID         string
 			Bundle          *graphql.Bundle
-			ExpectedEvent     *graphql.EventDefinition
+			ExpectedEvent   *graphql.EventDefinition
 			ExpectedErr     error
 		}{
 			{
@@ -466,10 +467,10 @@ func TestResolver_Event(t *testing.T) {
 					conv.On("ToGraphQL", modelEvent, modelSpec).Return(gqlEvent, nil).Once()
 					return conv
 				},
-				InputID:     "foo",
-				Bundle:      app,
+				InputID:       "foo",
+				Bundle:        app,
 				ExpectedEvent: gqlEvent,
-				ExpectedErr: nil,
+				ExpectedErr:   nil,
 			},
 			{
 				Name:            "Returns error when bundle retrieval failed",
@@ -486,10 +487,10 @@ func TestResolver_Event(t *testing.T) {
 				ConverterFn: func() *automock.EventConverter {
 					return &automock.EventConverter{}
 				},
-				InputID:     "foo",
-				Bundle:      app,
+				InputID:       "foo",
+				Bundle:        app,
 				ExpectedEvent: nil,
-				ExpectedErr: testErr,
+				ExpectedErr:   testErr,
 			},
 			{
 				Name:            "Returns null when api for bundle not found",
@@ -505,10 +506,10 @@ func TestResolver_Event(t *testing.T) {
 				ConverterFn: func() *automock.EventConverter {
 					return &automock.EventConverter{}
 				},
-				InputID:     "foo",
-				Bundle:      app,
+				InputID:       "foo",
+				Bundle:        app,
 				ExpectedEvent: nil,
-				ExpectedErr: nil,
+				ExpectedErr:   nil,
 			},
 			{
 				Name:            "Returns error when Spec retrieval failed",
@@ -527,10 +528,10 @@ func TestResolver_Event(t *testing.T) {
 				ConverterFn: func() *automock.EventConverter {
 					return &automock.EventConverter{}
 				},
-				InputID:     "foo",
-				Bundle:      app,
+				InputID:       "foo",
+				Bundle:        app,
 				ExpectedEvent: nil,
-				ExpectedErr: testErr,
+				ExpectedErr:   testErr,
 			},
 			{
 				Name:            "Returns error when converting to GraphQL failed",
@@ -551,10 +552,10 @@ func TestResolver_Event(t *testing.T) {
 					conv.On("ToGraphQL", modelEvent, modelSpec).Return(nil, testErr).Once()
 					return conv
 				},
-				InputID:     "foo",
-				Bundle:      app,
+				InputID:       "foo",
+				Bundle:        app,
 				ExpectedEvent: nil,
-				ExpectedErr: testErr,
+				ExpectedErr:   testErr,
 			},
 			{
 				Name:            "Returns error when commit begin error",
@@ -568,10 +569,10 @@ func TestResolver_Event(t *testing.T) {
 				ConverterFn: func() *automock.EventConverter {
 					return &automock.EventConverter{}
 				},
-				InputID:     "foo",
-				Bundle:      app,
+				InputID:       "foo",
+				Bundle:        app,
 				ExpectedEvent: nil,
-				ExpectedErr: testErr,
+				ExpectedErr:   testErr,
 			},
 			{
 				Name:            "Returns error when commit failed",
@@ -592,10 +593,10 @@ func TestResolver_Event(t *testing.T) {
 					conv.On("ToGraphQL", modelEvent, modelSpec).Return(gqlEvent, nil).Once()
 					return conv
 				},
-				InputID:     "foo",
-				Bundle:      app,
+				InputID:       "foo",
+				Bundle:        app,
 				ExpectedEvent: nil,
-				ExpectedErr: testErr,
+				ExpectedErr:   testErr,
 			},
 		}
 
@@ -606,7 +607,7 @@ func TestResolver_Event(t *testing.T) {
 				converter := testCase.ConverterFn()
 				specSvc := testCase.SpecServiceFn()
 
-				resolver := mp_bundle.NewResolver(transact, nil, nil, nil, svc,  nil, nil, nil, nil, converter, nil, specSvc)
+				resolver := mp_bundle.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, specSvc)
 
 				// when
 				result, err := resolver.EventDefinition(context.TODO(), testCase.Bundle, testCase.InputID)
@@ -802,7 +803,7 @@ func TestResolver_Events(t *testing.T) {
 			converter := testCase.ConverterFn()
 			specService := testCase.SpecServiceFn()
 
-			resolver := mp_bundle.NewResolver(transact, nil, nil, nil, svc,  nil, nil, nil, nil,converter, nil, specService)
+			resolver := mp_bundle.NewResolver(transact, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, specService)
 			// when
 			result, err := resolver.EventDefinitions(context.TODO(), app, &group, &first, &gqlAfter)
 

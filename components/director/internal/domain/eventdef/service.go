@@ -40,18 +40,18 @@ type SpecService interface {
 }
 
 type service struct {
-	eventAPIRepo     EventAPIRepository
-	uidService       UIDService
-	specService      SpecService
-	timestampGen     timestamp.Generator
+	eventAPIRepo EventAPIRepository
+	uidService   UIDService
+	specService  SpecService
+	timestampGen timestamp.Generator
 }
 
 func NewService(eventAPIRepo EventAPIRepository, uidService UIDService, specService SpecService) *service {
 	return &service{
-		eventAPIRepo:     eventAPIRepo,
-		uidService:       uidService,
-		specService:      specService,
-		timestampGen:     timestamp.DefaultGenerator(),
+		eventAPIRepo: eventAPIRepo,
+		uidService:   uidService,
+		specService:  specService,
+		timestampGen: timestamp.DefaultGenerator(),
 	}
 }
 

@@ -173,20 +173,20 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	boolPlaceholder := false
 
 	return api.Entity{
-			ID:          apiDefID,
-			TenantID:    tenantID,
-			BndlID:      bundleID,
-			Name:        placeholder,
-			Description: repo.NewValidNullableString("desc_" + placeholder),
-			Group:       repo.NewValidNullableString("group_" + placeholder),
-			TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
-			Version: version.Version{
-				VersionValue:           repo.NewNullableString(str.Ptr("v1.1")),
-				VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
-				VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
-				VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
-			},
-		}
+		ID:          apiDefID,
+		TenantID:    tenantID,
+		BndlID:      bundleID,
+		Name:        placeholder,
+		Description: repo.NewValidNullableString("desc_" + placeholder),
+		Group:       repo.NewValidNullableString("group_" + placeholder),
+		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
+		Version: version.Version{
+			VersionValue:           repo.NewNullableString(str.Ptr("v1.1")),
+			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
+			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
+			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
+		},
+	}
 }
 
 func fixAPIDefinitionColumns() []string {

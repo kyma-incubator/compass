@@ -3,6 +3,9 @@ package spec_test
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec/automock"
 	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -12,8 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestService_ListByReferenceObjectID(t *testing.T) {

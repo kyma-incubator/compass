@@ -2,14 +2,14 @@ package eventdef_test
 
 import (
 	"fmt"
+	"testing"
+
 	event "github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/pkg/errors"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
 	"github.com/stretchr/testify/require"
-
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 

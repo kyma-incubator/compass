@@ -2,8 +2,9 @@ package eventdef_test
 
 import (
 	"database/sql/driver"
-	event "github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"time"
+
+	event "github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 

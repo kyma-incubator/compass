@@ -35,7 +35,7 @@ func (_m *Converter) FromEntity(in spec.Entity) (model.Spec, error) {
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *Converter) ToEntity(in model.Spec) (spec.Entity, error) {
+func (_m *Converter) ToEntity(in model.Spec) spec.Entity {
 	ret := _m.Called(in)
 
 	var r0 spec.Entity
@@ -45,12 +45,5 @@ func (_m *Converter) ToEntity(in model.Spec) (spec.Entity, error) {
 		r0 = ret.Get(0).(spec.Entity)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(model.Spec) error); ok {
-		r1 = rf(in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }

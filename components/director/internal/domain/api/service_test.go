@@ -3,6 +3,9 @@ package api_test
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -14,8 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestService_Get(t *testing.T) {

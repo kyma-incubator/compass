@@ -2,10 +2,11 @@ package api_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
