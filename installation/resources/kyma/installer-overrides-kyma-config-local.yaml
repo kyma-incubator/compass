@@ -84,6 +84,8 @@ data:
       values:
         global:
           jwtPolicy: first-party-jwt
+          proxy:
+            holdApplicationUntilProxyStarts: true
         pilot:
           autoscaleEnabled: false
         mixer:

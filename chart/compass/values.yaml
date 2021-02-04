@@ -56,22 +56,22 @@ global:
     tests:
       director:
         dir:
-        version: "PR-1693"
+        version: "PR-1715"
       connector:
         dir:
-        version: "PR-1698"
+        version: "PR-1715"
       connectivity_adapter:
         dir:
         version: "PR-1693"
       tenant_fetcher:
         dir:
-        version: "PR-1698"
+        version: "PR-1715"
       system_broker:
         dir:
-        version: "PR-1700"
+        version: "PR-1715"
       ord_service:
         dir:
-        version: "PR-1713"
+        version: "PR-1715"
   isLocalEnv: false
   oauth2:
     host: oauth2

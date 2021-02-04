@@ -113,7 +113,6 @@ docker run --name ${DIRECTOR_CONTAINER} -d --network=${NETWORK} \
 cd "${SCRIPT_DIR}"
 
 export DIRECTOR_URL="http://${DIRECTOR_URL}:${APP_PORT}"
-DIRECTOR_HEALTHZ_URL="${DIRECTOR_URL}/healthz" ./wait-for-director.sh
 
 echo -e "${GREEN}Removing previous GraphQL examples...${NC}"
 touch "${LOCAL_ROOT_PATH}"/components/director/examples/tmp
