@@ -90,6 +90,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 			Condition: getApplicationStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: timestamp,
 		},
+		Ready: true,
 	}
 }
 

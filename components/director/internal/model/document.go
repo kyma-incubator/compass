@@ -61,5 +61,6 @@ func (d *DocumentInput) ToDocumentWithinBundle(id, tenant string, bundleID strin
 		Format:      d.Format,
 		Kind:        d.Kind,
 		Data:        d.Data,
+		Ready:       true,
 	}
 }

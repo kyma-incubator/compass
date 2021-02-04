@@ -53,6 +53,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 					Timestamp: timestamp,
 					Condition: model.ApplicationStatusConditionInitial,
 				},
+				Ready: true,
 			},
 		},
 		{

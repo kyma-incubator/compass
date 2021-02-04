@@ -30,6 +30,7 @@ func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *mo
 		BundleID:  bndlID,
 		Name:      name,
 		TargetURL: targetURL,
+		Ready:     true,
 	}
 }
 
@@ -78,6 +79,7 @@ func fixGQLAPIDefinition(id string, bndlId string, name, targetURL string) *grap
 		BundleID:  bndlId,
 		Name:      name,
 		TargetURL: targetURL,
+		Ready:     true,
 	}
 }
 
@@ -263,6 +265,7 @@ func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) *a
 		BndlID:    bndlID,
 		Name:      name,
 		TargetURL: targetUrl,
+		Ready:     true,
 	}
 }
 

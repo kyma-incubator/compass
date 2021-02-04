@@ -66,5 +66,6 @@ func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle
 		Description:                    i.Description,
 		InstanceAuthRequestInputSchema: i.InstanceAuthRequestInputSchema,
 		DefaultInstanceAuth:            i.DefaultInstanceAuth.ToAuth(),
+		Ready:                          true,
 	}
 }

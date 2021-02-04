@@ -316,6 +316,7 @@ func TestService_CreateToBundle(t *testing.T) {
 		Name:     name,
 		Spec:     &model.EventSpec{},
 		Version:  &model.Version{},
+		Ready:    true,
 	}
 
 	modelEventAPIDefinitionWithSpec := &model.EventDefinition{
@@ -325,6 +326,7 @@ func TestService_CreateToBundle(t *testing.T) {
 		Name:     name,
 		Spec:     &model.EventSpec{Data: &spec},
 		Version:  &model.Version{},
+		Ready:    true,
 	}
 
 	ctx := context.TODO()

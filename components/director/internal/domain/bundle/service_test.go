@@ -64,6 +64,7 @@ func TestService_Create(t *testing.T) {
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
+		Ready:                          true,
 	}
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -96,15 +97,15 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -176,7 +177,7 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(testErr).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(testErr).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -212,14 +213,14 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(testErr).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(testErr).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -253,8 +254,8 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(testErr).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(testErr).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
@@ -292,16 +293,16 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
 
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -337,15 +338,15 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {
@@ -382,15 +383,15 @@ func TestService_Create(t *testing.T) {
 			},
 			APIRepoFn: func() *automock.APIRepository {
 				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{Data: &spec}}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
+				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{Data: &spec}, Ready: true}).Return(nil).Once()
 				return repo
 			},
 			EventAPIRepoFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar"}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(nil).Once()
+				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
 				return repo
 			},
 			DocumentRepoFn: func() *automock.DocumentRepository {

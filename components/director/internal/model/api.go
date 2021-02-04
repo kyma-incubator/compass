@@ -79,6 +79,7 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID str
 		TargetURL:   a.TargetURL,
 		Group:       a.Group,
 		Version:     a.Version.ToVersion(),
+		Ready:       true,
 	}
 }
 

@@ -71,6 +71,7 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bndlID s
 		Group:       e.Group,
 		Spec:        e.Spec.ToEventSpec(),
 		Version:     e.Version.ToVersion(),
+		Ready:       true,
 	}
 }
 

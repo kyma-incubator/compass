@@ -36,6 +36,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 				Name:        name,
 				Description: &desc,
 				Group:       &group,
+				Ready:       true,
 			},
 		},
 		{

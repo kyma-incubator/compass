@@ -324,6 +324,7 @@ func TestService_CreateToBundle(t *testing.T) {
 		TargetURL: targetUrl,
 		Spec:      &model.APISpec{},
 		Version:   &model.Version{},
+		Ready:     true,
 	}
 
 	modelAPIDefinitionWithSpec := &model.APIDefinition{
@@ -334,6 +335,7 @@ func TestService_CreateToBundle(t *testing.T) {
 		TargetURL: targetUrl,
 		Spec:      &model.APISpec{Data: &spec},
 		Version:   &model.Version{},
+		Ready:     true,
 	}
 
 	ctx := context.TODO()

@@ -39,6 +39,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 				TargetURL:   targetUrl,
 				Group:       &group,
 				Tenant:      tenant,
+				Ready:       true,
 			},
 		},
 		{

@@ -23,7 +23,7 @@ const (
 )
 
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{ID: id, Tenant: tenantID, BundleID: bundleID, Name: placeholder}
+	return &model.EventDefinition{ID: id, Tenant: tenantID, BundleID: bundleID, Name: placeholder, Ready: true}
 }
 
 func fixGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
@@ -31,6 +31,7 @@ func fixGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
 		ID:       id,
 		BundleID: bundleID,
 		Name:     placeholder,
+		Ready:    true,
 	}
 }
 
@@ -191,7 +192,7 @@ func fixFullEventDefWithTimestamp(id, placeholder string, createdAt time.Time) *
 
 func fixMinEntityEventDef(id, placeholder string) *eventdef.Entity {
 	return &eventdef.Entity{ID: id, TenantID: tenantID,
-		BndlID: bundleID, Name: placeholder}
+		BndlID: bundleID, Name: placeholder, Ready: true}
 }
 
 func fixVersionModel() model.Version {
