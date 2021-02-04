@@ -3,9 +3,10 @@ package tenant
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 

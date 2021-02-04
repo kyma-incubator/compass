@@ -2,6 +2,9 @@ package tenant_test
 
 import (
 	"context"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/testdb"
@@ -9,8 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant/automock"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
 )
 
 func TestRepository_Create(t *testing.T) {

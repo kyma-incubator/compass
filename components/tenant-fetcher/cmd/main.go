@@ -19,14 +19,15 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/uuid"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
+	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
+	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/uuid"
 
 	"github.com/gorilla/mux"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"

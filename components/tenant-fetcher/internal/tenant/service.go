@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 	"github.com/pkg/errors"

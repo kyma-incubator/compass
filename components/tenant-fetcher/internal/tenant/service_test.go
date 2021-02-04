@@ -3,15 +3,17 @@ package tenant_test
 import (
 	"context"
 	"errors"
+
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant/automock"
 
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestService_Create(t *testing.T) {
