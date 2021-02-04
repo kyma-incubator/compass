@@ -162,8 +162,6 @@ CREATE TABLE specifications
 );
 
 CREATE INDEX ON specifications (tenant_id);
-CREATE UNIQUE INDEX ON specifications (tenant_id, coalesce(api_def_id, '00000000-0000-0000-0000-000000000000'),
-                                       coalesce(event_def_id, '00000000-0000-0000-0000-000000000000'));
 CREATE UNIQUE INDEX ON specifications (tenant_id, id);
 
 INSERT INTO specifications
@@ -251,7 +249,8 @@ ALTER TABLE event_api_definitions
     DROP COLUMN event_definitions;
 
 CREATE VIEW api_resource_definitions AS
-SELECT CASE
+SELECT api_def_id                                         AS api_definition_id,
+       CASE
            WHEN api_spec_type::text = 'ODATA' THEN 'edmx'
            WHEN api_spec_type::text = 'OPEN_API' THEN 'openapi-v3'
            ELSE api_spec_type::text
@@ -268,7 +267,8 @@ FROM specifications
 WHERE api_def_id IS NOT NULL;
 
 CREATE VIEW event_resource_definitions AS
-SELECT CASE
+SELECT event_def_id                                           as event_definition_id,
+       CASE
            WHEN event_spec_type::text = 'ASYNC_API' THEN 'asyncapi-v2'
            ELSE event_spec_type::text
            END                                                AS type,

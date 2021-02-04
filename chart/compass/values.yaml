@@ -32,7 +32,7 @@ global:
       version: "PR-1698"
     ord_service:
       dir:
-      version: "PR-12"
+      version: "PR-13"
     healthchecker:
       dir:
       version: "PR-1698"
@@ -71,7 +71,7 @@ global:
         version: "PR-1715"
       ord_service:
         dir:
-        version: "PR-1715"
+        version: "PR-1719"
   isLocalEnv: false
   oauth2:
     host: oauth2
