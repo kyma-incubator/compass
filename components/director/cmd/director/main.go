@@ -238,7 +238,10 @@ func main() {
 
 	appRepo := defaultApplicationRepo()
 	operationHandler := operation.NewHandler(transact, appRepo.GetByID, tenant.LoadFromContext)
-	mainRouter.HandleFunc(cfg.OperationEndpoint, operationHandler.ServeHTTP)
+
+	operationsAPIRouter := mainRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
+	operationsAPIRouter.Use(authMiddleware.Handler())
+	operationsAPIRouter.HandleFunc("", operationHandler.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())

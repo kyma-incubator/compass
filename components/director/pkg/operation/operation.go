@@ -41,21 +41,21 @@ const (
 // the flow of the original mutation with information such as ResourceID and ResourceType and finally scheduled through
 // a dedicated Scheduler implementation.
 type Operation struct {
-	OperationID       string                `json:"id"`
-	OperationType     graphql.OperationType `json:"type"`
-	OperationCategory string                `json:"operation_category"`
-	ResourceID        string                `json:"resource_id"`
-	ResourceType      string                `json:"resource_type"`
-	CorrelationID     string                `json:"correlation_id"`
-	WebhookID         string                `json:"webhook_id"`
-	RequestData       string                `json:"request_data"`
+	OperationID       string                `json:"id,omitempty"`
+	OperationType     graphql.OperationType `json:"type,omitempty"`
+	OperationCategory string                `json:"operation_category,omitempty"`
+	ResourceID        string                `json:"resource_id,omitempty"`
+	ResourceType      string                `json:"resource_type,omitempty"`
+	CorrelationID     string                `json:"correlation_id,omitempty"`
+	WebhookID         string                `json:"webhook_id,omitempty"`
+	RequestData       string                `json:"request_data,omitempty"`
 }
 
 // OperationResponse defines the expected response format for the Operations API
 type OperationResponse struct {
 	*Operation
-	Status OperationStatus `json:"status"`
-	Error  *string         `json:"error"`
+	Status OperationStatus `json:"status,omitempty"`
+	Error  *string         `json:"error,omitempty"`
 }
 
 // SaveToContext saves Operation to the context

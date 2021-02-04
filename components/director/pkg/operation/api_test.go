@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -63,7 +65,7 @@ func TestServeHTTP(t *testing.T) {
 		handler := operation.NewHandler(nil, nil, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
 
-		require.Contains(t, writer.Body.String(), "Unexpected resource type and/or ID")
+		require.Contains(t, writer.Body.String(), "Unexpected resource type and/or GUID")
 		require.Equal(t, http.StatusBadRequest, writer.Code)
 	})
 
@@ -81,7 +83,7 @@ func TestServeHTTP(t *testing.T) {
 		handler := operation.NewHandler(nil, nil, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
 
-		require.Contains(t, writer.Body.String(), "Unexpected resource type and/or ID")
+		require.Contains(t, writer.Body.String(), "Unexpected resource type and/or GUID")
 		require.Equal(t, http.StatusBadRequest, writer.Code)
 	})
 
@@ -99,7 +101,7 @@ func TestServeHTTP(t *testing.T) {
 		handler := operation.NewHandler(nil, nil, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
 
-		require.Contains(t, writer.Body.String(), "Unexpected resource type and/or ID")
+		require.Contains(t, writer.Body.String(), "Unexpected resource type and/or GUID")
 		require.Equal(t, http.StatusBadRequest, writer.Code)
 	})
 
@@ -126,7 +128,32 @@ func TestServeHTTP(t *testing.T) {
 		require.Contains(t, writer.Body.String(), "Unable to establish connection with database")
 	})
 
-	t.Run("when resource fetcher func fails to fetch application it should return internal server error ", func(t *testing.T) {
+	t.Run("when resource fetcher func fails to fetch missing application resource it should return not found", func(t *testing.T) {
+		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
+
+		writer := httptest.NewRecorder()
+		req := fixEmptyRequest(t, ctx)
+
+		queryValues := req.URL.Query()
+		queryValues.Add(operation.ResourceIDParam, resourceID)
+		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
+
+		req.URL.RawQuery = queryValues.Encode()
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (*model.Application, error) {
+			return nil, apperrors.NewNotFoundError(resource.Application, resourceID)
+		}, loadTenantFunc)
+		handler.ServeHTTP(writer, req)
+
+		require.Equal(t, http.StatusNotFound, writer.Code)
+		require.Contains(t, writer.Body.String(), "Object not found")
+	})
+
+	t.Run("when resource fetcher func fails to fetch application it should return internal server error", func(t *testing.T) {
 		ctx := tenant.SaveToContext(context.Background(), tenantID, tenantID)
 
 		writer := httptest.NewRecorder()

@@ -19,7 +19,6 @@ package operation
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -55,8 +54,8 @@ type handler struct {
 }
 
 // NewHandler creates a new handler struct associated with the Operations API
-func NewHandler(transact persistence.Transactioner, resourceFetcherFunc ResourceFetcherFunc, tenantLoaderFunc TenantLoaderFunc) handler {
-	return handler{
+func NewHandler(transact persistence.Transactioner, resourceFetcherFunc ResourceFetcherFunc, tenantLoaderFunc TenantLoaderFunc) *handler {
+	return &handler{
 		transact:            transact,
 		resourceFetcherFunc: resourceFetcherFunc,
 		tenantLoaderFunc:    tenantLoaderFunc,
@@ -89,7 +88,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if err := validation.ValidateStruct(&inputParams,
 		validation.Field(&inputParams.ResourceID, is.UUID),
 		validation.Field(&inputParams.ResourceType, validation.Required, validation.In(strings.ToLower(resource.Application.ToLower())))); err != nil {
-		http.Error(writer, fmt.Sprintf("Unexpected resource type and/or ID"), http.StatusBadRequest)
+		apperrors.WriteAppError(ctx, writer, apperrors.NewInvalidDataError("Unexpected resource type and/or GUID"), http.StatusBadRequest)
 		return
 	}
 
@@ -106,6 +105,12 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	app, err := h.resourceFetcherFunc(ctx, tenantID, inputParams.ResourceID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while fetching application from database: %s", err.Error())
+
+		if apperrors.IsNotFoundError(err) {
+			apperrors.WriteAppError(ctx, writer, apperrors.NewNotFoundError(resource.Application, inputParams.ResourceID), http.StatusNotFound)
+			return
+		}
+
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to execute database operation"), http.StatusInternalServerError)
 		return
 	}
