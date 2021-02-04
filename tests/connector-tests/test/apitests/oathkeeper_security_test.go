@@ -12,7 +12,7 @@ import (
 func TestOathkeeperSecurity(t *testing.T) {
 	appID := "54f83a73-b340-418d-b653-d95b5e347d74"
 
-	certResult, configuration := generateCertificate(t, appID, clientKey)
+	certResult, configuration := connector.GenerateApplicationCertificate(t, internalClient, connectorClient, appID, clientKey)
 	certChain := testkit.DecodeCertChain(t, certResult.CertificateChain)
 	securedClient := connector.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, clientKey, certChain...)
 
@@ -42,8 +42,8 @@ func TestOathkeeperSecurity(t *testing.T) {
 		// given
 		changedAppID := "aaabbbcc-b340-418d-b653-d95b5e347d74"
 
-		newSubject := changeCommonName(configuration.CertificateSigningRequestInfo.Subject, changedAppID)
-		certDataHeader := createCertDataHeader("df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a", newSubject)
+		newSubject := connector.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, changedAppID)
+		certDataHeader := connector.CreateCertDataHeader("df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a", newSubject)
 
 		forbiddenHeaders := map[string][]string{
 			config.CertificateDataHeader: {certDataHeader},

@@ -18,6 +18,7 @@ data:
         global:
           jwtPolicy: first-party-jwt
           proxy:
+            holdApplicationUntilProxyStarts: true
             resources:
               requests:
                 cpu: 20m
@@ -25,4 +26,3 @@ data:
               limits:
                 cpu: 100m
                 memory: 128Mi
-

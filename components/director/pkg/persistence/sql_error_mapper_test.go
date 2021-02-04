@@ -50,7 +50,7 @@ func TestMapSQLError(t *testing.T) {
 		{
 			Name:       "Foreign key violation error",
 			Error:      &pq.Error{Code: persistence.ForeignKeyViolation},
-			AssertFunc: apperrors.IsNewInvalidDataError,
+			AssertFunc: apperrors.IsNewInvalidOperationError,
 		},
 		{
 			Name:       "Not mapper sql error",

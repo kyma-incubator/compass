@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	pkgmock "github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -27,12 +28,13 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.Service
-		ConverterFn     func() *automock.Converter
-		ExpectedResult  *graphql.BundleInstanceAuth
-		ExpectedErr     error
+		Name              string
+		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn         func() *automock.Service
+		ConverterFn       func() *automock.Converter
+		BundleConverterFn func() *pkgmock.BundleConverter
+		ExpectedResult    *graphql.BundleInstanceAuth
+		ExpectedErr       error
 	}{
 		{
 			Name:            "Success",
@@ -48,6 +50,9 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
 		},
@@ -61,6 +66,9 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -76,6 +84,9 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -93,6 +104,9 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 				conv := &automock.Converter{}
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -109,6 +123,9 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 				conv := &automock.Converter{}
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -120,8 +137,9 @@ func TestResolver_DeleteBundleInstanceAuth(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			bndlConverter := testCase.BundleConverterFn()
 
-			resolver := bundleinstanceauth.NewResolver(transact, svc, nil, converter)
+			resolver := bundleinstanceauth.NewResolver(transact, svc, nil, converter, bndlConverter)
 
 			// when
 			result, err := resolver.DeleteBundleInstanceAuth(context.TODO(), id)
@@ -150,13 +168,14 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.Service
-		BndlServiceFn   func() *automock.BundleService
-		ConverterFn     func() *automock.Converter
-		ExpectedResult  *graphql.BundleInstanceAuth
-		ExpectedErr     error
+		Name              string
+		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn         func() *automock.Service
+		BndlServiceFn     func() *automock.BundleService
+		ConverterFn       func() *automock.Converter
+		BundleConverterFn func() *pkgmock.BundleConverter
+		ExpectedResult    *graphql.BundleInstanceAuth
+		ExpectedErr       error
 	}{
 		{
 			Name:            "Success",
@@ -178,6 +197,9 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
 		},
@@ -195,6 +217,9 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -218,6 +243,9 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput, nil).Once()
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
 		},
@@ -236,6 +264,9 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -257,6 +288,9 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				conv := &automock.Converter{}
 				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput, nil).Once()
 				return conv
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -280,6 +314,9 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 				conv.On("RequestInputFromGraphQL", *gqlRequestInput).Return(*modelRequestInput, nil).Once()
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
 		},
@@ -292,8 +329,9 @@ func TestResolver_RequestBundleInstanceAuthCreation(t *testing.T) {
 			svc := testCase.ServiceFn()
 			bndlSvc := testCase.BndlServiceFn()
 			converter := testCase.ConverterFn()
+			bndlConverter := testCase.BundleConverterFn()
 
-			resolver := bundleinstanceauth.NewResolver(transact, svc, bndlSvc, converter)
+			resolver := bundleinstanceauth.NewResolver(transact, svc, bndlSvc, converter, bndlConverter)
 
 			// when
 			result, err := resolver.RequestBundleInstanceAuthCreation(context.TODO(), testBundleID, *gqlRequestInput)
@@ -321,12 +359,13 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.Service
-		ConverterFn     func() *automock.Converter
-		ExpectedResult  *graphql.BundleInstanceAuth
-		ExpectedErr     error
+		Name              string
+		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn         func() *automock.Service
+		ConverterFn       func() *automock.Converter
+		BundleConverterFn func() *pkgmock.BundleConverter
+		ExpectedResult    *graphql.BundleInstanceAuth
+		ExpectedErr       error
 	}{
 		{
 			Name:            "Success",
@@ -343,6 +382,9 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
 		},
@@ -356,6 +398,9 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
 				return conv
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -374,6 +419,9 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
 		},
@@ -389,6 +437,9 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 				conv := &automock.Converter{}
 				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
 				return conv
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
@@ -407,6 +458,9 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 				conv.On("SetInputFromGraphQL", *gqlSetInput).Return(*modelSetInput, nil).Once()
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testError,
 		},
@@ -418,8 +472,9 @@ func TestResolver_SetBundleInstanceAuth(t *testing.T) {
 			persist, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
+			bndlConverter := testCase.BundleConverterFn()
 
-			resolver := bundleinstanceauth.NewResolver(transact, svc, nil, converter)
+			resolver := bundleinstanceauth.NewResolver(transact, svc, nil, converter, bndlConverter)
 
 			// when
 			result, err := resolver.SetBundleInstanceAuth(context.TODO(), testAuthID, *gqlSetInput)
@@ -446,13 +501,14 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.Service
-		BundleServiceFn func() *automock.BundleService
-		ConverterFn     func() *automock.Converter
-		ExpectedResult  *graphql.BundleInstanceAuth
-		ExpectedErr     error
+		Name              string
+		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn         func() *automock.Service
+		BundleServiceFn   func() *automock.BundleService
+		ConverterFn       func() *automock.Converter
+		BundleConverterFn func() *pkgmock.BundleConverter
+		ExpectedResult    *graphql.BundleInstanceAuth
+		ExpectedErr       error
 	}{
 		{
 			Name:            "Success - Deleted",
@@ -472,6 +528,9 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 				conv := &automock.Converter{}
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
@@ -495,6 +554,9 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 				conv.On("ToGraphQL", modelInstanceAuth).Return(gqlInstanceAuth, nil).Once()
 				return conv
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: gqlInstanceAuth,
 			ExpectedErr:    nil,
 		},
@@ -511,6 +573,9 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -531,6 +596,9 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -550,6 +618,9 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -572,6 +643,9 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -586,6 +660,9 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
+			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
 			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
@@ -607,6 +684,9 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			ConverterFn: func() *automock.Converter {
 				return &automock.Converter{}
 			},
+			BundleConverterFn: func() *pkgmock.BundleConverter {
+				return &pkgmock.BundleConverter{}
+			},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -619,8 +699,9 @@ func TestResolver_RequestBundleInstanceAuthDeletion(t *testing.T) {
 			svc := testCase.ServiceFn()
 			bundleSvc := testCase.BundleServiceFn()
 			converter := testCase.ConverterFn()
+			bndlConverter := testCase.BundleConverterFn()
 
-			resolver := bundleinstanceauth.NewResolver(transact, svc, bundleSvc, converter)
+			resolver := bundleinstanceauth.NewResolver(transact, svc, bundleSvc, converter, bndlConverter)
 
 			// when
 			result, err := resolver.RequestBundleInstanceAuthDeletion(context.TODO(), id)

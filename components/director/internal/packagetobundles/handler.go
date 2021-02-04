@@ -110,6 +110,8 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			body = strings.ReplaceAll(body, "\\n", "") // removes unnecessary complexity from the next regexes
 
 			// rewrite Query/Mutation names
+			body = strings.ReplaceAll(body, "packageByInstanceAuth", "bundleByInstanceAuth")
+			body = strings.ReplaceAll(body, "packageInstanceAuth", "bundleInstanceAuth")
 			body = strings.ReplaceAll(body, "addPackage", "addBundle")
 			body = strings.ReplaceAll(body, "updatePackage", "updateBundle")
 			body = strings.ReplaceAll(body, "deletePackage", "deleteBundle")
