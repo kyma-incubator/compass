@@ -13,6 +13,8 @@ spec:
   disableConcurrency: false
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
       labels:
         app: {{ .Chart.Name }}-tests
     spec:
@@ -47,5 +49,5 @@ spec:
             - "/bin/sh"
           args:
             - "-c"
-            - "echo 'TESTING start'; sleep 10; ./entrypoint.sh; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"
+            - "./entrypoint.sh; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"
     restartPolicy: Never
