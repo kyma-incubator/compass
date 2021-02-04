@@ -1,5 +1,7 @@
 package resource
 
+import "strings"
+
 type Type string
 
 const (
@@ -21,6 +23,11 @@ const (
 	AutomaticScenarioAssigment Type = "AutomaticScenarioAssigment"
 	Webhook                    Type = "Webhook"
 )
+
+// ToLower returns the lower-case string representation of a resource Type
+func (t Type) ToLower() string {
+	return strings.ToLower(string(t))
+}
 
 type SQLOperation string
 

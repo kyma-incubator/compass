@@ -250,7 +250,7 @@ func updateOperationContext(ctx context.Context, appID string) error {
 	op := (*operations)[len(*operations)-1]
 
 	op.ResourceID = appID
-	op.ResourceType = string(resource.Application)
+	op.ResourceType = resource.Application.ToLower()
 
 	return nil
 }

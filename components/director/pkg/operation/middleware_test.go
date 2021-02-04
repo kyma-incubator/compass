@@ -69,7 +69,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				OperationType:     graphql.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
-				ResourceType:      string(resource.Application),
+				ResourceType:      resource.Application.ToLower(),
 			},
 		}
 
@@ -106,13 +106,13 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				OperationType:     graphql.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID + "-1",
-				ResourceType:      string(resource.Application),
+				ResourceType:      resource.Application.ToLower(),
 			},
 			{
 				OperationType:     graphql.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID + "-2",
-				ResourceType:      string(resource.Application),
+				ResourceType:      resource.Application.ToLower(),
 			},
 		}
 
@@ -149,7 +149,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				OperationType:     graphql.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
-				ResourceType:      string(resource.Application),
+				ResourceType:      resource.Application.ToLower(),
 			},
 		}
 
@@ -179,7 +179,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				OperationType:     graphql.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
-				ResourceType:      string(resource.Application),
+				ResourceType:      resource.Application.ToLower(),
 			},
 		}
 

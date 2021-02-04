@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -87,7 +88,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	if err := validation.ValidateStruct(&inputParams,
 		validation.Field(&inputParams.ResourceID, is.UUID),
-		validation.Field(&inputParams.ResourceType, validation.Required, validation.In(string(resource.Application)))); err != nil {
+		validation.Field(&inputParams.ResourceType, validation.Required, validation.In(strings.ToLower(resource.Application.ToLower())))); err != nil {
 		http.Error(writer, fmt.Sprintf("Unexpected resource type and/or ID"), http.StatusBadRequest)
 		return
 	}

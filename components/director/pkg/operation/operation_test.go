@@ -32,13 +32,13 @@ func TestFromContext(t *testing.T) {
 	op1 := &operation.Operation{
 		OperationType:     graphql.OperationTypeCreate,
 		OperationCategory: "registerApplication",
-		ResourceType:      string(resource.Application),
+		ResourceType:      resource.Application.ToLower(),
 	}
 
 	op2 := &operation.Operation{
 		OperationType:     graphql.OperationTypeCreate,
 		OperationCategory: "registerApplication",
-		ResourceType:      string(resource.Application),
+		ResourceType:      resource.Application.ToLower(),
 	}
 
 	initOperations := &[]*operation.Operation{op1}
@@ -95,7 +95,7 @@ func TestSaveToContext(t *testing.T) {
 	op := &operation.Operation{
 		OperationType:     graphql.OperationTypeCreate,
 		OperationCategory: "registerApplication",
-		ResourceType:      string(resource.Application),
+		ResourceType:      resource.Application.ToLower(),
 	}
 	operations := &[]*operation.Operation{op}
 

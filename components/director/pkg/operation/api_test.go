@@ -111,7 +111,7 @@ func TestServeHTTP(t *testing.T) {
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
+		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
 
 		req.URL.RawQuery = queryValues.Encode()
 
@@ -134,7 +134,7 @@ func TestServeHTTP(t *testing.T) {
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
+		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
 
 		req.URL.RawQuery = queryValues.Encode()
 
@@ -159,7 +159,7 @@ func TestServeHTTP(t *testing.T) {
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
+		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
 
 		req.URL.RawQuery = queryValues.Encode()
 
@@ -183,7 +183,7 @@ func TestServeHTTP(t *testing.T) {
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
+		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
 
 		req.URL.RawQuery = queryValues.Encode()
 
@@ -202,7 +202,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  string(resource.Application),
+						ResourceType:  resource.Application.ToLower(),
 						OperationType: graphql.OperationTypeCreate,
 					},
 					Status: operation.OperationStatusSucceeded,
@@ -214,7 +214,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  string(resource.Application),
+						ResourceType:  resource.Application.ToLower(),
 						OperationType: graphql.OperationTypeUpdate,
 					},
 					Status: operation.OperationStatusSucceeded,
@@ -226,7 +226,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  string(resource.Application),
+						ResourceType:  resource.Application.ToLower(),
 						OperationType: graphql.OperationTypeDelete,
 					},
 					Status: operation.OperationStatusSucceeded,
@@ -238,7 +238,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  string(resource.Application),
+						ResourceType:  resource.Application.ToLower(),
 						OperationType: graphql.OperationTypeCreate,
 					},
 					Status: operation.OperationStatusInProgress,
@@ -250,7 +250,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  string(resource.Application),
+						ResourceType:  resource.Application.ToLower(),
 						OperationType: graphql.OperationTypeUpdate,
 					},
 					Status: operation.OperationStatusInProgress,
@@ -262,7 +262,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  string(resource.Application),
+						ResourceType:  resource.Application.ToLower(),
 						OperationType: graphql.OperationTypeDelete,
 					},
 					Status: operation.OperationStatusInProgress,
@@ -274,7 +274,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  string(resource.Application),
+						ResourceType:  resource.Application.ToLower(),
 						OperationType: graphql.OperationTypeCreate,
 					},
 					Status: operation.OperationStatusFailed,
@@ -287,7 +287,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  string(resource.Application),
+						ResourceType:  resource.Application.ToLower(),
 						OperationType: graphql.OperationTypeUpdate,
 					},
 					Status: operation.OperationStatusFailed,
@@ -300,7 +300,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  string(resource.Application),
+						ResourceType:  resource.Application.ToLower(),
 						OperationType: graphql.OperationTypeDelete,
 					},
 					Status: operation.OperationStatusFailed,
