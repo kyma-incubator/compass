@@ -1,23 +1,15 @@
-# TODO: Synchronize OWNERS file with CODEOWNERS
 filters:
   ".*":
     approvers:
-     - PK85
-     - crabtree 
-     - kfurgol
-     - tgorgol
-     - dbadura
-     - akgalwas
-     - janmedrek
-     - Szymongib
-     - franpog859
-     - Maladie
-     - kjaksik
-     - koala7659
+     - @kyma-incubator/cmp_team
   '\.md$|/docs/|^milv\.config\.yaml$':
     approvers:
-      - documentation-approvers
+      - Peteva
+      - ekaterina-mitova
+      - nkanchev
     reviewers:
-      - documentation-reviewers
+      - Peteva
+      - ekaterina-mitova
+      - nkanchev
     labels:
       - area/documentation
