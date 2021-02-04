@@ -23,7 +23,7 @@ global:
       version: "PR-1698"
     director:
       dir:
-      version: "PR-1700"
+      version: "PR-1719"
     gateway:
       dir:
       version: "PR-1692"
@@ -38,7 +38,7 @@ global:
       version: "PR-1698"
     schema_migrator:
       dir:
-      version: "PR-1713"
+      version: "PR-1719"
     system_broker:
       dir:
       version: "PR-1700"
