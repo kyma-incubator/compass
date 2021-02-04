@@ -17,6 +17,5 @@ RUN apk add --no-cache curl
 
 LABEL source=git@github.com:kyma-incubator/compass.git
 
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-broker/wait-for-components.sh .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-broker/system-broker.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-broker/licenses ./licenses

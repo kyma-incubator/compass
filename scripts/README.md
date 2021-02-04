@@ -13,7 +13,6 @@ make 'rule'
 
 Default makefile rule is `verify`, so when `make` is launched, the `verify` rule will be executed.
 `verify` rule will run tests, check formatting, check imports and run errcheck.
-It can be used instead of old `/before-commit.sh`.
 
 On CI all rules are run inside docker, because in CI environment we don't have `go` tools.
 
