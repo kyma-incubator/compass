@@ -13,11 +13,11 @@ func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            url,
 		Auth:           &model.Auth{},
-		Mode:           model.WebhookModeSync,
-		URLTemplate:    `{}`,
-		InputTemplate:  `{}`,
-		HeaderTemplate: `{}`,
-		OutputTemplate: `{}`,
+		Mode:           &modelWebhookMode,
+		URLTemplate:    &template,
+		InputTemplate:  &template,
+		HeaderTemplate: &template,
+		OutputTemplate: &template,
 	}
 }
 
@@ -28,11 +28,11 @@ func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 		Type:           graphql.WebhookTypeConfigurationChanged,
 		URL:            url,
 		Auth:           &graphql.Auth{},
-		Mode:           graphql.WebhookModeSync,
-		URLTemplate:    `{}`,
-		InputTemplate:  `{}`,
-		HeaderTemplate: `{}`,
-		OutputTemplate: `{}`,
+		Mode:           &graphqlWebhookMode,
+		URLTemplate:    &template,
+		InputTemplate:  &template,
+		HeaderTemplate: &template,
+		OutputTemplate: &template,
 	}
 }
 
@@ -41,11 +41,11 @@ func fixModelWebhookInput(url string) *model.WebhookInput {
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            url,
 		Auth:           &model.AuthInput{},
-		Mode:           model.WebhookModeSync,
-		URLTemplate:    `{}`,
-		InputTemplate:  `{}`,
-		HeaderTemplate: `{}`,
-		OutputTemplate: `{}`,
+		Mode:           &modelWebhookMode,
+		URLTemplate:    &template,
+		InputTemplate:  &template,
+		HeaderTemplate: &template,
+		OutputTemplate: &template,
 	}
 }
 
@@ -54,10 +54,10 @@ func fixGQLWebhookInput(url string) *graphql.WebhookInput {
 		Type:           graphql.WebhookTypeConfigurationChanged,
 		URL:            url,
 		Auth:           &graphql.AuthInput{},
-		Mode:           graphql.WebhookModeSync,
-		URLTemplate:    `{}`,
-		InputTemplate:  `{}`,
-		HeaderTemplate: `{}`,
-		OutputTemplate: `{}`,
+		Mode:           &graphqlWebhookMode,
+		URLTemplate:    &template,
+		InputTemplate:  &template,
+		HeaderTemplate: &template,
+		OutputTemplate: &template,
 	}
 }

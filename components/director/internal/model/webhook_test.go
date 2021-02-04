@@ -13,6 +13,8 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 	applicationID := "foo"
 	id := "bar"
 	tenant := "baz"
+	template := `{}`
+	webhookMode := model.WebhookModeSync
 	testCases := []struct {
 		Name     string
 		Input    *model.WebhookInput
@@ -29,11 +31,11 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 						"bar": {"bar", "foo"},
 					},
 				},
-				Mode:           model.WebhookModeSync,
-				URLTemplate:    `{}`,
-				InputTemplate:  `{}`,
-				HeaderTemplate: `{}`,
-				OutputTemplate: `{}`,
+				Mode:           &webhookMode,
+				URLTemplate:    &template,
+				InputTemplate:  &template,
+				HeaderTemplate: &template,
+				OutputTemplate: &template,
 			},
 			Expected: &model.Webhook{
 				ApplicationID: &applicationID,
@@ -47,11 +49,11 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 						"bar": {"bar", "foo"},
 					},
 				},
-				Mode:           model.WebhookModeSync,
-				URLTemplate:    `{}`,
-				InputTemplate:  `{}`,
-				HeaderTemplate: `{}`,
-				OutputTemplate: `{}`,
+				Mode:           &webhookMode,
+				URLTemplate:    &template,
+				InputTemplate:  &template,
+				HeaderTemplate: &template,
+				OutputTemplate: &template,
 			},
 		},
 		{

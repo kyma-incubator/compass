@@ -576,38 +576,38 @@ type Viewer struct {
 }
 
 type Webhook struct {
-	ID                  string      `json:"id"`
-	ApplicationID       *string     `json:"applicationID"`
-	RuntimeID           *string     `json:"runtimeID"`
-	IntegrationSystemID *string     `json:"integrationSystemID"`
-	Type                WebhookType `json:"type"`
-	Mode                WebhookMode `json:"mode"`
-	CorrelationIDKey    *string     `json:"correlationIdKey"`
-	RetryInterval       int         `json:"retryInterval"`
-	Timeout             int         `json:"timeout"`
-	URL                 string      `json:"url"`
-	Auth                *Auth       `json:"auth"`
-	URLTemplate         string      `json:"urlTemplate"`
-	InputTemplate       string      `json:"inputTemplate"`
-	HeaderTemplate      string      `json:"headerTemplate"`
-	OutputTemplate      string      `json:"outputTemplate"`
-	StatusTemplate      *string     `json:"statusTemplate"`
+	ID                  string       `json:"id"`
+	ApplicationID       *string      `json:"applicationID"`
+	RuntimeID           *string      `json:"runtimeID"`
+	IntegrationSystemID *string      `json:"integrationSystemID"`
+	Type                WebhookType  `json:"type"`
+	Mode                *WebhookMode `json:"mode"`
+	CorrelationIDKey    *string      `json:"correlationIdKey"`
+	RetryInterval       *int         `json:"retryInterval"`
+	Timeout             *int         `json:"timeout"`
+	URL                 string       `json:"url"`
+	Auth                *Auth        `json:"auth"`
+	URLTemplate         *string      `json:"urlTemplate"`
+	InputTemplate       *string      `json:"inputTemplate"`
+	HeaderTemplate      *string      `json:"headerTemplate"`
+	OutputTemplate      *string      `json:"outputTemplate"`
+	StatusTemplate      *string      `json:"statusTemplate"`
 }
 
 type WebhookInput struct {
 	Type WebhookType `json:"type"`
 	// **Validation:** valid URL, max=256
-	URL              string      `json:"url"`
-	Auth             *AuthInput  `json:"auth"`
-	Mode             WebhookMode `json:"mode"`
-	CorrelationIDKey *string     `json:"correlationIdKey"`
-	RetryInterval    int         `json:"retryInterval"`
-	Timeout          int         `json:"timeout"`
-	URLTemplate      string      `json:"urlTemplate"`
-	InputTemplate    string      `json:"inputTemplate"`
-	HeaderTemplate   string      `json:"headerTemplate"`
-	OutputTemplate   string      `json:"outputTemplate"`
-	StatusTemplate   *string     `json:"statusTemplate"`
+	URL              string       `json:"url"`
+	Auth             *AuthInput   `json:"auth"`
+	Mode             *WebhookMode `json:"mode"`
+	CorrelationIDKey *string      `json:"correlationIdKey"`
+	RetryInterval    *int         `json:"retryInterval"`
+	Timeout          *int         `json:"timeout"`
+	URLTemplate      *string      `json:"urlTemplate"`
+	InputTemplate    *string      `json:"inputTemplate"`
+	HeaderTemplate   *string      `json:"headerTemplate"`
+	OutputTemplate   *string      `json:"outputTemplate"`
+	StatusTemplate   *string      `json:"statusTemplate"`
 }
 
 type APISpecType string

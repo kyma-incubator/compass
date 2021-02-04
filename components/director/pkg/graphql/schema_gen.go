@@ -3909,14 +3909,14 @@ input WebhookInput {
 	"""
 	url: String!
 	auth: AuthInput
-	mode: WebhookMode!
+	mode: WebhookMode
 	correlationIdKey: String
-	retryInterval: Int!
-	timeout: Int!
-	urlTemplate: String!
-	inputTemplate: String!
-	headerTemplate: String!
-	outputTemplate: String!
+	retryInterval: Int
+	timeout: Int
+	urlTemplate: String
+	inputTemplate: String
+	headerTemplate: String
+	outputTemplate: String
 	statusTemplate: String
 }
 
@@ -4335,16 +4335,16 @@ type Webhook {
 	runtimeID: ID
 	integrationSystemID: ID
 	type: WebhookType!
-	mode: WebhookMode!
+	mode: WebhookMode
 	correlationIdKey: String
-	retryInterval: Int!
-	timeout: Int!
+	retryInterval: Int
+	timeout: Int
 	url: String!
 	auth: Auth
-	urlTemplate: String!
-	inputTemplate: String!
-	headerTemplate: String!
-	outputTemplate: String!
+	urlTemplate: String
+	inputTemplate: String
+	headerTemplate: String
+	outputTemplate: String
 	statusTemplate: String
 }
 
@@ -19552,15 +19552,12 @@ func (ec *executionContext) _Webhook_mode(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(WebhookMode)
+	res := resTmp.(*WebhookMode)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNWebhookMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx, field.Selections, res)
+	return ec.marshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_correlationIdKey(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -19623,15 +19620,12 @@ func (ec *executionContext) _Webhook_retryInterval(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_timeout(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -19660,15 +19654,12 @@ func (ec *executionContext) _Webhook_timeout(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_url(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -19768,15 +19759,12 @@ func (ec *executionContext) _Webhook_urlTemplate(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_inputTemplate(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -19805,15 +19793,12 @@ func (ec *executionContext) _Webhook_inputTemplate(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_headerTemplate(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -19842,15 +19827,12 @@ func (ec *executionContext) _Webhook_headerTemplate(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_outputTemplate(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -19879,15 +19861,12 @@ func (ec *executionContext) _Webhook_outputTemplate(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_statusTemplate(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -22195,7 +22174,7 @@ func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, obj 
 			}
 		case "mode":
 			var err error
-			it.Mode, err = ec.unmarshalNWebhookMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx, v)
+			it.Mode, err = ec.unmarshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -22207,37 +22186,37 @@ func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, obj 
 			}
 		case "retryInterval":
 			var err error
-			it.RetryInterval, err = ec.unmarshalNInt2int(ctx, v)
+			it.RetryInterval, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "timeout":
 			var err error
-			it.Timeout, err = ec.unmarshalNInt2int(ctx, v)
+			it.Timeout, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "urlTemplate":
 			var err error
-			it.URLTemplate, err = ec.unmarshalNString2string(ctx, v)
+			it.URLTemplate, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "inputTemplate":
 			var err error
-			it.InputTemplate, err = ec.unmarshalNString2string(ctx, v)
+			it.InputTemplate, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "headerTemplate":
 			var err error
-			it.HeaderTemplate, err = ec.unmarshalNString2string(ctx, v)
+			it.HeaderTemplate, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "outputTemplate":
 			var err error
-			it.OutputTemplate, err = ec.unmarshalNString2string(ctx, v)
+			it.OutputTemplate, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -25042,21 +25021,12 @@ func (ec *executionContext) _Webhook(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "mode":
 			out.Values[i] = ec._Webhook_mode(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "correlationIdKey":
 			out.Values[i] = ec._Webhook_correlationIdKey(ctx, field, obj)
 		case "retryInterval":
 			out.Values[i] = ec._Webhook_retryInterval(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "timeout":
 			out.Values[i] = ec._Webhook_timeout(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "url":
 			out.Values[i] = ec._Webhook_url(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -25066,24 +25036,12 @@ func (ec *executionContext) _Webhook(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Webhook_auth(ctx, field, obj)
 		case "urlTemplate":
 			out.Values[i] = ec._Webhook_urlTemplate(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "inputTemplate":
 			out.Values[i] = ec._Webhook_inputTemplate(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "headerTemplate":
 			out.Values[i] = ec._Webhook_headerTemplate(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "outputTemplate":
 			out.Values[i] = ec._Webhook_outputTemplate(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "statusTemplate":
 			out.Values[i] = ec._Webhook_statusTemplate(ctx, field, obj)
 		default:
@@ -26797,15 +26755,6 @@ func (ec *executionContext) unmarshalNWebhookInput2ᚖgithubᚗcomᚋkymaᚑincu
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNWebhookMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx context.Context, v interface{}) (WebhookMode, error) {
-	var res WebhookMode
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNWebhookMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx context.Context, sel ast.SelectionSet, v WebhookMode) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx context.Context, v interface{}) (WebhookType, error) {
 	var res WebhookType
 	return res, res.UnmarshalGQL(v)
@@ -28174,6 +28123,30 @@ func (ec *executionContext) unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑi
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) unmarshalOWebhookMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx context.Context, v interface{}) (WebhookMode, error) {
+	var res WebhookMode
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOWebhookMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx context.Context, sel ast.SelectionSet, v WebhookMode) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx context.Context, v interface{}) (*WebhookMode, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOWebhookMode2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx context.Context, sel ast.SelectionSet, v *WebhookMode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

@@ -81,8 +81,8 @@ CREATE TYPE webhook_mode AS ENUM (
 );
 
 ALTER TABLE webhooks
-    ADD COLUMN mode webhook_mode NOT NULL,
-    ADD COLUMN correlation_id_key varchar(256) NOT NULL,
+    ADD COLUMN mode webhook_mode,
+    ADD COLUMN correlation_id_key varchar(256),
     ADD COLUMN retry_interval int,
     ADD COLUMN timeout int,
     ADD COLUMN url_template jsonb,

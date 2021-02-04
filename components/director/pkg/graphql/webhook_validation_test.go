@@ -135,13 +135,15 @@ func TestWebhookInput_Validate_Auth(t *testing.T) {
 }
 
 func fixValidWebhookInput() graphql.WebhookInput {
+	template := `{}`
+	webhookMode := graphql.WebhookModeAsync
 	return graphql.WebhookInput{
 		Type:           graphql.WebhookTypeConfigurationChanged,
 		URL:            inputvalidationtest.ValidURL,
-		Mode:           graphql.WebhookModeAsync,
-		URLTemplate:    "url-template-test",
-		InputTemplate:  "input-template-test",
-		HeaderTemplate: "header-template-test",
-		OutputTemplate: "output-template-test",
+		Mode:           &webhookMode,
+		URLTemplate:    &template,
+		InputTemplate:  &template,
+		HeaderTemplate: &template,
+		OutputTemplate: &template,
 	}
 }

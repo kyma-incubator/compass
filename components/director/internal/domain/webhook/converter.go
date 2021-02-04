@@ -37,13 +37,19 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 		return nil, errors.Wrap(err, "while converting Auth input")
 	}
 
+	var webhookMode *graphql.WebhookMode
+	if in.Mode != nil {
+		mode := graphql.WebhookMode(*in.Mode)
+		webhookMode = &mode
+	}
+
 	return &graphql.Webhook{
 		ID:                  in.ID,
 		ApplicationID:       in.ApplicationID,
 		RuntimeID:           in.RuntimeID,
 		IntegrationSystemID: in.IntegrationSystemID,
 		Type:                graphql.WebhookType(in.Type),
-		Mode:                graphql.WebhookMode(in.Mode),
+		Mode:                webhookMode,
 		URL:                 in.URL,
 		Auth:                auth,
 		CorrelationIDKey:    in.CorrelationIDKey,
@@ -85,12 +91,18 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookIn
 		return nil, errors.Wrap(err, "while converting Auth input")
 	}
 
+	var webhookMode *model.WebhookMode
+	if in.Mode != nil {
+		mode := model.WebhookMode(*in.Mode)
+		webhookMode = &mode
+	}
+
 	return &model.WebhookInput{
 		Type:             model.WebhookType(in.Type),
 		URL:              in.URL,
 		Auth:             auth,
-		Mode:             model.WebhookMode(in.Mode),
-		CorrelationIDKey: nullableString(in.CorrelationIDKey),
+		Mode:             webhookMode,
+		CorrelationIDKey: in.CorrelationIDKey,
 		RetryInterval:    in.RetryInterval,
 		Timeout:          in.Timeout,
 		URLTemplate:      in.URLTemplate,
@@ -124,6 +136,12 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 		return Entity{}, err
 	}
 
+	var webhookMode sql.NullString
+	if in.Mode != nil {
+		webhookMode.String = string(*in.Mode)
+		webhookMode.Valid = true
+	}
+
 	return Entity{
 		ID:                  in.ID,
 		TenantID:            in.TenantID,
@@ -134,13 +152,13 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 		Type:                string(in.Type),
 		URL:                 in.URL,
 		Auth:                optionalAuth,
-		Mode:                string(in.Mode),
-		RetryInterval:       in.RetryInterval,
-		Timeout:             in.Timeout,
-		URLTemplate:         in.URLTemplate,
-		InputTemplate:       in.InputTemplate,
-		HeaderTemplate:      in.HeaderTemplate,
-		OutputTemplate:      in.OutputTemplate,
+		Mode:                webhookMode,
+		RetryInterval:       repo.NewNullableInt(in.RetryInterval),
+		Timeout:             repo.NewNullableInt(in.Timeout),
+		URLTemplate:         repo.NewNullableString(in.URLTemplate),
+		InputTemplate:       repo.NewNullableString(in.InputTemplate),
+		HeaderTemplate:      repo.NewNullableString(in.HeaderTemplate),
+		OutputTemplate:      repo.NewNullableString(in.OutputTemplate),
 		StatusTemplate:      repo.NewNullableString(in.StatusTemplate),
 	}, nil
 }
@@ -167,6 +185,13 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 	if err != nil {
 		return model.Webhook{}, err
 	}
+
+	var webhookMode *model.WebhookMode
+	if in.Mode.Valid {
+		webhookModeStr := model.WebhookMode(in.Mode.String)
+		webhookMode = &webhookModeStr
+	}
+
 	return model.Webhook{
 		ID:                  in.ID,
 		TenantID:            in.TenantID,
@@ -177,13 +202,13 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 		Type:                model.WebhookType(in.Type),
 		URL:                 in.URL,
 		Auth:                auth,
-		Mode:                model.WebhookMode(in.Mode),
-		RetryInterval:       in.RetryInterval,
-		Timeout:             in.Timeout,
-		URLTemplate:         in.URLTemplate,
-		InputTemplate:       in.InputTemplate,
-		HeaderTemplate:      in.HeaderTemplate,
-		OutputTemplate:      in.OutputTemplate,
+		Mode:                webhookMode,
+		RetryInterval:       repo.IntPtrFromNullableInt(in.RetryInterval),
+		Timeout:             repo.IntPtrFromNullableInt(in.Timeout),
+		URLTemplate:         repo.StringPtrFromNullableString(in.URLTemplate),
+		InputTemplate:       repo.StringPtrFromNullableString(in.InputTemplate),
+		HeaderTemplate:      repo.StringPtrFromNullableString(in.HeaderTemplate),
+		OutputTemplate:      repo.StringPtrFromNullableString(in.OutputTemplate),
 		StatusTemplate:      repo.StringPtrFromNullableString(in.StatusTemplate),
 	}, nil
 }
@@ -210,9 +235,9 @@ func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
 	return auth, nil
 }
 
-func nullableString(text *string) string {
-	if text != nil {
-		return *text
+func nullableInt(n *int) int {
+	if n != nil {
+		return *n
 	}
-	return ""
+	return 0
 }

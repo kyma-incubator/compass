@@ -29,6 +29,16 @@ func NewNullableString(text *string) sql.NullString {
 	return nullString
 }
 
+func NewNullableInt(i *int) sql.NullInt32 {
+	nullInt := sql.NullInt32{}
+	if i != nil {
+		nullInt.Int32 = int32(*i)
+		nullInt.Valid = true
+	}
+
+	return nullInt
+}
+
 func NewValidNullableString(text string) sql.NullString {
 	return sql.NullString{
 		String: text,
@@ -55,6 +65,15 @@ func NewValidNullableBool(boolean bool) sql.NullBool {
 func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	if sqlString.Valid {
 		return &sqlString.String
+	}
+
+	return nil
+}
+
+func IntPtrFromNullableInt(i sql.NullInt32) *int {
+	if i.Valid {
+		val := int(i.Int32)
+		return &val
 	}
 
 	return nil

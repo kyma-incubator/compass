@@ -10,28 +10,28 @@ type Webhook struct {
 	Type                WebhookType
 	URL                 string
 	Auth                *Auth
-	Mode                WebhookMode
-	RetryInterval       int
-	Timeout             int
-	URLTemplate         string
-	InputTemplate       string
-	HeaderTemplate      string
-	OutputTemplate      string
+	Mode                *WebhookMode
+	RetryInterval       *int
+	Timeout             *int
+	URLTemplate         *string
+	InputTemplate       *string
+	HeaderTemplate      *string
+	OutputTemplate      *string
 	StatusTemplate      *string
 }
 
 type WebhookInput struct {
-	CorrelationIDKey string
+	CorrelationIDKey *string
 	Type             WebhookType
 	URL              string
 	Auth             *AuthInput
-	Mode             WebhookMode
-	RetryInterval    int
-	Timeout          int
-	URLTemplate      string
-	InputTemplate    string
-	HeaderTemplate   string
-	OutputTemplate   string
+	Mode             *WebhookMode
+	RetryInterval    *int
+	Timeout          *int
+	URLTemplate      *string
+	InputTemplate    *string
+	HeaderTemplate   *string
+	OutputTemplate   *string
 	StatusTemplate   *string
 }
 

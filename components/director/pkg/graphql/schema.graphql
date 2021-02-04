@@ -598,14 +598,14 @@ input WebhookInput {
 	"""
 	url: String!
 	auth: AuthInput
-	mode: WebhookMode!
+	mode: WebhookMode
 	correlationIdKey: String
-	retryInterval: Int!
-	timeout: Int!
-	urlTemplate: String!
-	inputTemplate: String!
-	headerTemplate: String!
-	outputTemplate: String!
+	retryInterval: Int
+	timeout: Int
+	urlTemplate: String
+	inputTemplate: String
+	headerTemplate: String
+	outputTemplate: String
 	statusTemplate: String
 }
 
@@ -1024,16 +1024,16 @@ type Webhook {
 	runtimeID: ID
 	integrationSystemID: ID
 	type: WebhookType!
-	mode: WebhookMode!
+	mode: WebhookMode
 	correlationIdKey: String
-	retryInterval: Int!
-	timeout: Int!
+	retryInterval: Int
+	timeout: Int
 	url: String!
 	auth: Auth
-	urlTemplate: String!
-	inputTemplate: String!
-	headerTemplate: String!
-	outputTemplate: String!
+	urlTemplate: String
+	inputTemplate: String
+	headerTemplate: String
+	outputTemplate: String
 	statusTemplate: String
 }
 

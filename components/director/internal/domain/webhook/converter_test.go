@@ -17,7 +17,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var givenAppID = "givenApplicationID"
+var (
+	givenAppID         = "givenApplicationID"
+	modelWebhookMode   = model.WebhookModeSync
+	graphqlWebhookMode = graphql.WebhookModeSync
+)
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
@@ -182,11 +186,11 @@ func TestConverter_ToEntity(t *testing.T) {
 				URL:            "https://test-domain.com",
 				TenantID:       "givenTenant",
 				Type:           model.WebhookTypeConfigurationChanged,
-				Mode:           model.WebhookModeSync,
-				URLTemplate:    `{}`,
-				InputTemplate:  `{}`,
-				HeaderTemplate: `{}`,
-				OutputTemplate: `{}`,
+				Mode:           &modelWebhookMode,
+				URLTemplate:    &template,
+				InputTemplate:  &template,
+				HeaderTemplate: &template,
+				OutputTemplate: &template,
 			},
 			expected: webhook.Entity{
 				ID:             "givenID",
@@ -195,11 +199,11 @@ func TestConverter_ToEntity(t *testing.T) {
 				TenantID:       "givenTenant",
 				Type:           "CONFIGURATION_CHANGED",
 				Auth:           sql.NullString{Valid: false},
-				Mode:           "SYNC",
-				URLTemplate:    `{}`,
-				InputTemplate:  `{}`,
-				HeaderTemplate: `{}`,
-				OutputTemplate: `{}`,
+				Mode:           repo.NewValidNullableString("SYNC"),
+				URLTemplate:    repo.NewValidNullableString(template),
+				InputTemplate:  repo.NewValidNullableString(template),
+				HeaderTemplate: repo.NewValidNullableString(template),
+				OutputTemplate: repo.NewValidNullableString(template),
 			},
 		},
 		"success when Auth provided": {
@@ -242,11 +246,11 @@ func TestConverter_FromEntity(t *testing.T) {
 				Type:           "CONFIGURATION_CHANGED",
 				URL:            "https://test-domain.com",
 				ApplicationID:  repo.NewValidNullableString(givenAppID),
-				Mode:           "SYNC",
-				URLTemplate:    `{}`,
-				InputTemplate:  `{}`,
-				HeaderTemplate: `{}`,
-				OutputTemplate: `{}`,
+				Mode:           repo.NewValidNullableString("SYNC"),
+				URLTemplate:    repo.NewValidNullableString(template),
+				InputTemplate:  repo.NewValidNullableString(template),
+				HeaderTemplate: repo.NewValidNullableString(template),
+				OutputTemplate: repo.NewValidNullableString(template),
 			},
 			expectedModel: model.Webhook{
 				ID:             "givenID",
@@ -255,11 +259,11 @@ func TestConverter_FromEntity(t *testing.T) {
 				URL:            "https://test-domain.com",
 				ApplicationID:  &givenAppID,
 				Auth:           nil,
-				Mode:           model.WebhookModeSync,
-				URLTemplate:    `{}`,
-				InputTemplate:  `{}`,
-				HeaderTemplate: `{}`,
-				OutputTemplate: `{}`,
+				Mode:           &modelWebhookMode,
+				URLTemplate:    &template,
+				InputTemplate:  &template,
+				HeaderTemplate: &template,
+				OutputTemplate: &template,
 			},
 		},
 		"success when Auth provided": {
