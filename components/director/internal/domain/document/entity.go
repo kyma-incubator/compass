@@ -28,6 +28,10 @@ func (r Collection) Len() int {
 	return len(r)
 }
 
+func (e *Entity) SetReady(ready bool) {
+	e.Ready = ready
+}
+
 func (e *Entity) GetCreatedAt() time.Time {
 	return e.CreatedAt
 }

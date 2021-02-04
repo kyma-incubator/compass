@@ -20,6 +20,10 @@ type Entity struct {
 	Error                         sql.NullString `db:"error"`
 }
 
+func (e *Entity) SetReady(ready bool) {
+	e.Ready = ready
+}
+
 func (e *Entity) GetCreatedAt() time.Time {
 	return e.CreatedAt
 }

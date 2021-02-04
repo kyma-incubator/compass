@@ -237,7 +237,7 @@ func main() {
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
 	appRepo := defaultApplicationRepo()
-	operationHandler := operation.NewHandler(transact, appRepo.GetByID)
+	operationHandler := operation.NewHandler(transact, appRepo.GetByID, tenant.LoadFromContext)
 	mainRouter.HandleFunc(cfg.OperationEndpoint, operationHandler.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")

@@ -93,7 +93,7 @@ func (u *universalUpdater) unsafeUpdateSingle(ctx context.Context, dbEntity inte
 		stmtBuilder.WriteString(fmt.Sprintf(" %s", strings.Join(preparedIDColumns, " AND ")))
 	}
 
-	entity, ok := dbEntity.(TimestampableEntity)
+	entity, ok := dbEntity.(AsynchronousEntity)
 	if ok && entity.GetDeletedAt().IsZero() {
 		entity.SetUpdatedAt(time.Now())
 		dbEntity = entity

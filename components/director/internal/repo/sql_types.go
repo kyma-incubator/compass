@@ -5,8 +5,10 @@ import (
 	"time"
 )
 
-// TimestampableEntity denotes an DB-layer entity which can be timestamp with created_at and updated_at values
-type TimestampableEntity interface {
+// AsynchronousEntity denotes an DB-layer entity which can be timestamp with created_at, updated_at, deleted_at and ready values
+type AsynchronousEntity interface {
+	SetReady(ready bool)
+
 	GetCreatedAt() time.Time
 	SetCreatedAt(t time.Time)
 

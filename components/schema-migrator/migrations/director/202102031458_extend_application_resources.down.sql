@@ -1,20 +1,20 @@
 BEGIN;
 
-ALTER TABLE bundles
-    DROP CONSTRAINT bundle_id_ready_unique,
-    DROP CONSTRAINT bundles_applications_ready_fk;
-
 ALTER TABLE api_definitions
     DROP CONSTRAINT api_id_ready_unique,
-    DROP CONSTRAINT api_definitions_applications_ready_fk;
+    DROP CONSTRAINT api_definitions_bundles_ready_fk;
 
 ALTER TABLE event_api_definitions
     DROP CONSTRAINT event_api_id_ready_unique,
-    DROP CONSTRAINT event_api_definitions_applications_ready_fk;
+    DROP CONSTRAINT event_api_definitions_bundles_ready_fk;
 
 ALTER TABLE documents
     DROP CONSTRAINT document_id_ready_unique,
-    DROP CONSTRAINT documents_applications_ready_fk;
+    DROP CONSTRAINT documents_bundles_ready_fk;
+
+ALTER TABLE bundles
+    DROP CONSTRAINT bundle_id_ready_unique,
+    DROP CONSTRAINT bundles_applications_ready_fk;
 
 ALTER TABLE applications
     DROP COLUMN ready CASCADE,

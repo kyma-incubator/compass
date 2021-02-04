@@ -55,16 +55,16 @@ ALTER TABLE bundles
         FOREIGN KEY (app_id, ready) REFERENCES applications (id, ready) ON UPDATE CASCADE;
 
 ALTER TABLE api_definitions
-    ADD CONSTRAINT api_definitions_applications_ready_fk
-        FOREIGN KEY (app_id, ready) REFERENCES applications (id, ready) ON UPDATE CASCADE;
+    ADD CONSTRAINT api_definitions_bundles_ready_fk
+        FOREIGN KEY (bundle_id, ready) REFERENCES bundles (id, ready) ON UPDATE CASCADE;
 
 ALTER TABLE event_api_definitions
-    ADD CONSTRAINT event_api_definitions_applications_ready_fk
-        FOREIGN KEY (app_id, ready) REFERENCES applications (id, ready) ON UPDATE CASCADE;
+    ADD CONSTRAINT event_api_definitions_bundles_ready_fk
+        FOREIGN KEY (bundle_id, ready) REFERENCES bundles (id, ready) ON UPDATE CASCADE;
 
 ALTER TABLE documents
-    ADD CONSTRAINT documents_applications_ready_fk
-        FOREIGN KEY (app_id, ready) REFERENCES applications (id, ready) ON UPDATE CASCADE;
+    ADD CONSTRAINT documents_bundles_ready_fk
+        FOREIGN KEY (bundle_id, ready) REFERENCES bundles (id, ready) ON UPDATE CASCADE;
 
 ALTER TYPE webhook_type RENAME TO webhook_type_old;
 CREATE TYPE webhook_type AS ENUM (

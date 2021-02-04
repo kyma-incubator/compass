@@ -227,18 +227,18 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	return s.bndlRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
 }
 
-func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, tenant string, bundleID string) error {
-	err := s.createAPIs(ctx, bundleID, tenant, in.APIDefinitions)
+func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, tenantID string, bundleID string) error {
+	err := s.createAPIs(ctx, bundleID, tenantID, in.APIDefinitions)
 	if err != nil {
 		return errors.Wrapf(err, "while creating APIs for application")
 	}
 
-	err = s.createEvents(ctx, bundleID, tenant, in.EventDefinitions)
+	err = s.createEvents(ctx, bundleID, tenantID, in.EventDefinitions)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Events for application")
 	}
 
-	err = s.createDocuments(ctx, bundleID, tenant, in.Documents)
+	err = s.createDocuments(ctx, bundleID, tenantID, in.Documents)
 	if err != nil {
 		return errors.Wrapf(err, "while creating Documents for application")
 	}
@@ -246,12 +246,12 @@ func (s *service) createRelatedResources(ctx context.Context, in model.BundleCre
 	return nil
 }
 
-func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis []*model.APIDefinitionInput) error {
+func (s *service) createAPIs(ctx context.Context, bundleID, tenantID string, apis []*model.APIDefinitionInput) error {
 	var err error
 	for _, item := range apis {
 		apiDefID := s.uidService.Generate()
 
-		api := item.ToAPIDefinitionWithinBundle(apiDefID, bundleID, tenant)
+		api := item.ToAPIDefinitionWithinBundle(apiDefID, bundleID, tenantID)
 
 		err = s.apiRepo.Create(ctx, api)
 		if err != nil {
@@ -260,7 +260,7 @@ func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis 
 		log.C(ctx).Infof("Successfully created APIDefinition with id %s within Bundle with id %s", apiDefID, bundleID)
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			fr, err := s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
+			fr, err := s.createFetchRequest(ctx, tenantID, item.Spec.FetchRequest, model.APIFetchRequestReference, apiDefID)
 			if err != nil {
 				return errors.Wrap(err, "while creating FetchRequest for application")
 			}
@@ -277,19 +277,19 @@ func (s *service) createAPIs(ctx context.Context, bundleID, tenant string, apis 
 	return nil
 }
 
-func (s *service) createEvents(ctx context.Context, bundleID, tenant string, events []*model.EventDefinitionInput) error {
+func (s *service) createEvents(ctx context.Context, bundleID, tenantID string, events []*model.EventDefinitionInput) error {
 	var err error
 	for _, item := range events {
 		eventID := s.uidService.Generate()
 
-		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinBundle(eventID, bundleID, tenant))
+		err = s.eventAPIRepo.Create(ctx, item.ToEventDefinitionWithinBundle(eventID, bundleID, tenantID))
 		if err != nil {
 			return errors.Wrapf(err, "while creating EventDefinition with id %s in Bundle with id %s", eventID, bundleID)
 		}
 		log.C(ctx).Infof("Successfully created EventDefinition with id %s in Bundle with id %s", eventID, bundleID)
 
 		if item.Spec != nil && item.Spec.FetchRequest != nil {
-			_, err = s.createFetchRequest(ctx, tenant, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventID)
+			_, err = s.createFetchRequest(ctx, tenantID, item.Spec.FetchRequest, model.EventAPIFetchRequestReference, eventID)
 			if err != nil {
 				return errors.Wrap(err, "while creating FetchRequest for application")
 			}

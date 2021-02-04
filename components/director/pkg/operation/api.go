@@ -36,26 +36,29 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 )
 
 const ResourceIDParam = "resource_id"
 const ResourceTypeParam = "resource_type"
 
-// ResourceFetcherFunc defines a function which fetches an particular application by tenant and app ID
+// ResourceFetcherFunc defines a function which fetches a particular application by tenant and app ID
 type ResourceFetcherFunc func(ctx context.Context, tenant, id string) (*model.Application, error)
+
+// TenantLoaderFunc defines a function which fetches the tenant for a particular request
+type TenantLoaderFunc func(ctx context.Context) (string, error)
 
 type handler struct {
 	transact            persistence.Transactioner
 	resourceFetcherFunc ResourceFetcherFunc
+	tenantLoaderFunc    TenantLoaderFunc
 }
 
 // NewHandler creates a new handler struct associated with the Operations API
-func NewHandler(transact persistence.Transactioner, resourceFetcherFunc ResourceFetcherFunc) handler {
+func NewHandler(transact persistence.Transactioner, resourceFetcherFunc ResourceFetcherFunc, tenantLoaderFunc TenantLoaderFunc) handler {
 	return handler{
 		transact:            transact,
 		resourceFetcherFunc: resourceFetcherFunc,
+		tenantLoaderFunc:    tenantLoaderFunc,
 	}
 }
 
@@ -63,7 +66,7 @@ func NewHandler(transact persistence.Transactioner, resourceFetcherFunc Resource
 func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	tenantID, err := tenant.LoadFromContext(ctx)
+	tenantID, err := h.tenantLoaderFunc(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while retrieving tenant from context: %s", err.Error())
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to determine tenant for request"), http.StatusInternalServerError)

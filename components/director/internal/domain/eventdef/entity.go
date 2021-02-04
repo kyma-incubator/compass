@@ -29,6 +29,10 @@ type EntitySpec struct {
 	SpecType   sql.NullString `db:"spec_type"`
 }
 
+func (e *Entity) SetReady(ready bool) {
+	e.Ready = ready
+}
+
 func (e *Entity) GetCreatedAt() time.Time {
 	return e.CreatedAt
 }

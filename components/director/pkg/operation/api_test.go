@@ -34,18 +34,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestServeHTTP(t *testing.T) {
+const (
+	tenantID   = "d6f1d2bb-62f5-4971-9efe-8af93d6528a7"
+	resourceID = "46eb9542-8b18-4e4d-96d1-67f7e9675bb2"
+)
 
-	const (
-		tenantID   = "d6f1d2bb-62f5-4971-9efe-8af93d6528a7"
-		resourceID = "46eb9542-8b18-4e4d-96d1-67f7e9675bb2"
-	)
+func TestServeHTTP(t *testing.T) {
 
 	t.Run("when tenant is missing it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
 		req := fixEmptyRequest(t, context.Background())
 
-		handler := operation.NewHandler(nil, nil)
+		handler := operation.NewHandler(nil, nil, func(ctx context.Context) (string, error) {
+			return "", mockedError()
+		})
 		handler.ServeHTTP(writer, req)
 
 		require.Contains(t, writer.Body.String(), "Unable to determine tenant for request")
@@ -58,7 +60,7 @@ func TestServeHTTP(t *testing.T) {
 		writer := httptest.NewRecorder()
 		req := fixEmptyRequest(t, ctx)
 
-		handler := operation.NewHandler(nil, nil)
+		handler := operation.NewHandler(nil, nil, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
 
 		require.Contains(t, writer.Body.String(), "Unexpected resource type and/or ID")
@@ -76,7 +78,7 @@ func TestServeHTTP(t *testing.T) {
 
 		req.URL.RawQuery = queryValues.Encode()
 
-		handler := operation.NewHandler(nil, nil)
+		handler := operation.NewHandler(nil, nil, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
 
 		require.Contains(t, writer.Body.String(), "Unexpected resource type and/or ID")
@@ -94,7 +96,7 @@ func TestServeHTTP(t *testing.T) {
 
 		req.URL.RawQuery = queryValues.Encode()
 
-		handler := operation.NewHandler(nil, nil)
+		handler := operation.NewHandler(nil, nil, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
 
 		require.Contains(t, writer.Body.String(), "Unexpected resource type and/or ID")
@@ -117,7 +119,7 @@ func TestServeHTTP(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		handler := operation.NewHandler(mockedTransactioner, nil)
+		handler := operation.NewHandler(mockedTransactioner, nil, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
 
 		require.Equal(t, http.StatusInternalServerError, writer.Code)
@@ -142,7 +144,7 @@ func TestServeHTTP(t *testing.T) {
 
 		handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (*model.Application, error) {
 			return nil, mockedError()
-		})
+		}, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
 
 		require.Equal(t, http.StatusInternalServerError, writer.Code)
@@ -167,7 +169,7 @@ func TestServeHTTP(t *testing.T) {
 
 		handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (*model.Application, error) {
 			return nil, nil
-		})
+		}, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
 
 		require.Equal(t, http.StatusInternalServerError, writer.Code)
@@ -315,7 +317,7 @@ func TestServeHTTP(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (*model.Application, error) {
 					return testCase.Application, nil
-				})
+				}, loadTenantFunc)
 
 				writer := httptest.NewRecorder()
 				handler.ServeHTTP(writer, req)
@@ -336,4 +338,8 @@ func fixEmptyRequest(t *testing.T, ctx context.Context) *http.Request {
 	require.NoError(t, err)
 
 	return req
+}
+
+func loadTenantFunc(_ context.Context) (string, error) {
+	return tenantID, nil
 }

@@ -207,12 +207,7 @@ func (r *pgRepository) Create(ctx context.Context, model *model.Application) err
 		return errors.Wrap(err, "while converting to Application entity")
 	}
 
-	appEnt.Ready = true
-
-	opMode := operation.ModeFromCtx(ctx)
-	if opMode == graphql.OperationModeAsync {
-		appEnt.Ready = false
-
+	if operation.ModeFromCtx(ctx) == graphql.OperationModeAsync {
 		if err := updateOperationContext(ctx, model.ID); err != nil {
 			return err
 		}
