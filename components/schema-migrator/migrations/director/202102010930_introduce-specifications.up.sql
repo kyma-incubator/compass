@@ -241,13 +241,46 @@ CREATE UNIQUE INDEX fetch_requests_tenant_id_coalesce_coalesce1_coalesce2_idx ON
 ALTER TABLE api_definitions
     DROP COLUMN spec_data,
     DROP COLUMN spec_format,
-    DROP COLUMN spec_type;
+    DROP COLUMN spec_type,
+    DROP COLUMN api_definitions;
 
 ALTER TABLE event_api_definitions
     DROP COLUMN spec_data,
     DROP COLUMN spec_format,
-    DROP COLUMN spec_type;
+    DROP COLUMN spec_type,
+    DROP COLUMN event_definitions;
 
--- TODO: Add spec views for ORD Service
+CREATE VIEW api_resource_definitions AS
+SELECT CASE
+           WHEN api_spec_type::text = 'ODATA' THEN 'edmx'
+           WHEN api_spec_type::text = 'OPEN_API' THEN 'openapi-v3'
+           ELSE api_spec_type::text
+           END                                            AS type,
+       custom_type                                        AS custom_type,
+       format('/api/%s/specification/%s', api_def_id, id) AS url,
+       CASE
+           WHEN api_spec_format::text = 'YAML' THEN 'text/yaml'
+           WHEN api_spec_format::text = 'XML' THEN 'application/xml'
+           WHEN api_spec_format::text = 'JSON' THEN 'application/json'
+           ELSE api_spec_format::text
+           END                                            AS media_type
+FROM specifications
+WHERE api_def_id IS NOT NULL;
+
+CREATE VIEW event_resource_definitions AS
+SELECT CASE
+           WHEN event_spec_type::text = 'ASYNC_API' THEN 'asyncapi-v2'
+           ELSE event_spec_type::text
+           END                                                AS type,
+       custom_type                                            AS custom_type,
+       format('/event/%s/specification/%s', event_def_id, id) AS url,
+       CASE
+           WHEN event_spec_format::text = 'YAML' THEN 'text/yaml'
+           WHEN event_spec_format::text = 'XML' THEN 'application/xml'
+           WHEN event_spec_format::text = 'JSON' THEN 'application/json'
+           ELSE event_spec_format::text
+           END                                                AS media_type
+FROM specifications
+WHERE event_def_id IS NOT NULL;
 
 COMMIT;

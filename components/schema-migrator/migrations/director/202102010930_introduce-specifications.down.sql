@@ -3,12 +3,14 @@ BEGIN;
 ALTER TABLE api_definitions
     ADD COLUMN spec_data   TEXT,
     ADD COLUMN spec_format api_spec_format,
-    ADD COLUMN spec_type   api_spec_type;
+    ADD COLUMN spec_type   api_spec_type,
+    ADD COLUMN api_definitions JSONB;
 
 ALTER TABLE event_api_definitions
     ADD COLUMN spec_data   TEXT,
     ADD COLUMN spec_format event_api_spec_format,
-    ADD COLUMN spec_type   event_api_spec_type;
+    ADD COLUMN spec_type   event_api_spec_type,
+    ADD COLUMN event_definitions JSONB;
 
 ALTER TABLE fetch_requests
     DROP CONSTRAINT valid_refs;
@@ -65,6 +67,9 @@ UPDATE event_api_definitions
 SET spec_data   = (SELECT spec_data FROM specifications WHERE event_def_id = event_api_definitions.id),
     spec_format = (SELECT spec_format FROM specifications WHERE event_def_id = event_api_definitions.id),
     spec_type   = (SELECT spec_type FROM specifications WHERE event_def_id = event_api_definitions.id);
+
+DROP VIEW api_resource_definitions;
+DROP VIEW event_resource_definitions;
 
 DROP TABLE specifications;
 
