@@ -3,10 +3,11 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
