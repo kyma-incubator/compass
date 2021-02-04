@@ -1,11 +1,15 @@
-
-# Image URL to use all building/pushing image targets
-# TODO: Check what should be the image name of the controller image
-IMG ?= controller:latest
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+APP_NAME = compass-async-operations
+APP_PATH = components/async-operations
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210125-6234473e
+SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 CRD_OPTIONS ?= "crd:trivialVersions=true"
-
 CHART_PATH = $(realpath $(shell pwd)/../..)/chart/compass/charts/async-operations
+export GO111MODULE = on
+export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
+
+include $(SCRIPTS_DIR)/generic_make_go.mk
+VERIFY_IGNORE := /vendor\|/automock\|/testdata
+
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -16,8 +20,12 @@ endif
 
 all: manager
 
+# Build manager
+build-local:
+	go build -o bin/manager main.go
+
 # Run tests
-test: generate fmt vet manifests
+test-local: generate fmt vet manifests
 	go test ./... -coverprofile cover.out
 
 # Build manager binary
@@ -29,20 +37,20 @@ run: generate fmt vet manifests
 	go run ./main.go
 
 # Install CRDs into a cluster
-install: manifests
+install: manifests copy-crd-to-chart
 	kustomize build config/crd | kubectl apply -f -
 
 # Uninstall CRDs from a cluster
-uninstall: manifests
+uninstall: manifests copy-crd-to-chart
 	kustomize build config/crd | kubectl delete -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests
-	cd config/manager && kustomize edit set image controller=${IMG}
+deploy: manifests copy-crd-to-chart
+	cd config/manager && kustomize edit set image controller=${IMG_NAME}
 	kustomize build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen copy-crd-to-chart
+manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
@@ -54,16 +62,8 @@ vet:
 	go vet ./...
 
 # Generate code
-generate: controller-gen copy-crd-to-chart
+generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-
-# Build the docker image
-docker-build: test
-	docker build . -t ${IMG}
-
-# Push the docker image
-docker-push:
-	docker push ${IMG}
 
 # find or download controller-gen
 # download controller-gen if necessary
@@ -84,3 +84,15 @@ endif
 
 copy-crd-to-chart:
 	cp ./config/crd/bases/* ${CHART_PATH}/templates/crds/
+
+errcheck-local:
+	errcheck -blank -asserts -ignoregenerated ./...
+
+resolve-local:
+	@echo ${SKIP_STEP_MESSAGE}
+
+ensure-local:
+	@echo ${SKIP_STEP_MESSAGE}
+
+dep-status-local:
+	@echo ${SKIP_STEP_MESSAGE}

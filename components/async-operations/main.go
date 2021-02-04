@@ -37,9 +37,16 @@ var (
 )
 
 func init() {
-	_ = clientgoscheme.AddToScheme(scheme)
+	err := clientgoscheme.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
 
-	_ = operationsv0.AddToScheme(scheme)
+	err = operationsv0.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+
 	// +kubebuilder:scaffold:scheme
 }
 
