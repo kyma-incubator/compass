@@ -60,6 +60,8 @@ type Status string
 // +kubebuilder:object:root=true
 
 // Operation is the Schema for the operations API
+// +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.operation_type`
+// +kubebuilder:printcolumn:name="Resource Type",type=string,JSONPath=`.spec.resource_type`
 type Operation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

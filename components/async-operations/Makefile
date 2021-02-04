@@ -37,21 +37,26 @@ run: generate fmt vet manifests
 	go run ./main.go
 
 # Install CRDs into a cluster
-install: manifests copy-crd-to-chart
+install: manifests
 	kustomize build config/crd | kubectl apply -f -
 
 # Uninstall CRDs from a cluster
-uninstall: manifests copy-crd-to-chart
+uninstall: manifests
 	kustomize build config/crd | kubectl delete -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests copy-crd-to-chart
+deploy: manifests
 	cd config/manager && kustomize edit set image controller=${IMG_NAME}
 	kustomize build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+# Copy the CRDs into the Compass chart.
+copy-crds-to-chart:
+	kustomize build config/crd > crds.yaml
+	mv crds.yaml ${CHART_PATH}/templates/crds/
 
 # Run go fmt against code
 fmt:
@@ -81,9 +86,6 @@ CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
-
-copy-crd-to-chart:
-	cp ./config/crd/bases/* ${CHART_PATH}/templates/crds/
 
 errcheck-local:
 	errcheck -blank -asserts -ignoregenerated ./...

@@ -8,6 +8,13 @@ metadata:
   creationTimestamp: null
   name: operations.operations.compass
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.operation_type
+    name: Type
+    type: string
+  - JSONPath: .spec.resource_type
+    name: Resource Type
+    type: string
   group: operations.compass
   names:
     kind: Operation
@@ -15,6 +22,7 @@ spec:
     plural: operations
     singular: operation
   scope: Namespaced
+  subresources: {}
   validation:
     openAPIV3Schema:
       description: Operation is the Schema for the operations API

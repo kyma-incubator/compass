@@ -1,3 +1,2 @@
-controller:
-  name: "controller"
-  namespace: "compass-system"
+manager:
+  replicaCount: 1
