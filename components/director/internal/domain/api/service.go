@@ -24,13 +24,6 @@ type APIRepository interface {
 	Delete(ctx context.Context, tenantID string, id string) error
 }
 
-//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
-type FetchRequestRepository interface {
-	Create(ctx context.Context, item *model.FetchRequest) error
-	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
-	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) error
-}
-
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
@@ -47,20 +40,19 @@ type SpecService interface {
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
+	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
 }
 
 type service struct {
 	repo                APIRepository
-	fetchRequestRepo    FetchRequestRepository
 	uidService          UIDService
 	specService         SpecService
 	timestampGen        timestamp.Generator
 }
 
-func NewService(repo APIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, specService SpecService) *service {
+func NewService(repo APIRepository, uidService UIDService, specService SpecService) *service {
 	return &service{
 		repo:                repo,
-		fetchRequestRepo:    fetchRequestRepo,
 		uidService:          uidService,
 		specService:         specService,
 		timestampGen:        timestamp.DefaultGenerator(),
@@ -201,7 +193,7 @@ func (s *service) GetFetchRequest(ctx context.Context, apiDefID string) (*model.
 
 	var fetchRequest *model.FetchRequest
 	if spec != nil {
-		fetchRequest, err = s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+		fetchRequest, err = s.specService.GetFetchRequest(ctx, spec.ID)
 		if err != nil {
 			if apperrors.IsNotFoundError(err) {
 				return nil, nil

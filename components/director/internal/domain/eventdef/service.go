@@ -25,12 +25,6 @@ type EventAPIRepository interface {
 	Delete(ctx context.Context, tenantID string, id string) error
 }
 
-//go:generate mockery -name=FetchRequestRepository -output=automock -outpkg=automock -case=underscore
-type FetchRequestRepository interface {
-	Create(ctx context.Context, item *model.FetchRequest) error
-	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
-}
-
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
 type UIDService interface {
 	Generate() string
@@ -42,20 +36,19 @@ type SpecService interface {
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error)
 	RefetchSpec(ctx context.Context, id string) (*model.Spec, error)
+	GetFetchRequest(ctx context.Context, specID string) (*model.FetchRequest, error)
 }
 
 type service struct {
 	eventAPIRepo     EventAPIRepository
-	fetchRequestRepo FetchRequestRepository
 	uidService       UIDService
 	specService      SpecService
 	timestampGen     timestamp.Generator
 }
 
-func NewService(eventAPIRepo EventAPIRepository, fetchRequestRepo FetchRequestRepository, uidService UIDService, specService SpecService) *service {
+func NewService(eventAPIRepo EventAPIRepository, uidService UIDService, specService SpecService) *service {
 	return &service{
 		eventAPIRepo:     eventAPIRepo,
-		fetchRequestRepo: fetchRequestRepo,
 		uidService:       uidService,
 		specService:      specService,
 		timestampGen:     timestamp.DefaultGenerator(),
@@ -197,7 +190,7 @@ func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*m
 
 	var fetchRequest *model.FetchRequest
 	if spec != nil {
-		fetchRequest, err = s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, spec.ID)
+		fetchRequest, err = s.specService.GetFetchRequest(ctx, spec.ID)
 		if err != nil {
 			if apperrors.IsNotFoundError(err) {
 				return nil, nil
@@ -207,19 +200,4 @@ func (s *service) GetFetchRequest(ctx context.Context, eventAPIDefID string) (*m
 	}
 
 	return fetchRequest, nil
-}
-
-func (s *service) createFetchRequest(ctx context.Context, tenant string, in *model.FetchRequestInput, parentObjectID string) (*model.FetchRequest, error) {
-	if in == nil {
-		return nil, nil
-	}
-
-	id := s.uidService.Generate()
-	fr := in.ToFetchRequest(s.timestampGen(), id, tenant, model.SpecFetchRequestReference, parentObjectID)
-	err := s.fetchRequestRepo.Create(ctx, fr)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while creating FetchRequest for %s with ID %s", model.SpecFetchRequestReference, parentObjectID)
-	}
-
-	return fr, nil
 }

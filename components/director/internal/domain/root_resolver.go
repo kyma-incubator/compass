@@ -142,8 +142,8 @@ func NewRootResolver(
 
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	apiSvc := api.NewService(apiRepo, fetchRequestRepo, uidSvc, specSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, fetchRequestRepo, uidSvc, specSvc)
+	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
 	webhookSvc := webhook.NewService(webhookRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelUpsertSvc, labelRepo, scenarioAssignmentRepo)

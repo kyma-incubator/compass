@@ -216,9 +216,6 @@ func (s *service) GetFetchRequest(ctx context.Context, specID string) (*model.Fe
 
 	fetchRequest, err := s.fetchRequestRepo.GetByReferenceObjectID(ctx, tnt, model.SpecFetchRequestReference, specID)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, nil
-		}
 		return nil, errors.Wrapf(err, "while getting FetchRequest by Specification with id %q", specID)
 	}
 

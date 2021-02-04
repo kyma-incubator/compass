@@ -66,7 +66,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := event.NewService(repo, nil, nil, nil)
+			svc := event.NewService(repo, nil, nil)
 
 			// when
 			document, err := svc.Get(ctx, testCase.InputID)
@@ -84,7 +84,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := event.NewService(nil, nil, nil, nil)
+		svc := event.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -144,7 +144,7 @@ func TestService_GetForBundle(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := event.NewService(repo, nil, nil, nil)
+			svc := event.NewService(repo, nil, nil)
 
 			// when
 			event, err := svc.GetForBundle(ctx, testCase.InputID, testCase.BundleID)
@@ -162,7 +162,7 @@ func TestService_GetForBundle(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := event.NewService(nil, nil, nil, nil)
+		svc := event.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForBundle(context.TODO(), "", "")
 		// THEN
@@ -254,7 +254,7 @@ func TestService_ListForBundle(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := event.NewService(repo, nil, nil, nil)
+			svc := event.NewService(repo, nil, nil)
 
 			// when
 			docs, err := svc.ListForBundle(ctx, bundleID, testCase.PageSize, after)
@@ -272,7 +272,7 @@ func TestService_ListForBundle(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := event.NewService(nil, nil, nil, nil)
+		svc := event.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForBundle(context.TODO(), "", 5, "")
 		// THEN
@@ -394,7 +394,7 @@ func TestService_CreateInBundle(t *testing.T) {
 			uidService := testCase.UIDServiceFn()
 			specService := testCase.SpecServiceFn()
 
-			svc := event.NewService(repo, nil, uidService, specService)
+			svc := event.NewService(repo, uidService, specService)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -414,7 +414,7 @@ func TestService_CreateInBundle(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := event.NewService(nil, nil, nil, nil)
+		svc := event.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.CreateInBundle(context.TODO(), "", model.EventDefinitionInput{}, &model.SpecInput{})
 		// THEN
@@ -591,7 +591,7 @@ func TestService_Update(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			specSvc := testCase.SpecServiceFn()
 
-			svc := event.NewService(repo, nil, nil, specSvc)
+			svc := event.NewService(repo, nil, specSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -610,7 +610,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := event.NewService(nil, nil, nil, nil)
+		svc := event.NewService(nil, nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), "", model.EventDefinitionInput{}, &model.SpecInput{})
 		// THEN
@@ -662,7 +662,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := event.NewService(repo, nil, nil, nil)
+			svc := event.NewService(repo, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -679,7 +679,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := event.NewService(nil, nil, nil, nil)
+		svc := event.NewService(nil, nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -716,7 +716,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 	testCases := []struct {
 		Name                 string
 		RepositoryFn         func() *automock.EventAPIRepository
-		FetchRequestRepoFn   func() *automock.FetchRequestRepository
 		SpecServiceFn        func() *automock.SpecService
 		InputEventDefID      string
 		ExpectedFetchRequest *model.FetchRequest
@@ -729,14 +728,10 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("GetByReferenceObjectID", ctx, tenantID, model.SpecFetchRequestReference, refID).Return(fetchRequestModel, nil).Once()
-				return repo
-			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", ctx, model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
+				svc.On("GetFetchRequest", ctx, refID).Return(fetchRequestModel, nil).Once()
 				return svc
 			},
 			InputEventDefID:      eventID,
@@ -748,10 +743,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("Exists", ctx, tenantID, eventID).Return(false, nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
 			SpecServiceFn: func() *automock.SpecService {
@@ -767,9 +758,6 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo := &automock.EventAPIRepository{}
 				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
 				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				return &automock.FetchRequestRepository{}
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
@@ -787,14 +775,10 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("GetByReferenceObjectID", ctx, tenantID, model.SpecFetchRequestReference, refID).Return(nil, apperrors.NewNotFoundError(resource.EventDefinition, "")).Once()
-				return repo
-			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", ctx, model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
+				svc.On("GetFetchRequest", ctx, refID).Return(nil, apperrors.NewNotFoundError(resource.FetchRequest, "")).Once()
 				return svc
 			},
 			InputEventDefID:      eventID,
@@ -802,14 +786,11 @@ func TestService_GetFetchRequest(t *testing.T) {
 			ExpectedErrMessage:   "",
 		},
 		{
-			Name: "Error - Get FetchRequest",
+			Name: "Error - Get Spec",
 			RepositoryFn: func() *automock.EventAPIRepository {
 				repo := &automock.EventAPIRepository{}
 				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
 				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				return &automock.FetchRequestRepository{}
 			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
@@ -827,14 +808,10 @@ func TestService_GetFetchRequest(t *testing.T) {
 				repo.On("Exists", ctx, tenantID, eventID).Return(true, nil).Once()
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("GetByReferenceObjectID", ctx, tenantID, model.SpecFetchRequestReference, refID).Return(nil, testErr).Once()
-				return repo
-			},
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				svc.On("GetByReferenceObjectID", ctx, model.EventSpecReference, eventID).Return(modelSpec, nil).Once()
+				svc.On("GetFetchRequest", ctx, refID).Return(nil, testErr).Once()
 				return svc
 			},
 			InputEventDefID:      eventID,
@@ -846,10 +823,9 @@ func TestService_GetFetchRequest(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			specService := testCase.SpecServiceFn()
 
-			svc := event.NewService(repo, fetchRequestRepo, nil, specService)
+			svc := event.NewService(repo,nil, specService)
 
 			// when
 			l, err := svc.GetFetchRequest(ctx, testCase.InputEventDefID)
@@ -864,11 +840,10 @@ func TestService_GetFetchRequest(t *testing.T) {
 			}
 
 			repo.AssertExpectations(t)
-			fetchRequestRepo.AssertExpectations(t)
 		})
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := event.NewService(nil, nil, nil, nil)
+		svc := event.NewService(nil, nil, nil)
 		// when
 		_, err := svc.GetFetchRequest(context.TODO(), "dd")
 		assert.True(t, apperrors.IsCannotReadTenant(err))
