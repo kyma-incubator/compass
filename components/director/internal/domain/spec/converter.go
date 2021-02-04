@@ -31,8 +31,8 @@ func (c *converter) ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error) {
 		return nil, nil
 	}
 
-	if in.ObjectType != model.APISpecReference {
-		return nil, fmt.Errorf("could not convert %s Spec to API Spec", in.ObjectType)
+	if in.ObjectType != model.APISpecReference || in.APIType == nil {
+		return nil, fmt.Errorf("could not convert %s Spec to API Spec with APIType %v", in.ObjectType, in.APIType)
 	}
 
 	var data *graphql.CLOB
@@ -54,8 +54,8 @@ func (c *converter) ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec, erro
 		return nil, nil
 	}
 
-	if in.ObjectType != model.EventSpecReference {
-		return nil, fmt.Errorf("could not convert %s Spec to Event Spec", in.ObjectType)
+	if in.ObjectType != model.EventSpecReference || in.EventType == nil {
+		return nil, fmt.Errorf("could not convert %s Spec to Event Spec with EventType %v", in.ObjectType, in.EventType)
 	}
 
 	var data *graphql.CLOB
@@ -112,7 +112,7 @@ func (c *converter) InputFromGraphQLEventSpec(in *graphql.EventSpecInput) (*mode
 	}, nil
 }
 
-func (c *converter) ToEntity(in model.Spec) (Entity, error) {
+func (c *converter) ToEntity(in model.Spec) Entity {
 	refID := repo.NewValidNullableString(in.ObjectID)
 
 	var apiDefID sql.NullString
@@ -145,7 +145,7 @@ func (c *converter) ToEntity(in model.Spec) (Entity, error) {
 		EventSpecFormat: eventSpecFormat,
 		EventSpecType:   eventSpecType,
 		CustomType:      repo.NewNullableString(in.CustomType),
-	}, nil
+	}
 }
 
 func (c *converter) FromEntity(in Entity) (model.Spec, error) {

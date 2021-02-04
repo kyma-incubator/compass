@@ -126,6 +126,10 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, tenant strin
 }
 
 func (r *repository) Update(ctx context.Context, item *model.Spec) error {
+	if item == nil {
+		return apperrors.NewInternalError("item cannot be nil")
+	}
+
 	entity, err := r.conv.ToEntity(*item)
 	if err != nil {
 		return err

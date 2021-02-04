@@ -639,7 +639,6 @@ func TestService_Delete(t *testing.T) {
 	testCases := []struct {
 		Name         string
 		RepositoryFn func() *automock.APIRepository
-		Input        model.APIDefinitionInput
 		InputID      string
 		ExpectedErr  error
 	}{
