@@ -17,6 +17,5 @@ RUN apk add --no-cache curl
 
 LABEL source=git@github.com:kyma-incubator/compass.git
 
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service/wait-for-components.sh .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service/ord-service.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service/licenses ./licenses
