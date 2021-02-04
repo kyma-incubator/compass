@@ -26,4 +26,3 @@ func (e Entity) WithStatus(status TenantStatus) Entity {
 	e.Status = status
 	return e
 }
-
