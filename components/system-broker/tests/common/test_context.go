@@ -25,7 +25,7 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	gql "github.com/machinebox/graphql"
 
-	"github.com/gavv/httpexpect"
+	"github.com/gavv/httpexpect/v2"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/config"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	sblog "github.com/kyma-incubator/compass/components/system-broker/pkg/log"

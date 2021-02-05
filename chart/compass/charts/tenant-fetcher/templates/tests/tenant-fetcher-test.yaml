@@ -27,7 +27,7 @@ spec:
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.tests.tenant_fetcher.dir }}tenant-fetcher-tests:{{ .Values.global.images.tests.tenant_fetcher.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
-          args: ["-c", "./wait-for-tenant-fetcher.sh && /tenant-fetcher.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "/tenant-fetcher.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: TENANT_FETCHER_URL
               value: "http://compass-tenant-fetcher.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.tenantFetcher.port }}"
