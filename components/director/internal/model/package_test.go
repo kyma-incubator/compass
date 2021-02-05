@@ -3,9 +3,10 @@ package model_test
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestPackageInput_ToPackage(t *testing.T) {

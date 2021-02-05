@@ -35,16 +35,16 @@ type service struct {
 	eventSvc    EventService
 	documentSvc DocumentService
 
-	uidService   UIDService
+	uidService UIDService
 }
 
 func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventService, documentSvc DocumentService, uidService UIDService) *service {
 	return &service{
-		bndlRepo:     bndlRepo,
-		apiSvc:       apiSvc,
-		eventSvc:     eventSvc,
-		documentSvc:  documentSvc,
-		uidService:   uidService,
+		bndlRepo:    bndlRepo,
+		apiSvc:      apiSvc,
+		eventSvc:    eventSvc,
+		documentSvc: documentSvc,
+		uidService:  uidService,
 	}
 }
 

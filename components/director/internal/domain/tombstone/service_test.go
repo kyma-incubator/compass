@@ -1,13 +1,13 @@
-package mp_package_test
+package tombstone_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tombstone/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -22,42 +22,31 @@ func TestService_Create(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
-	modelPackage := fixPackageModel()
-	modelInput := *fixPackageModelInput()
+	modelTombstone := fixTombstoneModel()
+	modelInput := *fixTombstoneModelInput()
 
 	testCases := []struct {
 		Name         string
-		RepositoryFn func() *automock.PackageRepository
-		UIDServiceFn func() *automock.UIDService
-		Input        model.PackageInput
+		RepositoryFn func() *automock.TombstoneRepository
+		Input        model.TombstoneInput
 		ExpectedErr  error
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(nil).Once()
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("Create", ctx, modelTombstone).Return(nil).Once()
 				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(packageID)
-				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
 		{
-			Name: "Error - Package creation",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Create", ctx, modelPackage).Return(testErr).Once()
+			Name: "Error - Tombstone creation",
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("Create", ctx, modelTombstone).Return(testErr).Once()
 				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(packageID).Once()
-				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
@@ -68,9 +57,8 @@ func TestService_Create(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
-			upackageIDService := testCase.UIDServiceFn()
 
-			svc := mp_package.NewService(repo, upackageIDService)
+			svc := tombstone.NewService(repo)
 
 			// when
 			result, err := svc.Create(ctx, appID, testCase.Input)
@@ -83,13 +71,13 @@ func TestService_Create(t *testing.T) {
 				assert.IsType(t, "string", result)
 			}
 
-			mock.AssertExpectationsForObjects(t, repo, upackageIDService)
+			mock.AssertExpectationsForObjects(t, repo)
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := tombstone.NewService(nil)
 		// WHEN
-		_, err := svc.Create(context.TODO(), "", model.PackageInput{})
+		_, err := svc.Create(context.TODO(), "", model.TombstoneInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -100,11 +88,11 @@ func TestService_Update(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	modelPackage := fixPackageModel()
-	modelInput := *fixPackageModelInput()
+	modelTombstone := fixTombstoneModel()
+	modelInput := *fixTombstoneModelInput()
 
-	inputPackageModel := mock.MatchedBy(func(pkg *model.Package) bool {
-		return pkg.Title == modelInput.Title
+	inputTombstoneModel := mock.MatchedBy(func(ts *model.Tombstone) bool {
+		return ts.OrdID == modelInput.OrdID
 	})
 
 	ctx := context.TODO()
@@ -112,43 +100,43 @@ func TestService_Update(t *testing.T) {
 
 	testCases := []struct {
 		Name         string
-		RepositoryFn func() *automock.PackageRepository
-		Input        model.PackageInput
+		RepositoryFn func() *automock.TombstoneRepository
+		Input        model.TombstoneInput
 		InputID      string
 		ExpectedErr  error
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("GetByID", ctx, tenantID, packageID).Return(modelPackage, nil).Once()
-				repo.On("Update", ctx, inputPackageModel).Return(nil).Once()
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("GetByID", ctx, tenantID, ordID).Return(modelTombstone, nil).Once()
+				repo.On("Update", ctx, inputTombstoneModel).Return(nil).Once()
 				return repo
 			},
-			InputID:     packageID,
+			InputID:     ordID,
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
 		{
 			Name: "Update Error",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("GetByID", ctx, tenantID, packageID).Return(modelPackage, nil).Once()
-				repo.On("Update", ctx, inputPackageModel).Return(testErr).Once()
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("GetByID", ctx, tenantID, ordID).Return(modelTombstone, nil).Once()
+				repo.On("Update", ctx, inputTombstoneModel).Return(testErr).Once()
 				return repo
 			},
-			InputID:     packageID,
+			InputID:     ordID,
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
 		{
 			Name: "Get Error",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("GetByID", ctx, tenantID, packageID).Return(nil, testErr).Once()
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("GetByID", ctx, tenantID, ordID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:     packageID,
+			InputID:     ordID,
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -159,7 +147,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_package.NewService(repo, nil)
+			svc := tombstone.NewService(repo)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -176,9 +164,9 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := tombstone.NewService(nil)
 		// WHEN
-		err := svc.Update(context.TODO(), "", model.PackageInput{})
+		err := svc.Update(context.TODO(), "", model.TombstoneInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -194,29 +182,29 @@ func TestService_Delete(t *testing.T) {
 
 	testCases := []struct {
 		Name         string
-		RepositoryFn func() *automock.PackageRepository
-		Input        model.PackageInput
+		RepositoryFn func() *automock.TombstoneRepository
+		Input        model.TombstoneInput
 		InputID      string
 		ExpectedErr  error
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Delete", ctx, tenantID, packageID).Return(nil).Once()
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("Delete", ctx, tenantID, ordID).Return(nil).Once()
 				return repo
 			},
-			InputID:     packageID,
+			InputID:     ordID,
 			ExpectedErr: nil,
 		},
 		{
 			Name: "Delete Error",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("Delete", ctx, tenantID, packageID).Return(testErr).Once()
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("Delete", ctx, tenantID, ordID).Return(testErr).Once()
 				return repo
 			},
-			InputID:     packageID,
+			InputID:     ordID,
 			ExpectedErr: testErr,
 		},
 	}
@@ -226,7 +214,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_package.NewService(repo, nil)
+			svc := tombstone.NewService(repo)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -243,7 +231,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := tombstone.NewService(nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -256,28 +244,27 @@ func TestService_Exist(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 	ctx := tenant.SaveToContext(context.TODO(), tenantID, externalTenantID)
-	packageID := packageID
 
 	testCases := []struct {
 		Name           string
-		RepoFn         func() *automock.PackageRepository
+		RepoFn         func() *automock.TombstoneRepository
 		ExpectedError  error
 		ExpectedOutput bool
 	}{
 		{
 			Name: "Success",
-			RepoFn: func() *automock.PackageRepository {
-				pkgRepo := &automock.PackageRepository{}
-				pkgRepo.On("Exists", ctx, tenantID, packageID).Return(true, nil).Once()
+			RepoFn: func() *automock.TombstoneRepository {
+				pkgRepo := &automock.TombstoneRepository{}
+				pkgRepo.On("Exists", ctx, tenantID, ordID).Return(true, nil).Once()
 				return pkgRepo
 			},
 			ExpectedOutput: true,
 		},
 		{
-			Name: "Error when getting Package",
-			RepoFn: func() *automock.PackageRepository {
-				pkgRepo := &automock.PackageRepository{}
-				pkgRepo.On("Exists", ctx, tenantID, packageID).Return(false, testErr).Once()
+			Name: "Error when getting Tombstone",
+			RepoFn: func() *automock.TombstoneRepository {
+				pkgRepo := &automock.TombstoneRepository{}
+				pkgRepo.On("Exists", ctx, tenantID, ordID).Return(false, testErr).Once()
 				return pkgRepo
 			},
 			ExpectedError:  testErr,
@@ -288,10 +275,10 @@ func TestService_Exist(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			pkgRepo := testCase.RepoFn()
-			svc := mp_package.NewService(pkgRepo, nil)
+			svc := tombstone.NewService(pkgRepo)
 
 			// WHEN
-			result, err := svc.Exist(ctx, packageID)
+			result, err := svc.Exist(ctx, ordID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -307,7 +294,7 @@ func TestService_Exist(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := tombstone.NewService(nil)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "")
 		// THEN
@@ -320,39 +307,39 @@ func TestService_Get(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	pkg := fixPackageModel()
+	pkg := fixTombstoneModel()
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
 	testCases := []struct {
 		Name               string
-		RepositoryFn       func() *automock.PackageRepository
-		Input              model.PackageInput
+		RepositoryFn       func() *automock.TombstoneRepository
+		Input              model.TombstoneInput
 		InputID            string
-		ExpectedPackage    *model.Package
+		ExpectedTombstone  *model.Tombstone
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("GetByID", ctx, tenantID, packageID).Return(pkg, nil).Once()
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("GetByID", ctx, tenantID, ordID).Return(pkg, nil).Once()
 				return repo
 			},
-			InputID:            packageID,
-			ExpectedPackage:    pkg,
+			InputID:            ordID,
+			ExpectedTombstone:  pkg,
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Returns error when Package retrieval failed",
-			RepositoryFn: func() *automock.PackageRepository {
-				repo := &automock.PackageRepository{}
-				repo.On("GetByID", ctx, tenantID, packageID).Return(nil, testErr).Once()
+			Name: "Returns error when Tombstone retrieval failed",
+			RepositoryFn: func() *automock.TombstoneRepository {
+				repo := &automock.TombstoneRepository{}
+				repo.On("GetByID", ctx, tenantID, ordID).Return(nil, testErr).Once()
 				return repo
 			},
-			InputID:            packageID,
-			ExpectedPackage:    pkg,
+			InputID:            ordID,
+			ExpectedTombstone:  pkg,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
@@ -360,7 +347,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_package.NewService(repo, nil)
+			svc := tombstone.NewService(repo)
 
 			// when
 			pkg, err := svc.Get(ctx, testCase.InputID)
@@ -368,7 +355,7 @@ func TestService_Get(t *testing.T) {
 			// then
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedPackage, pkg)
+				assert.Equal(t, testCase.ExpectedTombstone, pkg)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
@@ -378,7 +365,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_package.NewService(nil, nil)
+		svc := tombstone.NewService(nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN

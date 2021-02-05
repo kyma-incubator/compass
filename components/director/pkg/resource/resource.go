@@ -12,6 +12,8 @@ const (
 	Bundle                     Type = "Bundle"
 	Package                    Type = "Package"
 	Product                    Type = "Product"
+	Vendor                     Type = "Vendor"
+	Tombstone                  Type = "Tombstone"
 	IntegrationSystem          Type = "IntegrationSystem"
 	Tenant                     Type = "Tenant"
 	SystemAuth                 Type = "SystemAuth"

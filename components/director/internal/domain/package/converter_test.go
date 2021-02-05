@@ -1,10 +1,11 @@
 package mp_package_test
 
 import (
+	"testing"
+
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestEntityConverter_ToEntity(t *testing.T) {
