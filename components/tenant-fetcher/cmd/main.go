@@ -178,13 +178,13 @@ func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam string) 
 		var tenant model.TenantModel
 		if err := json.Unmarshal(body, &tenant); err != nil {
 			logger.Error(errors.Wrapf(err, "while unmarshalling body"))
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		if err := svc.Create(request.Context(), tenant); err != nil {
 			logger.Error(errors.Wrapf(err, "while creating tenant"))
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
@@ -192,7 +192,7 @@ func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam string) 
 		writer.WriteHeader(http.StatusOK)
 		if _, err := writer.Write([]byte(compassURL)); err != nil {
 			logger.Error(errors.Wrapf(err, "while writing response body"))
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
