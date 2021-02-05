@@ -19,7 +19,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"io/ioutil"
 	"net/http"
 	"os"
