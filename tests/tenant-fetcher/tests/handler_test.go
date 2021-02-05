@@ -87,7 +87,8 @@ func TestOnboardingHandler(t *testing.T) {
 	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), cisTenant.Id, 1)
 	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
-	byteTenant, _ := json.Marshal(cisTenant)
+	byteTenant, err := json.Marshal(cisTenant)
+	require.NoError(t, err)
 	request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
 	require.NoError(t, err)
 
@@ -121,7 +122,8 @@ func TestDecommissioningHandler(t *testing.T) {
 	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 	// Add test tenant
-	byteTenant, _ := json.Marshal(cisTenant)
+	byteTenant, err := json.Marshal(cisTenant)
+	require.NoError(t, err)
 	request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
 	require.NoError(t, err)
 
