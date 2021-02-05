@@ -32,7 +32,7 @@ spec:
       - args:
         - --metrics-addr=127.0.0.1:8080
         - --enable-leader-election
-        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-async-operations:{{ .Values.global.images.async_operations.version }}
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
         name: manager
         resources:
           limits:

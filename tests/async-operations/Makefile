@@ -1,5 +1,5 @@
-APP_NAME = async-operations-tests
-APP_PATH = tests/async-operations-tests
+APP_NAME = operations-controller-tests
+APP_PATH = tests/operations-controller-tests
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20201208-f3aa8f74
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"

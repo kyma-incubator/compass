@@ -1,9 +1,9 @@
-APP_NAME = compass-async-operations
-APP_PATH = components/async-operations
+APP_NAME = compass-operations-controller
+APP_PATH = components/operations-controller
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210125-6234473e
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 CRD_OPTIONS ?= "crd:trivialVersions=true"
-CHART_PATH = $(realpath $(shell pwd)/../..)/chart/compass/charts/async-operations
+CHART_PATH = $(realpath $(shell pwd)/../..)/chart/compass/charts/operations-controller
 export GO111MODULE = on
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
 

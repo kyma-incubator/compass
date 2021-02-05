@@ -1,4 +1,4 @@
-module github.com/kyma-incubator/compass/tests/async-operations
+module github.com/kyma-incubator/compass/tests/operations-controller
 
 go 1.14
 

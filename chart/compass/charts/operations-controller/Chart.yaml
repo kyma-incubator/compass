@@ -1,4 +1,4 @@
 apiVersion: v1
 description: A Helm chart for the Operations CRD
-name: async-operations
+name: operations-controller
 version: 0.1.0

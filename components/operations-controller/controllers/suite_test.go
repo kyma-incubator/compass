@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	operationsv0 "github.com/kyma-incubator/compass/components/async-operations/api/v0"
+	operationsv0 "github.com/kyma-incubator/compass/components/operations-controller/api/v0"
 	// +kubebuilder:scaffold:imports
 )
 

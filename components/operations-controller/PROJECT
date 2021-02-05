@@ -1,5 +1,5 @@
 domain: compass
-repo: github.com/kyma-incubator/compass/components/async-operations
+repo: github.com/kyma-incubator/compass/components/operations-controller
 resources:
 - group: operations
   kind: Operation
