@@ -57,6 +57,9 @@ global:
       dir:
       version: "PR-12"
     tests:
+      async_operations:
+        dir:
+        version: "PR-1717"
       director:
         dir:
         version: "PR-1715"
