@@ -20,13 +20,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/tenant-fetcher/tools/director"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/tenant-fetcher/tools/director"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 )
