@@ -16,7 +16,7 @@ import (
 func fixModelAPIDefinition(id string, bndlID string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:          id,
-		BundleID:    bndlID,
+		BundleID:    &bndlID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,

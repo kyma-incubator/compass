@@ -172,10 +172,10 @@ func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		GroupName:   repo.NewValidNullableString("group_" + placeholder),
 		Version: version.Version{
-			VersionValue:           repo.NewNullableString(str.Ptr("v1.1")),
-			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
-			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
-			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
+			Value:           repo.NewNullableString(str.Ptr("v1.1")),
+			Deprecated:      repo.NewNullableBool(&boolPlaceholder),
+			DeprecatedSince: repo.NewNullableString(str.Ptr("v1.0")),
+			ForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
 	}
 }

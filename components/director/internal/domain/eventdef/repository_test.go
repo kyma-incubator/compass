@@ -233,8 +233,8 @@ func TestPgRepository_Update(t *testing.T) {
 		convMock := &automock.EventAPIDefinitionConverter{}
 		convMock.On("ToEntity", eventModel).Return(entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.Name, entity.Description, entity.GroupName, entity.VersionValue, entity.VersionDepracated,
-				entity.VersionDepracatedSince, entity.VersionForRemoval, tenantID, entity.ID).
+			WithArgs(entity.Name, entity.Description, entity.GroupName, entity.Value, entity.Deprecated,
+				entity.DeprecatedSince, entity.ForRemoval, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		pgRepository := event.NewRepository(convMock)

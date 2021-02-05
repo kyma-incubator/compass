@@ -134,7 +134,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return err
 	}
 
-	api = in.ToAPIDefinitionWithinBundle(id, api.BundleID, tnt)
+	api = in.ToAPIDefinition(id, api.BundleID, api.PackageID, tnt)
 
 	err = s.repo.Update(ctx, api)
 	if err != nil {

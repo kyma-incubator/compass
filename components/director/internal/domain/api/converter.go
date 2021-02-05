@@ -42,9 +42,14 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 		return nil, err
 	}
 
+	var bundleID string
+	if in.BundleID != nil {
+		bundleID = *in.BundleID
+	}
+
 	return &graphql.APIDefinition{
 		ID:          in.ID,
-		BundleID:    in.BundleID,
+		BundleID:    bundleID,
 		Name:        in.Name,
 		Description: in.Description,
 		Spec:        s,
@@ -115,28 +120,66 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
-		ID:          entity.ID,
-		BundleID:    entity.BndlID,
-		Name:        entity.Name,
-		TargetURL:   entity.TargetURL,
-		Tenant:      entity.TenantID,
-		Description: repo.StringPtrFromNullableString(entity.Description),
-		Group:       repo.StringPtrFromNullableString(entity.Group),
-		Version:     c.version.FromEntity(entity.Version),
+		ID:                  entity.ID,
+		BundleID:            repo.StringPtrFromNullableString(entity.BndlID),
+		PackageID:           repo.StringPtrFromNullableString(entity.PackageID),
+		Tenant:              entity.TenantID,
+		Name:                entity.Name,
+		Description:         repo.StringPtrFromNullableString(entity.Description),
+		TargetURL:           entity.TargetURL,
+		Group:               repo.StringPtrFromNullableString(entity.Group),
+		OrdID:               repo.StringPtrFromNullableString(entity.OrdID),
+		ShortDescription:    repo.StringPtrFromNullableString(entity.ShortDescription),
+		SystemInstanceAware: repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
+		ApiProtocol:         repo.StringPtrFromNullableString(entity.ApiProtocol),
+		Tags:                repo.JSONRawMessageFromNullableString(entity.Tags),
+		Countries:           repo.JSONRawMessageFromNullableString(entity.Countries),
+		Links:               repo.JSONRawMessageFromNullableString(entity.Links),
+		APIResourceLinks:    repo.JSONRawMessageFromNullableString(entity.APIResourceLinks),
+		ReleaseStatus:       repo.StringPtrFromNullableString(entity.ReleaseStatus),
+		SunsetDate:          repo.StringPtrFromNullableString(entity.SunsetDate),
+		Successor:           repo.StringPtrFromNullableString(entity.Successor),
+		ChangeLogEntries:    repo.JSONRawMessageFromNullableString(entity.ChangeLogEntries),
+		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
+		Visibility:          repo.StringPtrFromNullableString(entity.Visibility),
+		Disabled:            repo.BoolPtrFromNullableBool(entity.Disabled),
+		PartOfProducts:      repo.JSONRawMessageFromNullableString(entity.PartOfProducts),
+		LineOfBusiness:      repo.JSONRawMessageFromNullableString(entity.LineOfBusiness),
+		Industry:            repo.JSONRawMessageFromNullableString(entity.Industry),
+		Version:             c.version.FromEntity(entity.Version),
 	}
 }
 
 func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 
 	return Entity{
-		ID:          apiModel.ID,
-		TenantID:    apiModel.Tenant,
-		BndlID:      apiModel.BundleID,
-		Name:        apiModel.Name,
-		Description: repo.NewNullableString(apiModel.Description),
-		Group:       repo.NewNullableString(apiModel.Group),
-		TargetURL:   apiModel.TargetURL,
-		Version:     c.convertVersionToEntity(apiModel.Version),
+		ID:                  apiModel.ID,
+		TenantID:            apiModel.Tenant,
+		BndlID:              repo.NewNullableString(apiModel.BundleID),
+		PackageID:           repo.NewNullableString(apiModel.PackageID),
+		Name:                apiModel.Name,
+		Description:         repo.NewNullableString(apiModel.Description),
+		Group:               repo.NewNullableString(apiModel.Group),
+		TargetURL:           apiModel.TargetURL,
+		OrdID:               repo.NewNullableString(apiModel.OrdID),
+		ShortDescription:    repo.NewNullableString(apiModel.ShortDescription),
+		SystemInstanceAware: repo.NewNullableBool(apiModel.SystemInstanceAware),
+		ApiProtocol:         repo.NewNullableString(apiModel.ApiProtocol),
+		Tags:                repo.NewNullableStringFromJSONRawMessage(apiModel.Tags),
+		Countries:           repo.NewNullableStringFromJSONRawMessage(apiModel.Countries),
+		Links:               repo.NewNullableStringFromJSONRawMessage(apiModel.Links),
+		APIResourceLinks:    repo.NewNullableStringFromJSONRawMessage(apiModel.APIResourceLinks),
+		ReleaseStatus:       repo.NewNullableString(apiModel.ReleaseStatus),
+		SunsetDate:          repo.NewNullableString(apiModel.SunsetDate),
+		Successor:           repo.NewNullableString(apiModel.Successor),
+		ChangeLogEntries:    repo.NewNullableStringFromJSONRawMessage(apiModel.ChangeLogEntries),
+		Labels:              repo.NewNullableStringFromJSONRawMessage(apiModel.Labels),
+		Visibility:          repo.NewNullableString(apiModel.Visibility),
+		Disabled:            repo.NewNullableBool(apiModel.Disabled),
+		PartOfProducts:      repo.NewNullableStringFromJSONRawMessage(apiModel.PartOfProducts),
+		LineOfBusiness:      repo.NewNullableStringFromJSONRawMessage(apiModel.LineOfBusiness),
+		Industry:            repo.NewNullableStringFromJSONRawMessage(apiModel.Industry),
+		Version:             c.convertVersionToEntity(apiModel.Version),
 	}
 }
 

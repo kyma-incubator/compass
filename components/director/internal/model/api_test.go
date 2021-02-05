@@ -33,7 +33,7 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 			},
 			Expected: &model.APIDefinition{
 				ID:          id,
-				BundleID:    bndlID,
+				BundleID:    &bndlID,
 				Name:        name,
 				Description: &desc,
 				TargetURL:   targetUrl,
