@@ -137,7 +137,7 @@ kind: Service
 metadata:
   labels:
     control-plane: controller-manager
-  name: {{ template "fullname" . }}-controller-manager-metrics-service
+  name: {{ printf "%s-%s" (include "fullname" .) "manager-metrics-service" | trunc 63 | trimSuffix "-" }}
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
