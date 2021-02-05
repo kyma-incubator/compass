@@ -56,7 +56,7 @@ manifests: controller-gen
 # Copy the CRDs into the Compass chart.
 copy-crds-to-chart:
 	kustomize build config/crd > crds.yaml
-	mv crds.yaml ${CHART_PATH}/templates/crds/
+	mv crds.yaml ${CHART_PATH}/templates/
 
 # Run go fmt against code
 fmt:
