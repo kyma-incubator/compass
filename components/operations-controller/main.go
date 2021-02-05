@@ -30,8 +30,11 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	devLogging       = true
+	scheme           = runtime.NewScheme()
+	port             = 9443
+	leaderElectionID = "c8593142.compass"
+	setupLog         = ctrl.Log.WithName("setup")
 )
 
 func init() {
@@ -57,14 +60,14 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	ctrl.SetLogger(zap.New(zap.UseDevMode(devLogging)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
-		Port:               9443,
+		Port:               port,
 		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "c8593142.compass",
+		LeaderElectionID:   leaderElectionID,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
