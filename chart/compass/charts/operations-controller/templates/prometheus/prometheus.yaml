@@ -1,3 +1,4 @@
+{{- if eq .Values.global.metrics.enabled true -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -12,3 +13,4 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+{{- end }}
