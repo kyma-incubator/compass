@@ -10,6 +10,7 @@ const (
 	LabelDefinition            Type = "LabelDefinition"
 	Label                      Type = "Label"
 	Bundle                     Type = "Bundle"
+	Package                    Type = "Package"
 	IntegrationSystem          Type = "IntegrationSystem"
 	Tenant                     Type = "Tenant"
 	SystemAuth                 Type = "SystemAuth"

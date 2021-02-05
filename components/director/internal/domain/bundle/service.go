@@ -9,7 +9,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 	"github.com/pkg/errors"
 )
 
@@ -37,7 +36,6 @@ type service struct {
 	documentSvc DocumentService
 
 	uidService   UIDService
-	timestampGen timestamp.Generator
 }
 
 func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventService, documentSvc DocumentService, uidService UIDService) *service {
@@ -47,7 +45,6 @@ func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventServ
 		eventSvc:     eventSvc,
 		documentSvc:  documentSvc,
 		uidService:   uidService,
-		timestampGen: timestamp.DefaultGenerator(),
 	}
 }
 

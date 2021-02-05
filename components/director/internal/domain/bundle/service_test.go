@@ -3,9 +3,6 @@ package mp_bundle_test
 import (
 	"context"
 	"fmt"
-	"testing"
-	"time"
-
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -15,13 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	timestamp := time.Now()
 	id := "foo"
 	applicationID := "appid"
 	name := "foo"
@@ -247,7 +244,6 @@ func TestService_Create(t *testing.T) {
 			eventSvc := testCase.EventServiceFn()
 			documentSvc := testCase.DocumentServiceFn()
 			svc := mp_bundle.NewService(repo, apiSvc, eventSvc, documentSvc, uidService)
-			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
 			result, err := svc.Create(ctx, applicationID, testCase.Input)
