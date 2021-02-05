@@ -29,7 +29,7 @@
   name = "golang.org/x/sys"
   packages = ["execabs"]
   pruneopts = "UT"
-  revision = "b64e53b001e413bd5067f36d4e439eded3827374"
+  revision = "22da62e12c0cd9c1da93581e1113ca4d82a5be14"
 
 [[projects]]
   digest = "1:5af6d16efac689c41eb96f842a331e40cbc9e7bab1fbf54fee98fc738fa85892"
