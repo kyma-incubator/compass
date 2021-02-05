@@ -139,7 +139,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("400 when requests to ORD Service event specification do not have tenant header", func(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
-		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
+		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
@@ -161,7 +161,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
-		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
+		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
@@ -352,7 +352,7 @@ func TestORDService(t *testing.T) {
 
 				specURL := specs[0].Get("url").String()
 				specPath := fmt.Sprintf("/event/%s/specification", eventID)
-				require.Contains(t, specPath, testConfig.ORDServiceStaticURL+specPath)
+				require.Contains(t, specURL, testConfig.ORDServiceStaticURL+specPath)
 
 				respBody := makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testData.tenant}})
 
@@ -533,7 +533,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("404 when request to ORD Service for event spec have another tenant header value", func(t *testing.T) {
 		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
-		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
+		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
