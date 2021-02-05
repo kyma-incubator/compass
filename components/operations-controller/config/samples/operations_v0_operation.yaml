@@ -1,4 +1,4 @@
-apiVersion: operations.compass/v0
+apiVersion: operations.compass/v1alpha1
 kind: Operation
 metadata:
   name: operation-sample

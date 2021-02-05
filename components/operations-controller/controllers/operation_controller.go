@@ -24,7 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operationsv0 "github.com/kyma-incubator/compass/components/operations-controller/api/v0"
+	operationsv1alpha1 "github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 )
 
 // OperationReconciler reconciles a Operation object
@@ -48,6 +48,6 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&operationsv0.Operation{}).
+		For(&operationsv1alpha1.Operation{}).
 		Complete(r)
 }

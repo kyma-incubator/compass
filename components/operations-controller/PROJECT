@@ -3,5 +3,5 @@ repo: github.com/kyma-incubator/compass/components/operations-controller
 resources:
 - group: operations
   kind: Operation
-  version: v0
+  version: v1alpha1
 version: "2"
