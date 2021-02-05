@@ -16,5 +16,5 @@ func TestMain(m *testing.M) {
 }
 
 func TestAsyncOperations(t *testing.T) {
-	t.Skip()
+
 }
