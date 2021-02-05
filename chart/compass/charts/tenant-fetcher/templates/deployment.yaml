@@ -50,6 +50,8 @@ spec:
 {{ toYaml . | indent 12 }}
           {{- end }}
           env:
+            - name: APP_TENANT
+              value: {{ .Values.global.defaultTenant }}
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_ROOT_API
@@ -92,6 +94,16 @@ spec:
               value: "{{.Values.deployment.dbPool.maxOpenConnections}}"
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: "{{.Values.deployment.dbPool.maxIdleConnections}}"
+            - name: APP_CIS_IDENTITY_ZONE
+              value: "sap-provisioning"
+            {{- range $authenticatorName, $config := .Values.global.authenticators }}
+            {{- if eq $config.enabled true }}
+            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ $config.trusted_issuers | quote }}
+            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ $config.attributes | quote }}
+            {{- end }}
+            {{- end }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

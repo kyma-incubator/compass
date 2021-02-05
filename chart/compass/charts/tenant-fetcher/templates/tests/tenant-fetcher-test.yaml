@@ -39,4 +39,55 @@ spec:
               value: "{{ .Values.server.handlerEndpoint }}"
             - name: TENANT_PATH_PARAM
               value: "{{ .Values.server.tenantPathParam }}"
+            - name: APP_DIRECTOR_URL
+              value: http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.port }}/graphql
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name│
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-director-username
+                  name: compass-postgresql
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-director-password
+                  name: compass-postgresql
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-serviceName
+                  name: compass-postgresql
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-servicePort
+                  name: compass-postgresql
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-director-db-name
+                  name: compass-postgresql
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-sslMode
+                  name: compass-postgresql
+            - name: APP_DB_MAX_OPEN_CONNECTIONS
+              value: "30"
+            - name: APP_DB_MAX_IDLE_CONNECTIONS
+              value: "2"
+            - name: APP_CIS_IDENTITY_ZONE
+              value: sap-provisioning
+            {{- range $authenticatorName, $config := .Values.global.authenticators }}
+            {{- if eq $config.enabled true }}
+            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ $config.trusted_issuers | quote }}
+            - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ $config.attributes | quote }}
+            {{- end }}
+            {{- end }}
       restartPolicy: Never

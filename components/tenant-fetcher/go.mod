@@ -5,10 +5,12 @@ go 1.15
 //replace github.com/kyma-incubator/compass/components/director => ../director
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
+	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/google/uuid v1.1.5
 	github.com/gophercloud/gophercloud v0.1.0 // indirect
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210203121941-06c769e27c35
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210204111930-45b8c6c7bb7b
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/stretchr/testify v1.7.0

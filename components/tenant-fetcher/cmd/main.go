@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -38,6 +39,7 @@ import (
 )
 
 const compassURL = "https://github.com/kyma-incubator/compass"
+const envPrefix = "APP"
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
@@ -53,6 +55,8 @@ type config struct {
 
 	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
 	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+
+	CISIdentityZone string `envconfig:"APP_CIS_IDENTITY_ZONE"`
 }
 
 func main() {
@@ -74,7 +78,10 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
-	exitOnError(err, "error while beginning db transaction")
+	authenticators, err := authenticator.InitFromEnv(envPrefix)
+
+	exitOnError(err, "Failed to retrieve authenticators config")
+	log.C(ctx).Infof("%+v", authenticators)
 
 	defer func() {
 		err := closeFunc()
@@ -171,13 +178,13 @@ func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam string) 
 		var tenant model.TenantModel
 		if err := json.Unmarshal(body, &tenant); err != nil {
 			logger.Error(errors.Wrapf(err, "while unmarshalling body"))
-			writer.WriteHeader(http.StatusInternalServerError)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		if err := svc.Create(request.Context(), tenant); err != nil {
 			logger.Error(errors.Wrapf(err, "while creating tenant"))
-			writer.WriteHeader(http.StatusInternalServerError)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -185,7 +192,7 @@ func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam string) 
 		writer.WriteHeader(http.StatusOK)
 		if _, err := writer.Write([]byte(compassURL)); err != nil {
 			logger.Error(errors.Wrapf(err, "while writing response body"))
-			writer.WriteHeader(http.StatusInternalServerError)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -216,7 +223,7 @@ func getDecommissioningHandlerFunc(svc tenant.TenantService, tenantPathParam str
 		err = json.NewEncoder(writer).Encode(map[string]interface{}{})
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "while writing to response body"))
-			writer.WriteHeader(http.StatusInternalServerError)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
