@@ -11,6 +11,7 @@ const (
 	Label                      Type = "Label"
 	Bundle                     Type = "Bundle"
 	Package                    Type = "Package"
+	Product                    Type = "Product"
 	IntegrationSystem          Type = "IntegrationSystem"
 	Tenant                     Type = "Tenant"
 	SystemAuth                 Type = "SystemAuth"

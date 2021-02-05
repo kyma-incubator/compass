@@ -1,10 +1,10 @@
-package mp_package_test
+package product_test
 
 import (
 	"context"
 	"github.com/DATA-DOG/go-sqlmock"
-	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/package/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/product/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -17,23 +17,23 @@ import (
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
-	pkgModel := fixPackageModel()
-	pkgEntity := fixEntityPackage()
-	insertQuery := `^INSERT INTO public.packages \(.+\) VALUES \(.+\)$`
+	productModel := fixProductModel()
+	productEntity := fixEntityProduct()
+	insertQuery := `^INSERT INTO public.products \(.+\) VALUES \(.+\)$`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 
 		sqlMock.ExpectExec(insertQuery).
-			WithArgs(fixPackageRow()...).
+			WithArgs(fixProductRow()...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := automock.EntityConverter{}
-		convMock.On("ToEntity", pkgModel).Return(pkgEntity, nil).Once()
-		pgRepository := mp_package.NewRepository(&convMock)
+		convMock.On("ToEntity", productModel).Return(productEntity, nil).Once()
+		pgRepository := product.NewRepository(&convMock)
 		//WHEN
-		err := pgRepository.Create(ctx, pkgModel)
+		err := pgRepository.Create(ctx, productModel)
 		//THEN
 		require.NoError(t, err)
 		sqlMock.AssertExpectations(t)
@@ -43,7 +43,7 @@ func TestPgRepository_Create(t *testing.T) {
 	t.Run("returns error when item is nil", func(t *testing.T) {
 		ctx := context.TODO()
 		convMock := automock.EntityConverter{}
-		pgRepository := mp_package.NewRepository(&convMock)
+		pgRepository := product.NewRepository(&convMock)
 		// WHEN
 		err := pgRepository.Create(ctx, nil)
 		// THEN
@@ -54,24 +54,23 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.packages SET vendor = ?, title = ?, short_description = ?, description = ?, version = ?, package_links = ?, links = ?,
-		licence_type = ?, tags = ?, countries = ?, labels = ?, policy_level = ?, custom_policy_level = ?, part_of_products = ?, line_of_business = ?, industry = ? WHERE tenant_id = ? AND id = ?`)
+	updateQuery := regexp.QuoteMeta(`UPDATE public.products SET title = ?, short_description = ?, vendor = ?, parent = ?, sap_ppms_object_id = ?, labels = ? WHERE tenant_id = ? AND ord_id = ?`)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		pkg := fixPackageModel()
-		entity := fixEntityPackage()
+		productModel := fixProductModel()
+		entity := fixEntityProduct()
 
 		convMock := &automock.EntityConverter{}
-		convMock.On("ToEntity", pkg).Return(entity, nil)
+		convMock.On("ToEntity", productModel).Return(entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(append(fixPackageUpdateArgs(), tenantID, entity.ID)...).
+			WithArgs(append(fixProductUpdateArgs(), tenantID, entity.OrdID)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		pgRepository := mp_package.NewRepository(convMock)
+		pgRepository := product.NewRepository(convMock)
 		//WHEN
-		err := pgRepository.Update(ctx, pkg)
+		err := pgRepository.Update(ctx, productModel)
 		//THEN
 		require.NoError(t, err)
 		convMock.AssertExpectations(t)
@@ -82,7 +81,7 @@ func TestPgRepository_Update(t *testing.T) {
 		sqlxDB, _ := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		pgRepository := mp_package.NewRepository(convMock)
+		pgRepository := product.NewRepository(convMock)
 		//WHEN
 		err := pgRepository.Update(ctx, nil)
 		//THEN
@@ -95,13 +94,13 @@ func TestPgRepository_Update(t *testing.T) {
 func TestPgRepository_Delete(t *testing.T) {
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	deleteQuery := `^DELETE FROM public.packages WHERE tenant_id = \$1 AND id = \$2$`
+	deleteQuery := `^DELETE FROM public.products WHERE tenant_id = \$1 AND ord_id = \$2$`
 
-	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, packageID).WillReturnResult(sqlmock.NewResult(-1, 1))
+	sqlMock.ExpectExec(deleteQuery).WithArgs(tenantID, ordID).WillReturnResult(sqlmock.NewResult(-1, 1))
 	convMock := &automock.EntityConverter{}
-	pgRepository := mp_package.NewRepository(convMock)
+	pgRepository := product.NewRepository(convMock)
 	//WHEN
-	err := pgRepository.Delete(ctx, tenantID, packageID)
+	err := pgRepository.Delete(ctx, tenantID, ordID)
 	//THEN
 	require.NoError(t, err)
 	sqlMock.AssertExpectations(t)
@@ -112,13 +111,13 @@ func TestPgRepository_Exists(t *testing.T) {
 	//GIVEN
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
 	ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-	existQuery := regexp.QuoteMeta(`SELECT 1 FROM public.packages WHERE tenant_id = $1 AND id = $2`)
+	existQuery := regexp.QuoteMeta(`SELECT 1 FROM public.products WHERE tenant_id = $1 AND ord_id = $2`)
 
-	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, packageID).WillReturnRows(testdb.RowWhenObjectExist())
+	sqlMock.ExpectQuery(existQuery).WithArgs(tenantID, ordID).WillReturnRows(testdb.RowWhenObjectExist())
 	convMock := &automock.EntityConverter{}
-	pgRepository := mp_package.NewRepository(convMock)
+	pgRepository := product.NewRepository(convMock)
 	//WHEN
-	found, err := pgRepository.Exists(ctx, tenantID, packageID)
+	found, err := pgRepository.Exists(ctx, tenantID, ordID)
 	//THEN
 	require.NoError(t, err)
 	assert.True(t, found)
@@ -128,28 +127,28 @@ func TestPgRepository_Exists(t *testing.T) {
 
 func TestPgRepository_GetByID(t *testing.T) {
 	// given
-	pkgEntity := fixEntityPackage()
+	productEntity := fixEntityProduct()
 
-	selectQuery := `^SELECT (.+) FROM public.packages WHERE tenant_id = \$1 AND id = \$2$`
+	selectQuery := `^SELECT (.+) FROM public.products WHERE tenant_id = \$1 AND ord_id = \$2$`
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow()...)
+		rows := sqlmock.NewRows(fixProductColumns()).
+			AddRow(fixProductRow()...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, ordID).
 			WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", pkgEntity).Return(&model.Package{ID: packageID, TenantID: tenantID}, nil).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", productEntity).Return(&model.Product{OrdID: ordID, TenantID: tenantID}, nil).Once()
+		pgRepository := product.NewRepository(convMock)
 		// WHEN
-		modelBndl, err := pgRepository.GetByID(ctx, tenantID, packageID)
+		modelBndl, err := pgRepository.GetByID(ctx, tenantID, ordID)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, packageID, modelBndl.ID)
+		assert.Equal(t, ordID, modelBndl.OrdID)
 		assert.Equal(t, tenantID, modelBndl.TenantID)
 		convMock.AssertExpectations(t)
 		sqlMock.AssertExpectations(t)
@@ -157,18 +156,18 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// given
-		repo := mp_package.NewRepository(nil)
+		repo := product.NewRepository(nil)
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, ordID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 
 		// when
-		modelBndl, err := repo.GetByID(ctx, tenantID, packageID)
+		modelBndl, err := repo.GetByID(ctx, tenantID, ordID)
 		// then
 
 		sqlMock.AssertExpectations(t)
@@ -179,19 +178,19 @@ func TestPgRepository_GetByID(t *testing.T) {
 	t.Run("returns error when conversion failed", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		testError := errors.New("test error")
-		rows := sqlmock.NewRows(fixPackageColumns()).
-			AddRow(fixPackageRow()...)
+		rows := sqlmock.NewRows(fixProductColumns()).
+			AddRow(fixProductRow()...)
 
 		sqlMock.ExpectQuery(selectQuery).
-			WithArgs(tenantID, packageID).
+			WithArgs(tenantID, ordID).
 			WillReturnRows(rows)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", pkgEntity).Return(&model.Package{}, testError).Once()
-		pgRepository := mp_package.NewRepository(convMock)
+		convMock.On("FromEntity", productEntity).Return(&model.Product{}, testError).Once()
+		pgRepository := product.NewRepository(convMock)
 		// WHEN
-		_, err := pgRepository.GetByID(ctx, tenantID, packageID)
+		_, err := pgRepository.GetByID(ctx, tenantID, ordID)
 		//THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testError.Error())

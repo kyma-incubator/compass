@@ -98,13 +98,13 @@ func fixPackageColumns() []string {
 		"custom_policy_level", "part_of_products", "line_of_business", "industry"}
 }
 
-func fixBundleRow() []driver.Value {
+func fixPackageRow() []driver.Value {
 	return []driver.Value{packageID, tenantID, appID, ordID, "vendorID", "title", "short desc", "desc", "v1.0.5",
 		json.RawMessage("{}"), json.RawMessage("[]"), "test", json.RawMessage("[]"), json.RawMessage("[]"), json.RawMessage("{}"),
 		"test", nil, json.RawMessage("[\"test\"]"), json.RawMessage("[]"), json.RawMessage("[]")}
 }
 
-func fixBundleUpdateArgs() []driver.Value {
+func fixPackageUpdateArgs() []driver.Value {
 	return []driver.Value{"vendorID", "title", "short desc", "desc", "v1.0.5", json.RawMessage("{}"), json.RawMessage("[]"),
 		"test", json.RawMessage("[]"), json.RawMessage("[]"), json.RawMessage("{}"), "test", nil, json.RawMessage("[\"test\"]"), json.RawMessage("[]"), json.RawMessage("[]")}
 }
