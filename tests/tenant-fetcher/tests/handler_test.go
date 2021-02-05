@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/tenant-fetcher/tools/director"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -98,10 +97,10 @@ func TestOnboardingHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	tenants, err := director.GetTenants(config.DirectorUrl, config.Tenant)
-	newTenant := tenants[0]
-	log.D().Infof("%d, %d, %+v, %s", len(oldTenantState), len(tenants), response.StatusCode, response.Status)
-	// THEN
 	require.NoError(t, err)
+	newTenant := tenants[0]
+
+	// THEN
 	assert.Len(t, tenants, len(oldTenantState)+1)
 	assert.Equal(t, newTenant.ID, cisTenant.Id)
 	require.Equal(t, http.StatusOK, response.StatusCode)
@@ -126,7 +125,7 @@ func TestDecommissioningHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	httpClient := http.DefaultClient
-	httpClient.Timeout = 10 * time.Second
+	httpClient.Timeout = 15 * time.Second
 
 	response, err := httpClient.Do(request)
 	require.NoError(t, err)
@@ -137,9 +136,6 @@ func TestDecommissioningHandler(t *testing.T) {
 
 	request, err = http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(byteTenant))
 	require.NoError(t, err)
-
-	httpClient = http.DefaultClient
-	httpClient.Timeout = 10 * time.Second
 
 	response, err = httpClient.Do(request)
 	require.NoError(t, err)
