@@ -96,6 +96,8 @@ spec:
               value: "{{.Values.deployment.dbPool.maxIdleConnections}}"
             - name: APP_CIS_IDENTITY_ZONE
               value: "sap-provisioning"
+            - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
+              value: Callback
             {{- range $authenticatorName, $config := .Values.global.authenticators }}
             {{- if eq $config.enabled true }}
             - name: APP_{{ $authenticatorName }}_AUTHENTICATOR_TRUSTED_ISSUERS

@@ -19,8 +19,7 @@ import (
 )
 
 const (
-	SubscriptionCallbacksScope = "Callback"
-	AuthorizationHeaderKey     = "Authorization"
+	AuthorizationHeaderKey = "Authorization"
 )
 
 type Error struct {
@@ -28,18 +27,20 @@ type Error struct {
 }
 
 type Authenticator struct {
-	mux                  sync.Mutex
-	cachedJWKs           *jwk.Set
-	jwksEndpoint         string
-	zoneId               string
-	trustedClaimPrefixes []string
+	mux                        sync.Mutex
+	cachedJWKs                 *jwk.Set
+	jwksEndpoint               string
+	zoneId                     string
+	trustedClaimPrefixes       []string
+	SubscriptionCallbacksScope string
 }
 
-func New(jwksEndpoint, zoneId string, trustedClaimPrefixes []string) *Authenticator {
+func New(jwksEndpoint, zoneId, SubscriptionCallbacksScope string, trustedClaimPrefixes []string) *Authenticator {
 	return &Authenticator{
-		jwksEndpoint:         jwksEndpoint,
-		zoneId:               zoneId,
-		trustedClaimPrefixes: trustedClaimPrefixes,
+		jwksEndpoint:               jwksEndpoint,
+		zoneId:                     zoneId,
+		trustedClaimPrefixes:       trustedClaimPrefixes,
+		SubscriptionCallbacksScope: SubscriptionCallbacksScope,
 	}
 }
 
@@ -51,13 +52,14 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if err != nil {
 				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 			}
-
+			log.D().Warnf("1. %v", token)
 			claims, err := a.parseClaimsWithRetry(r.Context(), token)
 			if err != nil {
 				log.C(ctx).WithError(err).Error("An error has occurred while parsing claims. Error code: ", http.StatusUnauthorized)
 				a.writeAppError(ctx, w, err, http.StatusUnauthorized)
 				return
 			}
+			log.D().Warnf("2. %v", claims)
 
 			if claims.ZID != a.zoneId {
 				log.C(ctx).Errorf(`Zone id "%s" from user token does not match the trusted zone %s`, claims.ZID, a.zoneId)
@@ -65,7 +67,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			scopes := PrefixScopes(a.trustedClaimPrefixes, SubscriptionCallbacksScope)
+			scopes := PrefixScopes(a.trustedClaimPrefixes, a.SubscriptionCallbacksScope)
 			if !stringsAnyEquals(scopes, strings.Join(claims.Scopes, " ")) {
 				log.C(ctx).Errorf(`Scope "%s" from user token does not match the trusted scopes`, claims.Scopes)
 				a.writeAppError(ctx, w, errors.Errorf(`Scope "%s" is not trusted`, claims.Scopes), http.StatusUnauthorized)

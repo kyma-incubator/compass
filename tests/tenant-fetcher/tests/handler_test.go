@@ -33,39 +33,41 @@ import (
 )
 
 const (
-	tenantFetcherURL     = "TENANT_FETCHER_URL"
-	rootAPI              = "ROOT_API"
-	handlerEndpoint      = "HANDLER_ENDPOINT"
-	tenantPathParam      = "TENANT_PATH_PARAM"
-	dbUser               = "APP_DB_USER"
-	dbPassword           = "APP_DB_PASSWORD"
-	dbHost               = "APP_DB_HOST"
-	dbPort               = "APP_DB_PORT"
-	dbName               = "APP_DB_NAME"
-	dbSSL                = "APP_DB_SSL"
-	dbMaxOpenConnections = "APP_DB_MAX_OPEN_CONNECTIONS"
-	dbMaxIdleConnections = "APP_DB_MAX_IDLE_CONNECTIONS"
-	identityZone         = "APP_CIS_IDENTITY_ZONE"
-	defaultTenant        = "APP_TENANT"
-	directorURL          = "APP_DIRECTOR_URL"
+	tenantFetcherURL          = "TENANT_FETCHER_URL"
+	rootAPI                   = "ROOT_API"
+	handlerEndpoint           = "HANDLER_ENDPOINT"
+	tenantPathParam           = "TENANT_PATH_PARAM"
+	dbUser                    = "APP_DB_USER"
+	dbPassword                = "APP_DB_PASSWORD"
+	dbHost                    = "APP_DB_HOST"
+	dbPort                    = "APP_DB_PORT"
+	dbName                    = "APP_DB_NAME"
+	dbSSL                     = "APP_DB_SSL"
+	dbMaxOpenConnections      = "APP_DB_MAX_OPEN_CONNECTIONS"
+	dbMaxIdleConnections      = "APP_DB_MAX_IDLE_CONNECTIONS"
+	identityZone              = "APP_CIS_IDENTITY_ZONE"
+	defaultTenant             = "APP_TENANT"
+	directorURL               = "APP_DIRECTOR_URL"
+	subscriptionCallbackScope = "APP_SUBSCRIPTION_CALLBACK_SCOPE"
 )
 
 type config struct {
-	TenantFetcherURL     string
-	RootAPI              string
-	HandlerEndpoint      string
-	TenantPathParam      string
-	DbUser               string
-	DbPassword           string
-	DbHost               string
-	DbPort               string
-	DbName               string
-	DbSSL                string
-	DbMaxIdleConnections string
-	DbMaxOpenConnections string
-	IdentityZone         string
-	Tenant               string
-	DirectorUrl          string
+	TenantFetcherURL          string
+	RootAPI                   string
+	HandlerEndpoint           string
+	TenantPathParam           string
+	DbUser                    string
+	DbPassword                string
+	DbHost                    string
+	DbPort                    string
+	DbName                    string
+	DbSSL                     string
+	DbMaxIdleConnections      string
+	DbMaxOpenConnections      string
+	IdentityZone              string
+	Tenant                    string
+	DirectorUrl               string
+	SubscriptionCallbackScope string
 }
 
 type Tenant struct {
@@ -152,21 +154,22 @@ func TestDecommissioningHandler(t *testing.T) {
 
 func loadConfig(t *testing.T) config {
 	config := config{
-		TenantFetcherURL:     os.Getenv(tenantFetcherURL),
-		RootAPI:              os.Getenv(rootAPI),
-		HandlerEndpoint:      os.Getenv(handlerEndpoint),
-		TenantPathParam:      os.Getenv(tenantPathParam),
-		DbUser:               os.Getenv(dbUser),
-		DbPassword:           os.Getenv(dbPassword),
-		DbHost:               os.Getenv(dbHost),
-		DbPort:               os.Getenv(dbPort),
-		DbName:               os.Getenv(dbName),
-		DbSSL:                os.Getenv(dbSSL),
-		DbMaxIdleConnections: os.Getenv(dbMaxIdleConnections),
-		DbMaxOpenConnections: os.Getenv(dbMaxOpenConnections),
-		IdentityZone:         os.Getenv(identityZone),
-		Tenant:               os.Getenv(defaultTenant),
-		DirectorUrl:          os.Getenv(directorURL),
+		TenantFetcherURL:          os.Getenv(tenantFetcherURL),
+		RootAPI:                   os.Getenv(rootAPI),
+		HandlerEndpoint:           os.Getenv(handlerEndpoint),
+		TenantPathParam:           os.Getenv(tenantPathParam),
+		DbUser:                    os.Getenv(dbUser),
+		DbPassword:                os.Getenv(dbPassword),
+		DbHost:                    os.Getenv(dbHost),
+		DbPort:                    os.Getenv(dbPort),
+		DbName:                    os.Getenv(dbName),
+		DbSSL:                     os.Getenv(dbSSL),
+		DbMaxIdleConnections:      os.Getenv(dbMaxIdleConnections),
+		DbMaxOpenConnections:      os.Getenv(dbMaxOpenConnections),
+		IdentityZone:              os.Getenv(identityZone),
+		Tenant:                    os.Getenv(defaultTenant),
+		DirectorUrl:               os.Getenv(directorURL),
+		SubscriptionCallbackScope: os.Getenv(subscriptionCallbackScope),
 	}
 
 	require.NotEmpty(t, config.TenantFetcherURL)
@@ -184,6 +187,7 @@ func loadConfig(t *testing.T) config {
 	require.NotEmpty(t, config.IdentityZone)
 	require.NotEmpty(t, config.Tenant)
 	require.NotEmpty(t, config.DirectorUrl)
+	require.NotEmpty(t, config.SubscriptionCallbackScope)
 
 	return config
 }
