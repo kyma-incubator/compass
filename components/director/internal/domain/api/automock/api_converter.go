@@ -15,7 +15,7 @@ type APIConverter struct {
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *APIConverter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, error) {
+func (_m *APIConverter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error) {
 	ret := _m.Called(in)
 
 	var r0 *model.APIDefinitionInput
@@ -27,18 +27,27 @@ func (_m *APIConverter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*graphql.APIDefinitionInput) error); ok {
+	var r1 *model.SpecInput
+	if rf, ok := ret.Get(1).(func(*graphql.APIDefinitionInput) *model.SpecInput); ok {
 		r1 = rf(in)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.SpecInput)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(*graphql.APIDefinitionInput) error); ok {
+		r2 = rf(in)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // MultipleInputFromGraphQL provides a mock function with given fields: in
-func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, error) {
+func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error) {
 	ret := _m.Called(in)
 
 	var r0 []*model.APIDefinitionInput
@@ -50,9 +59,41 @@ func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInpu
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func([]*graphql.APIDefinitionInput) error); ok {
+	var r1 []*model.SpecInput
+	if rf, ok := ret.Get(1).(func([]*graphql.APIDefinitionInput) []*model.SpecInput); ok {
 		r1 = rf(in)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]*model.SpecInput)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func([]*graphql.APIDefinitionInput) error); ok {
+		r2 = rf(in)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// MultipleToGraphQL provides a mock function with given fields: in, specs
+func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec) ([]*graphql.APIDefinition, error) {
+	ret := _m.Called(in, specs)
+
+	var r0 []*graphql.APIDefinition
+	if rf, ok := ret.Get(0).(func([]*model.APIDefinition, []*model.Spec) []*graphql.APIDefinition); ok {
+		r0 = rf(in, specs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*graphql.APIDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*model.APIDefinition, []*model.Spec) error); ok {
+		r1 = rf(in, specs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -60,50 +101,25 @@ func (_m *APIConverter) MultipleInputFromGraphQL(in []*graphql.APIDefinitionInpu
 	return r0, r1
 }
 
-// MultipleToGraphQL provides a mock function with given fields: in
-func (_m *APIConverter) MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition {
-	ret := _m.Called(in)
-
-	var r0 []*graphql.APIDefinition
-	if rf, ok := ret.Get(0).(func([]*model.APIDefinition) []*graphql.APIDefinition); ok {
-		r0 = rf(in)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*graphql.APIDefinition)
-		}
-	}
-
-	return r0
-}
-
-// SpecToGraphQL provides a mock function with given fields: definitionID, in
-func (_m *APIConverter) SpecToGraphQL(definitionID string, in *model.APISpec) *graphql.APISpec {
-	ret := _m.Called(definitionID, in)
-
-	var r0 *graphql.APISpec
-	if rf, ok := ret.Get(0).(func(string, *model.APISpec) *graphql.APISpec); ok {
-		r0 = rf(definitionID, in)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*graphql.APISpec)
-		}
-	}
-
-	return r0
-}
-
-// ToGraphQL provides a mock function with given fields: in
-func (_m *APIConverter) ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition {
-	ret := _m.Called(in)
+// ToGraphQL provides a mock function with given fields: in, spec
+func (_m *APIConverter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graphql.APIDefinition, error) {
+	ret := _m.Called(in, spec)
 
 	var r0 *graphql.APIDefinition
-	if rf, ok := ret.Get(0).(func(*model.APIDefinition) *graphql.APIDefinition); ok {
-		r0 = rf(in)
+	if rf, ok := ret.Get(0).(func(*model.APIDefinition, *model.Spec) *graphql.APIDefinition); ok {
+		r0 = rf(in, spec)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*graphql.APIDefinition)
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.APIDefinition, *model.Spec) error); ok {
+		r1 = rf(in, spec)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

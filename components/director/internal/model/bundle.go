@@ -27,7 +27,9 @@ type BundleCreateInput struct {
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *AuthInput
 	APIDefinitions                 []*APIDefinitionInput
+	APISpecs                       []*SpecInput
 	EventDefinitions               []*EventDefinitionInput
+	EventSpecs                     []*SpecInput
 	Documents                      []*DocumentInput
 }
 

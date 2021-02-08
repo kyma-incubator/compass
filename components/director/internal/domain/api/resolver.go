@@ -15,11 +15,10 @@ import (
 
 //go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
 type APIService interface {
-	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput) (string, error)
-	Update(ctx context.Context, id string, in model.APIDefinitionInput) error
+	CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
+	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
 	Get(ctx context.Context, id string) (*model.APIDefinition, error)
 	Delete(ctx context.Context, id string) error
-	RefetchAPISpec(ctx context.Context, id string) (*model.APISpec, error)
 	GetFetchRequest(ctx context.Context, apiDefID string) (*model.FetchRequest, error)
 }
 
@@ -30,11 +29,10 @@ type RuntimeService interface {
 
 //go:generate mockery -name=APIConverter -output=automock -outpkg=automock -case=underscore
 type APIConverter interface {
-	ToGraphQL(in *model.APIDefinition) *graphql.APIDefinition
-	MultipleToGraphQL(in []*model.APIDefinition) []*graphql.APIDefinition
-	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, error)
-	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, error)
-	SpecToGraphQL(definitionID string, in *model.APISpec) *graphql.APISpec
+	ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graphql.APIDefinition, error)
+	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec) ([]*graphql.APIDefinition, error)
+	MultipleInputFromGraphQL(in []*graphql.APIDefinitionInput) ([]*model.APIDefinitionInput, []*model.SpecInput, error)
+	InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.APIDefinitionInput, *model.SpecInput, error)
 }
 
 //go:generate mockery -name=FetchRequestConverter -output=automock -outpkg=automock -case=underscore
@@ -54,24 +52,28 @@ type BundleService interface {
 }
 
 type Resolver struct {
-	transact    persistence.Transactioner
-	svc         APIService
-	appSvc      ApplicationService
-	bndlSvc     BundleService
-	rtmSvc      RuntimeService
-	converter   APIConverter
-	frConverter FetchRequestConverter
+	transact      persistence.Transactioner
+	svc           APIService
+	appSvc        ApplicationService
+	bndlSvc       BundleService
+	rtmSvc        RuntimeService
+	converter     APIConverter
+	frConverter   FetchRequestConverter
+	specService   SpecService
+	specConverter SpecConverter
 }
 
-func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, bndlSvc BundleService, converter APIConverter, frConverter FetchRequestConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, appSvc ApplicationService, rtmSvc RuntimeService, bndlSvc BundleService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
 	return &Resolver{
-		transact:    transact,
-		svc:         svc,
-		appSvc:      appSvc,
-		rtmSvc:      rtmSvc,
-		bndlSvc:     bndlSvc,
-		converter:   converter,
-		frConverter: frConverter,
+		transact:      transact,
+		svc:           svc,
+		appSvc:        appSvc,
+		rtmSvc:        rtmSvc,
+		bndlSvc:       bndlSvc,
+		converter:     converter,
+		frConverter:   frConverter,
+		specService:   specService,
+		specConverter: specConverter,
 	}
 }
 
@@ -86,7 +88,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.converter.InputFromGraphQL(&in)
+	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting GraphQL input to APIDefinition")
 	}
@@ -100,7 +102,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, apperrors.NewInvalidDataError("cannot add API to not existing bundle")
 	}
 
-	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn)
+	id, err := r.svc.CreateInBundle(ctx, bundleID, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error occurred while creating APIDefinition in Bundle with id %s", bundleID)
 	}
@@ -110,12 +112,20 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, err
 	}
 
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	}
+
+	gqlAPI, err := r.converter.ToGraphQL(api, spec)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
-
-	gqlAPI := r.converter.ToGraphQL(api)
 
 	log.C(ctx).Infof("APIDefinition with id %s successfully added to Bundle with id %s", id, bundleID)
 	return gqlAPI, nil
@@ -132,12 +142,12 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	convertedIn, err := r.converter.InputFromGraphQL(&in)
+	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting GraphQL input to APIDefinition with id %s", id)
 	}
 
-	err = r.svc.Update(ctx, id, *convertedIn)
+	err = r.svc.Update(ctx, id, *convertedIn, convertedSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -147,12 +157,20 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 		return nil, err
 	}
 
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	}
+
+	gqlAPI, err := r.converter.ToGraphQL(api, spec)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
-
-	gqlAPI := r.converter.ToGraphQL(api)
 
 	log.C(ctx).Infof("APIDefinition with id %s successfully updated.", id)
 	return gqlAPI, nil
@@ -173,6 +191,16 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 		return nil, err
 	}
 
+	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	}
+
+	gqlAPI, err := r.converter.ToGraphQL(api, spec)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
+	}
+
 	err = r.svc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
@@ -184,8 +212,9 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 	}
 
 	log.C(ctx).Infof("APIDefinition with id %s successfully deleted.", id)
-	return r.converter.ToGraphQL(api), nil
+	return gqlAPI, nil
 }
+
 func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.APISpec, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -197,7 +226,21 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	spec, err := r.svc.RefetchAPISpec(ctx, apiID)
+	dbSpec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, apiID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", apiID)
+	}
+
+	if dbSpec == nil {
+		return nil, errors.Errorf("spec for API with id %q not found", apiID)
+	}
+
+	spec, err := r.specService.RefetchSpec(ctx, dbSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	converted, err := r.specConverter.ToGraphQLAPISpec(spec)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +250,6 @@ func (r *Resolver) RefetchAPISpec(ctx context.Context, apiID string) (*graphql.A
 		return nil, err
 	}
 
-	converted := r.converter.SpecToGraphQL(apiID, spec)
 	log.C(ctx).Infof("Successfully refetched APISpec for APIDefinition with id %s", apiID)
 	return converted, nil
 }
