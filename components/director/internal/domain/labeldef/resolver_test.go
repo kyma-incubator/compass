@@ -339,7 +339,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	t.Run("successfully returns single definition", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 		mockPersistanceCtx.On("Commit").Return(nil)
 
@@ -402,7 +402,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 	t.Run("returns nil if definition does not exist", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 
 		mockTransactioner := &pautomock.Transactioner{}
@@ -428,7 +428,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 	t.Run("got error on getting label definition from service", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 
 		mockTransactioner := &pautomock.Transactioner{}
@@ -472,7 +472,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 	t.Run("got error on committing transaction", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 		mockPersistanceCtx.On("Commit").Return(errors.New("commit errror"))
 
@@ -573,7 +573,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 
 	t.Run("error when get failed", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 
 		mockTransactioner := &pautomock.Transactioner{}
@@ -607,7 +607,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 
 	t.Run("error when label definition not found", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 
 		mockTransactioner := &pautomock.Transactioner{}
@@ -642,7 +642,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 
 	t.Run("error when label definition delete failed", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 
 		mockTransactioner := &pautomock.Transactioner{}
@@ -697,7 +697,7 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 
 	t.Run("got error on committing transaction", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 		mockPersistanceCtx.On("Commit").Return(errors.New("commit errror"))
 
@@ -756,7 +756,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 	t.Run("successfully updated Label Definition", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 		mockPersistanceCtx.On("Commit").Return(nil)
 
@@ -860,7 +860,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 	t.Run("got error on updating Label Definition", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 
 		mockTransactioner := &pautomock.Transactioner{}
@@ -912,7 +912,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 	t.Run("got error on committing transaction", func(t *testing.T) {
 		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTxOp{}
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 		mockPersistanceCtx.On("Commit").Return(errors.New("error on commit"))
 

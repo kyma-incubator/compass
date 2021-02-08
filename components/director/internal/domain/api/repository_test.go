@@ -156,7 +156,7 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
-	apiDefModel := fixFullAPIDefinitionModel("placeholder")
+	apiDefModel, _ := fixFullAPIDefinitionModel("placeholder")
 	apiDefEntity := fixFullEntityAPIDefinition(apiDefID, "placeholder")
 	insertQuery := `^INSERT INTO "public"."api_definitions" \(.+\) VALUES \(.+\)$`
 
@@ -198,9 +198,9 @@ func TestPgRepository_CreateMany(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		first := fixFullAPIDefinitionModel("first")
-		second := fixFullAPIDefinitionModel("second")
-		third := fixFullAPIDefinitionModel("third")
+		first, _ := fixFullAPIDefinitionModel("first")
+		second, _ := fixFullAPIDefinitionModel("second")
+		third, _ := fixFullAPIDefinitionModel("third")
 		items := []*model.APIDefinition{&first, &second, &third}
 
 		convMock := &automock.APIDefinitionConverter{}
@@ -222,20 +222,19 @@ func TestPgRepository_CreateMany(t *testing.T) {
 
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(`UPDATE "public"."api_definitions" SET name = ?, description = ?, group_name = ?, 
-		target_url = ?, spec_data = ?, spec_format = ?, spec_type = ?, version_value = ?, 
+		target_url = ?, version_value = ?, 
 		version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE tenant_id = ? AND id = ?`)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
-		apiModel := fixFullAPIDefinitionModel("update")
+		apiModel, _ := fixFullAPIDefinitionModel("update")
 		entity := fixFullEntityAPIDefinition(apiDefID, "update")
 
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", apiModel).Return(entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.Name, entity.Description, entity.Group, entity.TargetURL, entity.SpecData,
-				entity.SpecFormat, entity.SpecType, entity.VersionValue, entity.VersionDepracated,
+			WithArgs(entity.Name, entity.Description, entity.Group, entity.TargetURL, entity.VersionValue, entity.VersionDepracated,
 				entity.VersionDepracatedSince, entity.VersionForRemoval, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 

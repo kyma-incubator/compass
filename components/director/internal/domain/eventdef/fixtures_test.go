@@ -4,7 +4,8 @@ import (
 	"database/sql/driver"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	event "github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -14,54 +15,61 @@ import (
 )
 
 const (
-	eventAPIID       = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	eventID          = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	specID           = "sssssssss-ssss-ssss-ssss-ssssssssssss"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
-	bundleID         = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 )
 
-func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{ID: id, Tenant: tenantID, BundleID: bundleID, Name: placeholder}
-}
-
-func fixGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
-	return &graphql.EventDefinition{
+func fixEventDefinitionModel(id string, bndlID string, name string) *model.EventDefinition {
+	return &model.EventDefinition{
 		ID:       id,
-		BundleID: bundleID,
-		Name:     placeholder,
+		BundleID: bndlID,
+		Name:     name,
 	}
 }
 
-func fixFullModelEventDefinition(id, placeholder string) model.EventDefinition {
-	spec := &model.EventSpec{
-		Data:   str.Ptr("data"),
-		Format: model.SpecFormatJSON,
-		Type:   model.EventSpecTypeAsyncAPI,
+func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, model.Spec) {
+	eventType := model.EventSpecTypeAsyncAPI
+	spec := model.Spec{
+		ID:         specID,
+		Data:       str.Ptr("spec_data_" + placeholder),
+		Format:     model.SpecFormatYaml,
+		ObjectType: model.EventSpecReference,
+		ObjectID:   eventID,
+		EventType:  &eventType,
 	}
-	v := fixVersionModel()
+
+	deprecated := false
+	forRemoval := false
+
+	v := &model.Version{
+		Value:           "v1.1",
+		Deprecated:      &deprecated,
+		DeprecatedSince: str.Ptr("v1.0"),
+		ForRemoval:      &forRemoval,
+	}
 
 	return model.EventDefinition{
-		ID:          id,
+		ID:          eventID,
 		Tenant:      tenantID,
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Group:       str.Ptr("group_" + placeholder),
-		Spec:        spec,
-		Version:     &v,
-	}
+		Version:     v,
+	}, spec
 }
 
-func fixDetailedGQLEventDefinition(id, placeholder string) *graphql.EventDefinition {
-	data := graphql.CLOB("data")
-	format := graphql.SpecFormatJSON
+func fixFullGQLEventDefinition(placeholder string) *graphql.EventDefinition {
+	data := graphql.CLOB("spec_data_" + placeholder)
 
 	spec := &graphql.EventSpec{
 		Data:         &data,
-		Format:       format,
+		Format:       graphql.SpecFormatYaml,
 		Type:         graphql.EventSpecTypeAsyncAPI,
-		DefinitionID: id,
+		DefinitionID: eventID,
 	}
 
 	deprecated := false
@@ -75,7 +83,7 @@ func fixDetailedGQLEventDefinition(id, placeholder string) *graphql.EventDefinit
 	}
 
 	return &graphql.EventDefinition{
-		ID:          id,
+		ID:          eventID,
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
@@ -85,37 +93,37 @@ func fixDetailedGQLEventDefinition(id, placeholder string) *graphql.EventDefinit
 	}
 }
 
-func fixModelEventDefinitionInput() *model.EventDefinitionInput {
+func fixModelEventDefinitionInput(name, description string, group string) (*model.EventDefinitionInput, *model.SpecInput) {
 	data := "data"
-	format := model.SpecFormatYaml
+	eventType := model.EventSpecTypeAsyncAPI
 
-	spec := &model.EventSpecInput{
-		Data:          &data,
-		EventSpecType: model.EventSpecTypeAsyncAPI,
-		Format:        format,
-		FetchRequest:  &model.FetchRequestInput{},
+	spec := &model.SpecInput{
+		Data:         &data,
+		EventType:    &eventType,
+		Format:       model.SpecFormatYaml,
+		FetchRequest: &model.FetchRequestInput{},
 	}
 
 	deprecated := false
+	deprecatedSince := ""
 	forRemoval := false
 
 	v := &model.VersionInput{
-		Value:           "v1.1",
+		Value:           "1.0.0",
 		Deprecated:      &deprecated,
-		DeprecatedSince: str.Ptr("v1.0"),
+		DeprecatedSince: &deprecatedSince,
 		ForRemoval:      &forRemoval,
 	}
 
 	return &model.EventDefinitionInput{
-		Name:        "name",
-		Description: str.Ptr("description"),
-		Group:       str.Ptr("group"),
-		Spec:        spec,
+		Name:        name,
+		Description: &description,
+		Group:       &group,
 		Version:     v,
-	}
+	}, spec
 }
 
-func fixGQLEventDefinitionInput() *graphql.EventDefinitionInput {
+func fixGQLEventDefinitionInput(name, description string, group string) *graphql.EventDefinitionInput {
 	data := graphql.CLOB("data")
 
 	spec := &graphql.EventSpecInput{
@@ -126,82 +134,64 @@ func fixGQLEventDefinitionInput() *graphql.EventDefinitionInput {
 	}
 
 	deprecated := false
+	deprecatedSince := ""
 	forRemoval := false
 
 	v := &graphql.VersionInput{
-		Value:           "v1.1",
+		Value:           "1.0.0",
 		Deprecated:      &deprecated,
-		DeprecatedSince: str.Ptr("v1.0"),
+		DeprecatedSince: &deprecatedSince,
 		ForRemoval:      &forRemoval,
 	}
 
 	return &graphql.EventDefinitionInput{
-		Name:        "name",
-		Description: str.Ptr("description"),
-		Group:       str.Ptr("group"),
+		Name:        name,
+		Description: &description,
+		Group:       &group,
 		Spec:        spec,
 		Version:     v,
 	}
 }
 
-func fixFullEventDef(id, placeholder string) eventdef.Entity {
-	v := fixVersionEntity()
-	return eventdef.Entity{
-		ID:          id,
-		BndlID:      bundleID,
+func fixEntityEventDefinition(id string, bndlID string, name string) event.Entity {
+	return event.Entity{
+		ID:     id,
+		BndlID: bndlID,
+		Name:   name,
+	}
+}
+
+func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
+	boolPlaceholder := false
+
+	return event.Entity{
+		ID:          eventID,
 		TenantID:    tenantID,
+		BndlID:      bundleID,
 		Name:        placeholder,
-		GroupName:   repo.NewValidNullableString("group_" + placeholder),
 		Description: repo.NewValidNullableString("desc_" + placeholder),
-		EntitySpec: eventdef.EntitySpec{
-			SpecData:   repo.NewValidNullableString("data"),
-			SpecType:   repo.NewValidNullableString(string(model.EventSpecTypeAsyncAPI)),
-			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatJSON)),
+		GroupName:   repo.NewValidNullableString("group_" + placeholder),
+		Version: version.Version{
+			VersionValue:           repo.NewNullableString(str.Ptr("v1.1")),
+			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
+			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
+			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
-		Version: v,
-	}
-}
-
-func fixMinEntityEventDef(id, placeholder string) eventdef.Entity {
-	return eventdef.Entity{ID: id, TenantID: tenantID,
-		BndlID: bundleID, Name: placeholder}
-}
-
-func fixVersionModel() model.Version {
-	deprecated := false
-	forRemoval := false
-	return model.Version{
-		Value:           "v1.1",
-		Deprecated:      &deprecated,
-		DeprecatedSince: str.Ptr("v1.0"),
-		ForRemoval:      &forRemoval,
-	}
-}
-
-func fixVersionEntity() version.Version {
-	return version.Version{
-		VersionDepracated:      repo.NewValidNullableBool(false),
-		VersionValue:           repo.NewValidNullableString("v1.1"),
-		VersionDepracatedSince: repo.NewValidNullableString("v1.0"),
-		VersionForRemoval:      repo.NewValidNullableBool(false),
 	}
 }
 
 func fixEventDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "spec_data",
-		"spec_format", "spec_type", "version_value", "version_deprecated",
+	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "version_value", "version_deprecated",
 		"version_deprecated_since", "version_for_removal"}
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
-		"data", "JSON", "ASYNC_API", "v1.1", false, "v1.0", false}
+	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder, "v1.1", false, "v1.0", false}
 }
 
-func fixEventCreateArgs(id string, api model.EventDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
-		api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type), api.Version.Value, api.Version.Deprecated,
-		api.Version.DeprecatedSince, api.Version.ForRemoval}
+func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
+	return []driver.Value{id, tenantID, bundleID, event.Name, event.Description, event.Group, event.Version.Value, event.Version.Deprecated, event.Version.DeprecatedSince,
+		event.Version.ForRemoval}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
@@ -216,8 +206,8 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 			Condition: model.FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,
 		},
-		ObjectType: model.EventAPIFetchRequestReference,
-		ObjectID:   "foo",
+		ObjectType: model.SpecFetchRequestReference,
+		ObjectID:   specID,
 	}
 }
 

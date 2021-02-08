@@ -249,12 +249,12 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			Expected: modelBundleCreateInput,
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", gqlBundleCreateInput.APIDefinitions).Return(modelBundleCreateInput.APIDefinitions, nil)
+				conv.On("MultipleInputFromGraphQL", gqlBundleCreateInput.APIDefinitions).Return(modelBundleCreateInput.APIDefinitions, modelBundleCreateInput.APISpecs, nil)
 				return conv
 			},
 			EventAPIConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleInputFromGraphQL", gqlBundleCreateInput.EventDefinitions).Return(modelBundleCreateInput.EventDefinitions, nil)
+				conv.On("MultipleInputFromGraphQL", gqlBundleCreateInput.EventDefinitions).Return(modelBundleCreateInput.EventDefinitions, modelBundleCreateInput.EventSpecs, nil)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
@@ -274,12 +274,12 @@ func TestConverter_CreateInputFromGraphQL(t *testing.T) {
 			Expected: model.BundleCreateInput{},
 			APIConverterFn: func() *automock.APIConverter {
 				conv := &automock.APIConverter{}
-				conv.On("MultipleInputFromGraphQL", emptyGQLBundleCreateInput.APIDefinitions).Return(emptyModelBundleCreateInput.APIDefinitions, nil)
+				conv.On("MultipleInputFromGraphQL", emptyGQLBundleCreateInput.APIDefinitions).Return(emptyModelBundleCreateInput.APIDefinitions, emptyModelBundleCreateInput.APISpecs, nil)
 				return conv
 			},
 			EventAPIConverterFn: func() *automock.EventConverter {
 				conv := &automock.EventConverter{}
-				conv.On("MultipleInputFromGraphQL", emptyGQLBundleCreateInput.EventDefinitions).Return(emptyModelBundleCreateInput.EventDefinitions, nil)
+				conv.On("MultipleInputFromGraphQL", emptyGQLBundleCreateInput.EventDefinitions).Return(emptyModelBundleCreateInput.EventDefinitions, emptyModelBundleCreateInput.EventSpecs, nil)
 				return conv
 			},
 			DocumentConverterFn: func() *automock.DocumentConverter {
@@ -331,12 +331,12 @@ func TestConverter_MultipleCreateInputFromGraphQL(t *testing.T) {
 	}
 
 	apiConv := &automock.APIConverter{}
-	apiConv.On("MultipleInputFromGraphQL", gqlBndl1.APIDefinitions).Return(modBndl1.APIDefinitions, nil).Once()
-	apiConv.On("MultipleInputFromGraphQL", gqlBndl2.APIDefinitions).Return(modBndl2.APIDefinitions, nil).Once()
+	apiConv.On("MultipleInputFromGraphQL", gqlBndl1.APIDefinitions).Return(modBndl1.APIDefinitions, modBndl1.APISpecs, nil).Once()
+	apiConv.On("MultipleInputFromGraphQL", gqlBndl2.APIDefinitions).Return(modBndl2.APIDefinitions, modBndl2.APISpecs, nil).Once()
 
 	eventConv := &automock.EventConverter{}
-	eventConv.On("MultipleInputFromGraphQL", gqlBndl1.EventDefinitions).Return(modBndl1.EventDefinitions, nil).Once()
-	eventConv.On("MultipleInputFromGraphQL", gqlBndl2.EventDefinitions).Return(modBndl2.EventDefinitions, nil).Once()
+	eventConv.On("MultipleInputFromGraphQL", gqlBndl1.EventDefinitions).Return(modBndl1.EventDefinitions, modBndl1.EventSpecs, nil).Once()
+	eventConv.On("MultipleInputFromGraphQL", gqlBndl2.EventDefinitions).Return(modBndl2.EventDefinitions, modBndl2.EventSpecs, nil).Once()
 
 	docConv := &automock.DocumentConverter{}
 	docConv.On("MultipleInputFromGraphQL", gqlBndl1.Documents).Return(modBndl1.Documents, nil).Once()
@@ -362,7 +362,7 @@ func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
 	name := "foo"
 	desc := "Lorem ipsum"
 	gqlBundleCreateInput := fixGQLBundleUpdateInput(name, desc)
-	modelBundleCreateInput := fixModelBundleUpdateInput(t, name, desc)
+	modelBundleCreateInput := fixModelBundleUpdateInput(name, desc)
 	emptyGQLBundleCreateInput := &graphql.BundleCreateInput{}
 	emptyModelBundleCreateInput := &model.BundleCreateInput{}
 	testCases := []struct {

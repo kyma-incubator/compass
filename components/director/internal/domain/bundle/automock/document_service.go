@@ -14,6 +14,27 @@ type DocumentService struct {
 	mock.Mock
 }
 
+// CreateInBundle provides a mock function with given fields: ctx, bundleID, in
+func (_m *DocumentService) CreateInBundle(ctx context.Context, bundleID string, in model.DocumentInput) (string, error) {
+	ret := _m.Called(ctx, bundleID, in)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.DocumentInput) string); ok {
+		r0 = rf(ctx, bundleID, in)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.DocumentInput) error); ok {
+		r1 = rf(ctx, bundleID, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetForBundle provides a mock function with given fields: ctx, id, bundleID
 func (_m *DocumentService) GetForBundle(ctx context.Context, id string, bundleID string) (*model.Document, error) {
 	ret := _m.Called(ctx, id, bundleID)

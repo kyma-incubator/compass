@@ -33,18 +33,6 @@ func TestService_Create(t *testing.T) {
 		{Title: "foo", Description: "test", FetchRequest: &model.FetchRequestInput{URL: "doc.foo.bar"}},
 		{Title: "bar", Description: "test"},
 	}
-	APIDefinitions := []*model.APIDefinitionInput{
-		{
-			Name: "foo",
-			Spec: &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
-		}, {Name: "bar"},
-	}
-	EventDefinitions := []*model.EventDefinitionInput{
-		{
-			Name: "foo",
-			Spec: &model.EventSpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
-		}, {Name: "bar"},
-	}
 	modelInput := model.ApplicationRegisterInput{
 		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
@@ -60,10 +48,36 @@ func TestService_Create(t *testing.T) {
 
 	bundles := []*model.BundleCreateInput{
 		{
-			Name:             "bndl1",
-			APIDefinitions:   APIDefinitions,
-			EventDefinitions: EventDefinitions,
-			Documents:        Documents,
+			Name: "bndl1",
+			APIDefinitions: []*model.APIDefinitionInput{
+				{
+					Name: "foo",
+				},
+				{
+					Name: "bar",
+				},
+			},
+			APISpecs: []*model.SpecInput{
+				{
+					FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"},
+				},
+				nil,
+			},
+			EventDefinitions: []*model.EventDefinitionInput{
+				{
+					Name: "foo",
+				},
+				{
+					Name: "bar",
+				},
+			},
+			EventSpecs: []*model.SpecInput{
+				{
+					FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"},
+				},
+				nil,
+			},
+			Documents: Documents,
 		},
 	}
 	modelInput.Bundles = bundles
@@ -128,7 +142,6 @@ func TestService_Create(t *testing.T) {
 		AppNameNormalizer  normalizer.Normalizator
 		AppRepoFn          func() *automock.ApplicationRepository
 		WebhookRepoFn      func() *automock.WebhookRepository
-		FetchRequestRepoFn func() *automock.FetchRequestRepository
 		IntSysRepoFn       func() *automock.IntegrationSystemRepository
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
@@ -149,10 +162,6 @@ func TestService_Create(t *testing.T) {
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -205,10 +214,6 @@ func TestService_Create(t *testing.T) {
 				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
@@ -259,10 +264,6 @@ func TestService_Create(t *testing.T) {
 				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
@@ -311,10 +312,6 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.WebhookRepository{}
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
@@ -350,10 +347,6 @@ func TestService_Create(t *testing.T) {
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -404,10 +397,6 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.WebhookRepository{}
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
@@ -443,10 +432,6 @@ func TestService_Create(t *testing.T) {
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -489,10 +474,6 @@ func TestService_Create(t *testing.T) {
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -543,10 +524,6 @@ func TestService_Create(t *testing.T) {
 				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
@@ -591,10 +568,6 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.WebhookRepository{}
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
@@ -635,10 +608,6 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.WebhookRepository{}
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
@@ -677,10 +646,6 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.WebhookRepository{}
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				return repo
@@ -714,10 +679,6 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -756,10 +717,6 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.WebhookRepository{}
 				return repo
 			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
@@ -796,10 +753,6 @@ func TestService_Create(t *testing.T) {
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("CreateMany", ctx, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -845,7 +798,6 @@ func TestService_Create(t *testing.T) {
 			appNameNormalizer := testCase.AppNameNormalizer
 			appRepo := testCase.AppRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
-			fetchRequestRepo := testCase.FetchRequestRepoFn()
 			scenariosSvc := testCase.ScenariosServiceFn()
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
@@ -869,7 +821,6 @@ func TestService_Create(t *testing.T) {
 			appRepo.AssertExpectations(t)
 			intSysRepo.AssertExpectations(t)
 			webhookRepo.AssertExpectations(t)
-			fetchRequestRepo.AssertExpectations(t)
 			scenariosSvc.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
 			bndlSvc.AssertExpectations(t)
