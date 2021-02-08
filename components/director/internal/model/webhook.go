@@ -18,7 +18,8 @@ type WebhookInput struct {
 type WebhookType string
 
 const (
-	WebhookTypeConfigurationChanged WebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeConfigurationChanged  WebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
 )
 
 func (i *WebhookInput) ToWebhook(id, tenant, applicationID string) *Webhook {

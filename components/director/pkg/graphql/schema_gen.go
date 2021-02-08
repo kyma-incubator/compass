@@ -3076,6 +3076,7 @@ enum ApplicationTemplateAccessLevel {
 
 enum ApplicationWebhookType {
 	CONFIGURATION_CHANGED
+	OPEN_RESOURCE_DISCOVERY
 }
 
 enum BundleInstanceAuthSetStatusConditionInput {

@@ -7,7 +7,7 @@ import (
 
 func (i WebhookInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Type, validation.Required, validation.In(ApplicationWebhookTypeConfigurationChanged)),
+		validation.Field(&i.Type, validation.Required, validation.In(ApplicationWebhookTypeConfigurationChanged, ApplicationWebhookTypeOpenResourceDiscovery)),
 		validation.Field(&i.URL, validation.Required, is.URL, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.Auth),
 	)

@@ -716,16 +716,18 @@ func (e ApplicationTemplateAccessLevel) MarshalGQL(w io.Writer) {
 type ApplicationWebhookType string
 
 const (
-	ApplicationWebhookTypeConfigurationChanged ApplicationWebhookType = "CONFIGURATION_CHANGED"
+	ApplicationWebhookTypeConfigurationChanged  ApplicationWebhookType = "CONFIGURATION_CHANGED"
+	ApplicationWebhookTypeOpenResourceDiscovery ApplicationWebhookType = "OPEN_RESOURCE_DISCOVERY"
 )
 
 var AllApplicationWebhookType = []ApplicationWebhookType{
 	ApplicationWebhookTypeConfigurationChanged,
+	ApplicationWebhookTypeOpenResourceDiscovery,
 }
 
 func (e ApplicationWebhookType) IsValid() bool {
 	switch e {
-	case ApplicationWebhookTypeConfigurationChanged:
+	case ApplicationWebhookTypeConfigurationChanged, ApplicationWebhookTypeOpenResourceDiscovery:
 		return true
 	}
 	return false
