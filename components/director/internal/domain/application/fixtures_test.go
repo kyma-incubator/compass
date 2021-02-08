@@ -1,6 +1,7 @@
 package application_test
 
 import (
+	"encoding/json"
 	"net/url"
 	"testing"
 	"time"
@@ -90,17 +91,19 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 	require.NoError(t, err)
 
 	return &model.Application{
-		ID: id,
+		ID:           id,
+		ProviderName: &providerName,
+		Tenant:       tenant,
+		Name:         name,
+		Description:  &description,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 			Timestamp: time,
 		},
-		Name:                name,
-		Description:         &description,
-		Tenant:              tenant,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
-		ProviderName:        &providerName,
+		BaseURL:             str.Ptr("base_url"),
+		Labels:              json.RawMessage("[]"),
 	}
 }
 
@@ -130,12 +133,14 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		ID:                  id,
 		TenantID:            tenant,
 		Name:                name,
+		ProviderName:        repo.NewNullableString(&providerName),
 		Description:         repo.NewValidNullableString(description),
 		StatusCondition:     string(model.ApplicationStatusConditionInitial),
 		StatusTimestamp:     ts,
 		HealthCheckURL:      repo.NewValidNullableString(testURL),
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
-		ProviderName:        repo.NewNullableString(&providerName),
+		BaseURL:             repo.NewValidNullableString("base_url"),
+		Labels:              repo.NewValidNullableString("[]"),
 	}
 }
 

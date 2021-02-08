@@ -15,6 +15,9 @@ type Entity struct {
 	StatusTimestamp     time.Time      `db:"status_timestamp"`
 	HealthCheckURL      sql.NullString `db:"healthcheck_url"`
 	IntegrationSystemID sql.NullString `db:"integration_system_id"`
+
+	BaseURL sql.NullString `db:"base_url"`
+	Labels  sql.NullString `db:"labels"`
 }
 
 type EntityCollection []Entity
