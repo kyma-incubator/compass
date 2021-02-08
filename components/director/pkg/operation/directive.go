@@ -37,15 +37,19 @@ type Scheduler interface {
 }
 
 type directive struct {
-	transact  persistence.Transactioner
-	scheduler Scheduler
+	transact            persistence.Transactioner
+	scheduler           Scheduler
+	resourceFetcherFunc ResourceFetcherFunc
+	tenantLoaderFunc    TenantLoaderFunc
 }
 
 // NewDirective creates a new handler struct responsible for the Async directive business logic
-func NewDirective(transact persistence.Transactioner, scheduler Scheduler) *directive {
+func NewDirective(transact persistence.Transactioner, scheduler Scheduler, resourceFetcherFunc ResourceFetcherFunc, tenantLoaderFunc TenantLoaderFunc) *directive {
 	return &directive{
-		transact:  transact,
-		scheduler: scheduler,
+		transact:            transact,
+		scheduler:           scheduler,
+		resourceFetcherFunc: resourceFetcherFunc,
+		tenantLoaderFunc:    tenantLoaderFunc,
 	}
 }
 
@@ -95,6 +99,26 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		log.C(ctx).WithError(err).Errorf("An error occurred while processing operation: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to process operation")
 	}
+
+	tenant, err := d.tenantLoaderFunc(ctx)
+	if err != nil {
+		return nil, apperrors.NewTenantRequiredError()
+	}
+	app, err := d.resourceFetcherFunc(ctx, tenant, operation.ResourceID)
+	if err != nil {
+		return nil, apperrors.NewInternalError("could not found resource with id %s", operation.ResourceID)
+	}
+
+	if app.DeletedAt.IsZero() && app.CreatedAt.Equal(app.UpdatedAt) && !app.Ready && *app.Error == "" { // CREATING
+		return nil, apperrors.NewInvalidDataError("another operation is in progress")
+	}
+	if !app.DeletedAt.IsZero() && *app.Error == "" { // DELETING
+		return nil, apperrors.NewInvalidDataError("another operation is in progress")
+	}
+	// Note: This will be needed when there is async UPDATE supported
+	// if app.DeletedAt.IsZero() && app.UpdatedAt.After(app.CreatedAt) && !app.Ready && *app.Error == "" { // UPDATING
+	// 	return nil, apperrors.NewInvalidDataError("another operation is in progress")
+	// }
 
 	operationID, err := d.scheduler.Schedule(*operation)
 	if err != nil {
