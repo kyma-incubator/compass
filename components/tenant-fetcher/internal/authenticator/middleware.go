@@ -5,13 +5,14 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+	"sync"
+
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
-	"net/http"
-	"strings"
-	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -46,32 +47,30 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			// token, err := a.getBearerToken(r)
-			// if err != nil {
-			// 	a.writeAppError(ctx, w, err, http.StatusBadRequest)
-			// }
+			token, err := a.getBearerToken(r)
+			if err != nil {
+				a.writeAppError(ctx, w, err, http.StatusBadRequest)
+			}
 
-			// get claims from token
-			//claims, err := a.parseClaimsWithRetry(r.Context(), token)
-			//if err != nil {
-			//	log.C(ctx).WithError(err).Error("An error has occurred while parsing claims. Error code: ", http.StatusUnauthorized)
-			//	a.writeAppError(ctx, w, err, http.StatusUnauthorized)
-			//	return
-			//}
+			claims, err := a.parseClaimsWithRetry(r.Context(), token)
+			if err != nil {
+				log.C(ctx).WithError(err).Error("An error has occurred while parsing claims. Error code: ", http.StatusUnauthorized)
+				a.writeAppError(ctx, w, err, http.StatusUnauthorized)
+				return
+			}
 
-			// validate claim parameters
-			//if claims.ZID != a.zoneId {
-			//	log.C(ctx).Errorf(`Zone id "%s" from user token does not match the trusted zone %s`, claims.ZID, a.zoneId)
-			//	a.writeAppError(ctx, w, errors.Errorf(`Zone id "%s" from user token is not trusted`, claims.ZID), http.StatusUnauthorized)
-			//	return
-			//}
-			//
-			//scopes := PrefixScopes(a.trustedClaimPrefixes, SubscriptionCallbacksScope)
-			//if !stringsAnyEquals(scopes, claims.Scopes) {
-			//	log.C(ctx).Errorf(`Scope "%s" from user token does not match the trusted scopes`, claims.Scopes)
-			//	a.writeAppError(ctx, w, errors.Errorf(`Scope "%s" is not trusted`, claims.Scopes), http.StatusUnauthorized)
-			//	return
-			//}
+			if claims.ZID != a.zoneId {
+				log.C(ctx).Errorf(`Zone id "%s" from user token does not match the trusted zone %s`, claims.ZID, a.zoneId)
+				a.writeAppError(ctx, w, errors.Errorf(`Zone id "%s" from user token is not trusted`, claims.ZID), http.StatusUnauthorized)
+				return
+			}
+
+			scopes := PrefixScopes(a.trustedClaimPrefixes, SubscriptionCallbacksScope)
+			if !stringsAnyEquals(scopes, strings.Join(claims.Scopes, " ")) {
+				log.C(ctx).Errorf(`Scope "%s" from user token does not match the trusted scopes`, claims.Scopes)
+				a.writeAppError(ctx, w, errors.Errorf(`Scope "%s" is not trusted`, claims.Scopes), http.StatusUnauthorized)
+				return
+			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -127,10 +126,18 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 
 func (a *Authenticator) parseClaims(bearerToken string) (Claims, error) {
 	claims := Claims{}
+
+	// TODO: adjust this productive code
 	//_, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
 	//if err != nil {
 	//	return Claims{}, err
 	//}
+
+	// TODO: remove testing version
+	p := jwt.Parser{SkipClaimsValidation: true}
+	if _, _, err := p.ParseUnverified(bearerToken, &claims); err != nil {
+		return Claims{}, err
+	}
 
 	return claims, nil
 }

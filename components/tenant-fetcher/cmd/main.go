@@ -27,6 +27,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	auth "github.com/kyma-incubator/compass/components/tenant-fetcher/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/uuid"
@@ -79,9 +80,9 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
-	authenticators, err := authenticator.InitFromEnv(envPrefix)
+	authenticatorsConfig, err := authenticator.InitFromEnv(envPrefix)
 	exitOnError(err, "Failed to retrieve authenticators config")
-	log.C(ctx).Infof("%+v", authenticators)
+	log.C(ctx).Infof("%+v", authenticatorsConfig)
 
 	defer func() {
 		err := closeFunc()
@@ -97,8 +98,11 @@ func main() {
 	exitOnError(err, "Failed to configure Logger")
 	logger := log.C(ctx)
 
+	middleware := auth.New("", cfg.CISIdentityZone, extractTrustedIssuersScopePrefixes(authenticatorsConfig))
+
 	mainRouter := mux.NewRouter()
 	subrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+	subrouter.Use(middleware.Handler())
 
 	logger.Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
 	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(service, cfg.TenantPathParam)).Methods(http.MethodPut)
@@ -106,13 +110,14 @@ func main() {
 	logger.Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
 	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(service, cfg.TenantPathParam)).Methods(http.MethodDelete)
 
+	healthCheckSubrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
-	subrouter.HandleFunc("/readyz", newReadinessHandler())
+	healthCheckSubrouter.HandleFunc("/readyz", newReadinessHandler())
 
 	logger.Infof("Registering liveness endpoint...")
-	subrouter.HandleFunc("/healthz", newReadinessHandler())
+	healthCheckSubrouter.HandleFunc("/healthz", newReadinessHandler())
 
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, subrouter, "main")
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, mainRouter, "main")
 
 	go func() {
 		<-ctx.Done()
