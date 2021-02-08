@@ -17,14 +17,18 @@ import (
 const eventAPIDefTable string = `"public"."event_api_definitions"`
 
 var (
-	idColumn      = "id"
-	tenantColumn  = "tenant_id"
-	bundleColumn  = "bundle_id"
-	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "name", "description", "group_name", "version_value", "version_deprecated", "version_deprecated_since",
+	idColumn        = "id"
+	tenantColumn    = "tenant_id"
+	bundleColumn    = "bundle_id"
+	eventDefColumns = []string{idColumn, tenantColumn, bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
+		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
+		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal"}
-	idColumns        = []string{"id"}
-	updatableColumns = []string{"name", "description", "group_name",
-		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+	idColumns        = []string{idColumn}
+	updatableColumns = []string{bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
+		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
+		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
+		"version_for_removal"}
 )
 
 //go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore
@@ -45,9 +49,9 @@ type pgRepository struct {
 
 func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
-		singleGetter:    repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, apiDefColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn, apiDefColumns),
-		creator:         repo.NewCreator(resource.EventDefinition, eventAPIDefTable, apiDefColumns),
+		singleGetter:    repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
+		pageableQuerier: repo.NewPageableQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
+		creator:         repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		updater:         repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
 		deleter:         repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
 		existQuerier:    repo.NewExistQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn),

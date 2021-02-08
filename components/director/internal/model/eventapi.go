@@ -1,17 +1,36 @@
 package model
 
 import (
+	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type EventDefinition struct {
-	ID          string
-	Tenant      string
-	BundleID    string
-	Name        string
-	Description *string
-	Group       *string
-	Version     *Version
+	ID                  string
+	Tenant              string
+	BundleID            *string
+	PackageID           *string
+	Name                string
+	Description         *string
+	Group               *string
+	OrdID               *string
+	ShortDescription    *string
+	SystemInstanceAware *bool
+	ChangeLogEntries    json.RawMessage
+	Links               json.RawMessage
+	Tags                json.RawMessage
+	Countries           json.RawMessage
+	ReleaseStatus       *string
+	SunsetDate          *string
+	Successor           *string
+	Labels              json.RawMessage
+	Visibility          *string
+	Disabled            *bool
+	PartOfProducts      json.RawMessage
+	LineOfBusiness      json.RawMessage
+	Industry            json.RawMessage
+
+	Version *Version
 }
 
 type EventDefinitionPage struct {
@@ -23,24 +42,65 @@ type EventDefinitionPage struct {
 func (EventDefinitionPage) IsPageable() {}
 
 type EventDefinitionInput struct {
-	Name        string
-	Description *string
-	Group       *string
-	Version     *VersionInput
+	Tenant              string
+	BundleID            *string
+	PackageID           *string
+	Name                string
+	Description         *string
+	Group               *string
+	OrdID               *string
+	ShortDescription    *string
+	SystemInstanceAware *bool
+	ChangeLogEntries    json.RawMessage
+	Links               json.RawMessage
+	Tags                json.RawMessage
+	Countries           json.RawMessage
+	ReleaseStatus       *string
+	SunsetDate          *string
+	Successor           *string
+	Labels              json.RawMessage
+	Visibility          *string
+	Disabled            *bool
+	PartOfProducts      json.RawMessage
+	LineOfBusiness      json.RawMessage
+	Industry            json.RawMessage
+
+	Version *VersionInput
 }
 
 func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bndlID string, tenant string) *EventDefinition {
+	return e.ToEventDefinition(id, &bndlID, nil, tenant)
+}
+
+func (e *EventDefinitionInput) ToEventDefinition(id string, bundleID *string, packageID *string, tenant string) *EventDefinition {
 	if e == nil {
 		return nil
 	}
 
 	return &EventDefinition{
-		ID:          id,
-		BundleID:    bndlID,
-		Tenant:      tenant,
-		Name:        e.Name,
-		Description: e.Description,
-		Group:       e.Group,
-		Version:     e.Version.ToVersion(),
+		ID:                  id,
+		BundleID:            bundleID,
+		PackageID:           packageID,
+		Tenant:              tenant,
+		Name:                e.Name,
+		Description:         e.Description,
+		Group:               e.Group,
+		OrdID:               e.OrdID,
+		ShortDescription:    e.ShortDescription,
+		SystemInstanceAware: e.SystemInstanceAware,
+		Tags:                e.Tags,
+		Countries:           e.Countries,
+		Links:               e.Links,
+		ReleaseStatus:       e.ReleaseStatus,
+		SunsetDate:          e.SunsetDate,
+		Successor:           e.Successor,
+		ChangeLogEntries:    e.ChangeLogEntries,
+		Labels:              e.Labels,
+		Visibility:          e.Visibility,
+		Disabled:            e.Disabled,
+		PartOfProducts:      e.PartOfProducts,
+		LineOfBusiness:      e.LineOfBusiness,
+		Industry:            e.Industry,
+		Version:             e.Version.ToVersion(),
 	}
 }

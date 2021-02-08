@@ -60,7 +60,7 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 func fixModelEventAPIDefinition(id string, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
 		ID:          id,
-		BundleID:    bundleID,
+		BundleID:    &bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,

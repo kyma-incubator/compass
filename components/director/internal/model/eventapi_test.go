@@ -32,7 +32,7 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 			Expected: &model.EventDefinition{
 				ID:          id,
 				Tenant:      tenant,
-				BundleID:    bndlID,
+				BundleID:    &bndlID,
 				Name:        name,
 				Description: &desc,
 				Group:       &group,
