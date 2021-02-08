@@ -8,6 +8,20 @@ readonly TMP_DIR=$(mktemp -d)
 echo "ARTIFACTS: ${ARTIFACTS}"
 readonly JUNIT_REPORT_PATH="${ARTIFACTS:-${TMP_DIR}}/junit_compass_octopus-test-suite.xml"
 
+
+USED_DRIVER=$(minikube profile list -o json | jq -r ".valid[0].Config.Driver")
+if [[ $USED_DRIVER == "docker" ]]; then
+  echo "----------------------------"
+  echo "- Docker driver is used, patching Test definitions..."
+  echo "----------------------------"
+
+  MINIKUBE_IP=$(minikube ssh egrep "minikube$" /etc/hosts | cut -f1)
+  NAMESPACES=( "kyma-system" "compass-system" )
+  for namespace in "${NAMESPACES[@]}"; do
+   kubectl get testdefinitions.testing.kyma-project.io -o name -n ${namespace} | sed -e 's/.*\///g' | xargs -I {} kubectl patch testdefinitions.testing.kyma-project.io {} -n ${namespace} --type=json -p="[{\"op\": \"replace\", \"path\": \"/spec/template/spec/hostAliases/0/ip\", \"value\": \"${MINIKUBE_IP}\"}]" 2>/dev/null
+  done
+fi
+
 suiteName="testsuite-all"
 echo "----------------------------"
 echo "- Testing Compass..."
