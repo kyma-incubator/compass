@@ -80,7 +80,6 @@ func main() {
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	authenticators, err := authenticator.InitFromEnv(envPrefix)
-
 	exitOnError(err, "Failed to retrieve authenticators config")
 	log.C(ctx).Infof("%+v", authenticators)
 
@@ -252,4 +251,20 @@ func newReadinessHandler() func(writer http.ResponseWriter, request *http.Reques
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	}
+}
+
+func extractTrustedIssuersScopePrefixes(config []authenticator.Config) []string {
+	var prefixes []string
+
+	for _, authenticator := range config {
+		if len(authenticator.TrustedIssuers) == 0 {
+			continue
+		}
+
+		for _, trustedIssuers := range authenticator.TrustedIssuers {
+			prefixes = append(prefixes, trustedIssuers.ScopePrefix)
+		}
+	}
+
+	return prefixes
 }

@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"net/http"
 	"strings"
 	"sync"
@@ -48,7 +49,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	log.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
 	defer a.mux.Unlock()
-	jwks, err := FetchJWK(ctx, a.jwksEndpoint)
+	jwks, err := authenticator.FetchJWK(ctx, a.jwksEndpoint)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
@@ -161,7 +162,7 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 			a.mux.Unlock()
 			for _, key := range keys {
 				if key.Algorithm() == token.Method.Alg() {
-					return key.Materialize()
+					return key.Materialize(), nil
 				}
 			}
 
