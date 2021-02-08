@@ -102,7 +102,7 @@ func TestOnboardingHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	// THEN
-	assert.Greater(t, tenants, oldTenantState)
+	assert.Greater(t, len(tenants), len(oldTenantState))
 	require.Equal(t, http.StatusOK, response.StatusCode)
 }
 
