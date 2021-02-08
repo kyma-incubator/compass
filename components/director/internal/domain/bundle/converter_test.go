@@ -27,7 +27,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		desc := "bar"
-		bndlModel := fixBundleModel(t, name, desc)
+		bndlModel := fixBundleModel(name, desc)
 		require.NotNil(t, bndlModel)
 		authConv := auth.NewConverter()
 		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
@@ -83,7 +83,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		bndlModel, err := conv.FromEntity(entity)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixBundleModel(t, name, desc), bndlModel)
+		assert.Equal(t, fixBundleModel(name, desc), bndlModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
@@ -122,7 +122,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	id := bundleID
 	name := "foo"
 	desc := "bar"
-	modelBundle := fixBundleModel(t, name, desc)
+	modelBundle := fixBundleModel(name, desc)
 	gqlBundle := fixGQLBundle(id, name, desc)
 	emptyModelBundle := &model.Bundle{}
 	emptyGraphQLBundle := &graphql.Bundle{}
@@ -194,8 +194,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	name2 := "bar"
 	desc := "1"
 	input := []*model.Bundle{
-		fixBundleModel(t, name1, desc),
-		fixBundleModel(t, name2, desc),
+		fixBundleModel(name1, desc),
+		fixBundleModel(name2, desc),
 		{},
 		nil,
 	}

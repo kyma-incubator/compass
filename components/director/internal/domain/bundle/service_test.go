@@ -518,7 +518,7 @@ func TestService_Get(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	bndl := fixBundleModel(t, name, desc)
+	bndl := fixBundleModel(name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -594,7 +594,7 @@ func TestService_GetForApplication(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	bndl := fixBundleModel(t, name, desc)
+	bndl := fixBundleModel(name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -672,7 +672,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	bndl := fixBundleModel(t, name, desc)
+	bndl := fixBundleModel(name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -748,9 +748,9 @@ func TestService_ListByApplicationID(t *testing.T) {
 	desc := "bar"
 
 	bundles := []*model.Bundle{
-		fixBundleModel(t, name, desc),
-		fixBundleModel(t, name, desc),
-		fixBundleModel(t, name, desc),
+		fixBundleModel(name, desc),
+		fixBundleModel(name, desc),
+		fixBundleModel(name, desc),
 	}
 	bundlePage := &model.BundlePage{
 		Data:       bundles,

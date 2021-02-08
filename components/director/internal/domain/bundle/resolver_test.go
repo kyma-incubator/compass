@@ -1056,7 +1056,7 @@ func TestResolver_AddBundle(t *testing.T) {
 	desc := "bar"
 	name := "baz"
 
-	modelBundle := fixBundleModel(t, name, desc)
+	modelBundle := fixBundleModel(name, desc)
 	gqlBundle := fixGQLBundle(id, name, desc)
 	gqlBundleInput := fixGQLBundleCreateInput(name, desc)
 	modelBundleInput := fixModelBundleCreateInput(name, desc)
@@ -1213,7 +1213,7 @@ func TestResolver_UpdateBundle(t *testing.T) {
 	gqlBundleUpdateInput := fixGQLBundleUpdateInput(name, desc)
 	modelBundleUpdateInput := fixModelBundleUpdateInput(name, desc)
 	gqlBundle := fixGQLBundle(id, name, desc)
-	modelBundle := fixBundleModel(t, name, desc)
+	modelBundle := fixBundleModel(name, desc)
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -1385,7 +1385,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 	id := "id"
 	name := "foo"
 	desc := "desc"
-	modelBundle := fixBundleModel(t, name, desc)
+	modelBundle := fixBundleModel(name, desc)
 	gqlBundle := fixGQLBundle(id, name, desc)
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)

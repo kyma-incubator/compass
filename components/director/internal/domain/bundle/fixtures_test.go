@@ -3,8 +3,11 @@ package mp_bundle_test
 import (
 	"database/sql"
 	"database/sql/driver"
-	"testing"
+	"encoding/json"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
@@ -159,9 +162,10 @@ const (
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	ordID            = "com.compass.v1"
 )
 
-func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
+func fixBundleModel(name, desc string) *model.Bundle {
 	return &model.Bundle{
 		ID:                             bundleID,
 		TenantID:                       tenantID,
@@ -170,6 +174,11 @@ func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            fixModelAuth(),
+		OrdID:                          str.Ptr(ordID),
+		ShortDescription:               str.Ptr("short_description"),
+		Links:                          json.RawMessage("[]"),
+		Labels:                         json.RawMessage("[]"),
+		CredentialExchangeStrategies:   json.RawMessage("[]"),
 	}
 }
 
@@ -358,19 +367,24 @@ func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 		Description:                   descSQL,
 		InstanceAuthRequestJSONSchema: schemaSQL,
 		DefaultInstanceAuth:           authSQL,
+		OrdID:                         repo.NewValidNullableString(ordID),
+		ShortDescription:              repo.NewValidNullableString("short_description"),
+		Links:                         repo.NewValidNullableString("[]"),
+		Labels:                        repo.NewValidNullableString("[]"),
+		CredentialExchangeStrategies:  repo.NewValidNullableString("[]"),
 	}
 }
 
 func fixBundleColumns() []string {
-	return []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth"}
+	return []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies"}
 }
 
 func fixBundleRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth()}
+	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), ordID, str.Ptr("short_description"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
 func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Value {
-	return []driver.Value{bundleID, tenantID, appID, bndl.Name, bndl.Description, schema, defAuth}
+	return []driver.Value{bundleID, tenantID, appID, bndl.Name, bndl.Description, schema, defAuth, ordID, bndl.ShortDescription, repo.NewNullableStringFromJSONRawMessage(bndl.Links), repo.NewNullableStringFromJSONRawMessage(bndl.Labels), repo.NewNullableStringFromJSONRawMessage(bndl.CredentialExchangeStrategies)}
 }
 
 func fixDefaultAuth() string {
