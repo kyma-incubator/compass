@@ -1,10 +1,6 @@
 package model
 
-import (
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-)
+import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 type Document struct {
 	BundleID    string
@@ -15,13 +11,9 @@ type Document struct {
 	Description string
 	Format      DocumentFormat
 	// for example Service Class, API etc
-	Kind      *string
-	Data      *string
-	Ready     bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt time.Time
-	Error     *string
+	Kind *string
+	Data *string
+	*BaseEntity
 }
 
 type DocumentInput struct {
@@ -61,6 +53,8 @@ func (d *DocumentInput) ToDocumentWithinBundle(id, tenant string, bundleID strin
 		Format:      d.Format,
 		Kind:        d.Kind,
 		Data:        d.Data,
-		Ready:       true,
+		BaseEntity: &BaseEntity{
+			Ready: true,
+		},
 	}
 }

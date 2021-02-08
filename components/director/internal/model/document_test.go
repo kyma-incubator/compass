@@ -46,7 +46,9 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				Format:      model.DocumentFormatMarkdown,
 				Kind:        &kind,
 				Data:        &data,
-				Ready:       true,
+				BaseEntity: &model.BaseEntity{
+					Ready: true,
+				},
 			},
 		},
 		{
@@ -70,7 +72,9 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				Format:      model.DocumentFormatMarkdown,
 				Kind:        &kind,
 				Data:        &data,
-				Ready:       true,
+				BaseEntity: &model.BaseEntity{
+					Ready: true,
+				},
 			},
 		},
 		{
@@ -80,7 +84,9 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				BundleID: bundleID,
 				ID:       id,
 				Tenant:   tenant,
-				Ready:    true,
+				BaseEntity: &model.BaseEntity{
+					Ready: true,
+				},
 			},
 		},
 		{

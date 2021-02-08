@@ -3,6 +3,7 @@ package mp_bundle_test
 import (
 	"database/sql"
 	"database/sql/driver"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"testing"
 	"time"
 
@@ -174,11 +175,13 @@ func fixBundleModelWithTimestamp(_ *testing.T, name, desc string, createdAt time
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            fixModelAuth(),
-		Ready:                          true,
-		Error:                          nil,
-		CreatedAt:                      createdAt,
-		UpdatedAt:                      createdAt,
-		DeletedAt:                      time.Time{},
+		BaseEntity: &model.BaseEntity{
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+			DeletedAt: time.Time{},
+		},
 	}
 }
 
@@ -194,11 +197,13 @@ func fixGQLBundleWithTimestamp(id, name, desc string, createdAt time.Time) *grap
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: &schema,
 		DefaultInstanceAuth:            fixGQLAuth(),
-		Ready:                          true,
-		Error:                          nil,
-		CreatedAt:                      graphql.Timestamp(createdAt),
-		UpdatedAt:                      graphql.Timestamp(createdAt),
-		DeletedAt:                      graphql.Timestamp(time.Time{}),
+		BaseEntity: &graphql.BaseEntity{
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: graphql.Timestamp(createdAt),
+			UpdatedAt: graphql.Timestamp(createdAt),
+			DeletedAt: graphql.Timestamp(time.Time{}),
+		},
 	}
 }
 
@@ -380,11 +385,13 @@ func fixEntityBundleWithTimestamp(id, name, desc string, createdAt time.Time) *m
 		Description:                   descSQL,
 		InstanceAuthRequestJSONSchema: schemaSQL,
 		DefaultInstanceAuth:           authSQL,
-		Ready:                         true,
-		Error:                         sql.NullString{},
-		CreatedAt:                     createdAt,
-		UpdatedAt:                     createdAt,
-		DeletedAt:                     time.Time{},
+		BaseEntity: &repo.BaseEntity{
+			Ready:     true,
+			Error:     sql.NullString{},
+			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+			DeletedAt: time.Time{},
+		},
 	}
 }
 

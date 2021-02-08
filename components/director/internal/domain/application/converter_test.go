@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"testing"
 
 	"github.com/google/uuid"
@@ -31,11 +32,12 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 		{
 			Name:  "Empty",
-			Input: &model.Application{},
+			Input: &model.Application{BaseEntity: &model.BaseEntity{}},
 			Expected: &graphql.Application{
 				Status: &graphql.ApplicationStatus{
 					Condition: graphql.ApplicationStatusConditionInitial,
 				},
+				BaseEntity: &graphql.BaseEntity{},
 			},
 		},
 		{
@@ -276,7 +278,7 @@ func TestConverter_FromEntity(t *testing.T) {
 
 	t.Run("Empty", func(t *testing.T) {
 		// GIVEN
-		appEntity := &application.Entity{}
+		appEntity := &application.Entity{BaseEntity: &repo.BaseEntity{}}
 
 		// WHEN
 		appModel := conv.FromEntity(appEntity)

@@ -1,10 +1,6 @@
 package model
 
-import (
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-)
+import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 type EventDefinition struct {
 	ID          string
@@ -14,11 +10,7 @@ type EventDefinition struct {
 	Description *string
 	Group       *string
 	Version     *Version
-	Ready       bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   time.Time
-	Error       *string
+	*BaseEntity
 }
 
 type EventDefinitionPage struct {
@@ -49,6 +41,8 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bndlID s
 		Description: e.Description,
 		Group:       e.Group,
 		Version:     e.Version.ToVersion(),
-		Ready:       true,
+		BaseEntity: &BaseEntity{
+			Ready: true,
+		},
 	}
 }

@@ -66,11 +66,13 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
-		Ready:       true,
-		CreatedAt:   fixedTimestamp,
-		UpdatedAt:   fixedTimestamp,
-		DeletedAt:   time.Time{},
-		Error:       nil,
+		BaseEntity: &model.BaseEntity{
+			Ready:     true,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: fixedTimestamp,
+			DeletedAt: time.Time{},
+			Error:     nil,
+		},
 	}, spec
 }
 
@@ -103,11 +105,13 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
-		Ready:       true,
-		Error:       nil,
-		CreatedAt:   graphql.Timestamp(fixedTimestamp),
-		UpdatedAt:   graphql.Timestamp(fixedTimestamp),
-		DeletedAt:   graphql.Timestamp(time.Time{}),
+		BaseEntity: &graphql.BaseEntity{
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(fixedTimestamp),
+			DeletedAt: graphql.Timestamp(time.Time{}),
+		},
 	}
 }
 
@@ -199,11 +203,13 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) *api.Entity {
 			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
 			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
-		Ready:     true,
-		CreatedAt: fixedTimestamp,
-		UpdatedAt: fixedTimestamp,
-		DeletedAt: time.Time{},
-		Error:     sql.NullString{},
+		BaseEntity: &repo.BaseEntity{
+			Ready:     true,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: fixedTimestamp,
+			DeletedAt: time.Time{},
+			Error:     sql.NullString{},
+		},
 	}
 }
 

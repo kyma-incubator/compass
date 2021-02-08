@@ -2,7 +2,7 @@ package mp_bundle
 
 import (
 	"database/sql"
-	"time"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
 type Entity struct {
@@ -13,37 +13,5 @@ type Entity struct {
 	Description                   sql.NullString `db:"description"`
 	InstanceAuthRequestJSONSchema sql.NullString `db:"instance_auth_request_json_schema"`
 	DefaultInstanceAuth           sql.NullString `db:"default_instance_auth"`
-	Ready                         bool           `db:"ready"`
-	CreatedAt                     time.Time      `db:"created_at"`
-	UpdatedAt                     time.Time      `db:"updated_at"`
-	DeletedAt                     time.Time      `db:"deleted_at"`
-	Error                         sql.NullString `db:"error"`
-}
-
-func (e *Entity) SetReady(ready bool) {
-	e.Ready = ready
-}
-
-func (e *Entity) GetCreatedAt() time.Time {
-	return e.CreatedAt
-}
-
-func (e *Entity) SetCreatedAt(t time.Time) {
-	e.CreatedAt = t
-}
-
-func (e *Entity) GetUpdatedAt() time.Time {
-	return e.UpdatedAt
-}
-
-func (e *Entity) SetUpdatedAt(t time.Time) {
-	e.UpdatedAt = t
-}
-
-func (e *Entity) GetDeletedAt() time.Time {
-	return e.DeletedAt
-}
-
-func (e *Entity) SetDeletedAt(t time.Time) {
-	e.DeletedAt = t
+	*repo.BaseEntity
 }

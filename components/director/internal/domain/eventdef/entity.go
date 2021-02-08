@@ -2,9 +2,8 @@ package eventdef
 
 import (
 	"database/sql"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
 type Entity struct {
@@ -14,38 +13,6 @@ type Entity struct {
 	Name        string         `db:"name"`
 	Description sql.NullString `db:"description"`
 	GroupName   sql.NullString `db:"group_name"`
-	Ready       bool           `db:"ready"`
-	CreatedAt   time.Time      `db:"created_at"`
-	UpdatedAt   time.Time      `db:"updated_at"`
-	DeletedAt   time.Time      `db:"deleted_at"`
-	Error       sql.NullString `db:"error"`
+	*repo.BaseEntity
 	version.Version
-}
-
-func (e *Entity) SetReady(ready bool) {
-	e.Ready = ready
-}
-
-func (e *Entity) GetCreatedAt() time.Time {
-	return e.CreatedAt
-}
-
-func (e *Entity) SetCreatedAt(t time.Time) {
-	e.CreatedAt = t
-}
-
-func (e *Entity) GetUpdatedAt() time.Time {
-	return e.UpdatedAt
-}
-
-func (e *Entity) SetUpdatedAt(t time.Time) {
-	e.UpdatedAt = t
-}
-
-func (e *Entity) GetDeletedAt() time.Time {
-	return e.DeletedAt
-}
-
-func (e *Entity) SetDeletedAt(t time.Time) {
-	e.DeletedAt = t
 }

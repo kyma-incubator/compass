@@ -36,11 +36,13 @@ func fixModelDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *mo
 		Format:      model.DocumentFormatMarkdown,
 		Kind:        &docKind,
 		Data:        &docData,
-		Ready:       true,
-		Error:       nil,
-		CreatedAt:   createdAt,
-		UpdatedAt:   createdAt,
-		DeletedAt:   time.Time{},
+		BaseEntity: &model.BaseEntity{
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+			DeletedAt: time.Time{},
+		},
 	}
 }
 
@@ -59,11 +61,14 @@ func fixEntityDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *d
 		Format:      string(model.DocumentFormatMarkdown),
 		Kind:        repo.NewValidNullableString(docKind),
 		Data:        repo.NewValidNullableString(docData),
-		Ready:       true,
-		Error:       sql.NullString{},
-		CreatedAt:   createdAt,
-		UpdatedAt:   createdAt,
-		DeletedAt:   time.Time{},
+		BaseEntity: &repo.BaseEntity{
+
+			Ready:     true,
+			Error:     sql.NullString{},
+			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+			DeletedAt: time.Time{},
+		},
 	}
 }
 
@@ -81,11 +86,13 @@ func fixGQLDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *grap
 		Format:      graphql.DocumentFormatMarkdown,
 		Kind:        &docKind,
 		Data:        &docCLOB,
-		Ready:       true,
-		Error:       nil,
-		CreatedAt:   graphql.Timestamp(createdAt),
-		UpdatedAt:   graphql.Timestamp(createdAt),
-		DeletedAt:   graphql.Timestamp(time.Time{}),
+		BaseEntity: &graphql.BaseEntity{
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: graphql.Timestamp(createdAt),
+			UpdatedAt: graphql.Timestamp(createdAt),
+			DeletedAt: graphql.Timestamp(time.Time{}),
+		},
 	}
 }
 

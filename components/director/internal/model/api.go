@@ -14,13 +14,9 @@ type APIDefinition struct {
 	Description *string
 	TargetURL   string
 	//  group allows you to find the same API but in different version
-	Group     *string
-	Version   *Version
-	Ready     bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt time.Time
-	Error     *string
+	Group   *string
+	Version *Version
+	*BaseEntity
 }
 
 type Timestamp time.Time
@@ -55,6 +51,8 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID str
 		TargetURL:   a.TargetURL,
 		Group:       a.Group,
 		Version:     a.Version.ToVersion(),
-		Ready:       true,
+		BaseEntity: &BaseEntity{
+			Ready: true,
+		},
 	}
 }

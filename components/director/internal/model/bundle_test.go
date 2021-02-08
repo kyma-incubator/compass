@@ -34,7 +34,9 @@ func TestBundleCreateInput_ToBundle(t *testing.T) {
 				ApplicationID: appID,
 				Name:          name,
 				Description:   &desc,
-				Ready:         true,
+				BaseEntity: &model.BaseEntity{
+					Ready: true,
+				},
 			},
 		},
 		{

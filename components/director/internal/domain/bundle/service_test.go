@@ -74,7 +74,9 @@ func TestService_Create(t *testing.T) {
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
-		Ready:                          true,
+		BaseEntity: &model.BaseEntity{
+			Ready: true,
+		},
 	}
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)

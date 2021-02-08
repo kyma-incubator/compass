@@ -6,12 +6,8 @@ type Bundle struct {
 	Description                    *string     `json:"description"`
 	InstanceAuthRequestInputSchema *JSONSchema `json:"InstanceAuthRequestInputSchema"`
 	// When defined, all Auth requests fallback to defaultAuth.
-	DefaultInstanceAuth *Auth     `json:"defaultInstanceAuth"`
-	Ready               bool      `json:"ready"`
-	CreatedAt           Timestamp `json:"createdAt"`
-	UpdatedAt           Timestamp `json:"updatedAt"`
-	DeletedAt           Timestamp `json:"deletedAt"`
-	Error               *string   `json:"error"`
+	DefaultInstanceAuth *Auth `json:"defaultInstanceAuth"`
+	*BaseEntity
 }
 
 type BundleExt struct {

@@ -8,13 +8,9 @@ type Document struct {
 	Description string         `json:"description"`
 	Format      DocumentFormat `json:"format"`
 	// for example Service Class, API etc
-	Kind      *string   `json:"kind"`
-	Data      *CLOB     `json:"data"`
-	Ready     bool      `json:"ready"`
-	CreatedAt Timestamp `json:"createdAt"`
-	UpdatedAt Timestamp `json:"updatedAt"`
-	DeletedAt Timestamp `json:"deletedAt"`
-	Error     *string   `json:"error"`
+	Kind *string `json:"kind"`
+	Data *CLOB   `json:"data"`
+	*BaseEntity
 }
 
 // Extended types used by external API

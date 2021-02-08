@@ -62,11 +62,13 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 		Description: str.Ptr("desc_" + placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
-		Ready:       true,
-		CreatedAt:   fixedTimestamp,
-		UpdatedAt:   fixedTimestamp,
-		DeletedAt:   time.Time{},
-		Error:       nil,
+		BaseEntity: &model.BaseEntity{
+			Ready:     true,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: fixedTimestamp,
+			DeletedAt: time.Time{},
+			Error:     nil,
+		},
 	}, spec
 }
 
@@ -98,11 +100,13 @@ func fixFullGQLEventDefinition(placeholder string) *graphql.EventDefinition {
 		Spec:        spec,
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
-		Ready:       true,
-		Error:       nil,
-		CreatedAt:   graphql.Timestamp(fixedTimestamp),
-		UpdatedAt:   graphql.Timestamp(fixedTimestamp),
-		DeletedAt:   graphql.Timestamp(time.Time{}),
+		BaseEntity: &graphql.BaseEntity{
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(fixedTimestamp),
+			DeletedAt: graphql.Timestamp(time.Time{}),
+		},
 	}
 }
 
@@ -190,11 +194,13 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
 			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
-		Ready:     true,
-		CreatedAt: fixedTimestamp,
-		UpdatedAt: fixedTimestamp,
-		DeletedAt: time.Time{},
-		Error:     sql.NullString{},
+		BaseEntity: &repo.BaseEntity{
+			Ready:     true,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: fixedTimestamp,
+			DeletedAt: time.Time{},
+			Error:     sql.NullString{},
+		},
 	}
 }
 

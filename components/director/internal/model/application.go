@@ -15,11 +15,7 @@ type Application struct {
 	Status              *ApplicationStatus
 	HealthCheckURL      *string
 	IntegrationSystemID *string
-	Ready               bool
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	DeletedAt           time.Time
-	Error               *string
+	*BaseEntity
 }
 
 func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timestamp time.Time) {
@@ -90,7 +86,9 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 			Condition: getApplicationStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: timestamp,
 		},
-		Ready: true,
+		BaseEntity: &BaseEntity{
+			Ready: true,
+		},
 	}
 }
 

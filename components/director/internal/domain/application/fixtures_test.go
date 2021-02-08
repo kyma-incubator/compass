@@ -106,11 +106,13 @@ func fixDetailedModelApplicationWithTimestamp(t *testing.T, id, tenant, name, de
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
-		Ready:               true,
-		Error:               nil,
-		CreatedAt:           createdAt,
-		UpdatedAt:           createdAt,
-		DeletedAt:           time.Time{},
+		BaseEntity: &model.BaseEntity{
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+			DeletedAt: time.Time{},
+		},
 	}
 }
 
@@ -133,11 +135,13 @@ func fixDetailedGQLApplicationWithTimestamp(t *testing.T, id, name, description 
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        str.Ptr("provider name"),
-		Ready:               true,
-		Error:               nil,
-		CreatedAt:           graphql.Timestamp(createdAt),
-		UpdatedAt:           graphql.Timestamp(createdAt),
-		DeletedAt:           graphql.Timestamp(time.Time{}),
+		BaseEntity: &graphql.BaseEntity{
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: graphql.Timestamp(createdAt),
+			UpdatedAt: graphql.Timestamp(createdAt),
+			DeletedAt: graphql.Timestamp(time.Time{}),
+		},
 	}
 }
 
@@ -159,11 +163,13 @@ func fixDetailedEntityApplicationWithTimestamp(t *testing.T, id, tenant, name, d
 		HealthCheckURL:      repo.NewValidNullableString(testURL),
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
 		ProviderName:        repo.NewNullableString(&providerName),
-		Ready:               true,
-		Error:               sql.NullString{},
-		CreatedAt:           createdAt,
-		UpdatedAt:           createdAt,
-		DeletedAt:           time.Time{},
+		BaseEntity: &repo.BaseEntity{
+			Ready:     true,
+			Error:     sql.NullString{},
+			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+			DeletedAt: time.Time{},
+		},
 	}
 }
 

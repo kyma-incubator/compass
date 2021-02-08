@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"testing"
 	"time"
 
@@ -58,6 +59,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 			Description:                    nil,
 			InstanceAuthRequestInputSchema: nil,
 			DefaultInstanceAuth:            nil,
+			BaseEntity:                     &model.BaseEntity{},
 		}
 
 		expectedEntity := &mp_bundle.Entity{
@@ -68,6 +70,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 			Description:                   sql.NullString{},
 			InstanceAuthRequestJSONSchema: sql.NullString{},
 			DefaultInstanceAuth:           sql.NullString{},
+			BaseEntity:                    &repo.BaseEntity{},
 		}
 
 		require.NotNil(t, bndlModel)
@@ -114,6 +117,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 			Description:                   sql.NullString{},
 			InstanceAuthRequestJSONSchema: sql.NullString{},
 			DefaultInstanceAuth:           sql.NullString{},
+			BaseEntity:                    &repo.BaseEntity{},
 		}
 		expectedModel := &model.Bundle{
 			ID:                             bundleID,
@@ -123,6 +127,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 			Description:                    nil,
 			InstanceAuthRequestInputSchema: nil,
 			DefaultInstanceAuth:            nil,
+			BaseEntity:                     &model.BaseEntity{},
 		}
 		authConv := auth.NewConverter()
 		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
@@ -143,8 +148,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	createdAt := time.Now()
 	modelBundle := fixBundleModelWithTimestamp(t, name, desc, createdAt)
 	gqlBundle := fixGQLBundleWithTimestamp(id, name, desc, createdAt)
-	emptyModelBundle := &model.Bundle{}
-	emptyGraphQLBundle := &graphql.Bundle{}
+	emptyModelBundle := &model.Bundle{BaseEntity: &model.BaseEntity{}}
+	emptyGraphQLBundle := &graphql.Bundle{BaseEntity: &graphql.BaseEntity{}}
 
 	testCases := []struct {
 		Name            string

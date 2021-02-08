@@ -51,11 +51,13 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 		TargetURL:   in.TargetURL,
 		Group:       in.Group,
 		Version:     c.version.ToGraphQL(in.Version),
-		Ready:       in.Ready,
-		CreatedAt:   graphql.Timestamp(in.CreatedAt),
-		UpdatedAt:   graphql.Timestamp(in.UpdatedAt),
-		DeletedAt:   graphql.Timestamp(in.DeletedAt),
-		Error:       in.Error,
+		BaseEntity: &graphql.BaseEntity{
+			Ready:     in.Ready,
+			CreatedAt: graphql.Timestamp(in.CreatedAt),
+			UpdatedAt: graphql.Timestamp(in.UpdatedAt),
+			DeletedAt: graphql.Timestamp(in.DeletedAt),
+			Error:     in.Error,
+		},
 	}, nil
 }
 
@@ -128,11 +130,13 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		Description: repo.StringPtrFromNullableString(entity.Description),
 		Group:       repo.StringPtrFromNullableString(entity.Group),
 		Version:     c.version.FromEntity(entity.Version),
-		Ready:       entity.Ready,
-		CreatedAt:   entity.CreatedAt,
-		UpdatedAt:   entity.UpdatedAt,
-		DeletedAt:   entity.DeletedAt,
-		Error:       repo.StringPtrFromNullableString(entity.Error),
+		BaseEntity: &model.BaseEntity{
+			Ready:     entity.Ready,
+			CreatedAt: entity.CreatedAt,
+			UpdatedAt: entity.UpdatedAt,
+			DeletedAt: entity.DeletedAt,
+			Error:     repo.StringPtrFromNullableString(entity.Error),
+		},
 	}
 }
 
@@ -147,11 +151,13 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 		Group:       repo.NewNullableString(apiModel.Group),
 		TargetURL:   apiModel.TargetURL,
 		Version:     c.convertVersionToEntity(apiModel.Version),
-		Ready:       apiModel.Ready,
-		CreatedAt:   apiModel.CreatedAt,
-		UpdatedAt:   apiModel.UpdatedAt,
-		DeletedAt:   apiModel.DeletedAt,
-		Error:       repo.NewNullableString(apiModel.Error),
+		BaseEntity: &repo.BaseEntity{
+			Ready:     apiModel.Ready,
+			CreatedAt: apiModel.CreatedAt,
+			UpdatedAt: apiModel.UpdatedAt,
+			DeletedAt: apiModel.DeletedAt,
+			Error:     repo.NewNullableString(apiModel.Error),
+		},
 	}
 }
 

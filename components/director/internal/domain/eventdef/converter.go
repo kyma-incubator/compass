@@ -49,11 +49,13 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*gra
 		Group:       in.Group,
 		Spec:        s,
 		Version:     c.vc.ToGraphQL(in.Version),
-		Ready:       in.Ready,
-		CreatedAt:   graphql.Timestamp(in.CreatedAt),
-		UpdatedAt:   graphql.Timestamp(in.UpdatedAt),
-		DeletedAt:   graphql.Timestamp(in.DeletedAt),
-		Error:       in.Error,
+		BaseEntity: &graphql.BaseEntity{
+			Ready:     in.Ready,
+			CreatedAt: graphql.Timestamp(in.CreatedAt),
+			UpdatedAt: graphql.Timestamp(in.UpdatedAt),
+			DeletedAt: graphql.Timestamp(in.DeletedAt),
+			Error:     in.Error,
+		},
 	}, nil
 }
 
@@ -123,11 +125,13 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 		Description: repo.StringPtrFromNullableString(entity.Description),
 		Group:       repo.StringPtrFromNullableString(entity.GroupName),
 		Version:     c.vc.FromEntity(entity.Version),
-		Ready:       entity.Ready,
-		CreatedAt:   entity.CreatedAt,
-		UpdatedAt:   entity.UpdatedAt,
-		DeletedAt:   entity.DeletedAt,
-		Error:       repo.StringPtrFromNullableString(entity.Error),
+		BaseEntity: &model.BaseEntity{
+			Ready:     entity.Ready,
+			CreatedAt: entity.CreatedAt,
+			UpdatedAt: entity.UpdatedAt,
+			DeletedAt: entity.DeletedAt,
+			Error:     repo.StringPtrFromNullableString(entity.Error),
+		},
 	}
 }
 
@@ -140,11 +144,13 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) *Entity {
 		Description: repo.NewNullableString(eventModel.Description),
 		GroupName:   repo.NewNullableString(eventModel.Group),
 		Version:     c.convertVersionToEntity(eventModel.Version),
-		Ready:       eventModel.Ready,
-		CreatedAt:   eventModel.CreatedAt,
-		UpdatedAt:   eventModel.UpdatedAt,
-		DeletedAt:   eventModel.DeletedAt,
-		Error:       repo.NewNullableString(eventModel.Error),
+		BaseEntity: &repo.BaseEntity{
+			Ready:     eventModel.Ready,
+			CreatedAt: eventModel.CreatedAt,
+			UpdatedAt: eventModel.UpdatedAt,
+			DeletedAt: eventModel.DeletedAt,
+			Error:     repo.NewNullableString(eventModel.Error),
+		},
 	}
 }
 

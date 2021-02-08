@@ -318,7 +318,9 @@ func TestService_CreateInBundle(t *testing.T) {
 		Name:      name,
 		TargetURL: targetUrl,
 		Version:   &model.Version{},
-		Ready:     true,
+		BaseEntity: &model.BaseEntity{
+			Ready: true,
+		},
 	}
 
 	ctx := context.TODO()

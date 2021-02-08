@@ -64,11 +64,13 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		IntegrationSystemID: repo.StringPtrFromNullableString(entity.IntegrationSystemID),
 		HealthCheckURL:      repo.StringPtrFromNullableString(entity.HealthCheckURL),
 		ProviderName:        repo.StringPtrFromNullableString(entity.ProviderName),
-		Ready:               entity.Ready,
-		CreatedAt:           entity.CreatedAt,
-		UpdatedAt:           entity.UpdatedAt,
-		DeletedAt:           entity.DeletedAt,
-		Error:               repo.StringPtrFromNullableString(entity.Error),
+		BaseEntity: &model.BaseEntity{
+			Ready:     entity.Ready,
+			CreatedAt: entity.CreatedAt,
+			UpdatedAt: entity.UpdatedAt,
+			DeletedAt: entity.DeletedAt,
+			Error:     repo.StringPtrFromNullableString(entity.Error),
+		},
 	}
 }
 
@@ -85,11 +87,13 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 		ProviderName:        in.ProviderName,
-		Ready:               in.Ready,
-		CreatedAt:           graphql.Timestamp(in.CreatedAt),
-		UpdatedAt:           graphql.Timestamp(in.UpdatedAt),
-		DeletedAt:           graphql.Timestamp(in.DeletedAt),
-		Error:               in.Error,
+		BaseEntity: &graphql.BaseEntity{
+			Ready:     in.Ready,
+			CreatedAt: graphql.Timestamp(in.CreatedAt),
+			UpdatedAt: graphql.Timestamp(in.UpdatedAt),
+			DeletedAt: graphql.Timestamp(in.DeletedAt),
+			Error:     in.Error,
+		},
 	}
 }
 

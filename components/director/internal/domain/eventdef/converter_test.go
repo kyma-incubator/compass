@@ -24,8 +24,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	placeholder := "test"
 	modelEventDefinition, modelSpec := fixFullEventDefinitionModel(placeholder)
 	gqlEventDefinition := fixFullGQLEventDefinition(placeholder)
-	emptyModelEventDefinition := &model.EventDefinition{}
-	emptyGraphQLEventDefinition := &graphql.EventDefinition{}
+	emptyModelEventDefinition := &model.EventDefinition{BaseEntity: &model.BaseEntity{}}
+	emptyGraphQLEventDefinition := &graphql.EventDefinition{BaseEntity: &graphql.BaseEntity{}}
 
 	expectedErr := errors.New("error")
 

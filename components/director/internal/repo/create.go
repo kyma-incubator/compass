@@ -51,7 +51,7 @@ func (c *universalCreator) Create(ctx context.Context, dbEntity interface{}) err
 		values = append(values, fmt.Sprintf(":%s", c))
 	}
 
-	entity, ok := dbEntity.(AsynchronousEntity)
+	entity, ok := dbEntity.(Entity)
 	if ok && entity.GetCreatedAt().IsZero() { // This zero check is needed to mock the Create tests
 		now := time.Now()
 		entity.SetCreatedAt(now)

@@ -312,7 +312,9 @@ func TestService_CreateInBundle(t *testing.T) {
 		Tenant:   tenantID,
 		Name:     name,
 		Version:  &model.Version{},
-		Ready:    true,
+		BaseEntity: &model.BaseEntity{
+			Ready: true,
+		},
 	}
 
 	ctx := context.TODO()

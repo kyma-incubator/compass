@@ -1,10 +1,6 @@
 package model
 
-import (
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-)
+import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 type Bundle struct {
 	ID                             string
@@ -14,11 +10,7 @@ type Bundle struct {
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
-	Ready                          bool
-	CreatedAt                      time.Time
-	UpdatedAt                      time.Time
-	DeletedAt                      time.Time
-	Error                          *string
+	*BaseEntity
 }
 
 func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
@@ -68,6 +60,8 @@ func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle
 		Description:                    i.Description,
 		InstanceAuthRequestInputSchema: i.InstanceAuthRequestInputSchema,
 		DefaultInstanceAuth:            i.DefaultInstanceAuth.ToAuth(),
-		Ready:                          true,
+		BaseEntity: &BaseEntity{
+			Ready: true,
+		},
 	}
 }

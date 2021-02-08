@@ -34,8 +34,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.Document{},
-			Expected: &graphql.Document{},
+			Input:    &model.Document{BaseEntity: &model.BaseEntity{}},
+			Expected: &graphql.Document{BaseEntity: &graphql.BaseEntity{}},
 		},
 		{
 			Name:     "Nil",
@@ -165,11 +165,13 @@ func TestToEntity(t *testing.T) {
 		Description: "givenDescription",
 		DisplayName: "givenDisplayName",
 		Format:      "givenFormat",
-		Ready:       true,
-		CreatedAt:   createdAt,
-		UpdatedAt:   createdAt,
-		DeletedAt:   time.Time{},
-		Error:       nil,
+		BaseEntity: &model.BaseEntity{
+			Ready:     true,
+			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+			DeletedAt: time.Time{},
+			Error:     nil,
+		},
 	}
 
 	t.Run("only required fields", func(t *testing.T) {
@@ -186,11 +188,13 @@ func TestToEntity(t *testing.T) {
 			Description: givenModel.Description,
 			DisplayName: givenModel.DisplayName,
 			Format:      string(givenModel.Format),
-			Ready:       givenModel.Ready,
-			CreatedAt:   givenModel.CreatedAt,
-			UpdatedAt:   givenModel.UpdatedAt,
-			DeletedAt:   givenModel.DeletedAt,
-			Error:       repo.NewNullableString(givenModel.Error),
+			BaseEntity: &repo.BaseEntity{
+				Ready:     givenModel.Ready,
+				CreatedAt: givenModel.CreatedAt,
+				UpdatedAt: givenModel.UpdatedAt,
+				DeletedAt: givenModel.DeletedAt,
+				Error:     repo.NewNullableString(givenModel.Error),
+			},
 		}, actual)
 	})
 
