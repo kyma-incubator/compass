@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 
@@ -80,8 +81,9 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Address string `envconfig:"default=127.0.0.1:3000"`
-	AppURL  string `envconfig:"APP_URL"`
+	Address         string `envconfig:"default=127.0.0.1:3000"`
+	InternalAddress string `envconfig:"default=127.0.0.1:3001"`
+	AppURL          string `envconfig:"APP_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
@@ -255,17 +257,39 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
+	internalRouter := mux.NewRouter()
+	operationUpdaterHandler := operation.NewUpdateOperationHandler(transact, map[string]operation.ResourceUpdaterFunc{
+		resource.Application.ToLower(): func(ctx context.Context, id string, ready bool, errorMsg string) error {
+			app, err := appRepo.GetGlobalByID(ctx, id)
+			if err != nil {
+				return err
+			}
+			app.Ready = ready
+			app.Error = &errorMsg
+			return appRepo.Update(ctx, app)
+		},
+	}, map[string]operation.ResourceDeleterFunc{
+		resource.Application.ToLower(): func(ctx context.Context, id string) error {
+			return appRepo.DeleteGlobal(ctx, id)
+		},
+	})
+	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
+	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
+
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
+	runInternalSrv, shutdownInternalSrv := createServer(ctx, cfg.InternalAddress, internalRouter, "internal", cfg.ServerTimeout)
 
 	go func() {
 		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
 		shutdownMetricsSrv()
+		shutdownInternalSrv()
 		shutdownMainSrv()
 	}()
 
 	go runMetricsSrv()
+	go runInternalSrv()
 	runMainSrv()
 }
 
