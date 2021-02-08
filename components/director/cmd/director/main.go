@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 
@@ -424,9 +426,10 @@ func bundleRepo() mp_bundle.BundleRepository {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	specConverter := spec.NewConverter(frConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	docConverter := document.NewConverter(frConverter)
-	apiConverter := api.NewConverter(frConverter, versionConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
 
 	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }
@@ -436,9 +439,10 @@ func applicationRepo() application.ApplicationRepository {
 
 	versionConverter := version.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
+	specConverter := spec.NewConverter(frConverter)
 
-	apiConverter := api.NewConverter(frConverter, versionConverter)
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	docConverter := document.NewConverter(frConverter)
 
 	webhookConverter := webhook.NewConverter(authConverter)

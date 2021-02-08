@@ -14,19 +14,12 @@ type Entity struct {
 	Name        string         `db:"name"`
 	Description sql.NullString `db:"description"`
 	GroupName   sql.NullString `db:"group_name"`
+	Ready       bool           `db:"ready"`
+	CreatedAt   time.Time      `db:"created_at"`
+	UpdatedAt   time.Time      `db:"updated_at"`
+	DeletedAt   time.Time      `db:"deleted_at"`
+	Error       sql.NullString `db:"error"`
 	version.Version
-	EntitySpec
-	Ready     bool           `db:"ready"`
-	CreatedAt time.Time      `db:"created_at"`
-	UpdatedAt time.Time      `db:"updated_at"`
-	DeletedAt time.Time      `db:"deleted_at"`
-	Error     sql.NullString `db:"error"`
-}
-
-type EntitySpec struct {
-	SpecData   sql.NullString `db:"spec_data"`
-	SpecFormat sql.NullString `db:"spec_format"`
-	SpecType   sql.NullString `db:"spec_type"`
 }
 
 func (e *Entity) SetReady(ready bool) {

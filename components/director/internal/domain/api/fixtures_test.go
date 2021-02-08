@@ -19,10 +19,13 @@ import (
 
 const (
 	apiDefID         = "ddddddddd-dddd-dddd-dddd-dddddddddddd"
+	specID           = "sssssssss-ssss-ssss-ssss-ssssssssssss"
 	tenantID         = "ttttttttt-tttt-tttt-tttt-tttttttttttt"
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 )
+
+var fixedTimestamp = time.Now()
 
 func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
@@ -30,19 +33,18 @@ func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *mo
 		BundleID:  bndlID,
 		Name:      name,
 		TargetURL: targetURL,
-		Ready:     true,
 	}
 }
 
-func fixFullAPIDefinitionModel(placeholder string) model.APIDefinition {
-	return fixFullAPIDefinitionModelWithTimestamp(placeholder, time.Now())
-}
-
-func fixFullAPIDefinitionModelWithTimestamp(placeholder string, createdAt time.Time) model.APIDefinition {
-	spec := &model.APISpec{
-		Data:   str.Ptr("spec_data_" + placeholder),
-		Format: model.SpecFormatYaml,
-		Type:   model.APISpecTypeOpenAPI,
+func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.Spec) {
+	apiType := model.APISpecTypeOpenAPI
+	spec := model.Spec{
+		ID:         specID,
+		Data:       str.Ptr("spec_data_" + placeholder),
+		Format:     model.SpecFormatYaml,
+		ObjectType: model.APISpecReference,
+		ObjectID:   apiDefID,
+		APIType:    &apiType,
 	}
 
 	deprecated := false
@@ -61,39 +63,23 @@ func fixFullAPIDefinitionModelWithTimestamp(placeholder string, createdAt time.T
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
-		Spec:        spec,
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
 		Ready:       true,
-		Error:       nil,
-		CreatedAt:   createdAt,
-		UpdatedAt:   createdAt,
+		CreatedAt:   fixedTimestamp,
+		UpdatedAt:   fixedTimestamp,
 		DeletedAt:   time.Time{},
-	}
-}
-
-func fixGQLAPIDefinition(id string, bndlId string, name, targetURL string) *graphql.APIDefinition {
-	return &graphql.APIDefinition{
-		ID:        id,
-		BundleID:  bndlId,
-		Name:      name,
-		TargetURL: targetURL,
-		Ready:     true,
-	}
+		Error:       nil,
+	}, spec
 }
 
 func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
-	return fixFullGQLAPIDefinitionWithTimestamp(placeholder, createdAt)
-}
-
-func fixFullGQLAPIDefinitionWithTimestamp(placeholder string, createdAt time.Time) *graphql.APIDefinition {
 	data := graphql.CLOB("spec_data_" + placeholder)
-	format := graphql.SpecFormatYaml
 
 	spec := &graphql.APISpec{
 		Data:         &data,
-		Format:       format,
+		Format:       graphql.SpecFormatYaml,
 		Type:         graphql.APISpecTypeOpenAPI,
 		DefinitionID: apiDefID,
 	}
@@ -119,18 +105,19 @@ func fixFullGQLAPIDefinitionWithTimestamp(placeholder string, createdAt time.Tim
 		Version:     v,
 		Ready:       true,
 		Error:       nil,
-		CreatedAt:   graphql.Timestamp(createdAt),
-		UpdatedAt:   graphql.Timestamp(createdAt),
+		CreatedAt:   graphql.Timestamp(fixedTimestamp),
+		UpdatedAt:   graphql.Timestamp(fixedTimestamp),
 		DeletedAt:   graphql.Timestamp(time.Time{}),
 	}
 }
 
-func fixModelAPIDefinitionInput(name, description string, group string) *model.APIDefinitionInput {
+func fixModelAPIDefinitionInput(name, description string, group string) (*model.APIDefinitionInput, *model.SpecInput) {
 	data := "data"
+	apiType := model.APISpecTypeOpenAPI
 
-	spec := &model.APISpecInput{
+	spec := &model.SpecInput{
 		Data:         &data,
-		Type:         model.APISpecTypeOpenAPI,
+		APIType:      &apiType,
 		Format:       model.SpecFormatYaml,
 		FetchRequest: &model.FetchRequestInput{},
 	}
@@ -151,9 +138,8 @@ func fixModelAPIDefinitionInput(name, description string, group string) *model.A
 		Description: &description,
 		TargetURL:   "https://test-url.com",
 		Group:       &group,
-		Spec:        spec,
 		Version:     v,
-	}
+	}, spec
 }
 
 func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.APIDefinitionInput {
@@ -187,93 +173,16 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	}
 }
 
-func fixModelAuthInput(headers map[string][]string) *model.AuthInput {
-	return &model.AuthInput{
-		AdditionalHeaders: headers,
-	}
-}
-
-func fixGQLAuthInput(headers map[string][]string) *graphql.AuthInput {
-	httpHeaders := graphql.HttpHeaders(headers)
-
-	return &graphql.AuthInput{
-		AdditionalHeaders: &httpHeaders,
-	}
-}
-
-func fixModelAuth() *model.Auth {
-	return &model.Auth{
-		Credential: model.CredentialData{
-			Basic: &model.BasicCredentialData{
-				Username: "foo",
-				Password: "bar",
-			},
-		},
-		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
-		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-		RequestAuth: &model.CredentialRequestAuth{
-			Csrf: &model.CSRFTokenCredentialRequestAuth{
-				TokenEndpointURL: "foo.url",
-				Credential: model.CredentialData{
-					Basic: &model.BasicCredentialData{
-						Username: "boo",
-						Password: "far",
-					},
-				},
-				AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
-				AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-			},
-		},
-	}
-}
-
-func fixGQLAuth() *graphql.Auth {
-	return &graphql.Auth{
-		Credential: &graphql.BasicCredentialData{
-			Username: "foo",
-			Password: "bar",
-		},
-		AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-		AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
-		RequestAuth: &graphql.CredentialRequestAuth{
-			Csrf: &graphql.CSRFTokenCredentialRequestAuth{
-				TokenEndpointURL: "foo.url",
-				Credential: &graphql.BasicCredentialData{
-					Username: "boo",
-					Password: "far",
-				},
-				AdditionalHeaders:     &graphql.HttpHeaders{"test": {"foo", "bar"}},
-				AdditionalQueryParams: &graphql.QueryParams{"test": {"foo", "bar"}},
-			},
-		},
-	}
-}
-
-func fixModelAPIRtmAuth(id string, auth *model.Auth) *model.APIRuntimeAuth {
-	return &model.APIRuntimeAuth{
-		ID:        str.Ptr("foo"),
-		TenantID:  "tnt",
-		RuntimeID: id,
-		APIDefID:  "api_id",
-		Value:     auth,
-	}
-}
-
 func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) *api.Entity {
 	return &api.Entity{
 		ID:        id,
 		BndlID:    bndlID,
 		Name:      name,
 		TargetURL: targetUrl,
-		Ready:     true,
 	}
 }
 
 func fixFullEntityAPIDefinition(apiDefID, placeholder string) *api.Entity {
-	return fixFullEntityAPIDefinitionWithTimestamp(apiDefID, placeholder, time.Now())
-}
-
-func fixFullEntityAPIDefinitionWithTimestamp(apiDefID, placeholder string, createdAt time.Time) *api.Entity {
 	boolPlaceholder := false
 
 	return &api.Entity{
@@ -284,11 +193,6 @@ func fixFullEntityAPIDefinitionWithTimestamp(apiDefID, placeholder string, creat
 		Description: repo.NewValidNullableString("desc_" + placeholder),
 		Group:       repo.NewValidNullableString("group_" + placeholder),
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
-		EntitySpec: api.EntitySpec{
-			SpecData:   repo.NewValidNullableString("spec_data_" + placeholder),
-			SpecFormat: repo.NewValidNullableString(string(model.SpecFormatYaml)),
-			SpecType:   repo.NewValidNullableString(string(model.APISpecTypeOpenAPI)),
-		},
 		Version: version.Version{
 			VersionValue:           repo.NewNullableString(str.Ptr("v1.1")),
 			VersionDepracated:      repo.NewNullableBool(&boolPlaceholder),
@@ -296,38 +200,27 @@ func fixFullEntityAPIDefinitionWithTimestamp(apiDefID, placeholder string, creat
 			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
 		Ready:     true,
-		Error:     sql.NullString{},
-		CreatedAt: createdAt,
-		UpdatedAt: createdAt,
+		CreatedAt: fixedTimestamp,
+		UpdatedAt: fixedTimestamp,
 		DeletedAt: time.Time{},
+		Error:     sql.NullString{},
 	}
 }
 
 func fixAPIDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "spec_data",
-		"spec_format", "spec_type", "version_value", "version_deprecated",
+	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "version_value", "version_deprecated",
 		"version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
-	return fixAPIDefinitionRowWithTimestamp(id, placeholder, time.Now())
-}
-
-func fixAPIDefinitionRowWithTimestamp(id, placeholder string, createdAt time.Time) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
-		fmt.Sprintf("https://%s.com", placeholder), "spec_data_" + placeholder, "YAML", "OPEN_API",
-		"v1.1", false, "v1.0", false, true, createdAt, createdAt, time.Time{}, nil}
+		fmt.Sprintf("https://%s.com", placeholder), "v1.1", false, "v1.0", false, true, fixedTimestamp, fixedTimestamp, time.Time{}, nil}
 }
 
 func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
-		api.TargetURL, api.Spec.Data, string(api.Spec.Format), string(api.Spec.Type),
-		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
+		api.TargetURL, api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
 		api.Version.ForRemoval, api.Ready, api.CreatedAt, api.UpdatedAt, api.DeletedAt, api.Error}
-}
-
-func fixDefaultAuth() string {
-	return `{"Credential":{"Basic":null,"Oauth":null},"AdditionalHeaders":{"testHeader":["hval1","hval2"]},"AdditionalQueryParams":null,"RequestAuth":null}`
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
@@ -342,25 +235,8 @@ func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchReque
 			Condition: model.FetchRequestStatusConditionInitial,
 			Timestamp: timestamp,
 		},
-		ObjectType: model.APIFetchRequestReference,
-		ObjectID:   "foo",
-	}
-}
-
-func fixModelFetchRequestWithCondition(id, url string, timestamp time.Time, condition model.FetchRequestStatusCondition) *model.FetchRequest {
-	return &model.FetchRequest{
-		ID:     id,
-		Tenant: tenantID,
-		URL:    url,
-		Auth:   nil,
-		Mode:   "SINGLE",
-		Filter: nil,
-		Status: &model.FetchRequestStatus{
-			Condition: condition,
-			Timestamp: timestamp,
-		},
-		ObjectType: model.APIFetchRequestReference,
-		ObjectID:   "foo",
+		ObjectType: model.SpecFetchRequestReference,
+		ObjectID:   specID,
 	}
 }
 

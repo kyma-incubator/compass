@@ -14,6 +14,27 @@ type EventService struct {
 	mock.Mock
 }
 
+// CreateInBundle provides a mock function with given fields: ctx, bundleID, in, spec
+func (_m *EventService) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
+	ret := _m.Called(ctx, bundleID, in, spec)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) string); ok {
+		r0 = rf(ctx, bundleID, in, spec)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.EventDefinitionInput, *model.SpecInput) error); ok {
+		r1 = rf(ctx, bundleID, in, spec)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetForBundle provides a mock function with given fields: ctx, id, bundleID
 func (_m *EventService) GetForBundle(ctx context.Context, id string, bundleID string) (*model.EventDefinition, error) {
 	ret := _m.Called(ctx, id, bundleID)

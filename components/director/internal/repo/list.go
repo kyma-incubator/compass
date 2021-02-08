@@ -26,6 +26,8 @@ type universalLister struct {
 	selectedColumns string
 	tenantColumn    *string
 	resourceType    resource.Type
+
+	orderByParams OrderByParams
 }
 
 func NewLister(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string) Lister {
@@ -34,6 +36,17 @@ func NewLister(resourceType resource.Type, tableName string, tenantColumn string
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
+		orderByParams:   NoOrderBy,
+	}
+}
+
+func NewListerWithOrderBy(resourceType resource.Type, tableName string, tenantColumn string, selectedColumns []string, orderByParams OrderByParams) Lister {
+	return &universalLister{
+		resourceType:    resourceType,
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
+		tenantColumn:    &tenantColumn,
+		orderByParams:   orderByParams,
 	}
 }
 
@@ -42,6 +55,7 @@ func NewListerGlobal(resourceType resource.Type, tableName string, selectedColum
 		resourceType:    resourceType,
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
+		orderByParams:   NoOrderBy,
 	}
 }
 
@@ -63,7 +77,7 @@ func (l *universalLister) unsafeList(ctx context.Context, dest Collection, condi
 		return err
 	}
 
-	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, OrderByParams{})
+	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, l.orderByParams)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}

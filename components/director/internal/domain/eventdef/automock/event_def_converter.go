@@ -15,7 +15,7 @@ type EventDefConverter struct {
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *EventDefConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, error) {
+func (_m *EventDefConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.EventDefinitionInput, *model.SpecInput, error) {
 	ret := _m.Called(in)
 
 	var r0 *model.EventDefinitionInput
@@ -27,18 +27,27 @@ func (_m *EventDefConverter) InputFromGraphQL(in *graphql.EventDefinitionInput) 
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*graphql.EventDefinitionInput) error); ok {
+	var r1 *model.SpecInput
+	if rf, ok := ret.Get(1).(func(*graphql.EventDefinitionInput) *model.SpecInput); ok {
 		r1 = rf(in)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.SpecInput)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(*graphql.EventDefinitionInput) error); ok {
+		r2 = rf(in)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // MultipleInputFromGraphQL provides a mock function with given fields: in
-func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, error) {
+func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinitionInput) ([]*model.EventDefinitionInput, []*model.SpecInput, error) {
 	ret := _m.Called(in)
 
 	var r0 []*model.EventDefinitionInput
@@ -50,9 +59,41 @@ func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinit
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func([]*graphql.EventDefinitionInput) error); ok {
+	var r1 []*model.SpecInput
+	if rf, ok := ret.Get(1).(func([]*graphql.EventDefinitionInput) []*model.SpecInput); ok {
 		r1 = rf(in)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]*model.SpecInput)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func([]*graphql.EventDefinitionInput) error); ok {
+		r2 = rf(in)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// MultipleToGraphQL provides a mock function with given fields: in, specs
+func (_m *EventDefConverter) MultipleToGraphQL(in []*model.EventDefinition, specs []*model.Spec) ([]*graphql.EventDefinition, error) {
+	ret := _m.Called(in, specs)
+
+	var r0 []*graphql.EventDefinition
+	if rf, ok := ret.Get(0).(func([]*model.EventDefinition, []*model.Spec) []*graphql.EventDefinition); ok {
+		r0 = rf(in, specs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*graphql.EventDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*model.EventDefinition, []*model.Spec) error); ok {
+		r1 = rf(in, specs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -60,34 +101,25 @@ func (_m *EventDefConverter) MultipleInputFromGraphQL(in []*graphql.EventDefinit
 	return r0, r1
 }
 
-// MultipleToGraphQL provides a mock function with given fields: in
-func (_m *EventDefConverter) MultipleToGraphQL(in []*model.EventDefinition) []*graphql.EventDefinition {
-	ret := _m.Called(in)
-
-	var r0 []*graphql.EventDefinition
-	if rf, ok := ret.Get(0).(func([]*model.EventDefinition) []*graphql.EventDefinition); ok {
-		r0 = rf(in)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*graphql.EventDefinition)
-		}
-	}
-
-	return r0
-}
-
-// ToGraphQL provides a mock function with given fields: in
-func (_m *EventDefConverter) ToGraphQL(in *model.EventDefinition) *graphql.EventDefinition {
-	ret := _m.Called(in)
+// ToGraphQL provides a mock function with given fields: in, spec
+func (_m *EventDefConverter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*graphql.EventDefinition, error) {
+	ret := _m.Called(in, spec)
 
 	var r0 *graphql.EventDefinition
-	if rf, ok := ret.Get(0).(func(*model.EventDefinition) *graphql.EventDefinition); ok {
-		r0 = rf(in)
+	if rf, ok := ret.Get(0).(func(*model.EventDefinition, *model.Spec) *graphql.EventDefinition); ok {
+		r0 = rf(in, spec)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*graphql.EventDefinition)
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.EventDefinition, *model.Spec) error); ok {
+		r1 = rf(in, spec)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

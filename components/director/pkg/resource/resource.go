@@ -16,6 +16,7 @@ const (
 	Tenant                     Type = "Tenant"
 	SystemAuth                 Type = "SystemAuth"
 	FetchRequest               Type = "FetchRequest"
+	Specification              Type = "Specification"
 	Document                   Type = "Document"
 	BundleInstanceAuth         Type = "BundleInstanceAuth"
 	API                        Type = "Api"

@@ -20,14 +20,7 @@ type Entity struct {
 	UpdatedAt   time.Time      `db:"updated_at"`
 	DeletedAt   time.Time      `db:"deleted_at"`
 	Error       sql.NullString `db:"error"`
-	EntitySpec
 	version.Version
-}
-
-type EntitySpec struct {
-	SpecData   sql.NullString `db:"spec_data"`
-	SpecFormat sql.NullString `db:"spec_format"`
-	SpecType   sql.NullString `db:"spec_type"`
 }
 
 func (e *Entity) SetReady(ready bool) {

@@ -6,20 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestService_Create(t *testing.T) {
@@ -31,7 +26,6 @@ func TestService_Create(t *testing.T) {
 	applicationID := "appid"
 	name := "foo"
 	desc := "bar"
-	spec := "test"
 
 	modelInput := model.BundleCreateInput{
 		Name:                           name,
@@ -45,14 +39,30 @@ func TestService_Create(t *testing.T) {
 		APIDefinitions: []*model.APIDefinitionInput{
 			{
 				Name: "foo",
-				Spec: &model.APISpecInput{FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"}},
-			}, {Name: "bar"},
+			},
+			{
+				Name: "bar",
+			},
+		},
+		APISpecs: []*model.SpecInput{
+			{
+				FetchRequest: &model.FetchRequestInput{URL: "api.foo.bar"},
+			},
+			nil,
 		},
 		EventDefinitions: []*model.EventDefinitionInput{
 			{
 				Name: "foo",
-				Spec: &model.EventSpecInput{FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"}},
-			}, {Name: "bar"},
+			},
+			{
+				Name: "bar",
+			},
+		},
+		EventSpecs: []*model.SpecInput{
+			{
+				FetchRequest: &model.FetchRequestInput{URL: "eventapi.foo.bar"},
+			},
+			nil,
 		},
 	}
 
@@ -69,19 +79,15 @@ func TestService_Create(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
 
-	modelFr := fixFetchRequest("api.foo.bar", model.APIFetchRequestReference, timestamp)
-
 	testCases := []struct {
-		Name                  string
-		RepositoryFn          func() *automock.BundleRepository
-		APIRepoFn             func() *automock.APIRepository
-		EventAPIRepoFn        func() *automock.EventAPIRepository
-		DocumentRepoFn        func() *automock.DocumentRepository
-		FetchRequestRepoFn    func() *automock.FetchRequestRepository
-		UIDServiceFn          func() *automock.UIDService
-		FetchRequestServiceFn func() *automock.FetchRequestService
-		Input                 model.BundleCreateInput
-		ExpectedErr           error
+		Name              string
+		RepositoryFn      func() *automock.BundleRepository
+		APIServiceFn      func() *automock.APIService
+		EventServiceFn    func() *automock.EventService
+		DocumentServiceFn func() *automock.DocumentService
+		UIDServiceFn      func() *automock.UIDService
+		Input             model.BundleCreateInput
+		ExpectedErr       error
 	}{
 		{
 			Name: "Success",
@@ -95,34 +101,22 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-				return repo
+			APIServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
+				return svc
 			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
-				return repo
+			EventServiceFn: func() *automock.EventService {
+				svc := &automock.EventService{}
+				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
+				return svc
 			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, mock.Anything).Return(nil).Times(2)
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, modelFr).Return(nil).Once()
-				repo.On("Create", ctx, fixFetchRequest("eventapi.foo.bar", model.EventAPIFetchRequestReference, timestamp)).Return(nil).Once()
-				repo.On("Create", ctx, fixFetchRequest("doc.foo.bar", model.DocumentFetchRequestReference, timestamp)).Return(nil).Once()
-				return repo
-			},
-			FetchRequestServiceFn: func() *automock.FetchRequestService {
-				svc := &automock.FetchRequestService{}
-				svc.On("HandleSpec", ctx, modelFr).Return(nil)
+			DocumentServiceFn: func() *automock.DocumentService {
+				svc := &automock.DocumentService{}
+				svc.On("CreateInBundle", ctx, id, *modelInput.Documents[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, id, *modelInput.Documents[1]).Return("", nil).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -140,25 +134,14 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				return repo
+			APIServiceFn: func() *automock.APIService {
+				return &automock.APIService{}
 			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
+			EventServiceFn: func() *automock.EventService {
+				return &automock.EventService{}
 			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			FetchRequestServiceFn: func() *automock.FetchRequestService {
-				svc := &automock.FetchRequestService{}
-				return svc
+			DocumentServiceFn: func() *automock.DocumentService {
+				return &automock.DocumentService{}
 			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
@@ -175,25 +158,17 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(testErr).Once()
-				return repo
+			APIServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", testErr).Once()
+				return svc
 			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
+			EventServiceFn: func() *automock.EventService {
+				svc := &automock.EventService{}
+				return svc
 			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				return repo
-			},
-			FetchRequestServiceFn: func() *automock.FetchRequestService {
-				svc := &automock.FetchRequestService{}
+			DocumentServiceFn: func() *automock.DocumentService {
+				svc := &automock.DocumentService{}
 				return svc
 			},
 			Input:       modelInput,
@@ -211,70 +186,20 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(testErr).Once()
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, modelFr).Return(nil).Once()
-				return repo
-			},
-			FetchRequestServiceFn: func() *automock.FetchRequestService {
-				svc := &automock.FetchRequestService{}
-				svc.On("HandleSpec", ctx, modelFr).Return(nil)
+			APIServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
 				return svc
 			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
-		},
-		{
-			Name: "Error - API Update",
-			RepositoryFn: func() *automock.BundleRepository {
-				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
+			EventServiceFn: func() *automock.EventService {
+				svc := &automock.EventService{}
+				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", testErr).Once()
 				return svc
 			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(testErr).Once()
+			DocumentServiceFn: func() *automock.DocumentService {
+				repo := &automock.DocumentService{}
 				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, modelFr).Return(nil).Once()
-				return repo
-			},
-			FetchRequestServiceFn: func() *automock.FetchRequestService {
-				svc := &automock.FetchRequestService{}
-				svc.On("HandleSpec", ctx, modelFr).Return(nil)
-				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
@@ -291,128 +216,25 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-
-				return repo
+			APIServiceFn: func() *automock.APIService {
+				svc := &automock.APIService{}
+				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
+				return svc
 			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
-				return repo
+			EventServiceFn: func() *automock.EventService {
+				svc := &automock.EventService{}
+				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
+				return svc
 			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, mock.Anything).Return(testErr).Once()
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, modelFr).Return(nil).Once()
-				repo.On("Create", ctx, fixFetchRequest("eventapi.foo.bar", model.EventAPIFetchRequestReference, timestamp)).Return(nil).Once()
-				return repo
-			},
-			FetchRequestServiceFn: func() *automock.FetchRequestService {
-				svc := &automock.FetchRequestService{}
-				svc.On("HandleSpec", ctx, modelFr).Return(nil)
+			DocumentServiceFn: func() *automock.DocumentService {
+				svc := &automock.DocumentService{}
+				svc.On("CreateInBundle", ctx, id, *modelInput.Documents[0]).Return("", testErr).Once()
 				return svc
 			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
-		},
-		{
-			Name: "Success when fetching API Spec failed",
-			RepositoryFn: func() *automock.BundleRepository {
-				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, mock.Anything).Return(nil).Times(2)
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, modelFr).Return(nil).Once()
-				repo.On("Create", ctx, fixFetchRequest("eventapi.foo.bar", model.EventAPIFetchRequestReference, timestamp)).Return(nil).Once()
-				repo.On("Create", ctx, fixFetchRequest("doc.foo.bar", model.DocumentFetchRequestReference, timestamp)).Return(nil).Once()
-				return repo
-			},
-			FetchRequestServiceFn: func() *automock.FetchRequestService {
-				svc := &automock.FetchRequestService{}
-				svc.On("HandleSpec", ctx, modelFr).Return(nil)
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "Success - fetched api schema",
-			RepositoryFn: func() *automock.BundleRepository {
-				repo := &automock.BundleRepository{}
-				repo.On("Create", ctx, modelBundle).Return(nil).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			APIRepoFn: func() *automock.APIRepository {
-				repo := &automock.APIRepository{}
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Create", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
-				repo.On("Update", ctx, &model.APIDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.APISpec{Data: &spec}, Ready: true}).Return(nil).Once()
-				return repo
-			},
-			EventAPIRepoFn: func() *automock.EventAPIRepository {
-				repo := &automock.EventAPIRepository{}
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "foo", Spec: &model.EventSpec{}, Ready: true}).Return(nil).Once()
-				repo.On("Create", ctx, &model.EventDefinition{ID: "foo", BundleID: "foo", Tenant: tenantID, Name: "bar", Ready: true}).Return(nil).Once()
-				return repo
-			},
-			DocumentRepoFn: func() *automock.DocumentRepository {
-				repo := &automock.DocumentRepository{}
-				repo.On("Create", ctx, mock.Anything).Return(nil).Times(2)
-				return repo
-			},
-			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
-				repo := &automock.FetchRequestRepository{}
-				repo.On("Create", ctx, modelFr).Return(nil).Once()
-				repo.On("Create", ctx, fixFetchRequest("eventapi.foo.bar", model.EventAPIFetchRequestReference, timestamp)).Return(nil).Once()
-				repo.On("Create", ctx, fixFetchRequest("doc.foo.bar", model.DocumentFetchRequestReference, timestamp)).Return(nil).Once()
-				return repo
-			},
-			FetchRequestServiceFn: func() *automock.FetchRequestService {
-				svc := &automock.FetchRequestService{}
-				svc.On("HandleSpec", ctx, modelFr).Return(&spec)
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: nil,
 		},
 	}
 
@@ -422,12 +244,10 @@ func TestService_Create(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			uidService := testCase.UIDServiceFn()
 
-			apiRepo := testCase.APIRepoFn()
-			eventRepo := testCase.EventAPIRepoFn()
-			documentRepo := testCase.DocumentRepoFn()
-			frRepo := testCase.FetchRequestRepoFn()
-			frSvc := testCase.FetchRequestServiceFn()
-			svc := mp_bundle.NewService(repo, apiRepo, eventRepo, documentRepo, frRepo, uidService, frSvc)
+			apiSvc := testCase.APIServiceFn()
+			eventSvc := testCase.EventServiceFn()
+			documentSvc := testCase.DocumentServiceFn()
+			svc := mp_bundle.NewService(repo, apiSvc, eventSvc, documentSvc, uidService)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -441,11 +261,11 @@ func TestService_Create(t *testing.T) {
 				assert.IsType(t, "string", result)
 			}
 
-			mock.AssertExpectationsForObjects(t, repo, apiRepo, eventRepo, documentRepo, frRepo, uidService)
+			mock.AssertExpectationsForObjects(t, repo, apiSvc, eventSvc, documentSvc, uidService)
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), "", model.BundleCreateInput{})
 		// THEN
@@ -535,7 +355,7 @@ func TestService_Update(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			err := svc.Update(ctx, testCase.InputID, testCase.Input)
@@ -552,7 +372,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), "", model.BundleUpdateInput{})
 		// THEN
@@ -604,7 +424,7 @@ func TestService_Delete(t *testing.T) {
 			// given
 			repo := testCase.RepositoryFn()
 
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			err := svc.Delete(ctx, testCase.InputID)
@@ -621,7 +441,7 @@ func TestService_Delete(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.Delete(context.TODO(), "")
 		// THEN
@@ -666,7 +486,7 @@ func TestService_Exist(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			bndlRepo := testCase.RepoFn()
-			svc := mp_bundle.NewService(bndlRepo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(bndlRepo, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := svc.Exist(ctx, id)
@@ -685,7 +505,7 @@ func TestService_Exist(t *testing.T) {
 	}
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "")
 		// THEN
@@ -742,7 +562,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			bndl, err := svc.Get(ctx, testCase.InputID)
@@ -760,7 +580,7 @@ func TestService_Get(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Get(context.TODO(), "")
 		// THEN
@@ -821,7 +641,7 @@ func TestService_GetForApplication(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			document, err := svc.GetForApplication(ctx, testCase.InputID, testCase.ApplicationID)
@@ -839,7 +659,7 @@ func TestService_GetForApplication(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForApplication(context.TODO(), "", "")
 		// THEN
@@ -896,7 +716,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			document, err := svc.GetByInstanceAuthID(ctx, testCase.InstanceAuthID)
@@ -914,7 +734,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForApplication(context.TODO(), "", "")
 		// THEN
@@ -1006,7 +826,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := mp_bundle.NewService(repo, nil, nil, nil, nil, nil, nil)
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
 
 			// when
 			docs, err := svc.ListByApplicationID(ctx, applicationID, testCase.PageSize, after)
@@ -1024,7 +844,7 @@ func TestService_ListByApplicationID(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := mp_bundle.NewService(nil, nil, nil, nil, nil, nil, nil)
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByApplicationID(context.TODO(), "", 5, "")
 		// THEN

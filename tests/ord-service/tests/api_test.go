@@ -78,8 +78,6 @@ func TestORDService(t *testing.T) {
 
 	app, err := pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 	require.NoError(t, err)
-	apiDefinitionIDDefaultTenant := app.Bundles.Data[0].APIDefinitions.Data[0].ID
-	eventDefinitionIDDefaultTenant := app.Bundles.Data[0].EventDefinitions.Data[0].ID
 
 	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
@@ -129,19 +127,47 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service api specification do not have tenant header", func(t *testing.T) {
-		makeRequestWithStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), http.StatusBadRequest)
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
+
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", 0)).Array()
+		require.Equal(t, 1, len(specs))
+
+		specURL := specs[0].Get("url").String()
+		makeRequestWithStatusExpect(t, httpClient, specURL, http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service event specification do not have tenant header", func(t *testing.T) {
-		makeRequestWithStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), http.StatusBadRequest)
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
+
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
+		require.Equal(t, 1, len(specs))
+
+		specURL := specs[0].Get("url").String()
+		makeRequestWithStatusExpect(t, httpClient, specURL, http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service api specification have wrong tenant header", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
+
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", 0)).Array()
+		require.Equal(t, 1, len(specs))
+
+		specURL := specs[0].Get("url").String()
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
+
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
+		require.Equal(t, 1, len(specs))
+
+		specURL := specs[0].Get("url").String()
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {"wrong-tenant"}}, http.StatusBadRequest)
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
@@ -260,7 +286,7 @@ func TestORDService(t *testing.T) {
 
 				specURL := specs[0].Get("url").String()
 				specPath := fmt.Sprintf("/api/%s/specification", apiID)
-				require.Equal(t, testConfig.ORDServiceStaticURL+specPath, specURL)
+				require.Contains(t, specURL, testConfig.ORDServiceStaticURL+specPath)
 
 				respBody := makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testData.tenant}})
 
@@ -326,7 +352,7 @@ func TestORDService(t *testing.T) {
 
 				specURL := specs[0].Get("url").String()
 				specPath := fmt.Sprintf("/event/%s/specification", eventID)
-				require.Equal(t, testConfig.ORDServiceStaticURL+specPath, specURL)
+				require.Contains(t, specURL, testConfig.ORDServiceStaticURL+specPath)
 
 				respBody := makeRequestWithHeaders(t, httpClient, specURL, map[string][]string{tenantHeader: {testData.tenant}})
 
@@ -493,13 +519,29 @@ func TestORDService(t *testing.T) {
 	}
 
 	t.Run("404 when request to ORD Service for api spec have another tenant header value", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/api/%s/specification", apiDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
+
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.apiDefinitions", 0)).Array()
+		require.Equal(t, 1, len(specs))
+
+		specURL := specs[0].Get("url").String()
+
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
 	})
 
 	t.Run("404 when request to ORD Service for event spec have another tenant header value", func(t *testing.T) {
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
-		makeRequestWithHeadersAndStatusExpect(t, httpClient, fmt.Sprintf(testConfig.ORDServiceStaticURL+"/event/%s/specification", eventDefinitionIDDefaultTenant), map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
+		respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTenant}})
+		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
+
+		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.eventDefinitions", 0)).Array()
+		require.Equal(t, 1, len(specs))
+
+		specURL := specs[0].Get("url").String()
+
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.Tenant}}, http.StatusNotFound)
+		makeRequestWithHeadersAndStatusExpect(t, httpClient, specURL, map[string][]string{tenantHeader: {testConfig.DefaultTenant}}, http.StatusOK)
 	})
 
 	t.Run("Errors generate user-friendly message", func(t *testing.T) {
