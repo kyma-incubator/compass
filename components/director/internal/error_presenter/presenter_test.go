@@ -35,7 +35,8 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 		err := presenter.Do(ctx, errors.New(errMsg))
 
 		entry := hook.LastEntry()
-		actualErrMsg := entry.Data[logrus.ErrorKey].(error)
+		actualErrMsg, ok := entry.Data[logrus.ErrorKey].(error)
+		require.True(t, ok)
 
 		//then
 		require.NotNil(t, entry)
@@ -55,7 +56,8 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 		err := presenter.Do(ctx, customErr)
 
 		entry := hook.LastEntry()
-		actualErrMsg := entry.Data[logrus.ErrorKey].(error)
+		actualErrMsg, ok := entry.Data[logrus.ErrorKey].(error)
+		require.True(t, ok)
 
 		//then
 		require.NotNil(t, entry)
