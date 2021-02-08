@@ -36,6 +36,7 @@ Afterwards, those files should be copied to this component's Helm chart which is
 ### Controller
 
 If we make changes to the controller, we have two options:
-1. Deploy the new version of the controller using `make install` which will install the controller onto the cluster
-   that is described by your `~/.kube/config` file.
+1. Deploy the new version of the controller directly onto the cluster described by your `~/.kube/config` using `make deploy`.
+   Alternatively, you can use `make run` to run an instance of the controller locally which also connects to the
+   cluster described by the `~/.kube/config` file. The later method provides a faster development feedback loop. 
 2. Create a Docker image for the new version of the controller and deploy it manually on a Kubernetes cluster.
