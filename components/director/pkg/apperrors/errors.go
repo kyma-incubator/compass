@@ -107,6 +107,15 @@ func NewNotFoundError(resourceType resource.Type, objectID string) error {
 	}
 }
 
+func NewNotFoundErrorWithMessage(resourceType resource.Type, objectID string, message string) error {
+	return Error{
+		errorCode: NotFound,
+		Message:   fmt.Sprintf(NotFoundMsgF, message),
+		arguments: map[string]string{"object": string(resourceType), "ID": objectID},
+		parentErr: nil,
+	}
+}
+
 func NewNotFoundErrorWithType(resourceType resource.Type) error {
 	return Error{
 		errorCode: NotFound,

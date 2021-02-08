@@ -30,8 +30,6 @@ const (
 	testCaseErrorOnDBCommunication   = "got error on db communication"
 )
 
-var template = `{}`
-
 func TestRepositoryGetByID(t *testing.T) {
 	t.Run(testCaseSuccess, func(t *testing.T) {
 		// GIVEN
@@ -521,10 +519,10 @@ func givenEntity() webhook.Entity {
 		Type:           string(model.WebhookTypeConfigurationChanged),
 		URL:            "http://kyma.io",
 		Mode:           repo.NewValidNullableString(string(model.WebhookModeSync)),
-		URLTemplate:    repo.NewValidNullableString(template),
-		InputTemplate:  repo.NewValidNullableString(template),
-		HeaderTemplate: repo.NewValidNullableString(template),
-		OutputTemplate: repo.NewValidNullableString(template),
+		URLTemplate:    repo.NewValidNullableString(emptyTemplate),
+		InputTemplate:  repo.NewValidNullableString(emptyTemplate),
+		HeaderTemplate: repo.NewValidNullableString(emptyTemplate),
+		OutputTemplate: repo.NewValidNullableString(emptyTemplate),
 	}
 }
 
@@ -550,10 +548,10 @@ func givenModel() model.Webhook {
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            "http://kyma.io",
 		Mode:           &webhookMode,
-		URLTemplate:    &template,
-		InputTemplate:  &template,
-		HeaderTemplate: &template,
-		OutputTemplate: &template,
+		URLTemplate:    &emptyTemplate,
+		InputTemplate:  &emptyTemplate,
+		HeaderTemplate: &emptyTemplate,
+		OutputTemplate: &emptyTemplate,
 	}
 }
 

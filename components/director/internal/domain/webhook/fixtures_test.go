@@ -5,6 +5,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
+var emptyTemplate = `{}`
+
 func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
@@ -14,10 +16,10 @@ func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 		URL:            url,
 		Auth:           &model.Auth{},
 		Mode:           &modelWebhookMode,
-		URLTemplate:    &template,
-		InputTemplate:  &template,
-		HeaderTemplate: &template,
-		OutputTemplate: &template,
+		URLTemplate:    &emptyTemplate,
+		InputTemplate:  &emptyTemplate,
+		HeaderTemplate: &emptyTemplate,
+		OutputTemplate: &emptyTemplate,
 	}
 }
 
@@ -29,10 +31,10 @@ func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 		URL:            url,
 		Auth:           &graphql.Auth{},
 		Mode:           &graphqlWebhookMode,
-		URLTemplate:    &template,
-		InputTemplate:  &template,
-		HeaderTemplate: &template,
-		OutputTemplate: &template,
+		URLTemplate:    &emptyTemplate,
+		InputTemplate:  &emptyTemplate,
+		HeaderTemplate: &emptyTemplate,
+		OutputTemplate: &emptyTemplate,
 	}
 }
 
@@ -42,10 +44,10 @@ func fixModelWebhookInput(url string) *model.WebhookInput {
 		URL:            url,
 		Auth:           &model.AuthInput{},
 		Mode:           &modelWebhookMode,
-		URLTemplate:    &template,
-		InputTemplate:  &template,
-		HeaderTemplate: &template,
-		OutputTemplate: &template,
+		URLTemplate:    &emptyTemplate,
+		InputTemplate:  &emptyTemplate,
+		HeaderTemplate: &emptyTemplate,
+		OutputTemplate: &emptyTemplate,
 	}
 }
 
@@ -55,9 +57,9 @@ func fixGQLWebhookInput(url string) *graphql.WebhookInput {
 		URL:            url,
 		Auth:           &graphql.AuthInput{},
 		Mode:           &graphqlWebhookMode,
-		URLTemplate:    &template,
-		InputTemplate:  &template,
-		HeaderTemplate: &template,
-		OutputTemplate: &template,
+		URLTemplate:    &emptyTemplate,
+		InputTemplate:  &emptyTemplate,
+		HeaderTemplate: &emptyTemplate,
+		OutputTemplate: &emptyTemplate,
 	}
 }

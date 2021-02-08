@@ -80,8 +80,8 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Address     string `envconfig:"default=127.0.0.1:3000"`
-	DirectorURL string `envconfig:"APP_DIRECTOR_URL"`
+	Address string `envconfig:"default=127.0.0.1:3000"`
+	AppURL  string `envconfig:"APP_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
@@ -175,7 +175,7 @@ func main() {
 		),
 		Directives: graphql.DirectiveRoot{
 			Async:       operation.NewDirective(transact, operation.DefaultScheduler{}).HandleOperation,
-			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultBundleRepo(), defaultBundleInstanceAuthRepo()).HasScenario,
+			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},
@@ -207,7 +207,7 @@ func main() {
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
-	operationMiddleware := operation.NewMiddleware(cfg.DirectorURL)
+	operationMiddleware := operation.NewMiddleware(cfg.AppURL)
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
@@ -236,7 +236,7 @@ func main() {
 
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
-	appRepo := defaultApplicationRepo()
+	appRepo := applicationRepo()
 	operationHandler := operation.NewHandler(transact, appRepo.GetByID, tenant.LoadFromContext)
 
 	operationsAPIRouter := mainRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
@@ -414,13 +414,13 @@ func createServer(ctx context.Context, address string, handler http.Handler, nam
 	return runFn, shutdownFn
 }
 
-func defaultBundleInstanceAuthRepo() bundleinstanceauth.Repository {
+func bundleInstanceAuthRepo() bundleinstanceauth.Repository {
 	authConverter := auth.NewConverter()
 
 	return bundleinstanceauth.NewRepository(bundleinstanceauth.NewConverter(authConverter))
 }
 
-func defaultBundleRepo() mp_bundle.BundleRepository {
+func bundleRepo() mp_bundle.BundleRepository {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -431,7 +431,7 @@ func defaultBundleRepo() mp_bundle.BundleRepository {
 	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }
 
-func defaultApplicationRepo() application.ApplicationRepository {
+func applicationRepo() application.ApplicationRepository {
 	authConverter := auth.NewConverter()
 
 	versionConverter := version.NewConverter()

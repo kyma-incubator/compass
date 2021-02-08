@@ -19,6 +19,7 @@ package operation
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -102,12 +103,13 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	app, err := h.resourceFetcherFunc(ctx, tenantID, inputParams.ResourceID)
+	res, err := h.resourceFetcherFunc(ctx, tenantID, inputParams.ResourceID)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while fetching application from database: %s", err.Error())
+		log.C(ctx).WithError(err).Errorf("An error occurred while fetching resource from database: %s", err.Error())
 
 		if apperrors.IsNotFoundError(err) {
-			apperrors.WriteAppError(ctx, writer, apperrors.NewNotFoundError(resource.Application, inputParams.ResourceID), http.StatusNotFound)
+			apperrors.WriteAppError(ctx, writer, apperrors.NewNotFoundErrorWithMessage(resource.Application, inputParams.ResourceID,
+				fmt.Sprintf("Operation for application with id %s not found", inputParams.ResourceID)), http.StatusNotFound)
 			return
 		}
 
@@ -126,20 +128,20 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 			ResourceID:   inputParams.ResourceID,
 			ResourceType: inputParams.ResourceType,
 		},
-		Error: app.Error,
+		Error: res.Error,
 	}
 
-	if !app.DeletedAt.IsZero() {
+	if !res.DeletedAt.IsZero() {
 		opResponse.OperationType = graphql.OperationTypeDelete
-	} else if app.CreatedAt != app.UpdatedAt {
+	} else if res.CreatedAt != res.UpdatedAt {
 		opResponse.OperationType = graphql.OperationTypeUpdate
 	} else {
 		opResponse.OperationType = graphql.OperationTypeCreate
 	}
 
-	if app.Ready {
+	if res.Ready {
 		opResponse.Status = OperationStatusSucceeded
-	} else if app.Error != nil {
+	} else if res.Error != nil {
 		opResponse.Status = OperationStatusFailed
 	} else {
 		opResponse.Status = OperationStatusInProgress

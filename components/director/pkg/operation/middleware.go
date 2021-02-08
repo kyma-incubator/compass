@@ -56,7 +56,7 @@ func (m *middleware) ExtensionHandler(ctx context.Context, next func(ctx context
 	if len(locations) > 0 {
 		reqCtx := gqlgen.GetRequestContext(ctx)
 		if err := reqCtx.RegisterExtension(LocationsParam, locations); err != nil {
-			log.C(ctx).Infof("Unable to attach %s extension: %s", LocationsParam, err.Error())
+			log.C(ctx).Errorf("Unable to attach %s extension: %s", LocationsParam, err.Error())
 			return []byte(`{"error": "unable to finalize operation location"}`)
 		}
 
@@ -81,6 +81,7 @@ func (m *middleware) ExtensionHandler(ctx context.Context, next func(ctx context
 			var err error
 			resp, err = sjson.DeleteBytes(resp, prop)
 			if err != nil {
+				log.C(ctx).Errorf("Unable to process and delete unnecessary bytes from response body: %s", err.Error())
 				return []byte(`{"error": "failed to prepare response body"}`)
 			}
 

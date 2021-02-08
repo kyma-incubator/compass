@@ -53,7 +53,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 		require.Equal(t, gqlResultResponse(gqlResults[0].resultName), resp)
 	})
 
-	t.Run("when an async operation is found in the context, location extension would be attached and data would dropped", func(t *testing.T) {
+	t.Run("when an async operation is found in the context, location extension would be attached and data would be dropped", func(t *testing.T) {
 		gqlResults := []gqlResult{
 			{
 				resultName:    "result",
