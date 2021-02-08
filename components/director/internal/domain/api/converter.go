@@ -109,11 +109,11 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 	}
 
 	return &model.APIDefinitionInput{
-		Name:        in.Name,
-		Description: in.Description,
-		TargetURL:   in.TargetURL,
-		Group:       in.Group,
-		Version:     c.version.InputFromGraphQL(in.Version),
+		Name:         in.Name,
+		Description:  in.Description,
+		TargetURL:    in.TargetURL,
+		Group:        in.Group,
+		VersionInput: c.version.InputFromGraphQL(in.Version),
 	}, spec, nil
 }
 

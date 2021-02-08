@@ -37,32 +37,49 @@ type APIDefinition struct {
 }
 
 type APIDefinitionInput struct {
-	BundleID            *string
-	PackageID           *string
+	OrdBundleID         *string `json:"partOfConsumptionBundle"`
+	OrdPackageID        *string `json:"partOfPackage"`
 	Tenant              string
-	Name                string
-	Description         *string
-	TargetURL           string
-	Group               *string //  group allows you to find the same API but in different version
-	OrdID               *string
-	ShortDescription    *string
-	SystemInstanceAware *bool
-	ApiProtocol         *string
-	Tags                json.RawMessage
-	Countries           json.RawMessage
-	Links               json.RawMessage
-	APIResourceLinks    json.RawMessage
-	ReleaseStatus       *string
-	SunsetDate          *string
-	Successor           *string
-	ChangeLogEntries    json.RawMessage
-	Labels              json.RawMessage
-	Visibility          *string
-	Disabled            *bool
-	PartOfProducts      json.RawMessage
-	LineOfBusiness      json.RawMessage
-	Industry            json.RawMessage
-	Version             *VersionInput
+	Name                string          `json:"title"`
+	Description         *string         `json:"description"`
+	TargetURL           string          `json:"entryPoint"`
+	Group               *string         //  group allows you to find the same API but in different version
+	OrdID               *string         `json:"ordId"`
+	ShortDescription    *string         `json:"shortDescription"`
+	SystemInstanceAware *bool           `json:"systemInstanceAware"`
+	ApiProtocol         *string         `json:"apiProtocol"`
+	Tags                json.RawMessage `json:"tags"`
+	Countries           json.RawMessage `json:"countries"`
+	Links               json.RawMessage `json:"links"`
+	APIResourceLinks    json.RawMessage `json:"apiResourceLinks"`
+	ReleaseStatus       *string         `json:"releaseStatus"`
+	SunsetDate          *string         `json:"sunsetDate"`
+	Successor           *string         `json:"successor"`
+	ChangeLogEntries    json.RawMessage `json:"changelogEntries"`
+	Labels              json.RawMessage `json:"labels"`
+	Visibility          *string         `json:"visibility"`
+	Disabled            *bool           `json:"disabled"`
+	PartOfProducts      json.RawMessage `json:"partOfProducts"`
+	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
+	Industry            json.RawMessage `json:"industry"`
+
+	ResourceDefinitions []APIResourceDefinition `json:"resourceDefinitions"`
+
+	*VersionInput
+}
+
+type APIResourceDefinition struct { // This is the place from where the specification for this API is fetched
+	Type           string           `json:"type"`
+	CustomType     string           `json:"customType"`
+	MediaType      string           `json:"mediaType"`
+	URL            string           `json:"url"`
+	AccessStrategy []AccessStrategy `json:"accessStrategies"`
+}
+
+type AccessStrategy struct {
+	Type              string `json:"type"`
+	CustomType        string `json:"customType"`
+	CustomDescription string `json:"customDescription"`
 }
 
 type APIDefinitionPage struct {
@@ -109,6 +126,6 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, bundleID *string, packag
 		PartOfProducts:      a.PartOfProducts,
 		LineOfBusiness:      a.LineOfBusiness,
 		Industry:            a.Industry,
-		Version:             a.Version.ToVersion(),
+		Version:             a.VersionInput.ToVersion(),
 	}
 }

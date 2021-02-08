@@ -110,7 +110,7 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 		Name:        in.Name,
 		Description: in.Description,
 		Group:       in.Group,
-		Version:     c.vc.InputFromGraphQL(in.Version),
+		VersionInput:     c.vc.InputFromGraphQL(in.Version),
 	}, spec, nil
 }
 

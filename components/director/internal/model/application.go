@@ -16,8 +16,8 @@ type Application struct {
 	Status              *ApplicationStatus
 	HealthCheckURL      *string
 	IntegrationSystemID *string
-	BaseURL             *string
-	Labels              json.RawMessage
+	BaseURL             *string         `json:"base_url"`
+	Labels              json.RawMessage `json:"labels"`
 }
 
 func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timestamp time.Time) {

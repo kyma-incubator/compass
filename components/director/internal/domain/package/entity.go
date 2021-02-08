@@ -17,7 +17,7 @@ type Entity struct {
 	Version           string          `db:"version"`
 	PackageLinks      json.RawMessage `db:"package_links"`
 	Links             json.RawMessage `db:"links"`
-	LicenceType       sql.NullString  `db:"licence_type"`
+	LicenseType       sql.NullString  `db:"licence_type"`
 	Tags              json.RawMessage `db:"tags"`
 	Countries         json.RawMessage `db:"countries"`
 	Labels            json.RawMessage `db:"labels"`

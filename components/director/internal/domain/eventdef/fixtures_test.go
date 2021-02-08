@@ -140,7 +140,7 @@ func fixModelEventDefinitionInput(name, description string, group string) (*mode
 		Name:        name,
 		Description: &description,
 		Group:       &group,
-		Version:     v,
+		VersionInput:     v,
 	}, spec
 }
 

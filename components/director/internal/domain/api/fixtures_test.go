@@ -148,7 +148,7 @@ func fixModelAPIDefinitionInput(name, description string, group string) (*model.
 		Description: &description,
 		TargetURL:   "https://test-url.com",
 		Group:       &group,
-		Version:     v,
+		VersionInput:     v,
 	}, spec
 }
 

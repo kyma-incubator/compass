@@ -301,7 +301,7 @@ func TestService_CreateInBundle(t *testing.T) {
 	modelInput := model.APIDefinitionInput{
 		Name:      name,
 		TargetURL: targetUrl,
-		Version:   &model.VersionInput{},
+		VersionInput:   &model.VersionInput{},
 	}
 
 	modelSpecInput := model.SpecInput{
@@ -442,7 +442,7 @@ func TestService_Update(t *testing.T) {
 	modelInput := model.APIDefinitionInput{
 		Name:      "Foo",
 		TargetURL: "https://test-url.com",
-		Version:   &model.VersionInput{},
+		VersionInput:   &model.VersionInput{},
 	}
 
 	modelSpecInput := model.SpecInput{

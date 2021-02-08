@@ -11,7 +11,7 @@ type Version struct {
 }
 
 type VersionInput struct {
-	Value           string
+	Value           string `json:"version"`
 	Deprecated      *bool
 	DeprecatedSince *string
 	ForRemoval      *bool

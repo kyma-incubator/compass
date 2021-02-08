@@ -31,26 +31,28 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	existQuerier    repo.ExistQuerier
-	singleGetter    repo.SingleGetter
-	lister          repo.Lister
-	deleter         repo.Deleter
-	pageableQuerier repo.PageableQuerier
-	creator         repo.Creator
-	updater         repo.Updater
-	conv            EntityConverter
+	existQuerier          repo.ExistQuerier
+	singleGetter          repo.SingleGetter
+	lister                repo.Lister
+	deleter               repo.Deleter
+	pageableQuerier       repo.PageableQuerier
+	globalPageableQuerier repo.PageableQuerierGlobal
+	creator               repo.Creator
+	updater               repo.Updater
+	conv                  EntityConverter
 }
 
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier:    repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
-		singleGetter:    repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		deleter:         repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
-		lister:          repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		pageableQuerier: repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
-		creator:         repo.NewCreator(resource.Application, applicationTable, applicationColumns),
-		updater:         repo.NewUpdater(resource.Application, applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels"}, tenantColumn, []string{"id"}),
-		conv:            conv,
+		existQuerier:          repo.NewExistQuerier(resource.Application, applicationTable, tenantColumn),
+		singleGetter:          repo.NewSingleGetter(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		deleter:               repo.NewDeleter(resource.Application, applicationTable, tenantColumn),
+		lister:                repo.NewLister(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
+		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
+		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
+		updater:               repo.NewUpdater(resource.Application, applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels"}, tenantColumn, []string{"id"}),
+		conv:                  conv,
 	}
 }
 
@@ -102,6 +104,27 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*model.Application
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
+func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+
+	page, totalCount, err := r.globalPageableQuerier.ListGlobal(ctx, pageSize, cursor, "id", &appsCollection)
 
 	if err != nil {
 		return nil, err

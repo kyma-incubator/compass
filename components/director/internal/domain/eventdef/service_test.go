@@ -296,7 +296,7 @@ func TestService_CreateInBundle(t *testing.T) {
 
 	modelInput := model.EventDefinitionInput{
 		Name:    name,
-		Version: &model.VersionInput{},
+		VersionInput: &model.VersionInput{},
 	}
 
 	modelSpecInput := model.SpecInput{
@@ -435,7 +435,7 @@ func TestService_Update(t *testing.T) {
 
 	modelInput := model.EventDefinitionInput{
 		Name:    "Foo",
-		Version: &model.VersionInput{},
+		VersionInput: &model.VersionInput{},
 	}
 
 	modelSpecInput := model.SpecInput{
