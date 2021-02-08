@@ -41,8 +41,8 @@ const (
 // the flow of the original mutation with information such as ResourceID and ResourceType and finally scheduled through
 // a dedicated Scheduler implementation.
 type Operation struct {
-	OperationID       string                `json:"id,omitempty"`
-	OperationType     graphql.OperationType `json:"type,omitempty"`
+	OperationID       string                `json:"operation_id,omitempty"`
+	OperationType     graphql.OperationType `json:"operation_type,omitempty"`
 	OperationCategory string                `json:"operation_category,omitempty"`
 	ResourceID        string                `json:"resource_id,omitempty"`
 	ResourceType      string                `json:"resource_type,omitempty"`
