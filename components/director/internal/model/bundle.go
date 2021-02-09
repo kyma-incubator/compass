@@ -6,7 +6,6 @@ import (
 )
 
 type Bundle struct {
-	ID                             string
 	TenantID                       string
 	ApplicationID                  string
 	Name                           string
@@ -14,10 +13,6 @@ type Bundle struct {
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
 	*BaseEntity
-}
-
-func (bndl *Bundle) GetID() string {
-	return bndl.ID
 }
 
 func (_ *Bundle) GetType() string {
@@ -64,7 +59,6 @@ func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle
 	}
 
 	return &Bundle{
-		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Name:                           i.Name,
@@ -72,6 +66,7 @@ func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle
 		InstanceAuthRequestInputSchema: i.InstanceAuthRequestInputSchema,
 		DefaultInstanceAuth:            i.DefaultInstanceAuth.ToAuth(),
 		BaseEntity: &BaseEntity{
+			ID:    id,
 			Ready: true,
 		},
 	}

@@ -19,11 +19,11 @@ var fixedTimestamp = time.Now()
 
 func fixModelAPIDefinition(id string, bndlID string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
-		ID:          id,
 		BundleID:    bndlID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 }
 
@@ -63,11 +63,11 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 
 func fixModelEventAPIDefinition(id string, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:          id,
 		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 }
 
@@ -115,12 +115,12 @@ var (
 
 func fixModelDocument(bundleID, id string) *model.Document {
 	return &model.Document{
-		BundleID: bundleID,
-		ID:       id,
-		Title:    docTitle,
-		Format:   model.DocumentFormatMarkdown,
-		Kind:     &docKind,
-		Data:     &docData,
+		BundleID:   bundleID,
+		Title:      docTitle,
+		Format:     model.DocumentFormatMarkdown,
+		Kind:       &docKind,
+		Data:       &docData,
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -167,7 +167,6 @@ const (
 
 func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
 	return &model.Bundle{
-		ID:                             bundleID,
 		TenantID:                       tenantID,
 		ApplicationID:                  appID,
 		Name:                           name,
@@ -175,6 +174,7 @@ func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            fixModelAuth(),
 		BaseEntity: &model.BaseEntity{
+			ID:        bundleID,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: fixedTimestamp,
@@ -369,7 +369,6 @@ func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 	}
 
 	return &mp_bundle.Entity{
-		ID:                            id,
 		TenantID:                      tenantID,
 		ApplicationID:                 appID,
 		Name:                          name,
@@ -377,6 +376,7 @@ func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 		InstanceAuthRequestJSONSchema: schemaSQL,
 		DefaultInstanceAuth:           authSQL,
 		BaseEntity: &repo.BaseEntity{
+			ID:        id,
 			Ready:     true,
 			Error:     sql.NullString{},
 			CreatedAt: fixedTimestamp,

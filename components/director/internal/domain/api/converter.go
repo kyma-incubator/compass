@@ -122,7 +122,6 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
-		ID:          entity.ID,
 		BundleID:    entity.BndlID,
 		Name:        entity.Name,
 		TargetURL:   entity.TargetURL,
@@ -131,6 +130,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		Group:       repo.StringPtrFromNullableString(entity.Group),
 		Version:     c.version.FromEntity(entity.Version),
 		BaseEntity: &model.BaseEntity{
+			ID:        entity.ID,
 			Ready:     entity.Ready,
 			CreatedAt: entity.CreatedAt,
 			UpdatedAt: entity.UpdatedAt,
@@ -143,7 +143,6 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 
 	return &Entity{
-		ID:          apiModel.ID,
 		TenantID:    apiModel.Tenant,
 		BndlID:      apiModel.BundleID,
 		Name:        apiModel.Name,
@@ -152,6 +151,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 		TargetURL:   apiModel.TargetURL,
 		Version:     c.convertVersionToEntity(apiModel.Version),
 		BaseEntity: &repo.BaseEntity{
+			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,
 			CreatedAt: apiModel.CreatedAt,
 			UpdatedAt: apiModel.UpdatedAt,

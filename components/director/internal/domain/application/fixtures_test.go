@@ -50,20 +50,18 @@ func fixGQLApplicationPage(applications []*graphql.Application) *graphql.Applica
 
 func fixModelApplication(id, tenant, name, description string) *model.Application {
 	return &model.Application{
-		ID:     id,
 		Tenant: tenant,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 		},
 		Name:        name,
 		Description: &description,
-		BaseEntity:  &model.BaseEntity{},
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 }
 
 func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, url string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
 	return &model.Application{
-		ID:     id,
 		Tenant: tenant,
 		Status: &model.ApplicationStatus{
 			Condition: conditionStatus,
@@ -74,6 +72,7 @@ func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, ur
 		Description:         &description,
 		HealthCheckURL:      &url,
 		ProviderName:        &providerName,
+		BaseEntity:          &model.BaseEntity{ID: id},
 	}
 }
 
@@ -94,7 +93,6 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 	require.NoError(t, err)
 
 	return &model.Application{
-		ID: id,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 			Timestamp: appStatusTimestamp,
@@ -106,6 +104,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		BaseEntity: &model.BaseEntity{
+			ID:        id,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: fixedTimestamp,
@@ -145,7 +144,6 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 	require.NoError(t, err)
 
 	return &application.Entity{
-		ID:                  id,
 		TenantID:            tenant,
 		Name:                name,
 		Description:         repo.NewValidNullableString(description),
@@ -155,6 +153,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
 		ProviderName:        repo.NewNullableString(&providerName),
 		BaseEntity: &repo.BaseEntity{
+			ID:        id,
 			Ready:     true,
 			Error:     sql.NullString{},
 			CreatedAt: fixedTimestamp,
@@ -272,12 +271,12 @@ var (
 
 func fixModelDocument(bundleID, id string) *model.Document {
 	return &model.Document{
-		BundleID: bundleID,
-		ID:       id,
-		Title:    docTitle,
-		Format:   model.DocumentFormatMarkdown,
-		Kind:     &docKind,
-		Data:     &docData,
+		BundleID:   bundleID,
+		Title:      docTitle,
+		Format:     model.DocumentFormatMarkdown,
+		Kind:       &docKind,
+		Data:       &docData,
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -360,16 +359,16 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 
 func fixModelEventAPIDefinition(id string, appId, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:          id,
 		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
+	return &model.EventDefinition{Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
+		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
 }
 func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
@@ -426,13 +425,13 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 
 func fixModelBundle(id, tenantID, appId, name, description string) *model.Bundle {
 	return &model.Bundle{
-		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  appId,
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: nil,
 		DefaultInstanceAuth:            nil,
+		BaseEntity:                     &model.BaseEntity{ID: id},
 	}
 }
 

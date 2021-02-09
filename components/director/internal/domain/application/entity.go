@@ -8,7 +8,6 @@ import (
 )
 
 type Entity struct {
-	ID                  string         `db:"id"`
 	TenantID            string         `db:"tenant_id"`
 	Name                string         `db:"name"`
 	ProviderName        sql.NullString `db:"provider_name"`

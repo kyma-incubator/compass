@@ -50,25 +50,23 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		bndlModel := &model.Bundle{
-			ID:                             bundleID,
 			TenantID:                       tenantID,
 			ApplicationID:                  appID,
 			Name:                           name,
 			Description:                    nil,
 			InstanceAuthRequestInputSchema: nil,
 			DefaultInstanceAuth:            nil,
-			BaseEntity:                     &model.BaseEntity{},
+			BaseEntity:                     &model.BaseEntity{ID: bundleID},
 		}
 
 		expectedEntity := &mp_bundle.Entity{
-			ID:                            bundleID,
 			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
 			Description:                   sql.NullString{},
 			InstanceAuthRequestJSONSchema: sql.NullString{},
 			DefaultInstanceAuth:           sql.NullString{},
-			BaseEntity:                    &repo.BaseEntity{},
+			BaseEntity:                    &repo.BaseEntity{ID: bundleID},
 		}
 
 		require.NotNil(t, bndlModel)
@@ -107,24 +105,22 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		entity := &mp_bundle.Entity{
-			ID:                            bundleID,
 			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
 			Description:                   sql.NullString{},
 			InstanceAuthRequestJSONSchema: sql.NullString{},
 			DefaultInstanceAuth:           sql.NullString{},
-			BaseEntity:                    &repo.BaseEntity{},
+			BaseEntity:                    &repo.BaseEntity{ID: bundleID},
 		}
 		expectedModel := &model.Bundle{
-			ID:                             bundleID,
 			TenantID:                       tenantID,
 			ApplicationID:                  appID,
 			Name:                           name,
 			Description:                    nil,
 			InstanceAuthRequestInputSchema: nil,
 			DefaultInstanceAuth:            nil,
-			BaseEntity:                     &model.BaseEntity{},
+			BaseEntity:                     &model.BaseEntity{ID: bundleID},
 		}
 		authConv := auth.NewConverter()
 		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)

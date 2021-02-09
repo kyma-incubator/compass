@@ -223,11 +223,11 @@ func fixGQLApplicationCreateInput(name string) graphql.ApplicationRegisterInput 
 
 func fixModelApplication(id, name string) model.Application {
 	return model.Application{
-		ID:             id,
 		Tenant:         testTenant,
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
+		BaseEntity:     &model.BaseEntity{ID: id},
 	}
 }
 

@@ -7,7 +7,6 @@ import (
 )
 
 type Entity struct {
-	ID          string         `db:"id"`
 	TenantID    string         `db:"tenant_id"`
 	BndlID      string         `db:"bundle_id"`
 	Title       string         `db:"title"`

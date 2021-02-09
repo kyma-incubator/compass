@@ -67,7 +67,6 @@ func TestService_Create(t *testing.T) {
 	}
 
 	modelBundle := &model.Bundle{
-		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Name:                           name,
@@ -75,6 +74,7 @@ func TestService_Create(t *testing.T) {
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
 		BaseEntity: &model.BaseEntity{
+			ID:    id,
 			Ready: true,
 		},
 	}
@@ -296,13 +296,13 @@ func TestService_Update(t *testing.T) {
 	})
 
 	bundleModel := &model.Bundle{
-		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  "id",
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
+		BaseEntity:                     &model.BaseEntity{ID: id},
 	}
 
 	ctx := context.TODO()

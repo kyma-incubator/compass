@@ -109,7 +109,6 @@ func (c *converter) ToEntity(in model.Document) (*Entity, error) {
 	data := repo.NewNullableString(in.Data)
 
 	out := &Entity{
-		ID:          in.ID,
 		BndlID:      in.BundleID,
 		TenantID:    in.Tenant,
 		Title:       in.Title,
@@ -119,6 +118,7 @@ func (c *converter) ToEntity(in model.Document) (*Entity, error) {
 		Kind:        kind,
 		Data:        data,
 		BaseEntity: &repo.BaseEntity{
+			ID:        in.ID,
 			Ready:     in.Ready,
 			CreatedAt: in.CreatedAt,
 			UpdatedAt: in.UpdatedAt,
@@ -135,7 +135,6 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 	data := repo.StringPtrFromNullableString(in.Data)
 
 	out := model.Document{
-		ID:          in.ID,
 		BundleID:    in.BndlID,
 		Tenant:      in.TenantID,
 		Title:       in.Title,
@@ -145,6 +144,7 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		Kind:        kind,
 		Data:        data,
 		BaseEntity: &model.BaseEntity{
+			ID:        in.ID,
 			Ready:     in.Ready,
 			CreatedAt: in.CreatedAt,
 			UpdatedAt: in.UpdatedAt,

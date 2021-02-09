@@ -9,7 +9,6 @@ import (
 )
 
 type APIDefinition struct {
-	ID          string
 	BundleID    string
 	Tenant      string
 	Name        string
@@ -19,10 +18,6 @@ type APIDefinition struct {
 	Group   *string
 	Version *Version
 	*BaseEntity
-}
-
-func (api *APIDefinition) GetID() string {
-	return api.ID
 }
 
 func (_ *APIDefinition) GetType() string {
@@ -53,7 +48,6 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID str
 	}
 
 	return &APIDefinition{
-		ID:          id,
 		BundleID:    bundleID,
 		Tenant:      tenant,
 		Name:        a.Name,
@@ -62,6 +56,7 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID str
 		Group:       a.Group,
 		Version:     a.Version.ToVersion(),
 		BaseEntity: &BaseEntity{
+			ID:    id,
 			Ready: true,
 		},
 	}

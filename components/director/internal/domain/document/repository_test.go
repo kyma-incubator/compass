@@ -230,8 +230,8 @@ func TestRepository_ListForBundle(t *testing.T) {
 		conv := &automock.Converter{}
 		defer conv.AssertExpectations(t)
 
-		conv.On("FromEntity", *docEntity1).Return(model.Document{ID: docEntity1.ID}, nil).Once()
-		conv.On("FromEntity", *docEntity2).Return(model.Document{ID: docEntity2.ID}, nil).Once()
+		conv.On("FromEntity", *docEntity1).Return(model.Document{BaseEntity: &model.BaseEntity{ID: docEntity1.ID}}, nil).Once()
+		conv.On("FromEntity", *docEntity2).Return(model.Document{BaseEntity: &model.BaseEntity{ID: docEntity2.ID}}, nil).Once()
 
 		pgRepository := document.NewRepository(conv)
 		// WHEN

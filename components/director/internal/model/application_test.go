@@ -43,7 +43,6 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 			},
 			Expected: &model.Application{
 				Name:                "Foo",
-				ID:                  id,
 				Tenant:              tenant,
 				Description:         &desc,
 				HealthCheckURL:      &url,
@@ -54,6 +53,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 					Condition: model.ApplicationStatusConditionInitial,
 				},
 				BaseEntity: &model.BaseEntity{
+					ID:    id,
 					Ready: true,
 				},
 			},

@@ -42,6 +42,7 @@ type Entity interface {
 }
 
 type BaseEntity struct {
+	ID        string
 	Ready     bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -50,7 +51,7 @@ type BaseEntity struct {
 }
 
 func (e *BaseEntity) GetID() string {
-	return ""
+	return e.ID
 }
 
 func (e *BaseEntity) GetType() string {

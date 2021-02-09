@@ -224,7 +224,7 @@ func TestServeHTTP(t *testing.T) {
 		cases := []testCase{
 			{
 				Name:        "Successful CREATE Operation",
-				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: true}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: true}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -236,7 +236,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Successful UPDATE Operation",
-				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: true}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: true}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -248,7 +248,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Successful DELETE Operation",
-				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: true}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: true}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -260,7 +260,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "In Progress CREATE Operation",
-				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -272,7 +272,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "In Progress UPDATE Operation",
-				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: false}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: false}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -284,7 +284,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "In Progress DELETE Operation",
-				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: false}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: false}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -296,7 +296,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Failed CREATE Operation",
-				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -309,7 +309,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Failed UPDATE Operation",
-				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -322,7 +322,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Failed DELETE Operation",
-				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: false, Error: &mockedErr}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{ID: resourceID, CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: false, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,

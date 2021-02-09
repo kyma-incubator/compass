@@ -9,7 +9,6 @@ import (
 )
 
 type Application struct {
-	ID                  string
 	ProviderName        *string
 	Tenant              string
 	Name                string
@@ -18,10 +17,6 @@ type Application struct {
 	HealthCheckURL      *string
 	IntegrationSystemID *string
 	*BaseEntity
-}
-
-func (app *Application) GetID() string {
-	return app.ID
 }
 
 func (_ *Application) GetType() string {
@@ -85,7 +80,6 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 	}
 
 	return &Application{
-		ID:                  id,
 		Name:                i.Name,
 		Description:         i.Description,
 		Tenant:              tenant,
@@ -97,6 +91,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 			Timestamp: timestamp,
 		},
 		BaseEntity: &BaseEntity{
+			ID:    id,
 			Ready: true,
 		},
 	}

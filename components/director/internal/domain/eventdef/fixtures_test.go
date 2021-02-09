@@ -27,10 +27,9 @@ var fixedTimestamp = time.Now()
 
 func fixEventDefinitionModel(id string, bndlID string, name string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:         id,
 		BundleID:   bndlID,
 		Name:       name,
-		BaseEntity: &model.BaseEntity{},
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -56,7 +55,6 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 	}
 
 	return model.EventDefinition{
-		ID:          eventID,
 		Tenant:      tenantID,
 		BundleID:    bundleID,
 		Name:        placeholder,
@@ -64,6 +62,7 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
 		BaseEntity: &model.BaseEntity{
+			ID:        eventID,
 			Ready:     true,
 			CreatedAt: fixedTimestamp,
 			UpdatedAt: time.Time{},
@@ -173,10 +172,9 @@ func fixGQLEventDefinitionInput(name, description string, group string) *graphql
 
 func fixEntityEventDefinition(id string, bndlID string, name string) *event.Entity {
 	return &event.Entity{
-		ID:         id,
 		BndlID:     bndlID,
 		Name:       name,
-		BaseEntity: &repo.BaseEntity{},
+		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
 
@@ -184,7 +182,6 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 	boolPlaceholder := false
 
 	return &event.Entity{
-		ID:          eventID,
 		TenantID:    tenantID,
 		BndlID:      bundleID,
 		Name:        placeholder,
@@ -197,6 +194,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
 		BaseEntity: &repo.BaseEntity{
+			ID:        eventID,
 			Ready:     true,
 			CreatedAt: fixedTimestamp,
 			UpdatedAt: time.Time{},

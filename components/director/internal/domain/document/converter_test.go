@@ -156,7 +156,6 @@ func TestToEntity(t *testing.T) {
 	sut := document.NewConverter(nil)
 
 	modelWithRequiredFields := model.Document{
-		ID:          "givenID",
 		Tenant:      "givenTenant",
 		BundleID:    "givenBundleID",
 		Title:       "givenTitle",
@@ -164,6 +163,7 @@ func TestToEntity(t *testing.T) {
 		DisplayName: "givenDisplayName",
 		Format:      "givenFormat",
 		BaseEntity: &model.BaseEntity{
+			ID:        "givenID",
 			Ready:     true,
 			CreatedAt: fixedTimestamp,
 			UpdatedAt: time.Time{},
@@ -179,7 +179,6 @@ func TestToEntity(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, &document.Entity{
-			ID:          givenModel.ID,
 			TenantID:    givenModel.Tenant,
 			BndlID:      givenModel.BundleID,
 			Title:       givenModel.Title,
@@ -187,6 +186,7 @@ func TestToEntity(t *testing.T) {
 			DisplayName: givenModel.DisplayName,
 			Format:      string(givenModel.Format),
 			BaseEntity: &repo.BaseEntity{
+				ID:        givenModel.ID,
 				Ready:     givenModel.Ready,
 				CreatedAt: givenModel.CreatedAt,
 				UpdatedAt: givenModel.UpdatedAt,
@@ -213,14 +213,15 @@ func TestFromEntity(t *testing.T) {
 	// GIVEN
 	sut := document.NewConverter(nil)
 	entityWithRequiredFields := document.Entity{
-		ID:          "givenID",
 		TenantID:    "givenTenant",
 		BndlID:      "givenBundleID",
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",
 		Format:      "MARKDOWN",
-		BaseEntity:  &repo.BaseEntity{},
+		BaseEntity: &repo.BaseEntity{
+			ID: "givenID",
+		},
 	}
 
 	t.Run("only required fields", func(t *testing.T) {
@@ -230,14 +231,15 @@ func TestFromEntity(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, model.Document{
-			ID:          "givenID",
 			Tenant:      "givenTenant",
 			BundleID:    "givenBundleID",
 			Title:       "givenTitle",
 			DisplayName: "givenDisplayName",
 			Description: "givenDescription",
 			Format:      model.DocumentFormatMarkdown,
-			BaseEntity:  &model.BaseEntity{},
+			BaseEntity: &model.BaseEntity{
+				ID: "givenID",
+			},
 		}, actualModel)
 
 	})

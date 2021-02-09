@@ -47,7 +47,6 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 	}
 
 	output := &Entity{
-		ID:                            in.ID,
 		TenantID:                      in.TenantID,
 		ApplicationID:                 in.ApplicationID,
 		Name:                          in.Name,
@@ -55,6 +54,7 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 		DefaultInstanceAuth:           repo.NewNullableString(defaultInstanceAuth),
 		InstanceAuthRequestJSONSchema: repo.NewNullableString(in.InstanceAuthRequestInputSchema),
 		BaseEntity: &repo.BaseEntity{
+			ID:        in.ID,
 			Ready:     in.Ready,
 			CreatedAt: in.CreatedAt,
 			UpdatedAt: in.UpdatedAt,
@@ -77,7 +77,6 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 	}
 
 	output := &model.Bundle{
-		ID:                             entity.ID,
 		TenantID:                       entity.TenantID,
 		ApplicationID:                  entity.ApplicationID,
 		Name:                           entity.Name,
@@ -85,6 +84,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 		DefaultInstanceAuth:            defaultInstanceAuth,
 		InstanceAuthRequestInputSchema: repo.StringPtrFromNullableString(entity.InstanceAuthRequestJSONSchema),
 		BaseEntity: &model.BaseEntity{
+			ID:        entity.ID,
 			Ready:     entity.Ready,
 			CreatedAt: entity.CreatedAt,
 			UpdatedAt: entity.UpdatedAt,

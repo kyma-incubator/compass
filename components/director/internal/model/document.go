@@ -7,7 +7,6 @@ import (
 
 type Document struct {
 	BundleID    string
-	ID          string
 	Tenant      string
 	Title       string
 	DisplayName string
@@ -17,10 +16,6 @@ type Document struct {
 	Kind *string
 	Data *string
 	*BaseEntity
-}
-
-func (doc *Document) GetID() string {
-	return doc.ID
 }
 
 func (_ *Document) GetType() string {
@@ -56,7 +51,6 @@ func (d *DocumentInput) ToDocumentWithinBundle(id, tenant string, bundleID strin
 
 	return &Document{
 		BundleID:    bundleID,
-		ID:          id,
 		Tenant:      tenant,
 		Title:       d.Title,
 		DisplayName: d.DisplayName,
@@ -65,6 +59,7 @@ func (d *DocumentInput) ToDocumentWithinBundle(id, tenant string, bundleID strin
 		Kind:        d.Kind,
 		Data:        d.Data,
 		BaseEntity: &BaseEntity{
+			ID:    id,
 			Ready: true,
 		},
 	}

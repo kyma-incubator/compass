@@ -24,6 +24,7 @@ type Entity interface {
 }
 
 type BaseEntity struct {
+	ID        string         `db:"id"`
 	Ready     bool           `db:"ready"`
 	CreatedAt time.Time      `db:"created_at"`
 	UpdatedAt time.Time      `db:"updated_at"`

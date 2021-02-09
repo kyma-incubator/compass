@@ -1123,10 +1123,10 @@ func TestService_Delete(t *testing.T) {
 	externalTnt := "external-tnt"
 
 	applicationModel := &model.Application{
-		ID:          id,
 		Name:        "foo",
 		Description: &desc,
 		Tenant:      tnt,
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 
 	ctx := context.TODO()
@@ -1191,9 +1191,9 @@ func TestService_Get(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	applicationModel := &model.Application{
-		ID:          "foo",
 		Name:        "foo",
 		Description: &desc,
+		BaseEntity:  &model.BaseEntity{ID: "foo"},
 	}
 
 	tnt := "tenant"

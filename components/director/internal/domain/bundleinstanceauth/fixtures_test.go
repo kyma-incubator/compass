@@ -279,11 +279,11 @@ func fixSimpleGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 
 func fixModelBundle(id string, requestInputSchema *string, defaultAuth *model.Auth) *model.Bundle {
 	return &model.Bundle{
-		ID:                             id,
 		TenantID:                       testTenant,
 		ApplicationID:                  "foo",
 		Name:                           "test-bundle",
 		InstanceAuthRequestInputSchema: requestInputSchema,
 		DefaultInstanceAuth:            defaultAuth,
+		BaseEntity:                     &model.BaseEntity{ID: id},
 	}
 }

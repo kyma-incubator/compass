@@ -35,7 +35,6 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	}
 
 	return &Entity{
-		ID:                  in.ID,
 		TenantID:            in.Tenant,
 		Name:                in.Name,
 		Description:         repo.NewNullableString(in.Description),
@@ -45,6 +44,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
 		ProviderName:        repo.NewNullableString(in.ProviderName),
 		BaseEntity: &repo.BaseEntity{
+			ID:        in.ID,
 			Ready:     in.Ready,
 			CreatedAt: in.CreatedAt,
 			UpdatedAt: in.UpdatedAt,
@@ -60,7 +60,6 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 	}
 
 	return &model.Application{
-		ID:          entity.ID,
 		Tenant:      entity.TenantID,
 		Name:        entity.Name,
 		Description: repo.StringPtrFromNullableString(entity.Description),
@@ -72,6 +71,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		HealthCheckURL:      repo.StringPtrFromNullableString(entity.HealthCheckURL),
 		ProviderName:        repo.StringPtrFromNullableString(entity.ProviderName),
 		BaseEntity: &model.BaseEntity{
+			ID:        entity.ID,
 			Ready:     entity.Ready,
 			CreatedAt: entity.CreatedAt,
 			UpdatedAt: entity.UpdatedAt,
@@ -183,7 +183,6 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 	}
 
 	return &model.Application{
-		ID:                  obj.ID,
 		ProviderName:        obj.ProviderName,
 		Tenant:              tenantID,
 		Name:                obj.Name,
@@ -191,7 +190,9 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 		Status:              c.statusToModel(obj.Status),
 		HealthCheckURL:      obj.HealthCheckURL,
 		IntegrationSystemID: obj.IntegrationSystemID,
-		BaseEntity:          &model.BaseEntity{},
+		BaseEntity: &model.BaseEntity{
+			ID: obj.ID,
+		},
 	}
 }
 

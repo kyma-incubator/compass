@@ -29,11 +29,10 @@ var fixedTimestamp = time.Now()
 
 func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
-		ID:         id,
 		BundleID:   bndlID,
 		Name:       name,
 		TargetURL:  targetURL,
-		BaseEntity: &model.BaseEntity{},
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -59,7 +58,6 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 	}
 
 	return model.APIDefinition{
-		ID:          apiDefID,
 		Tenant:      tenantID,
 		BundleID:    bundleID,
 		Name:        placeholder,
@@ -68,6 +66,7 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
 		BaseEntity: &model.BaseEntity{
+			ID:        apiDefID,
 			Ready:     true,
 			CreatedAt: fixedTimestamp,
 			UpdatedAt: time.Time{},
@@ -180,11 +179,10 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 
 func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) *api.Entity {
 	return &api.Entity{
-		ID:         id,
 		BndlID:     bndlID,
 		Name:       name,
 		TargetURL:  targetUrl,
-		BaseEntity: &repo.BaseEntity{},
+		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
 
@@ -192,7 +190,6 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) *api.Entity {
 	boolPlaceholder := false
 
 	return &api.Entity{
-		ID:          apiDefID,
 		TenantID:    tenantID,
 		BndlID:      bundleID,
 		Name:        placeholder,
@@ -206,6 +203,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) *api.Entity {
 			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
 		BaseEntity: &repo.BaseEntity{
+			ID:        apiDefID,
 			Ready:     true,
 			CreatedAt: fixedTimestamp,
 			UpdatedAt: time.Time{},

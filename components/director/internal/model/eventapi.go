@@ -6,7 +6,6 @@ import (
 )
 
 type EventDefinition struct {
-	ID          string
 	Tenant      string
 	BundleID    string
 	Name        string
@@ -14,10 +13,6 @@ type EventDefinition struct {
 	Group       *string
 	Version     *Version
 	*BaseEntity
-}
-
-func (e *EventDefinition) GetID() string {
-	return e.ID
 }
 
 func (_ *EventDefinition) GetType() string {
@@ -45,7 +40,6 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bndlID s
 	}
 
 	return &EventDefinition{
-		ID:          id,
 		BundleID:    bndlID,
 		Tenant:      tenant,
 		Name:        e.Name,
@@ -53,6 +47,7 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bndlID s
 		Group:       e.Group,
 		Version:     e.Version.ToVersion(),
 		BaseEntity: &BaseEntity{
+			ID:    id,
 			Ready: true,
 		},
 	}

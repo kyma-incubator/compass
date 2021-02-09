@@ -24,7 +24,6 @@ var (
 
 func fixModelDocument(id, bundleID string) *model.Document {
 	return &model.Document{
-		ID:          id,
 		BundleID:    bundleID,
 		Tenant:      docTenant,
 		Title:       docTitle,
@@ -34,6 +33,7 @@ func fixModelDocument(id, bundleID string) *model.Document {
 		Kind:        &docKind,
 		Data:        &docData,
 		BaseEntity: &model.BaseEntity{
+			ID:        id,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: fixedTimestamp,
@@ -45,7 +45,6 @@ func fixModelDocument(id, bundleID string) *model.Document {
 
 func fixEntityDocument(id, bundleID string) *document.Entity {
 	return &document.Entity{
-		ID:          id,
 		BndlID:      bundleID,
 		TenantID:    docTenant,
 		Title:       docTitle,
@@ -55,7 +54,7 @@ func fixEntityDocument(id, bundleID string) *document.Entity {
 		Kind:        repo.NewValidNullableString(docKind),
 		Data:        repo.NewValidNullableString(docData),
 		BaseEntity: &repo.BaseEntity{
-
+			ID:        id,
 			Ready:     true,
 			Error:     sql.NullString{},
 			CreatedAt: fixedTimestamp,

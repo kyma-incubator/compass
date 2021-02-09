@@ -118,7 +118,6 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 
 func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 	return model.EventDefinition{
-		ID:          entity.ID,
 		Tenant:      entity.TenantID,
 		BundleID:    entity.BndlID,
 		Name:        entity.Name,
@@ -126,6 +125,7 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 		Group:       repo.StringPtrFromNullableString(entity.GroupName),
 		Version:     c.vc.FromEntity(entity.Version),
 		BaseEntity: &model.BaseEntity{
+			ID:        entity.ID,
 			Ready:     entity.Ready,
 			CreatedAt: entity.CreatedAt,
 			UpdatedAt: entity.UpdatedAt,
@@ -137,7 +137,6 @@ func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 
 func (c *converter) ToEntity(eventModel model.EventDefinition) *Entity {
 	return &Entity{
-		ID:          eventModel.ID,
 		TenantID:    eventModel.Tenant,
 		BndlID:      eventModel.BundleID,
 		Name:        eventModel.Name,
@@ -145,6 +144,7 @@ func (c *converter) ToEntity(eventModel model.EventDefinition) *Entity {
 		GroupName:   repo.NewNullableString(eventModel.Group),
 		Version:     c.convertVersionToEntity(eventModel.Version),
 		BaseEntity: &repo.BaseEntity{
+			ID:        eventModel.ID,
 			Ready:     eventModel.Ready,
 			CreatedAt: eventModel.CreatedAt,
 			UpdatedAt: eventModel.UpdatedAt,

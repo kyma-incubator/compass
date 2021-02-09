@@ -30,13 +30,13 @@ func TestEventAPIDefinitionInput_ToEventAPIDefinition(t *testing.T) {
 				Group:       &group,
 			},
 			Expected: &model.EventDefinition{
-				ID:          id,
 				Tenant:      tenant,
 				BundleID:    bndlID,
 				Name:        name,
 				Description: &desc,
 				Group:       &group,
 				BaseEntity: &model.BaseEntity{
+					ID:    id,
 					Ready: true,
 				},
 			},

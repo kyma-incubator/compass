@@ -34,7 +34,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", *apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID}, nil).Once()
+		convMock.On("FromEntity", *apiDefEntity).Return(model.APIDefinition{Tenant: tenantID, BaseEntity: &model.BaseEntity{ID: apiDefID}}, nil).Once()
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelApiDef, err := pgRepository.GetByID(ctx, tenantID, apiDefID)
@@ -65,7 +65,7 @@ func TestPgRepository_GetForBundle(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", *apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, BundleID: bundleID}, nil).Once()
+		convMock.On("FromEntity", *apiDefEntity).Return(model.APIDefinition{Tenant: tenantID, BundleID: bundleID, BaseEntity: &model.BaseEntity{ID: apiDefID}}, nil).Once()
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelApiDef, err := pgRepository.GetForBundle(ctx, tenantID, apiDefID, bundleID)
@@ -137,8 +137,8 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", *firstApiDefEntity).Return(model.APIDefinition{ID: firstApiDefID}, nil)
-		convMock.On("FromEntity", *secondApiDefEntity).Return(model.APIDefinition{ID: secondApiDefID}, nil)
+		convMock.On("FromEntity", *firstApiDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: firstApiDefID}}, nil)
+		convMock.On("FromEntity", *secondApiDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: secondApiDefID}}, nil)
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelAPIDef, err := pgRepository.ListForBundle(ctx, tenantID, bundleID, inputPageSize, inputCursor)

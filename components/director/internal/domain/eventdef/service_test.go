@@ -307,12 +307,12 @@ func TestService_CreateInBundle(t *testing.T) {
 	}
 
 	modelEventDefinition := &model.EventDefinition{
-		ID:       id,
 		BundleID: bundleID,
 		Tenant:   tenantID,
 		Name:     name,
 		Version:  &model.Version{},
 		BaseEntity: &model.BaseEntity{
+			ID:    id,
 			Ready: true,
 		},
 	}
