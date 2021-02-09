@@ -107,12 +107,12 @@ func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 	}
 
 	return &graphql.Bundle{
-		ID:                             in.ID,
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.strPtrToJSONSchemaPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
 		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
 			Ready:     in.Ready,
 			CreatedAt: graphql.Timestamp(in.CreatedAt),
 			UpdatedAt: graphql.Timestamp(in.UpdatedAt),

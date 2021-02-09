@@ -42,7 +42,6 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*gra
 	}
 
 	return &graphql.EventDefinition{
-		ID:          in.ID,
 		BundleID:    in.BundleID,
 		Name:        in.Name,
 		Description: in.Description,
@@ -50,6 +49,7 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*gra
 		Spec:        s,
 		Version:     c.vc.ToGraphQL(in.Version),
 		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
 			Ready:     in.Ready,
 			CreatedAt: graphql.Timestamp(in.CreatedAt),
 			UpdatedAt: graphql.Timestamp(in.UpdatedAt),

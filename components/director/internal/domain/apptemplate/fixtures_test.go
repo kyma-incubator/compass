@@ -233,7 +233,9 @@ func fixModelApplication(id, name string) model.Application {
 
 func fixGQLApplication(id, name string) graphql.Application {
 	return graphql.Application{
-		ID:             id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,

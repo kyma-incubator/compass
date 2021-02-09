@@ -78,13 +78,14 @@ func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, ur
 
 func fixGQLApplication(id, name, description string) *graphql.Application {
 	return &graphql.Application{
-		ID: id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Status: &graphql.ApplicationStatus{
 			Condition: graphql.ApplicationStatusConditionInitial,
 		},
 		Name:        name,
 		Description: &description,
-		BaseEntity:  &graphql.BaseEntity{},
 	}
 }
 
@@ -119,7 +120,6 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 	require.NoError(t, err)
 
 	return &graphql.Application{
-		ID: id,
 		Status: &graphql.ApplicationStatus{
 			Condition: graphql.ApplicationStatusConditionInitial,
 			Timestamp: graphql.Timestamp(appStatusTimestamp),
@@ -130,6 +130,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		IntegrationSystemID: &intSysID,
 		ProviderName:        str.Ptr("provider name"),
 		BaseEntity: &graphql.BaseEntity{
+			ID:        id,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: graphql.Timestamp(fixedTimestamp),
@@ -294,7 +295,9 @@ func fixModelDocumentPage(documents []*model.Document) *model.DocumentPage {
 
 func fixGQLDocument(id string) *graphql.Document {
 	return &graphql.Document{
-		ID:     id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Title:  docTitle,
 		Format: graphql.DocumentFormatMarkdown,
 		Kind:   &docKind,
@@ -372,7 +375,9 @@ func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinitio
 }
 func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
-		ID:          id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
@@ -437,7 +442,9 @@ func fixModelBundle(id, tenantID, appId, name, description string) *model.Bundle
 
 func fixGQLBundle(id, appId, name, description string) *graphql.Bundle {
 	return &graphql.Bundle{
-		ID:                             id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: nil,

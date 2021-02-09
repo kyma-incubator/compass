@@ -28,7 +28,6 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 	}
 
 	return &graphql.Document{
-		ID:          in.ID,
 		BundleID:    in.BundleID,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,
@@ -37,6 +36,7 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 		Kind:        in.Kind,
 		Data:        clob,
 		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
 			Ready:     in.Ready,
 			CreatedAt: graphql.Timestamp(in.CreatedAt),
 			UpdatedAt: graphql.Timestamp(in.UpdatedAt),

@@ -43,7 +43,6 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 	}
 
 	return &graphql.APIDefinition{
-		ID:          in.ID,
 		BundleID:    in.BundleID,
 		Name:        in.Name,
 		Description: in.Description,
@@ -52,6 +51,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 		Group:       in.Group,
 		Version:     c.version.ToGraphQL(in.Version),
 		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
 			Ready:     in.Ready,
 			CreatedAt: graphql.Timestamp(in.CreatedAt),
 			UpdatedAt: graphql.Timestamp(in.UpdatedAt),

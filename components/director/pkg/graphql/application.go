@@ -1,7 +1,8 @@
 package graphql
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 type Application struct {
-	ID                  string             `json:"id"`
 	Name                string             `json:"name"`
 	ProviderName        *string            `json:"providerName"`
 	IntegrationSystemID *string            `json:"integrationSystemID"`
@@ -9,6 +10,10 @@ type Application struct {
 	Status              *ApplicationStatus `json:"status"`
 	HealthCheckURL      *string            `json:"healthCheckURL"`
 	*BaseEntity
+}
+
+func (e *Application) GetType() resource.Type {
+	return resource.Application
 }
 
 // Extended types used by external API

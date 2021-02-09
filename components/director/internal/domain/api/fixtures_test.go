@@ -97,7 +97,6 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	}
 
 	return &graphql.APIDefinition{
-		ID:          apiDefID,
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
@@ -106,6 +105,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
 		BaseEntity: &graphql.BaseEntity{
+			ID:        apiDefID,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: graphql.Timestamp(fixedTimestamp),

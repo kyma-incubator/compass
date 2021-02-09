@@ -157,7 +157,7 @@ func TestHandleOperation(t *testing.T) {
 		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate)
 		// THEN
 		require.NoError(t, err)
-		require.Equal(t, mockedNextOutput(), res)
+		require.Equal(t, mockedNextResponse(), res)
 		require.Equal(t, graphql.OperationModeSync, dummyResolver.finalCtx.Value(operation.OpModeKey))
 	})
 
@@ -189,6 +189,38 @@ func TestHandleOperation(t *testing.T) {
 		res, err := directive.HandleOperation(ctx, nil, dummyResolver.ErrorResolve, graphql.OperationTypeCreate)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to process operation")
+		require.Empty(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context but response is not an Entity type should roll-back", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: "registerApplication",
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonEntityResolve, graphql.OperationTypeCreate)
+		// THEN
+		require.Error(t, err, mockedError().Error(), "Failed to process operation")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
 	})
@@ -303,7 +335,7 @@ func TestHandleOperation(t *testing.T) {
 
 		// THEN
 		require.NoError(t, err)
-		require.Equal(t, mockedNextOutput(), res)
+		require.Equal(t, mockedNextResponse(), res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
 
 		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
@@ -325,7 +357,7 @@ type dummyResolver struct {
 
 func (d *dummyResolver) SuccessResolve(ctx context.Context) (res interface{}, err error) {
 	d.finalCtx = ctx
-	return mockedNextOutput(), nil
+	return mockedNextResponse(), nil
 }
 
 func (d *dummyResolver) ErrorResolve(ctx context.Context) (res interface{}, err error) {
@@ -333,8 +365,17 @@ func (d *dummyResolver) ErrorResolve(ctx context.Context) (res interface{}, err 
 	return nil, mockedError()
 }
 
-func mockedNextOutput() string {
-	return "nextOutput"
+func (d *dummyResolver) NonEntityResolve(ctx context.Context) (res interface{}, err error) {
+	d.finalCtx = ctx
+	return mockedNextNonEntityResponse(), nil
+}
+
+func mockedNextResponse() interface{} {
+	return &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: resourceID}}
+}
+
+func mockedNextNonEntityResponse() interface{} {
+	return &graphql.Runtime{}
 }
 
 func mockedError() error {

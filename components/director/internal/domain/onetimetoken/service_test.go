@@ -157,7 +157,9 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 		mockAppConverter := &automock.ApplicationConverter{}
 		givenGraphQLApp := graphql.Application{
 			IntegrationSystemID: &integrationSystemID,
-			ID:                  givenApplication.ID,
+			BaseEntity: &graphql.BaseEntity{
+				ID: givenApplication.ID,
+			},
 		}
 		mockAppConverter.On("ToGraphQL", &givenApplication).Return(&givenGraphQLApp)
 
@@ -217,7 +219,9 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 		mockAppConverter := &automock.ApplicationConverter{}
 		givenGraphQLApp := graphql.Application{
 			IntegrationSystemID: &integrationSystemID,
-			ID:                  givenApplication.ID,
+			BaseEntity: &graphql.BaseEntity{
+				ID: givenApplication.ID,
+			},
 		}
 		mockAppConverter.On("ToGraphQL", &givenApplication).Return(&givenGraphQLApp)
 
@@ -297,7 +301,9 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 		mockAppConverter := &automock.ApplicationConverter{}
 		givenGraphQLApp := graphql.Application{
 			IntegrationSystemID: &integrationSystemID,
-			ID:                  givenApplication.ID,
+			BaseEntity: &graphql.BaseEntity{
+				ID: givenApplication.ID,
+			},
 		}
 		mockAppConverter.On("ToGraphQL", &givenApplication).Return(&givenGraphQLApp)
 

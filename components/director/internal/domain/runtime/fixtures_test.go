@@ -162,7 +162,9 @@ func fixModelApplication(id, name, description string) *model.Application {
 
 func fixGQLApplication(id, name, description string) *graphql.Application {
 	return &graphql.Application{
-		ID: id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Status: &graphql.ApplicationStatus{
 			Condition: graphql.ApplicationStatusConditionInitial,
 		},

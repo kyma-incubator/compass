@@ -93,7 +93,6 @@ func fixFullGQLEventDefinition(placeholder string) *graphql.EventDefinition {
 	}
 
 	return &graphql.EventDefinition{
-		ID:          eventID,
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
@@ -101,6 +100,7 @@ func fixFullGQLEventDefinition(placeholder string) *graphql.EventDefinition {
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
 		BaseEntity: &graphql.BaseEntity{
+			ID:        eventID,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: graphql.Timestamp(fixedTimestamp),

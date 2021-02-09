@@ -16,10 +16,26 @@
 
 package graphql
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
+type Entity interface {
+	GetID() string
+	GetType() resource.Type
+}
+
 type BaseEntity struct {
+	ID        string    `json:"id"`
 	Ready     bool      `json:"ready"`
 	CreatedAt Timestamp `json:"createdAt"`
 	UpdatedAt Timestamp `json:"updatedAt"`
 	DeletedAt Timestamp `json:"deletedAt"`
 	Error     *string   `json:"error"`
+}
+
+func (e *BaseEntity) GetID() string {
+	return e.ID
+}
+
+func (e *BaseEntity) GetType() resource.Type {
+	return ""
 }

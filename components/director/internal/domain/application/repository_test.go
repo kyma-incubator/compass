@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 
@@ -132,19 +130,6 @@ func TestRepository_Delete(t *testing.T) {
 		err := repo.Delete(ctx, givenTenant(), givenID())
 
 		assert.NoError(t, err)
-	})
-
-	t.Run("Failure when operation mode is set to async explicitly and operation is not in the context", func(t *testing.T) {
-		ctx := context.Background()
-		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
-
-		repo := application.NewRepository(nil)
-
-		// when
-		err := repo.Delete(ctx, "", "")
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "unable to fetch operations from context")
 	})
 
 	t.Run("Failure when operation mode is set to async, operation is in the context but fetch application fails", func(t *testing.T) {
@@ -307,16 +292,6 @@ func TestRepository_Create(t *testing.T) {
 
 		appID := givenID()
 		executeCreateFunc(ctx, appID, graphql.OperationModeAsync, nil)
-
-		assert.Equal(t, appID, op.ResourceID)
-		assert.Equal(t, resource.Application, op.ResourceType)
-	})
-
-	t.Run("Failure when operation mode is set to async explicitly and operation is not in the context", func(t *testing.T) {
-		ctx := context.Background()
-		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
-
-		executeCreateFunc(ctx, givenID(), graphql.OperationModeAsync, errors.New("unable to fetch operations from context"))
 	})
 
 	t.Run("DB Error", func(t *testing.T) {

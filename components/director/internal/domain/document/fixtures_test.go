@@ -66,7 +66,6 @@ func fixEntityDocument(id, bundleID string) *document.Entity {
 
 func fixGQLDocument(id, bundleID string) *graphql.Document {
 	return &graphql.Document{
-		ID:          id,
 		BundleID:    bundleID,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
@@ -75,6 +74,7 @@ func fixGQLDocument(id, bundleID string) *graphql.Document {
 		Kind:        &docKind,
 		Data:        &docCLOB,
 		BaseEntity: &graphql.BaseEntity{
+			ID:        id,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: graphql.Timestamp(fixedTimestamp),

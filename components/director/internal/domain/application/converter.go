@@ -87,7 +87,6 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 
 	return &graphql.Application{
-		ID:                  in.ID,
 		Status:              c.statusToGraphQL(in.Status),
 		Name:                in.Name,
 		Description:         in.Description,
@@ -95,6 +94,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		IntegrationSystemID: in.IntegrationSystemID,
 		ProviderName:        in.ProviderName,
 		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
 			Ready:     in.Ready,
 			CreatedAt: graphql.Timestamp(in.CreatedAt),
 			UpdatedAt: graphql.Timestamp(in.UpdatedAt),

@@ -29,7 +29,9 @@ func fixModelAPIDefinition(id string, bndlID string, name, description string, g
 
 func fixGQLAPIDefinition(id string, bndlID string, name, description string, group string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
-		ID:          id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		BundleID:    bndlID,
 		Name:        name,
 		Description: &description,
@@ -73,7 +75,9 @@ func fixModelEventAPIDefinition(id string, bundleID string, name, description st
 
 func fixGQLEventDefinition(id string, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
-		ID:          id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
@@ -138,7 +142,9 @@ func fixModelDocumentPage(documents []*model.Document) *model.DocumentPage {
 
 func fixGQLDocument(id string) *graphql.Document {
 	return &graphql.Document{
-		ID:     id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Title:  docTitle,
 		Format: graphql.DocumentFormatMarkdown,
 		Kind:   &docKind,
@@ -187,12 +193,12 @@ func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
 func fixGQLBundle(id, name, desc string) *graphql.Bundle {
 	schema := graphql.JSONSchema(`{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`)
 	return &graphql.Bundle{
-		ID:                             id,
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: &schema,
 		DefaultInstanceAuth:            fixGQLAuth(),
 		BaseEntity: &graphql.BaseEntity{
+			ID:        id,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: graphql.Timestamp(fixedTimestamp),

@@ -96,6 +96,15 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, apperrors.NewInternalError("Unable to process operation")
 	}
 
+	entity, ok := resp.(graphql.Entity)
+	if !ok {
+		log.C(ctx).WithError(err).Error("An error occurred while casting the response entity")
+		return nil, apperrors.NewInternalError("Failed to process operation")
+	}
+
+	operation.ResourceID = entity.GetID()
+	operation.ResourceType = entity.GetType()
+
 	operationID, err := d.scheduler.Schedule(*operation)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while scheduling operation: %s", err.Error())

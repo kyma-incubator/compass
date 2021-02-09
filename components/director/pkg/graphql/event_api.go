@@ -1,7 +1,8 @@
 package graphql
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 type EventDefinition struct {
-	ID          string  `json:"id"`
 	BundleID    string  `json:"bundleID"`
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
@@ -10,6 +11,10 @@ type EventDefinition struct {
 	Spec    *EventSpec `json:"spec"`
 	Version *Version   `json:"version"`
 	*BaseEntity
+}
+
+func (e *EventDefinition) GetType() resource.Type {
+	return resource.EventDefinition
 }
 
 type EventSpec struct {
