@@ -17,8 +17,9 @@
 package model
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity denotes an model-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values

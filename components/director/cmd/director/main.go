@@ -178,7 +178,7 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			Async:       operation.NewDirective(transact, operation.DefaultScheduler{}).HandleOperation,
+			Async:       operation.NewDirective(transact, webhookService().List, operation.DefaultScheduler{}).HandleOperation,
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -455,4 +455,14 @@ func applicationRepo() application.ApplicationRepository {
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 
 	return application.NewRepository(appConverter)
+}
+
+func webhookService() webhook.WebhookService {
+	uidSvc := uid.NewService()
+	authConverter := auth.NewConverter()
+
+	webhookConverter := webhook.NewConverter(authConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+
+	return webhook.NewService(webhookRepo, uidSvc)
 }

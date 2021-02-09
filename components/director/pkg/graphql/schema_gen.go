@@ -50,7 +50,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	Async func(ctx context.Context, obj interface{}, next graphql.Resolver, op OperationType) (res interface{}, err error)
+	Async func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType WebhookType) (res interface{}, err error)
 
 	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
 
@@ -3312,7 +3312,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `"""
 Async directive is added to mutations which are capable of being executed in asynchronious matter
 """
-directive @async(op: OperationType!) on FIELD_DEFINITION
+directive @async(operationType: OperationType!, webhookType: WebhookType!) on FIELD_DEFINITION
 """
 HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
 """
@@ -3454,7 +3454,7 @@ enum WebhookMode {
 enum WebhookType {
 	CONFIGURATION_CHANGED
 	REGISTER_APPLICATION
-	DELETE_APPLICATION
+	UNREGISTER_APPLICATION
 }
 
 interface OneTimeToken {
@@ -4449,7 +4449,7 @@ type Mutation {
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
-	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(op: CREATE)
+	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(operationType: CREATE, webhookType: REGISTER_APPLICATION)
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
@@ -4459,7 +4459,7 @@ type Mutation {
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
-	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(op: DELETE)
+	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(operationType: DELETE, webhookType: UNREGISTER_APPLICATION)
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -4692,13 +4692,21 @@ func (ec *executionContext) dir_async_args(ctx context.Context, rawArgs map[stri
 	var err error
 	args := map[string]interface{}{}
 	var arg0 OperationType
-	if tmp, ok := rawArgs["op"]; ok {
+	if tmp, ok := rawArgs["operationType"]; ok {
 		arg0, err = ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["op"] = arg0
+	args["operationType"] = arg0
+	var arg1 WebhookType
+	if tmp, ok := rawArgs["webhookType"]; ok {
+		arg1, err = ec.unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["webhookType"] = arg1
 	return args, nil
 }
 
@@ -12549,11 +12557,15 @@ func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, f
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
 		directive2 := func(ctx context.Context) (interface{}, error) {
-			op, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "CREATE")
+			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "CREATE")
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.Async(ctx, nil, directive1, op)
+			webhookType, err := ec.unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "REGISTER_APPLICATION")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType)
 		}
 
 		tmp, err := directive2(rctx)
@@ -12684,11 +12696,15 @@ func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context,
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
 		directive2 := func(ctx context.Context) (interface{}, error) {
-			op, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "DELETE")
+			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "DELETE")
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.Async(ctx, nil, directive1, op)
+			webhookType, err := ec.unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNREGISTER_APPLICATION")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType)
 		}
 
 		tmp, err := directive2(rctx)

@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -36,21 +38,26 @@ type Scheduler interface {
 	Schedule(operation Operation) (string, error)
 }
 
+// ResourceFetcherFunc defines a function which fetches the webhooks for a specific resource ID
+type WebhookFetcherFunc func(ctx context.Context, resourceID string) ([]*model.Webhook, error)
+
 type directive struct {
-	transact  persistence.Transactioner
-	scheduler Scheduler
+	transact           persistence.Transactioner
+	webhookFetcherFunc WebhookFetcherFunc
+	scheduler          Scheduler
 }
 
 // NewDirective creates a new handler struct responsible for the Async directive business logic
-func NewDirective(transact persistence.Transactioner, scheduler Scheduler) *directive {
+func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, scheduler Scheduler) *directive {
 	return &directive{
-		transact:  transact,
-		scheduler: scheduler,
+		transact:           transact,
+		webhookFetcherFunc: webhookFetcherFunc,
+		scheduler:          scheduler,
 	}
 }
 
 // HandleOperation enriches the request with an Operation information when the requesting mutation is annotated with the Async directive
-func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, op graphql.OperationType) (res interface{}, err error) {
+func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, operationType graphql.OperationType, webhookType graphql.WebhookType) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
 	mode, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)
 	if !ok {
@@ -84,7 +91,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	}
 
 	operation := &Operation{
-		OperationType:     OperationType(op),
+		OperationType:     OperationType(operationType),
 		OperationCategory: resCtx.Field.Name,
 		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
 	}
@@ -104,6 +111,19 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 	operation.ResourceID = entity.GetID()
 	operation.ResourceType = entity.GetType()
+
+	webhooks, err := d.webhookFetcherFunc(ctx, operation.ResourceID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while retrieving webhooks: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to retrieve webhooks")
+	}
+
+	operation.WebhookIDs = make([]string, 0)
+	for _, webhook := range webhooks {
+		if graphql.WebhookType(webhook.Type) == webhookType {
+			operation.WebhookIDs = append(operation.WebhookIDs, webhook.ID)
+		}
+	}
 
 	operationID, err := d.scheduler.Schedule(*operation)
 	if err != nil {

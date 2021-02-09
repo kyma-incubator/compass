@@ -18,6 +18,7 @@ package operation
 
 import (
 	"context"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -65,7 +66,7 @@ type Operation struct {
 	ResourceID        string        `json:"resource_id,omitempty"`
 	ResourceType      resource.Type `json:"resource_type,omitempty"`
 	CorrelationID     string        `json:"correlation_id,omitempty"`
-	WebhookID         string        `json:"webhook_id,omitempty"`
+	WebhookIDs        []string      `json:"webhook_ids,omitempty"`
 	RequestData       string        `json:"request_data,omitempty"`
 }
 

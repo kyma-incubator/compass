@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
@@ -30,6 +32,12 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser/ast"
+)
+
+const (
+	webhookID1 = "fe8ce7c6-919f-40f0-b78b-b1662dfbac64"
+	webhookID2 = "4f40d0cf-5a33-4895-aa03-528ab0982fb2"
+	webhookID3 = "dbd54239-5188-4bea-8826-bc04587a118e"
 )
 
 func TestHandleOperation(t *testing.T) {
@@ -44,10 +52,10 @@ func TestHandleOperation(t *testing.T) {
 		}
 		ctx = gqlgen.WithResolverContext(ctx, rCtx)
 
-		directive := operation.NewDirective(nil, nil)
+		directive := operation.NewDirective(nil, nil, nil)
 
 		// WHEN
-		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate)
+		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
 		// THEN
 		require.Error(t, err, fmt.Sprintf("could not get %s parameter", operation.ModeParam))
 	})
@@ -68,10 +76,10 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil)
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate)
+		res, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to initialize database operation")
 		require.Empty(t, res)
@@ -93,12 +101,12 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.ErrorResolve, graphql.OperationTypeCreate)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.ErrorResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to process operation")
 		require.Empty(t, res)
@@ -121,12 +129,12 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to finalize database operation")
 		require.Empty(t, res)
@@ -149,12 +157,12 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
 		// THEN
 		require.NoError(t, err)
 		require.Equal(t, mockedNextResponse(), res)
@@ -181,12 +189,12 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.ErrorResolve, graphql.OperationTypeCreate)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.ErrorResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to process operation")
 		require.Empty(t, res)
@@ -213,14 +221,48 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonEntityResolve, graphql.OperationTypeCreate)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonEntityResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Failed to process operation")
+		require.Empty(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context but server Director fails to fetch webhooks should roll-back", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: "registerApplication",
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
+			return nil, mockedError()
+		}, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonEntityResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
+		// THEN
+		require.Error(t, err, mockedError().Error(), "Unable to retrieve webhooks")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
 	})
@@ -249,12 +291,12 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler.On("Schedule", mock.Anything).Return("", mockedError())
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedScheduler)
 
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to schedule operation")
 		require.Empty(t, res)
@@ -286,12 +328,12 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler.On("Schedule", mock.Anything).Return(testID, nil)
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedScheduler)
 
 		dummyResolver := &dummyResolver{}
 
 		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate)
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
 		// THEN
 		require.Error(t, err, mockedError().Error(), "Unable to finalize database operation")
 		require.Empty(t, res)
@@ -318,35 +360,91 @@ func TestHandleOperation(t *testing.T) {
 		}
 		ctx = gqlgen.WithResolverContext(ctx, rCtx)
 
-		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
-		defer mockedTx.AssertExpectations(t)
-		defer mockedTransactioner.AssertExpectations(t)
-
 		mockedScheduler := &automock.Scheduler{}
 		mockedScheduler.On("Schedule", mock.Anything).Return(operationID, nil)
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedScheduler)
+		webhookType := graphql.WebhookTypeRegisterApplication
+		webhooks := []*model.Webhook{
+			{ID: webhookID1, Type: model.WebhookType(webhookType)},
+			{ID: webhookID2, Type: model.WebhookType(webhookType)},
+			{ID: webhookID3, Type: model.WebhookType(webhookType)},
+		}
+		expectedWebhookIDs := make([]string, 0)
+		for _, webhook := range webhooks {
+			if graphql.WebhookType(webhook.Type) == webhookType {
+				expectedWebhookIDs = append(expectedWebhookIDs, webhook.ID)
+			}
+		}
 
-		dummyResolver := &dummyResolver{}
+		testCases := []struct {
+			Name               string
+			Webhooks           []*model.Webhook
+			ExpectedWebhookIDs []string
+		}{
+			{
+				Name: "when all webhooks match their IDs should be present in the operation",
+				Webhooks: []*model.Webhook{
+					{ID: webhookID1, Type: model.WebhookType(webhookType)},
+					{ID: webhookID2, Type: model.WebhookType(webhookType)},
+					{ID: webhookID3, Type: model.WebhookType(webhookType)},
+				},
+				ExpectedWebhookIDs: []string{webhookID1, webhookID2, webhookID3},
+			},
+			{
+				Name: "when a single webhook matches its ID should be present in the operation",
+				Webhooks: []*model.Webhook{
+					{ID: webhookID1, Type: model.WebhookType(webhookType)},
+					{ID: webhookID2, Type: model.WebhookType(graphql.WebhookTypeUnregisterApplication)},
+					{ID: webhookID3, Type: model.WebhookType(graphql.WebhookTypeUnregisterApplication)},
+				},
+				ExpectedWebhookIDs: []string{webhookID1},
+			},
+			{
+				Name: "when no webhooks match no IDs should be present in the operation",
+				Webhooks: []*model.Webhook{
+					{ID: webhookID1, Type: model.WebhookType(graphql.WebhookTypeUnregisterApplication)},
+					{ID: webhookID2, Type: model.WebhookType(graphql.WebhookTypeUnregisterApplication)},
+					{ID: webhookID3, Type: model.WebhookType(graphql.WebhookTypeUnregisterApplication)},
+				},
+				ExpectedWebhookIDs: []string{},
+			},
+		}
 
-		// WHEN
-		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(len(testCases))
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
 
-		// THEN
-		require.NoError(t, err)
-		require.Equal(t, mockedNextResponse(), res)
-		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+		for _, testCase := range testCases {
+			t.Run(testCase.Name, func(t *testing.T) {
+				directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
+					return testCase.Webhooks, nil
+				}, mockedScheduler)
 
-		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
-		operations, ok := opsFromCtx.(*[]*operation.Operation)
-		require.True(t, ok)
-		require.Len(t, *operations, 1)
+				dummyResolver := &dummyResolver{}
 
-		op := (*operations)[0]
-		require.Equal(t, operationID, op.OperationID)
-		require.Equal(t, operation.OperationType(operationType), op.OperationType)
-		require.Equal(t, operationCategory, op.OperationCategory)
+				// WHEN
+				res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, operationType, webhookType)
+
+				// THEN
+				require.NoError(t, err)
+				require.Equal(t, mockedNextResponse(), res)
+				require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+				opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+				operations, ok := opsFromCtx.(*[]*operation.Operation)
+				require.True(t, ok)
+				require.Len(t, *operations, 1)
+
+				op := (*operations)[0]
+				require.Equal(t, operationID, op.OperationID)
+				require.Equal(t, operation.OperationType(operationType), op.OperationType)
+				require.Equal(t, operationCategory, op.OperationCategory)
+
+				require.Len(t, op.WebhookIDs, len(testCase.ExpectedWebhookIDs))
+				require.Equal(t, testCase.ExpectedWebhookIDs, op.WebhookIDs)
+			})
+		}
 	})
 
 }
@@ -376,6 +474,10 @@ func mockedNextResponse() interface{} {
 
 func mockedNextNonEntityResponse() interface{} {
 	return &graphql.Runtime{}
+}
+
+func mockedWebhooksResponse(_ context.Context, _ string) ([]*model.Webhook, error) {
+	return []*model.Webhook{}, nil
 }
 
 func mockedError() error {
