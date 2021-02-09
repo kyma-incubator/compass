@@ -2,8 +2,9 @@ package application_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/google/uuid"
 

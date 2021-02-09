@@ -18,6 +18,11 @@ package operation
 
 import (
 	"context"
+	"strings"
+
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -36,6 +41,13 @@ const (
 	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
 )
 
+// OperationResponse defines the expected response format for the Operations API
+type OperationResponse struct {
+	*Operation
+	Status OperationStatus `json:"status,omitempty"`
+	Error  *string         `json:"error,omitempty"`
+}
+
 // Operation represents a GraphQL mutation which has associated HTTP requests (Webhooks) that need to be executed
 // for the request to be completed fully. Objects of type Operation are meant to be constructed, enriched throughout
 // the flow of the original mutation with information such as ResourceID and ResourceType and finally scheduled through
@@ -51,11 +63,11 @@ type Operation struct {
 	RequestData       string                `json:"request_data,omitempty"`
 }
 
-// OperationResponse defines the expected response format for the Operations API
-type OperationResponse struct {
-	*Operation
-	Status OperationStatus `json:"status,omitempty"`
-	Error  *string         `json:"error,omitempty"`
+// Validate ensures that the constructed Operation has valid properties
+func (op *Operation) Validate() error {
+	return validation.ValidateStruct(op,
+		validation.Field(&op.ResourceID, is.UUID),
+		validation.Field(&op.ResourceType, validation.Required, validation.In(strings.ToLower(resource.Application.ToLower()))))
 }
 
 // SaveToContext saves Operation to the context

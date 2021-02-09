@@ -2,6 +2,7 @@ package mp_bundle
 
 import (
 	"database/sql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 

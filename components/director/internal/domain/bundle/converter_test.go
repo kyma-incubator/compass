@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/stretchr/testify/mock"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 

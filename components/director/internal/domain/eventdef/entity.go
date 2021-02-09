@@ -2,6 +2,7 @@ package eventdef
 
 import (
 	"database/sql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )

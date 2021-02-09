@@ -3,9 +3,10 @@ package mp_bundle_test
 import (
 	"database/sql"
 	"database/sql/driver"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 

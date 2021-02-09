@@ -21,16 +21,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/go-ozzo/ozzo-validation/is"
-
-	validation "github.com/go-ozzo/ozzo-validation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -76,19 +71,14 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	queryParams := request.URL.Query()
 
-	inputParams := struct {
-		ResourceID   string
-		ResourceType string
-	}{
+	op := &Operation{
 		ResourceID:   queryParams.Get(ResourceIDParam),
 		ResourceType: queryParams.Get(ResourceTypeParam),
 	}
 
-	log.C(ctx).Infof("Executing Operation API with resourceType: %s and resourceID: %s", inputParams.ResourceType, inputParams.ResourceID)
+	log.C(ctx).Infof("Executing Operation API with resourceType: %s and resourceID: %s", op.ResourceType, op.ResourceID)
 
-	if err := validation.ValidateStruct(&inputParams,
-		validation.Field(&inputParams.ResourceID, is.UUID),
-		validation.Field(&inputParams.ResourceType, validation.Required, validation.In(strings.ToLower(resource.Application.ToLower())))); err != nil {
+	if err := op.Validate(); err != nil {
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInvalidDataError("Unexpected resource type and/or GUID"), http.StatusBadRequest)
 		return
 	}
@@ -103,13 +93,13 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	res, err := h.resourceFetcherFunc(ctx, tenantID, inputParams.ResourceID)
+	res, err := h.resourceFetcherFunc(ctx, tenantID, op.ResourceID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while fetching resource from database: %s", err.Error())
 
 		if apperrors.IsNotFoundError(err) {
-			apperrors.WriteAppError(ctx, writer, apperrors.NewNotFoundErrorWithMessage(resource.Application, inputParams.ResourceID,
-				fmt.Sprintf("Operation for application with id %s not found", inputParams.ResourceID)), http.StatusNotFound)
+			apperrors.WriteAppError(ctx, writer, apperrors.NewNotFoundErrorWithMessage(resource.Application, op.ResourceID,
+				fmt.Sprintf("Operation for application with id %s not found", op.ResourceID)), http.StatusNotFound)
 			return
 		}
 
@@ -124,11 +114,8 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	opResponse := &OperationResponse{
-		Operation: &Operation{
-			ResourceID:   inputParams.ResourceID,
-			ResourceType: inputParams.ResourceType,
-		},
-		Error: res.Error,
+		Operation: op,
+		Error:     res.Error,
 	}
 
 	if !res.DeletedAt.IsZero() {

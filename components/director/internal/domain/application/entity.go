@@ -2,8 +2,9 @@ package application
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
 type Entity struct {
