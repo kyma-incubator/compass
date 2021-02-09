@@ -18,8 +18,8 @@ type Document struct {
 	*BaseEntity
 }
 
-func (_ *Document) GetType() string {
-	return resource.Document.ToLower()
+func (_ *Document) GetType() resource.Type {
+	return resource.Document
 }
 
 type DocumentInput struct {

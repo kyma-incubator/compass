@@ -309,7 +309,7 @@ func TestRepository_Create(t *testing.T) {
 		executeCreateFunc(ctx, appID, graphql.OperationModeAsync, nil)
 
 		assert.Equal(t, appID, op.ResourceID)
-		assert.Equal(t, resource.Application.ToLower(), op.ResourceType)
+		assert.Equal(t, resource.Application, op.ResourceType)
 	})
 
 	t.Run("Failure when operation mode is set to async explicitly and operation is not in the context", func(t *testing.T) {

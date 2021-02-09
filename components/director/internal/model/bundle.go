@@ -15,8 +15,8 @@ type Bundle struct {
 	*BaseEntity
 }
 
-func (_ *Bundle) GetType() string {
-	return resource.Bundle.ToLower()
+func (_ *Bundle) GetType() resource.Type {
+	return resource.Bundle
 }
 
 func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {

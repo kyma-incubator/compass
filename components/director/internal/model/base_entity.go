@@ -17,13 +17,14 @@
 package model
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"time"
 )
 
 // Entity denotes an model-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
 type Entity interface {
 	GetID() string
-	GetType() string
+	GetType() resource.Type
 
 	GetReady() bool
 	SetReady(ready bool)
@@ -54,7 +55,7 @@ func (e *BaseEntity) GetID() string {
 	return e.ID
 }
 
-func (e *BaseEntity) GetType() string {
+func (e *BaseEntity) GetType() resource.Type {
 	return ""
 }
 

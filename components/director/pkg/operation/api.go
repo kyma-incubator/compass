@@ -71,7 +71,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	op := &Operation{
 		ResourceID:   queryParams.Get(ResourceIDParam),
-		ResourceType: queryParams.Get(ResourceTypeParam),
+		ResourceType: resource.Type(queryParams.Get(ResourceTypeParam)),
 	}
 
 	log.C(ctx).Infof("Executing Operation API with resourceType: %s and resourceID: %s", op.ResourceType, op.ResourceID)

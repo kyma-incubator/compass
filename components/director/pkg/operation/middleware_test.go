@@ -69,7 +69,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 		}
 
@@ -106,13 +106,13 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID + "-1",
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 			{
 				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID + "-2",
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 		}
 
@@ -149,7 +149,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 		}
 
@@ -179,7 +179,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 		}
 

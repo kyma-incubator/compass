@@ -15,8 +15,8 @@ type EventDefinition struct {
 	*BaseEntity
 }
 
-func (_ *EventDefinition) GetType() string {
-	return resource.EventDefinition.ToLower()
+func (_ *EventDefinition) GetType() resource.Type {
+	return resource.EventDefinition
 }
 
 type EventDefinitionPage struct {

@@ -19,8 +19,8 @@ type Application struct {
 	*BaseEntity
 }
 
-func (_ *Application) GetType() string {
-	return resource.Application.ToLower()
+func (_ *Application) GetType() resource.Type {
+	return resource.Application
 }
 
 func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timestamp time.Time) {

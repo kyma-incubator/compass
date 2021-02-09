@@ -18,8 +18,6 @@ package operation
 
 import (
 	"context"
-	"strings"
-
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -65,7 +63,7 @@ type Operation struct {
 	OperationType     OperationType `json:"operation_type,omitempty"`
 	OperationCategory string        `json:"operation_category,omitempty"`
 	ResourceID        string        `json:"resource_id,omitempty"`
-	ResourceType      string        `json:"resource_type,omitempty"`
+	ResourceType      resource.Type `json:"resource_type,omitempty"`
 	CorrelationID     string        `json:"correlation_id,omitempty"`
 	WebhookID         string        `json:"webhook_id,omitempty"`
 	RequestData       string        `json:"request_data,omitempty"`
@@ -75,7 +73,7 @@ type Operation struct {
 func (op *Operation) Validate() error {
 	return validation.ValidateStruct(op,
 		validation.Field(&op.ResourceID, is.UUID),
-		validation.Field(&op.ResourceType, validation.Required, validation.In(strings.ToLower(resource.Application.ToLower()))))
+		validation.Field(&op.ResourceType, validation.Required, validation.In(resource.Application)))
 }
 
 // SaveToContext saves Operation to the context

@@ -32,13 +32,13 @@ func TestFromContext(t *testing.T) {
 	op1 := &operation.Operation{
 		OperationType:     operation.OperationTypeCreate,
 		OperationCategory: "registerApplication",
-		ResourceType:      resource.Application.ToLower(),
+		ResourceType:      resource.Application,
 	}
 
 	op2 := &operation.Operation{
 		OperationType:     operation.OperationTypeCreate,
 		OperationCategory: "registerApplication",
-		ResourceType:      resource.Application.ToLower(),
+		ResourceType:      resource.Application,
 	}
 
 	initOperations := &[]*operation.Operation{op1}
@@ -95,7 +95,7 @@ func TestSaveToContext(t *testing.T) {
 	op := &operation.Operation{
 		OperationType:     operation.OperationTypeCreate,
 		OperationCategory: "registerApplication",
-		ResourceType:      resource.Application.ToLower(),
+		ResourceType:      resource.Application,
 	}
 	operations := &[]*operation.Operation{op}
 

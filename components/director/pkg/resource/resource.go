@@ -1,34 +1,27 @@
 package resource
 
-import "strings"
-
 type Type string
 
 const (
-	Application                Type = "Application"
-	ApplicationTemplate        Type = "ApplicationTemplate"
-	Runtime                    Type = "Runtime"
-	RuntimeContext             Type = "RuntimeContext"
-	LabelDefinition            Type = "LabelDefinition"
-	Label                      Type = "Label"
-	Bundle                     Type = "Bundle"
-	IntegrationSystem          Type = "IntegrationSystem"
-	Tenant                     Type = "Tenant"
-	SystemAuth                 Type = "SystemAuth"
-	FetchRequest               Type = "FetchRequest"
-	Specification              Type = "Specification"
-	Document                   Type = "Document"
-	BundleInstanceAuth         Type = "BundleInstanceAuth"
-	API                        Type = "Api"
-	EventDefinition            Type = "EventDefinition"
-	AutomaticScenarioAssigment Type = "AutomaticScenarioAssigment"
-	Webhook                    Type = "Webhook"
+	Application                Type = "application"
+	ApplicationTemplate        Type = "applicationTemplate"
+	Runtime                    Type = "runtime"
+	RuntimeContext             Type = "runtimeContext"
+	LabelDefinition            Type = "labelDefinition"
+	Label                      Type = "label"
+	Bundle                     Type = "bundle"
+	IntegrationSystem          Type = "integrationSystem"
+	Tenant                     Type = "tenant"
+	SystemAuth                 Type = "systemAuth"
+	FetchRequest               Type = "fetchRequest"
+	Specification              Type = "specification"
+	Document                   Type = "document"
+	BundleInstanceAuth         Type = "bundleInstanceAuth"
+	API                        Type = "api"
+	EventDefinition            Type = "eventDefinition"
+	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
+	Webhook                    Type = "webhook"
 )
-
-// ToLower returns the lower-case string representation of a resource Type
-func (t Type) ToLower() string {
-	return strings.ToLower(string(t))
-}
 
 type SQLOperation string
 

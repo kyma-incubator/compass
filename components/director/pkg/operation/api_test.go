@@ -112,7 +112,7 @@ func TestServeHTTP(t *testing.T) {
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
+		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
 
 		req.URL.RawQuery = queryValues.Encode()
 
@@ -135,7 +135,7 @@ func TestServeHTTP(t *testing.T) {
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
+		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
 
 		req.URL.RawQuery = queryValues.Encode()
 
@@ -160,7 +160,7 @@ func TestServeHTTP(t *testing.T) {
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
+		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
 
 		req.URL.RawQuery = queryValues.Encode()
 
@@ -185,7 +185,7 @@ func TestServeHTTP(t *testing.T) {
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
+		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
 
 		req.URL.RawQuery = queryValues.Encode()
 
@@ -209,7 +209,7 @@ func TestServeHTTP(t *testing.T) {
 
 		queryValues := req.URL.Query()
 		queryValues.Add(operation.ResourceIDParam, resourceID)
-		queryValues.Add(operation.ResourceTypeParam, resource.Application.ToLower())
+		queryValues.Add(operation.ResourceTypeParam, string(resource.Application))
 
 		req.URL.RawQuery = queryValues.Encode()
 
@@ -228,7 +228,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  resource.Application.ToLower(),
+						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeCreate,
 					},
 					Status: operation.OperationStatusSucceeded,
@@ -240,7 +240,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  resource.Application.ToLower(),
+						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeUpdate,
 					},
 					Status: operation.OperationStatusSucceeded,
@@ -252,7 +252,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  resource.Application.ToLower(),
+						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeDelete,
 					},
 					Status: operation.OperationStatusSucceeded,
@@ -264,7 +264,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  resource.Application.ToLower(),
+						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeCreate,
 					},
 					Status: operation.OperationStatusInProgress,
@@ -276,7 +276,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  resource.Application.ToLower(),
+						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeUpdate,
 					},
 					Status: operation.OperationStatusInProgress,
@@ -288,7 +288,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  resource.Application.ToLower(),
+						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeDelete,
 					},
 					Status: operation.OperationStatusInProgress,
@@ -300,7 +300,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  resource.Application.ToLower(),
+						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeCreate,
 					},
 					Status: operation.OperationStatusFailed,
@@ -313,7 +313,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  resource.Application.ToLower(),
+						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeUpdate,
 					},
 					Status: operation.OperationStatusFailed,
@@ -326,7 +326,7 @@ func TestServeHTTP(t *testing.T) {
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
-						ResourceType:  resource.Application.ToLower(),
+						ResourceType:  resource.Application,
 						OperationType: operation.OperationTypeDelete,
 					},
 					Status: operation.OperationStatusFailed,

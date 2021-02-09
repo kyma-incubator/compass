@@ -20,8 +20,8 @@ type APIDefinition struct {
 	*BaseEntity
 }
 
-func (_ *APIDefinition) GetType() string {
-	return resource.API.ToLower()
+func (_ *APIDefinition) GetType() resource.Type {
+	return resource.API
 }
 
 type Timestamp time.Time
