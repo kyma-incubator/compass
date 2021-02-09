@@ -5,10 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"testing"
-	"time"
-
 	"github.com/stretchr/testify/mock"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 
@@ -30,8 +28,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		name := "foo"
 		desc := "bar"
 		testErrMsg := "test-err"
-		createdAt := time.Now()
-		bndlModel := fixBundleModelWithTimestamp(t, name, desc, createdAt)
+		bndlModel := fixBundleModel(t, name, desc)
 		bndlModel.Error = &testErrMsg
 		require.NotNil(t, bndlModel)
 		authConv := auth.NewConverter()
@@ -41,7 +38,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 
-		expectedBndl := fixEntityBundleWithTimestamp(bundleID, name, desc, createdAt)
+		expectedBndl := fixEntityBundle(bundleID, name, desc)
 		expectedBndl.Error = sql.NullString{
 			String: testErrMsg,
 			Valid:  true,
@@ -89,9 +86,8 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		desc := "bar"
-		createdAt := time.Now()
 		testErrMsg := "test-err"
-		entity := fixEntityBundleWithTimestamp(bundleID, name, desc, createdAt)
+		entity := fixEntityBundle(bundleID, name, desc)
 		entity.Error = sql.NullString{
 			String: testErrMsg,
 			Valid:  true,
@@ -102,7 +98,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		bndlModel, err := conv.FromEntity(entity)
 		//THEN
 		require.NoError(t, err)
-		expectedBdnl := fixBundleModelWithTimestamp(t, name, desc, createdAt)
+		expectedBdnl := fixBundleModel(t, name, desc)
 		expectedBdnl.Error = &testErrMsg
 		assert.Equal(t, expectedBdnl, bndlModel)
 	})
@@ -145,9 +141,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	id := bundleID
 	name := "foo"
 	desc := "bar"
-	createdAt := time.Now()
-	modelBundle := fixBundleModelWithTimestamp(t, name, desc, createdAt)
-	gqlBundle := fixGQLBundleWithTimestamp(id, name, desc, createdAt)
+	modelBundle := fixBundleModel(t, name, desc)
+	gqlBundle := fixGQLBundle(id, name, desc)
 	emptyModelBundle := &model.Bundle{BaseEntity: &model.BaseEntity{}}
 	emptyGraphQLBundle := &graphql.Bundle{BaseEntity: &graphql.BaseEntity{}}
 
@@ -217,17 +212,16 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	name1 := "foo"
 	name2 := "bar"
 	desc := "1"
-	createdAt := time.Now()
 	input := []*model.Bundle{
-		fixBundleModelWithTimestamp(t, name1, desc, createdAt),
-		fixBundleModelWithTimestamp(t, name2, desc, createdAt),
+		fixBundleModel(t, name1, desc),
+		fixBundleModel(t, name2, desc),
 		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
 
 	expected := []*graphql.Bundle{
-		fixGQLBundleWithTimestamp(bundleID, name1, desc, createdAt),
-		fixGQLBundleWithTimestamp(bundleID, name2, desc, createdAt),
+		fixGQLBundle(bundleID, name1, desc),
+		fixGQLBundle(bundleID, name2, desc),
 		{BaseEntity: &graphql.BaseEntity{}},
 	}
 

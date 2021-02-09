@@ -29,8 +29,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var createdAt = time.Now()
-
 func TestRepository_Exists(t *testing.T) {
 	// given
 	sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -369,7 +367,8 @@ func TestRepository_Update(t *testing.T) {
 		// given
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		appEntity.DeletedAt = time.Now() // This is needed as workaround so that updatedAt timestamp is not updated
+		appEntity.UpdatedAt = fixedTimestamp
+		appEntity.DeletedAt = fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
@@ -690,8 +689,8 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ExpectedCountQuery:       countQuery,
 			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir"},
 			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "ready", "created_at", "updated_at", "deleted_at", "error"}).
-				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID, true, createdAt, createdAt, time.Time{}, nil).
-				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID, true, createdAt, createdAt, time.Time{}, nil),
+				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID, true, fixedTimestamp, fixedTimestamp, time.Time{}, nil).
+				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID, true, fixedTimestamp, fixedTimestamp, time.Time{}, nil),
 			TotalCount:    2,
 			ExpectedError: nil,
 		},
@@ -704,8 +703,8 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ExpectedCountQuery:       countQueryWithHidingSelectors,
 			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir", tenantID, "foo", strconv.Quote("bar"), tenantID, "foo", strconv.Quote("baz")},
 			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "ready", "created_at", "updated_at", "deleted_at", "error"}).
-				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID, true, createdAt, createdAt, time.Time{}, nil).
-				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID, true, createdAt, createdAt, time.Time{}, nil),
+				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID, true, fixedTimestamp, fixedTimestamp, time.Time{}, nil).
+				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID, true, fixedTimestamp, fixedTimestamp, time.Time{}, nil),
 			TotalCount:    2,
 			ExpectedError: nil,
 		},

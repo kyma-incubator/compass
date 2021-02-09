@@ -225,7 +225,7 @@ func TestServeHTTP(t *testing.T) {
 		cases := []testCase{
 			{
 				Name:        "Successful CREATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: time.Time{}, Ready: true}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: true}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -261,7 +261,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "In Progress CREATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: time.Time{}, Ready: false}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
@@ -297,7 +297,7 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Failed CREATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
+				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,

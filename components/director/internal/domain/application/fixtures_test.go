@@ -18,9 +18,10 @@ import (
 )
 
 var (
-	testURL      = "https://foo.bar"
-	intSysID     = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
-	providerName = "provider name"
+	testURL        = "https://foo.bar"
+	intSysID       = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
+	providerName   = "provider name"
+	fixedTimestamp = time.Now()
 )
 
 func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {
@@ -107,8 +108,8 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		BaseEntity: &model.BaseEntity{
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: createdAt,
-			UpdatedAt: createdAt,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 		},
 	}
@@ -132,8 +133,8 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		BaseEntity: &graphql.BaseEntity{
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: graphql.Timestamp(createdAt),
-			UpdatedAt: graphql.Timestamp(createdAt),
+			CreatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(time.Time{}),
 			DeletedAt: graphql.Timestamp(time.Time{}),
 		},
 	}
@@ -156,8 +157,8 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		BaseEntity: &repo.BaseEntity{
 			Ready:     true,
 			Error:     sql.NullString{},
-			CreatedAt: createdAt,
-			UpdatedAt: createdAt,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 		},
 	}

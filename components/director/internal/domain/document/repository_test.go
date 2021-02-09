@@ -25,8 +25,8 @@ func TestRepository_Create(t *testing.T) {
 	refID := bndlID()
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		docModel := fixModelDocumentWithTimestamp(givenID(), refID, createdAt)
-		docEntity := fixEntityDocumentWithTimestamp(givenID(), refID, createdAt)
+		docModel := fixModelDocument(givenID(), refID)
+		docEntity := fixEntityDocument(givenID(), refID)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("ToEntity", *docModel).Return(docEntity, nil).Once()
@@ -50,8 +50,8 @@ func TestRepository_Create(t *testing.T) {
 
 	t.Run("DB Error", func(t *testing.T) {
 		// GIVEN
-		docModel := fixModelDocumentWithTimestamp(givenID(), refID, createdAt)
-		docEntity := fixEntityDocumentWithTimestamp(givenID(), refID, createdAt)
+		docModel := fixModelDocument(givenID(), refID)
+		docEntity := fixEntityDocument(givenID(), refID)
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", *docModel).Return(docEntity, nil)
@@ -71,7 +71,7 @@ func TestRepository_Create(t *testing.T) {
 
 	t.Run("Converter Error", func(t *testing.T) {
 		// GIVEN
-		docModel := fixModelDocumentWithTimestamp(givenID(), refID, createdAt)
+		docModel := fixModelDocument(givenID(), refID)
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", *docModel).Return(nil, givenError())
@@ -91,14 +91,14 @@ func TestRepository_CreateMany(t *testing.T) {
 		defer conv.AssertExpectations(t)
 
 		given := []*model.Document{
-			fixModelDocumentWithTimestamp("1", bndlID(), createdAt),
-			fixModelDocumentWithTimestamp("2", bndlID(), createdAt),
-			fixModelDocumentWithTimestamp("3", bndlID(), createdAt),
+			fixModelDocument("1", bndlID()),
+			fixModelDocument("2", bndlID()),
+			fixModelDocument("3", bndlID()),
 		}
 		expected := []*document.Entity{
-			fixEntityDocumentWithTimestamp("1", bndlID(), createdAt),
-			fixEntityDocumentWithTimestamp("2", bndlID(), createdAt),
-			fixEntityDocumentWithTimestamp("3", bndlID(), createdAt),
+			fixEntityDocument("1", bndlID()),
+			fixEntityDocument("2", bndlID()),
+			fixEntityDocument("3", bndlID()),
 		}
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -126,13 +126,13 @@ func TestRepository_CreateMany(t *testing.T) {
 		defer conv.AssertExpectations(t)
 
 		given := []*model.Document{
-			fixModelDocumentWithTimestamp("1", bndlID(), createdAt),
-			fixModelDocumentWithTimestamp("2", bndlID(), createdAt),
-			fixModelDocumentWithTimestamp("3", bndlID(), createdAt),
+			fixModelDocument("1", bndlID()),
+			fixModelDocument("2", bndlID()),
+			fixModelDocument("3", bndlID()),
 		}
 		expected := []*document.Entity{
-			fixEntityDocumentWithTimestamp("1", bndlID(), createdAt),
-			fixEntityDocumentWithTimestamp("2", bndlID(), createdAt),
+			fixEntityDocument("1", bndlID()),
+			fixEntityDocument("2", bndlID()),
 		}
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -162,13 +162,13 @@ func TestRepository_CreateMany(t *testing.T) {
 		defer conv.AssertExpectations(t)
 
 		given := []*model.Document{
-			fixModelDocumentWithTimestamp("1", bndlID(), createdAt),
-			fixModelDocumentWithTimestamp("2", bndlID(), createdAt),
-			fixModelDocumentWithTimestamp("3", bndlID(), createdAt),
+			fixModelDocument("1", bndlID()),
+			fixModelDocument("2", bndlID()),
+			fixModelDocument("3", bndlID()),
 		}
 		expected := []*document.Entity{
-			fixEntityDocumentWithTimestamp("1", bndlID(), createdAt),
-			fixEntityDocumentWithTimestamp("2", bndlID(), createdAt),
+			fixEntityDocument("1", bndlID()),
+			fixEntityDocument("2", bndlID()),
 		}
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -200,8 +200,8 @@ func TestRepository_ListForBundle(t *testing.T) {
 	inputPageSize := 3
 	inputCursor := ""
 	totalCount := 2
-	docEntity1 := fixEntityDocumentWithTimestamp("1", bndlID(), createdAt)
-	docEntity2 := fixEntityDocumentWithTimestamp("2", bndlID(), createdAt)
+	docEntity1 := fixEntityDocument("1", bndlID())
+	docEntity2 := fixEntityDocument("2", bndlID())
 
 	selectQuery := regexp.QuoteMeta(fmt.Sprintf(`SELECT id, tenant_id, bundle_id, title, display_name, description, format, kind, data, ready, created_at, updated_at, deleted_at, error
 		FROM public.documents WHERE tenant_id = $1 AND bundle_id = $2 ORDER BY id LIMIT %d OFFSET %d`, ExpectedLimit, ExpectedOffset))
@@ -322,8 +322,8 @@ func TestRepository_GetByID(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		docModel := fixModelDocumentWithTimestamp(givenID(), refID, createdAt)
-		docEntity := fixEntityDocumentWithTimestamp(givenID(), refID, createdAt)
+		docModel := fixModelDocument(givenID(), refID)
+		docEntity := fixEntityDocument(givenID(), refID)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromEntity", *docEntity).Return(*docModel, nil).Once()
@@ -353,7 +353,7 @@ func TestRepository_GetByID(t *testing.T) {
 
 	t.Run("Converter Error", func(t *testing.T) {
 		// GIVEN
-		docEntity := fixEntityDocumentWithTimestamp(givenID(), refID, createdAt)
+		docEntity := fixEntityDocument(givenID(), refID)
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
@@ -399,8 +399,8 @@ func TestRepository_GetForBundle(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		docModel := fixModelDocumentWithTimestamp(givenID(), refID, createdAt)
-		docEntity := fixEntityDocumentWithTimestamp(givenID(), refID, createdAt)
+		docModel := fixModelDocument(givenID(), refID)
+		docEntity := fixEntityDocument(givenID(), refID)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromEntity", *docEntity).Return(*docModel, nil).Once()
@@ -430,7 +430,7 @@ func TestRepository_GetForBundle(t *testing.T) {
 
 	t.Run("Converter Error", func(t *testing.T) {
 		// GIVEN
-		docEntity := fixEntityDocumentWithTimestamp(givenID(), refID, createdAt)
+		docEntity := fixEntityDocument(givenID(), refID)
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)

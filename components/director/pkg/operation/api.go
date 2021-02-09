@@ -133,7 +133,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	if !res.DeletedAt.IsZero() {
 		opResponse.OperationType = graphql.OperationTypeDelete
-	} else if res.CreatedAt != res.UpdatedAt {
+	} else if !res.UpdatedAt.IsZero() {
 		opResponse.OperationType = graphql.OperationTypeUpdate
 	} else {
 		opResponse.OperationType = graphql.OperationTypeCreate

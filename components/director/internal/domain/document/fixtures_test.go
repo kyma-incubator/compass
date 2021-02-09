@@ -19,13 +19,10 @@ var (
 	docDisplayName = "foodisplay"
 	docDescription = "foodesc"
 	docCLOB        = graphql.CLOB(docData)
+	fixedTimestamp = time.Now()
 )
 
 func fixModelDocument(id, bundleID string) *model.Document {
-	return fixModelDocumentWithTimestamp(id, bundleID, time.Now())
-}
-
-func fixModelDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *model.Document {
 	return &model.Document{
 		ID:          id,
 		BundleID:    bundleID,
@@ -39,18 +36,14 @@ func fixModelDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *mo
 		BaseEntity: &model.BaseEntity{
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: createdAt,
-			UpdatedAt: createdAt,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 		},
 	}
 }
 
 func fixEntityDocument(id, bundleID string) *document.Entity {
-	return fixEntityDocumentWithTimestamp(id, bundleID, time.Now())
-}
-
-func fixEntityDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *document.Entity {
 	return &document.Entity{
 		ID:          id,
 		BndlID:      bundleID,
@@ -65,18 +58,14 @@ func fixEntityDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *d
 
 			Ready:     true,
 			Error:     sql.NullString{},
-			CreatedAt: createdAt,
-			UpdatedAt: createdAt,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 		},
 	}
 }
 
 func fixGQLDocument(id, bundleID string) *graphql.Document {
-	return fixGQLDocumentWithTimestamp(id, bundleID, time.Now())
-}
-
-func fixGQLDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *graphql.Document {
 	return &graphql.Document{
 		ID:          id,
 		BundleID:    bundleID,
@@ -89,8 +78,8 @@ func fixGQLDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *grap
 		BaseEntity: &graphql.BaseEntity{
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: graphql.Timestamp(createdAt),
-			UpdatedAt: graphql.Timestamp(createdAt),
+			CreatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(time.Time{}),
 			DeletedAt: graphql.Timestamp(time.Time{}),
 		},
 	}

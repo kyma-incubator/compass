@@ -18,8 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var createdAt = time.Now()
-
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	testCases := []struct {
@@ -29,8 +27,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelDocumentWithTimestamp("1", "foo", createdAt),
-			Expected: fixGQLDocumentWithTimestamp("1", "foo", createdAt),
+			Input:    fixModelDocument("1", "foo"),
+			Expected: fixGQLDocument("1", "foo"),
 		},
 		{
 			Name:     "Empty",
@@ -62,14 +60,14 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Document{
-		fixModelDocumentWithTimestamp("1", "foo", createdAt),
-		fixModelDocumentWithTimestamp("2", "bar", createdAt),
+		fixModelDocument("1", "foo"),
+		fixModelDocument("2", "bar"),
 		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
 	expected := []*graphql.Document{
-		fixGQLDocumentWithTimestamp("1", "foo", createdAt),
-		fixGQLDocumentWithTimestamp("2", "bar", createdAt),
+		fixGQLDocument("1", "foo"),
+		fixGQLDocument("2", "bar"),
 		{BaseEntity: &graphql.BaseEntity{}},
 	}
 	frConv := &automock.FetchRequestConverter{}
@@ -167,8 +165,8 @@ func TestToEntity(t *testing.T) {
 		Format:      "givenFormat",
 		BaseEntity: &model.BaseEntity{
 			Ready:     true,
-			CreatedAt: createdAt,
-			UpdatedAt: createdAt,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 			Error:     nil,
 		},

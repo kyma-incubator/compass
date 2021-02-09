@@ -14,6 +14,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+var fixedTimestamp = time.Now()
+
 func fixModelAPIDefinition(id string, bndlID string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
 		ID:          id,
@@ -163,10 +165,6 @@ const (
 )
 
 func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
-	return fixBundleModelWithTimestamp(t, name, desc, time.Now())
-}
-
-func fixBundleModelWithTimestamp(_ *testing.T, name, desc string, createdAt time.Time) *model.Bundle {
 	return &model.Bundle{
 		ID:                             bundleID,
 		TenantID:                       tenantID,
@@ -178,18 +176,14 @@ func fixBundleModelWithTimestamp(_ *testing.T, name, desc string, createdAt time
 		BaseEntity: &model.BaseEntity{
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: createdAt,
-			UpdatedAt: createdAt,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 		},
 	}
 }
 
 func fixGQLBundle(id, name, desc string) *graphql.Bundle {
-	return fixGQLBundleWithTimestamp(id, name, desc, time.Now())
-}
-
-func fixGQLBundleWithTimestamp(id, name, desc string, createdAt time.Time) *graphql.Bundle {
 	schema := graphql.JSONSchema(`{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`)
 	return &graphql.Bundle{
 		ID:                             id,
@@ -200,8 +194,8 @@ func fixGQLBundleWithTimestamp(id, name, desc string, createdAt time.Time) *grap
 		BaseEntity: &graphql.BaseEntity{
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: graphql.Timestamp(createdAt),
-			UpdatedAt: graphql.Timestamp(createdAt),
+			CreatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(time.Time{}),
 			DeletedAt: graphql.Timestamp(time.Time{}),
 		},
 	}
@@ -363,10 +357,6 @@ func fixGQLAuth() *graphql.Auth {
 }
 
 func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
-	return fixEntityBundleWithTimestamp(id, name, desc, time.Now())
-}
-
-func fixEntityBundleWithTimestamp(id, name, desc string, createdAt time.Time) *mp_bundle.Entity {
 	descSQL := sql.NullString{desc, true}
 	schemaSQL := sql.NullString{
 		String: inputSchemaString(),
@@ -388,8 +378,8 @@ func fixEntityBundleWithTimestamp(id, name, desc string, createdAt time.Time) *m
 		BaseEntity: &repo.BaseEntity{
 			Ready:     true,
 			Error:     sql.NullString{},
-			CreatedAt: createdAt,
-			UpdatedAt: createdAt,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 		},
 	}
@@ -400,11 +390,7 @@ func fixBundleColumns() []string {
 }
 
 func fixBundleRow(id, _ string) []driver.Value {
-	return fixBundleRowWithTimestamp(id, "", time.Now())
-}
-
-func fixBundleRowWithTimestamp(id, _ string, createdAt time.Time) []driver.Value {
-	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), true, createdAt, createdAt, time.Time{}, nil}
+	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Value {

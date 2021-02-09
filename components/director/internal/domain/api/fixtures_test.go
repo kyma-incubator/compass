@@ -70,7 +70,7 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		BaseEntity: &model.BaseEntity{
 			Ready:     true,
 			CreatedAt: fixedTimestamp,
-			UpdatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 			Error:     nil,
 		},
@@ -110,7 +110,7 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: graphql.Timestamp(fixedTimestamp),
-			UpdatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(time.Time{}),
 			DeletedAt: graphql.Timestamp(time.Time{}),
 		},
 	}
@@ -208,7 +208,7 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) *api.Entity {
 		BaseEntity: &repo.BaseEntity{
 			Ready:     true,
 			CreatedAt: fixedTimestamp,
-			UpdatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 			Error:     sql.NullString{},
 		},
@@ -222,7 +222,7 @@ func fixAPIDefinitionColumns() []string {
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
-		fmt.Sprintf("https://%s.com", placeholder), "v1.1", false, "v1.0", false, true, fixedTimestamp, fixedTimestamp, time.Time{}, nil}
+		fmt.Sprintf("https://%s.com", placeholder), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {

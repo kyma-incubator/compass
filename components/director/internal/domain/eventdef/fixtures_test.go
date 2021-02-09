@@ -66,7 +66,7 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 		BaseEntity: &model.BaseEntity{
 			Ready:     true,
 			CreatedAt: fixedTimestamp,
-			UpdatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 			Error:     nil,
 		},
@@ -105,7 +105,7 @@ func fixFullGQLEventDefinition(placeholder string) *graphql.EventDefinition {
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: graphql.Timestamp(fixedTimestamp),
-			UpdatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(time.Time{}),
 			DeletedAt: graphql.Timestamp(time.Time{}),
 		},
 	}
@@ -199,7 +199,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 		BaseEntity: &repo.BaseEntity{
 			Ready:     true,
 			CreatedAt: fixedTimestamp,
-			UpdatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
 			DeletedAt: time.Time{},
 			Error:     sql.NullString{},
 		},
@@ -212,7 +212,7 @@ func fixEventDefinitionColumns() []string {
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder, "v1.1", false, "v1.0", false, true, fixedTimestamp, fixedTimestamp, time.Time{}, nil}
+	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder, "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
