@@ -66,10 +66,7 @@ func fixModelEventAPIDefinition(id string, bundleID string, name, description st
 		Group:       &group,
 	}
 }
-func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
-}
+
 func fixGQLEventDefinition(id string, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
 		ID:          id,
@@ -227,6 +224,9 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
 	}
 
+	specData1 := "spec_data1"
+	specData2 := "spec_data2"
+
 	return model.BundleCreateInput{
 		Name:                           name,
 		Description:                    &description,
@@ -236,9 +236,17 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 			{Name: "api1", TargetURL: "foo.bar"},
 			{Name: "api2", TargetURL: "foo.bar2"},
 		},
+		APISpecs: []*model.SpecInput{
+			{Data: &specData1},
+			{Data: &specData2},
+		},
 		EventDefinitions: []*model.EventDefinitionInput{
 			{Name: "event1", Description: &desc},
 			{Name: "event2", Description: &desc},
+		},
+		EventSpecs: []*model.SpecInput{
+			{Data: &specData1},
+			{Data: &specData2},
 		},
 		Documents: []*model.DocumentInput{
 			{DisplayName: "doc1", Kind: &docKind},
@@ -266,7 +274,7 @@ func fixGQLBundleUpdateInput(name, description string) graphql.BundleUpdateInput
 	}
 }
 
-func fixModelBundleUpdateInput(t *testing.T, name, description string) model.BundleUpdateInput {
+func fixModelBundleUpdateInput(name, description string) model.BundleUpdateInput {
 	basicCredentialDataInput := model.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -280,12 +288,6 @@ func fixModelBundleUpdateInput(t *testing.T, name, description string) model.Bun
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
-	}
-}
-
-func fixModelAuthInput(headers map[string][]string) *model.AuthInput {
-	return &model.AuthInput{
-		AdditionalHeaders: headers,
 	}
 }
 
@@ -433,39 +435,5 @@ func fixGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 		InputParams: &params,
 		Auth:        fixGQLAuth(),
 		Status:      &status,
-	}
-}
-
-func fixFetchRequest(url string, objectType model.FetchRequestReferenceObjectType, timestamp time.Time) *model.FetchRequest {
-	return &model.FetchRequest{
-		ID:     "foo",
-		Tenant: tenantID,
-		URL:    url,
-		Auth:   nil,
-		Mode:   "SINGLE",
-		Filter: nil,
-		Status: &model.FetchRequestStatus{
-			Condition: model.FetchRequestStatusConditionInitial,
-			Timestamp: timestamp,
-		},
-		ObjectType: objectType,
-		ObjectID:   "foo",
-	}
-}
-
-func fixFetchRequestWithCondition(url string, objectType model.FetchRequestReferenceObjectType, timestamp time.Time, condition model.FetchRequestStatusCondition) *model.FetchRequest {
-	return &model.FetchRequest{
-		ID:     "foo",
-		Tenant: tenantID,
-		URL:    url,
-		Auth:   nil,
-		Mode:   "SINGLE",
-		Filter: nil,
-		Status: &model.FetchRequestStatus{
-			Condition: condition,
-			Timestamp: timestamp,
-		},
-		ObjectType: objectType,
-		ObjectID:   "foo",
 	}
 }

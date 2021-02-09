@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+
 	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
@@ -406,9 +408,10 @@ func defaultBundleRepo() mp_bundle.BundleRepository {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	specConverter := spec.NewConverter(frConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	docConverter := document.NewConverter(frConverter)
-	apiConverter := api.NewConverter(frConverter, versionConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
 
 	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }

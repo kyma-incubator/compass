@@ -14,6 +14,27 @@ type APIService struct {
 	mock.Mock
 }
 
+// CreateInBundle provides a mock function with given fields: ctx, bundleID, in, spec
+func (_m *APIService) CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
+	ret := _m.Called(ctx, bundleID, in, spec)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput) string); ok {
+		r0 = rf(ctx, bundleID, in, spec)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.APIDefinitionInput, *model.SpecInput) error); ok {
+		r1 = rf(ctx, bundleID, in, spec)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetForBundle provides a mock function with given fields: ctx, id, bundleID
 func (_m *APIService) GetForBundle(ctx context.Context, id string, bundleID string) (*model.APIDefinition, error) {
 	ret := _m.Called(ctx, id, bundleID)

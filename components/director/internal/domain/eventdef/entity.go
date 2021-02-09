@@ -14,11 +14,4 @@ type Entity struct {
 	Description sql.NullString `db:"description"`
 	GroupName   sql.NullString `db:"group_name"`
 	version.Version
-	EntitySpec
-}
-
-type EntitySpec struct {
-	SpecData   sql.NullString `db:"spec_data"`
-	SpecFormat sql.NullString `db:"spec_format"`
-	SpecType   sql.NullString `db:"spec_type"`
 }

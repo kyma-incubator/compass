@@ -181,7 +181,7 @@ func TestService_HandleSpec(t *testing.T) {
 				})
 			},
 			InputFr:        modelInputBasicCredentials,
-			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching API Spec status code: 500"), timestamp),
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec status code: 500"), timestamp),
 		},
 		{
 			Name: "Nil when auth without credentials is provided",
@@ -193,7 +193,7 @@ func TestService_HandleSpec(t *testing.T) {
 
 			InputFr:        modelInputMissingCredentials,
 			ExpectedResult: nil,
-			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching API Spec: Invalid data [reason=Credentials not provided]"), timestamp),
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec: Invalid data [reason=Credentials not provided]"), timestamp),
 		},
 		{
 			Name: "Success with oauth authentication",
@@ -239,7 +239,7 @@ func TestService_HandleSpec(t *testing.T) {
 				})
 			},
 			InputFr:        modelInputOauth,
-			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching API Spec: Get \"http://dummy.url.sth\": oauth2: cannot fetch token: \nResponse: "), timestamp),
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec: Get \"http://dummy.url.sth\": oauth2: cannot fetch token: \nResponse: "), timestamp),
 		},
 		{
 			Name: "Fails to execute the request with oauth authentication",
@@ -263,7 +263,7 @@ func TestService_HandleSpec(t *testing.T) {
 				})
 			},
 			InputFr:        modelInputOauth,
-			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching API Spec status code: 500"), timestamp),
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec status code: 500"), timestamp),
 		},
 	}
 
