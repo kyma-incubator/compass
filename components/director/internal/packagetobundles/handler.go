@@ -166,6 +166,20 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 			body = string(respBody)
 
+			// rewrite Query/Mutation names
+			body = strings.ReplaceAll(body, "bundleByInstanceAuth", "packageByInstanceAuth")
+			body = strings.ReplaceAll(body, "bundleInstanceAuth", "packageInstanceAuth")
+			body = strings.ReplaceAll(body, "addBundle", "addPackage")
+			body = strings.ReplaceAll(body, "updateBundle", "updatePackage")
+			body = strings.ReplaceAll(body, "deleteBundle", "deletePackage")
+			body = strings.ReplaceAll(body, "addAPIDefinitionToBundle", "addAPIDefinitionToPackage")
+			body = strings.ReplaceAll(body, "addEventDefinitionToBundle", "addEventDefinitionToPackage")
+			body = strings.ReplaceAll(body, "addDocumentToBundle", "addDocumentToPackage")
+			body = strings.ReplaceAll(body, "setBundleInstanceAuth", "setPackageInstanceAuth")
+			body = strings.ReplaceAll(body, "deleteBundleInstanceAuth", "deletePackageInstanceAuth")
+			body = strings.ReplaceAll(body, "requestBundleInstanceAuthCreation", "requestPackageInstanceAuthCreation")
+			body = strings.ReplaceAll(body, "requestBundleInstanceAuthDeletion", "requestPackageInstanceAuthDeletion")
+
 			respPackagesJSONPattern := regexp.MustCompile(`(\s*\")bundles(\"\s*:\s*\{)`) // matches ` "bundles":  {`
 			body = respPackagesJSONPattern.ReplaceAllString(body, "${1}packages${2}")
 
