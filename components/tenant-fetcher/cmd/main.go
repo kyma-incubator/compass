@@ -58,6 +58,7 @@ type config struct {
 	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
 	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 
+	JwksEndpoint              string `envconfig:"APP_JWKS_ENDPOINT"`
 	CISIdentityZone           string `envconfig:"APP_CIS_IDENTITY_ZONE"`
 	SubscriptionCallbackScope string `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
@@ -99,7 +100,7 @@ func main() {
 	exitOnError(err, "Failed to configure Logger")
 	logger := log.C(ctx)
 
-	middleware := auth.New("", cfg.CISIdentityZone, cfg.SubscriptionCallbackScope, extractTrustedIssuersScopePrefixes(authenticatorsConfig))
+	middleware := auth.New(cfg.JwksEndpoint, cfg.CISIdentityZone, cfg.SubscriptionCallbackScope, extractTrustedIssuersScopePrefixes(authenticatorsConfig))
 
 	mainRouter := mux.NewRouter()
 	subrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
