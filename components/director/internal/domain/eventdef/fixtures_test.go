@@ -27,9 +27,10 @@ var fixedTimestamp = time.Now()
 
 func fixEventDefinitionModel(id string, bndlID string, name string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:       id,
-		BundleID: bndlID,
-		Name:     name,
+		ID:         id,
+		BundleID:   bndlID,
+		Name:       name,
+		BaseEntity: &model.BaseEntity{},
 	}
 }
 
@@ -172,9 +173,10 @@ func fixGQLEventDefinitionInput(name, description string, group string) *graphql
 
 func fixEntityEventDefinition(id string, bndlID string, name string) *event.Entity {
 	return &event.Entity{
-		ID:     id,
-		BndlID: bndlID,
-		Name:   name,
+		ID:         id,
+		BndlID:     bndlID,
+		Name:       name,
+		BaseEntity: &repo.BaseEntity{},
 	}
 }
 

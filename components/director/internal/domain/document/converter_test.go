@@ -64,13 +64,13 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	input := []*model.Document{
 		fixModelDocumentWithTimestamp("1", "foo", createdAt),
 		fixModelDocumentWithTimestamp("2", "bar", createdAt),
-		{},
+		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
 	expected := []*graphql.Document{
 		fixGQLDocumentWithTimestamp("1", "foo", createdAt),
 		fixGQLDocumentWithTimestamp("2", "bar", createdAt),
-		{},
+		{BaseEntity: &graphql.BaseEntity{}},
 	}
 	frConv := &automock.FetchRequestConverter{}
 	converter := document.NewConverter(frConv)
@@ -222,6 +222,7 @@ func TestFromEntity(t *testing.T) {
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",
 		Format:      "MARKDOWN",
+		BaseEntity:  &repo.BaseEntity{},
 	}
 
 	t.Run("only required fields", func(t *testing.T) {
@@ -238,6 +239,7 @@ func TestFromEntity(t *testing.T) {
 			DisplayName: "givenDisplayName",
 			Description: "givenDescription",
 			Format:      model.DocumentFormatMarkdown,
+			BaseEntity:  &model.BaseEntity{},
 		}, actualModel)
 
 	})

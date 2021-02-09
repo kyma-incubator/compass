@@ -94,28 +94,30 @@ func TestRepository_Delete(t *testing.T) {
 
 		deletedAt := time.Now()
 
-		appModel := fixDetailedModelApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
+		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appModel.Ready = false
 		appModel.DeletedAt = deletedAt
-		appEntity := fixDetailedEntityApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
+		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
-		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "ready", "created_at", "updated_at", "deleted_at", "error"}).
-			AddRow(givenID(), givenTenant(), appEntity.Name, appEntity.Description, appEntity.StatusCondition, appEntity.StatusTimestamp, appEntity.HealthCheckURL, appEntity.IntegrationSystemID, appEntity.ProviderName, appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error)
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name",
+			"ready", "created_at", "updated_at", "deleted_at", "error"}).
+			AddRow(givenID(), givenTenant(), appEntity.Name, appEntity.Description, appEntity.StatusCondition, appEntity.StatusTimestamp, appEntity.HealthCheckURL, appEntity.IntegrationSystemID, appEntity.ProviderName,
+				appEntity.Ready, appEntity.CreatedAt, appEntity.UpdatedAt, appEntity.DeletedAt, appEntity.Error)
 
 		dbMock.ExpectQuery(`^SELECT (.+) FROM public.applications WHERE tenant_id = \$1 AND id = \$2$`).
 			WithArgs(givenTenant(), givenID()).
 			WillReturnRows(rows)
 
 		mockConverter := &automock.EntityConverter{}
-		mockConverter.On("FromEntity", appEntity).Return(appModel, nil).Once()
+		mockConverter.On("FromEntity", appEntity).Return(appModel).Once()
 
-		appEntityWithDeletedTimestamp := *appEntity
+		appEntityWithDeletedTimestamp := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntityWithDeletedTimestamp.Ready = false
 		appEntityWithDeletedTimestamp.DeletedAt = deletedAt
-		mockConverter.On("ToEntity", appModel).Return(&appEntityWithDeletedTimestamp, nil).Once()
+		mockConverter.On("ToEntity", appModel).Return(appEntityWithDeletedTimestamp, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
 		updateStmt := `UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_name = \?, ready = \?, created_at = \?, updated_at = \?, deleted_at = \?, error = \? WHERE tenant_id = \? AND id = \?`
@@ -185,10 +187,10 @@ func TestRepository_Delete(t *testing.T) {
 
 		deletedAt := time.Now()
 
-		appModel := fixDetailedModelApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
+		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appModel.Ready = false
 		appModel.DeletedAt = deletedAt
-		appEntity := fixDetailedEntityApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
+		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
@@ -203,10 +205,10 @@ func TestRepository_Delete(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("FromEntity", appEntity).Return(appModel, nil).Once()
 
-		appEntityWithDeletedTimestamp := *appEntity
+		appEntityWithDeletedTimestamp := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntityWithDeletedTimestamp.Ready = false
 		appEntityWithDeletedTimestamp.DeletedAt = deletedAt
-		mockConverter.On("ToEntity", appModel).Return(&appEntityWithDeletedTimestamp, nil).Once()
+		mockConverter.On("ToEntity", appModel).Return(appEntityWithDeletedTimestamp, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
 		updateStmt := `UPDATE public\.applications SET name = \?, description = \?, status_condition = \?, status_timestamp = \?, healthcheck_url = \?, integration_system_id = \?, provider_name = \?, ready = \?, created_at = \?, updated_at = \?, deleted_at = \?, error = \? WHERE tenant_id = \? AND id = \?`
@@ -247,8 +249,8 @@ func TestRepository_Delete(t *testing.T) {
 func TestRepository_Create(t *testing.T) {
 	var executeCreateFunc = func(ctx context.Context, appID string, mode graphql.OperationMode, operationError error) {
 		// given
-		appModel := fixDetailedModelApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
-		appEntity := fixDetailedEntityApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
+		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
 		if mode == graphql.OperationModeAsync {
 			appModel.Ready = false
@@ -435,8 +437,8 @@ func TestRepository_Update(t *testing.T) {
 func TestRepository_GetByID(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// given
-		appModel := fixDetailedModelApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
-		appEntity := fixDetailedEntityApplicationWithTimestamp(t, givenID(), givenTenant(), "Test app", "Test app description", createdAt)
+		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
+		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("FromEntity", appEntity).Return(appModel, nil).Once()
@@ -486,11 +488,11 @@ func TestRepository_GetByID(t *testing.T) {
 func TestPgRepository_List(t *testing.T) {
 	app1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	app2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
-	appEntity1 := fixDetailedEntityApplicationWithTimestamp(t, app1ID, givenTenant(), "App 1", "App desc 1", createdAt)
-	appEntity2 := fixDetailedEntityApplicationWithTimestamp(t, app2ID, givenTenant(), "App 2", "App desc 2", createdAt)
+	appEntity1 := fixDetailedEntityApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+	appEntity2 := fixDetailedEntityApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
 
-	appModel1 := fixDetailedModelApplicationWithTimestamp(t, app1ID, givenTenant(), "App 1", "App desc 1", createdAt)
-	appModel2 := fixDetailedModelApplicationWithTimestamp(t, app2ID, givenTenant(), "App 2", "App desc 2", createdAt)
+	appModel1 := fixDetailedModelApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
+	appModel2 := fixDetailedModelApplication(t, app2ID, givenTenant(), "App 2", "App desc 2")
 
 	inputPageSize := 3
 	inputCursor := ""
@@ -687,9 +689,9 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ExpectedPageableQuery:    pageableQuery,
 			ExpectedCountQuery:       countQuery,
 			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir"},
-			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}).
-				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID).
-				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID),
+			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "ready", "created_at", "updated_at", "deleted_at", "error"}).
+				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID, true, createdAt, createdAt, time.Time{}, nil).
+				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID, true, createdAt, createdAt, time.Time{}, nil),
 			TotalCount:    2,
 			ExpectedError: nil,
 		},
@@ -701,9 +703,9 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ExpectedPageableQuery:    pageableQueryWithHidingSelectors,
 			ExpectedCountQuery:       countQueryWithHidingSelectors,
 			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir", tenantID, "foo", strconv.Quote("bar"), tenantID, "foo", strconv.Quote("baz")},
-			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}).
-				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID).
-				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID),
+			ExpectedApplicationRows: sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "ready", "created_at", "updated_at", "deleted_at", "error"}).
+				AddRow(app1ID, tenantID, "App ABC", "Description for application ABC", "INITIAL", timestamp, "http://domain.local/app1", intSysID, true, createdAt, createdAt, time.Time{}, nil).
+				AddRow(app2ID, tenantID, "App XYZ", "Description for application XYZ", "INITIAL", timestamp, "http://domain.local/app2", intSysID, true, createdAt, createdAt, time.Time{}, nil),
 			TotalCount:    2,
 			ExpectedError: nil,
 		},
@@ -713,7 +715,7 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 			ExpectedPageableQuery:    pageableQuery,
 			ExpectedCountQuery:       countQuery,
 			ExpectedQueriesInputArgs: []driver.Value{tenantID, tenantID, scenariosKey, "Java", tenantID, scenariosKey, "Go", tenantID, scenariosKey, "Elixir"},
-			ExpectedApplicationRows:  sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id"}),
+			ExpectedApplicationRows:  sqlmock.NewRows([]string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "ready", "created_at", "updated_at", "deleted_at", "error"}),
 			TotalCount:               0,
 			ExpectedError:            nil,
 		},

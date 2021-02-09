@@ -127,7 +127,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	event2, spec2 := fixFullEventDefinitionModel("test2")
 
 	inputApis := []*model.EventDefinition{
-		&event1, &event2, {}, nil,
+		&event1, &event2, {BaseEntity: &model.BaseEntity{}}, nil,
 	}
 
 	inputSpecs := []*model.Spec{
@@ -137,7 +137,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	expected := []*graphql.EventDefinition{
 		fixFullGQLEventDefinition("test1"),
 		fixFullGQLEventDefinition("test2"),
-		{},
+		{BaseEntity: &graphql.BaseEntity{}},
 	}
 
 	versionConverter := &automock.VersionConverter{}

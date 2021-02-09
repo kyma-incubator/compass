@@ -56,6 +56,7 @@ func fixModelApplication(id, tenant, name, description string) *model.Applicatio
 		},
 		Name:        name,
 		Description: &description,
+		BaseEntity:  &model.BaseEntity{},
 	}
 }
 
@@ -83,14 +84,11 @@ func fixGQLApplication(id, name, description string) *graphql.Application {
 		},
 		Name:        name,
 		Description: &description,
+		BaseEntity:  &graphql.BaseEntity{},
 	}
 }
 
 func fixDetailedModelApplication(t *testing.T, id, tenant, name, description string) *model.Application {
-	return fixDetailedModelApplicationWithTimestamp(t, id, tenant, name, description, time.Now())
-}
-
-func fixDetailedModelApplicationWithTimestamp(t *testing.T, id, tenant, name, description string, createdAt time.Time) *model.Application {
 	appStatusTimestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
@@ -117,10 +115,6 @@ func fixDetailedModelApplicationWithTimestamp(t *testing.T, id, tenant, name, de
 }
 
 func fixDetailedGQLApplication(t *testing.T, id, name, description string) *graphql.Application {
-	return fixDetailedGQLApplicationWithTimestamp(t, id, name, description, createdAt)
-}
-
-func fixDetailedGQLApplicationWithTimestamp(t *testing.T, id, name, description string, createdAt time.Time) *graphql.Application {
 	appStatusTimestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
@@ -146,10 +140,6 @@ func fixDetailedGQLApplicationWithTimestamp(t *testing.T, id, name, description 
 }
 
 func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description string) *application.Entity {
-	return fixDetailedEntityApplicationWithTimestamp(t, id, tenant, name, description, time.Now())
-}
-
-func fixDetailedEntityApplicationWithTimestamp(t *testing.T, id, tenant, name, description string, createdAt time.Time) *application.Entity {
 	ts, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 

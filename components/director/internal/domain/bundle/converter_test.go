@@ -221,14 +221,14 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	input := []*model.Bundle{
 		fixBundleModelWithTimestamp(t, name1, desc, createdAt),
 		fixBundleModelWithTimestamp(t, name2, desc, createdAt),
-		{},
+		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
 
 	expected := []*graphql.Bundle{
 		fixGQLBundleWithTimestamp(bundleID, name1, desc, createdAt),
 		fixGQLBundleWithTimestamp(bundleID, name2, desc, createdAt),
-		{},
+		{BaseEntity: &graphql.BaseEntity{}},
 	}
 
 	authConverter := &automock.AuthConverter{}

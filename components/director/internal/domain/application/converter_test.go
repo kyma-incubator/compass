@@ -27,8 +27,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixDetailedModelApplicationWithTimestamp(t, givenID(), givenTenant(), "Foo", "Lorem ipsum", createdAt),
-			Expected: fixDetailedGQLApplicationWithTimestamp(t, givenID(), "Foo", "Lorem ipsum", createdAt),
+			Input:    fixDetailedModelApplication(t, givenID(), givenTenant(), "Foo", "Lorem ipsum"),
+			Expected: fixDetailedGQLApplication(t, givenID(), "Foo", "Lorem ipsum"),
 		},
 		{
 			Name:  "Empty",
@@ -64,13 +64,14 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	input := []*model.Application{
 		fixModelApplication("foo", givenTenant(), "Foo", "Lorem ipsum"),
 		fixModelApplication("bar", givenTenant(), "Bar", "Dolor sit amet"),
-		{},
+		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
 	expected := []*graphql.Application{
 		fixGQLApplication("foo", "Foo", "Lorem ipsum"),
 		fixGQLApplication("bar", "Bar", "Dolor sit amet"),
 		{
+			BaseEntity: &graphql.BaseEntity{},
 			Status: &graphql.ApplicationStatus{
 				Condition: graphql.ApplicationStatusConditionInitial,
 			},
@@ -337,7 +338,7 @@ func TestConverter_ConvertToModel(t *testing.T) {
 
 	t.Run("Success empty model", func(t *testing.T) {
 		//GIVEN
-		appGraphql := &graphql.Application{}
+		appGraphql := &graphql.Application{BaseEntity: &graphql.BaseEntity{}}
 
 		//WHEN
 		appModel := conv.GraphQLToModel(appGraphql, uuid.New().String())

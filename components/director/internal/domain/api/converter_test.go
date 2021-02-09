@@ -125,16 +125,17 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	api2, spec2 := fixFullAPIDefinitionModel("test2")
 
 	inputApis := []*model.APIDefinition{
-		&api1, &api2, nil,
+		&api1, &api2, {BaseEntity: &model.BaseEntity{}}, nil,
 	}
 
 	inputSpecs := []*model.Spec{
-		&spec1, &spec2, nil,
+		&spec1, &spec2, {}, nil,
 	}
 
 	expected := []*graphql.APIDefinition{
 		fixFullGQLAPIDefinition("test1"),
 		fixFullGQLAPIDefinition("test2"),
+		{BaseEntity: &graphql.BaseEntity{}},
 	}
 
 	versionConverter := &automock.VersionConverter{}

@@ -44,6 +44,13 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		HealthCheckURL:      repo.NewNullableString(in.HealthCheckURL),
 		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
 		ProviderName:        repo.NewNullableString(in.ProviderName),
+		BaseEntity: &repo.BaseEntity{
+			Ready:     in.Ready,
+			CreatedAt: in.CreatedAt,
+			UpdatedAt: in.UpdatedAt,
+			DeletedAt: in.DeletedAt,
+			Error:     repo.NewNullableString(in.Error),
+		},
 	}, nil
 }
 
@@ -184,6 +191,7 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 		Status:              c.statusToModel(obj.Status),
 		HealthCheckURL:      obj.HealthCheckURL,
 		IntegrationSystemID: obj.IntegrationSystemID,
+		BaseEntity:          &model.BaseEntity{},
 	}
 }
 

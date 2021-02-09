@@ -29,10 +29,11 @@ var fixedTimestamp = time.Now()
 
 func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
-		ID:        id,
-		BundleID:  bndlID,
-		Name:      name,
-		TargetURL: targetURL,
+		ID:         id,
+		BundleID:   bndlID,
+		Name:       name,
+		TargetURL:  targetURL,
+		BaseEntity: &model.BaseEntity{},
 	}
 }
 
@@ -179,10 +180,11 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 
 func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) *api.Entity {
 	return &api.Entity{
-		ID:        id,
-		BndlID:    bndlID,
-		Name:      name,
-		TargetURL: targetUrl,
+		ID:         id,
+		BndlID:     bndlID,
+		Name:       name,
+		TargetURL:  targetUrl,
+		BaseEntity: &repo.BaseEntity{},
 	}
 }
 
