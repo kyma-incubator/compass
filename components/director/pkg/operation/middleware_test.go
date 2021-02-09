@@ -218,7 +218,7 @@ func (d *dummyMiddlewareResolver) SuccessResolve(ctx context.Context) []byte {
 }
 
 func operationURL(op *operation.Operation, directorURL string) string {
-	return fmt.Sprintf("%s/operations?resourceID=%s&resourceType=%s", directorURL, op.ResourceID, op.ResourceType)
+	return fmt.Sprintf("%s/operations?%s=%s&%s=%s", directorURL, operation.ResourceIDParam, op.ResourceID, operation.ResourceTypeParam, op.ResourceType)
 }
 
 func gqlResultItem(resultName string) string {
