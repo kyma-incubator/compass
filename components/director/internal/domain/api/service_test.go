@@ -285,6 +285,86 @@ func TestService_ListForBundle(t *testing.T) {
 	})
 }
 
+func TestService_ListByApplicationID(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	bndlID := "foobar"
+	name := "foo"
+	desc := "bar"
+
+	apiDefinitions := []*model.APIDefinition{
+		fixAPIDefinitionModel(id, bndlID, name, desc),
+		fixAPIDefinitionModel(id, bndlID, name, desc),
+		fixAPIDefinitionModel(id, bndlID, name, desc),
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.APIRepository
+		ExpectedResult     []*model.APIDefinition
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(apiDefinitions, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     apiDefinitions,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when APIDefinition listing failed",
+			RepositoryFn: func() *automock.APIRepository {
+				repo := &automock.APIRepository{}
+				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := api.NewService(repo, nil, nil)
+
+			// when
+			docs, err := svc.ListByApplicationID(ctx, appID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByApplicationID(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_CreateInBundle(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")

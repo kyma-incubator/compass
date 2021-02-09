@@ -123,6 +123,29 @@ func (_m *APIRepository) GetForBundle(ctx context.Context, tenant string, id str
 	return r0, r1
 }
 
+// ListByApplicationID provides a mock function with given fields: ctx, tenantID, appID
+func (_m *APIRepository) ListByApplicationID(ctx context.Context, tenantID string, appID string) ([]*model.APIDefinition, error) {
+	ret := _m.Called(ctx, tenantID, appID)
+
+	var r0 []*model.APIDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.APIDefinition); ok {
+		r0 = rf(ctx, tenantID, appID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.APIDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenantID, appID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListForBundle provides a mock function with given fields: ctx, tenantID, bundleID, pageSize, cursor
 func (_m *APIRepository) ListForBundle(ctx context.Context, tenantID string, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error) {
 	ret := _m.Called(ctx, tenantID, bundleID, pageSize, cursor)

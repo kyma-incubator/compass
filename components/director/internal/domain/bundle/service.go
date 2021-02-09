@@ -22,6 +22,7 @@ type BundleRepository interface {
 	GetForApplication(ctx context.Context, tenant string, id string, applicationID string) (*model.Bundle, error)
 	GetByInstanceAuthID(ctx context.Context, tenant string, instanceAuthID string) (*model.Bundle, error)
 	ListByApplicationID(ctx context.Context, tenantID, applicationID string, pageSize int, cursor string) (*model.BundlePage, error)
+	ListByApplicationIDNoPaging(ctx context.Context, tenantID, appID string) ([]*model.Bundle, error)
 }
 
 //go:generate mockery -name=UIDService -output=automock -outpkg=automock -case=underscore
@@ -192,6 +193,15 @@ func (s *service) ListByApplicationID(ctx context.Context, applicationID string,
 	}
 
 	return s.bndlRepo.ListByApplicationID(ctx, tnt, applicationID, pageSize, cursor)
+}
+
+func (s *service) ListByApplicationIDNoPaging(ctx context.Context, appID string) ([]*model.Bundle, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.bndlRepo.ListByApplicationIDNoPaging(ctx, tnt, appID)
 }
 
 func (s *service) createRelatedResources(ctx context.Context, in model.BundleCreateInput, bundleID, appID string) error {

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+
 	event "github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -276,6 +278,85 @@ func TestService_ListForBundle(t *testing.T) {
 		svc := event.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForBundle(context.TODO(), "", 5, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
+func TestService_ListByApplicationID(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	bndlID := "foobar"
+	name := "foo"
+
+	apiDefinitions := []*model.EventDefinition{
+		fixEventDefinitionModel(id, bndlID, name),
+		fixEventDefinitionModel(id, bndlID, name),
+		fixEventDefinitionModel(id, bndlID, name),
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.EventAPIRepository
+		ExpectedResult     []*model.EventDefinition
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(apiDefinitions, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     apiDefinitions,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when EventDefinition listing failed",
+			RepositoryFn: func() *automock.EventAPIRepository {
+				repo := &automock.EventAPIRepository{}
+				repo.On("ListByApplicationID", ctx, tenantID, appID).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := event.NewService(repo, nil, nil)
+
+			// when
+			docs, err := svc.ListByApplicationID(ctx, appID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := api.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByApplicationID(context.TODO(), "")
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")

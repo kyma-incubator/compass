@@ -36,6 +36,7 @@ type pgRepository struct {
 	creator         repo.Creator
 	singleGetter    repo.SingleGetter
 	pageableQuerier repo.PageableQuerier
+	lister          repo.Lister
 	updater         repo.Updater
 	deleter         repo.Deleter
 	existQuerier    repo.ExistQuerier
@@ -46,6 +47,7 @@ func NewRepository(conv APIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.API, apiDefTable, tenantColumn, apiDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.API, apiDefTable, tenantColumn, apiDefColumns),
+		lister:          repo.NewLister(resource.API, apiDefTable, tenantColumn, apiDefColumns),
 		creator:         repo.NewCreator(resource.API, apiDefTable, apiDefColumns),
 		updater:         repo.NewUpdater(resource.API, apiDefTable, updatableColumns, tenantColumn, idColumns),
 		deleter:         repo.NewDeleter(resource.API, apiDefTable, tenantColumn),
@@ -65,6 +67,19 @@ func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundl
 		repo.NewEqualCondition("bundle_id", bundleID),
 	}
 	return r.list(ctx, tenantID, pageSize, cursor, conditions)
+}
+
+func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
+	apiCollection := APIDefCollection{}
+	if err := r.lister.List(ctx, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+		return nil, err
+	}
+	apis := make([]*model.APIDefinition, 0, apiCollection.Len())
+	for _, api := range apiCollection {
+		apiModel := r.conv.FromEntity(api)
+		apis = append(apis, &apiModel)
+	}
+	return apis, nil
 }
 
 func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.APIDefinitionPage, error) {

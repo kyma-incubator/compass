@@ -41,6 +41,7 @@ type EventAPIDefinitionConverter interface {
 type pgRepository struct {
 	singleGetter    repo.SingleGetter
 	pageableQuerier repo.PageableQuerier
+	lister          repo.Lister
 	creator         repo.Creator
 	updater         repo.Updater
 	deleter         repo.Deleter
@@ -52,6 +53,7 @@ func NewRepository(conv EventAPIDefinitionConverter) *pgRepository {
 	return &pgRepository{
 		singleGetter:    repo.NewSingleGetter(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		pageableQuerier: repo.NewPageableQuerier(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
+		lister:          repo.NewLister(resource.EventDefinition, eventAPIDefTable, tenantColumn, eventDefColumns),
 		creator:         repo.NewCreator(resource.EventDefinition, eventAPIDefTable, eventDefColumns),
 		updater:         repo.NewUpdater(resource.EventDefinition, eventAPIDefTable, updatableColumns, tenantColumn, idColumns),
 		deleter:         repo.NewDeleter(resource.EventDefinition, eventAPIDefTable, tenantColumn),
@@ -98,6 +100,19 @@ func (r *pgRepository) ListForBundle(ctx context.Context, tenantID string, bundl
 	}
 
 	return r.list(ctx, tenantID, pageSize, cursor, conditions)
+}
+
+func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.EventDefinition, error) {
+	eventCollection := EventAPIDefCollection{}
+	if err := r.lister.List(ctx, tenantID, &eventCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+		return nil, err
+	}
+	events := make([]*model.EventDefinition, 0, eventCollection.Len())
+	for _, event := range eventCollection {
+		eventModel := r.conv.FromEntity(event)
+		events = append(events, &eventModel)
+	}
+	return events, nil
 }
 
 func (r *pgRepository) list(ctx context.Context, tenant string, pageSize int, cursor string, conditions repo.Conditions) (*model.EventDefinitionPage, error) {

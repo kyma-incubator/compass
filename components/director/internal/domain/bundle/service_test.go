@@ -848,3 +848,81 @@ func TestService_ListByApplicationID(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
+
+func TestService_ListByApplicationIDNoPaging(t *testing.T) {
+	// given
+	testErr := errors.New("Test error")
+
+	name := "foo"
+	desc := "bar"
+
+	bundles := []*model.Bundle{
+		fixBundleModel(name, desc),
+		fixBundleModel(name, desc),
+		fixBundleModel(name, desc),
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		PageSize           int
+		RepositoryFn       func() *automock.BundleRepository
+		ExpectedResult     []*model.Bundle
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("ListByApplicationIDNoPaging", ctx, tenantID, appID).Return(bundles, nil).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     bundles,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when Bundle listing failed",
+			RepositoryFn: func() *automock.BundleRepository {
+				repo := &automock.BundleRepository{}
+				repo.On("ListByApplicationIDNoPaging", ctx, tenantID, appID).Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:           2,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := mp_bundle.NewService(repo, nil, nil, nil, nil)
+
+			// when
+			docs, err := svc.ListByApplicationIDNoPaging(ctx, appID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, docs)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := mp_bundle.NewService(nil, nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByApplicationIDNoPaging(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}

@@ -18,6 +18,7 @@ type APIRepository interface {
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.APIDefinition, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListForBundle(ctx context.Context, tenantID, bundleID string, pageSize int, cursor string) (*model.APIDefinitionPage, error)
+	ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error)
 	CreateMany(ctx context.Context, item []*model.APIDefinition) error
 	Create(ctx context.Context, item *model.APIDefinition) error
 	Update(ctx context.Context, item *model.APIDefinition) error
@@ -70,6 +71,15 @@ func (s *service) ListForBundle(ctx context.Context, bundleID string, pageSize i
 	}
 
 	return s.repo.ListForBundle(ctx, tnt, bundleID, pageSize, cursor)
+}
+
+func (s *service) ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListByApplicationID(ctx, tnt, appID)
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.APIDefinition, error) {

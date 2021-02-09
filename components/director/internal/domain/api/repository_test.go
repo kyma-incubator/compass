@@ -156,6 +156,44 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 	})
 }
 
+func TestPgRepository_ListByApplicationID(t *testing.T) {
+	// GIVEN
+	totalCount := 2
+	firstApiDefID := "111111111-1111-1111-1111-111111111111"
+	firstApiDefEntity := fixFullEntityAPIDefinition(firstApiDefID, "placeholder")
+	secondApiDefID := "222222222-2222-2222-2222-222222222222"
+	secondApiDefEntity := fixFullEntityAPIDefinition(secondApiDefID, "placeholder")
+
+	selectQuery := `^SELECT (.+) FROM "public"."api_definitions" 
+		WHERE tenant_id = \$1 AND app_id = \$2`
+
+	t.Run("success", func(t *testing.T) {
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		rows := sqlmock.NewRows(fixAPIDefinitionColumns()).
+			AddRow(fixAPIDefinitionRow(firstApiDefID, "placeholder")...).
+			AddRow(fixAPIDefinitionRow(secondApiDefID, "placeholder")...)
+
+		sqlMock.ExpectQuery(selectQuery).
+			WithArgs(tenantID, appID).
+			WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		convMock := &automock.APIDefinitionConverter{}
+		convMock.On("FromEntity", firstApiDefEntity).Return(model.APIDefinition{ID: firstApiDefID}, nil)
+		convMock.On("FromEntity", secondApiDefEntity).Return(model.APIDefinition{ID: secondApiDefID}, nil)
+		pgRepository := api.NewRepository(convMock)
+		// WHEN
+		modelAPIDef, err := pgRepository.ListByApplicationID(ctx, tenantID, appID)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, modelAPIDef, totalCount)
+		assert.Equal(t, firstApiDefID, modelAPIDef[0].ID)
+		assert.Equal(t, secondApiDefID, modelAPIDef[1].ID)
+		convMock.AssertExpectations(t)
+		sqlMock.AssertExpectations(t)
+	})
+}
+
 func TestPgRepository_Create(t *testing.T) {
 	//GIVEN
 	apiDefModel, _ := fixFullAPIDefinitionModel("placeholder")
