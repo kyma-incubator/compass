@@ -162,7 +162,7 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 			a.mux.Unlock()
 			for _, key := range keys {
 				if key.Algorithm() == token.Method.Alg() {
-					return key.Materialize(), nil
+					return key.Materialize()
 				}
 			}
 
