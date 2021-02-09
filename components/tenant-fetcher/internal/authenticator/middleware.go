@@ -52,14 +52,13 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if err != nil {
 				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 			}
-			log.D().Warnf("1. %v", token)
+
 			claims, err := a.parseClaimsWithRetry(r.Context(), token)
 			if err != nil {
 				log.C(ctx).WithError(err).Error("An error has occurred while parsing claims. Error code: ", http.StatusUnauthorized)
 				a.writeAppError(ctx, w, err, http.StatusUnauthorized)
 				return
 			}
-			log.D().Warnf("2. %v", claims)
 
 			if claims.ZID != a.zoneId {
 				log.C(ctx).Errorf(`Zone id "%s" from user token does not match the trusted zone %s`, claims.ZID, a.zoneId)
@@ -126,20 +125,41 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 	return claims, nil
 }
 
+func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error) {
+	return func(token *jwt.Token) (interface{}, error) {
+		unsupportedErr := apperrors.NewInternalError("unexpected signing method: %s", token.Method.Alg())
+
+		if token.Method.Alg() == jwt.SigningMethodRS256.Name {
+			a.mux.Lock()
+			keys := a.cachedJWKs.Keys
+			a.mux.Unlock()
+			for _, key := range keys {
+				if key.Algorithm() == token.Method.Alg() {
+					return key.Materialize()
+				}
+			}
+
+			return nil, apperrors.NewInternalError("unable to find key for algorithm %s", token.Method.Alg())
+		}
+
+		return nil, unsupportedErr
+	}
+}
+
 func (a *Authenticator) parseClaims(bearerToken string) (Claims, error) {
 	claims := Claims{}
 
-	// TODO: adjust this productive code
-	//_, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
-	//if err != nil {
-	//	return Claims{}, err
-	//}
-
-	// TODO: remove testing version
-	p := jwt.Parser{SkipClaimsValidation: true}
-	if _, _, err := p.ParseUnverified(bearerToken, &claims); err != nil {
+	//TODO: adjust this productive code
+	_, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
+	if err != nil {
 		return Claims{}, err
 	}
+	//
+	//// TODO: remove testing version
+	//p := jwt.Parser{SkipClaimsValidation: true}
+	//if _, _, err := p.ParseUnverified(bearerToken, &claims); err != nil {
+	//	return Claims{}, err
+	//}
 
 	return claims, nil
 }
