@@ -41,6 +41,14 @@ const (
 	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
 )
 
+type OperationType string
+
+const (
+	OperationTypeCreate OperationType = "CREATE"
+	OperationTypeUpdate OperationType = "UPDATE"
+	OperationTypeDelete OperationType = "DELETE"
+)
+
 // OperationResponse defines the expected response format for the Operations API
 type OperationResponse struct {
 	*Operation
@@ -53,14 +61,14 @@ type OperationResponse struct {
 // the flow of the original mutation with information such as ResourceID and ResourceType and finally scheduled through
 // a dedicated Scheduler implementation.
 type Operation struct {
-	OperationID       string                `json:"operation_id,omitempty"`
-	OperationType     graphql.OperationType `json:"operation_type,omitempty"`
-	OperationCategory string                `json:"operation_category,omitempty"`
-	ResourceID        string                `json:"resource_id,omitempty"`
-	ResourceType      string                `json:"resource_type,omitempty"`
-	CorrelationID     string                `json:"correlation_id,omitempty"`
-	WebhookID         string                `json:"webhook_id,omitempty"`
-	RequestData       string                `json:"request_data,omitempty"`
+	OperationID       string        `json:"operation_id,omitempty"`
+	OperationType     OperationType `json:"operation_type,omitempty"`
+	OperationCategory string        `json:"operation_category,omitempty"`
+	ResourceID        string        `json:"resource_id,omitempty"`
+	ResourceType      string        `json:"resource_type,omitempty"`
+	CorrelationID     string        `json:"correlation_id,omitempty"`
+	WebhookID         string        `json:"webhook_id,omitempty"`
+	RequestData       string        `json:"request_data,omitempty"`
 }
 
 // Validate ensures that the constructed Operation has valid properties

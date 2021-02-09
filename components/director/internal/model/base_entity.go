@@ -20,10 +20,79 @@ import (
 	"time"
 )
 
+// Entity denotes an model-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
+type Entity interface {
+	GetID() string
+	GetType() string
+
+	GetReady() bool
+	SetReady(ready bool)
+
+	GetCreatedAt() time.Time
+	SetCreatedAt(t time.Time)
+
+	GetUpdatedAt() time.Time
+	SetUpdatedAt(t time.Time)
+
+	GetDeletedAt() time.Time
+	SetDeletedAt(t time.Time)
+
+	GetError() *string
+	SetError(err string)
+}
+
 type BaseEntity struct {
 	Ready     bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
 	Error     *string
+}
+
+func (e *BaseEntity) GetID() string {
+	return ""
+}
+
+func (e *BaseEntity) GetType() string {
+	return ""
+}
+
+func (e *BaseEntity) GetReady() bool {
+	return e.Ready
+}
+
+func (e *BaseEntity) SetReady(ready bool) {
+	e.Ready = ready
+}
+
+func (e *BaseEntity) GetCreatedAt() time.Time {
+	return e.CreatedAt
+}
+
+func (e *BaseEntity) SetCreatedAt(t time.Time) {
+	e.CreatedAt = t
+}
+
+func (e *BaseEntity) GetUpdatedAt() time.Time {
+	return e.UpdatedAt
+}
+
+func (e *BaseEntity) SetUpdatedAt(t time.Time) {
+	e.UpdatedAt = t
+}
+
+func (e *BaseEntity) GetDeletedAt() time.Time {
+	return e.DeletedAt
+}
+
+func (e *BaseEntity) SetDeletedAt(t time.Time) {
+	e.DeletedAt = t
+}
+
+func (e *BaseEntity) GetError() *string {
+	return e.Error
+}
+
+func (e *BaseEntity) SetError(err string) {
+	e.Error = &err
 }

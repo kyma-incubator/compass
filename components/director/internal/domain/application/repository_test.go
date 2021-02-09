@@ -85,7 +85,7 @@ func TestRepository_Delete(t *testing.T) {
 		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
 
 		op := &operation.Operation{
-			OperationType:     graphql.OperationTypeDelete,
+			OperationType:     operation.OperationTypeDelete,
 			OperationCategory: "unregisterApplication",
 		}
 		ctx = operation.SaveToContext(ctx, &[]*operation.Operation{op})
@@ -152,7 +152,7 @@ func TestRepository_Delete(t *testing.T) {
 		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
 
 		op := &operation.Operation{
-			OperationType:     graphql.OperationTypeDelete,
+			OperationType:     operation.OperationTypeDelete,
 			OperationCategory: "unregisterApplication",
 		}
 		ctx = operation.SaveToContext(ctx, &[]*operation.Operation{op})
@@ -178,7 +178,7 @@ func TestRepository_Delete(t *testing.T) {
 		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
 
 		op := &operation.Operation{
-			OperationType:     graphql.OperationTypeDelete,
+			OperationType:     operation.OperationTypeDelete,
 			OperationCategory: "unregisterApplication",
 		}
 		ctx = operation.SaveToContext(ctx, &[]*operation.Operation{op})
@@ -300,7 +300,7 @@ func TestRepository_Create(t *testing.T) {
 		ctx = operation.SaveModeToContext(ctx, graphql.OperationModeAsync)
 
 		op := &operation.Operation{
-			OperationType:     graphql.OperationTypeCreate,
+			OperationType:     operation.OperationTypeCreate,
 			OperationCategory: "registerApplication",
 		}
 		ctx = operation.SaveToContext(ctx, &[]*operation.Operation{op})

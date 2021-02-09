@@ -29,7 +29,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -144,7 +143,7 @@ func TestServeHTTP(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (*model.Application, error) {
+		handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (model.Entity, error) {
 			return nil, apperrors.NewNotFoundError(resource.Application, resourceID)
 		}, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
@@ -169,7 +168,7 @@ func TestServeHTTP(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (*model.Application, error) {
+		handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (model.Entity, error) {
 			return nil, mockedError()
 		}, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
@@ -194,7 +193,7 @@ func TestServeHTTP(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (*model.Application, error) {
+		handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (model.Entity, error) {
 			return nil, nil
 		}, loadTenantFunc)
 		handler.ServeHTTP(writer, req)
@@ -225,84 +224,84 @@ func TestServeHTTP(t *testing.T) {
 		cases := []testCase{
 			{
 				Name:        "Successful CREATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: true}},
+				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: true}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application.ToLower(),
-						OperationType: graphql.OperationTypeCreate,
+						OperationType: operation.OperationTypeCreate,
 					},
 					Status: operation.OperationStatusSucceeded,
 				},
 			},
 			{
 				Name:        "Successful UPDATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: true}},
+				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: true}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application.ToLower(),
-						OperationType: graphql.OperationTypeUpdate,
+						OperationType: operation.OperationTypeUpdate,
 					},
 					Status: operation.OperationStatusSucceeded,
 				},
 			},
 			{
 				Name:        "Successful DELETE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: true}},
+				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: true}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application.ToLower(),
-						OperationType: graphql.OperationTypeDelete,
+						OperationType: operation.OperationTypeDelete,
 					},
 					Status: operation.OperationStatusSucceeded,
 				},
 			},
 			{
 				Name:        "In Progress CREATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false}},
+				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application.ToLower(),
-						OperationType: graphql.OperationTypeCreate,
+						OperationType: operation.OperationTypeCreate,
 					},
 					Status: operation.OperationStatusInProgress,
 				},
 			},
 			{
 				Name:        "In Progress UPDATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: false}},
+				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: false}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application.ToLower(),
-						OperationType: graphql.OperationTypeUpdate,
+						OperationType: operation.OperationTypeUpdate,
 					},
 					Status: operation.OperationStatusInProgress,
 				},
 			},
 			{
 				Name:        "In Progress DELETE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: false}},
+				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: false}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application.ToLower(),
-						OperationType: graphql.OperationTypeDelete,
+						OperationType: operation.OperationTypeDelete,
 					},
 					Status: operation.OperationStatusInProgress,
 				},
 			},
 			{
 				Name:        "Failed CREATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
+				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: time.Time{}, DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application.ToLower(),
-						OperationType: graphql.OperationTypeCreate,
+						OperationType: operation.OperationTypeCreate,
 					},
 					Status: operation.OperationStatusFailed,
 					Error:  &mockedErr,
@@ -310,12 +309,12 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Failed UPDATE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
+				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now.Add(1 * time.Minute), DeletedAt: time.Time{}, Ready: false, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application.ToLower(),
-						OperationType: graphql.OperationTypeUpdate,
+						OperationType: operation.OperationTypeUpdate,
 					},
 					Status: operation.OperationStatusFailed,
 					Error:  &mockedErr,
@@ -323,12 +322,12 @@ func TestServeHTTP(t *testing.T) {
 			},
 			{
 				Name:        "Failed DELETE Operation",
-				Application: &model.Application{BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: false, Error: &mockedErr}},
+				Application: &model.Application{ID: resourceID, BaseEntity: &model.BaseEntity{CreatedAt: now, UpdatedAt: now, DeletedAt: now.Add(1 * time.Minute), Ready: false, Error: &mockedErr}},
 				ExpectedResponse: operation.OperationResponse{
 					Operation: &operation.Operation{
 						ResourceID:    resourceID,
 						ResourceType:  resource.Application.ToLower(),
-						OperationType: graphql.OperationTypeDelete,
+						OperationType: operation.OperationTypeDelete,
 					},
 					Status: operation.OperationStatusFailed,
 					Error:  &mockedErr,
@@ -342,7 +341,7 @@ func TestServeHTTP(t *testing.T) {
 
 		for _, testCase := range cases {
 			t.Run(testCase.Name, func(t *testing.T) {
-				handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (*model.Application, error) {
+				handler := operation.NewHandler(mockedTransactioner, func(_ context.Context, _, _ string) (model.Entity, error) {
 					return testCase.Application, nil
 				}, loadTenantFunc)
 

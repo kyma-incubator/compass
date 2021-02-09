@@ -1,6 +1,9 @@
 package model
 
-import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+)
 
 type Document struct {
 	BundleID    string
@@ -14,6 +17,14 @@ type Document struct {
 	Kind *string
 	Data *string
 	*BaseEntity
+}
+
+func (doc *Document) GetID() string {
+	return doc.ID
+}
+
+func (_ *Document) GetType() string {
+	return resource.Document.ToLower()
 }
 
 type DocumentInput struct {

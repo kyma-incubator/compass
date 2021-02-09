@@ -84,7 +84,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	}
 
 	operation := &Operation{
-		OperationType:     op,
+		OperationType:     OperationType(op),
 		OperationCategory: resCtx.Field.Name,
 		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
 	}

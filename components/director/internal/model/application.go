@@ -3,6 +3,8 @@ package model
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
@@ -16,6 +18,14 @@ type Application struct {
 	HealthCheckURL      *string
 	IntegrationSystemID *string
 	*BaseEntity
+}
+
+func (app *Application) GetID() string {
+	return app.ID
+}
+
+func (_ *Application) GetType() string {
+	return resource.Application.ToLower()
 }
 
 func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timestamp time.Time) {

@@ -311,10 +311,10 @@ func TestHandleOperation(t *testing.T) {
 		require.True(t, ok)
 		require.Len(t, *operations, 1)
 
-		operation := (*operations)[0]
-		require.Equal(t, operationID, operation.OperationID)
-		require.Equal(t, operationType, operation.OperationType)
-		require.Equal(t, operationCategory, operation.OperationCategory)
+		op := (*operations)[0]
+		require.Equal(t, operationID, op.OperationID)
+		require.Equal(t, operation.OperationType(operationType), op.OperationType)
+		require.Equal(t, operationCategory, op.OperationCategory)
 	})
 
 }

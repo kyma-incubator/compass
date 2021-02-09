@@ -29,16 +29,14 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 const ResourceIDParam = "resource_id"
 const ResourceTypeParam = "resource_type"
 
-// ResourceFetcherFunc defines a function which fetches a particular application by tenant and app ID
-type ResourceFetcherFunc func(ctx context.Context, tenant, id string) (*model.Application, error)
+// ResourceFetcherFunc defines a function which fetches a particular resource by tenant and resource ID
+type ResourceFetcherFunc func(ctx context.Context, tenantID, resourceID string) (model.Entity, error)
 
 // TenantLoaderFunc defines a function which fetches the tenant for a particular request
 type TenantLoaderFunc func(ctx context.Context) (string, error)
@@ -113,29 +111,38 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	opResponse := &OperationResponse{
-		Operation: op,
-		Error:     res.Error,
-	}
-
-	if !res.DeletedAt.IsZero() {
-		opResponse.OperationType = graphql.OperationTypeDelete
-	} else if !res.UpdatedAt.IsZero() {
-		opResponse.OperationType = graphql.OperationTypeUpdate
-	} else {
-		opResponse.OperationType = graphql.OperationTypeCreate
-	}
-
-	if res.Ready {
-		opResponse.Status = OperationStatusSucceeded
-	} else if res.Error != nil {
-		opResponse.Status = OperationStatusFailed
-	} else {
-		opResponse.Status = OperationStatusInProgress
-	}
+	opResponse := prepareLastOperation(res)
 
 	err = json.NewEncoder(writer).Encode(opResponse)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while encoding operation data")
 	}
+}
+
+func prepareLastOperation(resource model.Entity) *OperationResponse {
+	opResponse := &OperationResponse{
+		Operation: &Operation{
+			ResourceID:   resource.GetID(),
+			ResourceType: resource.GetType(),
+		},
+		Error: resource.GetError(),
+	}
+
+	if !resource.GetDeletedAt().IsZero() {
+		opResponse.OperationType = OperationTypeDelete
+	} else if !resource.GetUpdatedAt().IsZero() {
+		opResponse.OperationType = OperationTypeUpdate
+	} else {
+		opResponse.OperationType = OperationTypeCreate
+	}
+
+	if resource.GetReady() {
+		opResponse.Status = OperationStatusSucceeded
+	} else if resource.GetError() != nil {
+		opResponse.Status = OperationStatusFailed
+	} else {
+		opResponse.Status = OperationStatusInProgress
+	}
+
+	return opResponse
 }

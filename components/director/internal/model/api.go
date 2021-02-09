@@ -3,6 +3,8 @@ package model
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
@@ -17,6 +19,14 @@ type APIDefinition struct {
 	Group   *string
 	Version *Version
 	*BaseEntity
+}
+
+func (api *APIDefinition) GetID() string {
+	return api.ID
+}
+
+func (_ *APIDefinition) GetType() string {
+	return resource.API.ToLower()
 }
 
 type Timestamp time.Time

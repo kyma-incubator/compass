@@ -66,7 +66,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 
 		operations := &[]*operation.Operation{
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
 				ResourceType:      resource.Application.ToLower(),
@@ -103,13 +103,13 @@ func TestExtensionHandlerOperation(t *testing.T) {
 
 		operations := &[]*operation.Operation{
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID + "-1",
 				ResourceType:      resource.Application.ToLower(),
 			},
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID + "-2",
 				ResourceType:      resource.Application.ToLower(),
@@ -146,7 +146,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 
 		operations := &[]*operation.Operation{
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
 				ResourceType:      resource.Application.ToLower(),
@@ -176,7 +176,7 @@ func TestExtensionHandlerOperation(t *testing.T) {
 		ctx := gqlgen.WithRequestContext(context.Background(), reqCtx)
 		operations := &[]*operation.Operation{
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
 				ResourceType:      resource.Application.ToLower(),

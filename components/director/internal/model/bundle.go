@@ -1,6 +1,9 @@
 package model
 
-import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+)
 
 type Bundle struct {
 	ID                             string
@@ -11,6 +14,14 @@ type Bundle struct {
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
 	*BaseEntity
+}
+
+func (bndl *Bundle) GetID() string {
+	return bndl.ID
+}
+
+func (_ *Bundle) GetType() string {
+	return resource.Bundle.ToLower()
 }
 
 func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {

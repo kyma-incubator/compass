@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -239,7 +241,9 @@ func main() {
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
 	appRepo := applicationRepo()
-	operationHandler := operation.NewHandler(transact, appRepo.GetByID, tenant.LoadFromContext)
+	operationHandler := operation.NewHandler(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
+		return appRepo.GetByID(ctx, tenantID, resourceID)
+	}, tenant.LoadFromContext)
 
 	operationsAPIRouter := mainRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
 	operationsAPIRouter.Use(authMiddleware.Handler())
