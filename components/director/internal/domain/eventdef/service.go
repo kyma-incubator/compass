@@ -96,14 +96,14 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return eventAPI, nil
 }
 
-func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in model.EventDefinitionInput, spec *model.SpecInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
 	id := s.uidService.Generate()
-	eventAPI := in.ToEventDefinitionWithinBundle(id, bundleID, tnt)
+	eventAPI := in.ToEventDefinitionWithinBundle(id, appID, bundleID, tnt)
 
 	err = s.eventAPIRepo.Create(ctx, eventAPI)
 	if err != nil {
@@ -131,7 +131,7 @@ func (s *service) Update(ctx context.Context, id string, in model.EventDefinitio
 		return err
 	}
 
-	event = in.ToEventDefinition(id, event.BundleID, event.PackageID, tnt)
+	event = in.ToEventDefinition(id, event.ApplicationID, event.BundleID, event.PackageID, tnt)
 
 	err = s.eventAPIRepo.Update(ctx, event)
 	if err != nil {

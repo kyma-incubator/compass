@@ -22,6 +22,7 @@ const (
 	externalTenantID = "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
+	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	ordID            = "com.compass.ord.v1"
 )
 
@@ -57,6 +58,7 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 	boolVar := false
 	return model.EventDefinition{
 		ID:                  eventID,
+		ApplicationID:       appID,
 		BundleID:            str.Ptr(bundleID),
 		PackageID:           str.Ptr(packageID),
 		Tenant:              tenantID,
@@ -137,10 +139,10 @@ func fixModelEventDefinitionInput(name, description string, group string) (*mode
 	}
 
 	return &model.EventDefinitionInput{
-		Name:        name,
-		Description: &description,
-		Group:       &group,
-		VersionInput:     v,
+		Name:         name,
+		Description:  &description,
+		Group:        &group,
+		VersionInput: v,
 	}, spec
 }
 
@@ -186,6 +188,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 	return event.Entity{
 		ID:                  eventID,
 		TenantID:            tenantID,
+		ApplicationID:       appID,
 		BundleID:            repo.NewValidNullableString(bundleID),
 		PackageID:           repo.NewValidNullableString(packageID),
 		Name:                placeholder,
@@ -217,7 +220,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 }
 
 func fixEventDefinitionColumns() []string {
-	return []string{"id", "tenant_id", "bundle_id", "package_id", "name", "description", "group_name", "ord_id",
+	return []string{"id", "tenant_id", "app_id", "bundle_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal"}
@@ -225,13 +228,13 @@ func fixEventDefinitionColumns() []string {
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
-	return []driver.Value{id, tenantID, bundleID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar,
+	return []driver.Value{id, tenantID, appID, bundleID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", "successor", repo.NewValidNullableString("[]"), "visibility", &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
-	return []driver.Value{id, tenantID, bundleID, packageID, event.Name, event.Description, event.Group, event.OrdID, event.ShortDescription,
+	return []driver.Value{id, tenantID, appID, bundleID, packageID, event.Name, event.Description, event.Group, event.OrdID, event.ShortDescription,
 		event.SystemInstanceAware, repo.NewNullableStringFromJSONRawMessage(event.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(event.Links),
 		repo.NewNullableStringFromJSONRawMessage(event.Tags), repo.NewNullableStringFromJSONRawMessage(event.Countries), event.ReleaseStatus, event.SunsetDate, event.Successor,
 		repo.NewNullableStringFromJSONRawMessage(event.Labels), event.Visibility,

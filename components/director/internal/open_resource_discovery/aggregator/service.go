@@ -2,6 +2,7 @@ package aggregator
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
@@ -100,34 +101,3 @@ func (s *service) processDocuments(ctx context.Context, appID string, documents 
 	}
 	return nil
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

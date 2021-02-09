@@ -121,6 +121,7 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
 		ID:                  entity.ID,
+		ApplicationID:       entity.ApplicationID,
 		BundleID:            repo.StringPtrFromNullableString(entity.BndlID),
 		PackageID:           repo.StringPtrFromNullableString(entity.PackageID),
 		Tenant:              entity.TenantID,
@@ -155,6 +156,7 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 	return Entity{
 		ID:                  apiModel.ID,
 		TenantID:            apiModel.Tenant,
+		ApplicationID:       apiModel.ApplicationID,
 		BndlID:              repo.NewNullableString(apiModel.BundleID),
 		PackageID:           repo.NewNullableString(apiModel.PackageID),
 		Name:                apiModel.Name,

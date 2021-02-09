@@ -21,7 +21,7 @@ func TestService_Create(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	applicationID := "appid"
+	applicationID := appID
 	name := "foo"
 	desc := "bar"
 
@@ -100,14 +100,14 @@ func TestService_Create(t *testing.T) {
 			},
 			APIServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			EventServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
@@ -157,7 +157,7 @@ func TestService_Create(t *testing.T) {
 			},
 			APIServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", testErr).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", testErr).Once()
 				return svc
 			},
 			EventServiceFn: func() *automock.EventService {
@@ -185,13 +185,13 @@ func TestService_Create(t *testing.T) {
 			},
 			APIServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			EventServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", testErr).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", testErr).Once()
 				return svc
 			},
 			DocumentServiceFn: func() *automock.DocumentService {
@@ -215,14 +215,14 @@ func TestService_Create(t *testing.T) {
 			},
 			APIServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[0], modelInput.APISpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.APIDefinitions[1], modelInput.APISpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			EventServiceFn: func() *automock.EventService {
 				svc := &automock.EventService{}
-				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
-				svc.On("CreateInBundle", ctx, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[0], modelInput.EventSpecs[0]).Return("", nil).Once()
+				svc.On("CreateInBundle", ctx, appID, id, *modelInput.EventDefinitions[1], modelInput.EventSpecs[1]).Return("", nil).Once()
 				return svc
 			},
 			DocumentServiceFn: func() *automock.DocumentService {

@@ -34,10 +34,8 @@ func fixTombstoneModel() *model.Tombstone {
 
 func fixTombstoneModelInput() *model.TombstoneInput {
 	return &model.TombstoneInput{
-		OrdID:         ordID,
-		TenantID:      tenantID,
-		ApplicationID: appID,
-		RemovalDate:   "removalDate",
+		OrdID:       ordID,
+		RemovalDate: "removalDate",
 	}
 }
 

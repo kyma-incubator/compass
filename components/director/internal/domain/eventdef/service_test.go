@@ -295,7 +295,7 @@ func TestService_CreateInBundle(t *testing.T) {
 	spec := "test"
 
 	modelInput := model.EventDefinitionInput{
-		Name:    name,
+		Name:         name,
 		VersionInput: &model.VersionInput{},
 	}
 
@@ -307,11 +307,12 @@ func TestService_CreateInBundle(t *testing.T) {
 	}
 
 	modelEventDefinition := &model.EventDefinition{
-		ID:       id,
-		BundleID: &bundleID,
-		Tenant:   tenantID,
-		Name:     name,
-		Version:  &model.Version{},
+		ID:            id,
+		BundleID:      &bundleID,
+		ApplicationID: appID,
+		Tenant:        tenantID,
+		Name:          name,
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -399,7 +400,7 @@ func TestService_CreateInBundle(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.CreateInBundle(ctx, bundleID, testCase.Input, testCase.SpecInput)
+			result, err := svc.CreateInBundle(ctx, appID, bundleID, testCase.Input, testCase.SpecInput)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -417,7 +418,7 @@ func TestService_CreateInBundle(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := event.NewService(nil, nil, nil)
 		// WHEN
-		_, err := svc.CreateInBundle(context.TODO(), "", model.EventDefinitionInput{}, &model.SpecInput{})
+		_, err := svc.CreateInBundle(context.TODO(), "", "", model.EventDefinitionInput{}, &model.SpecInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -434,7 +435,7 @@ func TestService_Update(t *testing.T) {
 	spec := "spec"
 
 	modelInput := model.EventDefinitionInput{
-		Name:    "Foo",
+		Name:         "Foo",
 		VersionInput: &model.VersionInput{},
 	}
 

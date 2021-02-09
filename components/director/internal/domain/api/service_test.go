@@ -299,9 +299,9 @@ func TestService_CreateInBundle(t *testing.T) {
 	spec := "test"
 
 	modelInput := model.APIDefinitionInput{
-		Name:      name,
-		TargetURL: targetUrl,
-		VersionInput:   &model.VersionInput{},
+		Name:         name,
+		TargetURL:    targetUrl,
+		VersionInput: &model.VersionInput{},
 	}
 
 	modelSpecInput := model.SpecInput{
@@ -312,12 +312,13 @@ func TestService_CreateInBundle(t *testing.T) {
 	}
 
 	modelAPIDefinition := &model.APIDefinition{
-		ID:        id,
-		BundleID:  &bundleID,
-		Tenant:    tenantID,
-		Name:      name,
-		TargetURL: targetUrl,
-		Version:   &model.Version{},
+		ID:            id,
+		BundleID:      &bundleID,
+		ApplicationID: appID,
+		Tenant:        tenantID,
+		Name:          name,
+		TargetURL:     targetUrl,
+		Version:       &model.Version{},
 	}
 
 	ctx := context.TODO()
@@ -405,7 +406,7 @@ func TestService_CreateInBundle(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			result, err := svc.CreateInBundle(ctx, bundleID, testCase.Input, testCase.SpecInput)
+			result, err := svc.CreateInBundle(ctx, appID, bundleID, testCase.Input, testCase.SpecInput)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -423,7 +424,7 @@ func TestService_CreateInBundle(t *testing.T) {
 	t.Run("Error when tenant not in context", func(t *testing.T) {
 		svc := api.NewService(nil, nil, nil)
 		// WHEN
-		_, err := svc.CreateInBundle(context.TODO(), "", model.APIDefinitionInput{}, &model.SpecInput{})
+		_, err := svc.CreateInBundle(context.TODO(), "", "", model.APIDefinitionInput{}, &model.SpecInput{})
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
@@ -440,9 +441,9 @@ func TestService_Update(t *testing.T) {
 	spec := "spec"
 
 	modelInput := model.APIDefinitionInput{
-		Name:      "Foo",
-		TargetURL: "https://test-url.com",
-		VersionInput:   &model.VersionInput{},
+		Name:         "Foo",
+		TargetURL:    "https://test-url.com",
+		VersionInput: &model.VersionInput{},
 	}
 
 	modelSpecInput := model.SpecInput{

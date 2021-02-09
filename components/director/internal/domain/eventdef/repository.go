@@ -19,8 +19,9 @@ const eventAPIDefTable string = `"public"."event_api_definitions"`
 var (
 	idColumn        = "id"
 	tenantColumn    = "tenant_id"
+	appColumn       = "app_id"
 	bundleColumn    = "bundle_id"
-	eventDefColumns = []string{idColumn, tenantColumn, bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
+	eventDefColumns = []string{idColumn, tenantColumn, appColumn, bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
 		"version_for_removal"}

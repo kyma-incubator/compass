@@ -100,14 +100,14 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 	return apiDefinition, nil
 }
 
-func (s *service) CreateInBundle(ctx context.Context, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
+func (s *service) CreateInBundle(ctx context.Context, appId, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	api := in.ToAPIDefinitionWithinBundle(id, bundleID, tnt)
+	api := in.ToAPIDefinitionWithinBundle(id, appId, bundleID, tnt)
 
 	err = s.repo.Create(ctx, api)
 	if err != nil {
@@ -134,7 +134,7 @@ func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionI
 		return err
 	}
 
-	api = in.ToAPIDefinition(id, api.BundleID, api.PackageID, tnt)
+	api = in.ToAPIDefinition(id, api.ApplicationID, api.BundleID, api.PackageID, tnt)
 
 	err = s.repo.Update(ctx, api)
 	if err != nil {

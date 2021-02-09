@@ -3,13 +3,14 @@ package aggregator
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 )
 
 type client struct {

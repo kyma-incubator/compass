@@ -9,6 +9,7 @@ import (
 type EventDefinition struct {
 	ID                  string
 	Tenant              string
+	ApplicationID       string
 	BundleID            *string
 	PackageID           *string
 	Name                string
@@ -78,11 +79,11 @@ type EventResourceDefinition struct { // This is the place from where the specif
 	AccessStrategy []AccessStrategy `json:"accessStrategies"`
 }
 
-func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bndlID string, tenant string) *EventDefinition {
-	return e.ToEventDefinition(id, &bndlID, nil, tenant)
+func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID, tenant string) *EventDefinition {
+	return e.ToEventDefinition(id, appID, &bndlID, nil, tenant)
 }
 
-func (e *EventDefinitionInput) ToEventDefinition(id string, bundleID *string, packageID *string, tenant string) *EventDefinition {
+func (e *EventDefinitionInput) ToEventDefinition(id, appID string, bundleID *string, packageID *string, tenant string) *EventDefinition {
 	if e == nil {
 		return nil
 	}
@@ -90,6 +91,7 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, bundleID *string, pa
 	return &EventDefinition{
 		ID:                  id,
 		BundleID:            bundleID,
+		ApplicationID:       appID,
 		PackageID:           packageID,
 		Tenant:              tenant,
 		Name:                e.Name,
