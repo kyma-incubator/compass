@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/form3tech-oss/jwt-go"
 	directorAuth "github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/authenticator"
 	"github.com/lestrrat-go/jwx/jwk"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 
