@@ -82,7 +82,7 @@ const envPrefix = "APP"
 
 type config struct {
 	Address         string `envconfig:"default=127.0.0.1:3000"`
-	InternalAddress string `envconfig:"default=127.0.0.1:3001"`
+	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
 	AppURL          string `envconfig:"APP_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
@@ -162,6 +162,8 @@ func main() {
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
+	appRepo := applicationRepo()
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -176,7 +178,7 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			Async:       operation.NewDirective(transact, operation.DefaultScheduler{}).HandleOperation,
+			Async:       operation.NewDirective(transact, operation.DefaultScheduler{}, appRepo.GetByID, tenant.LoadFromContext).HandleOperation,
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -238,7 +240,6 @@ func main() {
 
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
-	appRepo := applicationRepo()
 	operationHandler := operation.NewHandler(transact, appRepo.GetByID, tenant.LoadFromContext)
 
 	operationsAPIRouter := mainRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()

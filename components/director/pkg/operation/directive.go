@@ -54,7 +54,7 @@ func NewDirective(transact persistence.Transactioner, scheduler Scheduler, resou
 }
 
 // HandleOperation enriches the request with an Operation information when the requesting mutation is annotated with the Async directive
-func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, op graphql.OperationType) (res interface{}, err error) {
+func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, op graphql.OperationType, idField *string) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
 	mode, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)
 	if !ok {
@@ -71,6 +71,10 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	defer d.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := d.concurrencyCheck(ctx, op, resCtx, idField); err != nil {
+		return nil, err
+	}
 
 	if *mode == graphql.OperationModeSync {
 		resp, err := next(ctx)
@@ -100,26 +104,6 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, apperrors.NewInternalError("Unable to process operation")
 	}
 
-	tenant, err := d.tenantLoaderFunc(ctx)
-	if err != nil {
-		return nil, apperrors.NewTenantRequiredError()
-	}
-	app, err := d.resourceFetcherFunc(ctx, tenant, operation.ResourceID)
-	if err != nil {
-		return nil, apperrors.NewInternalError("could not found resource with id %s", operation.ResourceID)
-	}
-
-	if app.DeletedAt.IsZero() && app.CreatedAt.Equal(app.UpdatedAt) && !app.Ready && *app.Error == "" { // CREATING
-		return nil, apperrors.NewInvalidDataError("another operation is in progress")
-	}
-	if !app.DeletedAt.IsZero() && *app.Error == "" { // DELETING
-		return nil, apperrors.NewInvalidDataError("another operation is in progress")
-	}
-	// Note: This will be needed when there is async UPDATE supported
-	// if app.DeletedAt.IsZero() && app.UpdatedAt.After(app.CreatedAt) && !app.Ready && *app.Error == "" { // UPDATING
-	// 	return nil, apperrors.NewInvalidDataError("another operation is in progress")
-	// }
-
 	operationID, err := d.scheduler.Schedule(*operation)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while scheduling operation: %s", err.Error())
@@ -135,4 +119,46 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	}
 
 	return resp, nil
+}
+
+func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationType, resCtx *gqlgen.ResolverContext, idField *string) error {
+	if op == graphql.OperationTypeCreate {
+		return nil
+	}
+
+	if idField == nil {
+		return apperrors.NewInternalError("idField from context should not be empty")
+	}
+
+	resourceID, ok := resCtx.Args[*idField].(string)
+	if !ok {
+		return apperrors.NewInternalError(fmt.Sprintf("could not get idField: %q from request context", *idField))
+	}
+
+	tenant, err := d.tenantLoaderFunc(ctx)
+	if err != nil {
+		return apperrors.NewTenantRequiredError()
+	}
+
+	app, err := d.resourceFetcherFunc(ctx, tenant, resourceID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return err
+		}
+
+		return apperrors.NewInternalError("failed to fetch resource with id %s", resourceID)
+	}
+
+	if app.DeletedAt.IsZero() && app.UpdatedAt.IsZero() && !app.Ready && (app.Error == nil || *app.Error == "") { // CREATING
+		return apperrors.NewConcurrentOperationInProgressError("create operation is in progress")
+	}
+	if !app.DeletedAt.IsZero() && (app.Error == nil || *app.Error == "") { // DELETING
+		return apperrors.NewConcurrentOperationInProgressError("delete operation is in progress")
+	}
+	// Note: This will be needed when there is async UPDATE supported
+	// if app.DeletedAt.IsZero() && app.UpdatedAt.After(app.CreatedAt) && !app.Ready && *app.Error == "" { // UPDATING
+	// 	return nil, apperrors.NewInvalidData	Error("another operation is in progress")
+	// }
+
+	return nil
 }

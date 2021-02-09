@@ -50,7 +50,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	Async func(ctx context.Context, obj interface{}, next graphql.Resolver, op OperationType) (res interface{}, err error)
+	Async func(ctx context.Context, obj interface{}, next graphql.Resolver, op OperationType, idField *string) (res interface{}, err error)
 
 	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
 
@@ -3312,7 +3312,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `"""
 Async directive is added to mutations which are capable of being executed in asynchronious matter
 """
-directive @async(op: OperationType!) on FIELD_DEFINITION
+directive @async(op: OperationType!, idField: String) on FIELD_DEFINITION
 """
 HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
 """
@@ -4459,7 +4459,7 @@ type Mutation {
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
-	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(op: DELETE)
+	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(op: DELETE, idField: "id")
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -4699,6 +4699,14 @@ func (ec *executionContext) dir_async_args(ctx context.Context, rawArgs map[stri
 		}
 	}
 	args["op"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["idField"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["idField"] = arg1
 	return args, nil
 }
 
@@ -12553,7 +12561,7 @@ func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, f
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.Async(ctx, nil, directive1, op)
+			return ec.directives.Async(ctx, nil, directive1, op, nil)
 		}
 
 		tmp, err := directive2(rctx)
@@ -12688,7 +12696,11 @@ func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context,
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.Async(ctx, nil, directive1, op)
+			idField, err := ec.unmarshalOString2ᚖstring(ctx, "id")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.Async(ctx, nil, directive1, op, idField)
 		}
 
 		tmp, err := directive2(rctx)

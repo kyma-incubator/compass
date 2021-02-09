@@ -1,7 +1,7 @@
 """
 Async directive is added to mutations which are capable of being executed in asynchronious matter
 """
-directive @async(op: OperationType!) on FIELD_DEFINITION
+directive @async(op: OperationType!, idField: String) on FIELD_DEFINITION
 """
 HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
 """
@@ -1148,7 +1148,7 @@ type Mutation {
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
-	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(op: DELETE)
+	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(op: DELETE, idField: "id")
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
