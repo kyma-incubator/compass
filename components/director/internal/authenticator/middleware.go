@@ -5,10 +5,11 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 
