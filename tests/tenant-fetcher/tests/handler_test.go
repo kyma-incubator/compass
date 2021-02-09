@@ -77,11 +77,15 @@ type Tenant struct {
 
 func TestOnboardingHandler(t *testing.T) {
 	// GIVEN
+	config := loadConfig(t)
+
 	cisTenant := &Tenant{
 		UserId: "cis",
 		Id:     "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 	}
-	config := loadConfig(t)
+
+	cleanUp(t, cisTenant, config)
+
 	oldTenantState, err := director.GetTenants(config.DirectorUrl, config.Tenant)
 	require.NoError(t, err)
 
@@ -115,7 +119,7 @@ func TestDecommissioningHandler(t *testing.T) {
 		Id:     "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
 	}
 	config := loadConfig(t)
-
+	cleanUp(t, cisTenant, config)
 	// WHEN
 	tenantID := "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72"
 	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantID, 1)
@@ -190,4 +194,22 @@ func loadConfig(t *testing.T) config {
 	require.NotEmpty(t, config.SubscriptionCallbackScope)
 
 	return config
+}
+
+func cleanUp(t *testing.T, tenant *Tenant, config config) {
+	tenantID := "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72"
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantID, 1)
+	url := config.TenantFetcherURL + config.RootAPI + endpoint
+
+	byteTenant, err := json.Marshal(tenant)
+	require.NoError(t, err)
+
+	request, err := http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(byteTenant))
+	require.NoError(t, err)
+
+	httpClient := http.DefaultClient
+	httpClient.Timeout = 15 * time.Second
+
+	_, err = httpClient.Do(request)
+	require.NoError(t, err)
 }
