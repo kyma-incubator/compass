@@ -2,7 +2,9 @@ package open_resource_discovery
 
 import "github.com/kyma-incubator/compass/components/director/internal/model"
 
-const WellKnownEndpoint = "/.well-known/open-resource-discovery"
+const (
+	WellKnownEndpoint = "/.well-known/open-resource-discovery"
+)
 
 type WellKnownConfig struct {
 	Schema                  string                  `json:"$schema"`
@@ -16,13 +18,7 @@ type OpenResourceDiscoveryV1 struct {
 type DocumentDetails struct {
 	URL                 string           `json:"url"`
 	SystemInstanceAware bool             `json:"systemInstanceAware"`
-	AccessStrategies    []AccessStrategy `json:"accessStrategies"`
-}
-
-type AccessStrategy struct {
-	Type              string `json:"type"`
-	CustomType        string `json:"customType"`
-	CustomDescription string `json:"customDescription"`
+	AccessStrategies    AccessStrategies `json:"accessStrategies"`
 }
 
 type Document struct {
@@ -41,4 +37,10 @@ type Document struct {
 	EventResources     []*model.EventDefinitionInput `json:"eventResources"`
 	Tombstones         []*model.TombstoneInput       `json:"tombstones"`
 	Vendors            []*model.VendorInput          `json:"vendors"`
+}
+
+type Documents []*Document
+
+func (*Documents) Validate() error {
+	return nil
 }

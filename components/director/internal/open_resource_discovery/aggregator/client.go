@@ -24,7 +24,7 @@ func NewClient(timeout time.Duration) *client {
 	}
 }
 
-func (c *client) FetchOpenDiscoveryDocuments(ctx context.Context, url string) ([]*open_resource_discovery.Document, error) {
+func (c *client) FetchOpenDiscoveryDocuments(ctx context.Context, url string) (open_resource_discovery.Documents, error) {
 	resp, err := c.Get(url + open_resource_discovery.WellKnownEndpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
@@ -44,7 +44,12 @@ func (c *client) FetchOpenDiscoveryDocuments(ctx context.Context, url string) ([
 
 	docs := make([]*open_resource_discovery.Document, 0, 0)
 	for _, config := range config.OpenResourceDiscoveryV1.Documents {
-		doc, err := c.FetchOpenDiscoveryDocument(ctx, url+config.URL)
+		strategy, ok := config.AccessStrategies.GetSupported()
+		if !ok {
+			log.C(ctx).Warnf("Unsupported access strategy %q for document %s", strategy, url+config.URL)
+			continue
+		}
+		doc, err := c.FetchOpenDiscoveryDocumentWithAccessStrategy(ctx, url+config.URL, strategy)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", url+config.URL)
 		}
@@ -54,7 +59,11 @@ func (c *client) FetchOpenDiscoveryDocuments(ctx context.Context, url string) ([
 	return docs, nil
 }
 
-func (c *client) FetchOpenDiscoveryDocument(ctx context.Context, documentURL string) (*open_resource_discovery.Document, error) {
+func (c *client) FetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy open_resource_discovery.AccessStrategyType) (*open_resource_discovery.Document, error) {
+	if !accessStrategy.IsSupported() {
+		return nil, errors.Errorf("unsupported access strategy %q", accessStrategy)
+	}
+
 	resp, err := c.Get(documentURL)
 	if err != nil {
 		return nil, err

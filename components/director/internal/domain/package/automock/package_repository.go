@@ -86,6 +86,29 @@ func (_m *PackageRepository) GetByID(ctx context.Context, tenant string, id stri
 	return r0, r1
 }
 
+// GetByOrdID provides a mock function with given fields: ctx, tenant, ordID
+func (_m *PackageRepository) GetByOrdID(ctx context.Context, tenant string, ordID string) (*model.Package, error) {
+	ret := _m.Called(ctx, tenant, ordID)
+
+	var r0 *model.Package
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Package); ok {
+		r0 = rf(ctx, tenant, ordID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Package)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, ordID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: ctx, item
 func (_m *PackageRepository) Update(ctx context.Context, item *model.Package) error {
 	ret := _m.Called(ctx, item)

@@ -94,6 +94,40 @@ func (s *service) processAppPage(ctx context.Context, page []*model.Application)
 	return nil
 }
 
-func (s *service) processDocuments(ctx context.Context, appID string, documents []*open_resource_discovery.Document) error {
+func (s *service) processDocuments(ctx context.Context, appID string, documents open_resource_discovery.Documents) error {
+	if err := documents.Validate(); err != nil {
+		return errors.Wrap(err, "invalid documents")
+	}
 	return nil
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

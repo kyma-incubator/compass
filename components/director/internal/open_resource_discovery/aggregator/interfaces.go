@@ -28,7 +28,7 @@ type PackageService interface {
 	Create(ctx context.Context, applicationID string, in model.PackageInput) (string, error)
 	Update(ctx context.Context, id string, in model.PackageInput) error
 	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, id string) (*model.Package, error)
+	GetByOrdID(ctx context.Context, ordID string) (*model.Package, error)
 }
 
 //go:generate mockery -name=ProductService -output=automock -outpkg=automock -case=underscore
