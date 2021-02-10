@@ -16,10 +16,12 @@
 
 package operation
 
+import "context"
+
 // DefaultScheduler defines an initial Scheduler implementation
 type DefaultScheduler struct{}
 
 // Schedule is responsible for scheduling any provided Operation
-func (d DefaultScheduler) Schedule(_ Operation) (string, error) {
+func (d DefaultScheduler) Schedule(ctx context.Context, _ *Operation) (string, error) {
 	return "", nil
 }

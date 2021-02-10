@@ -30,12 +30,6 @@ import (
 
 const ModeParam = "mode"
 
-// Scheduler is responsible for scheduling any provided Operation entity for later processing
-//go:generate mockery -name=Scheduler -output=automock -outpkg=automock -case=underscore
-type Scheduler interface {
-	Schedule(operation Operation) (string, error)
-}
-
 type directive struct {
 	transact            persistence.Transactioner
 	scheduler           Scheduler
@@ -56,12 +50,18 @@ func NewDirective(transact persistence.Transactioner, scheduler Scheduler, resou
 // HandleOperation enriches the request with an Operation information when the requesting mutation is annotated with the Async directive
 func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, op graphql.OperationType, idField *string) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
-	mode, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)
-	if !ok {
-		return nil, apperrors.NewInternalError(fmt.Sprintf("could not get %s parameter", ModeParam))
+	var mode graphql.OperationMode
+	if _, found := resCtx.Args[ModeParam]; !found {
+		mode = graphql.OperationModeSync
+	} else {
+		modePointer, ok := resCtx.Args[ModeParam].(*graphql.OperationMode)
+		if !ok {
+			return nil, apperrors.NewInternalError(fmt.Sprintf("could not get %s parameter", ModeParam))
+		}
+		mode = *modePointer
 	}
 
-	ctx = SaveModeToContext(ctx, *mode)
+	ctx = SaveModeToContext(ctx, mode)
 
 	tx, err := d.transact.Begin()
 	if err != nil {
@@ -76,7 +76,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, err
 	}
 
-	if *mode == graphql.OperationModeSync {
+	if mode == graphql.OperationModeSync {
 		resp, err := next(ctx)
 		if err != nil {
 			return nil, err
@@ -104,7 +104,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		return nil, apperrors.NewInternalError("Unable to process operation")
 	}
 
-	operationID, err := d.scheduler.Schedule(*operation)
+	operationID, err := d.scheduler.Schedule(ctx, operation)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while scheduling operation: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to schedule operation")

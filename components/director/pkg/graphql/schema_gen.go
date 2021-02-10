@@ -4454,7 +4454,7 @@ type Mutation {
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
 	"""
-	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication")
+	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication") @async(op: UPDATE, idField: "id")
 	"""
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
@@ -12627,8 +12627,19 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			op, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "UPDATE")
+			if err != nil {
+				return nil, err
+			}
+			idField, err := ec.unmarshalOString2ᚖstring(ctx, "id")
+			if err != nil {
+				return nil, err
+			}
+			return ec.directives.Async(ctx, nil, directive1, op, idField)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
