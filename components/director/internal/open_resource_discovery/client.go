@@ -1,32 +1,31 @@
-package aggregator
+package open_resource_discovery
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/pkg/errors"
 )
 
-type client struct {
-	http.Client
+type Client interface {
+	FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (Documents, error)
 }
 
-func NewClient(timeout time.Duration) *client {
+type client struct {
+	*http.Client
+}
+
+func NewClient(httpClient *http.Client) *client {
 	return &client{
-		Client: http.Client{
-			Timeout: timeout,
-		},
+		Client: httpClient,
 	}
 }
 
-func (c *client) FetchOpenDiscoveryDocuments(ctx context.Context, url string) (open_resource_discovery.Documents, error) {
-	resp, err := c.Get(url + open_resource_discovery.WellKnownEndpoint)
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (Documents, error) {
+	resp, err := c.Get(url + WellKnownEndpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 	}
@@ -38,19 +37,19 @@ func (c *client) FetchOpenDiscoveryDocuments(ctx context.Context, url string) (o
 		return nil, errors.Wrap(err, "error reading response body")
 	}
 
-	config := open_resource_discovery.WellKnownConfig{}
+	config := WellKnownConfig{}
 	if err := json.Unmarshal(bodyBytes, &config); err != nil {
 		return nil, errors.Wrap(err, "error unmarshaling json body")
 	}
 
-	docs := make([]*open_resource_discovery.Document, 0, 0)
+	docs := make([]*Document, 0, 0)
 	for _, config := range config.OpenResourceDiscoveryV1.Documents {
 		strategy, ok := config.AccessStrategies.GetSupported()
 		if !ok {
 			log.C(ctx).Warnf("Unsupported access strategy %q for document %s", strategy, url+config.URL)
 			continue
 		}
-		doc, err := c.FetchOpenDiscoveryDocumentWithAccessStrategy(ctx, url+config.URL, strategy)
+		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, url+config.URL, strategy)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", url+config.URL)
 		}
@@ -60,7 +59,7 @@ func (c *client) FetchOpenDiscoveryDocuments(ctx context.Context, url string) (o
 	return docs, nil
 }
 
-func (c *client) FetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy open_resource_discovery.AccessStrategyType) (*open_resource_discovery.Document, error) {
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy AccessStrategyType) (*Document, error) {
 	if !accessStrategy.IsSupported() {
 		return nil, errors.Errorf("unsupported access strategy %q", accessStrategy)
 	}
@@ -74,7 +73,7 @@ func (c *client) FetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading document body")
 	}
-	result := &open_resource_discovery.Document{}
+	result := &Document{}
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
 		return nil, errors.Wrap(err, "error unmarshaling document")
 	}

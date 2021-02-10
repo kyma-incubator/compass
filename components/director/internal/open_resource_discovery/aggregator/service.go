@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type service struct {
+type Service struct {
 	transact persistence.Transactioner
 
 	appSvc       ApplicationService
@@ -26,11 +26,11 @@ type service struct {
 	vendorSvc    VendorService
 	tombstoneSvc TombstoneService
 
-	ordClient *client
+	ordClient open_resource_discovery.Client
 }
 
-func NewService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client *client) *service {
-	return &service{
+func NewService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client open_resource_discovery.Client) *Service {
+	return &Service{
 		transact:     transact,
 		appSvc:       appSvc,
 		webhookSvc:   webhookSvc,
@@ -46,7 +46,7 @@ func NewService(transact persistence.Transactioner, appSvc ApplicationService, w
 	}
 }
 
-func (s *service) SyncORDDocuments(ctx context.Context) error {
+func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -60,10 +60,10 @@ func (s *service) SyncORDDocuments(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrapf(err, "error while fetching application page number %d", pageCount)
 	}
-	pageCount++
 	if err := s.processAppPage(ctx, page.Data); err != nil {
 		return errors.Wrapf(err, "error while processing application page number %d", pageCount)
 	}
+	pageCount++
 
 	for page.PageInfo.HasNextPage {
 		page, err = s.appSvc.ListGlobal(ctx, pageSize, page.PageInfo.EndCursor)
@@ -79,7 +79,7 @@ func (s *service) SyncORDDocuments(ctx context.Context) error {
 	return tx.Commit()
 }
 
-func (s *service) processAppPage(ctx context.Context, page []*model.Application) error {
+func (s *Service) processAppPage(ctx context.Context, page []*model.Application) error {
 	for _, app := range page {
 		ctx = tenant.SaveToContext(ctx, app.Tenant, "")
 		webhooks, err := s.webhookSvc.List(ctx, app.ID)
@@ -89,7 +89,7 @@ func (s *service) processAppPage(ctx context.Context, page []*model.Application)
 		documents := make([]*open_resource_discovery.Document, 0, 0)
 		for _, wh := range webhooks {
 			if wh.Type == model.WebhookTypeOpenResourceDiscovery {
-				docs, err := s.ordClient.FetchOpenDiscoveryDocuments(ctx, wh.URL)
+				docs, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, wh.URL)
 				if err != nil {
 					return errors.Wrapf(err, "error fetching ORD document for webhook with id %q for app with id %q", wh.ID, app.ID)
 				}
@@ -103,7 +103,7 @@ func (s *service) processAppPage(ctx context.Context, page []*model.Application)
 	return nil
 }
 
-func (s *service) processDocuments(ctx context.Context, appID string, documents open_resource_discovery.Documents) error {
+func (s *Service) processDocuments(ctx context.Context, appID string, documents open_resource_discovery.Documents) error {
 	if err := documents.Validate(); err != nil {
 		return errors.Wrap(err, "invalid documents")
 	}
@@ -369,10 +369,6 @@ func (s *service) processDocuments(ctx context.Context, appID string, documents 
 	return nil
 }
 
-func equalStrings(first, second *string) bool {
-	return first != nil && second != nil && *first == *second
-}
-
 func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput {
 	return model.BundleUpdateInput{
 		Name:                           in.Name,
@@ -385,6 +381,10 @@ func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUp
 		Labels:                         in.Labels,
 		CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
 	}
+}
+
+func equalStrings(first, second *string) bool {
+	return first != nil && second != nil && *first == *second
 }
 
 func searchInSlice(length int, f func(i int) bool) (int, bool) {
