@@ -22,5 +22,10 @@ status:
       webhook_poll_url: "localhost"
       last_poll_timestamp: "123456789"
       state: "Success"
-  status: "Ready"
-  message: ""
+  conditions:
+    - type: "Ready"
+      status: "True"
+      message: ""
+    - type: "Error"
+      status: "Unknown"
+      message: "Unknown error"

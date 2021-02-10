@@ -15,8 +15,13 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// +kubebuilder:validation:Enum=Create;Update;Delete
+// +kubebuilder:validation:Required
+type OperationType string
 
 // OperationSpec defines the desired state of Operation
 type OperationSpec struct {
@@ -30,15 +35,20 @@ type OperationSpec struct {
 	RequestData       string        `json:"request_data,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Create;Update;Delete
+// +kubebuilder:validation:Enum=Ready;Error
 // +kubebuilder:validation:Required
-type OperationType string
+type ConditionType string
+
+type Condition struct {
+	Type    ConditionType          `json:"type"`
+	Status  corev1.ConditionStatus `json:"status" description:"status of the condition, one of True, False, Unknown"`
+	Message string                 `json:"message,omitempty"`
+}
 
 // OperationStatus defines the observed state of Operation
 type OperationStatus struct {
-	Webhooks []Webhook `json:"webhooks,omitempty"`
-	Status   Status    `json:"status"`
-	Message  string    `json:"message,omitempty"`
+	Webhooks   []Webhook   `json:"webhooks,omitempty"`
+	Conditions []Condition `json:"conditions"`
 }
 
 type Webhook struct {
@@ -60,8 +70,10 @@ type Status string
 // +kubebuilder:object:root=true
 
 // Operation is the Schema for the operations API
+// +kubebuilder:printcolumn:name="ID",type=string,JSONPath=`.spec.operation_id`
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.operation_type`
 // +kubebuilder:printcolumn:name="Resource Type",type=string,JSONPath=`.spec.resource_type`
+// +kubebuilder:subresource:status
 type Operation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

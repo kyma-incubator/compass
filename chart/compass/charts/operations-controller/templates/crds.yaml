@@ -7,11 +7,17 @@ metadata:
   name: operations.operations.compass
 spec:
   additionalPrinterColumns:
+  - JSONPath: .spec.operation_id
+    name: ID
+    type: string
   - JSONPath: .spec.operation_type
     name: Type
     type: string
   - JSONPath: .spec.resource_type
     name: Resource Type
+    type: string
+  - JSONPath: .status.conditions.status
+    name: Status
     type: string
   group: operations.compass
   names:
@@ -20,7 +26,8 @@ spec:
     plural: operations
     singular: operation
   scope: Namespaced
-  subresources: {}
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: Operation is the Schema for the operations API
@@ -69,14 +76,23 @@ spec:
         status:
           description: OperationStatus defines the observed state of Operation
           properties:
-            message:
-              type: string
-            status:
-              enum:
-              - Ready
-              - InProgress
-              - Failed
-              type: string
+            conditions:
+              items:
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    enum:
+                    - Ready
+                    - Error
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
             webhooks:
               items:
                 properties:
@@ -104,7 +120,7 @@ spec:
                 type: object
               type: array
           required:
-          - status
+          - conditions
           type: object
       type: object
   version: v1alpha1
