@@ -13,7 +13,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/klauspost/compress v1.11.7 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210203135116-086a057e4d3c
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210209152122-b3aa7f0f481b
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.2.3
@@ -40,8 +40,8 @@ require (
 	golang.org/x/text v0.3.5 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.20.2
-	k8s.io/apimachinery v0.20.2
-	k8s.io/client-go v0.20.2
-	sigs.k8s.io/controller-runtime v0.8.1
+	k8s.io/api v0.17.2
+	k8s.io/apimachinery v0.17.2
+	k8s.io/client-go v0.17.2
+	sigs.k8s.io/controller-runtime v0.5.0
 )
