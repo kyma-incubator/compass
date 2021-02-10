@@ -8,25 +8,24 @@ global:
       id: 1eba80dd-8ff6-54ee-be4d-77944d17b10b
     - name: bar
       id: af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e
-
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-1693"
+      version: "PR-1720"
     connectivity_adapter:
       dir:
-      version: "PR-1693"
+      version: "PR-1720"
     pairing_adapter:
       dir:
-      version: "PR-1698"
+      version: "PR-1720"
     director:
       dir:
       version: "PR-1718"
     gateway:
       dir:
-      version: "PR-1692"
+      version: "PR-1720"
     tenant_fetcher:
       dir:
       version: "PR-1718"
@@ -35,13 +34,13 @@ global:
       version: "PR-13"
     healthchecker:
       dir:
-      version: "PR-1698"
+      version: "PR-1720"
     schema_migrator:
       dir:
       version: "PR-1719"
     system_broker:
       dir:
-      version: "PR-1700"
+      version: "PR-1720"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -49,17 +48,17 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1698"
+      version: "PR-1720"
     console:
       dir:
       version: "PR-12"
     tests:
       director:
         dir:
-        version: "PR-1693"
+        version: "PR-1715"
       connector:
         dir:
-        version: "PR-1698"
+        version: "PR-1715"
       connectivity_adapter:
         dir:
         version: "PR-1693"
@@ -68,10 +67,10 @@ global:
         version: "PR-1718"
       system_broker:
         dir:
-        version: "PR-1700"
+        version: "PR-1715"
       ord_service:
         dir:
-        version: "PR-1713"
+        version: "PR-1719"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -332,10 +331,10 @@ global:
 
   authenticators:
     authenticator0:
-      enabled: false
+      enabled: true
       gatewayHost: "compass-gateway-authenticator0"
-      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix"}, {}]'
-      attributes: '{"uniqueAttribute": { "key": "", "value": "" }, "tenant": { "key": "" }, "identity": { "key": "" } }'
+      trusted_issuers: '[{"domain_url": "authenticator.domain", "scope_prefix": "prefix."}, {}]'
+      attributes: '{"uniqueAttribute": { "key": "key", "value": "val" }, "tenant": { "key": "key" }, "identity": { "key": "key" } }'
 
   externalServicesMock:
     enabled: false
