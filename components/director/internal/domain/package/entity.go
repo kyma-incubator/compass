@@ -16,7 +16,7 @@ type Entity struct {
 	Version           string         `db:"version"`
 	PackageLinks      sql.NullString `db:"package_links"`
 	Links             sql.NullString `db:"links"`
-	LicenceType       sql.NullString `db:"licence_type"`
+	LicenseType       sql.NullString `db:"licence_type"`
 	Tags              sql.NullString `db:"tags"`
 	Countries         sql.NullString `db:"countries"`
 	Labels            sql.NullString `db:"labels"`

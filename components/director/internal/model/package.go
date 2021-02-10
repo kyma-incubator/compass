@@ -16,7 +16,7 @@ type Package struct {
 	Version           string
 	PackageLinks      json.RawMessage
 	Links             json.RawMessage
-	LicenceType       *string
+	LicenseType       *string
 	Tags              json.RawMessage
 	Countries         json.RawMessage
 	Labels            json.RawMessage
@@ -36,7 +36,7 @@ type PackageInput struct {
 	Version           string
 	PackageLinks      json.RawMessage
 	Links             json.RawMessage
-	LicenceType       *string
+	LicenseType       *string
 	Tags              json.RawMessage
 	Countries         json.RawMessage
 	Labels            json.RawMessage
@@ -64,7 +64,7 @@ func (i *PackageInput) ToPackage(id, tenantID, appID string) *Package {
 		Version:           i.Version,
 		PackageLinks:      i.PackageLinks,
 		Links:             i.Links,
-		LicenceType:       i.LicenceType,
+		LicenseType:       i.LicenseType,
 		Tags:              i.Tags,
 		Countries:         i.Countries,
 		Labels:            i.Labels,
@@ -84,7 +84,7 @@ func (p *Package) SetFromUpdateInput(update PackageInput) {
 	p.Version = update.Version
 	p.PackageLinks = update.PackageLinks
 	p.Links = update.Links
-	p.LicenceType = update.LicenceType
+	p.LicenseType = update.LicenseType
 	p.Tags = update.Tags
 	p.Countries = update.Countries
 	p.Labels = update.Labels
