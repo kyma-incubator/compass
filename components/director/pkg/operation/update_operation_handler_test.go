@@ -35,7 +35,32 @@ import (
 
 func TestUpdateOperationHandler(t *testing.T) {
 
-	t.Run("when required input body properties are missing", func(t *testing.T) {
+	t.Run("when request method is not POST it should return method not allowed", func(t *testing.T) {
+		writer := httptest.NewRecorder()
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
+		require.NoError(t, err)
+
+		handler := operation.NewUpdateOperationHandler(nil, nil, nil)
+		handler.ServeHTTP(writer, req)
+
+		require.Contains(t, writer.Body.String(), "Method not allowed")
+		require.Equal(t, http.StatusMethodNotAllowed, writer.Code)
+	})
+
+	t.Run("when request body is not valid it should return bad request", func(t *testing.T) {
+		writer := httptest.NewRecorder()
+		reader := bytes.NewReader([]byte(`{"resource_id": 1}`))
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "/", reader)
+		require.NoError(t, err)
+
+		handler := operation.NewUpdateOperationHandler(nil, nil, nil)
+		handler.ServeHTTP(writer, req)
+
+		require.Contains(t, writer.Body.String(), "Unable to decode body to JSON")
+		require.Equal(t, http.StatusBadRequest, writer.Code)
+	})
+
+	t.Run("when required input body properties are missing it should return bad request", func(t *testing.T) {
 		writer := httptest.NewRecorder()
 		req := fixPostRequestWithBody(t, context.Background(), `{}`)
 

@@ -79,7 +79,12 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to read request body"), http.StatusInternalServerError)
 		return
 	}
-	defer request.Body.Close()
+	defer func() {
+		err := request.Body.Close()
+		if err != nil {
+			log.C(ctx).WithError(err).Error("Failed to close request body")
+		}
+	}()
 
 	var operation OperationRequest
 	if err := json.Unmarshal(bytes, &operation); err != nil {
