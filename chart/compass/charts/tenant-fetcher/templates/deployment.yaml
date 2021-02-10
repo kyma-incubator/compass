@@ -96,6 +96,8 @@ spec:
               value: "{{.Values.deployment.dbPool.maxOpenConnections}}"
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: "{{.Values.deployment.dbPool.maxIdleConnections}}"
+            - name: APP_ALLOW_JWT_SIGNING_NONE
+              value: {{ .Values.deployment.allowJWTSigningNone | quote }}
             - name: APP_CIS_IDENTITY_ZONE
               value: "sap-provisioning"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE

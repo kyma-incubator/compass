@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/tenant-fetcher/tools/authentication"
+
 	"github.com/kyma-incubator/compass/tests/tenant-fetcher/tools/director"
 	"github.com/stretchr/testify/assert"
 
@@ -96,6 +98,7 @@ func TestOnboardingHandler(t *testing.T) {
 	byteTenant, err := json.Marshal(cisTenant)
 	require.NoError(t, err)
 	request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
 	require.NoError(t, err)
 
 	httpClient := http.DefaultClient
@@ -129,6 +132,7 @@ func TestDecommissioningHandler(t *testing.T) {
 	byteTenant, err := json.Marshal(cisTenant)
 	require.NoError(t, err)
 	request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
 	require.NoError(t, err)
 
 	httpClient := http.DefaultClient
@@ -142,6 +146,7 @@ func TestDecommissioningHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	request, err = http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(byteTenant))
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
 	require.NoError(t, err)
 
 	response, err = httpClient.Do(request)
@@ -205,6 +210,7 @@ func cleanUp(t *testing.T, tenant *Tenant, config config) {
 	require.NoError(t, err)
 
 	request, err := http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(byteTenant))
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
 	require.NoError(t, err)
 
 	httpClient := http.DefaultClient

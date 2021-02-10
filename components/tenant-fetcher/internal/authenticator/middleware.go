@@ -32,15 +32,17 @@ type Authenticator struct {
 	jwksEndpoint               string
 	zoneId                     string
 	trustedClaimPrefixes       []string
-	SubscriptionCallbacksScope string
+	subscriptionCallbacksScope string
+	allowJWTSigningNone        bool
 }
 
-func New(jwksEndpoint, zoneId, SubscriptionCallbacksScope string, trustedClaimPrefixes []string) *Authenticator {
+func New(jwksEndpoint, zoneId, subscriptionCallbacksScope string, trustedClaimPrefixes []string, allowJWTSigningNone bool) *Authenticator {
 	return &Authenticator{
 		jwksEndpoint:               jwksEndpoint,
 		zoneId:                     zoneId,
 		trustedClaimPrefixes:       trustedClaimPrefixes,
-		SubscriptionCallbacksScope: SubscriptionCallbacksScope,
+		subscriptionCallbacksScope: subscriptionCallbacksScope,
+		allowJWTSigningNone:        allowJWTSigningNone,
 	}
 }
 
@@ -66,7 +68,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			scopes := PrefixScopes(a.trustedClaimPrefixes, a.SubscriptionCallbacksScope)
+			scopes := PrefixScopes(a.trustedClaimPrefixes, a.subscriptionCallbacksScope)
 			if !stringsAnyEquals(scopes, strings.Join(claims.Scopes, " ")) {
 				log.C(ctx).Errorf(`Scope "%s" from user token does not match the trusted scopes`, claims.Scopes)
 				a.writeAppError(ctx, w, errors.Errorf(`Scope "%s" is not trusted`, claims.Scopes), http.StatusUnauthorized)
@@ -140,6 +142,25 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 			}
 
 			return nil, apperrors.NewInternalError("unable to find key for algorithm %s", token.Method.Alg())
+		}
+
+		switch token.Method.Alg() {
+		case jwt.SigningMethodRS256.Name:
+			a.mux.Lock()
+			keys := a.cachedJWKs.Keys
+			a.mux.Unlock()
+			for _, key := range keys {
+				if key.Algorithm() == token.Method.Alg() {
+					return key.Materialize()
+				}
+			}
+
+			return nil, apperrors.NewInternalError("unable to find key for algorithm %s", token.Method.Alg())
+		case jwt.SigningMethodNone.Alg():
+			if !a.allowJWTSigningNone {
+				return nil, unsupportedErr
+			}
+			return jwt.UnsafeAllowNoneSignatureType, nil
 		}
 
 		return nil, unsupportedErr

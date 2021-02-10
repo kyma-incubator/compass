@@ -45,7 +45,7 @@ type Tenant struct {
 func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes)
+		auth := authenticator.New(PublicJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 
 		//when
 		err := auth.SynchronizeJWKS(context.TODO())
@@ -56,7 +56,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 
 	t.Run("Error when can't fetch JWKS", func(t *testing.T) {
 		//given
-		authFake := authenticator.New(fakeJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes)
+		authFake := authenticator.New(fakeJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 
 		//when
 		err := authFake.SynchronizeJWKS(context.TODO())
@@ -92,7 +92,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes)
+		auth := authenticator.New(PublicJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -120,7 +120,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
 		//given
-		auth := authenticator.New(PublicJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes)
+		auth := authenticator.New(PublicJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -294,7 +294,7 @@ func createTokenWithSigningMethod(t *testing.T, scopes []string, zone string, ke
 }
 
 func createMiddleware(t *testing.T) func(next http.Handler) http.Handler {
-	auth := authenticator.New(PublicJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes)
+	auth := authenticator.New(PublicJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
 	err := auth.SynchronizeJWKS(context.TODO())
 	require.NoError(t, err)
 

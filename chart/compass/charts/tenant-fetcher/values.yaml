@@ -17,6 +17,7 @@ deployment:
   dbPool:
     maxOpenConnections: 30
     maxIdleConnections: 2
+  allowJWTSigningNone: true
 
 server:
   handlerEndpoint: "/v1/callback/{tenantId}"
