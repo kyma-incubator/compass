@@ -215,11 +215,11 @@ func TestRepositoryCreateMany(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"one", "", nil, "", "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"one", "", nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"two", "", nil, "", "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"two", "", nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 		dbMock.ExpectExec(regexp.QuoteMeta(expectedInsert)).WithArgs(
-			"three", "", nil, "", "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
+			"three", "", nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		sut := webhook.NewRepository(mockConverter)
@@ -234,7 +234,7 @@ func TestRepositoryCreateMany(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
-		given := []*model.Webhook{{ID: "one", URL: "unlucky", Type: model.WebhookTypeConfigurationChanged}, {ID: "two"}, {ID: "three"}}
+		given := []*model.Webhook{{ID: "one", URL: stringPtr("unlucky"), Type: model.WebhookTypeConfigurationChanged}, {ID: "two"}, {ID: "three"}}
 		mockConverter.On("ToEntity", *given[0]).Return(webhook.Entity{}, givenError())
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
@@ -251,7 +251,7 @@ func TestRepositoryCreateMany(t *testing.T) {
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
-		given := []*model.Webhook{{ID: "one", URL: "unlucky", Type: model.WebhookTypeConfigurationChanged}, {ID: "two"}, {ID: "three"}}
+		given := []*model.Webhook{{ID: "one", URL: stringPtr("unlucky"), Type: model.WebhookTypeConfigurationChanged}, {ID: "two"}, {ID: "three"}}
 		mockConverter.On("ToEntity", *given[0]).Return(webhook.Entity{ID: "one"}, nil)
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -400,7 +400,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 				TenantID:      givenTenant(),
 				ApplicationID: repo.NewValidNullableString(givenApplicationID()),
 				Type:          string(model.WebhookTypeConfigurationChanged),
-				URL:           "http://kyma.io"}).
+				URL:           repo.NewValidNullableString("http://kyma.io")}).
 			Return(model.Webhook{
 				ID: givenID(),
 			}, nil)
@@ -410,7 +410,7 @@ func TestRepositoryListByApplicationID(t *testing.T) {
 				TenantID:      givenTenant(),
 				ApplicationID: repo.NewValidNullableString(givenApplicationID()),
 				Type:          string(model.WebhookTypeConfigurationChanged),
-				URL:           "http://kyma2.io"}).
+				URL:           repo.NewValidNullableString("http://kyma2.io")}).
 			Return(model.Webhook{ID: anotherID()}, nil)
 
 		sut := webhook.NewRepository(mockConv)
@@ -517,7 +517,7 @@ func givenEntity() webhook.Entity {
 		TenantID:       givenTenant(),
 		ApplicationID:  repo.NewValidNullableString(givenApplicationID()),
 		Type:           string(model.WebhookTypeConfigurationChanged),
-		URL:            "http://kyma.io",
+		URL:            repo.NewValidNullableString("http://kyma.io"),
 		Mode:           repo.NewValidNullableString(string(model.WebhookModeSync)),
 		URLTemplate:    repo.NewValidNullableString(emptyTemplate),
 		InputTemplate:  repo.NewValidNullableString(emptyTemplate),
@@ -546,7 +546,7 @@ func givenModel() model.Webhook {
 		TenantID:       givenTenant(),
 		ApplicationID:  &appID,
 		Type:           model.WebhookTypeConfigurationChanged,
-		URL:            "http://kyma.io",
+		URL:            stringPtr("http://kyma.io"),
 		Mode:           &webhookMode,
 		URLTemplate:    &emptyTemplate,
 		InputTemplate:  &emptyTemplate,

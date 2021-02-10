@@ -585,7 +585,7 @@ type Webhook struct {
 	CorrelationIDKey    *string      `json:"correlationIdKey"`
 	RetryInterval       *int         `json:"retryInterval"`
 	Timeout             *int         `json:"timeout"`
-	URL                 string       `json:"url"`
+	URL                 *string      `json:"url"`
 	Auth                *Auth        `json:"auth"`
 	URLTemplate         *string      `json:"urlTemplate"`
 	InputTemplate       *string      `json:"inputTemplate"`
@@ -597,7 +597,7 @@ type Webhook struct {
 type WebhookInput struct {
 	Type WebhookType `json:"type"`
 	// **Validation:** valid URL, max=256
-	URL              string       `json:"url"`
+	URL              *string      `json:"url"`
 	Auth             *AuthInput   `json:"auth"`
 	Mode             *WebhookMode `json:"mode"`
 	CorrelationIDKey *string      `json:"correlationIdKey"`

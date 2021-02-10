@@ -549,7 +549,7 @@ func TestHandleOperation(t *testing.T) {
 				require.Equal(t, operation.OperationType(operationType), op.OperationType)
 				require.Equal(t, operationCategory, op.OperationCategory)
 
-				expectedRequestData := &operation.RequestData{
+				expectedRequestData := &graphql.RequestData{
 					Application: *(mockedNextResponse().(*graphql.Application)),
 					TenantID:    tenantID,
 					Headers:     mockedHeaders,

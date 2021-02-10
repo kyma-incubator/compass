@@ -36,8 +36,8 @@ func TestService_Create(t *testing.T) {
 	modelInput := model.ApplicationRegisterInput{
 		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
-			{URL: "test.foo.com"},
-			{URL: "test.bar.com"},
+			{URL: stringPtr("test.foo.com")},
+			{URL: stringPtr("test.bar.com")},
 		},
 
 		Labels: map[string]interface{}{
@@ -85,8 +85,8 @@ func TestService_Create(t *testing.T) {
 	normalizedModelInput := model.ApplicationRegisterInput{
 		Name: "mp-foo-bar-not",
 		Webhooks: []*model.WebhookInput{
-			{URL: "test.foo.com"},
-			{URL: "test.bar.com"},
+			{URL: stringPtr("test.foo.com")},
+			{URL: stringPtr("test.bar.com")},
 		},
 
 		Labels: map[string]interface{}{

@@ -11,7 +11,7 @@ type Entity struct {
 	CollectionIDKey     sql.NullString `db:"correlation_id_key"`
 	Type                string         `db:"type"`
 	Mode                sql.NullString `db:"mode"`
-	URL                 string         `db:"url"`
+	URL                 sql.NullString `db:"url"`
 	Auth                sql.NullString `db:"auth"`
 	RetryInterval       sql.NullInt32  `db:"retry_interval"`
 	Timeout             sql.NullInt32  `db:"timeout"`
