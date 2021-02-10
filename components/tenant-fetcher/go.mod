@@ -2,8 +2,6 @@ module github.com/kyma-incubator/compass/components/tenant-fetcher
 
 go 1.15
 
-//replace github.com/kyma-incubator/compass/components/director => ../director
-
 require (
 	github.com/99designs/gqlgen v0.9.3
 	github.com/DATA-DOG/go-sqlmock v1.5.0

@@ -42,7 +42,7 @@ type Tenant struct {
 	Id     string `json:"globalAccountGUID"`
 }
 
-func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
+func TestMiddleware_SynchronizeJWKS(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		//given
 		auth := authenticator.New(PublicJWKSURL, ZoneId, SubscriptionCallbacksScope, trustedPrefixes, true)
@@ -67,7 +67,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 	})
 }
 
-func TestAuthenticator_Handler(t *testing.T) {
+func TestMiddleware_Handler(t *testing.T) {
 	//given
 	privateJWKS, err := directorAuth.FetchJWK(context.TODO(), PrivateJWKSURL)
 	require.NoError(t, err)
