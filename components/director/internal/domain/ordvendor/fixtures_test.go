@@ -3,6 +3,7 @@ package ordvendor_test
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/ordvendor"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -22,7 +23,7 @@ func fixEntityVendor() *ordvendor.Entity {
 		ApplicationID: appID,
 		Title:         "title",
 		Type:          "type",
-		Labels:        json.RawMessage("{}"),
+		Labels:        repo.NewValidNullableString("{}"),
 	}
 }
 
@@ -53,9 +54,9 @@ func fixVendorColumns() []string {
 }
 
 func fixVendorRow() []driver.Value {
-	return []driver.Value{ordID, tenantID, appID, "title", "type", json.RawMessage("{}")}
+	return []driver.Value{ordID, tenantID, appID, "title", "type", repo.NewValidNullableString("{}")}
 }
 
 func fixVendorUpdateArgs() []driver.Value {
-	return []driver.Value{"title", "type", json.RawMessage("{}")}
+	return []driver.Value{"title", "type", repo.NewValidNullableString("{}")}
 }

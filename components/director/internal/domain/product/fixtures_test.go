@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/product"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -32,7 +33,7 @@ func fixEntityProduct() *product.Entity {
 			String: "ppms_id",
 			Valid:  true,
 		},
-		Labels: json.RawMessage("{}"),
+		Labels: repo.NewValidNullableString("{}"),
 	}
 }
 
@@ -74,9 +75,9 @@ func fixProductColumns() []string {
 
 func fixProductRow() []driver.Value {
 	return []driver.Value{ordID, tenantID, appID, "title", "short desc", "vendorID", "parent", "ppms_id",
-		json.RawMessage("{}")}
+		repo.NewValidNullableString("{}")}
 }
 
 func fixProductUpdateArgs() []driver.Value {
-	return []driver.Value{"title", "short desc", "vendorID", "parent", "ppms_id", json.RawMessage("{}")}
+	return []driver.Value{"title", "short desc", "vendorID", "parent", "ppms_id", repo.NewValidNullableString("{}")}
 }
