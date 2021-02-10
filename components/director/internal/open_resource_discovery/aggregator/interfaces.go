@@ -23,6 +23,28 @@ type BundleService interface {
 	ListByApplicationIDNoPaging(ctx context.Context, appID string) ([]*model.Bundle, error)
 }
 
+//go:generate mockery -name=APIService -output=automock -outpkg=automock -case=underscore
+type APIService interface {
+	Create(ctx context.Context, appId string, bundleID, packageID *string, in model.APIDefinitionInput, spec []*model.SpecInput) (string, error)
+	Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error
+	Delete(ctx context.Context, id string) error
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.APIDefinition, error)
+}
+
+//go:generate mockery -name=EventService -output=automock -outpkg=automock -case=underscore
+type EventService interface {
+	Create(ctx context.Context, appId string, bundleID, packageID *string, in model.EventDefinitionInput, spec []*model.SpecInput) (string, error)
+	Update(ctx context.Context, id string, in model.EventDefinitionInput, specIn *model.SpecInput) error
+	Delete(ctx context.Context, id string) error
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.EventDefinition, error)
+}
+
+//go:generate mockery -name=SpecService -output=automock -outpkg=automock -case=underscore
+type SpecService interface {
+	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
+	DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error
+}
+
 //go:generate mockery -name=PackageService -output=automock -outpkg=automock -case=underscore
 type PackageService interface {
 	Create(ctx context.Context, applicationID string, in model.PackageInput) (string, error)

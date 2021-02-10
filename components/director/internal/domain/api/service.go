@@ -111,20 +111,27 @@ func (s *service) GetForBundle(ctx context.Context, id string, bundleID string) 
 }
 
 func (s *service) CreateInBundle(ctx context.Context, appId, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error) {
+	return s.Create(ctx, appId, &bundleID, nil, in, []*model.SpecInput{spec})
+}
+
+func (s *service) Create(ctx context.Context, appId string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	api := in.ToAPIDefinitionWithinBundle(id, appId, bundleID, tnt)
+	api := in.ToAPIDefinition(id, appId, bundleID, packageID, tnt)
 
 	err = s.repo.Create(ctx, api)
 	if err != nil {
 		return "", errors.Wrap(err, "while creating api")
 	}
 
-	if spec != nil {
+	for _, spec := range specs {
+		if spec == nil {
+			continue
+		}
 		_, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.APISpecReference, api.ID)
 		if err != nil {
 			return "", err
@@ -133,6 +140,7 @@ func (s *service) CreateInBundle(ctx context.Context, appId, bundleID string, in
 
 	return id, nil
 }
+
 func (s *service) Update(ctx context.Context, id string, in model.APIDefinitionInput, specIn *model.SpecInput) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

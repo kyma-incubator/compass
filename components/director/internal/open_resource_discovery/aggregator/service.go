@@ -18,6 +18,9 @@ type service struct {
 	appSvc       ApplicationService
 	webhookSvc   WebhookService
 	bundleSvc    BundleService
+	apiSvc       APIService
+	eventSvc     EventService
+	specSvc      SpecService
 	packageSvc   PackageService
 	productSvc   ProductService
 	vendorSvc    VendorService
@@ -26,12 +29,15 @@ type service struct {
 	ordClient *client
 }
 
-func NewService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client *client) *service {
+func NewService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client *client) *service {
 	return &service{
 		transact:     transact,
 		appSvc:       appSvc,
 		webhookSvc:   webhookSvc,
 		bundleSvc:    bundleSvc,
+		apiSvc:       apiSvc,
+		eventSvc:     eventSvc,
+		specSvc:      specSvc,
 		packageSvc:   packageSvc,
 		productSvc:   productSvc,
 		vendorSvc:    vendorSvc,
@@ -122,6 +128,16 @@ func (s *service) processDocuments(ctx context.Context, appID string, documents 
 		return errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
 	}
 
+	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing apis for app with id %q", appID)
+	}
+
+	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing events for app with id %q", appID)
+	}
+
 	tombstonesFromDB, err := s.tombstoneSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "error while listing tombstones for app with id %q", appID)
@@ -146,7 +162,7 @@ func (s *service) processDocuments(ctx context.Context, appID string, documents 
 
 		for _, bndl := range doc.ConsumptionBundles {
 			i, ok := searchInSlice(len(bundlesFromDB), func(i int) bool {
-				return bundlesFromDB[i].OrdID == bndl.OrdID
+				return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
 			})
 
 			if !ok {
@@ -192,6 +208,104 @@ func (s *service) processDocuments(ctx context.Context, appID string, documents 
 			}
 		}
 
+		for _, api := range doc.APIResources {
+			i, ok := searchInSlice(len(apisFromDB), func(i int) bool {
+				return apisFromDB[i].OrdID == api.OrdID
+			})
+
+			var bundleID *string
+			var packageID *string
+
+			if i, ok := searchInSlice(len(bundlesFromDB), func(i int) bool {
+				return equalStrings(bundlesFromDB[i].OrdID, api.OrdBundleID)
+			}); ok {
+				bundleID = &bundlesFromDB[i].ID
+			}
+
+			if i, ok := searchInSlice(len(packagesFromDB), func(i int) bool {
+				return equalStrings(&packagesFromDB[i].OrdID, api.OrdPackageID)
+			}); ok {
+				packageID = &packagesFromDB[i].ID
+			}
+
+			specs := make([]*model.SpecInput, 0, len(api.ResourceDefinitions))
+			for _, resourceDef := range api.ResourceDefinitions {
+				specs = append(specs, resourceDef.ToSpec())
+			}
+
+			if !ok {
+				if _, err := s.apiSvc.Create(ctx, appID, bundleID, packageID, api, specs); err != nil {
+					return err
+				}
+			} else {
+				if err := s.apiSvc.Update(ctx, apisFromDB[i].ID, api, nil); err != nil {
+					return err
+				}
+				if api.VersionInput.Value != apisFromDB[i].Version.Value {
+					if err := s.specSvc.DeleteByReferenceObjectID(ctx, model.APISpecReference, apisFromDB[i].ID); err != nil {
+						return err
+					}
+					for _, spec := range specs {
+						if spec == nil {
+							continue
+						}
+						if _, err := s.specSvc.CreateByReferenceObjectID(ctx, *spec, model.APISpecReference, apisFromDB[i].ID); err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+
+		for _, event := range doc.EventResources {
+			i, ok := searchInSlice(len(eventsFromDB), func(i int) bool {
+				return eventsFromDB[i].OrdID == event.OrdID
+			})
+
+			var bundleID *string
+			var packageID *string
+
+			if i, ok := searchInSlice(len(bundlesFromDB), func(i int) bool {
+				return equalStrings(bundlesFromDB[i].OrdID, event.OrdBundleID)
+			}); ok {
+				bundleID = &bundlesFromDB[i].ID
+			}
+
+			if i, ok := searchInSlice(len(packagesFromDB), func(i int) bool {
+				return equalStrings(&packagesFromDB[i].OrdID, event.OrdPackageID)
+			}); ok {
+				packageID = &packagesFromDB[i].ID
+			}
+
+			specs := make([]*model.SpecInput, 0, len(event.ResourceDefinitions))
+			for _, resourceDef := range event.ResourceDefinitions {
+				specs = append(specs, resourceDef.ToSpec())
+			}
+
+			if !ok {
+				if _, err := s.eventSvc.Create(ctx, appID, bundleID, packageID, event, specs); err != nil {
+					return err
+				}
+			} else {
+				if err := s.eventSvc.Update(ctx, eventsFromDB[i].ID, event, nil); err != nil {
+					return err
+				}
+				if event.VersionInput.Value != eventsFromDB[i].Version.Value {
+					if err := s.specSvc.DeleteByReferenceObjectID(ctx, model.EventSpecReference, eventsFromDB[i].ID); err != nil {
+						return err
+					}
+					for _, spec := range specs {
+						if spec == nil {
+							continue
+						}
+						if _, err := s.specSvc.CreateByReferenceObjectID(ctx, *spec, model.EventSpecReference, eventsFromDB[i].ID); err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+
 		for _, tombstone := range doc.Tombstones {
 			i, ok := searchInSlice(len(tombstonesFromDB), func(i int) bool {
 				return tombstonesFromDB[i].OrdID == tombstone.OrdID
@@ -213,7 +327,21 @@ func (s *service) processDocuments(ctx context.Context, appID string, documents 
 						}
 					}
 				case "apiResource":
+					if i, ok := searchInSlice(len(apisFromDB), func(i int) bool {
+						return equalStrings(apisFromDB[i].OrdID, &tombstone.OrdID)
+					}); ok {
+						if err = s.apiSvc.Delete(ctx, apisFromDB[i].ID); err != nil {
+							return err
+						}
+					}
 				case "eventResource":
+					if i, ok := searchInSlice(len(eventsFromDB), func(i int) bool {
+						return equalStrings(eventsFromDB[i].OrdID, &tombstone.OrdID)
+					}); ok {
+						if err = s.eventSvc.Delete(ctx, eventsFromDB[i].ID); err != nil {
+							return err
+						}
+					}
 				case "vendor":
 					if err = s.vendorSvc.Delete(ctx, tombstone.OrdID); err != nil && !apperrors.IsNotFoundError(err) {
 						return err
@@ -224,7 +352,7 @@ func (s *service) processDocuments(ctx context.Context, appID string, documents 
 					}
 				case "consumptionBundle":
 					if i, ok := searchInSlice(len(bundlesFromDB), func(i int) bool {
-						return *bundlesFromDB[i].OrdID == tombstone.OrdID
+						return equalStrings(bundlesFromDB[i].OrdID, &tombstone.OrdID)
 					}); ok {
 						if err = s.bundleSvc.Delete(ctx, bundlesFromDB[i].ID); err != nil {
 							return err
@@ -238,8 +366,11 @@ func (s *service) processDocuments(ctx context.Context, appID string, documents 
 			}
 		}
 	}
-
 	return nil
+}
+
+func equalStrings(first, second *string) bool {
+	return first != nil && second != nil && *first == *second
 }
 
 func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput {

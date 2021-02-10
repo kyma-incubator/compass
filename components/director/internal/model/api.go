@@ -77,6 +77,19 @@ type APIResourceDefinition struct { // This is the place from where the specific
 	AccessStrategy []AccessStrategy `json:"accessStrategies"`
 }
 
+func (a APIResourceDefinition) ToSpec() *SpecInput {
+	specType := APISpecType(a.Type)
+	return &SpecInput{
+		Format:     SpecFormat(a.MediaType),
+		APIType:    &specType,
+		CustomType: &a.CustomType,
+		FetchRequest: &FetchRequestInput{ // TODO: Convert AccessStrategies to FetchRequestAuths once ORD defines them
+			URL:  a.URL,
+			Auth: nil, // Currently only open AccessStrategy is defined by ORD, which means no auth
+		},
+	}
+}
+
 type AccessStrategy struct {
 	Type              string `json:"type"`
 	CustomType        string `json:"customType"`

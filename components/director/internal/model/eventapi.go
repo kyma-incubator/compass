@@ -66,7 +66,7 @@ type EventDefinitionInput struct {
 	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
 	Industry            json.RawMessage `json:"industry"`
 
-	EventResourceDefinition []EventResourceDefinition `json:"resourceDefinitions"`
+	ResourceDefinitions []EventResourceDefinition `json:"resourceDefinitions"`
 
 	*VersionInput
 }
@@ -77,6 +77,19 @@ type EventResourceDefinition struct { // This is the place from where the specif
 	MediaType      string           `json:"mediaType"`
 	URL            string           `json:"url"`
 	AccessStrategy []AccessStrategy `json:"accessStrategies"`
+}
+
+func (a EventResourceDefinition) ToSpec() *SpecInput {
+	specType := EventSpecType(a.Type)
+	return &SpecInput{
+		Format:     SpecFormat(a.MediaType),
+		EventType:  &specType,
+		CustomType: &a.CustomType,
+		FetchRequest: &FetchRequestInput{ // TODO: Convert AccessStrategies to FetchRequest Auths once ORD defines them
+			URL:  a.URL,
+			Auth: nil, // Currently only open AccessStrategy is defined by ORD, which means no auth
+		},
+	}
 }
 
 func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id, appID, bndlID, tenant string) *EventDefinition {
