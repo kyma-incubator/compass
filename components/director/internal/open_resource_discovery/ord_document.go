@@ -30,13 +30,13 @@ type Document struct {
 	DescribedSystemInstance *model.Application `json:"describedSystemInstance"`
 	ProviderSystemInstance  *model.Application `json:"providerSystemInstance"`
 
-	Packages           []*model.PackageInput         `json:"package"`
-	ConsumptionBundles []*model.BundleCreateInput    `json:"consumptionBundles"`
-	Products           []*model.ProductInput         `json:"products"`
-	APIResources       []*model.APIDefinitionInput   `json:"apiResources"`
-	EventResources     []*model.EventDefinitionInput `json:"eventResources"`
-	Tombstones         []*model.TombstoneInput       `json:"tombstones"`
-	Vendors            []*model.VendorInput          `json:"vendors"`
+	Packages           []model.PackageInput         `json:"package"`
+	ConsumptionBundles []model.BundleCreateInput    `json:"consumptionBundles"`
+	Products           []model.ProductInput         `json:"products"`
+	APIResources       []model.APIDefinitionInput   `json:"apiResources"`
+	EventResources     []model.EventDefinitionInput `json:"eventResources"`
+	Tombstones         []model.TombstoneInput       `json:"tombstones"`
+	Vendors            []model.VendorInput          `json:"vendors"`
 }
 
 type Documents []*Document
