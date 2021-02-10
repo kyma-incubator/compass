@@ -108,6 +108,10 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		return errors.Wrap(err, "invalid documents")
 	}
 
+	if err := documents.Sanitize(); err != nil {
+		return errors.Wrap(err, "while sanitizing ORD documents")
+	}
+
 	packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "error while listing packages for app with id %q", appID)
@@ -210,7 +214,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 
 		for _, api := range doc.APIResources {
 			i, ok := searchInSlice(len(apisFromDB), func(i int) bool {
-				return apisFromDB[i].OrdID == api.OrdID
+				return equalStrings(apisFromDB[i].OrdID, api.OrdID)
 			})
 
 			var bundleID *string
@@ -259,7 +263,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 
 		for _, event := range doc.EventResources {
 			i, ok := searchInSlice(len(eventsFromDB), func(i int) bool {
-				return eventsFromDB[i].OrdID == event.OrdID
+				return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
 			})
 
 			var bundleID *string

@@ -46,7 +46,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 	for _, config := range config.OpenResourceDiscoveryV1.Documents {
 		strategy, ok := config.AccessStrategies.GetSupported()
 		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategy %q for document %s", strategy, url+config.URL)
+			log.C(ctx).Warnf("Unsupported access strategies for document %s", url+config.URL)
 			continue
 		}
 		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, url+config.URL, strategy)
