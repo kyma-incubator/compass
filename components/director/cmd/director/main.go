@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
@@ -178,7 +180,7 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			Async:       operation.NewDirective(transact, webhookService().List, operation.DefaultScheduler{}).HandleOperation,
+			Async:       operation.NewDirective(transact, webhookService().List, tenant.LoadFromContext, operation.DefaultScheduler{}).HandleOperation,
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -208,7 +210,7 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
 	operationMiddleware := operation.NewMiddleware(cfg.AppURL)

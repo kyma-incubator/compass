@@ -18,7 +18,12 @@ package operation
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -44,14 +49,16 @@ type WebhookFetcherFunc func(ctx context.Context, resourceID string) ([]*model.W
 type directive struct {
 	transact           persistence.Transactioner
 	webhookFetcherFunc WebhookFetcherFunc
+	tenantLoaderFunc   TenantLoaderFunc
 	scheduler          Scheduler
 }
 
 // NewDirective creates a new handler struct responsible for the Async directive business logic
-func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, scheduler Scheduler) *directive {
+func NewDirective(transact persistence.Transactioner, webhookFetcherFunc WebhookFetcherFunc, tenantLoaderFunc TenantLoaderFunc, scheduler Scheduler) *directive {
 	return &directive{
 		transact:           transact,
 		webhookFetcherFunc: webhookFetcherFunc,
+		tenantLoaderFunc:   tenantLoaderFunc,
 		scheduler:          scheduler,
 	}
 }
@@ -112,18 +119,21 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	operation.ResourceID = entity.GetID()
 	operation.ResourceType = entity.GetType()
 
-	webhooks, err := d.webhookFetcherFunc(ctx, operation.ResourceID)
+	webhookIDs, err := d.prepareWebhookIDs(ctx, err, operation, webhookType)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while retrieving webhooks: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to retrieve webhooks")
 	}
 
-	operation.WebhookIDs = make([]string, 0)
-	for _, webhook := range webhooks {
-		if graphql.WebhookType(webhook.Type) == webhookType {
-			operation.WebhookIDs = append(operation.WebhookIDs, webhook.ID)
-		}
+	operation.WebhookIDs = webhookIDs
+
+	requestData, err := d.prepareRequestData(ctx, err, resp)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while preparing request data: %s", err.Error())
+		return nil, apperrors.NewInternalError("Unable to prepare webhook request data")
 	}
+
+	operation.RequestData = requestData
 
 	operationID, err := d.scheduler.Schedule(*operation)
 	if err != nil {
@@ -140,4 +150,49 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	}
 
 	return resp, nil
+}
+
+func (d *directive) prepareRequestData(ctx context.Context, err error, res interface{}) (string, error) {
+	tenantID, err := d.tenantLoaderFunc(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to retrieve tenant from request")
+	}
+
+	app, ok := res.(*graphql.Application)
+	if !ok {
+		return "", errors.New("entity is not a webhook provider")
+	}
+
+	headers, ok := ctx.Value(header.ContextKey).(http.Header)
+	if !ok {
+		return "", errors.New("failed to retrieve request headers")
+	}
+
+	requestData := &RequestData{
+		Application: *app,
+		TenantID:    tenantID,
+		Headers:     headers,
+	}
+
+	data, err := json.Marshal(requestData)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
+func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation *Operation, webhookType graphql.WebhookType) ([]string, error) {
+	webhooks, err := d.webhookFetcherFunc(ctx, operation.ResourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	webhookIDs := make([]string, 0)
+	for _, webhook := range webhooks {
+		if graphql.WebhookType(webhook.Type) == webhookType {
+			webhookIDs = append(webhookIDs, webhook.ID)
+		}
+	}
+	return webhookIDs, nil
 }

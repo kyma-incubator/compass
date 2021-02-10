@@ -18,9 +18,13 @@ package operation_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -41,6 +45,10 @@ const (
 )
 
 func TestHandleOperation(t *testing.T) {
+	var mockedHeaders = http.Header{
+		"key": []string{"value"},
+	}
+
 	t.Run("missing operation mode param causes internal server error", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
@@ -52,7 +60,7 @@ func TestHandleOperation(t *testing.T) {
 		}
 		ctx = gqlgen.WithResolverContext(ctx, rCtx)
 
-		directive := operation.NewDirective(nil, nil, nil)
+		directive := operation.NewDirective(nil, nil, nil, nil)
 
 		// WHEN
 		_, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
@@ -76,7 +84,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil)
 
 		// WHEN
 		res, err := directive.HandleOperation(ctx, nil, nil, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
@@ -101,7 +109,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -129,7 +137,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -157,7 +165,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -189,7 +197,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -221,7 +229,7 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, nil, nil)
+		directive := operation.NewDirective(mockedTransactioner, nil, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -255,7 +263,7 @@ func TestHandleOperation(t *testing.T) {
 
 		directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
 			return nil, mockedError()
-		}, nil)
+		}, nil, nil)
 
 		dummyResolver := &dummyResolver{}
 
@@ -267,7 +275,7 @@ func TestHandleOperation(t *testing.T) {
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
 	})
 
-	t.Run("when mutation is in ASYNC mode, there is operation in context but Scheduler fails to schedule should roll-back", func(t *testing.T) {
+	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due to missing tenant data should roll-back", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		operationMode := graphql.OperationModeAsync
@@ -287,11 +295,109 @@ func TestHandleOperation(t *testing.T) {
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, func(_ context.Context) (string, error) {
+			return "", mockedError()
+		}, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
+		// THEN
+		require.Error(t, err, mockedError().Error(), "Unable to prepare webhook request data")
+		require.Empty(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due unsupported webhook provider type should roll-back", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: "registerApplication",
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedTenantLoaderFunc, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.NonWebhookProviderResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
+		// THEN
+		require.Error(t, err, mockedError().Error(), "Unable to prepare webhook request data")
+		require.Empty(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due failure to missing request headers should roll-back", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: "registerApplication",
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedTenantLoaderFunc, nil)
+
+		dummyResolver := &dummyResolver{}
+
+		// WHEN
+		res, err := directive.HandleOperation(ctx, nil, dummyResolver.SuccessResolve, graphql.OperationTypeCreate, graphql.WebhookTypeRegisterApplication)
+		// THEN
+		require.Error(t, err, mockedError().Error(), "Unable to prepare webhook request data")
+		require.Empty(t, res)
+		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+	})
+
+	t.Run("when mutation is in ASYNC mode, there is operation in context but Scheduler fails to schedule should roll-back", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		operationMode := graphql.OperationModeAsync
+		rCtx := &gqlgen.ResolverContext{
+			Object: "RegisterApplication",
+			Field: gqlgen.CollectedField{
+				Field: &ast.Field{
+					Name: "registerApplication",
+				},
+			},
+			Args:     map[string]interface{}{operation.ModeParam: &operationMode},
+			IsMethod: false,
+		}
+		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		defer mockedTx.AssertExpectations(t)
+		defer mockedTransactioner.AssertExpectations(t)
+
 		mockedScheduler := &automock.Scheduler{}
 		mockedScheduler.On("Schedule", mock.Anything).Return("", mockedError())
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedTenantLoaderFunc, mockedScheduler)
 
 		dummyResolver := &dummyResolver{}
 
@@ -318,6 +424,7 @@ func TestHandleOperation(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
@@ -328,7 +435,7 @@ func TestHandleOperation(t *testing.T) {
 		mockedScheduler.On("Schedule", mock.Anything).Return(testID, nil)
 		defer mockedScheduler.AssertExpectations(t)
 
-		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedScheduler)
+		directive := operation.NewDirective(mockedTransactioner, mockedWebhooksResponse, mockedTenantLoaderFunc, mockedScheduler)
 
 		dummyResolver := &dummyResolver{}
 
@@ -359,6 +466,7 @@ func TestHandleOperation(t *testing.T) {
 			IsMethod: false,
 		}
 		ctx = gqlgen.WithResolverContext(ctx, rCtx)
+		ctx = context.WithValue(ctx, header.ContextKey, mockedHeaders)
 
 		mockedScheduler := &automock.Scheduler{}
 		mockedScheduler.On("Schedule", mock.Anything).Return(operationID, nil)
@@ -419,7 +527,7 @@ func TestHandleOperation(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				directive := operation.NewDirective(mockedTransactioner, func(_ context.Context, _ string) ([]*model.Webhook, error) {
 					return testCase.Webhooks, nil
-				}, mockedScheduler)
+				}, mockedTenantLoaderFunc, mockedScheduler)
 
 				dummyResolver := &dummyResolver{}
 
@@ -440,6 +548,17 @@ func TestHandleOperation(t *testing.T) {
 				require.Equal(t, operationID, op.OperationID)
 				require.Equal(t, operation.OperationType(operationType), op.OperationType)
 				require.Equal(t, operationCategory, op.OperationCategory)
+
+				expectedRequestData := &operation.RequestData{
+					Application: *(mockedNextResponse().(*graphql.Application)),
+					TenantID:    tenantID,
+					Headers:     mockedHeaders,
+				}
+
+				expectedData, err := json.Marshal(expectedRequestData)
+				require.NoError(t, err)
+
+				require.Equal(t, string(expectedData), op.RequestData)
 
 				require.Len(t, op.WebhookIDs, len(testCase.ExpectedWebhookIDs))
 				require.Equal(t, testCase.ExpectedWebhookIDs, op.WebhookIDs)
@@ -465,19 +584,24 @@ func (d *dummyResolver) ErrorResolve(ctx context.Context) (res interface{}, err 
 
 func (d *dummyResolver) NonEntityResolve(ctx context.Context) (res interface{}, err error) {
 	d.finalCtx = ctx
-	return mockedNextNonEntityResponse(), nil
+	return &graphql.Runtime{}, nil
+}
+
+func (d *dummyResolver) NonWebhookProviderResolve(ctx context.Context) (res interface{}, err error) {
+	d.finalCtx = ctx
+	return &graphql.Bundle{BaseEntity: &graphql.BaseEntity{ID: resourceID}}, nil
 }
 
 func mockedNextResponse() interface{} {
 	return &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: resourceID}}
 }
 
-func mockedNextNonEntityResponse() interface{} {
-	return &graphql.Runtime{}
-}
-
 func mockedWebhooksResponse(_ context.Context, _ string) ([]*model.Webhook, error) {
 	return []*model.Webhook{}, nil
+}
+
+func mockedTenantLoaderFunc(_ context.Context) (string, error) {
+	return tenantID, nil
 }
 
 func mockedError() error {
