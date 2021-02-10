@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -28,17 +29,17 @@ func fixEntityPackage() *mp_package.Entity {
 		ShortDescription:  "short desc",
 		Description:       "desc",
 		Version:           "v1.0.5",
-		PackageLinks:      json.RawMessage("{}"),
-		Links:             json.RawMessage("[]"),
-		LicenseType:       sql.NullString{String: "test", Valid: true},
-		Tags:              json.RawMessage("[]"),
-		Countries:         json.RawMessage("[]"),
-		Labels:            json.RawMessage("{}"),
+		PackageLinks:      repo.NewValidNullableString("{}"),
+		Links:             repo.NewValidNullableString("[]"),
+		LicenceType:       sql.NullString{String: "test", Valid: true},
+		Tags:              repo.NewValidNullableString("[]"),
+		Countries:         repo.NewValidNullableString("[]"),
+		Labels:            repo.NewValidNullableString("{}"),
 		PolicyLevel:       "test",
 		CustomPolicyLevel: sql.NullString{},
-		PartOfProducts:    json.RawMessage("[\"test\"]"),
-		LineOfBusiness:    json.RawMessage("[]"),
-		Industry:          json.RawMessage("[]"),
+		PartOfProducts:    repo.NewValidNullableString("[\"test\"]"),
+		LineOfBusiness:    repo.NewValidNullableString("[]"),
+		Industry:          repo.NewValidNullableString("[]"),
 	}
 }
 
@@ -101,11 +102,11 @@ func fixPackageColumns() []string {
 
 func fixPackageRow() []driver.Value {
 	return []driver.Value{packageID, tenantID, appID, ordID, "vendorID", "title", "short desc", "desc", "v1.0.5",
-		json.RawMessage("{}"), json.RawMessage("[]"), "test", json.RawMessage("[]"), json.RawMessage("[]"), json.RawMessage("{}"),
-		"test", nil, json.RawMessage("[\"test\"]"), json.RawMessage("[]"), json.RawMessage("[]")}
+		repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"), "test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"),
+		"test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
 func fixPackageUpdateArgs() []driver.Value {
-	return []driver.Value{"vendorID", "title", "short desc", "desc", "v1.0.5", json.RawMessage("{}"), json.RawMessage("[]"),
-		"test", json.RawMessage("[]"), json.RawMessage("[]"), json.RawMessage("{}"), "test", nil, json.RawMessage("[\"test\"]"), json.RawMessage("[]"), json.RawMessage("[]")}
+	return []driver.Value{"vendorID", "title", "short desc", "desc", "v1.0.5", repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"),
+		"test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"), "test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }

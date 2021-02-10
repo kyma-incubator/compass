@@ -1,6 +1,7 @@
 package ordvendor
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -24,7 +25,7 @@ func (c *converter) ToEntity(in *model.Vendor) *Entity {
 		ApplicationID: in.ApplicationID,
 		Title:         in.Title,
 		Type:          in.Type,
-		Labels:        in.Labels,
+		Labels:        repo.NewNullableStringFromJSONRawMessage(in.Labels),
 	}
 
 	return output
@@ -41,7 +42,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Vendor, error) {
 		ApplicationID: entity.ApplicationID,
 		Title:         entity.Title,
 		Type:          entity.Type,
-		Labels:        entity.Labels,
+		Labels:        repo.JSONRawMessageFromNullableString(entity.Labels),
 	}
 
 	return output, nil

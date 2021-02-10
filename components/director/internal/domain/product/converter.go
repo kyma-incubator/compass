@@ -28,7 +28,7 @@ func (c *converter) ToEntity(in *model.Product) *Entity {
 		Vendor:           in.Vendor,
 		Parent:           repo.NewNullableString(in.Parent),
 		PPMSObjectID:     repo.NewNullableString(in.PPMSObjectID),
-		Labels:           in.Labels,
+		Labels:           repo.NewNullableStringFromJSONRawMessage(in.Labels),
 	}
 
 	return output
@@ -48,7 +48,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Product, error) {
 		Vendor:           entity.Vendor,
 		Parent:           repo.StringPtrFromNullableString(entity.Parent),
 		PPMSObjectID:     repo.StringPtrFromNullableString(entity.PPMSObjectID),
-		Labels:           entity.Labels,
+		Labels:           repo.JSONRawMessageFromNullableString(entity.Labels),
 	}
 
 	return output, nil
