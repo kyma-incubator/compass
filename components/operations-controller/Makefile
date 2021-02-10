@@ -1,6 +1,7 @@
 APP_NAME = compass-operations-controller
 APP_PATH = components/operations-controller
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210125-6234473e
+VERIFY_IGNORE := /vendor\|/automock\|/api/v1alpha1/zz_generated.deepcopy.go
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 CHART_PATH = $(realpath $(shell pwd)/../..)/chart/compass/charts/operations-controller
@@ -21,8 +22,7 @@ endif
 all: manager
 
 # Build manager
-build-local:
-	go build -o bin/manager main.go
+build-local: manager
 
 # Run tests
 test-local: generate fmt vet manifests
