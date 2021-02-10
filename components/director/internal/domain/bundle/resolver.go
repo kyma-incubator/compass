@@ -140,7 +140,15 @@ func NewResolver(
 }
 
 func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graphql.BundleCreateInput) (*graphql.Bundle, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
 	log.C(ctx).Infof("Adding bundle to Application with id %s", applicationID)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.bundleConverter.CreateInputFromGraphQL(in)
 	if err != nil {
@@ -162,12 +170,25 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 		return nil, errors.Wrapf(err, "while converting Bundle with id %s to GraphQL", id)
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	log.C(ctx).Infof("Bundle with id %s successfully added to Application with id %s", id, applicationID)
 	return gqlBundle, nil
 }
 
 func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.BundleUpdateInput) (*graphql.Bundle, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
 	log.C(ctx).Infof("Updating Bundle with id %s", id)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, err := r.bundleConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
@@ -189,12 +210,25 @@ func (r *Resolver) UpdateBundle(ctx context.Context, id string, in graphql.Bundl
 		return nil, errors.Wrapf(err, "while converting Bundle with id %s to GraphQL", id)
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	log.C(ctx).Infof("Bundle with id %s successfully updated.", id)
 	return gqlBndl, nil
 }
 
 func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
 	log.C(ctx).Infof("Deleting Bundle with id %s", id)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	bndl, err := r.bundleSvc.Get(ctx, id)
 	if err != nil {
@@ -209,6 +243,11 @@ func (r *Resolver) DeleteBundle(ctx context.Context, id string) (*graphql.Bundle
 	deletedBndl, err := r.bundleConverter.ToGraphQL(bndl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting Bundle with id %s to GraphQL", id)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	log.C(ctx).Infof("Bundle with id %s successfully deleted.", id)

@@ -115,6 +115,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	case graphql.OperationTypeCreate:
 		fallthrough
 	case graphql.OperationTypeUpdate:
+		// TODO: Ready should always be true?
 		isReady := operation.Error == ""
 		if err := resourceUpdaterFunc(ctx, operation.ResourceID, isReady, operation.Error); err != nil {
 			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)

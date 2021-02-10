@@ -187,9 +187,6 @@ func main() {
 			Async: operation.NewDirective(transact, webhookService().List, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 				return appRepo.GetByID(ctx, tenantID, resourceID)
 			}, tenant.LoadFromContext, operation.DefaultScheduler{}).HandleOperation,
-			Concurrency: operation.NewConcurrencyDirective(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
-				return appRepo.GetByID(ctx, tenantID, resourceID)
-			}, tenant.LoadFromContext).ConcurrencyCheck,
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,

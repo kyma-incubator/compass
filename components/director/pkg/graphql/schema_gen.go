@@ -50,9 +50,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	Async func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType WebhookType, idField *string, parentIdField *string) (res interface{}, err error)
-
-	Concurrency func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, idField *string, parentIdField *string) (res interface{}, err error)
+	Async func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType *WebhookType, idField *string) (res interface{}, err error)
 
 	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
 
@@ -3314,11 +3312,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `"""
 Async directive is added to mutations which are capable of being executed in asynchronious matter
 """
-directive @async(operationType: OperationType!, webhookType: WebhookType!, idField: String, parentIdField: String) on FIELD_DEFINITION
-"""
-Concurrency directive is added to mutations which are part of being executed in asynchronious matter
-"""
-directive @concurrency(operationType: OperationType!, idField: String, parentIdField: String) on FIELD_DEFINITION
+directive @async(operationType: OperationType!, webhookType: WebhookType, idField: String) on FIELD_DEFINITION
 """
 HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
 """
@@ -4460,7 +4454,7 @@ type Mutation {
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
 	"""
-	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication") @concurrency(operationType: UPDATE, idField: "id")
+	updateApplication(id: ID!, in: ApplicationUpdateInput! @validate): Application! @hasScopes(path: "graphql.mutation.updateApplication") @async(operationType: UPDATE, idField: "id")
 	"""
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
@@ -4538,17 +4532,17 @@ type Mutation {
 	**Examples**
 	- [add api definition to bundle](examples/add-api-definition-to-bundle/add-api-definition-to-bundle.graphql)
 	"""
-	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle") @concurrency(operationType: CREATE, parentIdField: "bundleID")
+	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle")
 	"""
 	**Examples**
 	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
 	"""
-	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition") @concurrency(operationType: UPDATE, idField: "id")
+	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
 	"""
 	**Examples**
 	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
 	"""
-	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition") @concurrency(operationType: DELETE, idField: "id")
+	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
 	"""
 	**Examples**
 	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
@@ -4609,14 +4603,14 @@ type Mutation {
 	**Examples**
 	- [set application label](examples/set-application-label/set-application-label.graphql)
 	"""
-	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel") @concurrency(operationType: CREATE, parentIdField: "applicationID")
+	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
 	
 	**Examples**
 	- [delete application label](examples/delete-application-label/delete-application-label.graphql)
 	"""
-	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteApplicationLabel") @concurrency(operationType: DELETE, parentIdField: "applicationID")
+	deleteApplicationLabel(applicationID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteApplicationLabel")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
 	"""
@@ -4659,17 +4653,17 @@ type Mutation {
 	**Examples**
 	- [add bundle](examples/add-bundle/add-bundle.graphql)
 	"""
-	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle") @concurrency(operationType: CREATE, parentIdField: "applicationID")
+	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
 	"""
 	**Examples**
 	- [update bundle](examples/update-bundle/update-bundle.graphql)
 	"""
-	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle") @concurrency(operationType: UPDATE, idField: "id")
+	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
 	"""
 	**Examples**
 	- [delete bundle](examples/delete-bundle/delete-bundle.graphql)
 	"""
-	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle") @concurrency(operationType: DELETE, idField: "id")
+	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle")
 	"""
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
@@ -4705,9 +4699,9 @@ func (ec *executionContext) dir_async_args(ctx context.Context, rawArgs map[stri
 		}
 	}
 	args["operationType"] = arg0
-	var arg1 WebhookType
+	var arg1 *WebhookType
 	if tmp, ok := rawArgs["webhookType"]; ok {
-		arg1, err = ec.unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, tmp)
+		arg1, err = ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4721,44 +4715,6 @@ func (ec *executionContext) dir_async_args(ctx context.Context, rawArgs map[stri
 		}
 	}
 	args["idField"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["parentIdField"]; ok {
-		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["parentIdField"] = arg3
-	return args, nil
-}
-
-func (ec *executionContext) dir_concurrency_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 OperationType
-	if tmp, ok := rawArgs["operationType"]; ok {
-		arg0, err = ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["operationType"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["idField"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["idField"] = arg1
-	var arg2 *string
-	if tmp, ok := rawArgs["parentIdField"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["parentIdField"] = arg2
 	return args, nil
 }
 
@@ -12613,11 +12569,11 @@ func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, f
 			if err != nil {
 				return nil, err
 			}
-			webhookType, err := ec.unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "REGISTER_APPLICATION")
+			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "REGISTER_APPLICATION")
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType, nil, nil)
+			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType, nil)
 		}
 
 		tmp, err := directive2(rctx)
@@ -12692,7 +12648,7 @@ func (ec *executionContext) _Mutation_updateApplication(ctx context.Context, fie
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.Concurrency(ctx, nil, directive1, operationType, idField, nil)
+			return ec.directives.Async(ctx, nil, directive1, operationType, nil, idField)
 		}
 
 		tmp, err := directive2(rctx)
@@ -12763,7 +12719,7 @@ func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context,
 			if err != nil {
 				return nil, err
 			}
-			webhookType, err := ec.unmarshalNWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNREGISTER_APPLICATION")
+			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNREGISTER_APPLICATION")
 			if err != nil {
 				return nil, err
 			}
@@ -12771,7 +12727,7 @@ func (ec *executionContext) _Mutation_unregisterApplication(ctx context.Context,
 			if err != nil {
 				return nil, err
 			}
-			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType, idField, nil)
+			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType, idField)
 		}
 
 		tmp, err := directive2(rctx)
@@ -13861,19 +13817,8 @@ func (ec *executionContext) _Mutation_addAPIDefinitionToBundle(ctx context.Conte
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "CREATE")
-			if err != nil {
-				return nil, err
-			}
-			parentIDField, err := ec.unmarshalOString2ᚖstring(ctx, "bundleID")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.Concurrency(ctx, nil, directive1, operationType, nil, parentIDField)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -13936,19 +13881,8 @@ func (ec *executionContext) _Mutation_updateAPIDefinition(ctx context.Context, f
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "UPDATE")
-			if err != nil {
-				return nil, err
-			}
-			idField, err := ec.unmarshalOString2ᚖstring(ctx, "id")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.Concurrency(ctx, nil, directive1, operationType, idField, nil)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -14011,19 +13945,8 @@ func (ec *executionContext) _Mutation_deleteAPIDefinition(ctx context.Context, f
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "DELETE")
-			if err != nil {
-				return nil, err
-			}
-			idField, err := ec.unmarshalOString2ᚖstring(ctx, "id")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.Concurrency(ctx, nil, directive1, operationType, idField, nil)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -15238,19 +15161,8 @@ func (ec *executionContext) _Mutation_setApplicationLabel(ctx context.Context, f
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "CREATE")
-			if err != nil {
-				return nil, err
-			}
-			parentIDField, err := ec.unmarshalOString2ᚖstring(ctx, "applicationID")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.Concurrency(ctx, nil, directive1, operationType, nil, parentIDField)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -15313,19 +15225,8 @@ func (ec *executionContext) _Mutation_deleteApplicationLabel(ctx context.Context
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "DELETE")
-			if err != nil {
-				return nil, err
-			}
-			parentIDField, err := ec.unmarshalOString2ᚖstring(ctx, "applicationID")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.Concurrency(ctx, nil, directive1, operationType, nil, parentIDField)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -15922,19 +15823,8 @@ func (ec *executionContext) _Mutation_addBundle(ctx context.Context, field graph
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "CREATE")
-			if err != nil {
-				return nil, err
-			}
-			parentIDField, err := ec.unmarshalOString2ᚖstring(ctx, "applicationID")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.Concurrency(ctx, nil, directive1, operationType, nil, parentIDField)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -15997,19 +15887,8 @@ func (ec *executionContext) _Mutation_updateBundle(ctx context.Context, field gr
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "UPDATE")
-			if err != nil {
-				return nil, err
-			}
-			idField, err := ec.unmarshalOString2ᚖstring(ctx, "id")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.Concurrency(ctx, nil, directive1, operationType, idField, nil)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -16072,19 +15951,8 @@ func (ec *executionContext) _Mutation_deleteBundle(ctx context.Context, field gr
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			operationType, err := ec.unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx, "DELETE")
-			if err != nil {
-				return nil, err
-			}
-			idField, err := ec.unmarshalOString2ᚖstring(ctx, "id")
-			if err != nil {
-				return nil, err
-			}
-			return ec.directives.Concurrency(ctx, nil, directive1, operationType, idField, nil)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -28314,6 +28182,30 @@ func (ec *executionContext) unmarshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincub
 }
 
 func (ec *executionContext) marshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx context.Context, sel ast.SelectionSet, v *WebhookMode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx context.Context, v interface{}) (WebhookType, error) {
+	var res WebhookType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx context.Context, sel ast.SelectionSet, v WebhookType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx context.Context, v interface{}) (*WebhookType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOWebhookType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx context.Context, sel ast.SelectionSet, v *WebhookType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

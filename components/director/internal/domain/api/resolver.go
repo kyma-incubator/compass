@@ -78,7 +78,15 @@ func NewResolver(transact persistence.Transactioner, svc APIService, appSvc Appl
 }
 
 func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
 	log.C(ctx).Infof("Adding APIDefinition to bundle with id %s", bundleID)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
@@ -114,12 +122,25 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	log.C(ctx).Infof("APIDefinition with id %s successfully added to Bundle with id %s", id, bundleID)
 	return gqlAPI, nil
 }
 
 func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphql.APIDefinitionInput) (*graphql.APIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
 	log.C(ctx).Infof("Updating APIDefinition with id %s", id)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
@@ -141,6 +162,11 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	gqlAPI, err := r.converter.ToGraphQL(api, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
@@ -150,7 +176,15 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 	return gqlAPI, nil
 }
 func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql.APIDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
 	log.C(ctx).Infof("Deleting APIDefinition with id %s", id)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	api, err := r.svc.Get(ctx, id)
 	if err != nil {
@@ -168,6 +202,11 @@ func (r *Resolver) DeleteAPIDefinition(ctx context.Context, id string) (*graphql
 	}
 
 	err = r.svc.Delete(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}

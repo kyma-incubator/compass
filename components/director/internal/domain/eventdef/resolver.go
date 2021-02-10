@@ -113,7 +113,15 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 }
 
 func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
 	log.C(ctx).Infof("Updating EventDefinition with id %s", id)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
@@ -140,12 +148,25 @@ func (r *Resolver) UpdateEventDefinition(ctx context.Context, id string, in grap
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	log.C(ctx).Infof("EventDefinition with id %s successfully updated.", id)
 	return gqlEvent, nil
 }
 
 func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graphql.EventDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
 	log.C(ctx).Infof("Deleting EventDefinition with id %s", id)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	event, err := r.svc.Get(ctx, id)
 	if err != nil {
@@ -163,6 +184,11 @@ func (r *Resolver) DeleteEventDefinition(ctx context.Context, id string) (*graph
 	}
 
 	err = r.svc.Delete(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}

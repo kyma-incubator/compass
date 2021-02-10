@@ -60,7 +60,7 @@ func NewDirective(transact persistence.Transactioner, webhookFetcherFunc Webhook
 }
 
 // HandleOperation enriches the request with an Operation information when the requesting mutation is annotated with the Async directive
-func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, operationType graphql.OperationType, webhookType graphql.WebhookType, idField, parentIdField *string) (res interface{}, err error) {
+func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gqlgen.Resolver, operationType graphql.OperationType, webhookType *graphql.WebhookType, idField *string) (res interface{}, err error) {
 	resCtx := gqlgen.GetResolverContext(ctx)
 	var mode graphql.OperationMode
 	if _, found := resCtx.Args[ModeParam]; !found {
@@ -84,7 +84,7 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := d.concurrencyCheck(ctx, operationType, resCtx, idField, parentIdField); err != nil {
+	if err := d.concurrencyCheck(ctx, operationType, resCtx, idField); err != nil {
 		return nil, err
 	}
 
@@ -125,13 +125,15 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	operation.ResourceID = entity.GetID()
 	operation.ResourceType = entity.GetType()
 
-	webhookIDs, err := d.prepareWebhookIDs(ctx, err, operation, webhookType)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while retrieving webhooks: %s", err.Error())
-		return nil, apperrors.NewInternalError("Unable to retrieve webhooks")
-	}
+	if webhookType != nil {
+		webhookIDs, err := d.prepareWebhookIDs(ctx, err, operation, *webhookType)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while retrieving webhooks: %s", err.Error())
+			return nil, apperrors.NewInternalError("Unable to retrieve webhooks")
+		}
 
-	operation.WebhookIDs = webhookIDs
+		operation.WebhookIDs = webhookIDs
+	}
 
 	requestData, err := d.prepareRequestData(ctx, err, resp)
 	if err != nil {
@@ -158,27 +160,18 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 	return resp, nil
 }
 
-func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationType, resCtx *gqlgen.ResolverContext, idField, parentIdField *string) error {
-	if op == graphql.OperationTypeCreate && parentIdField == nil {
+func (d *directive) concurrencyCheck(ctx context.Context, op graphql.OperationType, resCtx *gqlgen.ResolverContext, idField *string) error {
+	if op == graphql.OperationTypeCreate {
 		return nil
 	}
 
-	if idField == nil && parentIdField == nil {
-		return apperrors.NewInternalError("idField or parentIdField from context should not be empty")
+	if idField == nil {
+		return apperrors.NewInternalError("idField from context should not be empty")
 	}
 
-	var resourceID string
-	var ok bool
-	if parentIdField != nil {
-		resourceID, ok = resCtx.Args[*parentIdField].(string)
-		if !ok {
-			return apperrors.NewInternalError(fmt.Sprintf("could not get parentIdField: %q from request context", *parentIdField))
-		}
-	} else {
-		resourceID, ok = resCtx.Args[*idField].(string)
-		if !ok {
-			return apperrors.NewInternalError(fmt.Sprintf("could not get idField: %q from request context", *idField))
-		}
+	resourceID, ok := resCtx.Args[*idField].(string)
+	if !ok {
+		return apperrors.NewInternalError(fmt.Sprintf("could not get idField: %q from request context", *idField))
 	}
 
 	tenant, err := d.tenantLoaderFunc(ctx)
