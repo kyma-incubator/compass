@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	mp_package "github.com/kyma-incubator/compass/components/director/internal/domain/package"
@@ -31,7 +32,7 @@ func fixEntityPackage() *mp_package.Entity {
 		Version:           "v1.0.5",
 		PackageLinks:      repo.NewValidNullableString("{}"),
 		Links:             repo.NewValidNullableString("[]"),
-		LicenceType:       sql.NullString{String: "test", Valid: true},
+		LicenseType:       sql.NullString{String: "test", Valid: true},
 		Tags:              repo.NewValidNullableString("[]"),
 		Countries:         repo.NewValidNullableString("[]"),
 		Labels:            repo.NewValidNullableString("{}"),
