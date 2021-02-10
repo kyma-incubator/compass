@@ -133,13 +133,13 @@ func TestConverter_FromEntity(t *testing.T) {
 				StatusTimestamp: timestamp,
 				StatusCondition: string(model.FetchRequestStatusConditionFailed),
 			},
-			ExpectedErrMessage: "while determining object reference: Incorrect Object Reference ID and its type for Entity with ID '2'",
+			ExpectedErrMessage: "while determining object reference: incorrect Object Reference ID and its type for Entity with ID \"2\"",
 		},
 		{
 			Name: "Error",
 			Input: fetchrequest.Entity{
-				Auth:     repo.NewValidNullableString(`{Dd`),
-				APIDefID: repo.NewValidNullableString("dd"),
+				Auth:   repo.NewValidNullableString(`{Dd`),
+				SpecID: repo.NewValidNullableString("dd"),
 			},
 			Expected:           model.FetchRequest{},
 			ExpectedErrMessage: "while converting Auth: while unmarshalling Auth: invalid character 'D' looking for beginning of object key string",

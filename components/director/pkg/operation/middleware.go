@@ -49,7 +49,7 @@ func (m *middleware) ExtensionHandler(ctx context.Context, next func(ctx context
 
 	locations := make([]string, 0)
 	for _, operation := range operations {
-		operationURL := fmt.Sprintf("%s/operations?resourceID=%s&resourceType=%s", m.directorURL, operation.ResourceID, operation.ResourceType)
+		operationURL := fmt.Sprintf("%s/operations?%s=%s&%s=%s", m.directorURL, ResourceIDParam, operation.ResourceID, ResourceTypeParam, operation.ResourceType)
 		locations = append(locations, operationURL)
 	}
 

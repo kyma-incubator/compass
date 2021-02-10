@@ -73,14 +73,14 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when transaction fails to begin it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application.ToLower(), graphql.OperationTypeCreate.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application, graphql.OperationTypeCreate.String()))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[string]operation.ResourceUpdaterFunc{
-			resource.Application.ToLower(): func(ctx context.Context, id string, ready bool, errorMsg string) error {
+		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
 				return nil
 			},
 		}, nil)
@@ -92,14 +92,14 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when transaction fails to commit it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application.ToLower(), graphql.OperationTypeCreate.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application, graphql.OperationTypeCreate.String()))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[string]operation.ResourceUpdaterFunc{
-			resource.Application.ToLower(): func(ctx context.Context, id string, ready bool, errorMsg string) error {
+		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
 				return nil
 			},
 		}, nil)
@@ -111,14 +111,14 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when update handler fails on CREATE/UPDATE operation", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application.ToLower(), graphql.OperationTypeCreate.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application, graphql.OperationTypeCreate.String()))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[string]operation.ResourceUpdaterFunc{
-			resource.Application.ToLower(): func(ctx context.Context, id string, ready bool, errorMsg string) error {
+		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
 				return errors.New("failed to update")
 			},
 		}, nil)
@@ -131,14 +131,14 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when delete handler fails on DELETE operation", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application.ToLower(), graphql.OperationTypeDelete.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application, graphql.OperationTypeDelete.String()))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		handler := operation.NewUpdateOperationHandler(mockedTransactioner, nil, map[string]operation.ResourceDeleterFunc{
-			resource.Application.ToLower(): func(ctx context.Context, id string) error {
+		handler := operation.NewUpdateOperationHandler(mockedTransactioner, nil, map[resource.Type]operation.ResourceDeleterFunc{
+			resource.Application: func(ctx context.Context, id string) error {
 				return errors.New("failed to delete")
 			},
 		})
@@ -151,14 +151,14 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when delete handler fails on DELETE operation with error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s", "error": "some error"}`, uuid.New().String(), resource.Application.ToLower(), graphql.OperationTypeDelete.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s", "error": "some error"}`, uuid.New().String(), resource.Application, graphql.OperationTypeDelete.String()))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
-		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[string]operation.ResourceUpdaterFunc{
-			resource.Application.ToLower(): func(ctx context.Context, id string, ready bool, errorMsg string) error {
+		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
 				return errors.New("failed to update")
 			},
 		}, nil)
@@ -234,20 +234,20 @@ func TestUpdateOperationHandler(t *testing.T) {
 				writer := httptest.NewRecorder()
 				expectedErrorMsg := testCase.ExpectedError
 				resourceID := uuid.New().String()
-				req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s", "error": "%s"}`, resourceID, resource.Application.ToLower(), testCase.OperationType.String(), expectedErrorMsg))
+				req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s", "error": "%s"}`, resourceID, resource.Application, testCase.OperationType.String(), expectedErrorMsg))
 
 				updateCalled := 0
 				deleteCalled := 0
-				handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[string]operation.ResourceUpdaterFunc{
-					resource.Application.ToLower(): func(ctx context.Context, id string, ready bool, errorMsg string) error {
+				handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
+					resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
 						require.Equal(t, resourceID, id)
 						require.Equal(t, testCase.Ready, ready)
 						require.Equal(t, expectedErrorMsg, errorMsg)
 						updateCalled++
 						return nil
 					},
-				}, map[string]operation.ResourceDeleterFunc{
-					resource.Application.ToLower(): func(ctx context.Context, id string) error {
+				}, map[resource.Type]operation.ResourceDeleterFunc{
+					resource.Application: func(ctx context.Context, id string) error {
 						require.Equal(t, resourceID, id)
 						deleteCalled++
 						return nil

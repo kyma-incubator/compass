@@ -47,18 +47,20 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 	}
 
 	output := &Entity{
-		ID:                            in.ID,
 		TenantID:                      in.TenantID,
 		ApplicationID:                 in.ApplicationID,
 		Name:                          in.Name,
 		Description:                   repo.NewNullableString(in.Description),
 		DefaultInstanceAuth:           repo.NewNullableString(defaultInstanceAuth),
 		InstanceAuthRequestJSONSchema: repo.NewNullableString(in.InstanceAuthRequestInputSchema),
-		Ready:                         in.Ready,
-		CreatedAt:                     in.CreatedAt,
-		UpdatedAt:                     in.UpdatedAt,
-		DeletedAt:                     in.DeletedAt,
-		Error:                         repo.NewNullableString(in.Error),
+		BaseEntity: &repo.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: in.CreatedAt,
+			UpdatedAt: in.UpdatedAt,
+			DeletedAt: in.DeletedAt,
+			Error:     repo.NewNullableString(in.Error),
+		},
 	}
 
 	return output, nil
@@ -75,18 +77,20 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 	}
 
 	output := &model.Bundle{
-		ID:                             entity.ID,
 		TenantID:                       entity.TenantID,
 		ApplicationID:                  entity.ApplicationID,
 		Name:                           entity.Name,
 		Description:                    repo.StringPtrFromNullableString(entity.Description),
 		DefaultInstanceAuth:            defaultInstanceAuth,
 		InstanceAuthRequestInputSchema: repo.StringPtrFromNullableString(entity.InstanceAuthRequestJSONSchema),
-		Ready:                          entity.Ready,
-		CreatedAt:                      entity.CreatedAt,
-		UpdatedAt:                      entity.UpdatedAt,
-		DeletedAt:                      entity.DeletedAt,
-		Error:                          repo.StringPtrFromNullableString(entity.Error),
+		BaseEntity: &model.BaseEntity{
+			ID:        entity.ID,
+			Ready:     entity.Ready,
+			CreatedAt: entity.CreatedAt,
+			UpdatedAt: entity.UpdatedAt,
+			DeletedAt: entity.DeletedAt,
+			Error:     repo.StringPtrFromNullableString(entity.Error),
+		},
 	}
 
 	return output, nil
@@ -103,16 +107,18 @@ func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 	}
 
 	return &graphql.Bundle{
-		ID:                             in.ID,
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.strPtrToJSONSchemaPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
-		Ready:                          in.Ready,
-		CreatedAt:                      graphql.Timestamp(in.CreatedAt),
-		UpdatedAt:                      graphql.Timestamp(in.UpdatedAt),
-		DeletedAt:                      graphql.Timestamp(in.DeletedAt),
-		Error:                          in.Error,
+		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: graphql.Timestamp(in.CreatedAt),
+			UpdatedAt: graphql.Timestamp(in.UpdatedAt),
+			DeletedAt: graphql.Timestamp(in.DeletedAt),
+			Error:     in.Error,
+		},
 	}, nil
 }
 
@@ -138,7 +144,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 		return model.BundleCreateInput{}, errors.Wrap(err, "while converting DefaultInstanceAuth input")
 	}
 
-	apiDefs, err := c.api.MultipleInputFromGraphQL(in.APIDefinitions)
+	apiDefs, apiSpecs, err := c.api.MultipleInputFromGraphQL(in.APIDefinitions)
 	if err != nil {
 		return model.BundleCreateInput{}, errors.Wrap(err, "while converting APIDefinitions input")
 	}
@@ -148,7 +154,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 		return model.BundleCreateInput{}, errors.Wrap(err, "while converting Documents input")
 	}
 
-	eventDefs, err := c.event.MultipleInputFromGraphQL(in.EventDefinitions)
+	eventDefs, eventSpecs, err := c.event.MultipleInputFromGraphQL(in.EventDefinitions)
 	if err != nil {
 		return model.BundleCreateInput{}, errors.Wrap(err, "while converting EventDefinitions input")
 	}
@@ -159,7 +165,9 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 		InstanceAuthRequestInputSchema: c.jsonSchemaPtrToStrPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
 		APIDefinitions:                 apiDefs,
+		APISpecs:                       apiSpecs,
 		EventDefinitions:               eventDefs,
+		EventSpecs:                     eventSpecs,
 		Documents:                      documents,
 	}, nil
 }

@@ -121,8 +121,7 @@ func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time) fet
 			Valid:  true,
 			String: string(bytes),
 		},
-		APIDefID:      sql.NullString{},
-		EventAPIDefID: sql.NullString{},
+		SpecID: sql.NullString{},
 		DocumentID: sql.NullString{
 			Valid:  true,
 			String: "documentID",
@@ -148,7 +147,7 @@ func fixFetchRequestModelWithReference(id string, timestamp time.Time, objectTyp
 	}
 }
 
-func fixFetchRequestEntityWithReferences(id string, timestamp time.Time, apiDefID, eventAPIDefID, documentID sql.NullString) fetchrequest.Entity {
+func fixFetchRequestEntityWithReferences(id string, timestamp time.Time, specID, documentID sql.NullString) fetchrequest.Entity {
 	return fetchrequest.Entity{
 		ID:       id,
 		TenantID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
@@ -161,8 +160,7 @@ func fixFetchRequestEntityWithReferences(id string, timestamp time.Time, apiDefI
 		StatusCondition: string(model.FetchRequestStatusConditionSucceeded),
 		StatusTimestamp: timestamp,
 		Auth:            sql.NullString{},
-		APIDefID:        apiDefID,
-		EventAPIDefID:   eventAPIDefID,
+		SpecID:          specID,
 		DocumentID:      documentID,
 	}
 }

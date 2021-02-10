@@ -18,8 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var createdAt = time.Now()
-
 func TestConverter_ToGraphQL(t *testing.T) {
 	// given
 	testCases := []struct {
@@ -29,13 +27,13 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixModelDocumentWithTimestamp("1", "foo", createdAt),
-			Expected: fixGQLDocumentWithTimestamp("1", "foo", createdAt),
+			Input:    fixModelDocument("1", "foo"),
+			Expected: fixGQLDocument("1", "foo"),
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.Document{},
-			Expected: &graphql.Document{},
+			Input:    &model.Document{BaseEntity: &model.BaseEntity{}},
+			Expected: &graphql.Document{BaseEntity: &graphql.BaseEntity{}},
 		},
 		{
 			Name:     "Nil",
@@ -62,15 +60,15 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// given
 	input := []*model.Document{
-		fixModelDocumentWithTimestamp("1", "foo", createdAt),
-		fixModelDocumentWithTimestamp("2", "bar", createdAt),
-		{},
+		fixModelDocument("1", "foo"),
+		fixModelDocument("2", "bar"),
+		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
 	expected := []*graphql.Document{
-		fixGQLDocumentWithTimestamp("1", "foo", createdAt),
-		fixGQLDocumentWithTimestamp("2", "bar", createdAt),
-		{},
+		fixGQLDocument("1", "foo"),
+		fixGQLDocument("2", "bar"),
+		{BaseEntity: &graphql.BaseEntity{}},
 	}
 	frConv := &automock.FetchRequestConverter{}
 	converter := document.NewConverter(frConv)
@@ -158,18 +156,20 @@ func TestToEntity(t *testing.T) {
 	sut := document.NewConverter(nil)
 
 	modelWithRequiredFields := model.Document{
-		ID:          "givenID",
 		Tenant:      "givenTenant",
 		BundleID:    "givenBundleID",
 		Title:       "givenTitle",
 		Description: "givenDescription",
 		DisplayName: "givenDisplayName",
 		Format:      "givenFormat",
-		Ready:       true,
-		CreatedAt:   createdAt,
-		UpdatedAt:   createdAt,
-		DeletedAt:   time.Time{},
-		Error:       nil,
+		BaseEntity: &model.BaseEntity{
+			ID:        "givenID",
+			Ready:     true,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
+			DeletedAt: time.Time{},
+			Error:     nil,
+		},
 	}
 
 	t.Run("only required fields", func(t *testing.T) {
@@ -179,18 +179,20 @@ func TestToEntity(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, &document.Entity{
-			ID:          givenModel.ID,
 			TenantID:    givenModel.Tenant,
 			BndlID:      givenModel.BundleID,
 			Title:       givenModel.Title,
 			Description: givenModel.Description,
 			DisplayName: givenModel.DisplayName,
 			Format:      string(givenModel.Format),
-			Ready:       givenModel.Ready,
-			CreatedAt:   givenModel.CreatedAt,
-			UpdatedAt:   givenModel.UpdatedAt,
-			DeletedAt:   givenModel.DeletedAt,
-			Error:       repo.NewNullableString(givenModel.Error),
+			BaseEntity: &repo.BaseEntity{
+				ID:        givenModel.ID,
+				Ready:     givenModel.Ready,
+				CreatedAt: givenModel.CreatedAt,
+				UpdatedAt: givenModel.UpdatedAt,
+				DeletedAt: givenModel.DeletedAt,
+				Error:     repo.NewNullableString(givenModel.Error),
+			},
 		}, actual)
 	})
 
@@ -211,13 +213,15 @@ func TestFromEntity(t *testing.T) {
 	// GIVEN
 	sut := document.NewConverter(nil)
 	entityWithRequiredFields := document.Entity{
-		ID:          "givenID",
 		TenantID:    "givenTenant",
 		BndlID:      "givenBundleID",
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",
 		Format:      "MARKDOWN",
+		BaseEntity: &repo.BaseEntity{
+			ID: "givenID",
+		},
 	}
 
 	t.Run("only required fields", func(t *testing.T) {
@@ -227,13 +231,15 @@ func TestFromEntity(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, model.Document{
-			ID:          "givenID",
 			Tenant:      "givenTenant",
 			BundleID:    "givenBundleID",
 			Title:       "givenTitle",
 			DisplayName: "givenDisplayName",
 			Description: "givenDescription",
 			Format:      model.DocumentFormatMarkdown,
+			BaseEntity: &model.BaseEntity{
+				ID: "givenID",
+			},
 		}, actualModel)
 
 	})

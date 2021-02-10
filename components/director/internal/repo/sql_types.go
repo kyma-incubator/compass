@@ -5,8 +5,9 @@ import (
 	"time"
 )
 
-// AsynchronousEntity denotes an DB-layer entity which can be timestamp with created_at, updated_at, deleted_at and ready values
-type AsynchronousEntity interface {
+// Entity denotes an DB-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
+type Entity interface {
+	GetReady() bool
 	SetReady(ready bool)
 
 	GetCreatedAt() time.Time
@@ -17,6 +18,58 @@ type AsynchronousEntity interface {
 
 	GetDeletedAt() time.Time
 	SetDeletedAt(t time.Time)
+
+	GetError() sql.NullString
+	SetError(err sql.NullString)
+}
+
+type BaseEntity struct {
+	ID        string         `db:"id"`
+	Ready     bool           `db:"ready"`
+	CreatedAt time.Time      `db:"created_at"`
+	UpdatedAt time.Time      `db:"updated_at"`
+	DeletedAt time.Time      `db:"deleted_at"`
+	Error     sql.NullString `db:"error"`
+}
+
+func (e *BaseEntity) GetReady() bool {
+	return e.Ready
+}
+
+func (e *BaseEntity) SetReady(ready bool) {
+	e.Ready = ready
+}
+
+func (e *BaseEntity) GetCreatedAt() time.Time {
+	return e.CreatedAt
+}
+
+func (e *BaseEntity) SetCreatedAt(t time.Time) {
+	e.CreatedAt = t
+}
+
+func (e *BaseEntity) GetUpdatedAt() time.Time {
+	return e.UpdatedAt
+}
+
+func (e *BaseEntity) SetUpdatedAt(t time.Time) {
+	e.UpdatedAt = t
+}
+
+func (e *BaseEntity) GetDeletedAt() time.Time {
+	return e.DeletedAt
+}
+
+func (e *BaseEntity) SetDeletedAt(t time.Time) {
+	e.DeletedAt = t
+}
+
+func (e *BaseEntity) GetError() sql.NullString {
+	return e.Error
+}
+
+func (e *BaseEntity) SetError(err sql.NullString) {
+	e.Error = err
 }
 
 func NewNullableString(text *string) sql.NullString {

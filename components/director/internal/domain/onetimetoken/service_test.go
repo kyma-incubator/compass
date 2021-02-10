@@ -130,7 +130,7 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 			Return(authID, nil)
 
 		mockAppService := &automock.ApplicationService{}
-		mockAppService.On("Get", ctx, applicationID).Return(&model.Application{ID: applicationID}, nil)
+		mockAppService.On("Get", ctx, applicationID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: applicationID}}, nil)
 
 		svc := onetimetoken.NewTokenService(mockGraphqlClient, mockSysAuthSvc, mockAppService, nil, nil, nil, URL, nil)
 		defer mock.AssertExpectationsForObjects(t, mockGraphqlClient, mockAppService, mockSysAuthSvc)
@@ -150,14 +150,16 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 			Return(authID, nil)
 
 		mockAppService := &automock.ApplicationService{}
-		givenApplication := model.Application{ID: applicationID, IntegrationSystemID: &integrationSystemID, Tenant: "internal-tenant"}
+		givenApplication := model.Application{IntegrationSystemID: &integrationSystemID, Tenant: "internal-tenant", BaseEntity: &model.BaseEntity{ID: applicationID}}
 		mockAppService.On("Get", ctx, applicationID).Return(&givenApplication, nil)
 		adaptersMapping := map[string]string{integrationSystemID: "https://my-integration-service.url"}
 
 		mockAppConverter := &automock.ApplicationConverter{}
 		givenGraphQLApp := graphql.Application{
 			IntegrationSystemID: &integrationSystemID,
-			ID:                  givenApplication.ID,
+			BaseEntity: &graphql.BaseEntity{
+				ID: givenApplication.ID,
+			},
 		}
 		mockAppConverter.On("ToGraphQL", &givenApplication).Return(&givenGraphQLApp)
 
@@ -210,14 +212,16 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 			Return(authID, nil)
 
 		mockAppService := &automock.ApplicationService{}
-		givenApplication := model.Application{ID: applicationID, IntegrationSystemID: &integrationSystemID, Tenant: "internal-tenant"}
+		givenApplication := model.Application{IntegrationSystemID: &integrationSystemID, Tenant: "internal-tenant", BaseEntity: &model.BaseEntity{ID: applicationID}}
 		mockAppService.On("Get", ctx, applicationID).Return(&givenApplication, nil)
 		adaptersMapping := map[string]string{integrationSystemID: "https://my-integration-service.url"}
 
 		mockAppConverter := &automock.ApplicationConverter{}
 		givenGraphQLApp := graphql.Application{
 			IntegrationSystemID: &integrationSystemID,
-			ID:                  givenApplication.ID,
+			BaseEntity: &graphql.BaseEntity{
+				ID: givenApplication.ID,
+			},
 		}
 		mockAppConverter.On("ToGraphQL", &givenApplication).Return(&givenGraphQLApp)
 
@@ -270,7 +274,7 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 			Return(authID, nil)
 
 		mockAppService := &automock.ApplicationService{}
-		mockAppService.On("Get", ctx, applicationID).Return(&model.Application{ID: applicationID, IntegrationSystemID: &integrationSystemID}, nil)
+		mockAppService.On("Get", ctx, applicationID).Return(&model.Application{IntegrationSystemID: &integrationSystemID, BaseEntity: &model.BaseEntity{ID: applicationID}}, nil)
 
 		svc := onetimetoken.NewTokenService(mockGraphqlClient, mockSysAuthSvc, mockAppService, nil, nil, nil, URL, nil)
 		defer mock.AssertExpectationsForObjects(t, mockGraphqlClient, mockAppService, mockSysAuthSvc)
@@ -290,14 +294,16 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 			Return(authID, nil)
 
 		mockAppService := &automock.ApplicationService{}
-		givenApplication := model.Application{ID: applicationID, IntegrationSystemID: &integrationSystemID, Tenant: "internal-tenant"}
+		givenApplication := model.Application{IntegrationSystemID: &integrationSystemID, Tenant: "internal-tenant", BaseEntity: &model.BaseEntity{ID: applicationID}}
 		mockAppService.On("Get", ctx, applicationID).Return(&givenApplication, nil)
 		adaptersMapping := map[string]string{integrationSystemID: "https://my-integration-service.url"}
 
 		mockAppConverter := &automock.ApplicationConverter{}
 		givenGraphQLApp := graphql.Application{
 			IntegrationSystemID: &integrationSystemID,
-			ID:                  givenApplication.ID,
+			BaseEntity: &graphql.BaseEntity{
+				ID: givenApplication.ID,
+			},
 		}
 		mockAppConverter.On("ToGraphQL", &givenApplication).Return(&givenGraphQLApp)
 
@@ -348,7 +354,7 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 			Return(authID, nil)
 
 		mockAppService := &automock.ApplicationService{}
-		givenApplication := model.Application{ID: applicationID, IntegrationSystemID: &integrationSystemID, Tenant: "internal-tenant"}
+		givenApplication := model.Application{IntegrationSystemID: &integrationSystemID, Tenant: "internal-tenant", BaseEntity: &model.BaseEntity{ID: applicationID}}
 		mockAppService.On("Get", ctx, applicationID).Return(&givenApplication, nil)
 		adaptersMapping := map[string]string{integrationSystemID: "https://my-integration-service.url"}
 		mockExtTenants := &automock.ExternalTenantsService{}
@@ -374,7 +380,7 @@ func TestTokenService_GetOneTimeTokenForApp(t *testing.T) {
 		appSvc := &automock.ApplicationService{}
 		defer mock.AssertExpectationsForObjects(t, cli, sysAuthSvc, appSvc)
 		appSvc.On("Get", ctx, applicationID).Return(&model.Application{
-			ID: applicationID,
+			BaseEntity: &model.BaseEntity{ID: applicationID},
 		}, nil)
 
 		defer mock.AssertExpectationsForObjects(t, appSvc, cli, sysAuthSvc)

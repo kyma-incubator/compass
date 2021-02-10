@@ -1,17 +1,18 @@
 package graphql
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 type Bundle struct {
-	ID                             string      `json:"id"`
 	Name                           string      `json:"name"`
 	Description                    *string     `json:"description"`
 	InstanceAuthRequestInputSchema *JSONSchema `json:"InstanceAuthRequestInputSchema"`
 	// When defined, all Auth requests fallback to defaultAuth.
-	DefaultInstanceAuth *Auth     `json:"defaultInstanceAuth"`
-	Ready               bool      `json:"ready"`
-	CreatedAt           Timestamp `json:"createdAt"`
-	UpdatedAt           Timestamp `json:"updatedAt"`
-	DeletedAt           Timestamp `json:"deletedAt"`
-	Error               *string   `json:"error"`
+	DefaultInstanceAuth *Auth `json:"defaultInstanceAuth"`
+	*BaseEntity
+}
+
+func (e *Bundle) GetType() resource.Type {
+	return resource.Bundle
 }
 
 type BundleExt struct {

@@ -7,6 +7,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 
@@ -178,7 +184,12 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			Async:       operation.NewDirective(transact, operation.DefaultScheduler{}, appRepo.GetByID, tenant.LoadFromContext).HandleOperation,
+			Async: operation.NewDirective(transact, webhookService().List, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
+				return appRepo.GetByID(ctx, tenantID, resourceID)
+			}, tenant.LoadFromContext, operation.DefaultScheduler{}).HandleOperation,
+			Concurrency: operation.NewConcurrencyDirective(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
+				return appRepo.GetByID(ctx, tenantID, resourceID)
+			}, tenant.LoadFromContext).ConcurrencyCheck,
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -208,7 +219,7 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
 
 	operationMiddleware := operation.NewMiddleware(cfg.AppURL)
@@ -240,7 +251,9 @@ func main() {
 
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 
-	operationHandler := operation.NewHandler(transact, appRepo.GetByID, tenant.LoadFromContext)
+	operationHandler := operation.NewHandler(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
+		return appRepo.GetByID(ctx, tenantID, resourceID)
+	}, tenant.LoadFromContext)
 
 	operationsAPIRouter := mainRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
 	operationsAPIRouter.Use(authMiddleware.Handler())
@@ -259,8 +272,8 @@ func main() {
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
 	internalRouter := mux.NewRouter()
-	operationUpdaterHandler := operation.NewUpdateOperationHandler(transact, map[string]operation.ResourceUpdaterFunc{
-		resource.Application.ToLower(): func(ctx context.Context, id string, ready bool, errorMsg string) error {
+	operationUpdaterHandler := operation.NewUpdateOperationHandler(transact, map[resource.Type]operation.ResourceUpdaterFunc{
+		resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
 			app, err := appRepo.GetGlobalByID(ctx, id)
 			if err != nil {
 				return err
@@ -269,8 +282,8 @@ func main() {
 			app.Error = &errorMsg
 			return appRepo.Update(ctx, app)
 		},
-	}, map[string]operation.ResourceDeleterFunc{
-		resource.Application.ToLower(): func(ctx context.Context, id string) error {
+	}, map[resource.Type]operation.ResourceDeleterFunc{
+		resource.Application: func(ctx context.Context, id string) error {
 			return appRepo.DeleteGlobal(ctx, id)
 		},
 	})
@@ -449,9 +462,10 @@ func bundleRepo() mp_bundle.BundleRepository {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	specConverter := spec.NewConverter(frConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	docConverter := document.NewConverter(frConverter)
-	apiConverter := api.NewConverter(frConverter, versionConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
 
 	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
 }
@@ -461,9 +475,10 @@ func applicationRepo() application.ApplicationRepository {
 
 	versionConverter := version.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
+	specConverter := spec.NewConverter(frConverter)
 
-	apiConverter := api.NewConverter(frConverter, versionConverter)
-	eventAPIConverter := eventdef.NewConverter(frConverter, versionConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	docConverter := document.NewConverter(frConverter)
 
 	webhookConverter := webhook.NewConverter(authConverter)
@@ -472,4 +487,14 @@ func applicationRepo() application.ApplicationRepository {
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 
 	return application.NewRepository(appConverter)
+}
+
+func webhookService() webhook.WebhookService {
+	uidSvc := uid.NewService()
+	authConverter := auth.NewConverter()
+
+	webhookConverter := webhook.NewConverter(authConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+
+	return webhook.NewService(webhookRepo, uidSvc)
 }

@@ -1,37 +1,22 @@
 package model
 
 import (
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 type EventDefinition struct {
-	ID          string
 	Tenant      string
 	BundleID    string
 	Name        string
 	Description *string
 	Group       *string
-	Spec        *EventSpec
 	Version     *Version
-	Ready       bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   time.Time
-	Error       *string
+	*BaseEntity
 }
 
-type EventSpecType string
-
-const (
-	EventSpecTypeAsyncAPI EventSpecType = "ASYNC_API"
-)
-
-type EventSpec struct {
-	Data   *string
-	Type   EventSpecType
-	Format SpecFormat
+func (_ *EventDefinition) GetType() resource.Type {
+	return resource.EventDefinition
 }
 
 type EventDefinitionPage struct {
@@ -45,16 +30,8 @@ func (EventDefinitionPage) IsPageable() {}
 type EventDefinitionInput struct {
 	Name        string
 	Description *string
-	Spec        *EventSpecInput
 	Group       *string
 	Version     *VersionInput
-}
-
-type EventSpecInput struct {
-	Data          *string
-	EventSpecType EventSpecType
-	Format        SpecFormat
-	FetchRequest  *FetchRequestInput
 }
 
 func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bndlID string, tenant string) *EventDefinition {
@@ -63,26 +40,15 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bndlID s
 	}
 
 	return &EventDefinition{
-		ID:          id,
 		BundleID:    bndlID,
 		Tenant:      tenant,
 		Name:        e.Name,
 		Description: e.Description,
 		Group:       e.Group,
-		Spec:        e.Spec.ToEventSpec(),
 		Version:     e.Version.ToVersion(),
-		Ready:       true,
-	}
-}
-
-func (e *EventSpecInput) ToEventSpec() *EventSpec {
-	if e == nil {
-		return nil
-	}
-
-	return &EventSpec{
-		Data:   e.Data,
-		Type:   e.EventSpecType,
-		Format: e.Format,
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }

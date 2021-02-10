@@ -39,7 +39,7 @@ import (
 
 type OperationRequest struct {
 	OperationType graphql.OperationType `json:"operation_type,omitempty"`
-	ResourceType  string                `json:"resource_type"`
+	ResourceType  resource.Type         `json:"resource_type"`
 	ResourceID    string                `json:"resource_id"`
 	Error         string                `json:"error"`
 }
@@ -52,12 +52,12 @@ type ResourceUpdaterFunc func(ctx context.Context, id string, ready bool, errorM
 
 type updateOperationHandler struct {
 	transact             persistence.Transactioner
-	resourceUpdaterFuncs map[string]ResourceUpdaterFunc
-	resourceDeleterFuncs map[string]ResourceDeleterFunc
+	resourceUpdaterFuncs map[resource.Type]ResourceUpdaterFunc
+	resourceDeleterFuncs map[resource.Type]ResourceDeleterFunc
 }
 
 // NewUpdateOperationHandler creates a new handler struct to update resource by operation
-func NewUpdateOperationHandler(transact persistence.Transactioner, resourceUpdaterFuncs map[string]ResourceUpdaterFunc, resourceDeleterFuncs map[string]ResourceDeleterFunc) *updateOperationHandler {
+func NewUpdateOperationHandler(transact persistence.Transactioner, resourceUpdaterFuncs map[resource.Type]ResourceUpdaterFunc, resourceDeleterFuncs map[resource.Type]ResourceDeleterFunc) *updateOperationHandler {
 	return &updateOperationHandler{
 		transact:             transact,
 		resourceUpdaterFuncs: resourceUpdaterFuncs,
@@ -95,7 +95,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	if err := validation.ValidateStruct(&operation,
 		validation.Field(&operation.ResourceID, is.UUID),
 		validation.Field(&operation.OperationType, validation.Required, validation.In(graphql.OperationTypeCreate, graphql.OperationTypeUpdate, graphql.OperationTypeDelete)),
-		validation.Field(&operation.ResourceType, validation.Required, validation.In(resource.Application.ToLower()))); err != nil {
+		validation.Field(&operation.ResourceType, validation.Required, validation.In(resource.Application))); err != nil {
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInvalidDataError("Invalid operation properties: %s", err), http.StatusBadRequest)
 		return
 	}

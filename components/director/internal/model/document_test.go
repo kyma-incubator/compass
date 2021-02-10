@@ -38,7 +38,6 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 			},
 			Expected: &model.Document{
 				BundleID:    bundleID,
-				ID:          id,
 				Tenant:      tenant,
 				Title:       title,
 				DisplayName: displayName,
@@ -46,7 +45,10 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				Format:      model.DocumentFormatMarkdown,
 				Kind:        &kind,
 				Data:        &data,
-				Ready:       true,
+				BaseEntity: &model.BaseEntity{
+					ID:    id,
+					Ready: true,
+				},
 			},
 		},
 		{
@@ -62,7 +64,6 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 			},
 			Expected: &model.Document{
 				BundleID:    bundleID,
-				ID:          id,
 				Tenant:      tenant,
 				Title:       title,
 				DisplayName: displayName,
@@ -70,7 +71,10 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 				Format:      model.DocumentFormatMarkdown,
 				Kind:        &kind,
 				Data:        &data,
-				Ready:       true,
+				BaseEntity: &model.BaseEntity{
+					ID:    id,
+					Ready: true,
+				},
 			},
 		},
 		{
@@ -78,9 +82,11 @@ func TestDocumentInput_ToDocument(t *testing.T) {
 			Input: &model.DocumentInput{},
 			Expected: &model.Document{
 				BundleID: bundleID,
-				ID:       id,
 				Tenant:   tenant,
-				Ready:    true,
+				BaseEntity: &model.BaseEntity{
+					ID:    id,
+					Ready: true,
+				},
 			},
 		},
 		{

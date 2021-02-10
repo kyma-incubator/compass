@@ -3,40 +3,26 @@ package model
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type APIDefinition struct {
-	ID          string
 	BundleID    string
 	Tenant      string
 	Name        string
 	Description *string
-	Spec        *APISpec
 	TargetURL   string
 	//  group allows you to find the same API but in different version
-	Group     *string
-	Version   *Version
-	Ready     bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt time.Time
-	Error     *string
+	Group   *string
+	Version *Version
+	*BaseEntity
 }
 
-type APISpec struct {
-	// when fetch request specified, data will be automatically populated
-	Data   *string
-	Format SpecFormat
-	Type   APISpecType
+func (_ *APIDefinition) GetType() resource.Type {
+	return resource.API
 }
-
-type APISpecType string
-
-const (
-	APISpecTypeOdata   APISpecType = "ODATA"
-	APISpecTypeOpenAPI APISpecType = "OPEN_API"
-)
 
 type Timestamp time.Time
 
@@ -45,15 +31,7 @@ type APIDefinitionInput struct {
 	Description *string
 	TargetURL   string
 	Group       *string
-	Spec        *APISpecInput
 	Version     *VersionInput
-}
-
-type APISpecInput struct {
-	Data         *string
-	Type         APISpecType
-	Format       SpecFormat
-	FetchRequest *FetchRequestInput
 }
 
 type APIDefinitionPage struct {
@@ -70,27 +48,16 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID str
 	}
 
 	return &APIDefinition{
-		ID:          id,
 		BundleID:    bundleID,
 		Tenant:      tenant,
 		Name:        a.Name,
 		Description: a.Description,
-		Spec:        a.Spec.ToAPISpec(),
 		TargetURL:   a.TargetURL,
 		Group:       a.Group,
 		Version:     a.Version.ToVersion(),
-		Ready:       true,
-	}
-}
-
-func (a *APISpecInput) ToAPISpec() *APISpec {
-	if a == nil {
-		return nil
-	}
-
-	return &APISpec{
-		Data:   a.Data,
-		Format: a.Format,
-		Type:   a.Type,
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }

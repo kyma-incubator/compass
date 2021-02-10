@@ -150,7 +150,7 @@ vet-local:
 	go vet $$($(DIRS_TO_CHECK))
 
 generate-local:
-	go genrate ./...
+	go generate ./...
 
 gqlgen-local:
 	./gqlgen.sh

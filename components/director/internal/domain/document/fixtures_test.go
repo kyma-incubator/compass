@@ -19,15 +19,11 @@ var (
 	docDisplayName = "foodisplay"
 	docDescription = "foodesc"
 	docCLOB        = graphql.CLOB(docData)
+	fixedTimestamp = time.Now()
 )
 
 func fixModelDocument(id, bundleID string) *model.Document {
-	return fixModelDocumentWithTimestamp(id, bundleID, time.Now())
-}
-
-func fixModelDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *model.Document {
 	return &model.Document{
-		ID:          id,
 		BundleID:    bundleID,
 		Tenant:      docTenant,
 		Title:       docTitle,
@@ -36,21 +32,19 @@ func fixModelDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *mo
 		Format:      model.DocumentFormatMarkdown,
 		Kind:        &docKind,
 		Data:        &docData,
-		Ready:       true,
-		Error:       nil,
-		CreatedAt:   createdAt,
-		UpdatedAt:   createdAt,
-		DeletedAt:   time.Time{},
+		BaseEntity: &model.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
+			DeletedAt: time.Time{},
+		},
 	}
 }
 
 func fixEntityDocument(id, bundleID string) *document.Entity {
-	return fixEntityDocumentWithTimestamp(id, bundleID, time.Now())
-}
-
-func fixEntityDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *document.Entity {
 	return &document.Entity{
-		ID:          id,
 		BndlID:      bundleID,
 		TenantID:    docTenant,
 		Title:       docTitle,
@@ -59,21 +53,19 @@ func fixEntityDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *d
 		Format:      string(model.DocumentFormatMarkdown),
 		Kind:        repo.NewValidNullableString(docKind),
 		Data:        repo.NewValidNullableString(docData),
-		Ready:       true,
-		Error:       sql.NullString{},
-		CreatedAt:   createdAt,
-		UpdatedAt:   createdAt,
-		DeletedAt:   time.Time{},
+		BaseEntity: &repo.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     sql.NullString{},
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
+			DeletedAt: time.Time{},
+		},
 	}
 }
 
 func fixGQLDocument(id, bundleID string) *graphql.Document {
-	return fixGQLDocumentWithTimestamp(id, bundleID, time.Now())
-}
-
-func fixGQLDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *graphql.Document {
 	return &graphql.Document{
-		ID:          id,
 		BundleID:    bundleID,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
@@ -81,11 +73,14 @@ func fixGQLDocumentWithTimestamp(id, bundleID string, createdAt time.Time) *grap
 		Format:      graphql.DocumentFormatMarkdown,
 		Kind:        &docKind,
 		Data:        &docCLOB,
-		Ready:       true,
-		Error:       nil,
-		CreatedAt:   graphql.Timestamp(createdAt),
-		UpdatedAt:   graphql.Timestamp(createdAt),
-		DeletedAt:   graphql.Timestamp(time.Time{}),
+		BaseEntity: &graphql.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(time.Time{}),
+			DeletedAt: graphql.Timestamp(time.Time{}),
+		},
 	}
 }
 

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -13,19 +15,23 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+var fixedTimestamp = time.Now()
+
 func fixModelAPIDefinition(id string, bndlID string, name, description string, group string) *model.APIDefinition {
 	return &model.APIDefinition{
-		ID:          id,
 		BundleID:    bndlID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 }
 
 func fixGQLAPIDefinition(id string, bndlID string, name, description string, group string) *graphql.APIDefinition {
 	return &graphql.APIDefinition{
-		ID:          id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		BundleID:    bndlID,
 		Name:        name,
 		Description: &description,
@@ -59,20 +65,19 @@ func fixGQLAPIDefinitionPage(apiDefinitions []*graphql.APIDefinition) *graphql.A
 
 func fixModelEventAPIDefinition(id string, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:          id,
 		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 }
-func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
-}
+
 func fixGQLEventDefinition(id string, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
-		ID:          id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
@@ -114,12 +119,12 @@ var (
 
 func fixModelDocument(bundleID, id string) *model.Document {
 	return &model.Document{
-		BundleID: bundleID,
-		ID:       id,
-		Title:    docTitle,
-		Format:   model.DocumentFormatMarkdown,
-		Kind:     &docKind,
-		Data:     &docData,
+		BundleID:   bundleID,
+		Title:      docTitle,
+		Format:     model.DocumentFormatMarkdown,
+		Kind:       &docKind,
+		Data:       &docData,
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -137,7 +142,9 @@ func fixModelDocumentPage(documents []*model.Document) *model.DocumentPage {
 
 func fixGQLDocument(id string) *graphql.Document {
 	return &graphql.Document{
-		ID:     id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Title:  docTitle,
 		Format: graphql.DocumentFormatMarkdown,
 		Kind:   &docKind,
@@ -165,43 +172,39 @@ const (
 )
 
 func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
-	return fixBundleModelWithTimestamp(t, name, desc, time.Now())
-}
-
-func fixBundleModelWithTimestamp(_ *testing.T, name, desc string, createdAt time.Time) *model.Bundle {
 	return &model.Bundle{
-		ID:                             bundleID,
 		TenantID:                       tenantID,
 		ApplicationID:                  appID,
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            fixModelAuth(),
-		Ready:                          true,
-		Error:                          nil,
-		CreatedAt:                      createdAt,
-		UpdatedAt:                      createdAt,
-		DeletedAt:                      time.Time{},
+		BaseEntity: &model.BaseEntity{
+			ID:        bundleID,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
+			DeletedAt: time.Time{},
+		},
 	}
 }
 
 func fixGQLBundle(id, name, desc string) *graphql.Bundle {
-	return fixGQLBundleWithTimestamp(id, name, desc, time.Now())
-}
-
-func fixGQLBundleWithTimestamp(id, name, desc string, createdAt time.Time) *graphql.Bundle {
 	schema := graphql.JSONSchema(`{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`)
 	return &graphql.Bundle{
-		ID:                             id,
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: &schema,
 		DefaultInstanceAuth:            fixGQLAuth(),
-		Ready:                          true,
-		Error:                          nil,
-		CreatedAt:                      graphql.Timestamp(createdAt),
-		UpdatedAt:                      graphql.Timestamp(createdAt),
-		DeletedAt:                      graphql.Timestamp(time.Time{}),
+		BaseEntity: &graphql.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(time.Time{}),
+			DeletedAt: graphql.Timestamp(time.Time{}),
+		},
 	}
 }
 
@@ -245,6 +248,9 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
 	}
 
+	specData1 := "spec_data1"
+	specData2 := "spec_data2"
+
 	return model.BundleCreateInput{
 		Name:                           name,
 		Description:                    &description,
@@ -254,9 +260,17 @@ func fixModelBundleCreateInput(name, description string) model.BundleCreateInput
 			{Name: "api1", TargetURL: "foo.bar"},
 			{Name: "api2", TargetURL: "foo.bar2"},
 		},
+		APISpecs: []*model.SpecInput{
+			{Data: &specData1},
+			{Data: &specData2},
+		},
 		EventDefinitions: []*model.EventDefinitionInput{
 			{Name: "event1", Description: &desc},
 			{Name: "event2", Description: &desc},
+		},
+		EventSpecs: []*model.SpecInput{
+			{Data: &specData1},
+			{Data: &specData2},
 		},
 		Documents: []*model.DocumentInput{
 			{DisplayName: "doc1", Kind: &docKind},
@@ -284,7 +298,7 @@ func fixGQLBundleUpdateInput(name, description string) graphql.BundleUpdateInput
 	}
 }
 
-func fixModelBundleUpdateInput(t *testing.T, name, description string) model.BundleUpdateInput {
+func fixModelBundleUpdateInput(name, description string) model.BundleUpdateInput {
 	basicCredentialDataInput := model.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
@@ -298,12 +312,6 @@ func fixModelBundleUpdateInput(t *testing.T, name, description string) model.Bun
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &authInput,
-	}
-}
-
-func fixModelAuthInput(headers map[string][]string) *model.AuthInput {
-	return &model.AuthInput{
-		AdditionalHeaders: headers,
 	}
 }
 
@@ -356,10 +364,6 @@ func fixGQLAuth() *graphql.Auth {
 }
 
 func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
-	return fixEntityBundleWithTimestamp(id, name, desc, time.Now())
-}
-
-func fixEntityBundleWithTimestamp(id, name, desc string, createdAt time.Time) *mp_bundle.Entity {
 	descSQL := sql.NullString{desc, true}
 	schemaSQL := sql.NullString{
 		String: inputSchemaString(),
@@ -371,18 +375,20 @@ func fixEntityBundleWithTimestamp(id, name, desc string, createdAt time.Time) *m
 	}
 
 	return &mp_bundle.Entity{
-		ID:                            id,
 		TenantID:                      tenantID,
 		ApplicationID:                 appID,
 		Name:                          name,
 		Description:                   descSQL,
 		InstanceAuthRequestJSONSchema: schemaSQL,
 		DefaultInstanceAuth:           authSQL,
-		Ready:                         true,
-		Error:                         sql.NullString{},
-		CreatedAt:                     createdAt,
-		UpdatedAt:                     createdAt,
-		DeletedAt:                     time.Time{},
+		BaseEntity: &repo.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     sql.NullString{},
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
+			DeletedAt: time.Time{},
+		},
 	}
 }
 
@@ -391,11 +397,7 @@ func fixBundleColumns() []string {
 }
 
 func fixBundleRow(id, _ string) []driver.Value {
-	return fixBundleRowWithTimestamp(id, "", time.Now())
-}
-
-func fixBundleRowWithTimestamp(id, _ string, createdAt time.Time) []driver.Value {
-	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), true, createdAt, createdAt, time.Time{}, nil}
+	return []driver.Value{id, tenantID, appID, "foo", "bar", fixSchema(), fixDefaultAuth(), true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Value {
@@ -464,39 +466,5 @@ func fixGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 		InputParams: &params,
 		Auth:        fixGQLAuth(),
 		Status:      &status,
-	}
-}
-
-func fixFetchRequest(url string, objectType model.FetchRequestReferenceObjectType, timestamp time.Time) *model.FetchRequest {
-	return &model.FetchRequest{
-		ID:     "foo",
-		Tenant: tenantID,
-		URL:    url,
-		Auth:   nil,
-		Mode:   "SINGLE",
-		Filter: nil,
-		Status: &model.FetchRequestStatus{
-			Condition: model.FetchRequestStatusConditionInitial,
-			Timestamp: timestamp,
-		},
-		ObjectType: objectType,
-		ObjectID:   "foo",
-	}
-}
-
-func fixFetchRequestWithCondition(url string, objectType model.FetchRequestReferenceObjectType, timestamp time.Time, condition model.FetchRequestStatusCondition) *model.FetchRequest {
-	return &model.FetchRequest{
-		ID:     "foo",
-		Tenant: tenantID,
-		URL:    url,
-		Auth:   nil,
-		Mode:   "SINGLE",
-		Filter: nil,
-		Status: &model.FetchRequestStatus{
-			Condition: condition,
-			Timestamp: timestamp,
-		},
-		ObjectType: objectType,
-		ObjectID:   "foo",
 	}
 }

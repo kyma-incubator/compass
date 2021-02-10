@@ -35,7 +35,6 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	}
 
 	return &Entity{
-		ID:                  in.ID,
 		TenantID:            in.Tenant,
 		Name:                in.Name,
 		Description:         repo.NewNullableString(in.Description),
@@ -44,6 +43,14 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		HealthCheckURL:      repo.NewNullableString(in.HealthCheckURL),
 		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
 		ProviderName:        repo.NewNullableString(in.ProviderName),
+		BaseEntity: &repo.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: in.CreatedAt,
+			UpdatedAt: in.UpdatedAt,
+			DeletedAt: in.DeletedAt,
+			Error:     repo.NewNullableString(in.Error),
+		},
 	}, nil
 }
 
@@ -53,7 +60,6 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 	}
 
 	return &model.Application{
-		ID:          entity.ID,
 		Tenant:      entity.TenantID,
 		Name:        entity.Name,
 		Description: repo.StringPtrFromNullableString(entity.Description),
@@ -64,11 +70,14 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		IntegrationSystemID: repo.StringPtrFromNullableString(entity.IntegrationSystemID),
 		HealthCheckURL:      repo.StringPtrFromNullableString(entity.HealthCheckURL),
 		ProviderName:        repo.StringPtrFromNullableString(entity.ProviderName),
-		Ready:               entity.Ready,
-		CreatedAt:           entity.CreatedAt,
-		UpdatedAt:           entity.UpdatedAt,
-		DeletedAt:           entity.DeletedAt,
-		Error:               repo.StringPtrFromNullableString(entity.Error),
+		BaseEntity: &model.BaseEntity{
+			ID:        entity.ID,
+			Ready:     entity.Ready,
+			CreatedAt: entity.CreatedAt,
+			UpdatedAt: entity.UpdatedAt,
+			DeletedAt: entity.DeletedAt,
+			Error:     repo.StringPtrFromNullableString(entity.Error),
+		},
 	}
 }
 
@@ -78,18 +87,20 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 	}
 
 	return &graphql.Application{
-		ID:                  in.ID,
 		Status:              c.statusToGraphQL(in.Status),
 		Name:                in.Name,
 		Description:         in.Description,
 		HealthCheckURL:      in.HealthCheckURL,
 		IntegrationSystemID: in.IntegrationSystemID,
 		ProviderName:        in.ProviderName,
-		Ready:               in.Ready,
-		CreatedAt:           graphql.Timestamp(in.CreatedAt),
-		UpdatedAt:           graphql.Timestamp(in.UpdatedAt),
-		DeletedAt:           graphql.Timestamp(in.DeletedAt),
-		Error:               in.Error,
+		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: graphql.Timestamp(in.CreatedAt),
+			UpdatedAt: graphql.Timestamp(in.UpdatedAt),
+			DeletedAt: graphql.Timestamp(in.DeletedAt),
+			Error:     in.Error,
+		},
 	}
 }
 
@@ -172,7 +183,6 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 	}
 
 	return &model.Application{
-		ID:                  obj.ID,
 		ProviderName:        obj.ProviderName,
 		Tenant:              tenantID,
 		Name:                obj.Name,
@@ -180,6 +190,9 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 		Status:              c.statusToModel(obj.Status),
 		HealthCheckURL:      obj.HealthCheckURL,
 		IntegrationSystemID: obj.IntegrationSystemID,
+		BaseEntity: &model.BaseEntity{
+			ID: obj.ID,
+		},
 	}
 }
 

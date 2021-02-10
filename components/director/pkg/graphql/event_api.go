@@ -1,19 +1,20 @@
 package graphql
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 type EventDefinition struct {
-	ID          string  `json:"id"`
 	BundleID    string  `json:"bundleID"`
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 	// group allows you to find the same API but in different version
-	Group     *string    `json:"group"`
-	Spec      *EventSpec `json:"spec"`
-	Version   *Version   `json:"version"`
-	Ready     bool       `json:"ready"`
-	CreatedAt Timestamp  `json:"createdAt"`
-	UpdatedAt Timestamp  `json:"updatedAt"`
-	DeletedAt Timestamp  `json:"deletedAt"`
-	Error     *string    `json:"error"`
+	Group   *string    `json:"group"`
+	Spec    *EventSpec `json:"spec"`
+	Version *Version   `json:"version"`
+	*BaseEntity
+}
+
+func (e *EventDefinition) GetType() resource.Type {
+	return resource.EventDefinition
 }
 
 type EventSpec struct {

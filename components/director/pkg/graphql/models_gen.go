@@ -1326,20 +1326,20 @@ func (e WebhookMode) MarshalGQL(w io.Writer) {
 type WebhookType string
 
 const (
-	WebhookTypeConfigurationChanged WebhookType = "CONFIGURATION_CHANGED"
-	WebhookTypeRegisterApplication  WebhookType = "REGISTER_APPLICATION"
-	WebhookTypeDeleteApplication    WebhookType = "DELETE_APPLICATION"
+	WebhookTypeConfigurationChanged  WebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeRegisterApplication   WebhookType = "REGISTER_APPLICATION"
+	WebhookTypeUnregisterApplication WebhookType = "UNREGISTER_APPLICATION"
 )
 
 var AllWebhookType = []WebhookType{
 	WebhookTypeConfigurationChanged,
 	WebhookTypeRegisterApplication,
-	WebhookTypeDeleteApplication,
+	WebhookTypeUnregisterApplication,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeDeleteApplication:
+	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication:
 		return true
 	}
 	return false

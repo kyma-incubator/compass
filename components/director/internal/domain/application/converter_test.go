@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/google/uuid"
 
 	"github.com/stretchr/testify/require"
@@ -26,16 +28,17 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixDetailedModelApplicationWithTimestamp(t, givenID(), givenTenant(), "Foo", "Lorem ipsum", createdAt),
-			Expected: fixDetailedGQLApplicationWithTimestamp(t, givenID(), "Foo", "Lorem ipsum", createdAt),
+			Input:    fixDetailedModelApplication(t, givenID(), givenTenant(), "Foo", "Lorem ipsum"),
+			Expected: fixDetailedGQLApplication(t, givenID(), "Foo", "Lorem ipsum"),
 		},
 		{
 			Name:  "Empty",
-			Input: &model.Application{},
+			Input: &model.Application{BaseEntity: &model.BaseEntity{}},
 			Expected: &graphql.Application{
 				Status: &graphql.ApplicationStatus{
 					Condition: graphql.ApplicationStatusConditionInitial,
 				},
+				BaseEntity: &graphql.BaseEntity{},
 			},
 		},
 		{
@@ -62,13 +65,14 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	input := []*model.Application{
 		fixModelApplication("foo", givenTenant(), "Foo", "Lorem ipsum"),
 		fixModelApplication("bar", givenTenant(), "Bar", "Dolor sit amet"),
-		{},
+		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
 	expected := []*graphql.Application{
 		fixGQLApplication("foo", "Foo", "Lorem ipsum"),
 		fixGQLApplication("bar", "Bar", "Dolor sit amet"),
 		{
+			BaseEntity: &graphql.BaseEntity{},
 			Status: &graphql.ApplicationStatus{
 				Condition: graphql.ApplicationStatusConditionInitial,
 			},
@@ -276,7 +280,7 @@ func TestConverter_FromEntity(t *testing.T) {
 
 	t.Run("Empty", func(t *testing.T) {
 		// GIVEN
-		appEntity := &application.Entity{}
+		appEntity := &application.Entity{BaseEntity: &repo.BaseEntity{}}
 
 		// WHEN
 		appModel := conv.FromEntity(appEntity)
@@ -335,7 +339,7 @@ func TestConverter_ConvertToModel(t *testing.T) {
 
 	t.Run("Success empty model", func(t *testing.T) {
 		//GIVEN
-		appGraphql := &graphql.Application{}
+		appGraphql := &graphql.Application{BaseEntity: &graphql.BaseEntity{}}
 
 		//WHEN
 		appModel := conv.GraphQLToModel(appGraphql, uuid.New().String())

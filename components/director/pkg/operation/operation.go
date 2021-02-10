@@ -18,6 +18,11 @@ package operation
 
 import (
 	"context"
+	"net/http"
+
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -36,26 +41,48 @@ const (
 	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
 )
 
-// Operation represents a GraphQL mutation which has associated HTTP requests (Webhooks) that need to be executed
-// for the request to be completed fully. Objects of type Operation are meant to be constructed, enriched throughout
-// the flow of the original mutation with information such as ResourceID and ResourceType and finally scheduled through
-// a dedicated Scheduler implementation.
-type Operation struct {
-	OperationID       string                `json:"operation_id,omitempty"`
-	OperationType     graphql.OperationType `json:"operation_type,omitempty"`
-	OperationCategory string                `json:"operation_category,omitempty"`
-	ResourceID        string                `json:"resource_id,omitempty"`
-	ResourceType      string                `json:"resource_type,omitempty"`
-	CorrelationID     string                `json:"correlation_id,omitempty"`
-	WebhookID         string                `json:"webhook_id,omitempty"`
-	RequestData       string                `json:"request_data,omitempty"`
-}
+type OperationType string
+
+const (
+	OperationTypeCreate OperationType = "CREATE"
+	OperationTypeUpdate OperationType = "UPDATE"
+	OperationTypeDelete OperationType = "DELETE"
+)
 
 // OperationResponse defines the expected response format for the Operations API
 type OperationResponse struct {
 	*Operation
 	Status OperationStatus `json:"status,omitempty"`
 	Error  *string         `json:"error,omitempty"`
+}
+
+// Operation represents a GraphQL mutation which has associated HTTP requests (Webhooks) that need to be executed
+// for the request to be completed fully. Objects of type Operation are meant to be constructed, enriched throughout
+// the flow of the original mutation with information such as ResourceID and ResourceType and finally scheduled through
+// a dedicated Scheduler implementation.
+type Operation struct {
+	OperationID       string        `json:"operation_id,omitempty"`
+	OperationType     OperationType `json:"operation_type,omitempty"`
+	OperationCategory string        `json:"operation_category,omitempty"`
+	ResourceID        string        `json:"resource_id,omitempty"`
+	ResourceType      resource.Type `json:"resource_type,omitempty"`
+	CorrelationID     string        `json:"correlation_id,omitempty"`
+	WebhookIDs        []string      `json:"webhook_ids,omitempty"`
+	RequestData       string        `json:"request_data,omitempty"`
+}
+
+// RequestData struct contains parts of request that might be needed for later processing of an Operation
+type RequestData struct {
+	Application graphql.Application
+	TenantID    string
+	Headers     http.Header
+}
+
+// Validate ensures that the constructed Operation has valid properties
+func (op *Operation) Validate() error {
+	return validation.ValidateStruct(op,
+		validation.Field(&op.ResourceID, is.UUID),
+		validation.Field(&op.ResourceType, validation.Required, validation.In(resource.Application)))
 }
 
 // SaveToContext saves Operation to the context

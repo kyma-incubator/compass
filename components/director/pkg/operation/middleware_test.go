@@ -66,10 +66,10 @@ func TestExtensionHandlerOperation(t *testing.T) {
 
 		operations := &[]*operation.Operation{
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 		}
 
@@ -103,16 +103,16 @@ func TestExtensionHandlerOperation(t *testing.T) {
 
 		operations := &[]*operation.Operation{
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID + "-1",
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID + "-2",
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 		}
 
@@ -146,10 +146,10 @@ func TestExtensionHandlerOperation(t *testing.T) {
 
 		operations := &[]*operation.Operation{
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 		}
 
@@ -176,10 +176,10 @@ func TestExtensionHandlerOperation(t *testing.T) {
 		ctx := gqlgen.WithRequestContext(context.Background(), reqCtx)
 		operations := &[]*operation.Operation{
 			{
-				OperationType:     graphql.OperationTypeCreate,
+				OperationType:     operation.OperationTypeCreate,
 				OperationCategory: "registerApplication",
 				ResourceID:        operationID,
-				ResourceType:      resource.Application.ToLower(),
+				ResourceType:      resource.Application,
 			},
 		}
 
@@ -218,7 +218,7 @@ func (d *dummyMiddlewareResolver) SuccessResolve(ctx context.Context) []byte {
 }
 
 func operationURL(op *operation.Operation, directorURL string) string {
-	return fmt.Sprintf("%s/operations?resourceID=%s&resourceType=%s", directorURL, op.ResourceID, op.ResourceType)
+	return fmt.Sprintf("%s/operations?%s=%s&%s=%s", directorURL, operation.ResourceIDParam, op.ResourceID, operation.ResourceTypeParam, op.ResourceType)
 }
 
 func gqlResultItem(resultName string) string {
