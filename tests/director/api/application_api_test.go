@@ -92,7 +92,7 @@ func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 	request := fixRegisterApplicationRequest(appSecondInputGQL)
 	err = tc.RunOperation(ctx, request, &actualSecondApp)
 	//THEN
-	require.EqualError(t, err, "graphql: Object name is not unique [object=Application]")
+	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
 	require.Empty(t, actualSecondApp.ID)
 
 	// THIRD APP WITH DIFFERENT APP NAME WHEN NORMALIZED
@@ -121,7 +121,7 @@ func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 	request = fixRegisterApplicationRequest(appFourthInputGQL)
 	err = tc.RunOperation(ctx, request, &actualFourthApp)
 	//THEN
-	require.EqualError(t, err, "graphql: Object name is not unique [object=Application]")
+	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
 	require.Empty(t, actualFourthApp.ID)
 
 	// FIFTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH DOES NOT MATCH ANY EXISTING APP WHEN NORMALIZED

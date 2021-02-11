@@ -2,10 +2,11 @@ package document
 
 import (
 	"database/sql"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
 type Entity struct {
-	ID          string         `db:"id"`
 	TenantID    string         `db:"tenant_id"`
 	BndlID      string         `db:"bundle_id"`
 	Title       string         `db:"title"`
@@ -14,6 +15,7 @@ type Entity struct {
 	Format      string         `db:"format"`
 	Kind        sql.NullString `db:"kind"`
 	Data        sql.NullString `db:"data"`
+	*repo.BaseEntity
 }
 
 type Collection []Entity

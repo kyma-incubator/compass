@@ -22,6 +22,7 @@ const (
 
 const (
 	NotFoundMsg                  = "Object not found"
+	NotFoundMsgF                 = "Object not found: %s"
 	InvalidDataMsg               = "Invalid data"
 	InternalServerErrMsgF        = "Internal Server Error: %s"
 	NotUniqueMsg                 = "Object is not unique"

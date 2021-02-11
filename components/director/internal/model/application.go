@@ -3,11 +3,12 @@ package model
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type Application struct {
-	ID                  string
 	ProviderName        *string
 	Tenant              string
 	Name                string
@@ -15,6 +16,11 @@ type Application struct {
 	Status              *ApplicationStatus
 	HealthCheckURL      *string
 	IntegrationSystemID *string
+	*BaseEntity
+}
+
+func (_ *Application) GetType() resource.Type {
+	return resource.Application
 }
 
 func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timestamp time.Time) {
@@ -74,7 +80,6 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 	}
 
 	return &Application{
-		ID:                  id,
 		Name:                i.Name,
 		Description:         i.Description,
 		Tenant:              tenant,
@@ -84,6 +89,10 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 		Status: &ApplicationStatus{
 			Condition: getApplicationStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: timestamp,
+		},
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
 		},
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -35,12 +37,29 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 		return nil, errors.Wrap(err, "while converting Auth input")
 	}
 
+	var webhookMode *graphql.WebhookMode
+	if in.Mode != nil {
+		mode := graphql.WebhookMode(*in.Mode)
+		webhookMode = &mode
+	}
+
 	return &graphql.Webhook{
-		ID:            in.ID,
-		ApplicationID: in.ApplicationID,
-		Type:          graphql.ApplicationWebhookType(in.Type),
-		URL:           in.URL,
-		Auth:          auth,
+		ID:                  in.ID,
+		ApplicationID:       in.ApplicationID,
+		RuntimeID:           in.RuntimeID,
+		IntegrationSystemID: in.IntegrationSystemID,
+		Type:                graphql.WebhookType(in.Type),
+		Mode:                webhookMode,
+		URL:                 in.URL,
+		Auth:                auth,
+		CorrelationIDKey:    in.CorrelationIDKey,
+		RetryInterval:       in.RetryInterval,
+		Timeout:             in.Timeout,
+		URLTemplate:         in.URLTemplate,
+		InputTemplate:       in.InputTemplate,
+		HeaderTemplate:      in.HeaderTemplate,
+		OutputTemplate:      in.OutputTemplate,
+		StatusTemplate:      in.StatusTemplate,
 	}, nil
 }
 
@@ -72,10 +91,25 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookIn
 		return nil, errors.Wrap(err, "while converting Auth input")
 	}
 
+	var webhookMode *model.WebhookMode
+	if in.Mode != nil {
+		mode := model.WebhookMode(*in.Mode)
+		webhookMode = &mode
+	}
+
 	return &model.WebhookInput{
-		Type: model.WebhookType(in.Type),
-		URL:  in.URL,
-		Auth: auth,
+		Type:             model.WebhookType(in.Type),
+		URL:              in.URL,
+		Auth:             auth,
+		Mode:             webhookMode,
+		CorrelationIDKey: in.CorrelationIDKey,
+		RetryInterval:    in.RetryInterval,
+		Timeout:          in.Timeout,
+		URLTemplate:      in.URLTemplate,
+		InputTemplate:    in.InputTemplate,
+		HeaderTemplate:   in.HeaderTemplate,
+		OutputTemplate:   in.OutputTemplate,
+		StatusTemplate:   in.StatusTemplate,
 	}, nil
 }
 
@@ -102,13 +136,30 @@ func (c *converter) ToEntity(in model.Webhook) (Entity, error) {
 		return Entity{}, err
 	}
 
+	var webhookMode sql.NullString
+	if in.Mode != nil {
+		webhookMode.String = string(*in.Mode)
+		webhookMode.Valid = true
+	}
+
 	return Entity{
-		ID:       in.ID,
-		Type:     string(in.Type),
-		TenantID: in.Tenant,
-		URL:      in.URL,
-		AppID:    in.ApplicationID,
-		Auth:     optionalAuth,
+		ID:                  in.ID,
+		TenantID:            in.TenantID,
+		ApplicationID:       repo.NewNullableString(in.ApplicationID),
+		RuntimeID:           repo.NewNullableString(in.RuntimeID),
+		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
+		CollectionIDKey:     repo.NewNullableString(in.CorrelationIDKey),
+		Type:                string(in.Type),
+		URL:                 repo.NewNullableString(in.URL),
+		Auth:                optionalAuth,
+		Mode:                webhookMode,
+		RetryInterval:       repo.NewNullableInt(in.RetryInterval),
+		Timeout:             repo.NewNullableInt(in.Timeout),
+		URLTemplate:         repo.NewNullableString(in.URLTemplate),
+		InputTemplate:       repo.NewNullableString(in.InputTemplate),
+		HeaderTemplate:      repo.NewNullableString(in.HeaderTemplate),
+		OutputTemplate:      repo.NewNullableString(in.OutputTemplate),
+		StatusTemplate:      repo.NewNullableString(in.StatusTemplate),
 	}, nil
 }
 
@@ -134,13 +185,31 @@ func (c *converter) FromEntity(in Entity) (model.Webhook, error) {
 	if err != nil {
 		return model.Webhook{}, err
 	}
+
+	var webhookMode *model.WebhookMode
+	if in.Mode.Valid {
+		webhookModeStr := model.WebhookMode(in.Mode.String)
+		webhookMode = &webhookModeStr
+	}
+
 	return model.Webhook{
-		ID:            in.ID,
-		Type:          model.WebhookType(in.Type),
-		Tenant:        in.TenantID,
-		URL:           in.URL,
-		ApplicationID: in.AppID,
-		Auth:          auth,
+		ID:                  in.ID,
+		TenantID:            in.TenantID,
+		ApplicationID:       repo.StringPtrFromNullableString(in.ApplicationID),
+		RuntimeID:           repo.StringPtrFromNullableString(in.RuntimeID),
+		IntegrationSystemID: repo.StringPtrFromNullableString(in.IntegrationSystemID),
+		CorrelationIDKey:    repo.StringPtrFromNullableString(in.CollectionIDKey),
+		Type:                model.WebhookType(in.Type),
+		URL:                 repo.StringPtrFromNullableString(in.URL),
+		Auth:                auth,
+		Mode:                webhookMode,
+		RetryInterval:       repo.IntPtrFromNullableInt(in.RetryInterval),
+		Timeout:             repo.IntPtrFromNullableInt(in.Timeout),
+		URLTemplate:         repo.StringPtrFromNullableString(in.URLTemplate),
+		InputTemplate:       repo.StringPtrFromNullableString(in.InputTemplate),
+		HeaderTemplate:      repo.StringPtrFromNullableString(in.HeaderTemplate),
+		OutputTemplate:      repo.StringPtrFromNullableString(in.OutputTemplate),
+		StatusTemplate:      repo.StringPtrFromNullableString(in.StatusTemplate),
 	}, nil
 }
 
@@ -164,4 +233,11 @@ func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
 	}
 
 	return auth, nil
+}
+
+func nullableInt(n *int) int {
+	if n != nil {
+		return *n
+	}
+	return 0
 }

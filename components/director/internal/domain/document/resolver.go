@@ -25,7 +25,7 @@ type DocumentService interface {
 type DocumentConverter interface {
 	ToGraphQL(in *model.Document) *graphql.Document
 	InputFromGraphQL(in *graphql.DocumentInput) (*model.DocumentInput, error)
-	ToEntity(in model.Document) (Entity, error)
+	ToEntity(in model.Document) (*Entity, error)
 	FromEntity(in Entity) (model.Document, error)
 }
 
