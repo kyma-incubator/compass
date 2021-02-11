@@ -183,9 +183,9 @@ func fixBundleModel(t *testing.T, name, desc string) *model.Bundle {
 			ID:        bundleID,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 		},
 	}
 }
@@ -201,9 +201,9 @@ func fixGQLBundle(id, name, desc string) *graphql.Bundle {
 			ID:        id,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: graphql.Timestamp(fixedTimestamp),
-			UpdatedAt: graphql.Timestamp(time.Time{}),
-			DeletedAt: graphql.Timestamp(time.Time{}),
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
 		},
 	}
 }
@@ -385,9 +385,9 @@ func fixEntityBundle(id, name, desc string) *mp_bundle.Entity {
 			ID:        id,
 			Ready:     true,
 			Error:     sql.NullString{},
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 		},
 	}
 }
@@ -467,4 +467,9 @@ func fixGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 		Auth:        fixGQLAuth(),
 		Status:      &status,
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }
