@@ -79,9 +79,9 @@ spec:
                   key: postgresql-sslMode
                   name: compass-postgresql
             - name: APP_DB_MAX_OPEN_CONNECTIONS
-              value: "30"
+              value: "{{.Values.database.dbPool.maxOpenConnections}}"
             - name: APP_DB_MAX_IDLE_CONNECTIONS
-              value: "2"
+              value: "{{.Values.database.dbPool.maxIdleConnections}}"
             - name: APP_CIS_IDENTITY_ZONE
               value: sap-provisioning
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE

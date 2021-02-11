@@ -8,7 +8,7 @@ import (
 )
 
 type Claims struct {
-	Scopes []string `json:"scopes"`
+	Scopes []string `json:"scope"`
 	ZID    string   `json:"zid"`
 	jwt.StandardClaims
 }

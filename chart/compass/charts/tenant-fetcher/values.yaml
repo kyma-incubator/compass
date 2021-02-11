@@ -14,9 +14,13 @@ deployment:
     allowPrivilegeEscalation: false
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
+
+database:
   dbPool:
     maxOpenConnections: 30
     maxIdleConnections: 2
+
+authentication:
   allowJWTSigningNone: true
   jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
 
