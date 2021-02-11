@@ -1,6 +1,8 @@
 package eventdef
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -42,13 +44,20 @@ func (c *converter) ToGraphQL(in *model.EventDefinition, spec *model.Spec) (*gra
 	}
 
 	return &graphql.EventDefinition{
-		ID:          in.ID,
 		BundleID:    in.BundleID,
 		Name:        in.Name,
 		Description: in.Description,
 		Group:       in.Group,
 		Spec:        s,
 		Version:     c.vc.ToGraphQL(in.Version),
+		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
+			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
+			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			Error:     in.Error,
+		},
 	}, nil
 }
 
@@ -111,25 +120,39 @@ func (c *converter) InputFromGraphQL(in *graphql.EventDefinitionInput) (*model.E
 
 func (c *converter) FromEntity(entity Entity) model.EventDefinition {
 	return model.EventDefinition{
-		ID:          entity.ID,
 		Tenant:      entity.TenantID,
 		BundleID:    entity.BndlID,
 		Name:        entity.Name,
 		Description: repo.StringPtrFromNullableString(entity.Description),
 		Group:       repo.StringPtrFromNullableString(entity.GroupName),
 		Version:     c.vc.FromEntity(entity.Version),
+		BaseEntity: &model.BaseEntity{
+			ID:        entity.ID,
+			Ready:     entity.Ready,
+			CreatedAt: entity.CreatedAt,
+			UpdatedAt: entity.UpdatedAt,
+			DeletedAt: entity.DeletedAt,
+			Error:     repo.StringPtrFromNullableString(entity.Error),
+		},
 	}
 }
 
-func (c *converter) ToEntity(eventModel model.EventDefinition) Entity {
-	return Entity{
-		ID:          eventModel.ID,
+func (c *converter) ToEntity(eventModel model.EventDefinition) *Entity {
+	return &Entity{
 		TenantID:    eventModel.Tenant,
 		BndlID:      eventModel.BundleID,
 		Name:        eventModel.Name,
 		Description: repo.NewNullableString(eventModel.Description),
 		GroupName:   repo.NewNullableString(eventModel.Group),
 		Version:     c.convertVersionToEntity(eventModel.Version),
+		BaseEntity: &repo.BaseEntity{
+			ID:        eventModel.ID,
+			Ready:     eventModel.Ready,
+			CreatedAt: eventModel.CreatedAt,
+			UpdatedAt: eventModel.UpdatedAt,
+			DeletedAt: eventModel.DeletedAt,
+			Error:     repo.NewNullableString(eventModel.Error),
+		},
 	}
 }
 
@@ -139,4 +162,13 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 	}
 
 	return c.vc.ToEntity(*inVer)
+}
+
+func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
+	if time == nil {
+		return nil
+	}
+
+	t := graphql.Timestamp(*time)
+	return &t
 }

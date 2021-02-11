@@ -29,14 +29,16 @@ func (_m *APIDefinitionConverter) FromEntity(entity api.Entity) model.APIDefinit
 }
 
 // ToEntity provides a mock function with given fields: apiModel
-func (_m *APIDefinitionConverter) ToEntity(apiModel model.APIDefinition) api.Entity {
+func (_m *APIDefinitionConverter) ToEntity(apiModel model.APIDefinition) *api.Entity {
 	ret := _m.Called(apiModel)
 
-	var r0 api.Entity
-	if rf, ok := ret.Get(0).(func(model.APIDefinition) api.Entity); ok {
+	var r0 *api.Entity
+	if rf, ok := ret.Get(0).(func(model.APIDefinition) *api.Entity); ok {
 		r0 = rf(apiModel)
 	} else {
-		r0 = ret.Get(0).(api.Entity)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*api.Entity)
+		}
 	}
 
 	return r0

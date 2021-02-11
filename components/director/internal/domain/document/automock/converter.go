@@ -36,14 +36,16 @@ func (_m *Converter) FromEntity(in document.Entity) (model.Document, error) {
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *Converter) ToEntity(in model.Document) (document.Entity, error) {
+func (_m *Converter) ToEntity(in model.Document) (*document.Entity, error) {
 	ret := _m.Called(in)
 
-	var r0 document.Entity
-	if rf, ok := ret.Get(0).(func(model.Document) document.Entity); ok {
+	var r0 *document.Entity
+	if rf, ok := ret.Get(0).(func(model.Document) *document.Entity); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(document.Entity)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*document.Entity)
+		}
 	}
 
 	var r1 error

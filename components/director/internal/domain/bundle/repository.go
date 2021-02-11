@@ -25,8 +25,9 @@ const bundleInstanceAuthTable string = `public.bundle_instance_auths`
 const bundleInstanceAuthBundleRefField string = `bundle_id`
 
 var (
-	bundleColumns = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth"}
-	tenantColumn  = "tenant_id"
+	bundleColumns    = []string{"id", "tenant_id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	updatableColumns = []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	tenantColumn     = "tenant_id"
 )
 
 //go:generate mockery -name=EntityConverter -output=automock -outpkg=automock -case=underscore
@@ -52,7 +53,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		deleter:         repo.NewDeleter(resource.Bundle, bundleTable, tenantColumn),
 		pageableQuerier: repo.NewPageableQuerier(resource.Bundle, bundleTable, tenantColumn, bundleColumns),
 		creator:         repo.NewCreator(resource.Bundle, bundleTable, bundleColumns),
-		updater:         repo.NewUpdater(resource.Bundle, bundleTable, []string{"name", "description", "instance_auth_request_json_schema", "default_instance_auth"}, tenantColumn, []string{"id"}),
+		updater:         repo.NewUpdater(resource.Bundle, bundleTable, updatableColumns, tenantColumn, []string{"id"}),
 		conv:            conv,
 	}
 }

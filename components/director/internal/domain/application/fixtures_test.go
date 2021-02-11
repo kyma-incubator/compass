@@ -1,6 +1,7 @@
 package application_test
 
 import (
+	"database/sql"
 	"net/url"
 	"testing"
 	"time"
@@ -17,10 +18,15 @@ import (
 )
 
 var (
-	testURL      = "https://foo.bar"
-	intSysID     = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
-	providerName = "provider name"
+	testURL        = "https://foo.bar"
+	intSysID       = "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"
+	providerName   = "provider name"
+	fixedTimestamp = time.Now()
 )
+
+func stringPtr(s string) *string {
+	return &s
+}
 
 func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {
 	return &model.ApplicationPage{
@@ -48,19 +54,18 @@ func fixGQLApplicationPage(applications []*graphql.Application) *graphql.Applica
 
 func fixModelApplication(id, tenant, name, description string) *model.Application {
 	return &model.Application{
-		ID:     id,
 		Tenant: tenant,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 		},
 		Name:        name,
 		Description: &description,
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 }
 
 func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, url string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
 	return &model.Application{
-		ID:     id,
 		Tenant: tenant,
 		Status: &model.ApplicationStatus{
 			Condition: conditionStatus,
@@ -71,12 +76,15 @@ func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, ur
 		Description:         &description,
 		HealthCheckURL:      &url,
 		ProviderName:        &providerName,
+		BaseEntity:          &model.BaseEntity{ID: id},
 	}
 }
 
 func fixGQLApplication(id, name, description string) *graphql.Application {
 	return &graphql.Application{
-		ID: id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Status: &graphql.ApplicationStatus{
 			Condition: graphql.ApplicationStatusConditionInitial,
 		},
@@ -86,14 +94,13 @@ func fixGQLApplication(id, name, description string) *graphql.Application {
 }
 
 func fixDetailedModelApplication(t *testing.T, id, tenant, name, description string) *model.Application {
-	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	appStatusTimestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
 	return &model.Application{
-		ID: id,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
-			Timestamp: time,
+			Timestamp: appStatusTimestamp,
 		},
 		Name:                name,
 		Description:         &description,
@@ -101,24 +108,39 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
+		BaseEntity: &model.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+		},
 	}
 }
 
 func fixDetailedGQLApplication(t *testing.T, id, name, description string) *graphql.Application {
-	time, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
+	appStatusTimestamp, err := time.Parse(time.RFC3339, "2002-10-02T10:00:00-05:00")
 	require.NoError(t, err)
 
 	return &graphql.Application{
-		ID: id,
 		Status: &graphql.ApplicationStatus{
 			Condition: graphql.ApplicationStatusConditionInitial,
-			Timestamp: graphql.Timestamp(time),
+			Timestamp: graphql.Timestamp(appStatusTimestamp),
 		},
 		Name:                name,
 		Description:         &description,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        str.Ptr("provider name"),
+		BaseEntity: &graphql.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
+		},
 	}
 }
 
@@ -127,7 +149,6 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 	require.NoError(t, err)
 
 	return &application.Entity{
-		ID:                  id,
 		TenantID:            tenant,
 		Name:                name,
 		Description:         repo.NewValidNullableString(description),
@@ -136,6 +157,14 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		HealthCheckURL:      repo.NewValidNullableString(testURL),
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
 		ProviderName:        repo.NewNullableString(&providerName),
+		BaseEntity: &repo.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     sql.NullString{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+		},
 	}
 }
 
@@ -152,8 +181,8 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		Webhooks: []*model.WebhookInput{
-			{URL: "webhook1.foo.bar"},
-			{URL: "webhook2.foo.bar"},
+			{URL: stringPtr("webhook1.foo.bar")},
+			{URL: stringPtr("webhook2.foo.bar")},
 		},
 		Bundles: []*model.BundleCreateInput{
 			{
@@ -205,8 +234,8 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		Webhooks: []*graphql.WebhookInput{
-			{URL: "webhook1.foo.bar"},
-			{URL: "webhook2.foo.bar"},
+			{URL: stringPtr("webhook1.foo.bar")},
+			{URL: stringPtr("webhook2.foo.bar")},
 		},
 		Bundles: []*graphql.BundleCreateInput{
 			{
@@ -247,12 +276,12 @@ var (
 
 func fixModelDocument(bundleID, id string) *model.Document {
 	return &model.Document{
-		BundleID: bundleID,
-		ID:       id,
-		Title:    docTitle,
-		Format:   model.DocumentFormatMarkdown,
-		Kind:     &docKind,
-		Data:     &docData,
+		BundleID:   bundleID,
+		Title:      docTitle,
+		Format:     model.DocumentFormatMarkdown,
+		Kind:       &docKind,
+		Data:       &docData,
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -270,7 +299,9 @@ func fixModelDocumentPage(documents []*model.Document) *model.DocumentPage {
 
 func fixGQLDocument(id string) *graphql.Document {
 	return &graphql.Document{
-		ID:     id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Title:  docTitle,
 		Format: graphql.DocumentFormatMarkdown,
 		Kind:   &docKind,
@@ -292,10 +323,10 @@ func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
 
 func fixModelWebhook(appID, id string) *model.Webhook {
 	return &model.Webhook{
-		ApplicationID: appID,
+		ApplicationID: &appID,
 		ID:            id,
 		Type:          model.WebhookTypeConfigurationChanged,
-		URL:           "foourl",
+		URL:           stringPtr("foourl"),
 		Auth:          &model.Auth{},
 	}
 }
@@ -303,8 +334,8 @@ func fixModelWebhook(appID, id string) *model.Webhook {
 func fixGQLWebhook(id string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:   id,
-		Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-		URL:  "foourl",
+		Type: graphql.WebhookTypeConfigurationChanged,
+		URL:  stringPtr("foourl"),
 		Auth: &graphql.Auth{},
 	}
 }
@@ -335,20 +366,22 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 
 func fixModelEventAPIDefinition(id string, appId, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:          id,
 		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{ID: id, Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder}
+	return &model.EventDefinition{Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
+		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
 }
 func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{
-		ID:          id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		BundleID:    bundleID,
 		Name:        name,
 		Description: &description,
@@ -401,19 +434,21 @@ func fixGQLApplicationEventingConfiguration(url string) *graphql.ApplicationEven
 
 func fixModelBundle(id, tenantID, appId, name, description string) *model.Bundle {
 	return &model.Bundle{
-		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  appId,
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: nil,
 		DefaultInstanceAuth:            nil,
+		BaseEntity:                     &model.BaseEntity{ID: id},
 	}
 }
 
 func fixGQLBundle(id, appId, name, description string) *graphql.Bundle {
 	return &graphql.Bundle{
-		ID:                             id,
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
 		Name:                           name,
 		Description:                    &description,
 		InstanceAuthRequestInputSchema: nil,
@@ -443,4 +478,9 @@ func fixBundlePage(bundles []*model.Bundle) *model.BundlePage {
 		},
 		TotalCount: len(bundles),
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }

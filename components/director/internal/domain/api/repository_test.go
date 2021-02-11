@@ -34,7 +34,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID}, nil).Once()
+		convMock.On("FromEntity", *apiDefEntity).Return(model.APIDefinition{Tenant: tenantID, BaseEntity: &model.BaseEntity{ID: apiDefID}}, nil).Once()
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelApiDef, err := pgRepository.GetByID(ctx, tenantID, apiDefID)
@@ -65,7 +65,7 @@ func TestPgRepository_GetForBundle(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", apiDefEntity).Return(model.APIDefinition{ID: apiDefID, Tenant: tenantID, BundleID: bundleID}, nil).Once()
+		convMock.On("FromEntity", *apiDefEntity).Return(model.APIDefinition{Tenant: tenantID, BundleID: bundleID, BaseEntity: &model.BaseEntity{ID: apiDefID}}, nil).Once()
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelApiDef, err := pgRepository.GetForBundle(ctx, tenantID, apiDefID, bundleID)
@@ -137,8 +137,8 @@ func TestPgRepository_ListForBundle(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.APIDefinitionConverter{}
-		convMock.On("FromEntity", firstApiDefEntity).Return(model.APIDefinition{ID: firstApiDefID}, nil)
-		convMock.On("FromEntity", secondApiDefEntity).Return(model.APIDefinition{ID: secondApiDefID}, nil)
+		convMock.On("FromEntity", *firstApiDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: firstApiDefID}}, nil)
+		convMock.On("FromEntity", *secondApiDefEntity).Return(model.APIDefinition{BaseEntity: &model.BaseEntity{ID: secondApiDefID}}, nil)
 		pgRepository := api.NewRepository(convMock)
 		// WHEN
 		modelAPIDef, err := pgRepository.ListForBundle(ctx, tenantID, bundleID, inputPageSize, inputCursor)
@@ -223,19 +223,21 @@ func TestPgRepository_CreateMany(t *testing.T) {
 func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(`UPDATE "public"."api_definitions" SET name = ?, description = ?, group_name = ?, 
 		target_url = ?, version_value = ?, 
-		version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ? WHERE tenant_id = ? AND id = ?`)
+		version_deprecated = ?, version_deprecated_since = ?, version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE tenant_id = ? AND id = ?`)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		apiModel, _ := fixFullAPIDefinitionModel("update")
 		entity := fixFullEntityAPIDefinition(apiDefID, "update")
+		entity.UpdatedAt = &fixedTimestamp
+		entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", apiModel).Return(entity, nil)
 		sqlMock.ExpectExec(updateQuery).
 			WithArgs(entity.Name, entity.Description, entity.Group, entity.TargetURL, entity.VersionValue, entity.VersionDepracated,
-				entity.VersionDepracatedSince, entity.VersionForRemoval, tenantID, entity.ID).
+				entity.VersionDepracatedSince, entity.VersionForRemoval, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		pgRepository := api.NewRepository(convMock)

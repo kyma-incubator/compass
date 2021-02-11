@@ -1,6 +1,7 @@
 package eventdef_test
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"time"
 
@@ -22,11 +23,13 @@ const (
 	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 )
 
+var fixedTimestamp = time.Now()
+
 func fixEventDefinitionModel(id string, bndlID string, name string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:       id,
-		BundleID: bndlID,
-		Name:     name,
+		BundleID:   bndlID,
+		Name:       name,
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -52,13 +55,20 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 	}
 
 	return model.EventDefinition{
-		ID:          eventID,
 		Tenant:      tenantID,
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
+		BaseEntity: &model.BaseEntity{
+			ID:        eventID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     nil,
+		},
 	}, spec
 }
 
@@ -83,13 +93,20 @@ func fixFullGQLEventDefinition(placeholder string) *graphql.EventDefinition {
 	}
 
 	return &graphql.EventDefinition{
-		ID:          eventID,
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
+		BaseEntity: &graphql.BaseEntity{
+			ID:        eventID,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
+		},
 	}
 }
 
@@ -153,19 +170,18 @@ func fixGQLEventDefinitionInput(name, description string, group string) *graphql
 	}
 }
 
-func fixEntityEventDefinition(id string, bndlID string, name string) event.Entity {
-	return event.Entity{
-		ID:     id,
-		BndlID: bndlID,
-		Name:   name,
+func fixEntityEventDefinition(id string, bndlID string, name string) *event.Entity {
+	return &event.Entity{
+		BndlID:     bndlID,
+		Name:       name,
+		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
 
-func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
+func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 	boolPlaceholder := false
 
-	return event.Entity{
-		ID:          eventID,
+	return &event.Entity{
 		TenantID:    tenantID,
 		BndlID:      bundleID,
 		Name:        placeholder,
@@ -177,21 +193,29 @@ func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
 			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
+		BaseEntity: &repo.BaseEntity{
+			ID:        eventID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     sql.NullString{},
+		},
 	}
 }
 
 func fixEventDefinitionColumns() []string {
 	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "version_value", "version_deprecated",
-		"version_deprecated_since", "version_for_removal"}
+		"version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
-	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder, "v1.1", false, "v1.0", false}
+	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder, "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, event.Name, event.Description, event.Group, event.Version.Value, event.Version.Deprecated, event.Version.DeprecatedSince,
-		event.Version.ForRemoval}
+		event.Version.ForRemoval, event.Ready, event.CreatedAt, event.UpdatedAt, event.DeletedAt, event.Error}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
@@ -222,4 +246,9 @@ func fixGQLFetchRequest(url string, timestamp time.Time) *graphql.FetchRequest {
 			Condition: graphql.FetchRequestStatusConditionInitial,
 		},
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }
