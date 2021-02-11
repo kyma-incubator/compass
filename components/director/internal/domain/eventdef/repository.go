@@ -20,17 +20,19 @@ var (
 	idColumn      = "id"
 	tenantColumn  = "tenant_id"
 	bundleColumn  = "bundle_id"
-	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "name", "description", "group_name", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal"}
+	apiDefColumns = []string{idColumn, tenantColumn, bundleColumn, "name", "description", "group_name",
+		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal",
+		"ready", "created_at", "updated_at", "deleted_at", "error"}
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"name", "description", "group_name",
-		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+		"version_value", "version_deprecated", "version_deprecated_since", "version_for_removal",
+		"ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
 //go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore
 type EventAPIDefinitionConverter interface {
 	FromEntity(entity Entity) model.EventDefinition
-	ToEntity(apiModel model.EventDefinition) Entity
+	ToEntity(apiModel model.EventDefinition) *Entity
 }
 
 type pgRepository struct {

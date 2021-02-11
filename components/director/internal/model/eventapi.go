@@ -2,16 +2,21 @@ package model
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 type EventDefinition struct {
-	ID          string
 	Tenant      string
 	BundleID    string
 	Name        string
 	Description *string
 	Group       *string
 	Version     *Version
+	*BaseEntity
+}
+
+func (_ *EventDefinition) GetType() resource.Type {
+	return resource.EventDefinition
 }
 
 type EventDefinitionPage struct {
@@ -35,12 +40,15 @@ func (e *EventDefinitionInput) ToEventDefinitionWithinBundle(id string, bndlID s
 	}
 
 	return &EventDefinition{
-		ID:          id,
 		BundleID:    bndlID,
 		Tenant:      tenant,
 		Name:        e.Name,
 		Description: e.Description,
 		Group:       e.Group,
 		Version:     e.Version.ToVersion(),
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }

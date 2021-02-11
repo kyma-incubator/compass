@@ -43,7 +43,6 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 	}
 
 	return &graphql.APIDefinition{
-		ID:          in.ID,
 		BundleID:    in.BundleID,
 		Name:        in.Name,
 		Description: in.Description,
@@ -51,6 +50,14 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 		TargetURL:   in.TargetURL,
 		Group:       in.Group,
 		Version:     c.version.ToGraphQL(in.Version),
+		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: graphql.Timestamp(in.CreatedAt),
+			UpdatedAt: graphql.Timestamp(in.UpdatedAt),
+			DeletedAt: graphql.Timestamp(in.DeletedAt),
+			Error:     in.Error,
+		},
 	}, nil
 }
 
@@ -115,7 +122,6 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
-		ID:          entity.ID,
 		BundleID:    entity.BndlID,
 		Name:        entity.Name,
 		TargetURL:   entity.TargetURL,
@@ -123,13 +129,20 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		Description: repo.StringPtrFromNullableString(entity.Description),
 		Group:       repo.StringPtrFromNullableString(entity.Group),
 		Version:     c.version.FromEntity(entity.Version),
+		BaseEntity: &model.BaseEntity{
+			ID:        entity.ID,
+			Ready:     entity.Ready,
+			CreatedAt: entity.CreatedAt,
+			UpdatedAt: entity.UpdatedAt,
+			DeletedAt: entity.DeletedAt,
+			Error:     repo.StringPtrFromNullableString(entity.Error),
+		},
 	}
 }
 
-func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
+func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
 
-	return Entity{
-		ID:          apiModel.ID,
+	return &Entity{
 		TenantID:    apiModel.Tenant,
 		BndlID:      apiModel.BundleID,
 		Name:        apiModel.Name,
@@ -137,6 +150,14 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 		Group:       repo.NewNullableString(apiModel.Group),
 		TargetURL:   apiModel.TargetURL,
 		Version:     c.convertVersionToEntity(apiModel.Version),
+		BaseEntity: &repo.BaseEntity{
+			ID:        apiModel.ID,
+			Ready:     apiModel.Ready,
+			CreatedAt: apiModel.CreatedAt,
+			UpdatedAt: apiModel.UpdatedAt,
+			DeletedAt: apiModel.DeletedAt,
+			Error:     repo.NewNullableString(apiModel.Error),
+		},
 	}
 }
 

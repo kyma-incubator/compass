@@ -468,7 +468,7 @@ func TestResolver_FetchRequest(t *testing.T) {
 			resolver := document.NewResolver(transact, svc, nil, nil, converter)
 
 			// when
-			result, err := resolver.FetchRequest(context.TODO(), &graphql.Document{ID: id})
+			result, err := resolver.FetchRequest(context.TODO(), &graphql.Document{BaseEntity: &graphql.BaseEntity{ID: id}})
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
