@@ -230,8 +230,8 @@ func TestPgRepository_Update(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		apiModel, _ := fixFullAPIDefinitionModel("update")
 		entity := fixFullEntityAPIDefinition(apiDefID, "update")
-		entity.UpdatedAt = fixedTimestamp
-		entity.DeletedAt = fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
+		entity.UpdatedAt = &fixedTimestamp
+		entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
 		convMock := &automock.APIDefinitionConverter{}
 		convMock.On("ToEntity", apiModel).Return(entity, nil)

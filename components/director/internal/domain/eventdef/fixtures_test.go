@@ -64,9 +64,9 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 		BaseEntity: &model.BaseEntity{
 			ID:        eventID,
 			Ready:     true,
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 			Error:     nil,
 		},
 	}, spec
@@ -103,9 +103,9 @@ func fixFullGQLEventDefinition(placeholder string) *graphql.EventDefinition {
 			ID:        eventID,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: graphql.Timestamp(fixedTimestamp),
-			UpdatedAt: graphql.Timestamp(time.Time{}),
-			DeletedAt: graphql.Timestamp(time.Time{}),
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
 		},
 	}
 }
@@ -196,9 +196,9 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventID,
 			Ready:     true,
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 			Error:     sql.NullString{},
 		},
 	}
@@ -246,4 +246,9 @@ func fixGQLFetchRequest(url string, timestamp time.Time) *graphql.FetchRequest {
 			Condition: graphql.FetchRequestStatusConditionInitial,
 		},
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }
