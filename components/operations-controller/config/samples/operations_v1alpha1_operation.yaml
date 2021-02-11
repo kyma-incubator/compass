@@ -9,6 +9,9 @@ spec:
   resource_type: "Application"
   resource_id: "31363883-d3f5-4548-addb-54ddb8cf2666"
   correlation_id: "528b6b43-9a32-4a5e-9cd6-72fb27ad63e3"
+  webhook_ids:
+    - "31363883-d3f5-4548-addb-54ddb8cf2669"
+    - "31363883-d3f5-4548-addb-54ddb8cf2569"
   request_data: "{ \"name\": \"test-app\", \"creation_date\": \"123456789\", \"year\": 2017 }"
 status:
   webhooks:
