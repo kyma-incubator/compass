@@ -32,3 +32,4 @@ status:
     - type: "Error"
       status: "Unknown"
       message: "Unknown error"
+  phase: "In Progress"
