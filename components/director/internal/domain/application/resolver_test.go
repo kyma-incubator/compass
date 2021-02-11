@@ -56,11 +56,11 @@ func TestResolver_RegisterApplication(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
-				svc.On("Create", contextParam, modelInput).Return("foo", nil).Once()
+				svc.On("Get", context.TODO(), "foo").Return(modelApplication, nil).Once()
+				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -74,12 +74,11 @@ func TestResolver_RegisterApplication(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name:            "Returns error when transaction commit failed",
-			TransactionerFn: txGen.ThatFailsOnCommit,
+			Name:            "Returns error when application creation failed",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, "foo").Return(modelApplication, nil).Once()
-				svc.On("Create", contextParam, modelInput).Return("foo", nil).Once()
+				svc.On("Create", context.TODO(), modelInput).Return("", testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -92,29 +91,12 @@ func TestResolver_RegisterApplication(t *testing.T) {
 			ExpectedErr:         testErr,
 		},
 		{
-			Name:            "Returns error when application creation failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			Name:            "Returns error when application fetch failed",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Create", contextParam, modelInput).Return("", testErr).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.ApplicationConverter {
-				conv := &automock.ApplicationConverter{}
-				conv.On("CreateInputFromGraphQL", mock.Anything, gqlInput).Return(modelInput, nil).Once()
-				return conv
-			},
-			Input:               gqlInput,
-			ExpectedApplication: nil,
-			ExpectedErr:         testErr,
-		},
-		{
-			Name:            "Returns error when application creation failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.ApplicationService {
-				svc := &automock.ApplicationService{}
-				svc.On("Create", contextParam, modelInput).Return("foo", nil).Once()
-				svc.On("Get", contextParam, "foo").Return(nil, testErr).Once()
+				svc.On("Create", context.TODO(), modelInput).Return("foo", nil).Once()
+				svc.On("Get", context.TODO(), "foo").Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -319,11 +301,11 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 	}{
 		{
 			Name:            "Success",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
-				svc.On("Delete", contextParam, appID.String()).Return(nil).Once()
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Delete", context.TODO(), appID.String()).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -333,17 +315,17 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
+				svc.On("CleanupAfterUnregisteringApplication", context.TODO(), appID).Return(nil, nil).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+				svc.On("DeleteMultipleClientCredentials", context.TODO(), testAuths).Return(nil)
 				return svc
 			},
 			InputID:             appID.String(),
@@ -351,45 +333,12 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			ExpectedErr:         nil,
 		},
 		{
-			Name:            "Return error when transaction commit failed",
-			TransactionerFn: txGen.ThatFailsOnCommit,
-			ServiceFn: func() *automock.ApplicationService {
-				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
-				svc.On("Delete", contextParam, appID.String()).Return(nil).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.ApplicationConverter {
-				conv := &automock.ApplicationConverter{}
-				return conv
-			},
-			EventingSvcFn: func() *automock.EventingService {
-				svc := &automock.EventingService{}
-				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
-				return svc
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
-
-				return svc
-			},
-			InputID:             appID.String(),
-			ExpectedApplication: nil,
-			ExpectedErr:         testErr,
-		},
-		{
 			Name:            "Returns error when application deletion failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
-				svc.On("Delete", contextParam, appID.String()).Return(testErr).Once()
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Delete", context.TODO(), appID.String()).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -398,17 +347,17 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
+				svc.On("CleanupAfterUnregisteringApplication", context.TODO(), appID).Return(nil, nil).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(nil)
+				svc.On("DeleteMultipleClientCredentials", context.TODO(), testAuths).Return(nil)
 
 				return svc
 			},
@@ -418,37 +367,10 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application retrieval failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, appID.String()).Return(nil, testErr).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.ApplicationConverter {
-				conv := &automock.ApplicationConverter{}
-				return conv
-			},
-			EventingSvcFn: func() *automock.EventingService {
-				svc := &automock.EventingService{}
-				return svc
-			},
-			SysAuthServiceFn: func() *automock.SystemAuthService {
-				svc := &automock.SystemAuthService{}
-				return svc
-			},
-			OAuth20ServiceFn: func() *automock.OAuth20Service {
-				svc := &automock.OAuth20Service{}
-				return svc
-			},
-			InputID:             appID.String(),
-			ExpectedApplication: nil,
-			ExpectedErr:         testErr,
-		},
-		{
-			Name:            "Return error when transaction starting failed",
-			TransactionerFn: txGen.ThatFailsOnBegin,
-			ServiceFn: func() *automock.ApplicationService {
-				svc := &automock.ApplicationService{}
+				svc.On("Get", context.TODO(), appID.String()).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -473,10 +395,10 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 		},
 		{
 			Name:            "Return error when listing all auths failed",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -485,12 +407,12 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
+				svc.On("CleanupAfterUnregisteringApplication", context.TODO(), appID).Return(nil, nil).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(nil, testErr)
+				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(nil, testErr)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -503,10 +425,10 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 		},
 		{
 			Name:            "Return error when removing oauth from hydra",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -515,17 +437,17 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, nil).Once()
+				svc.On("CleanupAfterUnregisteringApplication", context.TODO(), appID).Return(nil, nil).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
 				svc := &automock.OAuth20Service{}
-				svc.On("DeleteMultipleClientCredentials", contextParam, testAuths).Return(testErr)
+				svc.On("DeleteMultipleClientCredentials", context.TODO(), testAuths).Return(testErr)
 				return svc
 			},
 			InputID:             appID.String(),
@@ -533,10 +455,10 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			ExpectedErr:         testErr,
 		}, {
 			Name:            "Returns error when removing default eventing labels",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("Get", contextParam, appID.String()).Return(modelApplication, nil).Once()
+				svc.On("Get", context.TODO(), appID.String()).Return(modelApplication, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -545,7 +467,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			EventingSvcFn: func() *automock.EventingService {
 				svc := &automock.EventingService{}
-				svc.On("CleanupAfterUnregisteringApplication", contextParam, appID).Return(nil, testErr).Once()
+				svc.On("CleanupAfterUnregisteringApplication", context.TODO(), appID).Return(nil, testErr).Once()
 				return svc
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {

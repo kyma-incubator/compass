@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"time"
@@ -24,12 +25,14 @@ const (
 	bundleID         = "bbbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 )
 
+var fixedTimestamp = time.Now()
+
 func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
-		ID:        id,
-		BundleID:  bndlID,
-		Name:      name,
-		TargetURL: targetURL,
+		BundleID:   bndlID,
+		Name:       name,
+		TargetURL:  targetURL,
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -55,7 +58,6 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 	}
 
 	return model.APIDefinition{
-		ID:          apiDefID,
 		Tenant:      tenantID,
 		BundleID:    bundleID,
 		Name:        placeholder,
@@ -63,6 +65,14 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
+		BaseEntity: &model.BaseEntity{
+			ID:        apiDefID,
+			Ready:     true,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
+			DeletedAt: time.Time{},
+			Error:     nil,
+		},
 	}, spec
 }
 
@@ -87,7 +97,6 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	}
 
 	return &graphql.APIDefinition{
-		ID:          apiDefID,
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
@@ -95,6 +104,14 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
+		BaseEntity: &graphql.BaseEntity{
+			ID:        apiDefID,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: graphql.Timestamp(fixedTimestamp),
+			UpdatedAt: graphql.Timestamp(time.Time{}),
+			DeletedAt: graphql.Timestamp(time.Time{}),
+		},
 	}
 }
 
@@ -160,20 +177,19 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	}
 }
 
-func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) api.Entity {
-	return api.Entity{
-		ID:        id,
-		BndlID:    bndlID,
-		Name:      name,
-		TargetURL: targetUrl,
+func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) *api.Entity {
+	return &api.Entity{
+		BndlID:     bndlID,
+		Name:       name,
+		TargetURL:  targetUrl,
+		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
 
-func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
+func fixFullEntityAPIDefinition(apiDefID, placeholder string) *api.Entity {
 	boolPlaceholder := false
 
-	return api.Entity{
-		ID:          apiDefID,
+	return &api.Entity{
 		TenantID:    tenantID,
 		BndlID:      bundleID,
 		Name:        placeholder,
@@ -186,23 +202,31 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 			VersionDepracatedSince: repo.NewNullableString(str.Ptr("v1.0")),
 			VersionForRemoval:      repo.NewNullableBool(&boolPlaceholder),
 		},
+		BaseEntity: &repo.BaseEntity{
+			ID:        apiDefID,
+			Ready:     true,
+			CreatedAt: fixedTimestamp,
+			UpdatedAt: time.Time{},
+			DeletedAt: time.Time{},
+			Error:     sql.NullString{},
+		},
 	}
 }
 
 func fixAPIDefinitionColumns() []string {
 	return []string{"id", "tenant_id", "bundle_id", "name", "description", "group_name", "target_url", "version_value", "version_deprecated",
-		"version_deprecated_since", "version_for_removal"}
+		"version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, placeholder, "desc_" + placeholder, "group_" + placeholder,
-		fmt.Sprintf("https://%s.com", placeholder), "v1.1", false, "v1.0", false}
+		fmt.Sprintf("https://%s.com", placeholder), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, api.Name, api.Description, api.Group,
 		api.TargetURL, api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince,
-		api.Version.ForRemoval}
+		api.Version.ForRemoval, api.Ready, api.CreatedAt, api.UpdatedAt, api.DeletedAt, api.Error}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {

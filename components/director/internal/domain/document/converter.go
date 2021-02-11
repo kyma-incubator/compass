@@ -28,7 +28,6 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 	}
 
 	return &graphql.Document{
-		ID:          in.ID,
 		BundleID:    in.BundleID,
 		Title:       in.Title,
 		DisplayName: in.DisplayName,
@@ -36,6 +35,14 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 		Format:      graphql.DocumentFormat(in.Format),
 		Kind:        in.Kind,
 		Data:        clob,
+		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: graphql.Timestamp(in.CreatedAt),
+			UpdatedAt: graphql.Timestamp(in.UpdatedAt),
+			DeletedAt: graphql.Timestamp(in.DeletedAt),
+			Error:     in.Error,
+		},
 	}
 }
 
@@ -97,12 +104,11 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.DocumentInput) ([]*mo
 	return inputs, nil
 }
 
-func (c *converter) ToEntity(in model.Document) (Entity, error) {
+func (c *converter) ToEntity(in model.Document) (*Entity, error) {
 	kind := repo.NewNullableString(in.Kind)
 	data := repo.NewNullableString(in.Data)
 
-	out := Entity{
-		ID:          in.ID,
+	out := &Entity{
 		BndlID:      in.BundleID,
 		TenantID:    in.Tenant,
 		Title:       in.Title,
@@ -111,6 +117,14 @@ func (c *converter) ToEntity(in model.Document) (Entity, error) {
 		Format:      string(in.Format),
 		Kind:        kind,
 		Data:        data,
+		BaseEntity: &repo.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: in.CreatedAt,
+			UpdatedAt: in.UpdatedAt,
+			DeletedAt: in.DeletedAt,
+			Error:     repo.NewNullableString(in.Error),
+		},
 	}
 
 	return out, nil
@@ -121,7 +135,6 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 	data := repo.StringPtrFromNullableString(in.Data)
 
 	out := model.Document{
-		ID:          in.ID,
 		BundleID:    in.BndlID,
 		Tenant:      in.TenantID,
 		Title:       in.Title,
@@ -130,6 +143,14 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		Format:      model.DocumentFormat(in.Format),
 		Kind:        kind,
 		Data:        data,
+		BaseEntity: &model.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: in.CreatedAt,
+			UpdatedAt: in.UpdatedAt,
+			DeletedAt: in.DeletedAt,
+			Error:     repo.StringPtrFromNullableString(in.Error),
+		},
 	}
 	return out, nil
 }

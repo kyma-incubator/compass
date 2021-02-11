@@ -1,6 +1,0 @@
-/bin
-.idea
-vendor
-/licenses
-*.log
-coverage.out

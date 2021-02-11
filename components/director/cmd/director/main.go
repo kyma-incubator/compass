@@ -7,7 +7,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 
@@ -78,6 +87,7 @@ const envPrefix = "APP"
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
+	AppURL  string `envconfig:"APP_URL"`
 
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
@@ -87,6 +97,7 @@ type config struct {
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping"`
+	OperationEndpoint             string `envconfig:"default=/operations"`
 	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
 	ConfigurationFile             string
 	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
@@ -169,7 +180,8 @@ func main() {
 			cfg.ProtectedLabelPattern,
 		),
 		Directives: graphql.DirectiveRoot{
-			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), defaultBundleRepo(), defaultBundleInstanceAuthRepo()).HasScenario,
+			Async:       operation.NewDirective(transact, webhookService().List, tenant.LoadFromContext, operation.DefaultScheduler{}).HandleOperation,
+			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
 		},
@@ -198,14 +210,17 @@ func main() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	presenter := error_presenter.NewPresenter(uid.NewService())
+
+	operationMiddleware := operation.NewMiddleware(cfg.AppURL)
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(handler.GraphQL(executableSchema,
+		handler.RequestMiddleware(operationMiddleware.ExtensionHandler),
 		handler.ErrorPresenter(presenter.Do),
 		handler.RecoverFunc(panic_handler.RecoverFn))))
 
@@ -226,6 +241,15 @@ func main() {
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
 	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
+
+	appRepo := applicationRepo()
+	operationHandler := operation.NewHandler(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
+		return appRepo.GetByID(ctx, tenantID, resourceID)
+	}, tenant.LoadFromContext)
+
+	operationsAPIRouter := mainRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
+	operationsAPIRouter.Use(authMiddleware.Handler())
+	operationsAPIRouter.HandleFunc("", operationHandler.ServeHTTP)
 
 	logger.Infof("Registering readiness endpoint...")
 	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler())
@@ -398,13 +422,13 @@ func createServer(ctx context.Context, address string, handler http.Handler, nam
 	return runFn, shutdownFn
 }
 
-func defaultBundleInstanceAuthRepo() bundleinstanceauth.Repository {
+func bundleInstanceAuthRepo() bundleinstanceauth.Repository {
 	authConverter := auth.NewConverter()
 
 	return bundleinstanceauth.NewRepository(bundleinstanceauth.NewConverter(authConverter))
 }
 
-func defaultBundleRepo() mp_bundle.BundleRepository {
+func bundleRepo() mp_bundle.BundleRepository {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -414,4 +438,33 @@ func defaultBundleRepo() mp_bundle.BundleRepository {
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 
 	return mp_bundle.NewRepository(mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter))
+}
+
+func applicationRepo() application.ApplicationRepository {
+	authConverter := auth.NewConverter()
+
+	versionConverter := version.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	specConverter := spec.NewConverter(frConverter)
+
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	docConverter := document.NewConverter(frConverter)
+
+	webhookConverter := webhook.NewConverter(authConverter)
+	bundleConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+
+	return application.NewRepository(appConverter)
+}
+
+func webhookService() webhook.WebhookService {
+	uidSvc := uid.NewService()
+	authConverter := auth.NewConverter()
+
+	webhookConverter := webhook.NewConverter(authConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+
+	return webhook.NewService(webhookRepo, uidSvc)
 }

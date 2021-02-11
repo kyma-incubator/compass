@@ -3,11 +3,12 @@ package model
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type APIDefinition struct {
-	ID          string
 	BundleID    string
 	Tenant      string
 	Name        string
@@ -16,6 +17,11 @@ type APIDefinition struct {
 	//  group allows you to find the same API but in different version
 	Group   *string
 	Version *Version
+	*BaseEntity
+}
+
+func (_ *APIDefinition) GetType() resource.Type {
+	return resource.API
 }
 
 type Timestamp time.Time
@@ -42,7 +48,6 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID str
 	}
 
 	return &APIDefinition{
-		ID:          id,
 		BundleID:    bundleID,
 		Tenant:      tenant,
 		Name:        a.Name,
@@ -50,5 +55,9 @@ func (a *APIDefinitionInput) ToAPIDefinitionWithinBundle(id string, bundleID str
 		TargetURL:   a.TargetURL,
 		Group:       a.Group,
 		Version:     a.Version.ToVersion(),
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }

@@ -29,11 +29,14 @@ func TestBundleCreateInput_ToBundle(t *testing.T) {
 				Description: &desc,
 			},
 			Expected: &model.Bundle{
-				ID:            id,
 				TenantID:      tenant,
 				ApplicationID: appID,
 				Name:          name,
 				Description:   &desc,
+				BaseEntity: &model.BaseEntity{
+					ID:    id,
+					Ready: true,
+				},
 			},
 		},
 		{
