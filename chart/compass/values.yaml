@@ -27,6 +27,9 @@ global:
     gateway:
       dir:
       version: "PR-1720"
+    operations_controller:
+      dir:
+      version: "PR-1717"
     tenant_fetcher:
       dir:
       version: "PR-1720"
@@ -63,6 +66,9 @@ global:
       connectivity_adapter:
         dir:
         version: "PR-1693"
+      operations_controller:
+        dir:
+        version: "PR-1717"
       tenant_fetcher:
         dir:
         version: "PR-1715"
@@ -173,6 +179,9 @@ global:
           - "Client-Id-From-Certificate"
           - "Client-Certificate-Hash"
           - "Certificate-Data"
+
+  operations_controller:
+    enabled: false
 
   connectivity_adapter:
     port: 8080
