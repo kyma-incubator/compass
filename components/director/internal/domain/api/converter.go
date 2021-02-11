@@ -1,9 +1,10 @@
 package api
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/pkg/errors"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
