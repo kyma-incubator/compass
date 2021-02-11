@@ -13,6 +13,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	packageORDType = "package"
+	bundleORDType  = "consumptionBundle"
+	apiORDType     = "apiResource"
+	eventORDType   = "eventResource"
+	vendorORDType  = "vendor"
+	productORDType = "product"
+)
+
 type Service struct {
 	transact persistence.Transactioner
 
@@ -338,33 +347,33 @@ func (s *Service) resyncTombstones(ctx context.Context, appID string, tombstones
 
 	resourceType := strings.Split(tombstone.OrdID, ":")[1]
 	switch resourceType {
-	case "package":
+	case packageORDType:
 		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 			return packagesFromDB[i].OrdID == tombstone.OrdID
 		}); found {
 			return s.packageSvc.Delete(ctx, packagesFromDB[i].ID)
 		}
-	case "apiResource":
+	case apiORDType:
 		if i, found := searchInSlice(len(apisFromDB), func(i int) bool {
 			return equalStrings(apisFromDB[i].OrdID, &tombstone.OrdID)
 		}); found {
 			return s.apiSvc.Delete(ctx, apisFromDB[i].ID)
 		}
-	case "eventResource":
+	case eventORDType:
 		if i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
 			return equalStrings(eventsFromDB[i].OrdID, &tombstone.OrdID)
 		}); found {
 			return s.eventSvc.Delete(ctx, eventsFromDB[i].ID)
 		}
-	case "vendor":
+	case vendorORDType:
 		if err := s.vendorSvc.Delete(ctx, tombstone.OrdID); err != nil && !apperrors.IsNotFoundError(err) {
 			return err
 		}
-	case "product":
+	case productORDType:
 		if err := s.productSvc.Delete(ctx, tombstone.OrdID); err != nil && !apperrors.IsNotFoundError(err) {
 			return err
 		}
-	case "consumptionBundle":
+	case bundleORDType:
 		if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 			return equalStrings(bundlesFromDB[i].OrdID, &tombstone.OrdID)
 		}); found {
