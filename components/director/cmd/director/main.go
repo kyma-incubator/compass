@@ -279,6 +279,10 @@ func main() {
 			app.Error = error
 			return appRepo.Update(ctx, app)
 		},
+	}, map[resource.Type]operation.ResourceDeleterFunc{
+		resource.Application: func(ctx context.Context, id string) error {
+			return appRepo.DeleteGlobal(ctx, id)
+		},
 	})
 	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
