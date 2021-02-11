@@ -32,13 +32,16 @@ func TestAPIDefinitionInput_ToAPIDefinitionWithBundleID(t *testing.T) {
 				Group:       &group,
 			},
 			Expected: &model.APIDefinition{
-				ID:          id,
 				BundleID:    bndlID,
 				Name:        name,
 				Description: &desc,
 				TargetURL:   targetUrl,
 				Group:       &group,
 				Tenant:      tenant,
+				BaseEntity: &model.BaseEntity{
+					ID:    id,
+					Ready: true,
+				},
 			},
 		},
 		{

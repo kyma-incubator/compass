@@ -80,7 +80,7 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput) 
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	webhook = in.ToWebhook(id, webhook.Tenant, webhook.ApplicationID)
+	webhook = in.ToWebhook(id, webhook.TenantID, *webhook.ApplicationID)
 
 	err = s.repo.Update(ctx, webhook)
 	if err != nil {
@@ -96,5 +96,5 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	return s.repo.Delete(ctx, webhook.Tenant, webhook.ID)
+	return s.repo.Delete(ctx, webhook.TenantID, webhook.ID)
 }

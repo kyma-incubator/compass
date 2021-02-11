@@ -2,16 +2,21 @@ package model
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 type Bundle struct {
-	ID                             string
 	TenantID                       string
 	ApplicationID                  string
 	Name                           string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
+	*BaseEntity
+}
+
+func (_ *Bundle) GetType() resource.Type {
+	return resource.Bundle
 }
 
 func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
@@ -54,12 +59,15 @@ func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle
 	}
 
 	return &Bundle{
-		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Name:                           i.Name,
 		Description:                    i.Description,
 		InstanceAuthRequestInputSchema: i.InstanceAuthRequestInputSchema,
 		DefaultInstanceAuth:            i.DefaultInstanceAuth.ToAuth(),
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }

@@ -3,6 +3,9 @@ package document_test
 import (
 	"database/sql"
 	"testing"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -29,8 +32,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.Document{},
-			Expected: &graphql.Document{},
+			Input:    &model.Document{BaseEntity: &model.BaseEntity{}},
+			Expected: &graphql.Document{BaseEntity: &graphql.BaseEntity{}},
 		},
 		{
 			Name:     "Nil",
@@ -59,13 +62,13 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	input := []*model.Document{
 		fixModelDocument("1", "foo"),
 		fixModelDocument("2", "bar"),
-		{},
+		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
 	expected := []*graphql.Document{
 		fixGQLDocument("1", "foo"),
 		fixGQLDocument("2", "bar"),
-		{},
+		{BaseEntity: &graphql.BaseEntity{}},
 	}
 	frConv := &automock.FetchRequestConverter{}
 	converter := document.NewConverter(frConv)
@@ -153,13 +156,20 @@ func TestToEntity(t *testing.T) {
 	sut := document.NewConverter(nil)
 
 	modelWithRequiredFields := model.Document{
-		ID:          "givenID",
 		Tenant:      "givenTenant",
 		BundleID:    "givenBundleID",
 		Title:       "givenTitle",
 		Description: "givenDescription",
 		DisplayName: "givenDisplayName",
 		Format:      "givenFormat",
+		BaseEntity: &model.BaseEntity{
+			ID:        "givenID",
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     nil,
+		},
 	}
 
 	t.Run("only required fields", func(t *testing.T) {
@@ -168,14 +178,21 @@ func TestToEntity(t *testing.T) {
 		actual, err := sut.ToEntity(givenModel)
 		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, document.Entity{
-			ID:          "givenID",
-			TenantID:    "givenTenant",
-			BndlID:      "givenBundleID",
-			Title:       "givenTitle",
-			Description: "givenDescription",
-			DisplayName: "givenDisplayName",
-			Format:      "givenFormat",
+		assert.Equal(t, &document.Entity{
+			TenantID:    givenModel.Tenant,
+			BndlID:      givenModel.BundleID,
+			Title:       givenModel.Title,
+			Description: givenModel.Description,
+			DisplayName: givenModel.DisplayName,
+			Format:      string(givenModel.Format),
+			BaseEntity: &repo.BaseEntity{
+				ID:        givenModel.ID,
+				Ready:     givenModel.Ready,
+				CreatedAt: givenModel.CreatedAt,
+				UpdatedAt: givenModel.UpdatedAt,
+				DeletedAt: givenModel.DeletedAt,
+				Error:     repo.NewNullableString(givenModel.Error),
+			},
 		}, actual)
 	})
 
@@ -196,13 +213,15 @@ func TestFromEntity(t *testing.T) {
 	// GIVEN
 	sut := document.NewConverter(nil)
 	entityWithRequiredFields := document.Entity{
-		ID:          "givenID",
 		TenantID:    "givenTenant",
 		BndlID:      "givenBundleID",
 		Title:       "givenTitle",
 		DisplayName: "givenDisplayName",
 		Description: "givenDescription",
 		Format:      "MARKDOWN",
+		BaseEntity: &repo.BaseEntity{
+			ID: "givenID",
+		},
 	}
 
 	t.Run("only required fields", func(t *testing.T) {
@@ -212,13 +231,15 @@ func TestFromEntity(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, model.Document{
-			ID:          "givenID",
 			Tenant:      "givenTenant",
 			BundleID:    "givenBundleID",
 			Title:       "givenTitle",
 			DisplayName: "givenDisplayName",
 			Description: "givenDescription",
 			Format:      model.DocumentFormatMarkdown,
+			BaseEntity: &model.BaseEntity{
+				ID: "givenID",
+			},
 		}, actualModel)
 
 	})

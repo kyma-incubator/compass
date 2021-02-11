@@ -1,6 +1,7 @@
 package document_test
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
@@ -18,11 +19,11 @@ var (
 	docDisplayName = "foodisplay"
 	docDescription = "foodesc"
 	docCLOB        = graphql.CLOB(docData)
+	fixedTimestamp = time.Now()
 )
 
 func fixModelDocument(id, bundleID string) *model.Document {
 	return &model.Document{
-		ID:          id,
 		BundleID:    bundleID,
 		Tenant:      docTenant,
 		Title:       docTitle,
@@ -31,12 +32,19 @@ func fixModelDocument(id, bundleID string) *model.Document {
 		Format:      model.DocumentFormatMarkdown,
 		Kind:        &docKind,
 		Data:        &docData,
+		BaseEntity: &model.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+		},
 	}
 }
 
 func fixEntityDocument(id, bundleID string) *document.Entity {
 	return &document.Entity{
-		ID:          id,
 		BndlID:      bundleID,
 		TenantID:    docTenant,
 		Title:       docTitle,
@@ -45,12 +53,19 @@ func fixEntityDocument(id, bundleID string) *document.Entity {
 		Format:      string(model.DocumentFormatMarkdown),
 		Kind:        repo.NewValidNullableString(docKind),
 		Data:        repo.NewValidNullableString(docData),
+		BaseEntity: &repo.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     sql.NullString{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+		},
 	}
 }
 
 func fixGQLDocument(id, bundleID string) *graphql.Document {
 	return &graphql.Document{
-		ID:          id,
 		BundleID:    bundleID,
 		Title:       docTitle,
 		DisplayName: docDisplayName,
@@ -58,6 +73,14 @@ func fixGQLDocument(id, bundleID string) *graphql.Document {
 		Format:      graphql.DocumentFormatMarkdown,
 		Kind:        &docKind,
 		Data:        &docCLOB,
+		BaseEntity: &graphql.BaseEntity{
+			ID:        id,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
+		},
 	}
 }
 
@@ -125,4 +148,9 @@ func fixGQLDocumentInput(id string) *graphql.DocumentInput {
 		Kind:        &docKind,
 		Data:        &docCLOB,
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }

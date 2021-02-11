@@ -13,6 +13,9 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 	applicationID := "foo"
 	id := "bar"
 	tenant := "baz"
+	template := `{}`
+	webhookMode := model.WebhookModeSync
+	webhookURL := "foourl"
 	testCases := []struct {
 		Name     string
 		Input    *model.WebhookInput
@@ -22,35 +25,45 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 			Name: "All properties given",
 			Input: &model.WebhookInput{
 				Type: model.WebhookTypeConfigurationChanged,
-				URL:  "foourl",
+				URL:  &webhookURL,
 				Auth: &model.AuthInput{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
 						"bar": {"bar", "foo"},
 					},
 				},
+				Mode:           &webhookMode,
+				URLTemplate:    &template,
+				InputTemplate:  &template,
+				HeaderTemplate: &template,
+				OutputTemplate: &template,
 			},
 			Expected: &model.Webhook{
-				ApplicationID: applicationID,
+				ApplicationID: &applicationID,
 				ID:            id,
-				Tenant:        tenant,
+				TenantID:      tenant,
 				Type:          model.WebhookTypeConfigurationChanged,
-				URL:           "foourl",
+				URL:           &webhookURL,
 				Auth: &model.Auth{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
 						"bar": {"bar", "foo"},
 					},
 				},
+				Mode:           &webhookMode,
+				URLTemplate:    &template,
+				InputTemplate:  &template,
+				HeaderTemplate: &template,
+				OutputTemplate: &template,
 			},
 		},
 		{
 			Name:  "Empty",
 			Input: &model.WebhookInput{},
 			Expected: &model.Webhook{
-				ApplicationID: applicationID,
+				ApplicationID: &applicationID,
 				ID:            id,
-				Tenant:        tenant,
+				TenantID:      tenant,
 			},
 		},
 		{

@@ -167,9 +167,9 @@ func fixValidURL(t *testing.T, rawURL string) url.URL {
 
 func fixApplicationModel(name string) model.Application {
 	return model.Application{
-		ID:     applicationID.String(),
-		Tenant: tenantID.String(),
-		Name:   name,
+		Tenant:     tenantID.String(),
+		Name:       name,
+		BaseEntity: &model.BaseEntity{ID: applicationID.String()},
 	}
 }
 

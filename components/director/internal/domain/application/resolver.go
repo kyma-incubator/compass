@@ -261,14 +261,6 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 }
 
 func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput) (*graphql.Application, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	log.C(ctx).Infof("Registering Application with name %s", in.Name)
 
 	convertedIn, err := r.appConverter.CreateInputFromGraphQL(ctx, in)
@@ -281,11 +273,6 @@ func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.Applicati
 	}
 
 	app, err := r.appSvc.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
@@ -329,14 +316,6 @@ func (r *Resolver) UpdateApplication(ctx context.Context, id string, in graphql.
 	return gqlApp, nil
 }
 func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graphql.Application, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	log.C(ctx).Infof("Unregistering Application with id %s", id)
 
 	app, err := r.appSvc.Get(ctx, id)
@@ -363,11 +342,6 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 	err = r.appSvc.Delete(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
