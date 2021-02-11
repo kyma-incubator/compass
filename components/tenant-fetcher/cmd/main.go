@@ -24,6 +24,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/executor"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -58,10 +60,11 @@ type config struct {
 	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
 	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 
-	AllowJWTSigningNone       bool   `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
-	JwksEndpoint              string `envconfig:"APP_JWKS_ENDPOINT"`
-	CISIdentityZone           string `envconfig:"APP_CIS_IDENTITY_ZONE"`
-	SubscriptionCallbackScope string `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
+	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
+	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT"`
+	CISIdentityZone           string        `envconfig:"APP_CIS_IDENTITY_ZONE"`
+	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
 
 func main() {
@@ -107,6 +110,17 @@ func main() {
 		extractTrustedIssuersScopePrefixes(authenticatorsConfig),
 		cfg.AllowJWTSigningNone,
 	)
+
+	if cfg.JWKSSyncPeriod != 0 {
+		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
+		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
+			err := middleware.SynchronizeJWKS(ctx)
+			if err != nil {
+				logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
+			}
+		})
+		go periodicExecutor.Run(ctx)
+	}
 
 	mainRouter := mux.NewRouter()
 	subrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
