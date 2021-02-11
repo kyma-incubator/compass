@@ -30,8 +30,8 @@ type OperationSpec struct {
 	ResourceType      string        `json:"resource_type"`
 	ResourceID        string        `json:"resource_id"`
 	CorrelationID     string        `json:"correlation_id"`
-	WebhookIDs        []string      `json:"webhook_ids,omitempty"`
-	RequestData       string        `json:"request_data,omitempty"`
+	WebhookIDs        []string      `json:"webhook_ids"`
+	RequestData       string        `json:"request_data"`
 }
 
 // +kubebuilder:validation:Enum=Success;Failed;Polling
@@ -57,7 +57,8 @@ type Condition struct {
 // OperationStatus defines the observed state of Operation
 type OperationStatus struct {
 	Webhooks   []Webhook   `json:"webhooks,omitempty"`
-	Conditions []Condition `json:"conditions"`
+	Conditions []Condition `json:"conditions,omitempty"`
+	Phase      string      `json:"phase,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -66,6 +67,7 @@ type OperationStatus struct {
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.operation_type`
 // +kubebuilder:printcolumn:name="Resource ID",type=string,JSONPath=`.spec.resource_id`
 // +kubebuilder:printcolumn:name="Resource Type",type=string,JSONPath=`.spec.resource_type`
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:subresource:status
 type Operation struct {
 	metav1.TypeMeta   `json:",inline"`

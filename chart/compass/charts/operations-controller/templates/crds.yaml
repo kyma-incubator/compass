@@ -7,16 +7,16 @@ metadata:
   name: operations.operations.compass
 spec:
   additionalPrinterColumns:
-  - JSONPath: .spec.operation_id
-    name: ID
-    type: string
   - JSONPath: .spec.operation_type
     name: Type
+    type: string
+  - JSONPath: .spec.resource_id
+    name: Resource ID
     type: string
   - JSONPath: .spec.resource_type
     name: Resource Type
     type: string
-  - JSONPath: .status.conditions.status
+  - JSONPath: .status.phase
     name: Status
     type: string
   group: operations.compass
@@ -70,8 +70,10 @@ spec:
           - operation_category
           - operation_id
           - operation_type
+          - request_data
           - resource_id
           - resource_type
+          - webhook_ids
           type: object
         status:
           description: OperationStatus defines the observed state of Operation
@@ -93,6 +95,8 @@ spec:
                 - type
                 type: object
               type: array
+            phase:
+              type: string
             webhooks:
               items:
                 properties:
@@ -119,8 +123,6 @@ spec:
                 - webhook_poll_url
                 type: object
               type: array
-          required:
-          - conditions
           type: object
       type: object
   version: v1alpha1
