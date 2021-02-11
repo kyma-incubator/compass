@@ -34,6 +34,17 @@ type OperationSpec struct {
 	RequestData       string        `json:"request_data,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Success;Failed;Polling
+type State string
+
+type Webhook struct {
+	WebhookID         string `json:"webhook_id"`
+	RetriesCount      int32  `json:"retries_count"`
+	WebhookPollURL    string `json:"webhook_poll_url"`
+	LastPollTimestamp string `json:"last_poll_timestamp"`
+	State             State  `json:"state"`
+}
+
 // +kubebuilder:validation:Enum=Ready;Error
 type ConditionType string
 
@@ -48,17 +59,6 @@ type OperationStatus struct {
 	Webhooks   []Webhook   `json:"webhooks,omitempty"`
 	Conditions []Condition `json:"conditions"`
 }
-
-type Webhook struct {
-	WebhookID         string `json:"webhook_id"`
-	RetriesCount      int32  `json:"retries_count"`
-	WebhookPollURL    string `json:"webhook_poll_url"`
-	LastPollTimestamp string `json:"last_poll_timestamp"`
-	State             State  `json:"state"`
-}
-
-// +kubebuilder:validation:Enum=Success;Failed;Polling
-type State string
 
 // +kubebuilder:object:root=true
 
