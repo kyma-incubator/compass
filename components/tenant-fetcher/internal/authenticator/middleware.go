@@ -170,17 +170,10 @@ func (a *Authenticator) getKeyFunc() func(token *jwt.Token) (interface{}, error)
 func (a *Authenticator) parseClaims(bearerToken string) (Claims, error) {
 	claims := Claims{}
 
-	//TODO: adjust this productive code
 	_, err := jwt.ParseWithClaims(bearerToken, &claims, a.getKeyFunc())
 	if err != nil {
 		return Claims{}, err
 	}
-	//
-	//// TODO: remove testing version
-	//p := jwt.Parser{SkipClaimsValidation: true}
-	//if _, _, err := p.ParseUnverified(bearerToken, &claims); err != nil {
-	//	return Claims{}, err
-	//}
 
 	return claims, nil
 }

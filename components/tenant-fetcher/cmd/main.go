@@ -85,7 +85,6 @@ func main() {
 
 	authenticatorsConfig, err := authenticator.InitFromEnv(envPrefix)
 	exitOnError(err, "Failed to retrieve authenticators config")
-	log.C(ctx).Infof("%+v", authenticatorsConfig)
 
 	defer func() {
 		err := closeFunc()
