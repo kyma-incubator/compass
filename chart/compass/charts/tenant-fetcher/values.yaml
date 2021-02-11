@@ -18,6 +18,7 @@ deployment:
     maxOpenConnections: 30
     maxIdleConnections: 2
   allowJWTSigningNone: true
+  jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
 
 server:
   handlerEndpoint: "/v1/callback/{tenantId}"
