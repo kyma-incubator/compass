@@ -3,11 +3,12 @@ package open_resource_discovery
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/pkg/errors"
 )
 
 type Client interface {

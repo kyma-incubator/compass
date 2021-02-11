@@ -416,7 +416,7 @@ func TestService_Create(t *testing.T) {
 		UIDServiceFn  func() *automock.UIDService
 		SpecServiceFn func() *automock.SpecService
 		Input         model.EventDefinitionInput
-		SpecsInput     []*model.SpecInput
+		SpecsInput    []*model.SpecInput
 		ExpectedErr   error
 	}{
 		{
@@ -437,7 +437,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("CreateByReferenceObjectID", ctx, *modelSpecsInput[1], model.EventSpecReference, id).Return("id", nil).Once()
 				return svc
 			},
-			Input:     modelInput,
+			Input:      modelInput,
 			SpecsInput: modelSpecsInput,
 		},
 		{
@@ -456,7 +456,7 @@ func TestService_Create(t *testing.T) {
 				return &automock.SpecService{}
 			},
 			Input:       modelInput,
-			SpecsInput:   modelSpecsInput,
+			SpecsInput:  modelSpecsInput,
 			ExpectedErr: testErr,
 		},
 		{
@@ -477,7 +477,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       modelInput,
-			SpecsInput:   modelSpecsInput,
+			SpecsInput:  modelSpecsInput,
 			ExpectedErr: testErr,
 		},
 	}

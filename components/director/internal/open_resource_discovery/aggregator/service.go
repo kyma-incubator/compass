@@ -2,8 +2,9 @@ package aggregator
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -149,225 +150,225 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 
 	for _, doc := range documents {
 		for _, pkg := range doc.Packages {
-			i, ok := searchInSlice(len(packagesFromDB), func(i int) bool {
-				return packagesFromDB[i].OrdID == pkg.OrdID
-			})
-
-			if !ok {
-				if _, err := s.packageSvc.Create(ctx, appID, pkg); err != nil {
-					return err
-				}
-			} else {
-				if err := s.packageSvc.Update(ctx, packagesFromDB[i].ID, pkg); err != nil {
-					return err
-				}
+			if err := s.resyncPackage(ctx, appID, packagesFromDB, pkg); err != nil {
+				return errors.Wrapf(err, "error while resyncing package with ORD ID %q", pkg.OrdID)
 			}
 		}
-
 		for _, bndl := range doc.ConsumptionBundles {
-			i, ok := searchInSlice(len(bundlesFromDB), func(i int) bool {
-				return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
-			})
-
-			if !ok {
-				if _, err := s.bundleSvc.Create(ctx, appID, bndl); err != nil {
-					return err
-				}
-			} else {
-				if err := s.bundleSvc.Update(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl)); err != nil {
-					return err
-				}
+			if err := s.resyncBundle(ctx, appID, bundlesFromDB, bndl); err != nil {
+				return errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", bndl.OrdID)
 			}
 		}
-
 		for _, product := range doc.Products {
-			i, ok := searchInSlice(len(productsFromDB), func(i int) bool {
-				return productsFromDB[i].OrdID == product.OrdID
-			})
-
-			if !ok {
-				if _, err := s.productSvc.Create(ctx, appID, product); err != nil {
-					return err
-				}
-			} else {
-				if err := s.productSvc.Update(ctx, productsFromDB[i].OrdID, product); err != nil {
-					return err
-				}
+			if err := s.resyncProduct(ctx, appID, productsFromDB, product); err != nil {
+				return errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
 			}
 		}
-
 		for _, vendor := range doc.Vendors {
-			i, ok := searchInSlice(len(vendorsFromDB), func(i int) bool {
-				return vendorsFromDB[i].OrdID == vendor.OrdID
-			})
-
-			if !ok {
-				if _, err := s.vendorSvc.Create(ctx, appID, vendor); err != nil {
-					return err
-				}
-			} else {
-				if err := s.vendorSvc.Update(ctx, vendorsFromDB[i].OrdID, vendor); err != nil {
-					return err
-				}
+			if err := s.resyncVendor(ctx, appID, vendorsFromDB, vendor); err != nil {
+				return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
 			}
 		}
-
 		for _, api := range doc.APIResources {
-			i, ok := searchInSlice(len(apisFromDB), func(i int) bool {
-				return equalStrings(apisFromDB[i].OrdID, api.OrdID)
-			})
-
-			var bundleID *string
-			var packageID *string
-
-			if i, ok := searchInSlice(len(bundlesFromDB), func(i int) bool {
-				return equalStrings(bundlesFromDB[i].OrdID, api.OrdBundleID)
-			}); ok {
-				bundleID = &bundlesFromDB[i].ID
-			}
-
-			if i, ok := searchInSlice(len(packagesFromDB), func(i int) bool {
-				return equalStrings(&packagesFromDB[i].OrdID, api.OrdPackageID)
-			}); ok {
-				packageID = &packagesFromDB[i].ID
-			}
-
-			specs := make([]*model.SpecInput, 0, len(api.ResourceDefinitions))
-			for _, resourceDef := range api.ResourceDefinitions {
-				specs = append(specs, resourceDef.ToSpec())
-			}
-
-			if !ok {
-				if _, err := s.apiSvc.Create(ctx, appID, bundleID, packageID, api, specs); err != nil {
-					return err
-				}
-			} else {
-				if err := s.apiSvc.Update(ctx, apisFromDB[i].ID, api, nil); err != nil {
-					return err
-				}
-				if api.VersionInput.Value != apisFromDB[i].Version.Value {
-					if err := s.specSvc.DeleteByReferenceObjectID(ctx, model.APISpecReference, apisFromDB[i].ID); err != nil {
-						return err
-					}
-					for _, spec := range specs {
-						if spec == nil {
-							continue
-						}
-						if _, err := s.specSvc.CreateByReferenceObjectID(ctx, *spec, model.APISpecReference, apisFromDB[i].ID); err != nil {
-							return err
-						}
-					}
-				}
+			if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, api); err != nil {
+				return errors.Wrapf(err, "error while resyncing api with ORD ID %q", api.OrdID)
 			}
 		}
-
 		for _, event := range doc.EventResources {
-			i, ok := searchInSlice(len(eventsFromDB), func(i int) bool {
-				return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
-			})
-
-			var bundleID *string
-			var packageID *string
-
-			if i, ok := searchInSlice(len(bundlesFromDB), func(i int) bool {
-				return equalStrings(bundlesFromDB[i].OrdID, event.OrdBundleID)
-			}); ok {
-				bundleID = &bundlesFromDB[i].ID
-			}
-
-			if i, ok := searchInSlice(len(packagesFromDB), func(i int) bool {
-				return equalStrings(&packagesFromDB[i].OrdID, event.OrdPackageID)
-			}); ok {
-				packageID = &packagesFromDB[i].ID
-			}
-
-			specs := make([]*model.SpecInput, 0, len(event.ResourceDefinitions))
-			for _, resourceDef := range event.ResourceDefinitions {
-				specs = append(specs, resourceDef.ToSpec())
-			}
-
-			if !ok {
-				if _, err := s.eventSvc.Create(ctx, appID, bundleID, packageID, event, specs); err != nil {
-					return err
-				}
-			} else {
-				if err := s.eventSvc.Update(ctx, eventsFromDB[i].ID, event, nil); err != nil {
-					return err
-				}
-				if event.VersionInput.Value != eventsFromDB[i].Version.Value {
-					if err := s.specSvc.DeleteByReferenceObjectID(ctx, model.EventSpecReference, eventsFromDB[i].ID); err != nil {
-						return err
-					}
-					for _, spec := range specs {
-						if spec == nil {
-							continue
-						}
-						if _, err := s.specSvc.CreateByReferenceObjectID(ctx, *spec, model.EventSpecReference, eventsFromDB[i].ID); err != nil {
-							return err
-						}
-					}
-				}
+			if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, event); err != nil {
+				return errors.Wrapf(err, "error while resyncing event with ORD ID %q", event.OrdID)
 			}
 		}
-
 		for _, tombstone := range doc.Tombstones {
-			i, ok := searchInSlice(len(tombstonesFromDB), func(i int) bool {
-				return tombstonesFromDB[i].OrdID == tombstone.OrdID
-			})
-
-			if !ok {
-				if _, err := s.tombstoneSvc.Create(ctx, appID, tombstone); err != nil {
-					return err
-				}
-
-				resourceType := strings.Split(tombstone.OrdID, ":")[1]
-				switch resourceType {
-				case "package":
-					if i, ok := searchInSlice(len(packagesFromDB), func(i int) bool {
-						return packagesFromDB[i].OrdID == tombstone.OrdID
-					}); ok {
-						if err = s.packageSvc.Delete(ctx, packagesFromDB[i].ID); err != nil {
-							return err
-						}
-					}
-				case "apiResource":
-					if i, ok := searchInSlice(len(apisFromDB), func(i int) bool {
-						return equalStrings(apisFromDB[i].OrdID, &tombstone.OrdID)
-					}); ok {
-						if err = s.apiSvc.Delete(ctx, apisFromDB[i].ID); err != nil {
-							return err
-						}
-					}
-				case "eventResource":
-					if i, ok := searchInSlice(len(eventsFromDB), func(i int) bool {
-						return equalStrings(eventsFromDB[i].OrdID, &tombstone.OrdID)
-					}); ok {
-						if err = s.eventSvc.Delete(ctx, eventsFromDB[i].ID); err != nil {
-							return err
-						}
-					}
-				case "vendor":
-					if err = s.vendorSvc.Delete(ctx, tombstone.OrdID); err != nil && !apperrors.IsNotFoundError(err) {
-						return err
-					}
-				case "product":
-					if err = s.productSvc.Delete(ctx, tombstone.OrdID); err != nil && !apperrors.IsNotFoundError(err) {
-						return err
-					}
-				case "consumptionBundle":
-					if i, ok := searchInSlice(len(bundlesFromDB), func(i int) bool {
-						return equalStrings(bundlesFromDB[i].OrdID, &tombstone.OrdID)
-					}); ok {
-						if err = s.bundleSvc.Delete(ctx, bundlesFromDB[i].ID); err != nil {
-							return err
-						}
-					}
-				}
-			} else {
-				if err := s.tombstoneSvc.Update(ctx, tombstonesFromDB[i].OrdID, tombstone); err != nil {
-					return err
-				}
+			if err := s.resyncTombstones(ctx, appID, tombstonesFromDB, bundlesFromDB, packagesFromDB, apisFromDB, eventsFromDB, tombstone); err != nil {
+				return errors.Wrapf(err, "error while resyncing tombstone for resource with ORD ID %q", tombstone.OrdID)
 			}
+		}
+	}
+	return nil
+}
+
+func (s *Service) resyncPackage(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg model.PackageInput) error {
+	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
+		return packagesFromDB[i].OrdID == pkg.OrdID
+	}); found {
+		return s.packageSvc.Update(ctx, packagesFromDB[i].ID, pkg)
+	}
+	_, err := s.packageSvc.Create(ctx, appID, pkg)
+	return err
+}
+
+func (s *Service) resyncBundle(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bndl model.BundleCreateInput) error {
+	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
+		return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
+	}); found {
+		return s.bundleSvc.Update(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl))
+	}
+	_, err := s.bundleSvc.Create(ctx, appID, bndl)
+	return err
+}
+
+func (s *Service) resyncProduct(ctx context.Context, appID string, productsFromDB []*model.Product, product model.ProductInput) error {
+	if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
+		return productsFromDB[i].OrdID == product.OrdID
+	}); found {
+		return s.productSvc.Update(ctx, productsFromDB[i].OrdID, product)
+	}
+	_, err := s.productSvc.Create(ctx, appID, product)
+	return err
+}
+
+func (s *Service) resyncVendor(ctx context.Context, appID string, vendorsFromDB []*model.Vendor, vendor model.VendorInput) error {
+	if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
+		return vendorsFromDB[i].OrdID == vendor.OrdID
+	}); found {
+		return s.vendorSvc.Update(ctx, vendorsFromDB[i].OrdID, vendor)
+	}
+	_, err := s.vendorSvc.Create(ctx, appID, vendor)
+	return err
+}
+
+func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api model.APIDefinitionInput) error {
+	i, found := searchInSlice(len(apisFromDB), func(i int) bool {
+		return equalStrings(apisFromDB[i].OrdID, api.OrdID)
+	})
+
+	var bundleID *string
+	var packageID *string
+
+	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
+		return equalStrings(bundlesFromDB[i].OrdID, api.OrdBundleID)
+	}); found {
+		bundleID = &bundlesFromDB[i].ID
+	}
+
+	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
+		return equalStrings(&packagesFromDB[i].OrdID, api.OrdPackageID)
+	}); found {
+		packageID = &packagesFromDB[i].ID
+	}
+
+	specs := make([]*model.SpecInput, 0, len(api.ResourceDefinitions))
+	for _, resourceDef := range api.ResourceDefinitions {
+		specs = append(specs, resourceDef.ToSpec())
+	}
+
+	if !found {
+		_, err := s.apiSvc.Create(ctx, appID, bundleID, packageID, api, specs)
+		return err
+	}
+
+	if err := s.apiSvc.Update(ctx, apisFromDB[i].ID, api, nil); err != nil {
+		return err
+	}
+	if api.VersionInput.Value != apisFromDB[i].Version.Value {
+		if err := s.resyncSpecs(ctx, model.APISpecReference, apisFromDB[i].ID, specs); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event model.EventDefinitionInput) error {
+	i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
+		return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
+	})
+
+	var bundleID *string
+	var packageID *string
+
+	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
+		return equalStrings(bundlesFromDB[i].OrdID, event.OrdBundleID)
+	}); found {
+		bundleID = &bundlesFromDB[i].ID
+	}
+
+	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
+		return equalStrings(&packagesFromDB[i].OrdID, event.OrdPackageID)
+	}); found {
+		packageID = &packagesFromDB[i].ID
+	}
+
+	specs := make([]*model.SpecInput, 0, len(event.ResourceDefinitions))
+	for _, resourceDef := range event.ResourceDefinitions {
+		specs = append(specs, resourceDef.ToSpec())
+	}
+
+	if !found {
+		_, err := s.eventSvc.Create(ctx, appID, bundleID, packageID, event, specs)
+		return err
+	}
+
+	if err := s.eventSvc.Update(ctx, eventsFromDB[i].ID, event, nil); err != nil {
+		return err
+	}
+	if event.VersionInput.Value != eventsFromDB[i].Version.Value {
+		if err := s.resyncSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID, specs); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput) error {
+	if err := s.specSvc.DeleteByReferenceObjectID(ctx, objectType, objectID); err != nil {
+		return err
+	}
+	for _, spec := range specs {
+		if spec == nil {
+			continue
+		}
+		if _, err := s.specSvc.CreateByReferenceObjectID(ctx, *spec, objectType, objectID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) resyncTombstones(ctx context.Context, appID string, tombstonesFromDB []*model.Tombstone, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstone model.TombstoneInput) error {
+	if i, found := searchInSlice(len(tombstonesFromDB), func(i int) bool {
+		return tombstonesFromDB[i].OrdID == tombstone.OrdID
+	}); found {
+		return s.tombstoneSvc.Update(ctx, tombstonesFromDB[i].OrdID, tombstone)
+	}
+
+	if _, err := s.tombstoneSvc.Create(ctx, appID, tombstone); err != nil {
+		return err
+	}
+
+	resourceType := strings.Split(tombstone.OrdID, ":")[1]
+	switch resourceType {
+	case "package":
+		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
+			return packagesFromDB[i].OrdID == tombstone.OrdID
+		}); found {
+			return s.packageSvc.Delete(ctx, packagesFromDB[i].ID)
+		}
+	case "apiResource":
+		if i, found := searchInSlice(len(apisFromDB), func(i int) bool {
+			return equalStrings(apisFromDB[i].OrdID, &tombstone.OrdID)
+		}); found {
+			return s.apiSvc.Delete(ctx, apisFromDB[i].ID)
+		}
+	case "eventResource":
+		if i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
+			return equalStrings(eventsFromDB[i].OrdID, &tombstone.OrdID)
+		}); found {
+			return s.eventSvc.Delete(ctx, eventsFromDB[i].ID)
+		}
+	case "vendor":
+		if err := s.vendorSvc.Delete(ctx, tombstone.OrdID); err != nil && !apperrors.IsNotFoundError(err) {
+			return err
+		}
+	case "product":
+		if err := s.productSvc.Delete(ctx, tombstone.OrdID); err != nil && !apperrors.IsNotFoundError(err) {
+			return err
+		}
+	case "consumptionBundle":
+		if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
+			return equalStrings(bundlesFromDB[i].OrdID, &tombstone.OrdID)
+		}); found {
+			return s.bundleSvc.Delete(ctx, bundlesFromDB[i].ID)
 		}
 	}
 	return nil
