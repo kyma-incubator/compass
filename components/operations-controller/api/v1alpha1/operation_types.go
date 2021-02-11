@@ -20,7 +20,6 @@ import (
 )
 
 // +kubebuilder:validation:Enum=Create;Update;Delete
-// +kubebuilder:validation:Required
 type OperationType string
 
 // OperationSpec defines the desired state of Operation
@@ -36,7 +35,6 @@ type OperationSpec struct {
 }
 
 // +kubebuilder:validation:Enum=Ready;Error
-// +kubebuilder:validation:Required
 type ConditionType string
 
 type Condition struct {
@@ -60,12 +58,7 @@ type Webhook struct {
 }
 
 // +kubebuilder:validation:Enum=Success;Failed;Polling
-// +kubebuilder:validation:Required
 type State string
-
-// +kubebuilder:validation:Enum=Ready;InProgress;Failed
-// +kubebuilder:validation:Required
-type Status string
 
 // +kubebuilder:object:root=true
 

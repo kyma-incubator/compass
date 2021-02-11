@@ -180,6 +180,9 @@ global:
           - "Client-Certificate-Hash"
           - "Certificate-Data"
 
+  operations_controller:
+    enabled: false
+
   connectivity_adapter:
     port: 8080
     tls:
