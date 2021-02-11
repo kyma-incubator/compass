@@ -70,8 +70,8 @@ type Status string
 // +kubebuilder:object:root=true
 
 // Operation is the Schema for the operations API
-// +kubebuilder:printcolumn:name="ID",type=string,JSONPath=`.spec.operation_id`
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.operation_type`
+// +kubebuilder:printcolumn:name="Resource ID",type=string,JSONPath=`.spec.resource_id`
 // +kubebuilder:printcolumn:name="Resource Type",type=string,JSONPath=`.spec.resource_type`
 // +kubebuilder:subresource:status
 type Operation struct {
