@@ -24,12 +24,12 @@ type Entity interface {
 }
 
 type BaseEntity struct {
-	ID        string    `json:"id"`
-	Ready     bool      `json:"ready"`
-	CreatedAt Timestamp `json:"createdAt"`
-	UpdatedAt Timestamp `json:"updatedAt"`
-	DeletedAt Timestamp `json:"deletedAt"`
-	Error     *string   `json:"error"`
+	ID        string     `json:"id"`
+	Ready     bool       `json:"ready"`
+	CreatedAt *Timestamp `json:"createdAt"`
+	UpdatedAt *Timestamp `json:"updatedAt"`
+	DeletedAt *Timestamp `json:"deletedAt"`
+	Error     *string    `json:"error"`
 }
 
 func (e *BaseEntity) GetID() string {

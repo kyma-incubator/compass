@@ -3,6 +3,7 @@ package document
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/pkg/errors"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -38,9 +39,9 @@ func (c *converter) ToGraphQL(in *model.Document) *graphql.Document {
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
-			CreatedAt: graphql.Timestamp(in.CreatedAt),
-			UpdatedAt: graphql.Timestamp(in.UpdatedAt),
-			DeletedAt: graphql.Timestamp(in.DeletedAt),
+			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
+			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
+			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
 			Error:     in.Error,
 		},
 	}
@@ -153,4 +154,13 @@ func (c *converter) FromEntity(in Entity) (model.Document, error) {
 		},
 	}
 	return out, nil
+}
+
+func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
+	if time == nil {
+		return nil
+	}
+
+	t := graphql.Timestamp(*time)
+	return &t
 }
