@@ -59,7 +59,7 @@ spec:
             - name: APP_HANDLER_ENDPOINT
               value: "{{ .Values.server.handlerEndpoint }}"
             - name: APP_JWKS_ENDPOINT
-              value: https://cmpdev.authentication.stagingaws.hanavlab.ondemand.com/token_keys
+              value: https://sap-provisioning.authentication.stagingaws.hanavlab.ondemand.com/token_keys
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.server.tenantPathParam }}"
             - name: APP_DB_USER
