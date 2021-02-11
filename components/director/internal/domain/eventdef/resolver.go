@@ -72,7 +72,15 @@ func NewResolver(transact persistence.Transactioner, svc EventDefService, appSvc
 }
 
 func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID string, in graphql.EventDefinitionInput) (*graphql.EventDefinition, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
 	log.C(ctx).Infof("Adding EventDefinition to bundle with id %s", bundleID)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	convertedIn, convertedSpec, err := r.converter.InputFromGraphQL(&in)
 	if err != nil {
@@ -106,6 +114,11 @@ func (r *Resolver) AddEventDefinitionToBundle(ctx context.Context, bundleID stri
 	gqlEvent, err := r.converter.ToGraphQL(event, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", event.ID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	log.C(ctx).Infof("EventDefinition with id %s successfully added to bundle with id %s", id, bundleID)

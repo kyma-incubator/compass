@@ -162,14 +162,14 @@ func (r *Resolver) UpdateAPIDefinition(ctx context.Context, id string, in graphq
 		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
 	gqlAPI, err := r.converter.ToGraphQL(api, spec)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
 	}
 
 	log.C(ctx).Infof("APIDefinition with id %s successfully updated.", id)
