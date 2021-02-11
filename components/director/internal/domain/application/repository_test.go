@@ -92,7 +92,7 @@ func TestRepository_Delete(t *testing.T) {
 
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appModel.Ready = false
-		appModel.DeletedAt = deletedAt
+		appModel.DeletedAt = &deletedAt
 		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -112,7 +112,7 @@ func TestRepository_Delete(t *testing.T) {
 
 		appEntityWithDeletedTimestamp := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntityWithDeletedTimestamp.Ready = false
-		appEntityWithDeletedTimestamp.DeletedAt = deletedAt
+		appEntityWithDeletedTimestamp.DeletedAt = &deletedAt
 		mockConverter.On("ToEntity", appModel).Return(appEntityWithDeletedTimestamp, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
@@ -172,7 +172,7 @@ func TestRepository_Delete(t *testing.T) {
 
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appModel.Ready = false
-		appModel.DeletedAt = deletedAt
+		appModel.DeletedAt = &deletedAt
 		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 
 		db, dbMock := testdb.MockDatabase(t)
@@ -190,7 +190,7 @@ func TestRepository_Delete(t *testing.T) {
 
 		appEntityWithDeletedTimestamp := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntityWithDeletedTimestamp.Ready = false
-		appEntityWithDeletedTimestamp.DeletedAt = deletedAt
+		appEntityWithDeletedTimestamp.DeletedAt = &deletedAt
 		mockConverter.On("ToEntity", appModel).Return(appEntityWithDeletedTimestamp, nil).Once()
 		defer mockConverter.AssertExpectations(t)
 
@@ -342,8 +342,8 @@ func TestRepository_Update(t *testing.T) {
 		// given
 		appModel := fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
 		appEntity := fixDetailedEntityApplication(t, givenID(), givenTenant(), "Test app", "Test app description")
-		appEntity.UpdatedAt = fixedTimestamp
-		appEntity.DeletedAt = fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
+		appEntity.UpdatedAt = &fixedTimestamp
+		appEntity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
 		mockConverter := &automock.EntityConverter{}
 		mockConverter.On("ToEntity", appModel).Return(appEntity, nil).Once()
