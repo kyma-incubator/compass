@@ -25,7 +25,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -40,7 +41,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 		require.NoError(t, err)
 
-		handler := operation.NewUpdateOperationHandler(nil, nil, nil)
+		handler := operation.NewUpdateOperationHandler(nil, nil)
 		handler.ServeHTTP(writer, req)
 
 		require.Contains(t, writer.Body.String(), "Method not allowed")
@@ -53,7 +54,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "/", reader)
 		require.NoError(t, err)
 
-		handler := operation.NewUpdateOperationHandler(nil, nil, nil)
+		handler := operation.NewUpdateOperationHandler(nil, nil)
 		handler.ServeHTTP(writer, req)
 
 		require.Contains(t, writer.Body.String(), "Unable to decode body to JSON")
@@ -64,7 +65,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 		writer := httptest.NewRecorder()
 		req := fixPostRequestWithBody(t, context.Background(), `{}`)
 
-		handler := operation.NewUpdateOperationHandler(nil, nil, nil)
+		handler := operation.NewUpdateOperationHandler(nil, nil)
 		handler.ServeHTTP(writer, req)
 
 		require.Contains(t, writer.Body.String(), "Invalid operation properties")
@@ -73,17 +74,17 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when transaction fails to begin it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application, graphql.OperationTypeCreate.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, graphql.OperationTypeCreate.String()))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnBegin()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
 		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
 				return nil
 			},
-		}, nil)
+		})
 		handler.ServeHTTP(writer, req)
 
 		require.Equal(t, http.StatusInternalServerError, writer.Code)
@@ -92,17 +93,17 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when transaction fails to commit it should return internal server error", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application, graphql.OperationTypeCreate.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, graphql.OperationTypeCreate.String()))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(mockedError()).ThatFailsOnCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
 		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
 				return nil
 			},
-		}, nil)
+		})
 		handler.ServeHTTP(writer, req)
 
 		require.Equal(t, http.StatusInternalServerError, writer.Code)
@@ -111,62 +112,42 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 	t.Run("when update handler fails on CREATE/UPDATE operation", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application, graphql.OperationTypeCreate.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, graphql.OperationTypeCreate.String()))
 
 		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
 		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
 				return errors.New("failed to update")
-			},
-		}, nil)
-		handler.ServeHTTP(writer, req)
-
-		mockedTx.AssertNotCalled(t, "Commit")
-		require.Equal(t, http.StatusInternalServerError, writer.Code)
-		require.Contains(t, writer.Body.String(), "Unable to update resource application with id")
-	})
-
-	t.Run("when delete handler fails on DELETE operation", func(t *testing.T) {
-		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, uuid.New().String(), resource.Application, graphql.OperationTypeDelete.String()))
-
-		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
-		defer mockedTx.AssertExpectations(t)
-		defer mockedTransactioner.AssertExpectations(t)
-
-		handler := operation.NewUpdateOperationHandler(mockedTransactioner, nil, map[resource.Type]operation.ResourceDeleterFunc{
-			resource.Application: func(ctx context.Context, id string) error {
-				return errors.New("failed to delete")
 			},
 		})
 		handler.ServeHTTP(writer, req)
 
 		mockedTx.AssertNotCalled(t, "Commit")
 		require.Equal(t, http.StatusInternalServerError, writer.Code)
-		require.Contains(t, writer.Body.String(), "Unable to delete resource application with id")
+		require.Contains(t, writer.Body.String(), "Unable to update resource application with id")
 	})
 
-	t.Run("when delete handler fails on DELETE operation with error", func(t *testing.T) {
+	t.Run("when object was already deleted by previous request should return NotFound", func(t *testing.T) {
 		writer := httptest.NewRecorder()
-		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s", "error": "some error"}`, uuid.New().String(), resource.Application, graphql.OperationTypeDelete.String()))
+		req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, graphql.OperationTypeDelete.String()))
 
-		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+		mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(apperrors.NewNotFoundError(resource.Application, resourceID)).ThatDoesntExpectCommit()
 		defer mockedTx.AssertExpectations(t)
 		defer mockedTransactioner.AssertExpectations(t)
 
 		handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
-				return errors.New("failed to update")
+			resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
+				return apperrors.NewNotFoundError(resource.Application, resourceID)
 			},
-		}, nil)
+		})
 		handler.ServeHTTP(writer, req)
 
 		mockedTx.AssertNotCalled(t, "Commit")
-		require.Equal(t, http.StatusInternalServerError, writer.Code)
-		require.Contains(t, writer.Body.String(), "Unable to update resource application with id")
+		require.Equal(t, http.StatusNotFound, writer.Code)
+		require.Contains(t, writer.Body.String(), apperrors.NotFoundMsg)
 	})
 
 	t.Run("when operation has finished", func(t *testing.T) {
@@ -176,52 +157,46 @@ func TestUpdateOperationHandler(t *testing.T) {
 			ExpectedError string
 			Ready         bool
 			UpdateCalled  int
-			DeleteCalled  int
 		}
 		cases := []testCase{
 			{
 				Name:          "CREATE with error",
 				OperationType: graphql.OperationTypeCreate,
 				ExpectedError: "operation failed",
-				Ready:         false,
+				Ready:         true,
 				UpdateCalled:  1,
-				DeleteCalled:  0,
 			},
 			{
 				Name:          "CREATE with NO error",
 				OperationType: graphql.OperationTypeCreate,
 				Ready:         true,
 				UpdateCalled:  1,
-				DeleteCalled:  0,
 			},
 			{
 				Name:          "UPDATE with error",
 				OperationType: graphql.OperationTypeUpdate,
 				ExpectedError: "operation UPDATE failed",
-				Ready:         false,
+				Ready:         true,
 				UpdateCalled:  1,
-				DeleteCalled:  0,
 			},
 			{
 				Name:          "UPDATE with NO error",
 				OperationType: graphql.OperationTypeUpdate,
 				Ready:         true,
 				UpdateCalled:  1,
-				DeleteCalled:  0,
 			},
 			{
 				Name:          "DELETE with error",
 				OperationType: graphql.OperationTypeDelete,
 				ExpectedError: "operation DELETE failed",
-				Ready:         false,
+				Ready:         true,
 				UpdateCalled:  1,
-				DeleteCalled:  0,
 			},
 			{
 				Name:          "DELETE with NO error",
 				OperationType: graphql.OperationTypeDelete,
-				UpdateCalled:  0,
-				DeleteCalled:  1,
+				Ready:         true,
+				UpdateCalled:  1,
 			},
 		}
 
@@ -233,30 +208,25 @@ func TestUpdateOperationHandler(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				writer := httptest.NewRecorder()
 				expectedErrorMsg := testCase.ExpectedError
-				resourceID := uuid.New().String()
 				req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s", "error": "%s"}`, resourceID, resource.Application, testCase.OperationType.String(), expectedErrorMsg))
 
 				updateCalled := 0
-				deleteCalled := 0
 				handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-					resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
+					resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
 						require.Equal(t, resourceID, id)
 						require.Equal(t, testCase.Ready, ready)
-						require.Equal(t, expectedErrorMsg, errorMsg)
+						if expectedErrorMsg == "" {
+							require.Nil(t, errorMsg)
+						} else {
+							require.Equal(t, expectedErrorMsg, *errorMsg)
+						}
 						updateCalled++
-						return nil
-					},
-				}, map[resource.Type]operation.ResourceDeleterFunc{
-					resource.Application: func(ctx context.Context, id string) error {
-						require.Equal(t, resourceID, id)
-						deleteCalled++
 						return nil
 					},
 				})
 
 				handler.ServeHTTP(writer, req)
 				require.Equal(t, testCase.UpdateCalled, updateCalled)
-				require.Equal(t, testCase.DeleteCalled, deleteCalled)
 			})
 		}
 	})

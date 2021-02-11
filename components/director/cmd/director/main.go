@@ -270,18 +270,14 @@ func main() {
 
 	internalRouter := mux.NewRouter()
 	operationUpdaterHandler := operation.NewUpdateOperationHandler(transact, map[resource.Type]operation.ResourceUpdaterFunc{
-		resource.Application: func(ctx context.Context, id string, ready bool, errorMsg string) error {
+		resource.Application: func(ctx context.Context, id string, ready bool, error *string) error {
 			app, err := appRepo.GetGlobalByID(ctx, id)
 			if err != nil {
 				return err
 			}
 			app.Ready = ready
-			app.Error = &errorMsg
+			app.Error = error
 			return appRepo.Update(ctx, app)
-		},
-	}, map[resource.Type]operation.ResourceDeleterFunc{
-		resource.Application: func(ctx context.Context, id string) error {
-			return appRepo.DeleteGlobal(ctx, id)
 		},
 	})
 	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()

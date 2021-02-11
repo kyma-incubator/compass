@@ -44,24 +44,19 @@ type OperationRequest struct {
 	Error         string                `json:"error"`
 }
 
-// ResourceFetcherFunc defines a function which deletes a particular resource by ID
-type ResourceDeleterFunc func(ctx context.Context, id string) error
-
 // ResourceUpdaterFunc defines a function which updates a particular resource ready and error status
-type ResourceUpdaterFunc func(ctx context.Context, id string, ready bool, errorMsg string) error
+type ResourceUpdaterFunc func(ctx context.Context, id string, ready bool, errorMsg *string) error
 
 type updateOperationHandler struct {
 	transact             persistence.Transactioner
 	resourceUpdaterFuncs map[resource.Type]ResourceUpdaterFunc
-	resourceDeleterFuncs map[resource.Type]ResourceDeleterFunc
 }
 
 // NewUpdateOperationHandler creates a new handler struct to update resource by operation
-func NewUpdateOperationHandler(transact persistence.Transactioner, resourceUpdaterFuncs map[resource.Type]ResourceUpdaterFunc, resourceDeleterFuncs map[resource.Type]ResourceDeleterFunc) *updateOperationHandler {
+func NewUpdateOperationHandler(transact persistence.Transactioner, resourceUpdaterFuncs map[resource.Type]ResourceUpdaterFunc) *updateOperationHandler {
 	return &updateOperationHandler{
 		transact:             transact,
 		resourceUpdaterFuncs: resourceUpdaterFuncs,
-		resourceDeleterFuncs: resourceDeleterFuncs,
 	}
 }
 
@@ -111,32 +106,15 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	resourceUpdaterFunc := h.resourceUpdaterFuncs[operation.ResourceType]
-	switch operation.OperationType {
-	case graphql.OperationTypeCreate:
-		fallthrough
-	case graphql.OperationTypeUpdate:
-		// TODO: Ready should always be true?
-		isReady := operation.Error == ""
-		if err := resourceUpdaterFunc(ctx, operation.ResourceID, isReady, operation.Error); err != nil {
-			log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
-			apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
+	if err := resourceUpdaterFunc(ctx, operation.ResourceID, true, getError(operation.Error)); err != nil {
+		if apperrors.IsNotFoundError(err) {
+			apperrors.WriteAppError(ctx, writer, apperrors.NewNotFoundError(operation.ResourceType, operation.ResourceID), http.StatusNotFound)
 			return
 		}
-	case graphql.OperationTypeDelete:
-		resourceDeleterFunc := h.resourceDeleterFuncs[operation.ResourceType]
-		if operation.Error != "" {
-			if err := resourceUpdaterFunc(ctx, operation.ResourceID, false, operation.Error); err != nil {
-				log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
-				apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
-				return
-			}
-		} else {
-			if err := resourceDeleterFunc(ctx, operation.ResourceID); err != nil {
-				log.C(ctx).WithError(err).Errorf("While deleting resource %s with id %s", operation.ResourceType, operation.ResourceID)
-				apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to delete resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
-				return
-			}
-		}
+
+		log.C(ctx).WithError(err).Errorf("While updating resource %s with id %s", operation.ResourceType, operation.ResourceID)
+		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to update resource %s with id %s", operation.ResourceType, operation.ResourceID), http.StatusInternalServerError)
+		return
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -144,4 +122,12 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to finalize database operation"), http.StatusInternalServerError)
 		return
 	}
+}
+
+func getError(errorMsg string) *string {
+	if len(errorMsg) > 0 {
+		return &errorMsg
+	}
+
+	return nil
 }
