@@ -45,6 +45,7 @@ type Document struct {
 
 type Documents []*Document
 
+// Validate validates all the documents for a system instance
 func (docs Documents) Validate() error {
 	packageIDs := make(map[string]bool, 0)
 	bundleIDs := make(map[string]bool, 0)
@@ -55,21 +56,39 @@ func (docs Documents) Validate() error {
 
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
+			if err := validatePackageInput(&pkg); err != nil {
+				return errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID)
+			}
 			packageIDs[pkg.OrdID] = true
 		}
 		for _, bndl := range doc.ConsumptionBundles {
+			if err := validateBundleInput(&bndl); err != nil {
+				return errors.Wrapf(err, "error validating bundle with ord id %q", bndl.OrdID)
+			}
 			bundleIDs[*bndl.OrdID] = true
 		}
 		for _, product := range doc.Products {
+			if err := validateProductInput(&product); err != nil {
+				return errors.Wrapf(err, "error validating product with ord id %q", product.OrdID)
+			}
 			productIDs[product.OrdID] = true
 		}
 		for _, api := range doc.APIResources {
+			if err := validateAPIInput(&api); err != nil {
+				return errors.Wrapf(err, "error validating api with ord id %q", api.OrdID)
+			}
 			apiIDs[*api.OrdID] = true
 		}
 		for _, event := range doc.EventResources {
+			if err := validateEventInput(&event); err != nil {
+				return errors.Wrapf(err, "error validating event with ord id %q", event.OrdID)
+			}
 			eventIDs[*event.OrdID] = true
 		}
 		for _, vendor := range doc.Vendors {
+			if err := validateVendorInput(&vendor); err != nil {
+				return errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID)
+			}
 			vendorIDs[vendor.OrdID] = true
 		}
 	}
@@ -80,7 +99,7 @@ func (docs Documents) Validate() error {
 			if !vendorIDs[*pkg.Vendor] {
 				return errors.Errorf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor)
 			}
-			ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array() // TODO: Should be validated that partOfProducts is an array of strings (ordIDs)
+			ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !productIDs[productID.String()] {
 					return errors.Errorf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String())
@@ -99,7 +118,7 @@ func (docs Documents) Validate() error {
 			if api.OrdBundleID != nil && !bundleIDs[*api.OrdBundleID] {
 				return errors.Errorf("api with id %q has a reference to unknown bundle %q", api.OrdID, *api.OrdBundleID)
 			}
-			ordIDs := gjson.ParseBytes(api.PartOfProducts).Array() // TODO: Should be validated that partOfProducts is an array of strings (ordIDs)
+			ordIDs := gjson.ParseBytes(api.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !productIDs[productID.String()] {
 					return errors.Errorf("api with id %q has a reference to unknown product %q", api.OrdID, productID.String())
@@ -113,7 +132,7 @@ func (docs Documents) Validate() error {
 			if event.OrdBundleID != nil && !bundleIDs[*event.OrdBundleID] {
 				return errors.Errorf("event with id %q has a reference to unknown bundle %q", event.OrdID, *event.OrdBundleID)
 			}
-			ordIDs := gjson.ParseBytes(event.PartOfProducts).Array() // TODO: Should be validated that partOfProducts is an array of strings (ordIDs)
+			ordIDs := gjson.ParseBytes(event.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !productIDs[productID.String()] {
 					return errors.Errorf("event with id %q has a reference to unknown product %q", event.OrdID, productID.String())
