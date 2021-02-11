@@ -18,7 +18,6 @@ package operation
 
 import (
 	"context"
-	"net/http"
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
@@ -69,13 +68,6 @@ type Operation struct {
 	CorrelationID     string        `json:"correlation_id,omitempty"`
 	WebhookIDs        []string      `json:"webhook_ids,omitempty"`
 	RequestData       string        `json:"request_data,omitempty"`
-}
-
-// RequestData struct contains parts of request that might be needed for later processing of an Operation
-type RequestData struct {
-	Application graphql.Application
-	TenantID    string
-	Headers     http.Header
 }
 
 // Validate ensures that the constructed Operation has valid properties

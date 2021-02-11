@@ -24,6 +24,10 @@ var (
 	fixedTimestamp = time.Now()
 )
 
+func stringPtr(s string) *string {
+	return &s
+}
+
 func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {
 	return &model.ApplicationPage{
 		Data: applications,
@@ -177,8 +181,8 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		Webhooks: []*model.WebhookInput{
-			{URL: "webhook1.foo.bar"},
-			{URL: "webhook2.foo.bar"},
+			{URL: stringPtr("webhook1.foo.bar")},
+			{URL: stringPtr("webhook2.foo.bar")},
 		},
 		Bundles: []*model.BundleCreateInput{
 			{
@@ -230,8 +234,8 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		Webhooks: []*graphql.WebhookInput{
-			{URL: "webhook1.foo.bar"},
-			{URL: "webhook2.foo.bar"},
+			{URL: stringPtr("webhook1.foo.bar")},
+			{URL: stringPtr("webhook2.foo.bar")},
 		},
 		Bundles: []*graphql.BundleCreateInput{
 			{
@@ -322,7 +326,7 @@ func fixModelWebhook(appID, id string) *model.Webhook {
 		ApplicationID: &appID,
 		ID:            id,
 		Type:          model.WebhookTypeConfigurationChanged,
-		URL:           "foourl",
+		URL:           stringPtr("foourl"),
 		Auth:          &model.Auth{},
 	}
 }
@@ -331,7 +335,7 @@ func fixGQLWebhook(id string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:   id,
 		Type: graphql.WebhookTypeConfigurationChanged,
-		URL:  "foourl",
+		URL:  stringPtr("foourl"),
 		Auth: &graphql.Auth{},
 	}
 }

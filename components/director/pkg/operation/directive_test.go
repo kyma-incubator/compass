@@ -25,17 +25,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/header"
-
-	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
+	gqlgen "github.com/99designs/gqlgen/graphql"
+
 	tx_automock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser/ast"
@@ -560,7 +561,7 @@ func TestHandleOperation(t *testing.T) {
 				require.Equal(t, operation.OperationType(operationType), op.OperationType)
 				require.Equal(t, operationCategory, op.OperationCategory)
 
-				expectedRequestData := &operation.RequestData{
+				expectedRequestData := &graphql.RequestData{
 					Application: *(mockedNextResponse().(*graphql.Application)),
 					TenantID:    tenantID,
 					Headers:     mockedHeaders,

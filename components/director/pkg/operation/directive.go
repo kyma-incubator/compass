@@ -218,7 +218,7 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 		return "", errors.New("failed to retrieve request headers")
 	}
 
-	requestData := &RequestData{
+	requestData := &graphql.RequestData{
 		Application: *app,
 		TenantID:    tenantID,
 		Headers:     headers,

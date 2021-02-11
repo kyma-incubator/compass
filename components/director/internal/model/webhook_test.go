@@ -15,6 +15,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 	tenant := "baz"
 	template := `{}`
 	webhookMode := model.WebhookModeSync
+	webhookURL := "foourl"
 	testCases := []struct {
 		Name     string
 		Input    *model.WebhookInput
@@ -24,7 +25,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 			Name: "All properties given",
 			Input: &model.WebhookInput{
 				Type: model.WebhookTypeConfigurationChanged,
-				URL:  "foourl",
+				URL:  &webhookURL,
 				Auth: &model.AuthInput{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
@@ -42,7 +43,7 @@ func TestApplicationWebhookInput_ToWebhook(t *testing.T) {
 				ID:            id,
 				TenantID:      tenant,
 				Type:          model.WebhookTypeConfigurationChanged,
-				URL:           "foourl",
+				URL:           &webhookURL,
 				Auth: &model.Auth{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},

@@ -3907,7 +3907,7 @@ input WebhookInput {
 	"""
 	**Validation:** valid URL, max=256
 	"""
-	url: String!
+	url: String
 	auth: AuthInput
 	mode: WebhookMode
 	correlationIdKey: String
@@ -4339,7 +4339,7 @@ type Webhook {
 	correlationIdKey: String
 	retryInterval: Int
 	timeout: Int
-	url: String!
+	url: String
 	auth: Auth
 	urlTemplate: String
 	inputTemplate: String
@@ -19727,15 +19727,12 @@ func (ec *executionContext) _Webhook_url(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Webhook_auth(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
@@ -22201,7 +22198,7 @@ func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, obj 
 			}
 		case "url":
 			var err error
-			it.URL, err = ec.unmarshalNString2string(ctx, v)
+			it.URL, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -25068,9 +25065,6 @@ func (ec *executionContext) _Webhook(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Webhook_timeout(ctx, field, obj)
 		case "url":
 			out.Values[i] = ec._Webhook_url(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "auth":
 			out.Values[i] = ec._Webhook_auth(ctx, field, obj)
 		case "urlTemplate":

@@ -72,6 +72,7 @@ ALTER TABLE webhooks
     DROP COLUMN integration_system_id;
 
 ALTER TABLE webhooks ALTER COLUMN app_id SET NOT NULL;
+ALTER TABLE webhooks ALTER COLUMN url SET NOT NULL;
 
 DROP TYPE webhook_mode;
 

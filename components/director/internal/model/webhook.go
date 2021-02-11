@@ -8,7 +8,7 @@ type Webhook struct {
 	IntegrationSystemID *string
 	CorrelationIDKey    *string
 	Type                WebhookType
-	URL                 string
+	URL                 *string
 	Auth                *Auth
 	Mode                *WebhookMode
 	RetryInterval       *int
@@ -23,7 +23,7 @@ type Webhook struct {
 type WebhookInput struct {
 	CorrelationIDKey *string
 	Type             WebhookType
-	URL              string
+	URL              *string
 	Auth             *AuthInput
 	Mode             *WebhookMode
 	RetryInterval    *int

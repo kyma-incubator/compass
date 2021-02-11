@@ -596,7 +596,7 @@ input WebhookInput {
 	"""
 	**Validation:** valid URL, max=256
 	"""
-	url: String!
+	url: String
 	auth: AuthInput
 	mode: WebhookMode
 	correlationIdKey: String
@@ -1028,7 +1028,7 @@ type Webhook {
 	correlationIdKey: String
 	retryInterval: Int
 	timeout: Int
-	url: String!
+	url: String
 	auth: Auth
 	urlTemplate: String
 	inputTemplate: String

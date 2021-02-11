@@ -7,13 +7,17 @@ import (
 
 var emptyTemplate = `{}`
 
+func stringPtr(s string) *string {
+	return &s
+}
+
 func fixModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
 		ApplicationID:  &appID,
 		TenantID:       tenant,
 		Type:           model.WebhookTypeConfigurationChanged,
-		URL:            url,
+		URL:            &url,
 		Auth:           &model.Auth{},
 		Mode:           &modelWebhookMode,
 		URLTemplate:    &emptyTemplate,
@@ -28,7 +32,7 @@ func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 		ID:             id,
 		ApplicationID:  &appID,
 		Type:           graphql.WebhookTypeConfigurationChanged,
-		URL:            url,
+		URL:            &url,
 		Auth:           &graphql.Auth{},
 		Mode:           &graphqlWebhookMode,
 		URLTemplate:    &emptyTemplate,
@@ -41,7 +45,7 @@ func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 func fixModelWebhookInput(url string) *model.WebhookInput {
 	return &model.WebhookInput{
 		Type:           model.WebhookTypeConfigurationChanged,
-		URL:            url,
+		URL:            &url,
 		Auth:           &model.AuthInput{},
 		Mode:           &modelWebhookMode,
 		URLTemplate:    &emptyTemplate,
@@ -54,7 +58,7 @@ func fixModelWebhookInput(url string) *model.WebhookInput {
 func fixGQLWebhookInput(url string) *graphql.WebhookInput {
 	return &graphql.WebhookInput{
 		Type:           graphql.WebhookTypeConfigurationChanged,
-		URL:            url,
+		URL:            &url,
 		Auth:           &graphql.AuthInput{},
 		Mode:           &graphqlWebhookMode,
 		URLTemplate:    &emptyTemplate,
