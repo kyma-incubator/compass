@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
@@ -108,12 +109,22 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		OperationCategory: resCtx.Field.Name,
 		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
 	}
-	ctx = SaveToContext(ctx, &[]*Operation{operation})
+	operationsArr := &[]*Operation{operation}
+	ctx = SaveToContext(ctx, operationsArr)
 
+	committed := false
+	defer func() {
+		fmt.Println(">>>>>>>HERE1")
+		if !committed {
+			fmt.Println(">>>>>>>HERE2")
+			lastIndex := int(math.Max(0, float64(len(*operationsArr)-1)))
+			*operationsArr = (*operationsArr)[:lastIndex]
+		}
+	}()
 	resp, err := next(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while processing operation: %s", err.Error())
-		return nil, apperrors.NewInternalError("Unable to process operation")
+		return nil, err
 	}
 
 	entity, ok := resp.(graphql.Entity)
@@ -156,6 +167,8 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to finalize database operation")
 	}
+	fmt.Println(">>>>>>>COMMIITTEEEED")
+	committed = true
 
 	return resp, nil
 }

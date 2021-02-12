@@ -7,7 +7,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/operations-controller/client"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
+	"k8s.io/client-go/rest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -170,6 +174,10 @@ func main() {
 
 	appRepo := applicationRepo()
 
+	// TODO: Use namespace from configuration
+	scheduler, err := buildScheduler("compass-system")
+	exitOnError(err, "Error while creating operations scheduler")
+
 	gqlCfg := graphql.Config{
 		Resolvers: domain.NewRootResolver(
 			&normalizer.DefaultNormalizator{},
@@ -186,7 +194,7 @@ func main() {
 		Directives: graphql.DirectiveRoot{
 			Async: operation.NewDirective(transact, webhookService().List, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 				return appRepo.GetByID(ctx, tenantID, resourceID)
-			}, tenant.LoadFromContext, operation.DefaultScheduler{}).HandleOperation,
+			}, tenant.LoadFromContext, scheduler).HandleOperation,
 			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
 			HasScopes:   scope.NewDirective(cfgProvider).VerifyScopes,
 			Validate:    inputvalidation.NewDirective().Validate,
@@ -494,4 +502,18 @@ func webhookService() webhook.WebhookService {
 	webhookRepo := webhook.NewRepository(webhookConverter)
 
 	return webhook.NewService(webhookRepo, uidSvc)
+}
+
+func buildScheduler(namespace string) (operation.Scheduler, error) {
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	k8sClient, err := client.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	operationsK8sClient := k8sClient.Operations(namespace)
+
+	return k8s.NewScheduler(operationsK8sClient), nil
 }
