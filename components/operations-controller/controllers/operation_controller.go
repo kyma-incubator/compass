@@ -16,6 +16,9 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/types"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,6 +32,7 @@ import (
 type OperationReconciler struct {
 	client.Client
 	Log    logr.Logger
+	Lister types.ApplicationLister
 	Scheme *runtime.Scheme
 }
 
@@ -36,10 +40,21 @@ type OperationReconciler struct {
 // +kubebuilder:rbac:groups=operations.compass,resources=operations/status,verbs=get;update;patch
 
 func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("operation", req.NamespacedName)
+	ctx := context.Background()
+	logger := r.Log.WithValues("operation", req.NamespacedName)
 
 	// your logic here
+	var operation = &operationsv1alpha1.Operation{}
+	err := r.Get(ctx, req.NamespacedName, operation)
+	if err != nil {
+		logger.Info(fmt.Sprintf("Unable to retrieve %s from API server", req.NamespacedName))
+
+		// Do we need to requeue here if we return an error anyway?
+		// Also requeue-ing when the event being processed is for an Operation which is deleted, might result in an infinite loop
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	app, err := r.Lister.FetchApplication(ctx, operation.Spec.ResourceID)
 
 	return ctrl.Result{}, nil
 }

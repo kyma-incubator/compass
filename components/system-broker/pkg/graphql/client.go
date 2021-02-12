@@ -18,6 +18,11 @@ package graphql
 
 import (
 	"context"
+	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
+	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/machinebox/graphql"
@@ -33,6 +38,27 @@ type Client struct {
 	gqlClient GraphQLClient
 	logs      []string
 	logging   bool
+}
+
+func PrepareGqlClient(cfg *Config, httpCfg *httputil.Config, providers ...httputil.TokenProvider) (*director.GraphQLClient, error) {
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewErrorHandlerTransport(httputil.NewHTTPTransport(httpCfg)))
+
+	securedTransport := httputil.NewSecuredTransport(httpTransport, providers...)
+	securedClient := &http.Client{
+		Transport: securedTransport,
+		Timeout:   httpCfg.Timeout,
+	}
+
+	// prepare graphql client that uses secured http client as a basis
+	// the provided endpoint in the graphClient will be changed in the secured transport based on the matching token provider
+	graphClient := graphql.NewClient("", graphql.WithHTTPClient(securedClient))
+	gqlClient := NewClient(cfg, graphClient)
+
+	inputGraphqlizer := &graphqlizer.Graphqlizer{}
+	outputGraphqlizer := &graphqlizer.GqlFieldsProvider{}
+
+	// prepare director graphql client
+	return director.NewGraphQLClient(gqlClient, inputGraphqlizer, outputGraphqlizer), nil
 }
 
 func NewClient(config *Config, gqlClient GraphQLClient) *Client {

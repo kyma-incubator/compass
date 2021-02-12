@@ -66,6 +66,38 @@ type GraphQLClient struct {
 	outputGraphqlizer GqlFieldsProvider
 }
 
+func (c *GraphQLClient) FetchApplication(ctx context.Context, id string) (*ApplicationOutput, error) {
+	query := fmt.Sprintf(`query {
+			result: application(id: "%s") {
+					%s
+			}
+	}`, id, c.outputGraphqlizer.OmitForApplication([]string{
+		"providerName",
+		"description",
+		"integrationSystemID",
+		"labels",
+		"status",
+		"healthCheckURL",
+		"bundles",
+		"auths",
+		"eventingConfiguration",
+	}))
+
+	app := ApplicationOutput{}
+
+	req := gcli.NewRequest(query)
+
+	err := c.gcli.Do(ctx, req, &app)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching application in gqlclient")
+	}
+	if app.Result == nil {
+		return nil, errors.New("failed to fetch application")
+	}
+
+	return &app, nil
+}
+
 func (c *GraphQLClient) FetchApplications(ctx context.Context) (*ApplicationsOutput, error) {
 	query := fmt.Sprintf(`query {
 			result: applications {
