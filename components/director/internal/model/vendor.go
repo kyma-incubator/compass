@@ -17,7 +17,7 @@ type VendorInput struct {
 	OrdID         string `json:"id"`
 	Title         string `json:"title"`
 	Type          string `json:"type"`
-	Labels        json.RawMessage `json"labels"`
+	Labels        json.RawMessage `json:"labels"`
 }
 
 func (i *VendorInput) ToVendor(tenantID, appID string) *Vendor {

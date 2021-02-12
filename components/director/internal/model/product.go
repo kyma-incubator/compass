@@ -23,7 +23,7 @@ type ProductInput struct {
 	Vendor           string          `json:"vendor"`
 	Parent           *string         `json:"parent"`
 	PPMSObjectID     *string         `json:"sapPpmsObjectId"`
-	Labels           json.RawMessage `json:"labes"`
+	Labels           json.RawMessage `json:"labels"`
 }
 
 func (i *ProductInput) ToProduct(tenantID, appID string) *Product {
