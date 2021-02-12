@@ -194,5 +194,14 @@ func (d *directive) prepareWebhookIDs(ctx context.Context, err error, operation 
 			webhookIDs = append(webhookIDs, webhook.ID)
 		}
 	}
+
+	if len(webhookIDs) == 0 {
+		return nil, errors.New("no webhooks found for operation")
+	}
+
+	if len(webhookIDs) > 1 {
+		return nil, errors.New("multiple webhooks per operation are not supported")
+	}
+
 	return webhookIDs, nil
 }
