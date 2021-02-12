@@ -30,12 +30,12 @@ func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 	errID := p.uuidService.Generate()
 
 	if found := errors.As(err, &customErr); !found {
-		log.C(ctx).WithField("errorID", errID).Infof("Unknown error: %s\n", err.Error())
+		log.C(ctx).WithField("errorID", errID).WithError(err).Error("Unknown error")
 		return newGraphqlErrorResponse(ctx, apperrors.InternalError, "Internal Server Error [errorID=%s]", errID)
 	}
 
 	if apperrors.ErrorCode(customErr) == apperrors.InternalError {
-		log.C(ctx).WithField("errorID", errID).Infof("Internal Server Error: %s", err.Error())
+		log.C(ctx).WithField("errorID", errID).WithError(err).Error("Internal Server Error")
 		return newGraphqlErrorResponse(ctx, apperrors.InternalError, "Internal Server Error [errorID=%s]", errID)
 	}
 

@@ -312,7 +312,7 @@ func TestService_CreateInBundle(t *testing.T) {
 	}
 
 	modelAPIDefinition := &model.APIDefinition{
-		BundleID:  bundleID,
+		BundleID:  &bundleID,
 		Tenant:    tenantID,
 		Name:      name,
 		TargetURL: targetUrl,

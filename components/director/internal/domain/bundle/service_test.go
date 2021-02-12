@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
@@ -21,7 +20,6 @@ func TestService_Create(t *testing.T) {
 	// given
 	testErr := errors.New("Test error")
 
-	timestamp := time.Now()
 	id := "foo"
 	applicationID := "appid"
 	name := "foo"
@@ -250,7 +248,6 @@ func TestService_Create(t *testing.T) {
 			eventSvc := testCase.EventServiceFn()
 			documentSvc := testCase.DocumentServiceFn()
 			svc := mp_bundle.NewService(repo, apiSvc, eventSvc, documentSvc, uidService)
-			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
 			result, err := svc.Create(ctx, applicationID, testCase.Input)
@@ -524,7 +521,7 @@ func TestService_Get(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	bndl := fixBundleModel(t, name, desc)
+	bndl := fixBundleModel(name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -600,7 +597,7 @@ func TestService_GetForApplication(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	bndl := fixBundleModel(t, name, desc)
+	bndl := fixBundleModel(name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -678,7 +675,7 @@ func TestService_GetByInstanceAuthID(t *testing.T) {
 	name := "foo"
 	desc := "bar"
 
-	bndl := fixBundleModel(t, name, desc)
+	bndl := fixBundleModel(name, desc)
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -754,9 +751,9 @@ func TestService_ListByApplicationID(t *testing.T) {
 	desc := "bar"
 
 	bundles := []*model.Bundle{
-		fixBundleModel(t, name, desc),
-		fixBundleModel(t, name, desc),
-		fixBundleModel(t, name, desc),
+		fixBundleModel(name, desc),
+		fixBundleModel(name, desc),
+		fixBundleModel(name, desc),
 	}
 	bundlePage := &model.BundlePage{
 		Data:       bundles,
