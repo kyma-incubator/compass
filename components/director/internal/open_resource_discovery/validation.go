@@ -2,13 +2,14 @@ package open_resource_discovery
 
 import (
 	"encoding/json"
+	"regexp"
+	"strings"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	"regexp"
-	"strings"
 )
 
 // Disclaimer: All regexes below are provided by the ORD spec itself.

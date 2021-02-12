@@ -339,7 +339,7 @@ func TestService_Delete(t *testing.T) {
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByID", ctx, givenTenant(), id).Return(webhookModel, nil).Once()
-				repo.On("Delete", ctx, webhookModel.Tenant, webhookModel.ID).Return(nil).Once()
+				repo.On("Delete", ctx, webhookModel.TenantID, webhookModel.ID).Return(nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: "",
@@ -349,7 +349,7 @@ func TestService_Delete(t *testing.T) {
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("GetByID", ctx, givenTenant(), id).Return(webhookModel, nil).Once()
-				repo.On("Delete", ctx, webhookModel.Tenant, webhookModel.ID).Return(testErr).Once()
+				repo.On("Delete", ctx, webhookModel.TenantID, webhookModel.ID).Return(testErr).Once()
 				return repo
 			},
 			ExpectedErrMessage: testErr.Error(),

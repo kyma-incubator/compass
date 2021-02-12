@@ -65,13 +65,16 @@ func TestService_Create(t *testing.T) {
 	}
 
 	modelBundle := &model.Bundle{
-		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
+		BaseEntity: &model.BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
@@ -290,13 +293,13 @@ func TestService_Update(t *testing.T) {
 	})
 
 	bundleModel := &model.Bundle{
-		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  "id",
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
 		DefaultInstanceAuth:            &model.Auth{},
+		BaseEntity:                     &model.BaseEntity{ID: id},
 	}
 
 	ctx := context.TODO()

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/pkg/errors"
 
@@ -48,7 +50,6 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 	}
 
 	return &graphql.APIDefinition{
-		ID:          in.ID,
 		BundleID:    bundleID,
 		Name:        in.Name,
 		Description: in.Description,
@@ -56,6 +57,14 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec) (*graph
 		TargetURL:   in.TargetURL,
 		Group:       in.Group,
 		Version:     c.version.ToGraphQL(in.Version),
+		BaseEntity: &graphql.BaseEntity{
+			ID:        in.ID,
+			Ready:     in.Ready,
+			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
+			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
+			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			Error:     in.Error,
+		},
 	}, nil
 }
 
@@ -120,7 +129,6 @@ func (c *converter) InputFromGraphQL(in *graphql.APIDefinitionInput) (*model.API
 func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 
 	return model.APIDefinition{
-		ID:                  entity.ID,
 		ApplicationID:       entity.ApplicationID,
 		BundleID:            repo.StringPtrFromNullableString(entity.BndlID),
 		PackageID:           repo.StringPtrFromNullableString(entity.PackageID),
@@ -148,13 +156,19 @@ func (c *converter) FromEntity(entity Entity) model.APIDefinition {
 		LineOfBusiness:      repo.JSONRawMessageFromNullableString(entity.LineOfBusiness),
 		Industry:            repo.JSONRawMessageFromNullableString(entity.Industry),
 		Version:             c.version.FromEntity(entity.Version),
+		BaseEntity: &model.BaseEntity{
+			ID:        entity.ID,
+			Ready:     entity.Ready,
+			CreatedAt: entity.CreatedAt,
+			UpdatedAt: entity.UpdatedAt,
+			DeletedAt: entity.DeletedAt,
+			Error:     repo.StringPtrFromNullableString(entity.Error),
+		},
 	}
 }
 
-func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
-
-	return Entity{
-		ID:                  apiModel.ID,
+func (c *converter) ToEntity(apiModel model.APIDefinition) *Entity {
+	return &Entity{
 		TenantID:            apiModel.Tenant,
 		ApplicationID:       apiModel.ApplicationID,
 		BndlID:              repo.NewNullableString(apiModel.BundleID),
@@ -182,6 +196,14 @@ func (c *converter) ToEntity(apiModel model.APIDefinition) Entity {
 		LineOfBusiness:      repo.NewNullableStringFromJSONRawMessage(apiModel.LineOfBusiness),
 		Industry:            repo.NewNullableStringFromJSONRawMessage(apiModel.Industry),
 		Version:             c.convertVersionToEntity(apiModel.Version),
+		BaseEntity: &repo.BaseEntity{
+			ID:        apiModel.ID,
+			Ready:     apiModel.Ready,
+			CreatedAt: apiModel.CreatedAt,
+			UpdatedAt: apiModel.UpdatedAt,
+			DeletedAt: apiModel.DeletedAt,
+			Error:     repo.NewNullableString(apiModel.Error),
+		},
 	}
 }
 
@@ -191,4 +213,13 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 	}
 
 	return c.version.ToEntity(*inVer)
+}
+
+func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
+	if time == nil {
+		return nil
+	}
+
+	t := graphql.Timestamp(*time)
+	return &t
 }

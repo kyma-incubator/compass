@@ -4,22 +4,26 @@ import (
 	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 type Bundle struct {
-	ID                             string
 	TenantID                       string
 	ApplicationID                  string
 	Name                           string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
+	OrdID                          *string
+	ShortDescription               *string
+	Links                          json.RawMessage
+	Labels                         json.RawMessage
+	CredentialExchangeStrategies   json.RawMessage
+	*BaseEntity
+}
 
-	OrdID                        *string
-	ShortDescription             *string
-	Links                        json.RawMessage
-	Labels                       json.RawMessage
-	CredentialExchangeStrategies json.RawMessage
+func (_ *Bundle) GetType() resource.Type {
+	return resource.Bundle
 }
 
 func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
@@ -77,7 +81,6 @@ func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle
 	}
 
 	return &Bundle{
-		ID:                             id,
 		TenantID:                       tenantID,
 		ApplicationID:                  applicationID,
 		Name:                           i.Name,
@@ -89,5 +92,9 @@ func (i *BundleCreateInput) ToBundle(id, applicationID, tenantID string) *Bundle
 		Links:                          i.Links,
 		Labels:                         i.Labels,
 		CredentialExchangeStrategies:   i.CredentialExchangeStrategies,
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }

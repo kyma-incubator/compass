@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type Application struct {
-	ID                  string
 	ProviderName        *string
 	Tenant              string
 	Name                string
@@ -18,6 +19,11 @@ type Application struct {
 	IntegrationSystemID *string
 	BaseURL             *string         `json:"base_url"`
 	Labels              json.RawMessage `json:"labels"`
+	*BaseEntity
+}
+
+func (_ *Application) GetType() resource.Type {
+	return resource.Application
 }
 
 func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timestamp time.Time) {
@@ -85,7 +91,6 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 	}
 
 	return &Application{
-		ID:                  id,
 		Name:                i.Name,
 		Description:         i.Description,
 		Tenant:              tenant,
@@ -98,6 +103,10 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id, tenant
 		},
 		BaseURL: i.BaseURL,
 		Labels:  i.OrdLabels,
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }
 

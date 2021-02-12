@@ -27,9 +27,11 @@ func TestResolver_AddEventToBundle(t *testing.T) {
 
 	modelEvent, spec := fixFullEventDefinitionModel("test")
 	modelBndl := &model.Bundle{
-		ID:            bundleID,
 		TenantID:      tenantID,
 		ApplicationID: appID,
+		BaseEntity: &model.BaseEntity{
+			ID: bundleID,
+		},
 	}
 	gqlEvent := fixFullGQLEventDefinition("test")
 	gqlEventInput := fixGQLEventDefinitionInput("name", "foo", "bar")

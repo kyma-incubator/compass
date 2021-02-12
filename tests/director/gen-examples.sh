@@ -105,7 +105,8 @@ docker run --name ${DIRECTOR_CONTAINER} -d --network=${NETWORK} \
     -e APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients" \
     -e APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token" \
     -e APP_ONE_TIME_TOKEN_URL=http://connector.not.configured.url/graphql \
-    -e APP_CONNECTOR_URL=http://connector.not.configured.url/graphql \
+    -e APP_URL=http://director.not.configured.url/director \
+    -e APP_CONNECTOR_URL=http://connector.not.configured.url/connector/graphql \
     -e APP_JWKS_ENDPOINT="file:///app/default-jwks.json" \
     -e APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info" \
     ${DIRECTOR_IMG_NAME}

@@ -1,4 +1,8 @@
 """
+Async directive is added to mutations which are capable of being executed in asynchronious matter
+"""
+directive @async(operationType: OperationType!, webhookType: WebhookType!) on FIELD_DEFINITION
+"""
 HasScenario directive is added to queries and mutations to ensure that runtimes can only access resources which are in the same scenario as them
 """
 directive @hasScenario(applicationProvider: String!, idField: String!) on FIELD_DEFINITION
@@ -53,11 +57,6 @@ enum ApplicationTemplateAccessLevel {
 	GLOBAL
 }
 
-enum ApplicationWebhookType {
-	CONFIGURATION_CHANGED
-	OPEN_RESOURCE_DISCOVERY
-}
-
 enum BundleInstanceAuthSetStatusConditionInput {
 	SUCCEEDED
 	FAILED
@@ -105,6 +104,17 @@ enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
 }
 
+enum OperationMode {
+	SYNC
+	ASYNC
+}
+
+enum OperationType {
+	CREATE
+	UPDATE
+	DELETE
+}
+
 enum RuntimeStatusCondition {
 	INITIAL
 	PROVISIONING
@@ -123,6 +133,18 @@ enum ViewerType {
 	APPLICATION
 	INTEGRATION_SYSTEM
 	USER
+}
+
+enum WebhookMode {
+	SYNC
+	ASYNC
+}
+
+enum WebhookType {
+	CONFIGURATION_CHANGED
+	REGISTER_APPLICATION
+	UNREGISTER_APPLICATION
+	OPEN_RESOURCE_DISCOVERY
 }
 
 interface OneTimeToken {
@@ -571,12 +593,21 @@ input VersionInput {
 }
 
 input WebhookInput {
-	type: ApplicationWebhookType!
+	type: WebhookType!
 	"""
 	**Validation:** valid URL, max=256
 	"""
-	url: String!
+	url: String
 	auth: AuthInput
+	mode: WebhookMode
+	correlationIdKey: String
+	retryInterval: Int
+	timeout: Int
+	urlTemplate: String
+	inputTemplate: String
+	headerTemplate: String
+	outputTemplate: String
+	statusTemplate: String
 }
 
 type APIDefinition {
@@ -590,6 +621,11 @@ type APIDefinition {
 	"""
 	group: String
 	version: Version
+	ready: Boolean!
+	created_at: Timestamp
+	updated_at: Timestamp
+	deleted_at: Timestamp
+	error: String
 }
 
 type APIDefinitionPage implements Pageable {
@@ -622,6 +658,11 @@ type Application {
 	bundle(id: ID!): Bundle
 	auths: [SystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
+	ready: Boolean!
+	createdAt: Timestamp
+	updatedAt: Timestamp
+	deletedAt: Timestamp
+	error: String
 }
 
 type ApplicationEventingConfiguration {
@@ -696,6 +737,11 @@ type Bundle {
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
 	document(id: ID!): Document
+	ready: Boolean!
+	createdAt: Timestamp
+	updatedAt: Timestamp
+	deletedAt: Timestamp
+	error: String
 }
 
 type BundleInstanceAuth {
@@ -762,6 +808,11 @@ type Document {
 	kind: String
 	data: CLOB
 	fetchRequest: FetchRequest
+	ready: Boolean!
+	createdAt: Timestamp
+	updatedAt: Timestamp
+	deletedAt: Timestamp
+	error: String
 }
 
 type DocumentPage implements Pageable {
@@ -780,6 +831,11 @@ type EventDefinition {
 	group: String
 	spec: EventSpec
 	version: Version
+	ready: Boolean!
+	createdAt: Timestamp
+	updatedAt: Timestamp
+	deletedAt: Timestamp
+	error: String
 }
 
 type EventDefinitionPage implements Pageable {
@@ -965,10 +1021,21 @@ type Viewer {
 
 type Webhook {
 	id: ID!
-	applicationID: ID!
-	type: ApplicationWebhookType!
-	url: String!
+	applicationID: ID
+	runtimeID: ID
+	integrationSystemID: ID
+	type: WebhookType!
+	mode: WebhookMode
+	correlationIdKey: String
+	retryInterval: Int
+	timeout: Int
+	url: String
 	auth: Auth
+	urlTemplate: String
+	inputTemplate: String
+	headerTemplate: String
+	outputTemplate: String
+	statusTemplate: String
 }
 
 type Query {
@@ -1072,7 +1139,7 @@ type Mutation {
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
-	registerApplication(in: ApplicationRegisterInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplication")
+	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(operationType: CREATE, webhookType: REGISTER_APPLICATION)
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
@@ -1082,7 +1149,7 @@ type Mutation {
 	**Examples**
 	- [unregister application](examples/unregister-application/unregister-application.graphql)
 	"""
-	unregisterApplication(id: ID!): Application! @hasScopes(path: "graphql.mutation.unregisterApplication")
+	unregisterApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unregisterApplication") @async(operationType: DELETE, webhookType: UNREGISTER_APPLICATION)
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)

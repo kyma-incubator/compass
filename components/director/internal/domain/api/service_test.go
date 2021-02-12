@@ -402,7 +402,6 @@ func TestService_Create(t *testing.T) {
 	}
 
 	modelAPIDefinition := &model.APIDefinition{
-		ID:            id,
 		BundleID:      &bundleID,
 		PackageID:     &packageID,
 		ApplicationID: appID,
@@ -410,6 +409,10 @@ func TestService_Create(t *testing.T) {
 		Name:          name,
 		TargetURL:     targetUrl,
 		Version:       &model.Version{},
+		BaseEntity: &model.BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 
 	ctx := context.TODO()

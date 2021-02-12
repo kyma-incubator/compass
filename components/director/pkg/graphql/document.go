@@ -1,7 +1,8 @@
 package graphql
 
+import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 type Document struct {
-	ID          string         `json:"id"`
 	BundleID    string         `json:"bundleID"`
 	Title       string         `json:"title"`
 	DisplayName string         `json:"displayName"`
@@ -10,6 +11,11 @@ type Document struct {
 	// for example Service Class, API etc
 	Kind *string `json:"kind"`
 	Data *CLOB   `json:"data"`
+	*BaseEntity
+}
+
+func (e *Document) GetType() resource.Type {
+	return resource.Document
 }
 
 // Extended types used by external API

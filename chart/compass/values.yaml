@@ -27,6 +27,9 @@ global:
     gateway:
       dir:
       version: "PR-1720"
+    operations_controller:
+      dir:
+      version: "PR-1717"
     tenant_fetcher:
       dir:
       version: "PR-1720"
@@ -38,10 +41,10 @@ global:
       version: "PR-1720"
     schema_migrator:
       dir:
-      version: "PR-1719"
+      version: "PR-1727"
     system_broker:
       dir:
-      version: "PR-1720"
+      version: "PR-1721"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -49,20 +52,23 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-1720"
+      version: "PR-1726"
     console:
       dir:
       version: "PR-12"
     tests:
       director:
         dir:
-        version: "PR-1715"
+        version: "PR-1714"
       connector:
         dir:
         version: "PR-1715"
       connectivity_adapter:
         dir:
         version: "PR-1693"
+      operations_controller:
+        dir:
+        version: "PR-1717"
       tenant_fetcher:
         dir:
         version: "PR-1715"
@@ -173,6 +179,9 @@ global:
           - "Client-Id-From-Certificate"
           - "Client-Certificate-Hash"
           - "Certificate-Data"
+
+  operations_controller:
+    enabled: false
 
   connectivity_adapter:
     port: 8080

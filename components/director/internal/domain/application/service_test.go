@@ -36,8 +36,8 @@ func TestService_Create(t *testing.T) {
 	modelInput := model.ApplicationRegisterInput{
 		Name: "foo.bar-not",
 		Webhooks: []*model.WebhookInput{
-			{URL: "test.foo.com"},
-			{URL: "test.bar.com"},
+			{URL: stringPtr("test.foo.com")},
+			{URL: stringPtr("test.bar.com")},
 		},
 
 		Labels: map[string]interface{}{
@@ -85,8 +85,8 @@ func TestService_Create(t *testing.T) {
 	normalizedModelInput := model.ApplicationRegisterInput{
 		Name: "mp-foo-bar-not",
 		Webhooks: []*model.WebhookInput{
-			{URL: "test.foo.com"},
-			{URL: "test.bar.com"},
+			{URL: stringPtr("test.foo.com")},
+			{URL: stringPtr("test.bar.com")},
 		},
 
 		Labels: map[string]interface{}{
@@ -1123,10 +1123,10 @@ func TestService_Delete(t *testing.T) {
 	externalTnt := "external-tnt"
 
 	applicationModel := &model.Application{
-		ID:          id,
 		Name:        "foo",
 		Description: &desc,
 		Tenant:      tnt,
+		BaseEntity:  &model.BaseEntity{ID: id},
 	}
 
 	ctx := context.TODO()
@@ -1191,9 +1191,9 @@ func TestService_Get(t *testing.T) {
 	desc := "Lorem ipsum"
 
 	applicationModel := &model.Application{
-		ID:          "foo",
 		Name:        "foo",
 		Description: &desc,
+		BaseEntity:  &model.BaseEntity{ID: "foo"},
 	}
 
 	tnt := "tenant"

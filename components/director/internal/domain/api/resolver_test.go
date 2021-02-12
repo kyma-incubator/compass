@@ -27,9 +27,11 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 
 	modelAPI, spec := fixFullAPIDefinitionModel("test")
 	modelBndl := &model.Bundle{
-		ID:            bundleID,
 		TenantID:      tenantID,
 		ApplicationID: appID,
+		BaseEntity: &model.BaseEntity{
+			ID: bundleID,
+		},
 	}
 	gqlAPI := fixFullGQLAPIDefinition("test")
 	gqlAPIInput := fixGQLAPIDefinitionInput("name", "foo", "bar")

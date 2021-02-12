@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -28,6 +29,8 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		name := "foo"
 		desc := "bar"
 		bndlModel := fixBundleModel(name, desc)
+		testErrMsg := "test-err"
+		bndlModel.Error = &testErrMsg
 		require.NotNil(t, bndlModel)
 		authConv := auth.NewConverter()
 		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
@@ -35,29 +38,35 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		entity, err := conv.ToEntity(bndlModel)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixEntityBundle(bundleID, name, desc), entity)
+
+		expectedBndl := fixEntityBundle(bundleID, name, desc)
+		expectedBndl.Error = sql.NullString{
+			String: testErrMsg,
+			Valid:  true,
+		}
+		assert.Equal(t, expectedBndl, entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		bndlModel := &model.Bundle{
-			ID:                             bundleID,
 			TenantID:                       tenantID,
 			ApplicationID:                  appID,
 			Name:                           name,
 			Description:                    nil,
 			InstanceAuthRequestInputSchema: nil,
 			DefaultInstanceAuth:            nil,
+			BaseEntity:                     &model.BaseEntity{ID: bundleID},
 		}
 
 		expectedEntity := &mp_bundle.Entity{
-			ID:                            bundleID,
 			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
 			Description:                   sql.NullString{},
 			InstanceAuthRequestJSONSchema: sql.NullString{},
 			DefaultInstanceAuth:           sql.NullString{},
+			BaseEntity:                    &repo.BaseEntity{ID: bundleID},
 		}
 
 		require.NotNil(t, bndlModel)
@@ -76,35 +85,42 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		desc := "bar"
+		testErrMsg := "test-err"
 		entity := fixEntityBundle(bundleID, name, desc)
+		entity.Error = sql.NullString{
+			String: testErrMsg,
+			Valid:  true,
+		}
 		authConv := auth.NewConverter()
 		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
 		//WHEN
 		bndlModel, err := conv.FromEntity(entity)
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, fixBundleModel(name, desc), bndlModel)
+		expectedBdnl := fixBundleModel(name, desc)
+		expectedBdnl.Error = &testErrMsg
+		assert.Equal(t, expectedBdnl, bndlModel)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		entity := &mp_bundle.Entity{
-			ID:                            bundleID,
 			TenantID:                      tenantID,
 			ApplicationID:                 appID,
 			Name:                          name,
 			Description:                   sql.NullString{},
 			InstanceAuthRequestJSONSchema: sql.NullString{},
 			DefaultInstanceAuth:           sql.NullString{},
+			BaseEntity:                    &repo.BaseEntity{ID: bundleID},
 		}
 		expectedModel := &model.Bundle{
-			ID:                             bundleID,
 			TenantID:                       tenantID,
 			ApplicationID:                  appID,
 			Name:                           name,
 			Description:                    nil,
 			InstanceAuthRequestInputSchema: nil,
 			DefaultInstanceAuth:            nil,
+			BaseEntity:                     &model.BaseEntity{ID: bundleID},
 		}
 		authConv := auth.NewConverter()
 		conv := mp_bundle.NewConverter(authConv, nil, nil, nil)
@@ -124,8 +140,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	desc := "bar"
 	modelBundle := fixBundleModel(name, desc)
 	gqlBundle := fixGQLBundle(id, name, desc)
-	emptyModelBundle := &model.Bundle{}
-	emptyGraphQLBundle := &graphql.Bundle{}
+	emptyModelBundle := &model.Bundle{BaseEntity: &model.BaseEntity{}}
+	emptyGraphQLBundle := &graphql.Bundle{BaseEntity: &graphql.BaseEntity{}}
 
 	testCases := []struct {
 		Name            string
@@ -196,14 +212,14 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	input := []*model.Bundle{
 		fixBundleModel(name1, desc),
 		fixBundleModel(name2, desc),
-		{},
+		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
 
 	expected := []*graphql.Bundle{
 		fixGQLBundle(bundleID, name1, desc),
 		fixGQLBundle(bundleID, name2, desc),
-		{},
+		{BaseEntity: &graphql.BaseEntity{}},
 	}
 
 	authConverter := &automock.AuthConverter{}

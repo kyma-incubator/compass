@@ -75,18 +75,20 @@ func TestPgRepository_Create(t *testing.T) {
 }
 
 func TestPgRepository_Update(t *testing.T) {
-	updateQuery := regexp.QuoteMeta(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ? WHERE tenant_id = ? AND id = ?`)
+	updateQuery := regexp.QuoteMeta(`UPDATE public.bundles SET name = ?, description = ?, instance_auth_request_json_schema = ?, default_instance_auth = ?, ord_id = ?, short_description = ?, links = ?, labels = ?, credential_exchange_strategies = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ? WHERE tenant_id = ? AND id = ?`)
 
 	t.Run("success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		bndl := fixBundleModel("foo", "update")
 		entity := fixEntityBundle(bundleID, "foo", "update")
+		entity.UpdatedAt = &fixedTimestamp
+		entity.DeletedAt = &fixedTimestamp // This is needed as workaround so that updatedAt timestamp is not updated
 
 		convMock := &automock.EntityConverter{}
 		convMock.On("ToEntity", bndl).Return(entity, nil)
 		sqlMock.ExpectExec(updateQuery).
-			WithArgs(entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, tenantID, entity.ID).
+			WithArgs(entity.Name, entity.Description, entity.InstanceAuthRequestJSONSchema, entity.DefaultInstanceAuth, entity.OrdID, entity.ShortDescription, entity.Links, entity.Labels, entity.CredentialExchangeStrategies, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, tenantID, entity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		pgRepository := mp_bundle.NewRepository(convMock)
@@ -178,7 +180,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", bndlEntity).Return(&model.Bundle{ID: bundleID, TenantID: tenantID}, nil).Once()
+		convMock.On("FromEntity", bndlEntity).Return(&model.Bundle{TenantID: tenantID, BaseEntity: &model.BaseEntity{ID: bundleID}}, nil).Once()
 		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
 		modelBndl, err := pgRepository.GetByID(ctx, tenantID, bundleID)
@@ -240,7 +242,7 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 	instanceAuthID := "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
 
-	selectQuery := `^SELECT b.id, b.tenant_id, b.app_id, b.name, b.description, b.instance_auth_request_json_schema, b.default_instance_auth, b.ord_id, b.short_description, b.links, b.labels, b.credential_exchange_strategies FROM public.bundles AS b JOIN public.bundle_instance_auths AS a on a.bundle_id=b.id where a.tenant_id=\$1 AND a.id=\$2`
+	selectQuery := `^SELECT b.id, b.tenant_id, b.app_id, b.name, b.description, b.instance_auth_request_json_schema, b.default_instance_auth, b.ord_id, b.short_description, b.links, b.labels, b.credential_exchange_strategies, b.ready, b.created_at, b.updated_at, b.deleted_at, b.error FROM public.bundles AS b JOIN public.bundle_instance_auths AS a on a.bundle_id=b.id where a.tenant_id=\$1 AND a.id=\$2`
 
 	t.Run("Success", func(t *testing.T) {
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -253,7 +255,7 @@ func TestPgRepository_GetByInstanceAuthID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", bndlEntity).Return(&model.Bundle{ID: bundleID, TenantID: tenantID, ApplicationID: appID}, nil).Once()
+		convMock.On("FromEntity", bndlEntity).Return(&model.Bundle{TenantID: tenantID, ApplicationID: appID, BaseEntity: &model.BaseEntity{ID: bundleID}}, nil).Once()
 		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
 		modelBndl, err := pgRepository.GetByInstanceAuthID(ctx, tenantID, instanceAuthID)
@@ -328,7 +330,7 @@ func TestPgRepository_GetForApplication(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", bndlEntity).Return(&model.Bundle{ID: bundleID, TenantID: tenantID, ApplicationID: appID}, nil).Once()
+		convMock.On("FromEntity", bndlEntity).Return(&model.Bundle{TenantID: tenantID, ApplicationID: appID, BaseEntity: &model.BaseEntity{ID: bundleID}}, nil).Once()
 		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
 		modelBndl, err := pgRepository.GetForApplication(ctx, tenantID, bundleID, appID)
@@ -423,8 +425,8 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstBndlEntity).Return(&model.Bundle{ID: firstBndlID}, nil)
-		convMock.On("FromEntity", secondBndlEntity).Return(&model.Bundle{ID: secondBndlID}, nil)
+		convMock.On("FromEntity", firstBndlEntity).Return(&model.Bundle{BaseEntity: &model.BaseEntity{ID: firstBndlID}}, nil)
+		convMock.On("FromEntity", secondBndlEntity).Return(&model.Bundle{BaseEntity: &model.BaseEntity{ID: secondBndlID}}, nil)
 		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
 		modelBndl, err := pgRepository.ListByApplicationID(ctx, tenantID, appID, inputPageSize, inputCursor)
@@ -510,8 +512,8 @@ func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
 		convMock := &automock.EntityConverter{}
-		convMock.On("FromEntity", firstBundleEntity).Return(&model.Bundle{ID: firstBundleID}, nil)
-		convMock.On("FromEntity", secondBundleEntity).Return(&model.Bundle{ID: secondBundleID}, nil)
+		convMock.On("FromEntity", firstBundleEntity).Return(&model.Bundle{BaseEntity: &model.BaseEntity{ID: firstBundleID}}, nil)
+		convMock.On("FromEntity", secondBundleEntity).Return(&model.Bundle{BaseEntity: &model.BaseEntity{ID: secondBundleID}}, nil)
 		pgRepository := mp_bundle.NewRepository(convMock)
 		// WHEN
 		modelBndl, err := pgRepository.ListByApplicationIDNoPaging(ctx, tenantID, appID)

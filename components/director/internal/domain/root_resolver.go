@@ -336,13 +336,13 @@ type mutationResolver struct {
 	*RootResolver
 }
 
-func (r *mutationResolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput) (*graphql.Application, error) {
+func (r *mutationResolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput, _ *graphql.OperationMode) (*graphql.Application, error) {
 	return r.app.RegisterApplication(ctx, in)
 }
 func (r *mutationResolver) UpdateApplication(ctx context.Context, id string, in graphql.ApplicationUpdateInput) (*graphql.Application, error) {
 	return r.app.UpdateApplication(ctx, id, in)
 }
-func (r *mutationResolver) UnregisterApplication(ctx context.Context, id string) (*graphql.Application, error) {
+func (r *mutationResolver) UnregisterApplication(ctx context.Context, id string, _ *graphql.OperationMode) (*graphql.Application, error) {
 	return r.app.UnregisterApplication(ctx, id)
 }
 func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {

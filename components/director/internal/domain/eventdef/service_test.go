@@ -398,13 +398,16 @@ func TestService_Create(t *testing.T) {
 	}
 
 	modelEventDefinition := &model.EventDefinition{
-		ID:            id,
 		BundleID:      &bundleID,
 		PackageID:     &packageID,
 		ApplicationID: appID,
 		Tenant:        tenantID,
 		Name:          name,
 		Version:       &model.Version{},
+		BaseEntity: &model.BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 
 	ctx := context.TODO()

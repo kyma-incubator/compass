@@ -3,10 +3,13 @@ package application
 import (
 	"context"
 	"fmt"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -20,7 +23,8 @@ import (
 const applicationTable string = `public.applications`
 
 var (
-	applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels"}
+	applicationColumns = []string{"id", "tenant_id", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error"}
+	updatableColumns   = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	tenantColumn       = "tenant_id"
 )
 
@@ -51,7 +55,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		pageableQuerier:       repo.NewPageableQuerier(resource.Application, applicationTable, tenantColumn, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(resource.Application, applicationTable, applicationColumns),
-		updater:               repo.NewUpdater(resource.Application, applicationTable, []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels"}, tenantColumn, []string{"id"}),
+		updater:               repo.NewUpdater(resource.Application, applicationTable, updatableColumns, tenantColumn, []string{"id"}),
 		conv:                  conv,
 	}
 }
@@ -61,6 +65,21 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 }
 
 func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
+	opMode := operation.ModeFromCtx(ctx)
+	if opMode == graphql.OperationModeAsync {
+		app, err := r.GetByID(ctx, tenant, id)
+		if err != nil {
+			return err
+		}
+
+		app.Ready = false
+		if app.GetDeletedAt().IsZero() { // Needed for the tests but might be useful for the production also
+			app.SetDeletedAt(time.Now())
+		}
+
+		return r.Update(ctx, app)
+	}
+
 	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
@@ -219,7 +238,6 @@ func (r *pgRepository) Update(ctx context.Context, model *model.Application) err
 
 	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
 	appEnt, err := r.conv.ToEntity(model)
-
 	if err != nil {
 		return errors.Wrap(err, "while converting to Application entity")
 	}

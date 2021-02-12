@@ -44,6 +44,7 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.6.8
+	github.com/tidwall/sjson v1.1.4
 	github.com/vektah/gqlparser v1.3.1
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -57,6 +58,6 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/apimachinery v0.20.2
-	k8s.io/client-go v0.20.2
+	k8s.io/apimachinery v0.17.2
+	k8s.io/client-go v0.17.2
 )
