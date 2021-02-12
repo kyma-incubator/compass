@@ -84,6 +84,17 @@ func (c *OperationsClient) Create(ctx context.Context, operation *v1alpha1.Opera
 	return &result, err
 }
 
+func (c *OperationsClient) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
+	return c.restClient.
+		Delete().
+		Namespace(c.namespace).
+		Resource("operations").
+		Name(name).
+		Body(opts).
+		Do().
+		Error()
+}
+
 func (c *OperationsClient) Update(ctx context.Context, operation *v1alpha1.Operation) (*v1alpha1.Operation, error) {
 	err := c.restClient.
 		Put().

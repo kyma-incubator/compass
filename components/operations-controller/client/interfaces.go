@@ -14,4 +14,5 @@ type OperationsInterface interface {
 	Create(ctx context.Context, operation *v1alpha1.Operation) (*v1alpha1.Operation, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 	Update(ctx context.Context, operation *v1alpha1.Operation) (*v1alpha1.Operation, error)
+	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 }
