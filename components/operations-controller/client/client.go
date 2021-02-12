@@ -21,13 +21,7 @@ type OperationsClientInterface interface {
 	Operations(string) OperationsInterface
 }
 
-func NewForConfig() (OperationsClientInterface, error) {
-	// TODO: Extract config to accept as parameter
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-
+func NewForConfig(cfg *rest.Config) (OperationsClientInterface, error) {
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
