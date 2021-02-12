@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 type EventDefinition struct {
-	ID                  string
 	Tenant              string
 	BundleID            *string
 	PackageID           *string
@@ -32,6 +32,11 @@ type EventDefinition struct {
 	Industry            json.RawMessage
 
 	Version *Version
+	*BaseEntity
+}
+
+func (_ *EventDefinition) GetType() resource.Type {
+	return resource.EventDefinition
 }
 
 type EventDefinitionPage struct {
@@ -79,7 +84,6 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, bundleID *string, pa
 	}
 
 	return &EventDefinition{
-		ID:                  id,
 		BundleID:            bundleID,
 		PackageID:           packageID,
 		Tenant:              tenant,
@@ -103,5 +107,9 @@ func (e *EventDefinitionInput) ToEventDefinition(id string, bundleID *string, pa
 		LineOfBusiness:      e.LineOfBusiness,
 		Industry:            e.Industry,
 		Version:             e.Version.ToVersion(),
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }

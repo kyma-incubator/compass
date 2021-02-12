@@ -3,11 +3,12 @@ package model
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type APIDefinition struct {
-	ID                  string
 	BundleID            *string
 	PackageID           *string
 	Tenant              string
@@ -34,6 +35,11 @@ type APIDefinition struct {
 	LineOfBusiness      json.RawMessage
 	Industry            json.RawMessage
 	Version             *Version
+	*BaseEntity
+}
+
+func (_ *APIDefinition) GetType() resource.Type {
+	return resource.API
 }
 
 type APIDefinitionInput struct {
@@ -83,7 +89,6 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, bundleID *string, packag
 	}
 
 	return &APIDefinition{
-		ID:                  id,
 		BundleID:            bundleID,
 		PackageID:           packageID,
 		Tenant:              tenant,
@@ -110,5 +115,9 @@ func (a *APIDefinitionInput) ToAPIDefinition(id string, bundleID *string, packag
 		LineOfBusiness:      a.LineOfBusiness,
 		Industry:            a.Industry,
 		Version:             a.Version.ToVersion(),
+		BaseEntity: &BaseEntity{
+			ID:    id,
+			Ready: true,
+		},
 	}
 }

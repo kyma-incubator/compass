@@ -1,6 +1,7 @@
 package eventdef_test
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"time"
@@ -25,11 +26,13 @@ const (
 	ordID            = "com.compass.ord.v1"
 )
 
+var fixedTimestamp = time.Now()
+
 func fixEventDefinitionModel(id string, bndlID string, name string) *model.EventDefinition {
 	return &model.EventDefinition{
-		ID:       id,
-		BundleID: &bndlID,
-		Name:     name,
+		BundleID:   &bndlID,
+		Name:       name,
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -56,7 +59,6 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 
 	boolVar := false
 	return model.EventDefinition{
-		ID:                  eventID,
 		BundleID:            str.Ptr(bundleID),
 		PackageID:           str.Ptr(packageID),
 		Tenant:              tenantID,
@@ -80,6 +82,14 @@ func fixFullEventDefinitionModel(placeholder string) (model.EventDefinition, mod
 		LineOfBusiness:      json.RawMessage("[]"),
 		Industry:            json.RawMessage("[]"),
 		Version:             v,
+		BaseEntity: &model.BaseEntity{
+			ID:        eventID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     nil,
+		},
 	}, spec
 }
 
@@ -104,13 +114,20 @@ func fixFullGQLEventDefinition(placeholder string) *graphql.EventDefinition {
 	}
 
 	return &graphql.EventDefinition{
-		ID:          eventID,
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
 		Spec:        spec,
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
+		BaseEntity: &graphql.BaseEntity{
+			ID:        eventID,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
+		},
 	}
 }
 
@@ -176,15 +193,14 @@ func fixGQLEventDefinitionInput(name, description string, group string) *graphql
 
 func fixEntityEventDefinition(id string, bndlID string, name string) event.Entity {
 	return event.Entity{
-		ID:       id,
-		BundleID: repo.NewValidNullableString(bndlID),
-		Name:     name,
+		BundleID:   repo.NewValidNullableString(bndlID),
+		Name:       name,
+		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
 
 func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 	return event.Entity{
-		ID:                  eventID,
 		TenantID:            tenantID,
 		BundleID:            repo.NewValidNullableString(bundleID),
 		PackageID:           repo.NewValidNullableString(packageID),
@@ -213,6 +229,14 @@ func fixFullEntityEventDefinition(eventID, placeholder string) event.Entity {
 			DeprecatedSince: repo.NewNullableString(str.Ptr("v1.0")),
 			ForRemoval:      repo.NewValidNullableBool(false),
 		},
+		BaseEntity: &repo.BaseEntity{
+			ID:        eventID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     sql.NullString{},
+		},
 	}
 }
 
@@ -220,14 +244,14 @@ func fixEventDefinitionColumns() []string {
 	return []string{"id", "tenant_id", "bundle_id", "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 }
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
 	return []driver.Value{id, tenantID, bundleID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", "successor", repo.NewValidNullableString("[]"), "visibility", &boolVar,
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false}
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
@@ -236,7 +260,7 @@ func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value 
 		repo.NewNullableStringFromJSONRawMessage(event.Tags), repo.NewNullableStringFromJSONRawMessage(event.Countries), event.ReleaseStatus, event.SunsetDate, event.Successor,
 		repo.NewNullableStringFromJSONRawMessage(event.Labels), event.Visibility,
 		event.Disabled, repo.NewNullableStringFromJSONRawMessage(event.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(event.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(event.Industry),
-		event.Version.Value, event.Version.Deprecated, event.Version.DeprecatedSince, event.Version.ForRemoval}
+		event.Version.Value, event.Version.Deprecated, event.Version.DeprecatedSince, event.Version.ForRemoval, event.Ready, event.CreatedAt, event.UpdatedAt, event.DeletedAt, event.Error}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
@@ -267,4 +291,9 @@ func fixGQLFetchRequest(url string, timestamp time.Time) *graphql.FetchRequest {
 			Condition: graphql.FetchRequestStatusConditionInitial,
 		},
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }

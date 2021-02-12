@@ -4,10 +4,10 @@ import (
 	"database/sql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 )
 
 type Entity struct {
-	ID                  string         `db:"id"`
 	TenantID            string         `db:"tenant_id"`
 	BundleID            sql.NullString `db:"bundle_id"`
 	PackageID           sql.NullString `db:"package_id"`
@@ -30,6 +30,7 @@ type Entity struct {
 	PartOfProducts      sql.NullString `db:"part_of_products"`
 	LineOfBusiness      sql.NullString `db:"line_of_business"`
 	Industry            sql.NullString `db:"industry"`
-
 	version.Version
+
+	*repo.BaseEntity
 }

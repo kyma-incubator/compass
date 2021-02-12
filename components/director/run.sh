@@ -141,7 +141,8 @@ export APP_STATIC_GROUPS_SRC=${ROOT_PATH}/hack/static-groups-local.yaml
 export APP_OAUTH20_CLIENT_ENDPOINT="https://oauth2-admin.kyma.local/clients"
 export APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token"
 export APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql"
-export APP_CONNECTOR_URL="http://connector.not.configured.url/graphql"
+export APP_URL="http://director.not.configured.url/director"
+export APP_CONNECTOR_URL="http://connector.not.configured.url/connector/graphql"
 export APP_LEGACY_CONNECTOR_URL="https://adapter-gateway.kyma.local/v1/applications/signingRequests/info"
 export APP_LOG_LEVEL=debug 
 

@@ -23,12 +23,12 @@ var (
 	eventDefColumns = []string{idColumn, tenantColumn, bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	idColumns        = []string{idColumn}
 	updatableColumns = []string{bundleColumn, "package_id", "name", "description", "group_name", "ord_id",
 		"short_description", "system_instance_aware", "changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "successor", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
-		"version_for_removal"}
+		"version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
 //go:generate mockery -name=EventAPIDefinitionConverter -output=automock -outpkg=automock -case=underscore

@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/auditlog/configurationchange"
 
 	"github.com/gorilla/mux"
@@ -198,6 +200,52 @@ func TestConfigChangeHandler_SearchByString_Success(t *testing.T) {
 	//THEN
 	require.Equal(t, http.StatusOK, w.Code)
 	require.Len(t, svc.SearchByString(searchString), 1)
+}
+
+func TestConcurrentCalls(t *testing.T) {
+	//GIVEN
+	var wg sync.WaitGroup
+	var goroutinesCnt = 10
+
+	svc := configurationchange.NewService()
+	handler := configurationchange.NewConfigurationHandler(svc, nil)
+
+	for i := 0; i < goroutinesCnt; i++ {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+
+			logID := uuid.New().String()
+			input := fixConfigurationChange(logID)
+			payload, err := json.Marshal(input)
+			require.NoError(t, err)
+
+			req := httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer(payload))
+			w := httptest.NewRecorder()
+
+			//WHEN
+			handler.Save(w, req)
+
+			//THEN
+			require.Equal(t, http.StatusCreated, w.Code)
+			require.NotNil(t, svc.Get(logID))
+
+			//WHEN
+			endpointPath := path.Join("/", logID)
+			req = httptest.NewRequest(http.MethodDelete, endpointPath, bytes.NewBuffer([]byte{}))
+			vars := map[string]string{"id": logID}
+			req = mux.SetURLVars(req, vars)
+
+			w = httptest.NewRecorder()
+			handler.Delete(w, req)
+
+			//THEN
+			require.Equal(t, http.StatusOK, w.Code)
+			require.Nil(t, svc.Get(logID))
+
+		}(&wg)
+	}
+	wg.Wait()
 }
 
 func unmarshallJson(r io.Reader, target interface{}) error {

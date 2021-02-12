@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -27,12 +28,14 @@ const (
 	ordID            = "com.compass.ord.v1"
 )
 
+var fixedTimestamp = time.Now()
+
 func fixAPIDefinitionModel(id string, bndlID string, name, targetURL string) *model.APIDefinition {
 	return &model.APIDefinition{
-		ID:        id,
-		BundleID:  &bndlID,
-		Name:      name,
-		TargetURL: targetURL,
+		BundleID:   &bndlID,
+		Name:       name,
+		TargetURL:  targetURL,
+		BaseEntity: &model.BaseEntity{ID: id},
 	}
 }
 
@@ -59,7 +62,6 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 
 	boolVar := false
 	return model.APIDefinition{
-		ID:                  apiDefID,
 		BundleID:            str.Ptr(bundleID),
 		PackageID:           str.Ptr(packageID),
 		Tenant:              tenantID,
@@ -86,6 +88,14 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		LineOfBusiness:      json.RawMessage("[]"),
 		Industry:            json.RawMessage("[]"),
 		Version:             v,
+		BaseEntity: &model.BaseEntity{
+			ID:        apiDefID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     nil,
+		},
 	}, spec
 }
 
@@ -110,7 +120,6 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 	}
 
 	return &graphql.APIDefinition{
-		ID:          apiDefID,
 		BundleID:    bundleID,
 		Name:        placeholder,
 		Description: str.Ptr("desc_" + placeholder),
@@ -118,6 +127,14 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 		TargetURL:   fmt.Sprintf("https://%s.com", placeholder),
 		Group:       str.Ptr("group_" + placeholder),
 		Version:     v,
+		BaseEntity: &graphql.BaseEntity{
+			ID:        apiDefID,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
+		},
 	}
 }
 
@@ -183,18 +200,17 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	}
 }
 
-func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) api.Entity {
-	return api.Entity{
-		ID:        id,
-		BndlID:    repo.NewValidNullableString(bndlID),
-		Name:      name,
-		TargetURL: targetUrl,
+func fixEntityAPIDefinition(id string, bndlID string, name, targetUrl string) *api.Entity {
+	return &api.Entity{
+		BndlID:     repo.NewValidNullableString(bndlID),
+		Name:       name,
+		TargetURL:  targetUrl,
+		BaseEntity: &repo.BaseEntity{ID: id},
 	}
 }
 
 func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 	return api.Entity{
-		ID:                  apiDefID,
 		TenantID:            tenantID,
 		BndlID:              repo.NewValidNullableString(bundleID),
 		PackageID:           repo.NewValidNullableString(packageID),
@@ -226,6 +242,14 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 			DeprecatedSince: repo.NewNullableString(str.Ptr("v1.0")),
 			ForRemoval:      repo.NewValidNullableBool(false),
 		},
+		BaseEntity: &repo.BaseEntity{
+			ID:        apiDefID,
+			Ready:     true,
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+			Error:     sql.NullString{},
+		},
 	}
 }
 
@@ -233,7 +257,7 @@ func fixAPIDefinitionColumns() []string {
 	return []string{"id", "tenant_id", "bundle_id", "package_id", "name", "description", "group_name", "target_url", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
-		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
@@ -241,7 +265,7 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	return []driver.Value{id, tenantID, bundleID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
 		fmt.Sprintf("https://%s.com", placeholder), ordID, "shortDescription", &boolVar, "apiProtocol", repo.NewValidNullableString("[]"),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", "successor", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "visibility", &boolVar,
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false}
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil}
 }
 
 func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
@@ -250,7 +274,7 @@ func fixAPICreateArgs(id string, api *model.APIDefinition) []driver.Value {
 		repo.NewNullableStringFromJSONRawMessage(api.Links), repo.NewNullableStringFromJSONRawMessage(api.APIResourceLinks),
 		api.ReleaseStatus, api.SunsetDate, api.Successor, repo.NewNullableStringFromJSONRawMessage(api.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(api.Labels), api.Visibility,
 		api.Disabled, repo.NewNullableStringFromJSONRawMessage(api.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(api.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(api.Industry),
-		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince, api.Version.ForRemoval}
+		api.Version.Value, api.Version.Deprecated, api.Version.DeprecatedSince, api.Version.ForRemoval, api.Ready, api.CreatedAt, api.UpdatedAt, api.DeletedAt, api.Error}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {
@@ -281,4 +305,9 @@ func fixGQLFetchRequest(url string, timestamp time.Time) *graphql.FetchRequest {
 			Condition: graphql.FetchRequestStatusConditionInitial,
 		},
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }

@@ -18,18 +18,18 @@ var (
 	apiDefColumns = []string{"id", "tenant_id", "bundle_id", "package_id", "name", "description", "group_name", "target_url", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
-		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 	idColumns        = []string{"id"}
 	updatableColumns = []string{"bundle_id", "package_id", "name", "description", "group_name", "target_url", "ord_id",
 		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "successor", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
-		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal"}
+		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error"}
 )
 
 //go:generate mockery -name=APIDefinitionConverter -output=automock -outpkg=automock -case=underscore
 type APIDefinitionConverter interface {
 	FromEntity(entity Entity) model.APIDefinition
-	ToEntity(apiModel model.APIDefinition) Entity
+	ToEntity(apiModel model.APIDefinition) *Entity
 }
 
 type pgRepository struct {
