@@ -2,6 +2,7 @@ package repo
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -108,6 +109,15 @@ func NewValidNullableString(text string) sql.NullString {
 	}
 }
 
+func NewNullableStringFromJSONRawMessage(json json.RawMessage) sql.NullString {
+	nullString := sql.NullString{}
+	if json != nil {
+		nullString.String = string(json)
+		nullString.Valid = true
+	}
+	return nullString
+}
+
 func NewNullableBool(boolean *bool) sql.NullBool {
 	var sqlBool sql.NullBool
 	if boolean != nil {
@@ -129,6 +139,13 @@ func StringPtrFromNullableString(sqlString sql.NullString) *string {
 		return &sqlString.String
 	}
 
+	return nil
+}
+
+func JSONRawMessageFromNullableString(sqlString sql.NullString) json.RawMessage {
+	if sqlString.Valid {
+		return json.RawMessage(sqlString.String)
+	}
 	return nil
 }
 

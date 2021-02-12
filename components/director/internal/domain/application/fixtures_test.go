@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/url"
 	"testing"
 	"time"
@@ -98,16 +99,18 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 	require.NoError(t, err)
 
 	return &model.Application{
+		ProviderName: &providerName,
+		Tenant:       tenant,
+		Name:         name,
+		Description:  &description,
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 			Timestamp: appStatusTimestamp,
 		},
-		Name:                name,
-		Description:         &description,
-		Tenant:              tenant,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
-		ProviderName:        &providerName,
+		BaseURL:             str.Ptr("base_url"),
+		Labels:              json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -151,12 +154,14 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 	return &application.Entity{
 		TenantID:            tenant,
 		Name:                name,
+		ProviderName:        repo.NewNullableString(&providerName),
 		Description:         repo.NewValidNullableString(description),
 		StatusCondition:     string(model.ApplicationStatusConditionInitial),
 		StatusTimestamp:     ts,
 		HealthCheckURL:      repo.NewValidNullableString(testURL),
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
-		ProviderName:        repo.NewNullableString(&providerName),
+		BaseURL:             repo.NewValidNullableString("base_url"),
+		Labels:              repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -366,7 +371,7 @@ func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *
 
 func fixModelEventAPIDefinition(id string, appId, bundleID string, name, description string, group string) *model.EventDefinition {
 	return &model.EventDefinition{
-		BundleID:    bundleID,
+		BundleID:    &bundleID,
 		Name:        name,
 		Description: &description,
 		Group:       &group,
@@ -374,8 +379,9 @@ func fixModelEventAPIDefinition(id string, appId, bundleID string, name, descrip
 	}
 }
 func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
+	bundleID := "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 	return &model.EventDefinition{Tenant: "ttttttttt-tttt-tttt-tttt-tttttttttttt",
-		BundleID: "ppppppppp-pppp-pppp-pppp-pppppppppppp", Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
+		BundleID: &bundleID, Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
 }
 func fixGQLEventDefinition(id string, appId, bundleID string, name, description string, group string) *graphql.EventDefinition {
 	return &graphql.EventDefinition{

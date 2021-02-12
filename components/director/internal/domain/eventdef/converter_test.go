@@ -373,7 +373,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
 		//WHEN
-		eventModel := conv.FromEntity(*entity)
+		eventModel := conv.FromEntity(entity)
 		//THEN
 		expectedModel, _ := fixFullEventDefinitionModel("placeholder")
 		assert.Equal(t, expectedModel, eventModel)
@@ -384,7 +384,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := event.NewConverter(versionConv, nil)
 		//WHEN
-		eventModel := conv.FromEntity(*entity)
+		eventModel := conv.FromEntity(entity)
 		//THEN
 		expectedModel := fixEventDefinitionModel("id", "bndl_id", "name")
 		require.NotNil(t, expectedModel)
