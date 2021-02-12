@@ -36,9 +36,6 @@ global:
     ord_service:
       dir:
       version: "PR-13"
-    healthchecker:
-      dir:
-      version: "PR-1720"
     schema_migrator:
       dir:
       version: "PR-1727"
