@@ -25,6 +25,9 @@ authentication:
   jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
   identityZone: "id-zone"
 
+tenantProvider:
+  accountIdProperty: "accountId"
+
 server:
   handlerEndpoint: "/v1/callback/{tenantId}"
   tenantPathParam: "tenantId"

@@ -22,8 +22,7 @@ func TestService_Create(t *testing.T) {
 	ctx := context.Background()
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	tenantModel := model.TenantModel{
-		UserId:            testName,
-		GlobalAccountGUID: testID,
+		AccountId: testID,
 	}
 
 	testCases := []struct {

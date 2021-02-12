@@ -24,6 +24,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -59,6 +61,8 @@ type config struct {
 
 	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
 	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+
+	TenantProviderAccountId string `envconfig:"APP_TENANT_PROVIDER_ACCOUNT_ID_PROPERTY"`
 
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
@@ -125,10 +129,10 @@ func main() {
 	subrouter.Use(middleware.Handler())
 
 	logger.Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(service, cfg.TenantPathParam)).Methods(http.MethodPut)
+	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderAccountId)).Methods(http.MethodPut)
 
 	logger.Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(service, cfg.TenantPathParam)).Methods(http.MethodDelete)
+	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderAccountId)).Methods(http.MethodDelete)
 
 	healthCheckSubrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
@@ -188,7 +192,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam string) func(writer http.ResponseWriter, request *http.Request) {
+func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam, tenantIdProperty string) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		logger := log.C(request.Context())
 
@@ -200,11 +204,9 @@ func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam string) 
 			return
 		}
 
-		var tenant model.TenantModel
-		if err := json.Unmarshal(body, &tenant); err != nil {
-			logger.Error(errors.Wrapf(err, "while unmarshalling body"))
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
+		tenantId := gjson.GetBytes(body, tenantIdProperty).String()
+		tenant := model.TenantModel{
+			AccountId: tenantId,
 		}
 
 		if err := svc.Create(request.Context(), tenant); err != nil {
@@ -223,7 +225,7 @@ func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam string) 
 	}
 }
 
-func getDecommissioningHandlerFunc(svc tenant.TenantService, tenantPathParam string) func(writer http.ResponseWriter, request *http.Request) {
+func getDecommissioningHandlerFunc(svc tenant.TenantService, tenantPathParam, tenantIdProperty string) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		logger := log.C(request.Context())
 
@@ -231,14 +233,9 @@ func getDecommissioningHandlerFunc(svc tenant.TenantService, tenantPathParam str
 
 		body, err := extractBody(request, writer)
 
-		var tenant model.TenantModel
-		if err := json.Unmarshal(body, &tenant); err != nil {
-			logger.Error(errors.Wrapf(err, "while unmarshalling body"))
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		tenantId := gjson.GetBytes(body, tenantIdProperty).String()
 
-		if err := svc.DeleteByTenant(request.Context(), tenant.GlobalAccountGUID); err != nil {
+		if err := svc.DeleteByTenant(request.Context(), tenantId); err != nil {
 			logger.Error(errors.Wrapf(err, "while deleting tenant"))
 			writer.WriteHeader(http.StatusInternalServerError)
 			return

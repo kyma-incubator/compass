@@ -13,7 +13,6 @@ func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 
 const (
 	testID           = "foo"
-	testName         = "bar"
 	createQuery      = "INSERT INTO public.business_tenant_mappings ( id, external_name, external_tenant, provider_name, status ) VALUES ( ?, ?, ?, ?, ? )"
 	deleteQuery      = "DELETE FROM public.business_tenant_mappings WHERE external_tenant = $1"
 	testProviderName = "saas-manager"

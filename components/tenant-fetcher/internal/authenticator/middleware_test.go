@@ -38,8 +38,7 @@ var (
 )
 
 type Tenant struct {
-	UserId string `json:"userId"`
-	Id     string `json:"globalAccountGUID"`
+	AccountId string
 }
 
 func TestMiddleware_SynchronizeJWKS(t *testing.T) {
@@ -309,11 +308,10 @@ func testHandler(t *testing.T) http.HandlerFunc {
 }
 
 func emptyRequest(t *testing.T) *http.Request {
-	cisTenant := &Tenant{
-		UserId: "cis",
-		Id:     "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+	providedTenant := &Tenant{
+		AccountId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 	}
-	byteTenant, err := json.Marshal(cisTenant)
+	byteTenant, err := json.Marshal(providedTenant)
 	require.NoError(t, err)
 
 	req, err := http.NewRequest("PUT", HandlerEndpoint, bytes.NewBuffer(byteTenant))

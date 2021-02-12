@@ -17,8 +17,7 @@ import (
 
 func TestRepository_Create(t *testing.T) {
 	tenantModel := model.TenantModel{
-		UserId:            testName,
-		GlobalAccountGUID: testID,
+		AccountId: testID,
 	}
 	entity := tenantEntity.Entity{
 		Name:           testID,

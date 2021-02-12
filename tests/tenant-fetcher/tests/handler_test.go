@@ -73,29 +73,27 @@ type config struct {
 }
 
 type Tenant struct {
-	UserId string `json:"userId"`
-	Id     string `json:"globalAccountGUID"`
+	AccountId string
 }
 
 func TestOnboardingHandler(t *testing.T) {
 	// GIVEN
 	config := loadConfig(t)
 
-	cisTenant := &Tenant{
-		UserId: "cis",
-		Id:     "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+	providedTenant := &Tenant{
+		AccountId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 	}
 
-	cleanUp(t, cisTenant, config)
+	cleanUp(t, providedTenant, config)
 
 	oldTenantState, err := director.GetTenants(config.DirectorUrl, config.Tenant)
 	require.NoError(t, err)
 
 	// WHEN
-	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), cisTenant.Id, 1)
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.AccountId, 1)
 	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
-	byteTenant, err := json.Marshal(cisTenant)
+	byteTenant, err := json.Marshal(providedTenant)
 	require.NoError(t, err)
 	request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
@@ -117,19 +115,18 @@ func TestOnboardingHandler(t *testing.T) {
 
 func TestDecommissioningHandler(t *testing.T) {
 	// GIVEN
-	cisTenant := &Tenant{
-		UserId: "cis",
-		Id:     "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
+	providedTenant := &Tenant{
+		AccountId: "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
 	}
 	config := loadConfig(t)
-	cleanUp(t, cisTenant, config)
+	cleanUp(t, providedTenant, config)
 	// WHEN
 	tenantID := "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72"
 	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantID, 1)
 	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 	// Add test tenant
-	byteTenant, err := json.Marshal(cisTenant)
+	byteTenant, err := json.Marshal(providedTenant)
 	require.NoError(t, err)
 	request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(byteTenant))
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authentication.CreateNotSingedToken(t)))
