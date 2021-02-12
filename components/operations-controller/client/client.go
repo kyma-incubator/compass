@@ -21,7 +21,6 @@ type OperationsClientInterface interface {
 	Operations(string) OperationsInterface
 }
 
-
 func NewForConfig() (OperationsClientInterface, error) {
 	// TODO: Extract config to accept as parameter
 	cfg, err := rest.InClusterConfig()

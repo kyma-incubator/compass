@@ -94,7 +94,7 @@ func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
 
 		app.Ready = false
 		if app.DeletedAt.IsZero() { // Needed for the tests but might be useful for the production also
-			app.DeletedAt = time.Now()
+			app.SetDeletedAt(time.Now())
 		}
 
 		return r.Update(ctx, app)
