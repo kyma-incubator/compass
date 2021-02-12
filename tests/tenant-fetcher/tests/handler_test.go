@@ -47,7 +47,7 @@ const (
 	dbSSL                     = "APP_DB_SSL"
 	dbMaxOpenConnections      = "APP_DB_MAX_OPEN_CONNECTIONS"
 	dbMaxIdleConnections      = "APP_DB_MAX_IDLE_CONNECTIONS"
-	identityZone              = "APP_IDENTITY_ZONE"
+	identityZone              = "APP_TENANT_IDENTITY_ZONE"
 	defaultTenant             = "APP_TENANT"
 	directorURL               = "APP_DIRECTOR_URL"
 	subscriptionCallbackScope = "APP_SUBSCRIPTION_CALLBACK_SCOPE"

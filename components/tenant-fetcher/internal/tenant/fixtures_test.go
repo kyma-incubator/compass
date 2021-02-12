@@ -3,7 +3,7 @@ package tenant_test
 import (
 	"database/sql/driver"
 
-	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 )
 

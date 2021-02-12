@@ -98,7 +98,7 @@ spec:
               value: "{{.Values.database.dbPool.maxIdleConnections}}"
             - name: APP_ALLOW_JWT_SIGNING_NONE
               value: {{ .Values.authentication.allowJWTSigningNone | quote }}
-            - name: APP_IDENTITY_ZONE
+            - name: APP_TENANT_IDENTITY_ZONE
               value: {{ .Values.authentication.identityZone }}
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: Callback
