@@ -16,7 +16,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
-	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.2.0

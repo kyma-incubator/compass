@@ -98,8 +98,8 @@ func (s *Service) processAppPage(ctx context.Context, page []*model.Application)
 		}
 		documents := make([]*open_resource_discovery.Document, 0, 0)
 		for _, wh := range webhooks {
-			if wh.Type == model.WebhookTypeOpenResourceDiscovery {
-				docs, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, wh.URL)
+			if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+				docs, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, *wh.URL)
 				if err != nil {
 					return errors.Wrapf(err, "error fetching ORD document for webhook with id %q for app with id %q", wh.ID, app.ID)
 				}
@@ -165,7 +165,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		}
 		for _, bndl := range doc.ConsumptionBundles {
 			if err := s.resyncBundle(ctx, appID, bundlesFromDB, bndl); err != nil {
-				return errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", bndl.OrdID)
+				return errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", *bndl.OrdID)
 			}
 		}
 		for _, product := range doc.Products {
@@ -180,12 +180,12 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		}
 		for _, api := range doc.APIResources {
 			if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, api); err != nil {
-				return errors.Wrapf(err, "error while resyncing api with ORD ID %q", api.OrdID)
+				return errors.Wrapf(err, "error while resyncing api with ORD ID %q", *api.OrdID)
 			}
 		}
 		for _, event := range doc.EventResources {
 			if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, event); err != nil {
-				return errors.Wrapf(err, "error while resyncing event with ORD ID %q", event.OrdID)
+				return errors.Wrapf(err, "error while resyncing event with ORD ID %q", *event.OrdID)
 			}
 		}
 		for _, tombstone := range doc.Tombstones {

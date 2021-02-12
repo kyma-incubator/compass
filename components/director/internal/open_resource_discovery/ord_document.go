@@ -63,7 +63,7 @@ func (docs Documents) Validate() error {
 		}
 		for _, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInput(&bndl); err != nil {
-				return errors.Wrapf(err, "error validating bundle with ord id %q", bndl.OrdID)
+				return errors.Wrapf(err, "error validating bundle with ord id %q", *bndl.OrdID)
 			}
 			bundleIDs[*bndl.OrdID] = true
 		}
@@ -75,13 +75,13 @@ func (docs Documents) Validate() error {
 		}
 		for _, api := range doc.APIResources {
 			if err := validateAPIInput(&api); err != nil {
-				return errors.Wrapf(err, "error validating api with ord id %q", api.OrdID)
+				return errors.Wrapf(err, "error validating api with ord id %q", *api.OrdID)
 			}
 			apiIDs[*api.OrdID] = true
 		}
 		for _, event := range doc.EventResources {
 			if err := validateEventInput(&event); err != nil {
-				return errors.Wrapf(err, "error validating event with ord id %q", event.OrdID)
+				return errors.Wrapf(err, "error validating event with ord id %q", *event.OrdID)
 			}
 			eventIDs[*event.OrdID] = true
 		}
@@ -113,29 +113,29 @@ func (docs Documents) Validate() error {
 		}
 		for _, api := range doc.APIResources {
 			if !packageIDs[*api.OrdPackageID] {
-				return errors.Errorf("api with id %q has a reference to unknown package %q", api.OrdID, *api.OrdPackageID)
+				return errors.Errorf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)
 			}
 			if api.OrdBundleID != nil && !bundleIDs[*api.OrdBundleID] {
-				return errors.Errorf("api with id %q has a reference to unknown bundle %q", api.OrdID, *api.OrdBundleID)
+				return errors.Errorf("api with id %q has a reference to unknown bundle %q", *api.OrdID, *api.OrdBundleID)
 			}
 			ordIDs := gjson.ParseBytes(api.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !productIDs[productID.String()] {
-					return errors.Errorf("api with id %q has a reference to unknown product %q", api.OrdID, productID.String())
+					return errors.Errorf("api with id %q has a reference to unknown product %q", *api.OrdID, productID.String())
 				}
 			}
 		}
 		for _, event := range doc.EventResources {
 			if !packageIDs[*event.OrdPackageID] {
-				return errors.Errorf("event with id %q has a reference to unknown package %q", event.OrdID, *event.OrdPackageID)
+				return errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)
 			}
 			if event.OrdBundleID != nil && !bundleIDs[*event.OrdBundleID] {
-				return errors.Errorf("event with id %q has a reference to unknown bundle %q", event.OrdID, *event.OrdBundleID)
+				return errors.Errorf("event with id %q has a reference to unknown bundle %q", *event.OrdID, *event.OrdBundleID)
 			}
 			ordIDs := gjson.ParseBytes(event.PartOfProducts).Array()
 			for _, productID := range ordIDs {
 				if !productIDs[productID.String()] {
-					return errors.Errorf("event with id %q has a reference to unknown product %q", event.OrdID, productID.String())
+					return errors.Errorf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String())
 				}
 			}
 		}
