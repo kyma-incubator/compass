@@ -39,7 +39,7 @@ func validatePackageInput(pkg *model.PackageInput) error {
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex))),
 		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In("sap", "sap-partner", "custom"), validation.When(pkg.CustomPolicyLevel != nil, validation.In("custom"))),
 		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel == "custom", validation.Required)),
-		validation.Field(&pkg.PackageLinks, validation.By(validateResourceLinks)),
+		validation.Field(&pkg.PackageLinks, validation.By(validatePackageLinks)),
 		validation.Field(&pkg.Links, validation.By(validateORDLinks)),
 		validation.Field(&pkg.Vendor, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
 		validation.Field(&pkg.PartOfProducts, validation.Required, validation.By(func(value interface{}) error {
@@ -91,7 +91,7 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.OrdBundleID, validation.When(api.OrdBundleID != nil, validation.Match(regexp.MustCompile(BundleOrdIDRegex)))),
 		validation.Field(&api.ApiProtocol, validation.Required, validation.In("odata-v2", "odata-v4", "soap-inbound", "soap-outbound", "rest", "sap-rfc")),
 		validation.Field(&api.Visibility, validation.Required, validation.In("public", "internal", "private")),
-		validation.Field(&api.PartOfProducts, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
 		validation.Field(&api.Tags, validation.By(func(value interface{}) error {
@@ -106,31 +106,11 @@ func validateAPIInput(api *model.APIDefinitionInput) error {
 		validation.Field(&api.Industry, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
-		validation.Field(&api.ResourceDefinitions, validation.Required, validation.By(func(value interface{}) error {
-			return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
-				"type": {
-					validation.Required,
-					validation.In(model.APISpecTypeOpenAPIV2, model.APISpecTypeOpenAPIV3, model.APISpecTypeRaml, model.APISpecTypeEDMX,
-						model.APISpecTypeCsdl, model.APISpecTypeWsdlV1, model.APISpecTypeWsdlV2, model.APISpecTypeRfcMetadata, model.APISpecTypeCustom),
-				},
-				"mediaType": {
-					validation.Required,
-					validation.In(model.SpecFormatApplicationJSON, model.SpecFormatTextYAML, model.SpecFormatApplicationXML, model.SpecFormatPlainText, model.SpecFormatOctetStream),
-				},
-				"url": {
-					validation.Required,
-					is.RequestURI,
-				},
-				"accessStrategies": {
-					validation.Required,
-					validation.By(validateORDAccessStrategy),
-				},
-			}, validateCustomType)
-		})),
-		validation.Field(&api.APIResourceLinks, validation.By(validateResourceLinks)),
+		validation.Field(&api.ResourceDefinitions, validation.Required),
+		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
-		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.When(api.SunsetDate != nil, validation.Date("2021-12-18T09:35:30+0000"))),
+		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.When(api.SunsetDate != nil, validation.Date("2006-01-02T15:04:05+0000"))),
 		validation.Field(&api.Successor, validation.When(*api.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(ApiOrdIDRegex))),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURL, validation.Required, is.RequestURI),
@@ -148,7 +128,7 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&event.OrdBundleID, validation.When(event.OrdBundleID != nil, validation.Match(regexp.MustCompile(BundleOrdIDRegex)))),
 		validation.Field(&event.Visibility, validation.Required, validation.In("public", "internal", "private")),
-		validation.Field(&event.PartOfProducts, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
 		validation.Field(&event.Tags, validation.By(func(value interface{}) error {
@@ -163,29 +143,10 @@ func validateEventInput(event *model.EventDefinitionInput) error {
 		validation.Field(&event.Industry, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStrings(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
-		validation.Field(&event.ResourceDefinitions, validation.Required, validation.By(func(value interface{}) error {
-			return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
-				"type": {
-					validation.Required,
-					validation.In(model.EventSpecTypeAsyncAPIV2, model.EventSpecTypeCustom),
-				},
-				"mediaType": {
-					validation.Required,
-					validation.In(model.SpecFormatApplicationJSON, model.SpecFormatTextYAML, model.SpecFormatApplicationXML, model.SpecFormatPlainText, model.SpecFormatOctetStream),
-				},
-				"url": {
-					validation.Required,
-					is.RequestURI,
-				},
-				"accessStrategies": {
-					validation.Required,
-					validation.By(validateORDAccessStrategy),
-				},
-			}, validateCustomType)
-		})),
+		validation.Field(&event.ResourceDefinitions, validation.Required),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In("beta", "active", "deprecated")),
-		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.When(event.SunsetDate != nil, validation.Date("2021-12-18T09:35:30+0000"))),
+		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.When(event.SunsetDate != nil, validation.Date("2006-01-02T15:04:05+0000"))),
 		validation.Field(&event.Successor, validation.When(*event.ReleaseStatus == "deprecated", validation.Required), validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
@@ -223,6 +184,10 @@ func validateORDLabels(val interface{}) error {
 		return errors.New("labels should be json")
 	}
 
+	if len(labels) == 0 {
+		return nil
+	}
+
 	if !gjson.ValidBytes(labels) {
 		return errors.New("labels should be valid json")
 	}
@@ -252,19 +217,6 @@ func validateORDLabels(val interface{}) error {
 	return err
 }
 
-func validateORDAccessStrategy(value interface{}) error {
-	bytes, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-	return validateJSONArrayOfObjects(json.RawMessage(bytes), map[string][]validation.Rule{
-		"type": {
-			validation.Required,
-			validation.In("open", "custom"),
-		},
-	}, validateCustomType, validateCustomDescription)
-}
-
 func validateORDChangeLogEntries(value interface{}) error {
 	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"version": {
@@ -277,7 +229,7 @@ func validateORDChangeLogEntries(value interface{}) error {
 		},
 		"date": {
 			validation.Required,
-			validation.Date("2020-04-29"),
+			validation.Date("2006-01-02"),
 		},
 	})
 }
@@ -294,11 +246,29 @@ func validateORDLinks(value interface{}) error {
 	})
 }
 
-func validateResourceLinks(value interface{}) error {
+func validatePackageLinks(value interface{}) error {
 	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"type": {
 			validation.Required,
 			validation.In("terms-of-service", "licence", "client-registration", "payment", "sandbox", "service-level-agreement", "support", "custom"),
+		},
+		"url": {
+			validation.Required,
+			is.RequestURI,
+		},
+	}, func(el gjson.Result) error {
+		if el.Get("customType").Exists() && el.Get("type").String() != "custom" {
+			return errors.New("if customType is provided, type should be set to 'custom'")
+		}
+		return nil
+	})
+}
+
+func validateAPILinks(value interface{}) error {
+	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+		"type": {
+			validation.Required,
+			validation.In("api-documentation", "authentication", "client-registration", "console", "payment", "service-level-agreement", "support", "custom"),
 		},
 		"url": {
 			validation.Required,
@@ -324,6 +294,10 @@ func validateJSONArrayOfStrings(arr interface{}, regexPattern *regexp.Regexp) er
 	jsonArr, ok := arr.(json.RawMessage)
 	if !ok {
 		return errors.New("should be json")
+	}
+
+	if len(jsonArr) == 0 {
+		return nil
 	}
 
 	if !gjson.ValidBytes(jsonArr) {
@@ -354,6 +328,10 @@ func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 	jsonArr, ok := arr.(json.RawMessage)
 	if !ok {
 		return errors.New("should be json")
+	}
+
+	if len(jsonArr) == 0 {
+		return nil
 	}
 
 	if !gjson.ValidBytes(jsonArr) {

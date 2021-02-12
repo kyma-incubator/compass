@@ -158,6 +158,16 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 	}
 
 	for _, doc := range documents {
+		for _, vendor := range doc.Vendors {
+			if err := s.resyncVendor(ctx, appID, vendorsFromDB, vendor); err != nil {
+				return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
+			}
+		}
+		for _, product := range doc.Products {
+			if err := s.resyncProduct(ctx, appID, productsFromDB, product); err != nil {
+				return errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
+			}
+		}
 		for _, pkg := range doc.Packages {
 			if err := s.resyncPackage(ctx, appID, packagesFromDB, pkg); err != nil {
 				return errors.Wrapf(err, "error while resyncing package with ORD ID %q", pkg.OrdID)
@@ -166,16 +176,6 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		for _, bndl := range doc.ConsumptionBundles {
 			if err := s.resyncBundle(ctx, appID, bundlesFromDB, bndl); err != nil {
 				return errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", *bndl.OrdID)
-			}
-		}
-		for _, product := range doc.Products {
-			if err := s.resyncProduct(ctx, appID, productsFromDB, product); err != nil {
-				return errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
-			}
-		}
-		for _, vendor := range doc.Vendors {
-			if err := s.resyncVendor(ctx, appID, vendorsFromDB, vendor); err != nil {
-				return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
 			}
 		}
 		for _, api := range doc.APIResources {

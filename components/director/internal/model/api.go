@@ -2,6 +2,9 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/go-ozzo/ozzo-validation/is"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -76,11 +79,29 @@ type APIDefinitionInput struct {
 }
 
 type APIResourceDefinition struct { // This is the place from where the specification for this API is fetched
-	Type           string           `json:"type"`
+	Type           APISpecType      `json:"type"`
 	CustomType     string           `json:"customType"`
-	MediaType      string           `json:"mediaType"`
+	MediaType      SpecFormat       `json:"mediaType"`
 	URL            string           `json:"url"`
 	AccessStrategy []AccessStrategy `json:"accessStrategies"`
+}
+
+func (rd APIResourceDefinition) Validate() error {
+	const CustomTypeRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	return validation.ValidateStruct(&rd,
+		validation.Field(&rd.Type, validation.Required, validation.In(APISpecTypeOpenAPIV2, APISpecTypeOpenAPIV3, APISpecTypeRaml, APISpecTypeEDMX,
+			APISpecTypeCsdl, APISpecTypeWsdlV1, APISpecTypeWsdlV2, APISpecTypeRfcMetadata, APISpecTypeCustom)),
+		validation.Field(&rd.CustomType, validation.When(rd.Type == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomTypeRegex))).Else(validation.Empty)),
+		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream),
+			validation.When(rd.Type == APISpecTypeOpenAPIV2 || rd.Type == APISpecTypeOpenAPIV3, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML)),
+			validation.When(rd.Type == APISpecTypeRaml, validation.In(SpecFormatTextYAML)),
+			validation.When(rd.Type == APISpecTypeEDMX, validation.In(SpecFormatApplicationXML)),
+			validation.When(rd.Type == APISpecTypeCsdl, validation.In(SpecFormatApplicationJSON)),
+			validation.When(rd.Type == APISpecTypeWsdlV1 || rd.Type == APISpecTypeWsdlV2, validation.In(SpecFormatApplicationXML)),
+			validation.When(rd.Type == APISpecTypeRfcMetadata, validation.In(SpecFormatApplicationXML))),
+		validation.Field(&rd.URL, validation.Required, is.RequestURI),
+		validation.Field(&rd.AccessStrategy, validation.Required),
+	)
 }
 
 func (a APIResourceDefinition) ToSpec() *SpecInput {
@@ -100,6 +121,14 @@ type AccessStrategy struct {
 	Type              string `json:"type"`
 	CustomType        string `json:"customType"`
 	CustomDescription string `json:"customDescription"`
+}
+
+func (as AccessStrategy) Validate() error {
+	return validation.ValidateStruct(&as,
+		validation.Field(&as.Type, validation.Required, validation.In("open", "custom")),
+		validation.Field(&as.CustomType, validation.When(as.Type == "custom", validation.Required).Else(validation.Empty)),
+		validation.Field(&as.CustomDescription, validation.When(as.Type == "custom", validation.Required).Else(validation.Empty)),
+	)
 }
 
 type APIDefinitionPage struct {

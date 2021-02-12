@@ -2,6 +2,9 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/go-ozzo/ozzo-validation/is"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"regexp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -77,11 +80,22 @@ type EventDefinitionInput struct {
 }
 
 type EventResourceDefinition struct { // This is the place from where the specification for this API is fetched
-	Type           string           `json:"type"`
+	Type           EventSpecType    `json:"type"`
 	CustomType     string           `json:"customType"`
-	MediaType      string           `json:"mediaType"`
+	MediaType      SpecFormat       `json:"mediaType"`
 	URL            string           `json:"url"`
 	AccessStrategy []AccessStrategy `json:"accessStrategies"`
+}
+
+func (rd EventResourceDefinition) Validate() error {
+	const CustomTypeRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	return validation.ValidateStruct(&rd,
+		validation.Field(&rd.Type, validation.Required, validation.In(EventSpecTypeAsyncAPIV2, EventSpecTypeCustom)),
+		validation.Field(&rd.CustomType, validation.When(rd.Type == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomTypeRegex))).Else(validation.Empty)),
+		validation.Field(&rd.MediaType, validation.Required, validation.In(SpecFormatApplicationJSON, SpecFormatTextYAML, SpecFormatApplicationXML, SpecFormatPlainText, SpecFormatOctetStream)),
+		validation.Field(&rd.URL, validation.Required, is.RequestURI),
+		validation.Field(&rd.AccessStrategy, validation.Required),
+	)
 }
 
 func (a EventResourceDefinition) ToSpec() *SpecInput {
