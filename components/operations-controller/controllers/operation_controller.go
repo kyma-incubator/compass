@@ -54,7 +54,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	app, err := r.Lister.FetchApplication(ctx, operation.Spec.ResourceID)
+	_, err = r.Lister.FetchApplication(ctx, operation.Spec.ResourceID)
 
 	return ctrl.Result{}, nil
 }
