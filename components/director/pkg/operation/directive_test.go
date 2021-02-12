@@ -667,7 +667,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 					BaseEntity: &model.BaseEntity{
 						ID:        resourceID,
 						Ready:     false,
-						CreatedAt: time.Now(),
+						CreatedAt: timeToTimePtr(time.Now()),
 					},
 				}, nil
 			},
@@ -690,8 +690,8 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 					BaseEntity: &model.BaseEntity{
 						ID:        resourceID,
 						Ready:     false,
-						CreatedAt: time.Now(),
-						DeletedAt: time.Now(),
+						CreatedAt: timeToTimePtr(time.Now()),
+						DeletedAt: timeToTimePtr(time.Now()),
 					},
 				}, nil
 			},
@@ -715,7 +715,7 @@ func TestHandleOperation_ConcurrencyCheck(t *testing.T) {
 					BaseEntity: &model.BaseEntity{
 						ID:        resourceID,
 						Ready:     true,
-						CreatedAt: time.Now(),
+						CreatedAt: timeToTimePtr(time.Now()),
 					},
 				}, nil
 			},
