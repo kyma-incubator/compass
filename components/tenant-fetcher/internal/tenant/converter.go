@@ -1,6 +1,9 @@
 package tenant
 
-import "github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
+)
 
 type converter struct{}
 
@@ -8,8 +11,8 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-func (c *converter) ToEntity(in model.TenantModel) Entity {
-	return Entity{
+func (c *converter) ToEntity(in model.TenantModel) tenant.Entity {
+	return tenant.Entity{
 		ID:             "",
 		Name:           in.GlobalAccountGUID,
 		ExternalTenant: in.GlobalAccountGUID,
@@ -18,7 +21,7 @@ func (c *converter) ToEntity(in model.TenantModel) Entity {
 	}
 }
 
-func (c *converter) FromEntity(in *Entity) *model.TenantModel {
+func (c *converter) FromEntity(in *tenant.Entity) *model.TenantModel {
 	if in == nil {
 		return nil
 	}

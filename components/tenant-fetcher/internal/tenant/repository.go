@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 
@@ -34,8 +36,8 @@ type TenantRepository interface {
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
 type Converter interface {
-	ToEntity(in model.TenantModel) Entity
-	FromEntity(in *Entity) *model.TenantModel
+	ToEntity(in model.TenantModel) tenant.Entity
+	FromEntity(in *tenant.Entity) *model.TenantModel
 }
 
 type repository struct {
@@ -60,7 +62,7 @@ func (r *repository) Create(ctx context.Context, item model.TenantModel, id stri
 
 	dbEntity := r.converter.ToEntity(item)
 	dbEntity.ID = id
-	dbEntity.Status = Active
+	dbEntity.Status = tenant.Active
 	dbEntity.ProviderName = providerName
 
 	var values []string
