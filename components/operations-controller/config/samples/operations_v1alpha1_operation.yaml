@@ -1,0 +1,35 @@
+apiVersion: operations.compass/v1alpha1
+kind: Operation
+metadata:
+  name: operation-sample
+spec:
+  operation_id: "bdc816c5-e7b8-4c8f-9aab-4acfd50d33e1"
+  operation_type: "Create"
+  operation_category: "registerApplication"
+  resource_type: "Application"
+  resource_id: "31363883-d3f5-4548-addb-54ddb8cf2666"
+  correlation_id: "528b6b43-9a32-4a5e-9cd6-72fb27ad63e3"
+  webhook_ids:
+    - "31363883-d3f5-4548-addb-54ddb8cf2669"
+    - "31363883-d3f5-4548-addb-54ddb8cf2569"
+  request_data: "{ \"name\": \"test-app\", \"creation_date\": \"123456789\", \"year\": 2017 }"
+status:
+  webhooks:
+    - webhook_id: "bdc816c5-e7b8-4c8f-9aab-4acfd50d3200"
+      retries_count: 0
+      webhook_poll_url: "localhost"
+      last_poll_timestamp: "123456789"
+      state: "Success"
+    - webhook_id: "bdc816c5-e7b8-4c8f-9aab-4acfd50d3400"
+      retries_count: 5
+      webhook_poll_url: "localhost"
+      last_poll_timestamp: "123456789"
+      state: "Success"
+  conditions:
+    - type: "Ready"
+      status: "True"
+      message: ""
+    - type: "Error"
+      status: "Unknown"
+      message: "Unknown error"
+  phase: "In Progress"

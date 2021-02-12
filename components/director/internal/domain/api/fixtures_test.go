@@ -68,9 +68,9 @@ func fixFullAPIDefinitionModel(placeholder string) (model.APIDefinition, model.S
 		BaseEntity: &model.BaseEntity{
 			ID:        apiDefID,
 			Ready:     true,
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 			Error:     nil,
 		},
 	}, spec
@@ -108,9 +108,9 @@ func fixFullGQLAPIDefinition(placeholder string) *graphql.APIDefinition {
 			ID:        apiDefID,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: graphql.Timestamp(fixedTimestamp),
-			UpdatedAt: graphql.Timestamp(time.Time{}),
-			DeletedAt: graphql.Timestamp(time.Time{}),
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
 		},
 	}
 }
@@ -205,9 +205,9 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) *api.Entity {
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiDefID,
 			Ready:     true,
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 			Error:     sql.NullString{},
 		},
 	}
@@ -257,4 +257,9 @@ func fixGQLFetchRequest(url string, timestamp time.Time) *graphql.FetchRequest {
 			Condition: graphql.FetchRequestStatusConditionInitial,
 		},
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }

@@ -26,9 +26,9 @@ type Entity interface {
 type BaseEntity struct {
 	ID        string         `db:"id"`
 	Ready     bool           `db:"ready"`
-	CreatedAt time.Time      `db:"created_at"`
-	UpdatedAt time.Time      `db:"updated_at"`
-	DeletedAt time.Time      `db:"deleted_at"`
+	CreatedAt *time.Time     `db:"created_at"`
+	UpdatedAt *time.Time     `db:"updated_at"`
+	DeletedAt *time.Time     `db:"deleted_at"`
 	Error     sql.NullString `db:"error"`
 }
 
@@ -41,27 +41,36 @@ func (e *BaseEntity) SetReady(ready bool) {
 }
 
 func (e *BaseEntity) GetCreatedAt() time.Time {
-	return e.CreatedAt
+	if e.CreatedAt == nil {
+		return time.Time{}
+	}
+	return *e.CreatedAt
 }
 
 func (e *BaseEntity) SetCreatedAt(t time.Time) {
-	e.CreatedAt = t
+	e.CreatedAt = &t
 }
 
 func (e *BaseEntity) GetUpdatedAt() time.Time {
-	return e.UpdatedAt
+	if e.UpdatedAt == nil {
+		return time.Time{}
+	}
+	return *e.UpdatedAt
 }
 
 func (e *BaseEntity) SetUpdatedAt(t time.Time) {
-	e.UpdatedAt = t
+	e.UpdatedAt = &t
 }
 
 func (e *BaseEntity) GetDeletedAt() time.Time {
-	return e.DeletedAt
+	if e.DeletedAt == nil {
+		return time.Time{}
+	}
+	return *e.DeletedAt
 }
 
 func (e *BaseEntity) SetDeletedAt(t time.Time) {
-	e.DeletedAt = t
+	e.DeletedAt = &t
 }
 
 func (e *BaseEntity) GetError() sql.NullString {

@@ -165,9 +165,9 @@ func TestToEntity(t *testing.T) {
 		BaseEntity: &model.BaseEntity{
 			ID:        "givenID",
 			Ready:     true,
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 			Error:     nil,
 		},
 	}

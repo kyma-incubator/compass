@@ -112,9 +112,9 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 			ID:        id,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 		},
 	}
 }
@@ -137,9 +137,9 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 			ID:        id,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: graphql.Timestamp(fixedTimestamp),
-			UpdatedAt: graphql.Timestamp(time.Time{}),
-			DeletedAt: graphql.Timestamp(time.Time{}),
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
 		},
 	}
 }
@@ -161,9 +161,9 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 			ID:        id,
 			Ready:     true,
 			Error:     sql.NullString{},
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 		},
 	}
 }
@@ -478,4 +478,9 @@ func fixBundlePage(bundles []*model.Bundle) *model.BundlePage {
 		},
 		TotalCount: len(bundles),
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }

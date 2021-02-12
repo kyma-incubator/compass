@@ -36,9 +36,9 @@ func fixModelDocument(id, bundleID string) *model.Document {
 			ID:        id,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 		},
 	}
 }
@@ -57,9 +57,9 @@ func fixEntityDocument(id, bundleID string) *document.Entity {
 			ID:        id,
 			Ready:     true,
 			Error:     sql.NullString{},
-			CreatedAt: fixedTimestamp,
-			UpdatedAt: time.Time{},
-			DeletedAt: time.Time{},
+			CreatedAt: &fixedTimestamp,
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
 		},
 	}
 }
@@ -77,9 +77,9 @@ func fixGQLDocument(id, bundleID string) *graphql.Document {
 			ID:        id,
 			Ready:     true,
 			Error:     nil,
-			CreatedAt: graphql.Timestamp(fixedTimestamp),
-			UpdatedAt: graphql.Timestamp(time.Time{}),
-			DeletedAt: graphql.Timestamp(time.Time{}),
+			CreatedAt: timeToTimestampPtr(fixedTimestamp),
+			UpdatedAt: timeToTimestampPtr(time.Time{}),
+			DeletedAt: timeToTimestampPtr(time.Time{}),
 		},
 	}
 }
@@ -148,4 +148,9 @@ func fixGQLDocumentInput(id string) *graphql.DocumentInput {
 		Kind:        &docKind,
 		Data:        &docCLOB,
 	}
+}
+
+func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
+	t := graphql.Timestamp(time)
+	return &t
 }

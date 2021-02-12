@@ -1,38 +1,38 @@
 BEGIN;
 
 ALTER TABLE applications
-    ADD COLUMN ready bool NOT NULL DEFAULT TRUE,
-    ADD COLUMN created_at timestamp NOT NULL,
-    ADD COLUMN updated_at timestamp NOT NULL,
-    ADD COLUMN deleted_at timestamp NOT NULL,
+    ADD COLUMN ready bool DEFAULT TRUE,
+    ADD COLUMN created_at timestamp,
+    ADD COLUMN updated_at timestamp,
+    ADD COLUMN deleted_at timestamp,
     ADD COLUMN error jsonb;
 
 ALTER TABLE bundles
-    ADD COLUMN ready bool NOT NULL DEFAULT TRUE,
-    ADD COLUMN created_at timestamp NOT NULL,
-    ADD COLUMN updated_at timestamp NOT NULL,
-    ADD COLUMN deleted_at timestamp NOT NULL,
+    ADD COLUMN ready bool DEFAULT TRUE,
+    ADD COLUMN created_at timestamp,
+    ADD COLUMN updated_at timestamp,
+    ADD COLUMN deleted_at timestamp,
     ADD COLUMN error jsonb;
 
 ALTER TABLE api_definitions
-    ADD COLUMN ready bool NOT NULL DEFAULT TRUE,
-    ADD COLUMN created_at timestamp NOT NULL,
-    ADD COLUMN updated_at timestamp NOT NULL,
-    ADD COLUMN deleted_at timestamp NOT NULL,
+    ADD COLUMN ready bool DEFAULT TRUE,
+    ADD COLUMN created_at timestamp,
+    ADD COLUMN updated_at timestamp,
+    ADD COLUMN deleted_at timestamp,
     ADD COLUMN error jsonb;
 
 ALTER TABLE event_api_definitions
-    ADD COLUMN ready bool NOT NULL DEFAULT TRUE,
-    ADD COLUMN created_at timestamp NOT NULL,
-    ADD COLUMN updated_at timestamp NOT NULL,
-    ADD COLUMN deleted_at timestamp NOT NULL,
+    ADD COLUMN ready bool DEFAULT TRUE,
+    ADD COLUMN created_at timestamp,
+    ADD COLUMN updated_at timestamp,
+    ADD COLUMN deleted_at timestamp,
     ADD COLUMN error jsonb;
 
 ALTER TABLE documents
-    ADD COLUMN ready bool NOT NULL DEFAULT TRUE,
-    ADD COLUMN created_at timestamp NOT NULL,
-    ADD COLUMN updated_at timestamp NOT NULL,
-    ADD COLUMN deleted_at timestamp NOT NULL,
+    ADD COLUMN ready bool DEFAULT TRUE,
+    ADD COLUMN created_at timestamp,
+    ADD COLUMN updated_at timestamp,
+    ADD COLUMN deleted_at timestamp,
     ADD COLUMN error jsonb;
 
 ALTER TABLE applications
