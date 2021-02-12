@@ -16,7 +16,7 @@ type Claims struct {
 func CreateNotSingedToken(t *testing.T) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodNone, Claims{
 		Scopes: []string{"prefix.Callback"},
-		ZID:    "sap-provisioning",
+		ZID:    "id-zone",
 	})
 
 	signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)

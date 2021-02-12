@@ -52,6 +52,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			token, err := a.getBearerToken(r)
 			if err != nil {
+				log.C(ctx).WithError(err).Error("An error has occurred while extracting the JWT token. Error code: ", http.StatusUnauthorized)
 				a.writeAppError(ctx, w, err, http.StatusBadRequest)
 			}
 
@@ -78,6 +79,10 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func (a *Authenticator) SetJWKSEndpoint(url string) {
+	a.jwksEndpoint = url
 }
 
 func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {

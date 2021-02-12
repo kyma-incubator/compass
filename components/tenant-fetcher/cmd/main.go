@@ -63,7 +63,7 @@ type config struct {
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
 	JwksEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT"`
-	CISIdentityZone           string        `envconfig:"APP_CIS_IDENTITY_ZONE"`
+	IdentityZone              string        `envconfig:"APP_IDENTITY_ZONE"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 }
 
@@ -105,22 +105,20 @@ func main() {
 
 	middleware := auth.New(
 		cfg.JwksEndpoint,
-		cfg.CISIdentityZone,
+		cfg.IdentityZone,
 		cfg.SubscriptionCallbackScope,
 		extractTrustedIssuersScopePrefixes(authenticatorsConfig),
 		cfg.AllowJWTSigningNone,
 	)
 
-	if cfg.JWKSSyncPeriod != 0 {
-		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
-		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
-			err := middleware.SynchronizeJWKS(ctx)
-			if err != nil {
-				logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
-			}
-		})
-		go periodicExecutor.Run(ctx)
-	}
+	logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
+	periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
+		err := middleware.SynchronizeJWKS(ctx)
+		if err != nil {
+			logger.WithError(err).Error("An error has occurred while synchronizing JWKS")
+		}
+	})
+	go periodicExecutor.Run(ctx)
 
 	mainRouter := mux.NewRouter()
 	subrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
