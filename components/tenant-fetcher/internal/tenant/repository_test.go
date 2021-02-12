@@ -7,6 +7,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/testdb"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
@@ -19,7 +20,7 @@ func TestRepository_Create(t *testing.T) {
 		UserId:            testName,
 		GlobalAccountGUID: testID,
 	}
-	tenantEntity := tenant.Entity{
+	entity := tenantEntity.Entity{
 		Name:           testID,
 		ExternalTenant: testID,
 	}
@@ -31,7 +32,7 @@ func TestRepository_Create(t *testing.T) {
 		ctx = persistence.SaveToContext(ctx, db)
 
 		mockConverter := &automock.Converter{}
-		mockConverter.On("ToEntity", tenantModel).Return(tenantEntity)
+		mockConverter.On("ToEntity", tenantModel).Return(entity)
 		defer mockConverter.AssertExpectations(t)
 
 		defer dbMock.AssertExpectations(t)
