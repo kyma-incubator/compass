@@ -90,7 +90,7 @@ func (c *OperationsClient) Delete(ctx context.Context, name string, opts metav1.
 		Namespace(c.namespace).
 		Resource("operations").
 		Name(name).
-		Body(opts).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
 		Error()
 }
