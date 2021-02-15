@@ -260,17 +260,17 @@ func retrieveWebhooks(appWebhooks []graphql.Webhook, opWebhookIDs []string) (map
 
 	webhooks := make(map[string]graphql.Webhook, 0)
 
-	for _, webhookID := range opWebhookIDs {
+	for _, opWebhookID := range opWebhookIDs {
 		webhookExists := false
-		for _, webhook := range appWebhooks {
-			if webhookID == webhook.ID {
-				webhooks[webhookID] = webhook
+		for _, appWebhook := range appWebhooks {
+			if opWebhookID == appWebhook.ID {
+				webhooks[opWebhookID] = appWebhook
 				webhookExists = true
 			}
 		}
 
 		if !webhookExists {
-			return nil, fmt.Errorf("missing webhook with ID: %s", webhookID)
+			return nil, fmt.Errorf("missing webhook with ID: %s", opWebhookID)
 		}
 	}
 
