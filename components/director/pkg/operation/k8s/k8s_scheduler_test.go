@@ -70,7 +70,8 @@ func TestScheduler_Schedule(t *testing.T) {
 		operationName := fmt.Sprintf("%s-%s", op.ResourceType, op.ResourceID)
 
 		cli := &automock.K8SClient{}
-		cli.On("Get", ctx, operationName, metav1.GetOptions{}).Return(nil, k8s_errors.NewNotFound(schema.GroupResource{}, "test")).Once()
+		notFoundErr := k8s_errors.NewNotFound(schema.GroupResource{}, operationName)
+		cli.On("Get", ctx, operationName, metav1.GetOptions{}).Return(nil, notFoundErr).Once()
 
 		k8sOp := toK8SOperation(op)
 		k8sOp.UID = operationID
@@ -109,7 +110,7 @@ func TestScheduler_Schedule(t *testing.T) {
 		require.Contains(t, err.Error(), fmt.Sprintf("another operation is in progress for resource with ID %q", op.ResourceID))
 	})
 
-	t.Run("when a previous operation is not in progress and its deletion fails it should return an error", func(t *testing.T) {
+	t.Run("when operation update fails it should return an error", func(t *testing.T) {
 		// GIVEN
 		ctx := context.TODO()
 		op := &operation.Operation{OperationType: operation.OperationTypeCreate, ResourceID: resourceID}
@@ -125,7 +126,7 @@ func TestScheduler_Schedule(t *testing.T) {
 
 		cli.On("Get", ctx, operationName, metav1.GetOptions{}).Return(k8sOp, nil).Once()
 		expErr := errors.New("error")
-		cli.On("Delete", ctx, operationName, metav1.DeleteOptions{}).Return(expErr).Once()
+		cli.On("Update", ctx, k8sOp).Return(nil, expErr).Once()
 
 		defer cli.AssertExpectations(t)
 		s := k8s.NewScheduler(cli)
@@ -137,7 +138,7 @@ func TestScheduler_Schedule(t *testing.T) {
 		require.Equal(t, expErr, err)
 	})
 
-	t.Run("when a previous operation is deleted and the k8s client fails to create a new one it should fail", func(t *testing.T) {
+	t.Run("when another operation update is in progress it should return an error", func(t *testing.T) {
 		// GIVEN
 		ctx := context.TODO()
 		op := &operation.Operation{OperationType: operation.OperationTypeCreate, ResourceID: resourceID}
@@ -152,50 +153,46 @@ func TestScheduler_Schedule(t *testing.T) {
 		}}
 
 		cli.On("Get", ctx, operationName, metav1.GetOptions{}).Return(k8sOp, nil).Once()
-		cli.On("Delete", ctx, operationName, metav1.DeleteOptions{}).Return(nil).Once()
+		conflictErr := k8s_errors.NewConflict(schema.GroupResource{}, operationName, errors.New("error"))
+		cli.On("Update", ctx, k8sOp).Return(nil, conflictErr).Once()
 
-		newK8sOp := toK8SOperation(op)
-		expErr := errors.New("error")
-		cli.On("Create", ctx, newK8sOp).Return(nil, expErr).Once()
-
+		defer cli.AssertExpectations(t)
 		s := k8s.NewScheduler(cli)
 
 		// WHEN
 		_, err := s.Schedule(ctx, op)
 		// THEN
 		require.Error(t, err)
-		require.Equal(t, expErr, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("another operation is in progress for resource with ID %q", op.ResourceID))
 	})
 
-	t.Run("when a previous operation is deleted it should return the ID of a newly created operation", func(t *testing.T) {
+	t.Run("when the operation is updated successfully it should return the ID of the operation", func(t *testing.T) {
 		// GIVEN
 		ctx := context.TODO()
-		op := &operation.Operation{OperationType: operation.OperationTypeCreate, ResourceID: resourceID}
-		operationName := fmt.Sprintf("%s-%s", op.ResourceType, op.ResourceID)
-
 		cli := &automock.K8SClient{}
 
-		k8sOp := toK8SOperation(op)
-		k8sOp.UID = operationID
-		k8sOp.Status.Conditions = []v1alpha1.Condition{{
+		completedOp := &operation.Operation{OperationType: operation.OperationTypeCreate, ResourceID: resourceID}
+		completedOpName := fmt.Sprintf("%s-%s", completedOp.ResourceType, completedOp.ResourceID)
+		completedk8sOp := toK8SOperation(completedOp)
+		completedk8sOp.UID = operationID
+		completedk8sOp.Status.Conditions = []v1alpha1.Condition{{
 			Status: v1.ConditionTrue,
 		}}
 
-		cli.On("Get", ctx, operationName, metav1.GetOptions{}).Return(k8sOp, nil).Once()
-		cli.On("Delete", ctx, operationName, metav1.DeleteOptions{}).Return(nil).Once()
-
-		k8sOpWithoutID := toK8SOperation(op)
-		newK8sOp := toK8SOperation(op)
+		newOp := &operation.Operation{OperationType: operation.OperationTypeUpdate, ResourceID: resourceID}
+		newK8sOp := toK8SOperation(newOp)
 		newK8sOp.UID = operationID
-		cli.On("Create", ctx, k8sOpWithoutID).Return(k8sOp, nil).Once()
+
+		cli.On("Get", ctx, completedOpName, metav1.GetOptions{}).Return(completedk8sOp, nil).Once()
+		cli.On("Update", ctx, completedk8sOp).Return(newK8sOp, nil).Once()
 
 		s := k8s.NewScheduler(cli)
 
 		// WHEN
-		opID, err := s.Schedule(ctx, op)
+		opID, err := s.Schedule(ctx, newOp)
 		// THEN
 		require.NoError(t, err)
-		require.Equal(t, string(k8sOp.UID), opID)
+		require.Equal(t, string(newK8sOp.UID), opID)
 	})
 }
 

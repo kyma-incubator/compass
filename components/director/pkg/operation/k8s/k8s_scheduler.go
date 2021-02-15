@@ -44,7 +44,6 @@ func (s *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (stri
 		return "", err
 	}
 	if isOpInProgress(getOp) {
-		fmt.Println(">>>>>here")
 		return "", fmt.Errorf("another operation is in progress for resource with ID %q", op.ResourceID)
 	}
 	getOp = updateOperationSpec(op, getOp)
