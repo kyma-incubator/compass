@@ -26,21 +26,21 @@ type ResponseData struct {
 	Headers http.Header
 }
 
-// OutputTemplate defines the schema for Webhook output templates
-type OutputTemplate struct {
+// Response defines the schema for Webhook output templates
+type Response struct {
 	Location          *string `json:"location"`
 	SuccessStatusCode *int    `json:"success_status_code"`
 	Error             *string `json:"error"`
 }
 
-// StatusTemplate defines the schema for Webhook status templates when dealing with async webhooks
-type StatusTemplate struct {
+// ResponseStatus defines the schema for Webhook status templates when dealing with async webhooks
+type ResponseStatus struct {
 	Status            *string `json:"status"`
 	SuccessStatusCode *int    `json:"success_status_code"`
 	Error             *string `json:"error"`
 }
 
-func (ot *OutputTemplate) Validate(webhookMode *WebhookMode) error {
+func (ot *Response) Validate(webhookMode *WebhookMode) error {
 	if webhookMode != nil && *webhookMode == WebhookModeAsync && ot.Location == nil {
 		return errors.New("missing Output Template location field")
 	}
@@ -56,7 +56,7 @@ func (ot *OutputTemplate) Validate(webhookMode *WebhookMode) error {
 	return nil
 }
 
-func (st *StatusTemplate) Validate() error {
+func (st *ResponseStatus) Validate() error {
 	if st.Status == nil {
 		return errors.New("missing Status Template status field")
 	}
@@ -205,7 +205,7 @@ func (i WebhookInput) validateOutputTemplate(respData ResponseData) error {
 		return err
 	}
 
-	var outputTmpl OutputTemplate
+	var outputTmpl Response
 	if err := json.Unmarshal(outputBody.Bytes(), &outputTmpl); err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func (i WebhookInput) validateStatusTemplate(respData ResponseData) error {
 		return err
 	}
 
-	var statusTmpl StatusTemplate
+	var statusTmpl ResponseStatus
 	if err := json.Unmarshal(statusBody.Bytes(), &statusTmpl); err != nil {
 		return err
 	}
