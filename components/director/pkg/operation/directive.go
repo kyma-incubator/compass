@@ -110,8 +110,8 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
 	}
 
+	ctx = SaveToContext(ctx, &[]*Operation{operation})
 	operationsArr, _ := FromCtx(ctx)
-	*operationsArr = append(*operationsArr, operation)
 
 	committed := false
 	defer func() {

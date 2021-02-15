@@ -219,6 +219,9 @@ func TestHandleOperation(t *testing.T) {
 		require.Error(t, err, mockedError().Error(), "Unable to process operation")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context but response is not an Entity type should roll-back", func(t *testing.T) {
@@ -251,6 +254,9 @@ func TestHandleOperation(t *testing.T) {
 		require.Error(t, err, mockedError().Error(), "Failed to process operation")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context but server Director fails to fetch webhooks should roll-back", func(t *testing.T) {
@@ -285,6 +291,9 @@ func TestHandleOperation(t *testing.T) {
 		require.Error(t, err, mockedError().Error(), "Unable to retrieve webhooks")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due to missing tenant data should roll-back", func(t *testing.T) {
@@ -319,6 +328,9 @@ func TestHandleOperation(t *testing.T) {
 		require.Error(t, err, mockedError().Error(), "Unable to prepare webhook request data")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due unsupported webhook provider type should roll-back", func(t *testing.T) {
@@ -351,6 +363,9 @@ func TestHandleOperation(t *testing.T) {
 		require.Error(t, err, mockedError().Error(), "Unable to prepare webhook request data")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context but Director fails to prepare operation request due failure to missing request headers should roll-back", func(t *testing.T) {
@@ -383,6 +398,9 @@ func TestHandleOperation(t *testing.T) {
 		require.Error(t, err, mockedError().Error(), "Unable to prepare webhook request data")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context but Scheduler fails to schedule should roll-back", func(t *testing.T) {
@@ -419,6 +437,9 @@ func TestHandleOperation(t *testing.T) {
 		require.Error(t, err, mockedError().Error(), "Unable to schedule operation")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context but transaction commit fails should roll-back", func(t *testing.T) {
@@ -457,6 +478,9 @@ func TestHandleOperation(t *testing.T) {
 		require.Error(t, err, mockedError().Error(), "Unable to finalize database operation")
 		require.Empty(t, res)
 		require.Equal(t, graphql.OperationModeAsync, dummyResolver.finalCtx.Value(operation.OpModeKey))
+
+		opsFromCtx := dummyResolver.finalCtx.Value(operation.OpCtxKey)
+		assertNoOperationsInCtx(t, opsFromCtx)
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context and finishes successfully", func(t *testing.T) {
@@ -853,4 +877,10 @@ func scheduler(operationID string, err error) *automock.Scheduler {
 	mockedScheduler := &automock.Scheduler{}
 	mockedScheduler.On("Schedule", mock.Anything, mock.Anything).Return(operationID, err)
 	return mockedScheduler
+}
+
+func assertNoOperationsInCtx(t *testing.T, ops interface{}) {
+	operations, ok := ops.(*[]*operation.Operation)
+	require.True(t, ok)
+	require.Len(t, *operations, 0)
 }
