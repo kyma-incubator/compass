@@ -104,30 +104,6 @@ func FromCtx(ctx context.Context) (*[]*Operation, bool) {
 	return nil, false
 }
 
-func SaveErrorsToCtx(ctx context.Context, errs *map[string]bool) context.Context {
-	if errs == nil {
-		return ctx
-	}
-
-	errsFromCtx, exists := ErrsFromCtx(ctx)
-	if exists {
-		*errsFromCtx = *errs
-		return ctx
-	}
-	return context.WithValue(ctx, OpErrCtxKey, errsFromCtx)
-}
-
-// FromCtx extracts Operation from context
-func ErrsFromCtx(ctx context.Context) (*map[string]bool, bool) {
-	opErrCtx := ctx.Value(OpErrCtxKey)
-
-	if errs, ok := opErrCtx.(*map[string]bool); ok {
-		return errs, true
-	}
-
-	return &map[string]bool{}, false
-}
-
 // SaveModeToContext saves operation mode to the context
 func SaveModeToContext(ctx context.Context, opMode graphql.OperationMode) context.Context {
 	return context.WithValue(ctx, OpModeKey, opMode)

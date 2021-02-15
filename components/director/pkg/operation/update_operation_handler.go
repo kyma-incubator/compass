@@ -37,6 +37,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// OperationRequest is the expected request body when updating certain operation status
 type OperationRequest struct {
 	OperationType graphql.OperationType `json:"operation_type,omitempty"`
 	ResourceType  resource.Type         `json:"resource_type"`

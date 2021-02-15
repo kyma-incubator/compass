@@ -128,6 +128,7 @@ type config struct {
 	Features features.Config
 
 	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
+	OperationsNamespace   string `envconfig:"default=compass-system"`
 }
 
 func main() {
@@ -174,8 +175,7 @@ func main() {
 
 	appRepo := applicationRepo()
 
-	// TODO: Use namespace from configuration
-	scheduler, err := buildScheduler("compass-system")
+	scheduler, err := buildScheduler(cfg.OperationsNamespace)
 	exitOnError(err, "Error while creating operations scheduler")
 
 	gqlCfg := graphql.Config{
