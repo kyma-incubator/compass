@@ -15,8 +15,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"time"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -46,11 +44,11 @@ const (
 )
 
 type Webhook struct {
-	WebhookID         string    `json:"webhook_id"`
-	RetriesCount      int32     `json:"retries_count"`
-	WebhookPollURL    string    `json:"webhook_poll_url"`
-	LastPollTimestamp time.Time `json:"last_poll_timestamp"`
-	State             State     `json:"state"`
+	WebhookID         string `json:"webhook_id"`
+	RetriesCount      int32  `json:"retries_count"`
+	WebhookPollURL    string `json:"webhook_poll_url"`
+	LastPollTimestamp string `json:"last_poll_timestamp"`
+	State             State  `json:"state"`
 }
 
 // +kubebuilder:validation:Enum=Ready;Error
@@ -69,9 +67,10 @@ type Condition struct {
 
 // OperationStatus defines the observed state of Operation
 type OperationStatus struct {
-	Webhooks   []Webhook   `json:"webhooks,omitempty"`
-	Conditions []Condition `json:"conditions,omitempty"`
-	Phase      State       `json:"phase,omitempty"`
+	Webhooks           []Webhook   `json:"webhooks,omitempty"`
+	Conditions         []Condition `json:"conditions,omitempty"`
+	Phase              State       `json:"phase,omitempty"`
+	ObservedGeneration int64       `json:"observed_generation,omitempty"`
 }
 
 // +kubebuilder:object:root=true

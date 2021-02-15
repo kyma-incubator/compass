@@ -95,7 +95,14 @@ spec:
                 - type
                 type: object
               type: array
+            observed_generation:
+              format: int64
+              type: integer
             phase:
+              enum:
+              - Success
+              - Failed
+              - Polling
               type: string
             webhooks:
               items:

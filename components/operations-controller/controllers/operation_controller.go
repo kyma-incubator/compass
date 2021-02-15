@@ -39,6 +39,7 @@ const (
 	defaultTimeoutFactor         = 2
 	defaultWebhookTimeout        = 2
 	defaultRequeueInterval       = 10 * time.Minute
+	defaultTimeLayout            = time.RFC3339Nano
 )
 
 // OperationReconciler reconciles a Operation object
@@ -60,12 +61,9 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var operation = &v1alpha1.Operation{}
 	err := r.Get(ctx, req.NamespacedName, operation)
 	if err != nil {
-		logger.Info(fmt.Sprintf("Unable to retrieve %s from API server", req.NamespacedName))
-
-		return ctrl.Result{}, err
+		logger.Error(err, fmt.Sprintf("Unable to retrieve %s from API server", req.NamespacedName))
+		return ctrl.Result{}, nil
 	}
-
-	operation = setDefaultStatus(*operation)
 
 	reconciliationTimeout := time.Duration(defaultTimeoutFactor * defaultReconciliationTimeout)
 
@@ -83,6 +81,8 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		return ctrl.Result{RequeueAfter: defaultRequeueInterval}, nil
 	}
+
+	operation = setDefaultStatus(*operation)
 
 	webhooks, err := retrieveWebhooks(app.Result.Webhooks, operation.Spec.WebhookIDs)
 	if err != nil {
@@ -174,7 +174,13 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	if requeueAfter := getNextPollTime(&webhook, webhookStatus); requeueAfter > 0 {
+	requeueAfter, err := getNextPollTime(&webhook, webhookStatus)
+	if err != nil {
+		logger.Error(err, operationError("Unable to calculate next poll time", operation))
+		return ctrl.Result{Requeue: true}, err
+	}
+
+	if requeueAfter > 0 {
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
@@ -189,14 +195,25 @@ func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliatio
 	return time.Now().After(operationEndTime)
 }
 
-func getNextPollTime(webhook *graphql.Webhook, webhookStatus v1alpha1.Webhook) time.Duration {
-	nextPollTime := webhookStatus.LastPollTimestamp.Add(time.Duration(*webhook.RetryInterval) * time.Minute)
+func getNextPollTime(webhook *graphql.Webhook, webhookStatus v1alpha1.Webhook) (time.Duration, error) {
+	lastPollTimestamp, err := time.Parse(defaultTimeLayout, webhookStatus.LastPollTimestamp)
+	if err != nil {
+		return 0, err
+	}
 
-	return nextPollTime.Sub(time.Now())
+	nextPollTime := lastPollTimestamp.Add(time.Duration(*webhook.RetryInterval) * time.Minute)
+	return nextPollTime.Sub(time.Now()), nil
 }
 
 func setDefaultStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
-	if operation.Status.Conditions == nil {
+	overrideStatus := false
+	if operation.Generation != operation.Status.ObservedGeneration {
+		overrideStatus = true
+		operation.Status.ObservedGeneration = operation.Generation
+		operation.Status.Phase = v1alpha1.StatePolling
+	}
+
+	if operation.Status.Conditions == nil || overrideStatus {
 		operation.Status.Conditions = make([]v1alpha1.Condition, 0)
 	}
 
@@ -226,21 +243,21 @@ func setDefaultStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
 		})
 	}
 
-	if operation.Status.Webhooks == nil {
+	if operation.Status.Webhooks == nil || overrideStatus {
 		operation.Status.Webhooks = make([]v1alpha1.Webhook, 0)
 	}
 
-	for _, webhookID := range operation.Spec.WebhookIDs {
+	for _, opWebhookID := range operation.Spec.WebhookIDs {
 		webhookExists := false
-		for _, existingWebhook := range operation.Status.Webhooks {
-			if webhookID == existingWebhook.WebhookID {
+		for _, opWebhook := range operation.Status.Webhooks {
+			if opWebhookID == opWebhook.WebhookID {
 				webhookExists = true
 			}
 		}
 
 		if !webhookExists {
 			operation.Status.Webhooks = append(operation.Status.Webhooks, v1alpha1.Webhook{
-				WebhookID: webhookID,
+				WebhookID: opWebhookID,
 				State:     v1alpha1.StatePolling,
 			})
 		}
