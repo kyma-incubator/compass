@@ -17,7 +17,6 @@ type K8SClient interface {
 	Create(ctx context.Context, operation *v1alpha1.Operation) (*v1alpha1.Operation, error)
 	Get(ctx context.Context, name string, options metav1.GetOptions) (*v1alpha1.Operation, error)
 	Update(ctx context.Context, operation *v1alpha1.Operation) (*v1alpha1.Operation, error)
-	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 }
 
 type Scheduler struct {
@@ -34,31 +33,29 @@ func (s *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (stri
 	operationName := fmt.Sprintf("%s-%s", op.ResourceType, op.ResourceID)
 	getOp, err := s.kcli.Get(ctx, operationName, metav1.GetOptions{})
 	if err != nil {
-		if !errors.IsNotFound(err) {
-			return "", err
+		if errors.IsNotFound(err) {
+			k8sOp := toK8SOperation(op)
+			if createdOperation, err := s.kcli.Create(ctx, k8sOp); err != nil {
+				return "", err
+			} else {
+				return string(createdOperation.UID), nil
+			}
 		}
-
-		k8sOp := toK8SOperation(op)
-		createdOperation, err := s.kcli.Create(ctx, k8sOp)
-		if err != nil {
-			return "", err
-		}
-		return string(createdOperation.UID), err
-	}
-
-	if isOpInProgress(getOp) {
-		return "", fmt.Errorf("another operation is in progress for resource with ID %q", op.ResourceID)
-	}
-
-	if err := s.kcli.Delete(ctx, operationName, metav1.DeleteOptions{}); err != nil {
-		return "", fmt.Errorf("could not delete operation: %s", err)
-	}
-	k8sOp := toK8SOperation(op)
-	createdOperation, err := s.kcli.Create(ctx, k8sOp)
-	if err != nil {
 		return "", err
 	}
-	return string(createdOperation.UID), err
+	if isOpInProgress(getOp) {
+		fmt.Println(">>>>>here")
+		return "", fmt.Errorf("another operation is in progress for resource with ID %q", op.ResourceID)
+	}
+	getOp = updateOperationSpec(op, getOp)
+	updatedOperation, err := s.kcli.Update(ctx, getOp)
+	if err != nil {
+		if errors.IsConflict(err) {
+			return "", fmt.Errorf("another operation is in progress for resource with ID %q", op.ResourceID)
+		}
+		return "", err
+	}
+	return string(updatedOperation.UID), err
 }
 
 func isOpInProgress(op *v1alpha1.Operation) bool {
