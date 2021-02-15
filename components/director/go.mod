@@ -27,7 +27,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210211231432-0178122bf8fa
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b
 	github.com/lestrrat-go/jwx v0.9.2
 	github.com/lib/pq v1.9.0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225

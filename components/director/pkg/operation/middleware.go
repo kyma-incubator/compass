@@ -47,8 +47,6 @@ func (m *middleware) ExtensionHandler(ctx context.Context, next func(ctx context
 
 	resp := next(ctx)
 
-	reqCtx := gqlgen.GetRequestContext(ctx)
-	fmt.Printf(">>>>>>>HERE3, %+v\n", operations)
 	locations := make([]string, 0)
 	for _, operation := range operations {
 		operationURL := fmt.Sprintf("%s/operations?%s=%s&%s=%s", m.directorURL, ResourceIDParam, operation.ResourceID, ResourceTypeParam, operation.ResourceType)
@@ -56,6 +54,7 @@ func (m *middleware) ExtensionHandler(ctx context.Context, next func(ctx context
 	}
 
 	if len(locations) > 0 {
+		reqCtx := gqlgen.GetRequestContext(ctx)
 		if err := reqCtx.RegisterExtension(LocationsParam, locations); err != nil {
 			log.C(ctx).Errorf("Unable to attach %s extension: %s", LocationsParam, err.Error())
 			return []byte(`{"error": "unable to finalize operation location"}`)

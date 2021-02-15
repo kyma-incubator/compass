@@ -45,7 +45,7 @@ func (s *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (stri
 		return "", fmt.Errorf("another operation is in progress")
 	}
 	if err := s.kcli.Delete(ctx, operationName, metav1.DeleteOptions{}); err != nil {
-		return "", err
+		return "", fmt.Errorf("could not delete operation: %s", err)
 	}
 	k8sOp := toK8SOperation(op)
 	createdOperation, err := s.kcli.Create(ctx, k8sOp)

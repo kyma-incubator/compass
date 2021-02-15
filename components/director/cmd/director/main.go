@@ -507,7 +507,8 @@ func webhookService() webhook.WebhookService {
 func buildScheduler(namespace string) (operation.Scheduler, error) {
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, err
+		log.D().WithError(err).Warn("Could not start K8S Scheduler. Will use the default one")
+		return &operation.DefaultScheduler{}, nil
 	}
 	k8sClient, err := client.NewForConfig(cfg)
 	if err != nil {

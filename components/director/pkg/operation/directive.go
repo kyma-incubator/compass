@@ -109,18 +109,18 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		OperationCategory: resCtx.Field.Name,
 		CorrelationID:     log.C(ctx).Data[log.FieldRequestID].(string),
 	}
-	operationsArr := &[]*Operation{operation}
-	ctx = SaveToContext(ctx, operationsArr)
+
+	operationsArr, _ := FromCtx(ctx)
+	*operationsArr = append(*operationsArr, operation)
 
 	committed := false
 	defer func() {
-		fmt.Println(">>>>>>>HERE1")
 		if !committed {
-			fmt.Println(">>>>>>>HERE2")
 			lastIndex := int(math.Max(0, float64(len(*operationsArr)-1)))
 			*operationsArr = (*operationsArr)[:lastIndex]
 		}
 	}()
+
 	resp, err := next(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while processing operation: %s", err.Error())
@@ -167,7 +167,6 @@ func (d *directive) HandleOperation(ctx context.Context, _ interface{}, next gql
 		log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to finalize database operation")
 	}
-	fmt.Println(">>>>>>>COMMIITTEEEED")
 	committed = true
 
 	return resp, nil
