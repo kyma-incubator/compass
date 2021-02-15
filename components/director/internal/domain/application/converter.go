@@ -37,12 +37,14 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 	return &Entity{
 		TenantID:            in.Tenant,
 		Name:                in.Name,
+		ProviderName:        repo.NewNullableString(in.ProviderName),
 		Description:         repo.NewNullableString(in.Description),
 		StatusCondition:     string(in.Status.Condition),
 		StatusTimestamp:     in.Status.Timestamp,
 		HealthCheckURL:      repo.NewNullableString(in.HealthCheckURL),
 		IntegrationSystemID: repo.NewNullableString(in.IntegrationSystemID),
-		ProviderName:        repo.NewNullableString(in.ProviderName),
+		BaseURL:             repo.NewNullableString(in.BaseURL),
+		Labels:              repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -60,16 +62,18 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 	}
 
 	return &model.Application{
-		Tenant:      entity.TenantID,
-		Name:        entity.Name,
-		Description: repo.StringPtrFromNullableString(entity.Description),
+		ProviderName: repo.StringPtrFromNullableString(entity.ProviderName),
+		Tenant:       entity.TenantID,
+		Name:         entity.Name,
+		Description:  repo.StringPtrFromNullableString(entity.Description),
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusCondition(entity.StatusCondition),
 			Timestamp: entity.StatusTimestamp,
 		},
-		IntegrationSystemID: repo.StringPtrFromNullableString(entity.IntegrationSystemID),
 		HealthCheckURL:      repo.StringPtrFromNullableString(entity.HealthCheckURL),
-		ProviderName:        repo.StringPtrFromNullableString(entity.ProviderName),
+		IntegrationSystemID: repo.StringPtrFromNullableString(entity.IntegrationSystemID),
+		BaseURL:             repo.StringPtrFromNullableString(entity.BaseURL),
+		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
