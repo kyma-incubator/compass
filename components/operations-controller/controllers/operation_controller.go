@@ -16,8 +16,10 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -157,15 +159,31 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	webhook := webhooks[operation.Spec.WebhookIDs[0]]
+	webhookEntity := webhooks[operation.Spec.WebhookIDs[0]]
 	webhookStatus := operation.Status.Webhooks[0]
 
 	if webhookStatus.WebhookPollURL != "" {
-		fmt.Println(webhook)
 		// process input templates, run webhooks, process output templates
+		var reqData graphql.RequestData
+		if err := json.Unmarshal([]byte(operation.Spec.RequestData), &reqData); err != nil {
+			return ctrl.Result{Requeue: true}, err
+		}
 
-		// update status poll URL
-		operation.Status.Webhooks[0].WebhookPollURL = ""
+		client := webhook.DefaultClient{}
+		response, err := client.Do(ctx, webhookEntity, reqData, operation.Spec.CorrelationID)
+		if err != nil {
+			// Custom error check about webhook errors
+			// Also if op == sync, we should notify Director
+			return ctrl.Result{Requeue: true}, err
+		}
+
+		if *webhookEntity.Mode == graphql.WebhookModeAsync {
+			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
+		} else {
+			notifyDirector()
+			// UPDATE status condition Ready -> true
+		}
+
 		if err := r.Update(ctx, operation); err != nil {
 			logger.Error(err, operationError("Unable to update poll URL", operation))
 			return ctrl.Result{Requeue: true}, err
@@ -174,7 +192,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	requeueAfter, err := getNextPollTime(&webhook, webhookStatus)
+	requeueAfter, err := getNextPollTime(&webhookEntity, webhookStatus)
 	if err != nil {
 		logger.Error(err, operationError("Unable to calculate next poll time", operation))
 		return ctrl.Result{Requeue: true}, err
@@ -187,6 +205,10 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// Make Poll Request ( poll interval passed <-> operation in progress )
 
 	return ctrl.Result{}, nil
+}
+
+func notifyDirector() {
+
 }
 
 func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliationTimeout time.Duration) bool {

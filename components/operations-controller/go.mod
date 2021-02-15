@@ -8,6 +8,7 @@ require (
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210215163343-ece06e94d3e4
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.4
+	github.com/pkg/errors v0.9.1
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v0.17.2
