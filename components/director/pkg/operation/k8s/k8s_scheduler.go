@@ -34,16 +34,22 @@ func (s *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (stri
 	operationName := fmt.Sprintf("%s-%s", op.ResourceType, op.ResourceID)
 	getOp, err := s.kcli.Get(ctx, operationName, metav1.GetOptions{})
 	if err != nil {
-		if errors.IsNotFound(err) {
-			k8sOp := toK8SOperation(op)
-			createdOperation, err := s.kcli.Create(ctx, k8sOp)
-			return string(createdOperation.UID), err
+		if !errors.IsNotFound(err) {
+			return "", err
 		}
-		return "", err
+
+		k8sOp := toK8SOperation(op)
+		createdOperation, err := s.kcli.Create(ctx, k8sOp)
+		if err != nil {
+			return "", err
+		}
+		return string(createdOperation.UID), err
 	}
+
 	if isOpInProgress(getOp) {
-		return "", fmt.Errorf("another operation is in progress")
+		return "", fmt.Errorf("another operation is in progress for resource with ID %q", op.ResourceID)
 	}
+
 	if err := s.kcli.Delete(ctx, operationName, metav1.DeleteOptions{}); err != nil {
 		return "", err
 	}

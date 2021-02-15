@@ -50,8 +50,8 @@ const (
 	webhookID3 = "dbd54239-5188-4bea-8826-bc04587a118e"
 )
 
-var whType = graphql.WebhookType(graphql.WebhookTypeRegisterApplication)
-var whTypeApplicationUnregister = graphql.WebhookType(graphql.WebhookTypeUnregisterApplication)
+var whType = graphql.WebhookTypeRegisterApplication
+var whTypeApplicationUnregister = graphql.WebhookTypeUnregisterApplication
 
 var mockedHeaders = http.Header{
 	"key": []string{"value"},
@@ -460,7 +460,6 @@ func TestHandleOperation(t *testing.T) {
 	})
 
 	t.Run("when mutation is in ASYNC mode, there is operation in context and finishes successfully", func(t *testing.T) {
-		operationID := "test-id"
 		operationType := graphql.OperationTypeCreate
 		operationCategory := "registerApplication"
 

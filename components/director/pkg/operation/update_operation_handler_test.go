@@ -25,11 +25,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"github.com/stretchr/testify/require"
 )
 
 func TestUpdateOperationHandler(t *testing.T) {
@@ -147,26 +148,6 @@ func TestUpdateOperationHandler(t *testing.T) {
 		require.Equal(t, http.StatusInternalServerError, writer.Code)
 		require.Contains(t, writer.Body.String(), "Unable to delete resource application with id")
 	})
-
-	//t.Run("when object was already deleted by previous request should return NotFound", func(t *testing.T) {
-	//	writer := httptest.NewRecorder()
-	//	req := fixPostRequestWithBody(t, context.Background(), fmt.Sprintf(`{"resource_id": "%s", "resource_type": "%s", "operation_type": "%s"}`, resourceID, resource.Application, graphql.OperationTypeDelete.String()))
-	//
-	//	mockedTx, mockedTransactioner := txtest.NewTransactionContextGenerator(apperrors.NewNotFoundError(resource.Application, resourceID)).ThatDoesntExpectCommit()
-	//	defer mockedTx.AssertExpectations(t)
-	//	defer mockedTransactioner.AssertExpectations(t)
-	//
-	//	handler := operation.NewUpdateOperationHandler(mockedTransactioner, map[resource.Type]operation.ResourceUpdaterFunc{
-	//		resource.Application: func(ctx context.Context, id string, ready bool, errorMsg *string) error {
-	//			return apperrors.NewNotFoundError(resource.Application, resourceID)
-	//		},
-	//	}, nil)
-	//	handler.ServeHTTP(writer, req)
-	//
-	//	mockedTx.AssertNotCalled(t, "Commit")
-	//	require.Equal(t, http.StatusNotFound, writer.Code)
-	//	require.Contains(t, writer.Body.String(), apperrors.NotFoundMsg)
-	//})
 
 	t.Run("when operation has finished", func(t *testing.T) {
 		type testCase struct {
