@@ -51,6 +51,7 @@ const (
 	defaultTenant             = "APP_TENANT"
 	directorURL               = "APP_DIRECTOR_URL"
 	subscriptionCallbackScope = "APP_SUBSCRIPTION_CALLBACK_SCOPE"
+	tenantProvider            = "APP_TENANT_PROVIDER"
 )
 
 type config struct {
@@ -70,6 +71,7 @@ type config struct {
 	Tenant                    string
 	DirectorUrl               string
 	SubscriptionCallbackScope string
+	TenantProvider            string
 }
 
 type Tenant struct {
@@ -176,6 +178,7 @@ func loadConfig(t *testing.T) config {
 		Tenant:                    os.Getenv(defaultTenant),
 		DirectorUrl:               os.Getenv(directorURL),
 		SubscriptionCallbackScope: os.Getenv(subscriptionCallbackScope),
+		TenantProvider:            os.Getenv(tenantProvider),
 	}
 
 	require.NotEmpty(t, config.TenantFetcherURL)
@@ -194,6 +197,7 @@ func loadConfig(t *testing.T) config {
 	require.NotEmpty(t, config.Tenant)
 	require.NotEmpty(t, config.DirectorUrl)
 	require.NotEmpty(t, config.SubscriptionCallbackScope)
+	require.NotEmpty(t, config.TenantProvider)
 
 	return config
 }

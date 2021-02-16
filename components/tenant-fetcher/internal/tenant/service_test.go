@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
@@ -22,7 +24,10 @@ func TestService_Create(t *testing.T) {
 	ctx := context.Background()
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	tenantModel := model.TenantModel{
-		AccountId: testID,
+		ID:             testID,
+		AccountId:      testID,
+		Status:         tenantEntity.Active,
+		TenantProvider: testProviderName,
 	}
 
 	testCases := []struct {
@@ -37,7 +42,7 @@ func TestService_Create(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel, testID).Return(nil).Once()
+				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel).Return(nil).Once()
 				return tenantMappingRepo
 			},
 			UidFn: func() *automock.UIDService {
@@ -52,7 +57,7 @@ func TestService_Create(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel, testID).Return(testErr)
+				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel).Return(testErr)
 				return tenantMappingRepo
 			},
 			UidFn: func() *automock.UIDService {
@@ -67,7 +72,7 @@ func TestService_Create(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel, testID).Return(nil)
+				tenantMappingRepo.On("Create", txtest.CtxWithDBMatcher(), tenantModel).Return(nil)
 				return tenantMappingRepo
 			},
 			UidFn: func() *automock.UIDService {

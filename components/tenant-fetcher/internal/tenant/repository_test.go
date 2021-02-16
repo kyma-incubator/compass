@@ -17,11 +17,18 @@ import (
 
 func TestRepository_Create(t *testing.T) {
 	tenantModel := model.TenantModel{
-		AccountId: testID,
+		AccountId:      testID,
+		ID:             testID,
+		Status:         tenantEntity.Active,
+		TenantProvider: testProviderName,
 	}
+
 	entity := tenantEntity.Entity{
 		Name:           testID,
 		ExternalTenant: testID,
+		ID:             testID,
+		ProviderName:   testProviderName,
+		Status:         tenantEntity.Active,
 	}
 
 	t.Run("Success", func(t *testing.T) {
@@ -42,7 +49,7 @@ func TestRepository_Create(t *testing.T) {
 		repo := tenant.NewRepository(mockConverter)
 
 		//WHEN
-		err := repo.Create(ctx, tenantModel, testID)
+		err := repo.Create(ctx, tenantModel)
 
 		// THEN
 		require.NoError(t, err)
@@ -59,7 +66,7 @@ func TestRepository_Create(t *testing.T) {
 		repo := tenant.NewRepository(mockConverter)
 
 		//WHEN
-		err := repo.Create(ctx, tenantModel, testID)
+		err := repo.Create(ctx, tenantModel)
 
 		// THEN
 		require.Error(t, err)

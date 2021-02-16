@@ -1,5 +1,10 @@
 package model
 
+import "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 type TenantModel struct {
-	AccountId string
+	ID             string
+	AccountId      string
+	TenantProvider string
+	Status         tenant.TenantStatus
 }

@@ -14,13 +14,13 @@ type TenantRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, item, id
-func (_m *TenantRepository) Create(ctx context.Context, item model.TenantModel, id string) error {
-	ret := _m.Called(ctx, item, id)
+// Create provides a mock function with given fields: ctx, item
+func (_m *TenantRepository) Create(ctx context.Context, item model.TenantModel) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.TenantModel, string) error); ok {
-		r0 = rf(ctx, item, id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.TenantModel) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}

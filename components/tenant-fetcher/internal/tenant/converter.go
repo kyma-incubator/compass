@@ -13,11 +13,11 @@ func NewConverter() *converter {
 
 func (c *converter) ToEntity(in model.TenantModel) tenant.Entity {
 	return tenant.Entity{
-		ID:             "",
+		ID:             in.ID,
 		Name:           in.AccountId,
 		ExternalTenant: in.AccountId,
-		ProviderName:   "",
-		Status:         "",
+		ProviderName:   in.TenantProvider,
+		Status:         in.Status,
 	}
 }
 
@@ -26,6 +26,9 @@ func (c *converter) FromEntity(in *tenant.Entity) *model.TenantModel {
 		return nil
 	}
 	return &model.TenantModel{
-		AccountId: in.ExternalTenant,
+		ID:             in.ID,
+		AccountId:      in.ExternalTenant,
+		TenantProvider: in.ProviderName,
+		Status:         in.Status,
 	}
 }

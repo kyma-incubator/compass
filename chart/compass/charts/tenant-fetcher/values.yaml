@@ -27,6 +27,7 @@ authentication:
 
 tenantProvider:
   accountIdProperty: "accountId"
+  name: "saas-manager"
 
 server:
   handlerEndpoint: "/v1/callback/{tenantId}"

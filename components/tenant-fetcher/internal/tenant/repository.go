@@ -16,7 +16,6 @@ import (
 )
 
 const tableName string = `public.business_tenant_mappings`
-const providerName string = "saas-manager"
 const (
 	idColumn                  = "id"
 	externalNameColumn        = "external_name"
@@ -30,7 +29,7 @@ var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, 
 
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
 type TenantRepository interface {
-	Create(ctx context.Context, item model.TenantModel, id string) error
+	Create(ctx context.Context, item model.TenantModel) error
 	DeleteByExternalID(ctx context.Context, tenantId string) error
 }
 
@@ -54,16 +53,13 @@ func NewRepository(conv Converter) *repository {
 	}
 }
 
-func (r *repository) Create(ctx context.Context, item model.TenantModel, id string) error {
+func (r *repository) Create(ctx context.Context, item model.TenantModel) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
 	dbEntity := r.converter.ToEntity(item)
-	dbEntity.ID = id
-	dbEntity.Status = tenant.Active
-	dbEntity.ProviderName = providerName
 
 	var values []string
 	for _, c := range r.columns {

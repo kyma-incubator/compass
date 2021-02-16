@@ -43,9 +43,9 @@ func (s *service) Create(ctx context.Context, item model.TenantModel) error {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	id := s.uidService.Generate()
+	item.ID = s.uidService.Generate()
 
-	if err := s.repository.Create(ctx, item, id); err != nil {
+	if err := s.repository.Create(ctx, item); err != nil {
 		return errors.Wrap(err, "while creating tenant")
 	}
 

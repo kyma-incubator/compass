@@ -31,6 +31,8 @@ spec:
           env:
             - name: APP_TENANT_PROVIDER_ACCOUNT_ID_PROPERTY
               value: {{ .Values.tenantProvider.accountIdProperty }}
+            - name: APP_TENANT_PROVIDER
+              value: "test-provider"
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant }}
             - name: TENANT_FETCHER_URL
