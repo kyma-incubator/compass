@@ -28,8 +28,8 @@ func (_m *TenantRepository) Create(ctx context.Context, item model.TenantModel, 
 	return r0
 }
 
-// DeleteByTenant provides a mock function with given fields: ctx, tenantId
-func (_m *TenantRepository) DeleteByTenant(ctx context.Context, tenantId string) error {
+// DeleteByExternalID provides a mock function with given fields: ctx, tenantId
+func (_m *TenantRepository) DeleteByExternalID(ctx context.Context, tenantId string) error {
 	ret := _m.Called(ctx, tenantId)
 
 	var r0 error

@@ -83,7 +83,7 @@ func TestRepository_Delete(t *testing.T) {
 		repo := tenant.NewRepository(mockConverter)
 
 		//WHEN
-		err := repo.DeleteByTenant(ctx, testID)
+		err := repo.DeleteByExternalID(ctx, testID)
 
 		// THEN
 		require.NoError(t, err)
@@ -99,7 +99,7 @@ func TestRepository_Delete(t *testing.T) {
 		repo := tenant.NewRepository(mockConverter)
 
 		//WHEN
-		err := repo.DeleteByTenant(ctx, testID)
+		err := repo.DeleteByExternalID(ctx, testID)
 
 		// THEN
 		require.Error(t, err)

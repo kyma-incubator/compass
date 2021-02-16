@@ -235,7 +235,7 @@ func getDecommissioningHandlerFunc(svc tenant.TenantService, tenantPathParam, te
 
 		tenantId := gjson.GetBytes(body, tenantIdProperty).String()
 
-		if err := svc.DeleteByTenant(request.Context(), tenantId); err != nil {
+		if err := svc.DeleteByExternalID(request.Context(), tenantId); err != nil {
 			logger.Error(errors.Wrapf(err, "while deleting tenant"))
 			writer.WriteHeader(http.StatusInternalServerError)
 			return

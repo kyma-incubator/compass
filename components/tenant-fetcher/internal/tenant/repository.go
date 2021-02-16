@@ -31,7 +31,7 @@ var tableColumns = []string{idColumn, externalNameColumn, externalTenantColumn, 
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
 type TenantRepository interface {
 	Create(ctx context.Context, item model.TenantModel, id string) error
-	DeleteByTenant(ctx context.Context, tenantId string) error
+	DeleteByExternalID(ctx context.Context, tenantId string) error
 }
 
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
@@ -78,7 +78,7 @@ func (r *repository) Create(ctx context.Context, item model.TenantModel, id stri
 	return persistence.MapSQLError(ctx, err, resource.Tenant, resource.Create, "while inserting row to '%s' table", r.tableName)
 }
 
-func (r *repository) DeleteByTenant(ctx context.Context, tenantId string) error {
+func (r *repository) DeleteByExternalID(ctx context.Context, tenantId string) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err

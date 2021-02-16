@@ -11,7 +11,7 @@ import (
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
 type TenantService interface {
 	Create(ctx context.Context, item model.TenantModel) error
-	DeleteByTenant(ctx context.Context, tenantId string) error
+	DeleteByExternalID(ctx context.Context, tenantId string) error
 }
 
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
@@ -56,7 +56,7 @@ func (s *service) Create(ctx context.Context, item model.TenantModel) error {
 	return nil
 }
 
-func (s *service) DeleteByTenant(ctx context.Context, tenantId string) error {
+func (s *service) DeleteByExternalID(ctx context.Context, tenantId string) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return errors.Wrapf(err, "while beginning db transaction")
@@ -66,7 +66,7 @@ func (s *service) DeleteByTenant(ctx context.Context, tenantId string) error {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := s.repository.DeleteByTenant(ctx, tenantId); err != nil {
+	if err := s.repository.DeleteByExternalID(ctx, tenantId); err != nil {
 		return errors.Wrap(err, "while creating tenant")
 	}
 

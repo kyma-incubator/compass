@@ -137,7 +137,7 @@ func TestService_Delete(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.On("DeleteByTenant", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
+				tenantMappingRepo.On("DeleteByExternalID", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return tenantMappingRepo
 			},
 			UidFn: func() *automock.UIDService {
@@ -151,7 +151,7 @@ func TestService_Delete(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.On("DeleteByTenant", txtest.CtxWithDBMatcher(), testID).Return(testErr)
+				tenantMappingRepo.On("DeleteByExternalID", txtest.CtxWithDBMatcher(), testID).Return(testErr)
 				return tenantMappingRepo
 			},
 			UidFn: func() *automock.UIDService {
@@ -165,7 +165,7 @@ func TestService_Delete(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.On("DeleteByTenant", txtest.CtxWithDBMatcher(), testID).Return(nil)
+				tenantMappingRepo.On("DeleteByExternalID", txtest.CtxWithDBMatcher(), testID).Return(nil)
 				return tenantMappingRepo
 			},
 			UidFn: func() *automock.UIDService {
@@ -179,7 +179,7 @@ func TestService_Delete(t *testing.T) {
 			TxFn: txGen.ThatFailsOnBegin,
 			TenantRepoFn: func() *automock.TenantRepository {
 				tenantMappingRepo := &automock.TenantRepository{}
-				tenantMappingRepo.AssertNotCalled(t, "DeleteByTenant")
+				tenantMappingRepo.AssertNotCalled(t, "DeleteByExternalID")
 				return tenantMappingRepo
 			},
 			UidFn: func() *automock.UIDService {
@@ -199,7 +199,7 @@ func TestService_Delete(t *testing.T) {
 			svc := tenant.NewService(tenantRepo, transact, uidSvc)
 
 			//WHEN
-			err := svc.DeleteByTenant(ctx, testID)
+			err := svc.DeleteByExternalID(ctx, testID)
 
 			// THEN
 			if testCase.ExpectedOutput != nil {
