@@ -47,13 +47,13 @@ func (_ *APIDefinition) GetType() resource.Type {
 }
 
 type APIDefinitionInput struct {
-	OrdBundleID         *string `json:"partOfConsumptionBundle"`
-	OrdPackageID        *string `json:"partOfPackage"`
-	Tenant              string
+	OrdBundleID         *string         `json:"partOfConsumptionBundle"`
+	OrdPackageID        *string         `json:"partOfPackage"`
+	Tenant              string          `json:",omitempty"`
 	Name                string          `json:"title"`
 	Description         *string         `json:"description"`
 	TargetURL           string          `json:"entryPoint"`
-	Group               *string         //  group allows you to find the same API but in different version
+	Group               *string         `json:",omitempty"` //  group allows you to find the same API but in different version
 	OrdID               *string         `json:"ordId"`
 	ShortDescription    *string         `json:"shortDescription"`
 	SystemInstanceAware *bool           `json:"systemInstanceAware"`

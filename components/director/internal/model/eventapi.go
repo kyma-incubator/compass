@@ -56,7 +56,7 @@ type EventDefinitionInput struct {
 	OrdPackageID        *string `json:"partOfPackage"`
 	Name                string  `json:"title"`
 	Description         *string `json:"description"`
-	Group               *string
+	Group               *string `json:",omitempty"`
 	OrdID               *string         `json:"ordId"`
 	ShortDescription    *string         `json:"shortDescription"`
 	SystemInstanceAware *bool           `json:"systemInstanceAware"`

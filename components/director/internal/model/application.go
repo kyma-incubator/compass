@@ -17,7 +17,7 @@ type Application struct {
 	Status              *ApplicationStatus
 	HealthCheckURL      *string
 	IntegrationSystemID *string
-	BaseURL             *string         `json:"base_url"`
+	BaseURL             *string         `json:"baseUrl"`
 	Labels              json.RawMessage `json:"labels"`
 	*BaseEntity
 }
