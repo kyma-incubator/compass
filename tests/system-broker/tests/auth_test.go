@@ -4,15 +4,15 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"io/ioutil"
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	connectorTestkit "github.com/kyma-incubator/compass/tests/connector-tests/test/testkit"
-	"github.com/kyma-incubator/compass/tests/connector-tests/test/testkit/connector"
 	director "github.com/kyma-incubator/compass/tests/director/gateway-integration"
+	connectorTestkit "github.com/kyma-incubator/compass/tests/pkg/testkit-connector"
+	"github.com/kyma-incubator/compass/tests/pkg/testkit-connector/connector"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
