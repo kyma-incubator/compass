@@ -15,10 +15,14 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	"net/http"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -37,10 +41,20 @@ import (
 
 // OperationReconciler reconciles a Operation object
 type OperationReconciler struct {
+	DirectorURL string
 	client.Client
 	Log    logr.Logger
 	Lister types.ApplicationLister
 	Scheme *runtime.Scheme
+}
+
+// TODO: Remove this struct and resuse the one from Director once the Scheduler logic is merged
+type operationRequest struct {
+	OperationType graphql.OperationType `json:"operation_type,omitempty"`
+	ResourceType  resource.Type         `json:"resource_type"`
+	ResourceID    string                `json:"resource_id"`
+	Ready         bool                  `json:"ready"`
+	Error         string                `json:"error"`
 }
 
 // +kubebuilder:rbac:groups=operations.compass,resources=operations,verbs=get;list;watch;create;update;patch;delete
@@ -102,19 +116,20 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks)) {
-		operation = setErrorStatus(*operation, "Reconciliation timeout reached")
+		opErr := errors.New("reconciliation timeout reached")
 
-		err := notifyDirector() // TODO:
+		err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, true, opErr))
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 
+		operation = setErrorStatus(*operation, opErr.Error())
 		if err := r.Update(ctx, operation); err != nil {
 			logger.Error(err, operationError("Unable to update operation", operation))
 			return ctrl.Result{Requeue: true}, err
 		}
 
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, opErr
 	}
 
 	webhookEntity := webhooks[operation.Spec.WebhookIDs[0]]
@@ -133,7 +148,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, recErr
 			}
 
-			err := notifyDirector() // TODO: UPDATE status condition Error -> true
+			err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, false, err))
 			if err != nil {
 				return ctrl.Result{Requeue: true}, err
 			}
@@ -151,7 +166,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		case graphql.WebhookModeAsync:
 			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
 		case graphql.WebhookModeSync:
-			err := notifyDirector() // TODO: UPDATE status condition Ready -> true
+			err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, true, nil))
 			if err != nil {
 				return ctrl.Result{Requeue: true}, err
 			}
@@ -203,21 +218,22 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{Requeue: true, RequeueAfter: requeueAfter}, nil
 		}
 
-		err := notifyDirector() // TODO: UPDATE status condition Error -> true
+		opErr := errors.New("webhook timeout reached")
+
+		err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, false, opErr))
 		if err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
 
-		err = errors.New("webhook timeout reached")
-		operation = setErrorStatus(*operation, err.Error())
+		operation = setErrorStatus(*operation, opErr.Error())
 		if err := r.Update(ctx, operation); err != nil {
 			logger.Error(err, operationError("unable to update operation after it has timed out", operation))
 			return ctrl.Result{Requeue: true}, err
 		}
 
-		return ctrl.Result{}, err
+		return ctrl.Result{}, opErr
 	case *response.SuccessStatusIdentifier:
-		err := notifyDirector() // TODO: UPDATE status condition Ready -> true
+		err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, true, nil))
 		if err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
@@ -230,25 +246,55 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		return ctrl.Result{}, nil
 	case *response.FailedStatusIdentifier:
-		err := notifyDirector() // TODO: UPDATE status condition Error -> true && Ready -> True
+		opErr := errors.New("webhook operation has finished unsuccessfully")
+
+		err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, true, opErr))
 		if err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
 
-		err = errors.New("webhook operation has finished unsuccessfully")
-		operation = setErrorStatus(*operation, err.Error())
+		operation = setErrorStatus(*operation, opErr.Error())
 		if err := r.Update(ctx, operation); err != nil {
 			logger.Error(err, operationError("unable to update operation after it has finished unsuccessfully", operation))
 			return ctrl.Result{Requeue: true}, err
 		}
 
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, opErr
 	default:
 		return ctrl.Result{}, fmt.Errorf("unexpected poll status response: %s", *response.Status)
 	}
 }
 
-func notifyDirector() error {
+func prepareDirectorRequest(operation v1alpha1.Operation, ready bool, err error) *operationRequest {
+	return &operationRequest{
+		OperationType: graphql.OperationType(operation.Spec.OperationType),
+		ResourceType:  resource.Type(operation.Spec.ResourceID),
+		ResourceID:    operation.Spec.ResourceID,
+		Ready:         ready,
+		Error:         err.Error(),
+	}
+}
+
+func notifyDirector(ctx context.Context, directorURL string, request *operationRequest) error {
+	body, err := json.Marshal(request)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, directorURL, bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req) // TODO: Build custom client, do not rely on default one
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code when notifying director for application state: %d", resp.StatusCode)
+	}
+
 	return nil
 }
 
