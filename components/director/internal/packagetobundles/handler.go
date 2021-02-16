@@ -26,6 +26,11 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -36,6 +41,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/vektah/gqlparser/gqlerror"
 )
+
+const usesBundlesLabel = "usesBundles"
 
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
 type LabelUpsertService interface {
@@ -120,7 +127,24 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 			usingBundles := unmodifiedBody == body
 			if usingBundles {
+				consumerInfo, err := consumer.LoadFromContext(ctx)
+				if err != nil {
+					log.C(ctx).WithError(err).Error("Error determining request consumer")
+					appErr := apperrors.InternalErrorFrom(err, "while determining request consumer")
+					writeAppError(ctx, w, appErr, http.StatusInternalServerError)
+					return
+				}
+
+				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID %q and type %q", consumerInfo.ConsumerID, consumerInfo.ConsumerType)
+
 				next.ServeHTTP(w, r)
+
+				if consumerInfo.ConsumerType == consumer.Runtime {
+					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
+						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q", usesBundlesLabel)
+					}
+				}
+
 				return
 			}
 
@@ -174,6 +198,37 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			}
 		})
 	}
+}
+
+func (h *Handler) labelRuntimeWithBundlesParam(ctx context.Context, consumerInfo consumer.Consumer) error {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while determining request tenant")
+	}
+
+	tx, err := h.transact.Begin()
+	if err != nil {
+		return errors.Wrap(err, "while opening db transaction")
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	log.C(ctx).Infof("Proceeding with labeling runtime with ID %q with label %q", consumerInfo.ConsumerID, usesBundlesLabel)
+	if err := h.labelUpsertService.UpsertLabel(ctx, tenantID, &model.LabelInput{
+		Key:        usesBundlesLabel,
+		Value:      "true",
+		ObjectID:   consumerInfo.ConsumerID,
+		ObjectType: model.LabelableObject(consumerInfo.ConsumerType),
+	}); err != nil {
+		return errors.Wrapf(err, "while upserting %q label", usesBundlesLabel)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return errors.Wrap(err, "while committing database transaction")
+	}
+
+	return nil
 }
 
 func writeAppError(ctx context.Context, w http.ResponseWriter, appErr error, statusCode int) {
