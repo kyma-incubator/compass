@@ -21,48 +21,52 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
-	"net/url"
-	"text/template"
 	"time"
 )
 
 // Client defines a general purpose Webhook executor
 type Client interface {
-	Do(ctx context.Context, webhook graphql.Webhook, request *Request) (graphql.Response, error) // TODO: Move Response and other templates to a better package - maybe even in the Controller project itself
+	Do(ctx context.Context, request *Request) (*webhook.Response, error) // TODO: Move Response and other templates to a better package - maybe even in the Controller project itself
 }
 
 type DefaultClient struct {
 }
 
-func (d DefaultClient) Do(ctx context.Context, request *Request) (*graphql.Response, error) {
+func (d DefaultClient) Do(ctx context.Context, request *Request) (*webhook.Response, error) {
 	url := request.Webhook.URL
+	var method string
 	if request.Webhook.URLTemplate != nil {
-		resultURL, err := prepareURL(request.Webhook.URLTemplate, request.Data)
+		resultURL, err := webhook.ParseURLTemplate(request.Webhook.URLTemplate, request.Data)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to prepare webhook URL")
+			return nil, errors.Wrap(err, "unable to parse webhook URL")
 		}
-		url = &resultURL
+		url = resultURL.Path
+		method = *resultURL.Method
 	}
 
-	body, err := prepareBody(request.Webhook.InputTemplate, request.Data)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to prepare webhook input body")
+	if url == nil {
+		return nil, errors.New("missing webhook url")
 	}
 
-	headers, err := prepareHeaders(request.Webhook.HeaderTemplate, request.Data)
+	body, err := webhook.ParseInputTemplate(request.Webhook.InputTemplate, request.Data)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to prepare webhook headers")
+		return nil, errors.Wrap(err, "unable to parse webhook input body")
+	}
+
+	headers, err := webhook.ParseHeadersTemplate(request.Webhook.HeaderTemplate, request.Data)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse webhook headers")
 	}
 
 	if request.Webhook.CorrelationIDKey != nil && request.CorrelationID != "" {
 		headers.Add(*request.Webhook.CorrelationIDKey, request.CorrelationID)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, *url, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, method, *url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -84,12 +88,12 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*graphql.Respo
 		return nil, err
 	}
 
-	responseData := graphql.ResponseData{
+	responseData := webhook.ResponseData{
 		Body:    respBody,
 		Headers: resp.Header,
 	}
 
-	response, err := prepareResponse(request.Webhook.OutputTemplate, responseData)
+	response, err := webhook.ParseOutputTemplate(request.Webhook.InputTemplate, request.Webhook.OutputTemplate, webhook.Mode(*request.Webhook.Mode), responseData)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +107,7 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*graphql.Respo
 		recErr = &ReconcileError{Description: fmt.Sprintf("received error while requesting external system: %s", *response.Error)}
 	}
 
-	if recErr != nil && time.Now().Before(request.OperationCreationTime.Add(time.Duration(*request.Webhook.Timeout))) {
+	if recErr != nil && !isWebhookTimeoutReached(request.OperationCreationTime, time.Duration(*request.Webhook.Timeout)) {
 		recErr.Requeue = true
 		recErr.RequeueAfter = request.RetryInterval
 		return nil, recErr
@@ -114,97 +118,5 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*graphql.Respo
 
 func isWebhookTimeoutReached(creationTime time.Time, webhookTimeout time.Duration) bool {
 	operationEndTime := creationTime.Add(webhookTimeout)
-
 	return time.Now().After(operationEndTime)
-}
-
-func prepareURL(tmpl *string, reqData graphql.RequestData) (string, error) {
-	if tmpl == nil {
-		return "", errors.New("missing URL template")
-	}
-
-	urlTemplate, err := template.New("url").Parse(*tmpl)
-	if err != nil {
-		return "", err
-	}
-
-	result := new(bytes.Buffer)
-	err = urlTemplate.Execute(result, reqData)
-	if err != nil {
-		return "", err
-	}
-
-	resultURL := result.String()
-	_, err = url.ParseRequestURI(resultURL)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to parse URL")
-	}
-
-	return resultURL, nil
-}
-
-func prepareBody(tmpl *string, reqData graphql.RequestData) ([]byte, error) {
-	if tmpl == nil {
-		return nil, errors.New("missing input template")
-	}
-
-	inputTemplate, err := template.New("input").Parse(*tmpl)
-	if err != nil {
-		return nil, err
-	}
-
-	result := new(bytes.Buffer)
-	err = inputTemplate.Execute(result, reqData)
-	if err != nil {
-		return nil, err
-	}
-
-	return result.Bytes(), nil
-}
-
-func prepareHeaders(tmpl *string, reqData graphql.RequestData) (http.Header, error) {
-	if tmpl == nil {
-		return nil, errors.New("missing headers template")
-	}
-
-	headersTemplate, err := template.New("headers").Parse(*tmpl)
-	if err != nil {
-		return nil, err
-	}
-
-	result := new(bytes.Buffer)
-	err = headersTemplate.Execute(result, reqData)
-	if err != nil {
-		return nil, err
-	}
-
-	var headers http.Header
-	if err := json.Unmarshal(result.Bytes(), &headers); err != nil {
-		return nil, err
-	}
-
-	return headers, nil
-}
-
-func prepareResponse(tmpl *string, respData graphql.ResponseData) (*graphql.Response, error) {
-	if tmpl == nil {
-		return nil, nil
-	}
-
-	outputTemplate, err := template.New("output").Parse(*tmpl)
-	if err != nil {
-		return nil, err
-	}
-
-	result := new(bytes.Buffer)
-	if err := outputTemplate.Execute(result, respData); err != nil {
-		return nil, err
-	}
-
-	var outputTmpl graphql.Response
-	if err := json.Unmarshal(result.Bytes(), &outputTmpl); err != nil {
-		return nil, err
-	}
-
-	return &outputTmpl, err
 }

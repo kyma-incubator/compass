@@ -19,20 +19,21 @@ package webhook
 import (
 	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"time"
 )
 
 // Request represents a webhook request to be executed
 type Request struct {
 	Webhook               graphql.Webhook
-	Data                  graphql.RequestData
+	Data                  web_hook.RequestData
 	CorrelationID         string
 	RetryInterval         time.Duration
 	OperationCreationTime time.Time
 }
 
 func NewRequest(webhook graphql.Webhook, reqData string, correlationID string, opCreationTime time.Time) (*Request, error) {
-	var data graphql.RequestData
+	var data web_hook.RequestData
 	if err := json.Unmarshal([]byte(reqData), &data); err != nil {
 		return nil, err
 	}
