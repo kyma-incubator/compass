@@ -75,7 +75,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			}
 
 			body := string(reqBody)
-			//body = strings.ReplaceAll(body, "\\n", "") // removes unnecessary complexity from the next regexes
+			body = strings.ReplaceAll(body, "\\n", " ") // removes unnecessary complexity from the next regexes
 
 			unmodifiedBody := body
 
