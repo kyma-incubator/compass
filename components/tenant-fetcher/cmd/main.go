@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -35,6 +36,8 @@ import (
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/model"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/tenant"
 	"github.com/kyma-incubator/compass/components/tenant-fetcher/internal/uuid"
+
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/gorilla/mux"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -63,6 +66,7 @@ type config struct {
 	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 
 	TenantProviderAccountId string `envconfig:"APP_TENANT_PROVIDER_ACCOUNT_ID_PROPERTY"`
+	TenantProvider          string `envconfig:"APP_TENANT_PROVIDER"`
 
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
@@ -126,10 +130,10 @@ func main() {
 
 	mainRouter := mux.NewRouter()
 	subrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
-	subrouter.Use(middleware.Handler())
+	subrouter.Use(middleware.Handler(), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
 	logger.Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderAccountId)).Methods(http.MethodPut)
+	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderAccountId, cfg.TenantProvider)).Methods(http.MethodPut)
 
 	logger.Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
 	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderAccountId)).Methods(http.MethodDelete)
@@ -192,7 +196,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam, tenantIdProperty string) func(writer http.ResponseWriter, request *http.Request) {
+func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam, tenantIdProperty, tenantProvider string) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		logger := log.C(request.Context())
 
@@ -206,7 +210,9 @@ func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam, tenantI
 
 		tenantId := gjson.GetBytes(body, tenantIdProperty).String()
 		tenant := model.TenantModel{
-			AccountId: tenantId,
+			AccountId:      tenantId,
+			TenantProvider: tenantProvider,
+			Status:         tenantEntity.Active,
 		}
 
 		if err := svc.Create(request.Context(), tenant); err != nil {
