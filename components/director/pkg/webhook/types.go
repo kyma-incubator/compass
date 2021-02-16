@@ -134,118 +134,126 @@ func (st *ResponseStatus) Validate() error {
 	return nil
 }
 
-func ValidateURLTemplate(tmpl *string, reqData RequestData) error {
+func ParseURLTemplate(tmpl *string, reqData RequestData) (*URL, error) {
 	if tmpl == nil {
-		return nil
+		return nil, nil
 	}
 
 	urlTemplate, err := template.New("url").Parse(*tmpl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	result := new(bytes.Buffer)
 	err = urlTemplate.Execute(result, reqData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var url URL
 	if err := json.Unmarshal(result.Bytes(), &url); err != nil {
-		return err
+		return nil, err
 	}
 
-	return url.Validate()
+	return &url, url.Validate()
 }
 
-func ValidateInputTemplate(tmpl *string, reqData RequestData) error {
+func ParseInputTemplate(tmpl *string, reqData RequestData) ([]byte, error) {
 	if tmpl == nil {
-		return nil
+		return nil, nil
 	}
 
 	inputTemplate, err := template.New("input").Parse(*tmpl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	result := new(bytes.Buffer)
 	if err := inputTemplate.Execute(result, reqData); err != nil {
-		return err
+		return nil, err
 	}
 
 	res := json.RawMessage{}
-	return json.Unmarshal(result.Bytes(), &res)
+	if err := json.Unmarshal(result.Bytes(), &res); err != nil {
+		return nil, err
+	}
+
+	return result.Bytes(), nil
 }
 
-func ValidateHeadersTemplate(tmpl *string, reqData RequestData) error {
+func ParseHeadersTemplate(tmpl *string, reqData RequestData) (http.Header, error) {
 	if tmpl == nil {
-		return nil
+		return nil, nil
 	}
 
 	headerTemplate, err := template.New("header").Parse(*tmpl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	result := new(bytes.Buffer)
 	if err := headerTemplate.Execute(result, reqData); err != nil {
-		return err
+		return nil, err
 	}
 
 	if result.Len() == 0 {
-		return nil
+		return nil, nil
 	}
 
-	headers := map[string][]string{}
-	return json.Unmarshal(result.Bytes(), &headers)
+	var headers http.Header
+	if err := json.Unmarshal(result.Bytes(), &headers); err != nil {
+		return nil, err
+	}
+
+	return headers, nil
 }
 
-func ValidateOutputTemplate(inputTmpl, outputTmpl *string, webhookMode Mode, respData ResponseData) error {
+func ParseOutputTemplate(inputTmpl, outputTmpl *string, webhookMode Mode, respData ResponseData) (*Response, error) {
 	if outputTmpl == nil && inputTmpl != nil {
-		return errors.New("missing webhook output template")
+		return nil, errors.New("missing webhook output template")
 	}
 
 	if outputTmpl == nil {
-		return nil
+		return nil, nil
 	}
 
 	outputTemplate, err := template.New("output").Parse(*outputTmpl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	result := new(bytes.Buffer)
 	if err := outputTemplate.Execute(result, respData); err != nil {
-		return err
+		return nil, err
 	}
 
 	var outputTmplResp Response
 	if err := json.Unmarshal(result.Bytes(), &outputTmplResp); err != nil {
-		return err
+		return nil, err
 	}
 
-	return outputTmplResp.Validate(webhookMode)
+	return &outputTmplResp, outputTmplResp.Validate(webhookMode)
 }
 
-func ValidateStatusTemplate(tmpl *string, respData ResponseData) error {
+func ParseStatusTemplate(tmpl *string, respData ResponseData) (*ResponseStatus, error) {
 	if tmpl == nil {
-		return nil
+		return nil, nil
 	}
 
 	statusTemplate, err := template.New("status").Parse(*tmpl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	result := new(bytes.Buffer)
 	if err := statusTemplate.Execute(result, respData); err != nil {
-		return err
+		return nil, err
 	}
 
 	var statusTmpl ResponseStatus
 	if err := json.Unmarshal(result.Bytes(), &statusTmpl); err != nil {
-		return err
+		return nil, err
 	}
 
-	return statusTmpl.Validate()
+	return &statusTmpl, statusTmpl.Validate()
 }

@@ -26,15 +26,15 @@ func (i WebhookInput) Validate() error {
 	}
 
 	reqData := webhook.RequestData{Application: &Application{BaseEntity: &BaseEntity{}}}
-	if err := webhook.ValidateURLTemplate(i.URLTemplate, reqData); err != nil {
+	if _, err := webhook.ParseURLTemplate(i.URLTemplate, reqData); err != nil {
 		return err
 	}
 
-	if err := webhook.ValidateInputTemplate(i.InputTemplate, reqData); err != nil {
+	if _, err := webhook.ParseInputTemplate(i.InputTemplate, reqData); err != nil {
 		return err
 	}
 
-	if err := webhook.ValidateHeadersTemplate(i.HeaderTemplate, reqData); err != nil {
+	if _, err := webhook.ParseHeadersTemplate(i.HeaderTemplate, reqData); err != nil {
 		return err
 	}
 
@@ -44,12 +44,12 @@ func (i WebhookInput) Validate() error {
 	}
 
 	var respData webhook.ResponseData
-	if err := webhook.ValidateOutputTemplate(i.InputTemplate, i.OutputTemplate, webhookMode, respData); err != nil {
+	if _, err := webhook.ParseOutputTemplate(i.InputTemplate, i.OutputTemplate, webhookMode, respData); err != nil {
 		return err
 	}
 
 	if i.Mode != nil && *i.Mode == WebhookModeAsync {
-		if err := webhook.ValidateStatusTemplate(i.StatusTemplate, respData); err != nil {
+		if _, err := webhook.ParseStatusTemplate(i.StatusTemplate, respData); err != nil {
 			return err
 		}
 	}
