@@ -20,40 +20,46 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"text/template"
+	"time"
 )
 
 // Client defines a general purpose Webhook executor
 type Client interface {
-	Do(ctx context.Context, webhook graphql.Webhook, reqData graphql.RequestData, correlationID string) (graphql.Response, error) // TODO: Move Response and other templates to a better package - maybe even in the Controller project itself
+	Do(ctx context.Context, webhook graphql.Webhook, request *Request) (graphql.Response, error) // TODO: Move Response and other templates to a better package - maybe even in the Controller project itself
 }
 
 type DefaultClient struct {
 }
 
-func (d DefaultClient) Do(ctx context.Context, webhook graphql.Webhook, reqData graphql.RequestData, correlationID string) (*graphql.Response, error) {
-	url := webhook.URL
-	if webhook.URLTemplate != nil {
-		resultURL, err := prepareURL(webhook.URLTemplate, reqData)
+func (d DefaultClient) Do(ctx context.Context, request *Request) (*graphql.Response, error) {
+	url := request.Webhook.URL
+	if request.Webhook.URLTemplate != nil {
+		resultURL, err := prepareURL(request.Webhook.URLTemplate, request.Data)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to prepare webhook URL")
 		}
 		url = &resultURL
 	}
 
-	body, err := prepareBody(webhook.InputTemplate, reqData)
+	body, err := prepareBody(request.Webhook.InputTemplate, request.Data)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to prepare webhook input body")
 	}
 
-	headers, err := prepareHeaders(webhook.HeaderTemplate, reqData)
+	headers, err := prepareHeaders(request.Webhook.HeaderTemplate, request.Data)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to prepare webhook headers")
+	}
+
+	if request.Webhook.CorrelationIDKey != nil && request.CorrelationID != "" {
+		headers.Add(*request.Webhook.CorrelationIDKey, request.CorrelationID)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, *url, bytes.NewBuffer(body))
@@ -83,19 +89,33 @@ func (d DefaultClient) Do(ctx context.Context, webhook graphql.Webhook, reqData 
 		Headers: resp.Header,
 	}
 
-	response, err := prepareResponse(webhook.OutputTemplate, responseData)
+	response, err := prepareResponse(request.Webhook.OutputTemplate, responseData)
 	if err != nil {
 		return nil, err
 	}
 
+	var recErr *ReconcileError
 	if *response.SuccessStatusCode != resp.StatusCode {
-		// TODO: check
-		return nil, errors.Errorf("response success status code was not met - expected %q, got %q", response.SuccessStatusCode, resp.StatusCode)
+		recErr = &ReconcileError{Description: fmt.Sprintf("response success status code was not met - expected %q, got %q", response.SuccessStatusCode, resp.StatusCode)}
 	}
 
-	// TODO: ...
+	if response.Error != nil && *response.Error != "" {
+		recErr = &ReconcileError{Description: fmt.Sprintf("received error while requesting external system: %s", *response.Error)}
+	}
 
-	return nil, nil
+	if recErr != nil && time.Now().Before(request.OperationCreationTime.Add(time.Duration(*request.Webhook.Timeout))) {
+		recErr.Requeue = true
+		recErr.RequeueAfter = request.RetryInterval
+		return nil, recErr
+	}
+
+	return response, recErr
+}
+
+func isWebhookTimeoutReached(creationTime time.Time, webhookTimeout time.Duration) bool {
+	operationEndTime := creationTime.Add(webhookTimeout)
+
+	return time.Now().After(operationEndTime)
 }
 
 func prepareURL(tmpl *string, reqData graphql.RequestData) (string, error) {

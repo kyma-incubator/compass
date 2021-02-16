@@ -16,7 +16,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
@@ -37,9 +36,9 @@ import (
 )
 
 const (
-	defaultReconciliationTimeout = 12 //TODO: Extract in environment variable
 	defaultTimeoutFactor         = 2
-	defaultWebhookTimeout        = 2
+	defaultReconciliationTimeout = 12 * time.Hour //TODO: Extract in environment variable
+	defaultWebhookTimeout        = 2 * time.Hour
 	defaultRequeueInterval       = 10 * time.Minute
 	defaultTimeLayout            = time.RFC3339Nano
 )
@@ -59,7 +58,6 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	logger := r.Log.WithValues("operation", req.NamespacedName)
 
-	// your logic here
 	var operation = &v1alpha1.Operation{}
 	err := r.Get(ctx, req.NamespacedName, operation)
 	if err != nil {
@@ -67,13 +65,11 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	reconciliationTimeout := time.Duration(defaultTimeoutFactor * defaultReconciliationTimeout)
-
 	app, err := r.Lister.FetchApplication(ctx, operation.Spec.ResourceID)
 	if err != nil {
 		logger.Error(err, operationError("Unable to fetch application", operation))
 
-		if isReconciliationTimeoutReached(operation, reconciliationTimeout) {
+		if isReconciliationTimeoutReached(operation, defaultTimeoutFactor*defaultReconciliationTimeout) {
 			if err := r.Delete(ctx, operation); err != nil {
 				logger.Error(err, operationError("Unable to delete operation", operation))
 				return ctrl.Result{Requeue: true}, err
@@ -86,70 +82,40 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	operation = setDefaultStatus(*operation)
 
+	if app.Result.Ready {
+		operation = setConditionStatus(*operation, v1alpha1.ConditionTypeReady, corev1.ConditionTrue, "")
+		if app.Result.Error != nil {
+			operation = setConditionStatus(*operation, v1alpha1.ConditionTypeError, corev1.ConditionFalse, "")
+		}
+		if err := r.Update(ctx, operation); err != nil {
+			logger.Error(err, operationError("Unable to update operation", operation))
+			return ctrl.Result{Requeue: true}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if app.Result.Error != nil {
+		operation = setErrorStatus(*operation, *app.Result.Error)
+		if err := r.Update(ctx, operation); err != nil {
+			logger.Error(err, operationError("Unable to update operation", operation))
+			return ctrl.Result{Requeue: true}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
 	webhooks, err := retrieveWebhooks(app.Result.Webhooks, operation.Spec.WebhookIDs)
 	if err != nil {
 		logger.Error(err, operationError("Unable to retrieve webhooks", operation))
 		return ctrl.Result{}, err
 	}
 
-	reconciliationTimeout = calculateReconciliationTimeout(webhooks)
+	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks)) {
+		operation = setErrorStatus(*operation, "Reconciliation timeout reached")
 
-	if app.Result.Ready {
-		for _, condition := range operation.Status.Conditions {
-			if condition.Type == v1alpha1.ConditionTypeReady {
-				condition.Status = corev1.ConditionTrue
-				condition.Message = ""
-			}
-
-			if condition.Type == v1alpha1.ConditionTypeError {
-				condition.Status = corev1.ConditionFalse
-				condition.Message = ""
-			}
+		err := notifyDirector() // TODO:
+		if err != nil {
+			return ctrl.Result{}, err
 		}
-
-		if err := r.Update(ctx, operation); err != nil {
-			logger.Error(err, operationError("Unable to update operation", operation))
-			return ctrl.Result{Requeue: true}, err
-		}
-
-		return ctrl.Result{}, nil
-	}
-
-	if app.Result.Error != nil {
-		for _, condition := range operation.Status.Conditions {
-			if condition.Type == v1alpha1.ConditionTypeReady {
-				condition.Status = corev1.ConditionFalse
-				condition.Message = ""
-			}
-
-			if condition.Type == v1alpha1.ConditionTypeError {
-				condition.Status = corev1.ConditionTrue
-				condition.Message = *app.Result.Error
-			}
-		}
-
-		if err := r.Update(ctx, operation); err != nil {
-			logger.Error(err, operationError("Unable to update operation", operation))
-			return ctrl.Result{Requeue: true}, err
-		}
-
-		return ctrl.Result{}, nil
-	}
-
-	if isReconciliationTimeoutReached(operation, reconciliationTimeout) {
-		for _, condition := range operation.Status.Conditions {
-			if condition.Type == v1alpha1.ConditionTypeReady {
-				condition.Status = corev1.ConditionFalse
-				condition.Message = ""
-			}
-
-			if condition.Type == v1alpha1.ConditionTypeError {
-				condition.Status = corev1.ConditionTrue
-				condition.Message = "Reconciliation timeout reached"
-			}
-		}
-
-		// TODO: Probably notify Director here
 
 		if err := r.Update(ctx, operation); err != nil {
 			logger.Error(err, operationError("Unable to update operation", operation))
@@ -162,26 +128,49 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	webhookEntity := webhooks[operation.Spec.WebhookIDs[0]]
 	webhookStatus := operation.Status.Webhooks[0]
 
+	webhookClient := webhook.DefaultClient{}
 	if webhookStatus.WebhookPollURL != "" {
-		// process input templates, run webhooks, process output templates
-		var reqData graphql.RequestData
-		if err := json.Unmarshal([]byte(operation.Spec.RequestData), &reqData); err != nil {
-			return ctrl.Result{Requeue: true}, err
-		}
-
-		client := webhook.DefaultClient{}
-		response, err := client.Do(ctx, webhookEntity, reqData, operation.Spec.CorrelationID)
+		req, err := webhook.NewRequest(webhookEntity, operation.Spec.RequestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time)
 		if err != nil {
-			// Custom error check about webhook errors
-			// Also if op == sync, we should notify Director
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 
-		if *webhookEntity.Mode == graphql.WebhookModeAsync {
+		response, err := webhookClient.Do(ctx, req)
+		if err != nil {
+			recErr, isRecErr := err.(*webhook.ReconcileError)
+			if !isRecErr {
+				recErr = &webhook.ReconcileError{Description: err.Error()}
+			}
+
+			if recErr.Requeue { // the case when webhook timeout is reached
+				return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, errors.New(recErr.Error())
+			}
+
+			err := notifyDirector() // TODO: UPDATE status condition Error -> true
+			if err != nil {
+				return ctrl.Result{Requeue: true}, err
+			}
+
+			operation = setErrorStatus(*operation, recErr.Description)
+			if err := r.Update(ctx, operation); err != nil {
+				logger.Error(err, operationError("unable to update operation after failed webhook request", operation))
+				return ctrl.Result{Requeue: true}, err
+			}
+
+			return ctrl.Result{}, errors.New(recErr.Description)
+		}
+
+		switch *webhookEntity.Mode {
+		case graphql.WebhookModeAsync:
 			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
-		} else {
-			notifyDirector()
-			// UPDATE status condition Ready -> true
+		case graphql.WebhookModeSync:
+			err := notifyDirector() // TODO: UPDATE status condition Ready -> true
+			if err != nil {
+				return ctrl.Result{Requeue: true}, err
+			}
+			operation = setReadyStatus(*operation)
+		default:
+			return ctrl.Result{}, errors.New("unsupported webhook mode")
 		}
 
 		if err := r.Update(ctx, operation); err != nil {
@@ -207,8 +196,8 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func notifyDirector() {
-
+func notifyDirector() error {
+	return nil
 }
 
 func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliationTimeout time.Duration) bool {
@@ -288,6 +277,28 @@ func setDefaultStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
 	return &operation
 }
 
+func setConditionStatus(operation v1alpha1.Operation, conditionType v1alpha1.ConditionType, status corev1.ConditionStatus, msg string) *v1alpha1.Operation {
+	for _, condition := range operation.Status.Conditions {
+		if condition.Type == conditionType {
+			condition.Status = status
+			condition.Message = msg
+		}
+	}
+	return &operation
+}
+
+func setReadyStatus(operation v1alpha1.Operation) *v1alpha1.Operation {
+	operation = *setConditionStatus(operation, v1alpha1.ConditionTypeReady, corev1.ConditionTrue, "")
+	operation = *setConditionStatus(operation, v1alpha1.ConditionTypeError, corev1.ConditionFalse, "")
+	return &operation
+}
+
+func setErrorStatus(operation v1alpha1.Operation, errorMsg string) *v1alpha1.Operation {
+	operation = *setConditionStatus(operation, v1alpha1.ConditionTypeReady, corev1.ConditionFalse, "")
+	operation = *setConditionStatus(operation, v1alpha1.ConditionTypeError, corev1.ConditionTrue, errorMsg)
+	return &operation
+}
+
 func retrieveWebhooks(appWebhooks []graphql.Webhook, opWebhookIDs []string) (map[string]graphql.Webhook, error) {
 	if len(opWebhookIDs) == 0 {
 		return nil, errors.New("no webhooks found for operation")
@@ -317,16 +328,16 @@ func retrieveWebhooks(appWebhooks []graphql.Webhook, opWebhookIDs []string) (map
 }
 
 func calculateReconciliationTimeout(webhooks map[string]graphql.Webhook) time.Duration {
-	totalTimeout := 0
+	var totalTimeout time.Duration
 	for _, webhook := range webhooks {
 		if webhook.Timeout == nil {
 			totalTimeout += defaultWebhookTimeout
 		} else {
-			totalTimeout += *webhook.Timeout
+			totalTimeout += time.Duration(*webhook.Timeout) * time.Minute
 		}
 	}
 
-	return time.Duration(totalTimeout) * time.Hour
+	return totalTimeout
 }
 
 func operationError(msg string, operation *v1alpha1.Operation) string {
