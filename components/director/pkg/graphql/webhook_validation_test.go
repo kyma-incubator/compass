@@ -36,7 +36,7 @@ func TestWebhookInput_Validate_Type(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Type = testCase.Value
 			//WHEN
 			err := sut.Validate()
@@ -81,7 +81,7 @@ func TestWebhookInput_Validate_URL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.URL = &testCase.Value
 			//WHEN
 			err := sut.Validate()
@@ -122,7 +122,7 @@ func TestWebhookInput_Validate_Auth(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Auth = testCase.Value
 			//WHEN
 			err := sut.Validate()
@@ -162,7 +162,7 @@ func TestWebhookInput_Validate_CorrelationIDKey(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.CorrelationIDKey = testCase.Value
 			//WHEN
 			err := sut.Validate()
@@ -207,7 +207,7 @@ func TestWebhookInput_Validate_Mode(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Mode = testCase.Value
 			//WHEN
 			err := sut.Validate()
@@ -252,7 +252,7 @@ func TestWebhookInput_Validate_RetryInterval(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.RetryInterval = testCase.Value
 			//WHEN
 			err := sut.Validate()
@@ -297,7 +297,7 @@ func TestWebhookInput_Validate_Timeout(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Timeout = testCase.Value
 			//WHEN
 			err := sut.Validate()
@@ -318,8 +318,11 @@ func TestWebhookInput_Validate_URLTemplate(t *testing.T) {
 		ExpectedValid bool
 	}{
 		{
-			Name:          "ExpectedValid",
-			Value:         stringPtr("https://my-int-system/api/v1/{{.Application.ID}}/pairing"),
+			Name: "ExpectedValid",
+			Value: stringPtr(`{
+	   "method": "POST",
+	   "path": "https://my-int-system/api/v1/{{.Application.ID}}/pairing"
+ }`),
 			ExpectedValid: true,
 		},
 		{
@@ -342,7 +345,7 @@ func TestWebhookInput_Validate_URLTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.URL = nil
 			sut.URLTemplate = testCase.Value
 			//WHEN
@@ -394,7 +397,7 @@ func TestWebhookInput_Validate_InputTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.InputTemplate = testCase.Value
 			//WHEN
 			err := sut.Validate()
@@ -439,7 +442,7 @@ func TestWebhookInput_Validate_HeaderTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.HeaderTemplate = testCase.Value
 			//WHEN
 			err := sut.Validate()
@@ -504,7 +507,7 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.InputTemplate = nil
 			sut.OutputTemplate = testCase.Value
 			//WHEN
@@ -530,6 +533,9 @@ func TestWebhookInput_Validate_StatusTemplate(t *testing.T) {
 			Value: stringPtr(`{
 			   "status": "{{.Body.status}}",
 			   "success_status_code": 200,
+			   "success_status_identifier": "SUCCESS",
+			   "in_progress_status_identifier": "IN_PROGRESS",
+			   "failed_status_identifier": "FAILED",
 			   "error": "{{.Body.error}}"
 			}`),
 			ExpectedValid: true,
@@ -573,7 +579,7 @@ func TestWebhookInput_Validate_StatusTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidWebhookInput()
+			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Mode = webhookModePtr(graphql.WebhookModeAsync)
 			sut.StatusTemplate = testCase.Value
 			//WHEN
@@ -589,7 +595,7 @@ func TestWebhookInput_Validate_StatusTemplate(t *testing.T) {
 }
 
 func TestWebhookInput_Validate_BothURLAndURLTemplate(t *testing.T) {
-	sut := fixValidWebhookInput()
+	sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 	sut.URL = stringPtr("https://my-int-system/api/v1/123/pairing")
 	sut.URLTemplate = stringPtr("https://my-int-system/api/v1/{{.Application.ID}}/pairing")
 	//WHEN
@@ -599,7 +605,7 @@ func TestWebhookInput_Validate_BothURLAndURLTemplate(t *testing.T) {
 }
 
 func TestWebhookInput_Validate_InputTemplateProvided_MissingOutputTemplate_ShouldReturnError(t *testing.T) {
-	sut := fixValidWebhookInput()
+	sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 	sut.InputTemplate = stringPtr(`{
 	  "app_id": "{{.Application.ID}}",
 	  "app_name": "{{.Application.Name}}"
@@ -612,7 +618,7 @@ func TestWebhookInput_Validate_InputTemplateProvided_MissingOutputTemplate_Shoul
 }
 
 func TestWebhookInput_Validate_AsyncWebhook_MissingLocationInOutputTemplate_ShouldReturnError(t *testing.T) {
-	sut := fixValidWebhookInput()
+	sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 	sut.Mode = webhookModePtr(graphql.WebhookModeAsync)
 	sut.OutputTemplate = stringPtr(`{
 	   "success_status_code": 202,
@@ -624,7 +630,7 @@ func TestWebhookInput_Validate_AsyncWebhook_MissingLocationInOutputTemplate_Shou
 	require.Error(t, err)
 }
 
-func fixValidWebhookInput() graphql.WebhookInput {
+func fixValidWebhookInput(url string) graphql.WebhookInput {
 	template := `{}`
 	outputTemplate := `{
 	   "location": "{{.Headers.location}}",
@@ -632,15 +638,24 @@ func fixValidWebhookInput() graphql.WebhookInput {
 	   "error": "{{.Body.error}}"
  }`
 	webhookMode := graphql.WebhookModeSync
-	webhookURL := inputvalidationtest.ValidURL
-	return graphql.WebhookInput{
+	webhookInput := graphql.WebhookInput{
 		Type:           graphql.WebhookTypeConfigurationChanged,
-		URL:            &webhookURL,
 		Mode:           &webhookMode,
 		InputTemplate:  &template,
 		HeaderTemplate: &template,
 		OutputTemplate: &outputTemplate,
 	}
+
+	if url != "" {
+		webhookInput.URL = &url
+	} else {
+		webhookInput.URLTemplate = stringPtr(`{
+	   "method": "POST",
+	   "path": "https://my-int-system/api/v1/{{.Application.ID}}/pairing"
+ }`)
+	}
+
+	return webhookInput
 }
 
 func stringPtr(s string) *string {

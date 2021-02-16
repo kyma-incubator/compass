@@ -1,6 +1,8 @@
 package graphql
 
 import (
+	"net/url"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -16,8 +18,11 @@ func (i WebhookInput) Validate() error {
 		return apperrors.NewInvalidDataError("cannot provide both webhook url and url template")
 	}
 
-	if i.URLTemplate == nil {
-		i.URLTemplate = i.URL
+	if i.URL != nil {
+		_, err := url.ParseRequestURI(*i.URL)
+		if err != nil {
+			return apperrors.NewInvalidDataError("failed to parse webhook url")
+		}
 	}
 
 	reqData := webhook.RequestData{Application: &Application{BaseEntity: &BaseEntity{}}}

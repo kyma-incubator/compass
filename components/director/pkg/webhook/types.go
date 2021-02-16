@@ -51,6 +51,11 @@ type ResponseData struct {
 	Headers http.Header
 }
 
+type URL struct {
+	Method *string `json:"method"`
+	Path   *string `json:"path"`
+}
+
 // Response defines the schema for Webhook output templates
 type Response struct {
 	Location          *string `json:"location"`
@@ -60,9 +65,29 @@ type Response struct {
 
 // ResponseStatus defines the schema for Webhook status templates when dealing with async webhooks
 type ResponseStatus struct {
-	Status            *string `json:"status"`
-	SuccessStatusCode *int    `json:"success_status_code"`
-	Error             *string `json:"error"`
+	Status                     *string `json:"status"`
+	SuccessStatusCode          *int    `json:"success_status_code"`
+	SuccessStatusIdentifier    *string `json:"success_status_identifier"`
+	InProgressStatusIdentifier *string `json:"in_progress_status_identifier"`
+	FailedStatusIdentifier     *string `json:"failed_status_identifier"`
+	Error                      *string `json:"error"`
+}
+
+func (ot *URL) Validate() error {
+	if ot.Method == nil {
+		return errors.New("missing URL Template method field")
+	}
+
+	if ot.Path == nil {
+		return errors.New("missing URL Template path field")
+	}
+
+	_, err := url.ParseRequestURI(*ot.Path)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse URL Template path field")
+	}
+
+	return nil
 }
 
 func (ot *Response) Validate(webhookMode Mode) error {
@@ -90,6 +115,18 @@ func (st *ResponseStatus) Validate() error {
 		return errors.New("missing Status Template success status code field")
 	}
 
+	if st.SuccessStatusIdentifier == nil {
+		return errors.New("missing Status Template success status identifier field")
+	}
+
+	if st.InProgressStatusIdentifier == nil {
+		return errors.New("missing Status Template in progress status identifier field")
+	}
+
+	if st.FailedStatusIdentifier == nil {
+		return errors.New("missing Status Template failed status identifier field")
+	}
+
 	if st.Error == nil {
 		return errors.New("missing Status Template error field")
 	}
@@ -107,18 +144,18 @@ func ValidateURLTemplate(tmpl *string, reqData RequestData) error {
 		return err
 	}
 
-	finalURL := new(bytes.Buffer)
-	err = urlTemplate.Execute(finalURL, reqData)
+	result := new(bytes.Buffer)
+	err = urlTemplate.Execute(result, reqData)
 	if err != nil {
 		return err
 	}
 
-	_, err = url.ParseRequestURI(finalURL.String())
-	if err != nil {
+	var url URL
+	if err := json.Unmarshal(result.Bytes(), &url); err != nil {
 		return err
 	}
 
-	return nil
+	return url.Validate()
 }
 
 func ValidateInputTemplate(tmpl *string, reqData RequestData) error {
@@ -131,13 +168,13 @@ func ValidateInputTemplate(tmpl *string, reqData RequestData) error {
 		return err
 	}
 
-	inputBody := new(bytes.Buffer)
-	if err := inputTemplate.Execute(inputBody, reqData); err != nil {
+	result := new(bytes.Buffer)
+	if err := inputTemplate.Execute(result, reqData); err != nil {
 		return err
 	}
 
 	res := json.RawMessage{}
-	return json.Unmarshal(inputBody.Bytes(), &res)
+	return json.Unmarshal(result.Bytes(), &res)
 }
 
 func ValidateHeadersTemplate(tmpl *string, reqData RequestData) error {
@@ -150,17 +187,17 @@ func ValidateHeadersTemplate(tmpl *string, reqData RequestData) error {
 		return err
 	}
 
-	headers := new(bytes.Buffer)
-	if err := headerTemplate.Execute(headers, reqData); err != nil {
+	result := new(bytes.Buffer)
+	if err := headerTemplate.Execute(result, reqData); err != nil {
 		return err
 	}
 
-	if headers.Len() == 0 {
+	if result.Len() == 0 {
 		return nil
 	}
 
-	h := map[string][]string{}
-	return json.Unmarshal(headers.Bytes(), &h)
+	headers := map[string][]string{}
+	return json.Unmarshal(result.Bytes(), &headers)
 }
 
 func ValidateOutputTemplate(inputTmpl, outputTmpl *string, webhookMode Mode, respData ResponseData) error {
@@ -177,13 +214,13 @@ func ValidateOutputTemplate(inputTmpl, outputTmpl *string, webhookMode Mode, res
 		return err
 	}
 
-	outputBody := new(bytes.Buffer)
-	if err := outputTemplate.Execute(outputBody, respData); err != nil {
+	result := new(bytes.Buffer)
+	if err := outputTemplate.Execute(result, respData); err != nil {
 		return err
 	}
 
 	var outputTmplResp Response
-	if err := json.Unmarshal(outputBody.Bytes(), &outputTmplResp); err != nil {
+	if err := json.Unmarshal(result.Bytes(), &outputTmplResp); err != nil {
 		return err
 	}
 
@@ -200,13 +237,13 @@ func ValidateStatusTemplate(tmpl *string, respData ResponseData) error {
 		return err
 	}
 
-	statusBody := new(bytes.Buffer)
-	if err := statusTemplate.Execute(statusBody, respData); err != nil {
+	result := new(bytes.Buffer)
+	if err := statusTemplate.Execute(result, respData); err != nil {
 		return err
 	}
 
 	var statusTmpl ResponseStatus
-	if err := json.Unmarshal(statusBody.Bytes(), &statusTmpl); err != nil {
+	if err := json.Unmarshal(result.Bytes(), &statusTmpl); err != nil {
 		return err
 	}
 
