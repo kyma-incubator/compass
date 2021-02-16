@@ -87,7 +87,7 @@ spec:
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: "{{ .Values.database.dbPool.maxIdleConnections }}"
             - name: APP_TENANT_IDENTITY_ZONE
-              value: {{ .Values.authentication.identityZone }}
+              value: {{ .Values.global.tenantFetcher.authentication.identityZone }}
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: Callback
             {{- range $authenticatorName, $config := .Values.global.authenticators }}
