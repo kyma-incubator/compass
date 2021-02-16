@@ -42,6 +42,7 @@ func (c *converter) ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error) {
 	}
 
 	return &graphql.APISpec{
+		ID:           in.ID,
 		Data:         data,
 		Format:       graphql.SpecFormat(in.Format),
 		Type:         graphql.APISpecType(*in.APIType),
@@ -65,6 +66,7 @@ func (c *converter) ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec, erro
 	}
 
 	return &graphql.EventSpec{
+
 		Data:         data,
 		Format:       graphql.SpecFormat(in.Format),
 		Type:         graphql.EventSpecType(*in.EventType),
