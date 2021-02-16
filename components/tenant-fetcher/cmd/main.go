@@ -19,11 +19,12 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/tidwall/gjson"
 
