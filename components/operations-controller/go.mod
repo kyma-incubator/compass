@@ -4,8 +4,8 @@ go 1.15
 
 require (
 	github.com/go-logr/logr v0.1.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210215163040-bf34a18315ef
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210215163343-ece06e94d3e4
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210216185717-b539fec3afce
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210216190005-7c9faad763ec
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.4
 	github.com/pkg/errors v0.9.1
