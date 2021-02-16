@@ -24,6 +24,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -549,8 +551,8 @@ func TestHandleOperation(t *testing.T) {
 				require.Equal(t, operation.OperationType(operationType), op.OperationType)
 				require.Equal(t, operationCategory, op.OperationCategory)
 
-				expectedRequestData := &graphql.RequestData{
-					Application: *(mockedNextResponse().(*graphql.Application)),
+				expectedRequestData := &webhook.RequestData{
+					Application: mockedNextResponse().(webhook.Resource),
 					TenantID:    tenantID,
 					Headers:     mockedHeaders,
 				}

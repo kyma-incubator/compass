@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
 	"github.com/pkg/errors"
 
@@ -158,7 +160,7 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 		return "", errors.Wrap(err, "failed to retrieve tenant from request")
 	}
 
-	app, ok := res.(*graphql.Application)
+	app, ok := res.(webhook.Resource)
 	if !ok {
 		return "", errors.New("entity is not a webhook provider")
 	}
@@ -168,8 +170,8 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 		return "", errors.New("failed to retrieve request headers")
 	}
 
-	requestData := &graphql.RequestData{
-		Application: *app,
+	requestData := &webhook.RequestData{
+		Application: app,
 		TenantID:    tenantID,
 		Headers:     headers,
 	}
