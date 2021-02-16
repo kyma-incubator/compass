@@ -282,6 +282,13 @@ global:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
+    authentication:
+      allowJWTSigningNone: true
+      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      identityZone: "id-zone"
+    tenantProvider:
+      tenantIdProperty: "tenantId"
+      name: "saas-manager"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local

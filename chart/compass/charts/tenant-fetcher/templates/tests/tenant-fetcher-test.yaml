@@ -30,7 +30,7 @@ spec:
           args: ["-c", "/tenant-fetcher.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
-              value: {{ .Values.tenantProvider.tenantIdProperty }}
+              value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER
               value: "test-provider"
             - name: APP_TENANT

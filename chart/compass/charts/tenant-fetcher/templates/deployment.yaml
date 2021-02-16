@@ -51,9 +51,9 @@ spec:
           {{- end }}
           env:
             - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
-              value: {{ .Values.tenantProvider.tenantIdProperty }}
+              value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER
-              value: {{ .Values.tenantProvider.name }}
+              value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant }}
             - name: APP_ADDRESS
@@ -63,7 +63,7 @@ spec:
             - name: APP_HANDLER_ENDPOINT
               value: "{{ .Values.server.handlerEndpoint }}"
             - name: APP_JWKS_ENDPOINT
-              value: {{ .Values.authentication.jwksEndpoint }}
+              value: {{ .Values.global.tenantFetcher.authentication.jwksEndpoint }}
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.server.tenantPathParam }}"
             - name: APP_DB_USER
@@ -101,9 +101,9 @@ spec:
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: "{{.Values.database.dbPool.maxIdleConnections}}"
             - name: APP_ALLOW_JWT_SIGNING_NONE
-              value: {{ .Values.authentication.allowJWTSigningNone | quote }}
+              value: {{ .Values.global.tenantFetcher.authentication.allowJWTSigningNone | quote }}
             - name: APP_TENANT_IDENTITY_ZONE
-              value: {{ .Values.authentication.identityZone }}
+              value: {{ .Values.global.tenantFetcher.authentication.identityZone }}
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: Callback
             {{- range $authenticatorName, $config := .Values.global.authenticators }}

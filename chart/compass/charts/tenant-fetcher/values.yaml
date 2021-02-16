@@ -20,15 +20,6 @@ database:
     maxOpenConnections: 30
     maxIdleConnections: 2
 
-authentication:
-  allowJWTSigningNone: true
-  jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
-  identityZone: "id-zone"
-
-tenantProvider:
-  tenantIdProperty: "tenantId"
-  name: "saas-manager"
-
 server:
   handlerEndpoint: "/v1/callback/{tenantId}"
   tenantPathParam: "tenantId"
