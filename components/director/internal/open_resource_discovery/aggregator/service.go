@@ -2,15 +2,14 @@ package aggregator
 
 import (
 	"context"
-	"strings"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
+	"strings"
 )
 
 const (
@@ -56,6 +55,7 @@ func NewService(transact persistence.Transactioner, appSvc ApplicationService, w
 	}
 }
 
+// SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
 func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
@@ -96,33 +96,90 @@ func (s *Service) processAppPage(ctx context.Context, page []*model.Application)
 		if err != nil {
 			return errors.Wrapf(err, "error fetching webhooks for app with id %q", app.ID)
 		}
-		documents := make([]*open_resource_discovery.Document, 0, 0)
+		var documents open_resource_discovery.Documents
+		var baseURL string
 		for _, wh := range webhooks {
 			if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-				docs, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, *wh.URL)
+				ctx = addFieldToLogger(ctx, "app_id", app.ID)
+				documents, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, *wh.URL)
 				if err != nil {
-					return errors.Wrapf(err, "error fetching ORD document for webhook with id %q for app with id %q", wh.ID, app.ID)
+					log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q", wh.ID)
 				}
-				documents = append(documents, docs...)
+				baseURL = *wh.URL
+				break
 			}
 		}
-		if err := s.processDocuments(ctx, app.ID, documents); err != nil {
-			return errors.Wrapf(err, "error processing ORD documents for app with id %q", app.ID)
+		if len(documents) > 0 {
+			log.C(ctx).Info("Processing ORD documents")
+			if err := s.processDocuments(ctx, app.ID, baseURL, documents); err != nil {
+				log.C(ctx).WithError(err).Error("error processing ORD documents")
+			} else {
+				log.C(ctx).Info("Successfully processed ORD documents")
+			}
 		}
 	}
 	return nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, appID string, documents open_resource_discovery.Documents) error {
-	if err := documents.Validate(); err != nil {
+func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents open_resource_discovery.Documents) error {
+	if err := documents.Validate(baseURL); err != nil {
 		return errors.Wrap(err, "invalid documents")
 	}
 
-	if err := documents.Sanitize(); err != nil {
+	if err := documents.Sanitize(baseURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
+	vendorsFromDB, err := s.vendorSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
+	}
+
+	for _, doc := range documents {
+		for _, vendor := range doc.Vendors {
+			if err := s.resyncVendor(ctx, appID, vendorsFromDB, *vendor); err != nil {
+				return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
+			}
+		}
+	}
+
+	vendorsFromDB, err = s.vendorSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
+	}
+
+	productsFromDB, err := s.productSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing products for app with id %q", appID)
+	}
+
+	for _, doc := range documents {
+		for _, product := range doc.Products {
+			if err := s.resyncProduct(ctx, appID, productsFromDB, *product); err != nil {
+				return errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
+			}
+		}
+	}
+
+	productsFromDB, err = s.productSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing products for app with id %q", appID)
+	}
+
 	packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing packages for app with id %q", appID)
+	}
+
+	for _, doc := range documents {
+		for _, pkg := range doc.Packages {
+			if err := s.resyncPackage(ctx, appID, packagesFromDB, *pkg); err != nil {
+				return errors.Wrapf(err, "error while resyncing package with ORD ID %q", pkg.OrdID)
+			}
+		}
+	}
+
+	packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "error while listing packages for app with id %q", appID)
 	}
@@ -132,14 +189,17 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		return errors.Wrapf(err, "error while listing bundles for app with id %q", appID)
 	}
 
-	productsFromDB, err := s.productSvc.ListByApplicationID(ctx, appID)
-	if err != nil {
-		return errors.Wrapf(err, "error while listing products for app with id %q", appID)
+	for _, doc := range documents {
+		for _, bndl := range doc.ConsumptionBundles {
+			if err := s.resyncBundle(ctx, appID, bundlesFromDB, *bndl); err != nil {
+				return errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", *bndl.OrdID)
+			}
+		}
 	}
 
-	vendorsFromDB, err := s.vendorSvc.ListByApplicationID(ctx, appID)
+	bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
 	if err != nil {
-		return errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
+		return errors.Wrapf(err, "error while listing bundles for app with id %q", appID)
 	}
 
 	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
@@ -147,7 +207,33 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 		return errors.Wrapf(err, "error while listing apis for app with id %q", appID)
 	}
 
+	for _, doc := range documents {
+		for _, api := range doc.APIResources {
+			if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, *api); err != nil {
+				return errors.Wrapf(err, "error while resyncing api with ORD ID %q", *api.OrdID)
+			}
+		}
+	}
+
+	apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing apis for app with id %q", appID)
+	}
+
 	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing events for app with id %q", appID)
+	}
+
+	for _, doc := range documents {
+		for _, event := range doc.EventResources {
+			if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, *event); err != nil {
+				return errors.Wrapf(err, "error while resyncing event with ORD ID %q", *event.OrdID)
+			}
+		}
+	}
+
+	eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "error while listing events for app with id %q", appID)
 	}
@@ -158,46 +244,29 @@ func (s *Service) processDocuments(ctx context.Context, appID string, documents 
 	}
 
 	for _, doc := range documents {
-		for _, vendor := range doc.Vendors {
-			if err := s.resyncVendor(ctx, appID, vendorsFromDB, vendor); err != nil {
-				return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
-			}
-		}
-		for _, product := range doc.Products {
-			if err := s.resyncProduct(ctx, appID, productsFromDB, product); err != nil {
-				return errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
-			}
-		}
-		for _, pkg := range doc.Packages {
-			if err := s.resyncPackage(ctx, appID, packagesFromDB, pkg); err != nil {
-				return errors.Wrapf(err, "error while resyncing package with ORD ID %q", pkg.OrdID)
-			}
-		}
-		for _, bndl := range doc.ConsumptionBundles {
-			if err := s.resyncBundle(ctx, appID, bundlesFromDB, bndl); err != nil {
-				return errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", *bndl.OrdID)
-			}
-		}
-		for _, api := range doc.APIResources {
-			if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, api); err != nil {
-				return errors.Wrapf(err, "error while resyncing api with ORD ID %q", *api.OrdID)
-			}
-		}
-		for _, event := range doc.EventResources {
-			if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, event); err != nil {
-				return errors.Wrapf(err, "error while resyncing event with ORD ID %q", *event.OrdID)
-			}
-		}
 		for _, tombstone := range doc.Tombstones {
-			if err := s.resyncTombstones(ctx, appID, tombstonesFromDB, bundlesFromDB, packagesFromDB, apisFromDB, eventsFromDB, tombstone); err != nil {
+			if err := s.resyncTombstones(ctx, appID, tombstonesFromDB, *tombstone); err != nil {
 				return errors.Wrapf(err, "error while resyncing tombstone for resource with ORD ID %q", tombstone.OrdID)
 			}
 		}
 	}
+
+	tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while listing tombstones for app with id %q", appID)
+	}
+
+	for _, ts := range tombstonesFromDB {
+		if err := s.deleteResourceForTombstone(ctx, bundlesFromDB, packagesFromDB, apisFromDB, eventsFromDB, *ts); err != nil {
+			return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+		}
+	}
+
 	return nil
 }
 
 func (s *Service) resyncPackage(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg model.PackageInput) error {
+	ctx = addFieldToLogger(ctx, "package_ord_id", pkg.OrdID)
 	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 		return packagesFromDB[i].OrdID == pkg.OrdID
 	}); found {
@@ -208,6 +277,7 @@ func (s *Service) resyncPackage(ctx context.Context, appID string, packagesFromD
 }
 
 func (s *Service) resyncBundle(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bndl model.BundleCreateInput) error {
+	ctx = addFieldToLogger(ctx, "bundle_ord_id", *bndl.OrdID)
 	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 		return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
 	}); found {
@@ -218,6 +288,7 @@ func (s *Service) resyncBundle(ctx context.Context, appID string, bundlesFromDB 
 }
 
 func (s *Service) resyncProduct(ctx context.Context, appID string, productsFromDB []*model.Product, product model.ProductInput) error {
+	ctx = addFieldToLogger(ctx, "product_ord_id", product.OrdID)
 	if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
 		return productsFromDB[i].OrdID == product.OrdID
 	}); found {
@@ -228,6 +299,7 @@ func (s *Service) resyncProduct(ctx context.Context, appID string, productsFromD
 }
 
 func (s *Service) resyncVendor(ctx context.Context, appID string, vendorsFromDB []*model.Vendor, vendor model.VendorInput) error {
+	ctx = addFieldToLogger(ctx, "vendor_ord_id", vendor.OrdID)
 	if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
 		return vendorsFromDB[i].OrdID == vendor.OrdID
 	}); found {
@@ -238,6 +310,7 @@ func (s *Service) resyncVendor(ctx context.Context, appID string, vendorsFromDB 
 }
 
 func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api model.APIDefinitionInput) error {
+	ctx = addFieldToLogger(ctx, "api_ord_id", *api.OrdID)
 	i, found := searchInSlice(len(apisFromDB), func(i int) bool {
 		return equalStrings(apisFromDB[i].OrdID, api.OrdID)
 	})
@@ -279,6 +352,7 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 }
 
 func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event model.EventDefinitionInput) error {
+	ctx = addFieldToLogger(ctx, "event_ord_id", *event.OrdID)
 	i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
 		return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
 	})
@@ -334,17 +408,17 @@ func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenc
 	return nil
 }
 
-func (s *Service) resyncTombstones(ctx context.Context, appID string, tombstonesFromDB []*model.Tombstone, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstone model.TombstoneInput) error {
+func (s *Service) resyncTombstones(ctx context.Context, appID string, tombstonesFromDB []*model.Tombstone, tombstone model.TombstoneInput) error {
 	if i, found := searchInSlice(len(tombstonesFromDB), func(i int) bool {
 		return tombstonesFromDB[i].OrdID == tombstone.OrdID
 	}); found {
 		return s.tombstoneSvc.Update(ctx, tombstonesFromDB[i].OrdID, tombstone)
 	}
+	_, err := s.tombstoneSvc.Create(ctx, appID, tombstone)
+	return err
+}
 
-	if _, err := s.tombstoneSvc.Create(ctx, appID, tombstone); err != nil {
-		return err
-	}
-
+func (s *Service) deleteResourceForTombstone(ctx context.Context, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstone model.Tombstone) error {
 	resourceType := strings.Split(tombstone.OrdID, ":")[1]
 	switch resourceType {
 	case packageORDType:
@@ -408,4 +482,10 @@ func searchInSlice(length int, f func(i int) bool) (int, bool) {
 		}
 	}
 	return -1, false
+}
+
+func addFieldToLogger(ctx context.Context, fieldName, fieldValue string) context.Context {
+	logger := log.LoggerFromContext(ctx)
+	logger = logger.WithField(fieldName, fieldValue)
+	return log.ContextWithLogger(ctx, logger)
 }

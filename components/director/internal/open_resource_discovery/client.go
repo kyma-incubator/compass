@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Client represents ORD documents client
 type Client interface {
 	FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (Documents, error)
 }
@@ -19,12 +20,14 @@ type client struct {
 	*http.Client
 }
 
+// NewClient creates new ORD Client via a provided http.Client
 func NewClient(httpClient *http.Client) *client {
 	return &client{
 		Client: httpClient,
 	}
 }
 
+// FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
 func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url string) (Documents, error) {
 	resp, err := c.Get(url + WellKnownEndpoint)
 	if err != nil {
@@ -47,13 +50,14 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 	for _, config := range config.OpenResourceDiscoveryV1.Documents {
 		strategy, ok := config.AccessStrategies.GetSupported()
 		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategies for document %s", url+config.URL)
+			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", url+config.URL)
 			continue
 		}
 		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, url+config.URL, strategy)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error fetching ORD document from: %s", url+config.URL)
 		}
+		doc.SystemInstanceAware = config.SystemInstanceAware
 		docs = append(docs, doc)
 	}
 
@@ -64,7 +68,7 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 	if !accessStrategy.IsSupported() {
 		return nil, errors.Errorf("unsupported access strategy %q", accessStrategy)
 	}
-
+	log.C(ctx).Infof("Fetching ORD Document %q", documentURL)
 	resp, err := c.Get(documentURL)
 	if err != nil {
 		return nil, err

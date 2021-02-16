@@ -73,7 +73,7 @@ type APIDefinitionInput struct {
 	LineOfBusiness      json.RawMessage `json:"lineOfBusiness"`
 	Industry            json.RawMessage `json:"industry"`
 
-	ResourceDefinitions []APIResourceDefinition `json:"resourceDefinitions"`
+	ResourceDefinitions []*APIResourceDefinition `json:"resourceDefinitions"`
 
 	*VersionInput
 }
@@ -86,9 +86,9 @@ type APIResourceDefinition struct { // This is the place from where the specific
 	AccessStrategy []AccessStrategy `json:"accessStrategies"`
 }
 
-func (rd APIResourceDefinition) Validate() error {
+func (rd *APIResourceDefinition) Validate() error {
 	const CustomTypeRegex = "^([a-z0-9.]+):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
-	return validation.ValidateStruct(&rd,
+	return validation.ValidateStruct(rd,
 		validation.Field(&rd.Type, validation.Required, validation.In(APISpecTypeOpenAPIV2, APISpecTypeOpenAPIV3, APISpecTypeRaml, APISpecTypeEDMX,
 			APISpecTypeCsdl, APISpecTypeWsdlV1, APISpecTypeWsdlV2, APISpecTypeRfcMetadata, APISpecTypeCustom)),
 		validation.Field(&rd.CustomType, validation.When(rd.Type == "custom", validation.Required, validation.Match(regexp.MustCompile(CustomTypeRegex))).Else(validation.Empty)),
@@ -104,7 +104,7 @@ func (rd APIResourceDefinition) Validate() error {
 	)
 }
 
-func (a APIResourceDefinition) ToSpec() *SpecInput {
+func (a *APIResourceDefinition) ToSpec() *SpecInput {
 	specType := APISpecType(a.Type)
 	return &SpecInput{
 		Format:     SpecFormat(a.MediaType),
