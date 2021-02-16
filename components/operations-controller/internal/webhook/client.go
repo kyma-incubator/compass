@@ -21,8 +21,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -30,17 +33,19 @@ import (
 
 // Client defines a general purpose Webhook executor
 type Client interface {
-	Do(ctx context.Context, request *Request) (*webhook.Response, error) // TODO: Move Response and other templates to a better package - maybe even in the Controller project itself
+	Do(ctx context.Context, request *Request) (*web_hook.Response, error) // TODO: Move Response and other templates to a better package - maybe even in the Controller project itself
 }
 
 type DefaultClient struct {
 }
 
-func (d DefaultClient) Do(ctx context.Context, request *Request) (*webhook.Response, error) {
-	url := request.Webhook.URL
+func (d DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Response, error) {
+	webhook := request.Webhook
+
 	var method string
-	if request.Webhook.URLTemplate != nil {
-		resultURL, err := webhook.ParseURLTemplate(request.Webhook.URLTemplate, request.Data)
+	url := webhook.URL
+	if webhook.URLTemplate != nil {
+		resultURL, err := web_hook.ParseURLTemplate(webhook.URLTemplate, request.Data)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse webhook URL")
 		}
@@ -52,18 +57,18 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*webhook.Respo
 		return nil, errors.New("missing webhook url")
 	}
 
-	body, err := webhook.ParseInputTemplate(request.Webhook.InputTemplate, request.Data)
+	body, err := web_hook.ParseInputTemplate(webhook.InputTemplate, request.Data)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse webhook input body")
 	}
 
-	headers, err := webhook.ParseHeadersTemplate(request.Webhook.HeaderTemplate, request.Data)
+	headers, err := web_hook.ParseHeadersTemplate(webhook.HeaderTemplate, request.Data)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse webhook headers")
 	}
 
-	if request.Webhook.CorrelationIDKey != nil && request.CorrelationID != "" {
-		headers.Add(*request.Webhook.CorrelationIDKey, request.CorrelationID)
+	if webhook.CorrelationIDKey != nil && request.CorrelationID != "" {
+		headers.Add(*webhook.CorrelationIDKey, request.CorrelationID)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, *url, bytes.NewBuffer(body))
@@ -72,6 +77,19 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*webhook.Respo
 	}
 
 	req.Header = headers
+
+	client := http.DefaultClient
+	if webhook.Auth != nil {
+		basicCreds, isBasicAuth := webhook.Auth.Credential.(graphql.BasicCredentialData)
+		if isBasicAuth {
+			req.SetBasicAuth(basicCreds.Username, basicCreds.Password)
+		}
+
+		oauthCreds, isOAuth := webhook.Auth.Credential.(graphql.OAuthCredentialData)
+		if isOAuth {
+			client = oauthClient(ctx, *client, oauthCreds)
+		}
+	}
 
 	resp, err := http.DefaultClient.Do(req) // TODO: Build custom client, do not rely on default one
 	if err != nil {
@@ -88,26 +106,26 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*webhook.Respo
 		return nil, err
 	}
 
-	responseData := webhook.ResponseData{
+	responseData := web_hook.ResponseData{
 		Body:    respBody,
 		Headers: resp.Header,
 	}
 
-	response, err := webhook.ParseOutputTemplate(request.Webhook.InputTemplate, request.Webhook.OutputTemplate, webhook.Mode(*request.Webhook.Mode), responseData)
+	response, err := web_hook.ParseOutputTemplate(webhook.InputTemplate, webhook.OutputTemplate, web_hook.Mode(*webhook.Mode), responseData)
 	if err != nil {
 		return nil, err
 	}
 
 	var recErr *ReconcileError
 	if *response.SuccessStatusCode != resp.StatusCode {
-		recErr = &ReconcileError{Description: fmt.Sprintf("response success status code was not met - expected %q, got %q", response.SuccessStatusCode, resp.StatusCode)}
+		recErr = &ReconcileError{Description: fmt.Sprintf("response success status code was not met - expected %q, got %q", *response.SuccessStatusCode, resp.StatusCode)}
 	}
 
 	if response.Error != nil && *response.Error != "" {
 		recErr = &ReconcileError{Description: fmt.Sprintf("received error while requesting external system: %s", *response.Error)}
 	}
 
-	if recErr != nil && !isWebhookTimeoutReached(request.OperationCreationTime, time.Duration(*request.Webhook.Timeout)) {
+	if recErr != nil && !isWebhookTimeoutReached(request.OperationCreationTime, time.Duration(*webhook.Timeout)) {
 		recErr.Requeue = true
 		recErr.RequeueAfter = request.RetryInterval
 		return nil, recErr
@@ -119,4 +137,17 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*webhook.Respo
 func isWebhookTimeoutReached(creationTime time.Time, webhookTimeout time.Duration) bool {
 	operationEndTime := creationTime.Add(webhookTimeout)
 	return time.Now().After(operationEndTime)
+}
+
+func oauthClient(ctx context.Context, client http.Client, oauthCreds graphql.OAuthCredentialData) *http.Client {
+	conf := &clientcredentials.Config{
+		ClientID:     oauthCreds.ClientID,
+		ClientSecret: oauthCreds.ClientSecret,
+		TokenURL:     oauthCreds.URL,
+	}
+
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
+	securedClient := conf.Client(ctx)
+	securedClient.Timeout = client.Timeout
+	return securedClient
 }

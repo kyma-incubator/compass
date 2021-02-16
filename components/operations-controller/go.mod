@@ -9,6 +9,7 @@ require (
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.4
 	github.com/pkg/errors v0.9.1
+	golang.org/x/oauth2 v0.0.0-20210201163806-010130855d6c
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v0.17.2
