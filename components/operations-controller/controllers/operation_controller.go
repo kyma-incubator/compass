@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -33,14 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
-)
-
-const (
-	defaultTimeoutFactor         = 2
-	defaultReconciliationTimeout = 12 * time.Hour //TODO: Extract in environment variable
-	defaultWebhookTimeout        = 2 * time.Hour
-	defaultRequeueInterval       = 10 * time.Minute
-	defaultTimeLayout            = time.RFC3339Nano
 )
 
 // OperationReconciler reconciles a Operation object
@@ -69,7 +61,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err != nil {
 		logger.Error(err, operationError("Unable to fetch application", operation))
 
-		if isReconciliationTimeoutReached(operation, defaultTimeoutFactor*defaultReconciliationTimeout) {
+		if isReconciliationTimeoutReached(operation, web_hook.DefaultTimeoutFactor*web_hook.DefaultReconciliationTimeout) {
 			if err := r.Delete(ctx, operation); err != nil {
 				logger.Error(err, operationError("Unable to delete operation", operation))
 				return ctrl.Result{Requeue: true}, err
@@ -77,7 +69,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, nil
 		}
 
-		return ctrl.Result{RequeueAfter: defaultRequeueInterval}, nil
+		return ctrl.Result{RequeueAfter: web_hook.DefaultRequeueInterval}, nil
 	}
 
 	operation = setDefaultStatus(*operation)
@@ -128,22 +120,17 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	webhookEntity := webhooks[operation.Spec.WebhookIDs[0]]
 	webhookStatus := operation.Status.Webhooks[0]
 
-	webhookClient := webhook.DefaultClient{}
-	if webhookStatus.WebhookPollURL != "" {
-		req, err := webhook.NewRequest(webhookEntity, operation.Spec.RequestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time)
+	webhookClient := web_hook.DefaultClient{}
+	if webhookStatus.WebhookPollURL == "" {
+		request, err := web_hook.NewRequest(webhookEntity, operation.Spec.RequestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 
-		response, err := webhookClient.Do(ctx, req)
+		response, err := webhookClient.Do(ctx, request)
 		if err != nil {
-			recErr, isRecErr := err.(*webhook.ReconcileError)
-			if !isRecErr {
-				recErr = &webhook.ReconcileError{Description: err.Error()}
-			}
-
-			if recErr.Requeue { // the case when webhook timeout is reached
-				return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, errors.New(recErr.Error())
+			if recErr, isRecErr := err.(*web_hook.ReconcileError); isRecErr && recErr.Requeue { // the case when webhook timeout is reached
+				return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, recErr
 			}
 
 			err := notifyDirector() // TODO: UPDATE status condition Error -> true
@@ -151,13 +138,13 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				return ctrl.Result{Requeue: true}, err
 			}
 
-			operation = setErrorStatus(*operation, recErr.Description)
+			operation = setErrorStatus(*operation, err.Error())
 			if err := r.Update(ctx, operation); err != nil {
 				logger.Error(err, operationError("unable to update operation after failed webhook request", operation))
 				return ctrl.Result{Requeue: true}, err
 			}
 
-			return ctrl.Result{}, errors.New(recErr.Description)
+			return ctrl.Result{}, err
 		}
 
 		switch *webhookEntity.Mode {
@@ -192,8 +179,73 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// Make Poll Request ( poll interval passed <-> operation in progress )
+	request, err := web_hook.NewRequest(webhookEntity, operation.Spec.RequestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
-	return ctrl.Result{}, nil
+	request.PollURL = &webhookStatus.WebhookPollURL
+	response, err := webhookClient.Poll(ctx, request)
+	if err != nil {
+		if recErr, isRecErr := err.(*web_hook.ReconcileError); isRecErr && recErr.Requeue { // the case when webhook timeout is reached
+			return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, recErr
+		}
+		return ctrl.Result{}, err
+	}
+
+	switch *response.Status {
+	case *response.InProgressStatusIdentifier:
+		if !isWebhookTimeoutReached(operation.CreationTimestamp.Time, time.Duration(*webhookEntity.Timeout)) {
+			requeueAfter := web_hook.DefaultRequeueInterval
+			if webhookEntity.RetryInterval != nil {
+				requeueAfter = time.Duration(*webhookEntity.RetryInterval)
+			}
+			return ctrl.Result{Requeue: true, RequeueAfter: requeueAfter}, nil
+		}
+
+		err := notifyDirector() // TODO: UPDATE status condition Error -> true
+		if err != nil {
+			return ctrl.Result{Requeue: true}, err
+		}
+
+		err = errors.New("webhook timeout reached")
+		operation = setErrorStatus(*operation, err.Error())
+		if err := r.Update(ctx, operation); err != nil {
+			logger.Error(err, operationError("unable to update operation after it has timed out", operation))
+			return ctrl.Result{Requeue: true}, err
+		}
+
+		return ctrl.Result{}, err
+	case *response.SuccessStatusIdentifier:
+		err := notifyDirector() // TODO: UPDATE status condition Ready -> true
+		if err != nil {
+			return ctrl.Result{Requeue: true}, err
+		}
+
+		operation = setReadyStatus(*operation)
+		if err := r.Update(ctx, operation); err != nil {
+			logger.Error(err, operationError("unable to update operation after it has completed successfully", operation))
+			return ctrl.Result{Requeue: true}, err
+		}
+
+		return ctrl.Result{}, nil
+	case *response.FailedStatusIdentifier:
+		err := notifyDirector() // TODO: UPDATE status condition Error -> true && Ready -> True
+		if err != nil {
+			return ctrl.Result{Requeue: true}, err
+		}
+
+		err = errors.New("webhook operation has finished unsuccessfully")
+		operation = setErrorStatus(*operation, err.Error())
+		if err := r.Update(ctx, operation); err != nil {
+			logger.Error(err, operationError("unable to update operation after it has finished unsuccessfully", operation))
+			return ctrl.Result{Requeue: true}, err
+		}
+
+		return ctrl.Result{}, nil
+	default:
+		return ctrl.Result{}, fmt.Errorf("unexpected poll status response: %s", *response.Status)
+	}
 }
 
 func notifyDirector() error {
@@ -206,8 +258,13 @@ func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliatio
 	return time.Now().After(operationEndTime)
 }
 
+func isWebhookTimeoutReached(creationTime time.Time, webhookTimeout time.Duration) bool {
+	operationEndTime := creationTime.Add(webhookTimeout)
+	return time.Now().After(operationEndTime)
+}
+
 func getNextPollTime(webhook *graphql.Webhook, webhookStatus v1alpha1.Webhook) (time.Duration, error) {
-	lastPollTimestamp, err := time.Parse(defaultTimeLayout, webhookStatus.LastPollTimestamp)
+	lastPollTimestamp, err := time.Parse(web_hook.DefaultTimeLayout, webhookStatus.LastPollTimestamp)
 	if err != nil {
 		return 0, err
 	}
@@ -331,7 +388,7 @@ func calculateReconciliationTimeout(webhooks map[string]graphql.Webhook) time.Du
 	var totalTimeout time.Duration
 	for _, webhook := range webhooks {
 		if webhook.Timeout == nil {
-			totalTimeout += defaultWebhookTimeout
+			totalTimeout += web_hook.DefaultWebhookTimeout
 		} else {
 			totalTimeout += time.Duration(*webhook.Timeout) * time.Minute
 		}

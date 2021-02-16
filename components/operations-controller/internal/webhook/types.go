@@ -23,6 +23,14 @@ import (
 	"time"
 )
 
+const (
+	DefaultTimeoutFactor         = 2
+	DefaultReconciliationTimeout = 12 * time.Hour //TODO: Extract in environment variable
+	DefaultWebhookTimeout        = 2 * time.Hour
+	DefaultRequeueInterval       = 10 * time.Minute
+	DefaultTimeLayout            = time.RFC3339Nano
+)
+
 // Request represents a webhook request to be executed
 type Request struct {
 	Webhook               graphql.Webhook
@@ -30,6 +38,7 @@ type Request struct {
 	CorrelationID         string
 	RetryInterval         time.Duration
 	OperationCreationTime time.Time
+	PollURL               *string
 }
 
 func NewRequest(webhook graphql.Webhook, reqData string, correlationID string, opCreationTime time.Time) (*Request, error) {
@@ -38,7 +47,7 @@ func NewRequest(webhook graphql.Webhook, reqData string, correlationID string, o
 		return nil, err
 	}
 
-	var retryInterval time.Duration
+	retryInterval := DefaultRequeueInterval
 	if webhook.RetryInterval != nil {
 		retryInterval = time.Duration(*webhook.RetryInterval) * time.Minute // TODO: Align measuring units
 	}
