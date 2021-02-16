@@ -349,7 +349,7 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		//WHEN
 		entity := conv.ToEntity(apiModel)
 		//THEN
-		assert.Equal(t, fixFullEntityAPIDefinition(apiDefID, "foo"), entity)
+		assert.Equal(t, fixFullEntityAPIDefinition(apiDefID, "foo"), *entity)
 	})
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		//GIVEN
@@ -371,7 +371,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		versionConv := version.NewConverter()
 		conv := api.NewConverter(versionConv, nil)
 		//WHEN
-		apiModel := conv.FromEntity(*entity)
+		apiModel := conv.FromEntity(entity)
 		//THEN
 		expectedModel, _ := fixFullAPIDefinitionModel("placeholder")
 		assert.Equal(t, expectedModel, apiModel)
