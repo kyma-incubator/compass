@@ -25,7 +25,7 @@ func TestService_Create(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	tenantModel := model.TenantModel{
 		ID:             testID,
-		AccountId:      testID,
+		TenantId:       testID,
 		Status:         tenantEntity.Active,
 		TenantProvider: testProviderName,
 	}

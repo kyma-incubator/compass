@@ -75,7 +75,7 @@ type config struct {
 }
 
 type Tenant struct {
-	AccountId string
+	TenantId string
 }
 
 func TestOnboardingHandler(t *testing.T) {
@@ -83,7 +83,7 @@ func TestOnboardingHandler(t *testing.T) {
 	config := loadConfig(t)
 
 	providedTenant := &Tenant{
-		AccountId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+		TenantId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 	}
 
 	cleanUp(t, providedTenant, config)
@@ -92,7 +92,7 @@ func TestOnboardingHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	// WHEN
-	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.AccountId, 1)
+	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), providedTenant.TenantId, 1)
 	url := config.TenantFetcherURL + config.RootAPI + endpoint
 
 	byteTenant, err := json.Marshal(providedTenant)
@@ -118,7 +118,7 @@ func TestOnboardingHandler(t *testing.T) {
 func TestDecommissioningHandler(t *testing.T) {
 	// GIVEN
 	providedTenant := &Tenant{
-		AccountId: "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
+		TenantId: "cb0bb8f2-7b44-4dd2-bce1-fa0c19169b79",
 	}
 	config := loadConfig(t)
 	cleanUp(t, providedTenant, config)

@@ -38,7 +38,7 @@ var (
 )
 
 type Tenant struct {
-	AccountId string
+	TenantId string
 }
 
 func TestMiddleware_SynchronizeJWKS(t *testing.T) {
@@ -309,7 +309,7 @@ func testHandler(t *testing.T) http.HandlerFunc {
 
 func emptyRequest(t *testing.T) *http.Request {
 	providedTenant := &Tenant{
-		AccountId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
+		TenantId: "ad0bb8f2-7b44-4dd2-bce1-fa0c19169b72",
 	}
 	byteTenant, err := json.Marshal(providedTenant)
 	require.NoError(t, err)

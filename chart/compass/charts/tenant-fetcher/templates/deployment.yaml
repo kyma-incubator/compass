@@ -50,8 +50,8 @@ spec:
 {{ toYaml . | indent 12 }}
           {{- end }}
           env:
-            - name: APP_TENANT_PROVIDER_ACCOUNT_ID_PROPERTY
-              value: {{ .Values.tenantProvider.accountIdProperty }}
+            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+              value: {{ .Values.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER
               value: {{ .Values.tenantProvider.name }}
             - name: APP_TENANT

@@ -65,8 +65,8 @@ type config struct {
 	HandlerEndpoint string `envconfig:"APP_HANDLER_ENDPOINT,default=/v1/callback/{tenantId}"`
 	TenantPathParam string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 
-	TenantProviderAccountId string `envconfig:"APP_TENANT_PROVIDER_ACCOUNT_ID_PROPERTY"`
-	TenantProvider          string `envconfig:"APP_TENANT_PROVIDER"`
+	TenantProviderTenantIdProperty string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
+	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER"`
 
 	JWKSSyncPeriod            time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=true"`
@@ -133,10 +133,10 @@ func main() {
 	subrouter.Use(middleware.Handler(), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
 	logger.Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderAccountId, cfg.TenantProvider)).Methods(http.MethodPut)
+	subrouter.HandleFunc(cfg.HandlerEndpoint, getOnboardingHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderTenantIdProperty, cfg.TenantProvider)).Methods(http.MethodPut)
 
 	logger.Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
-	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderAccountId)).Methods(http.MethodDelete)
+	subrouter.HandleFunc(cfg.HandlerEndpoint, getDecommissioningHandlerFunc(service, cfg.TenantPathParam, cfg.TenantProviderTenantIdProperty)).Methods(http.MethodDelete)
 
 	healthCheckSubrouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
@@ -210,7 +210,7 @@ func getOnboardingHandlerFunc(svc tenant.TenantService, tenantPathParam, tenantI
 
 		tenantId := gjson.GetBytes(body, tenantIdProperty).String()
 		tenant := model.TenantModel{
-			AccountId:      tenantId,
+			TenantId:       tenantId,
 			TenantProvider: tenantProvider,
 			Status:         tenantEntity.Active,
 		}

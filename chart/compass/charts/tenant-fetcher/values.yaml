@@ -26,7 +26,7 @@ authentication:
   identityZone: "id-zone"
 
 tenantProvider:
-  accountIdProperty: "accountId"
+  tenantIdProperty: "tenantId"
   name: "saas-manager"
 
 server:
