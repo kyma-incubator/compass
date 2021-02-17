@@ -90,14 +90,14 @@ var (
       ]`)
 )
 
-func fixWellKnownConfig() open_resource_discovery.WellKnownConfig {
-	return open_resource_discovery.WellKnownConfig{
+func fixWellKnownConfig() *open_resource_discovery.WellKnownConfig {
+	return &open_resource_discovery.WellKnownConfig{
 		Schema: "../spec/v1/generated/Configuration.schema.json",
 		OpenResourceDiscoveryV1: open_resource_discovery.OpenResourceDiscoveryV1{
 			Documents: []open_resource_discovery.DocumentDetails{
 				{
 					URL:                 ordDocURI,
-					SystemInstanceAware: false,
+					SystemInstanceAware: true,
 					AccessStrategies: []open_resource_discovery.AccessStrategy{
 						{
 							Type: open_resource_discovery.OpenAccessStrategy,
@@ -109,13 +109,13 @@ func fixWellKnownConfig() open_resource_discovery.WellKnownConfig {
 	}
 }
 
-func fixORDDocument() open_resource_discovery.Document {
+func fixORDDocument() *open_resource_discovery.Document {
 	true := true
-	return open_resource_discovery.Document{
+	return &open_resource_discovery.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
 		OpenResourceDiscovery: "v1",
 		Description:           "Test Document",
-		SystemInstanceAware:   false,
+		SystemInstanceAware:   true,
 		DescribedSystemInstance: &model.Application{
 			BaseURL: str.Ptr(baseURL),
 			Labels:  json.RawMessage(labels),

@@ -34,6 +34,10 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d", resp.StatusCode)
+	}
+
 	defer closeBody(ctx, resp.Body)
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -65,14 +69,16 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, url st
 }
 
 func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy AccessStrategyType) (*Document, error) {
-	if !accessStrategy.IsSupported() {
-		return nil, errors.Errorf("unsupported access strategy %q", accessStrategy)
-	}
 	log.C(ctx).Infof("Fetching ORD Document %q", documentURL)
 	resp, err := c.Get(documentURL)
 	if err != nil {
 		return nil, err
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("error while fetching open resource discovery document %q: status code %d", documentURL, resp.StatusCode)
+	}
+
 	defer closeBody(ctx, resp.Body)
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
