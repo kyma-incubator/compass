@@ -12,12 +12,12 @@ import (
 
 //Application
 func registerApplicationFromInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) graphql.ApplicationExt {
-	app, err := registerApplicationWithinTenant(t, ctx, gqlClient, tenant, in)
+	app, err := RegisterApplicationWithinTenant(t, ctx, gqlClient, tenant, in)
 	require.NoError(t, err)
 	return app
 }
 
-func registerApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
+func RegisterApplicationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
 	appInputGQL, err := tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
@@ -46,7 +46,7 @@ func requestClientCredentialsForApplication(t *testing.T, ctx context.Context, g
 	return systemAuth
 }
 
-func unregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, applicationID string) graphql.ApplicationExt {
+func UnregisterApplication(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant string, applicationID string) graphql.ApplicationExt {
 	deleteRequest := fixDeleteApplicationRequest(t, applicationID)
 	app := graphql.ApplicationExt{}
 
