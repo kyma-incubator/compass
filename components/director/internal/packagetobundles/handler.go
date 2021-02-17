@@ -71,7 +71,6 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			log.C(ctx).Info("Will rewrite the request body. Bundles are still not adopted")
 
 			reqBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
@@ -82,8 +81,6 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			}
 
 			body := string(reqBody)
-			body = strings.ReplaceAll(body, "\\n", " ") // removes unnecessary complexity from the next regexes
-
 			unmodifiedBody := body
 
 			// rewrite Query/Mutation names
@@ -147,6 +144,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 				return
 			}
+			log.C(ctx).Info("Will rewrite the request body. Bundles are still not adopted")
 
 			recorder := httptest.NewRecorder()
 			next.ServeHTTP(recorder, r)
