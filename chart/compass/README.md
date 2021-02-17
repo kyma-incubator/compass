@@ -7,7 +7,6 @@ Compass is a multi-tenant system which consists of components that provide a way
 - `connector` 
 - `director` 
 - `gateway` 
-- `healthchecker`
 - `postgresql`
 
 To learn more, read the [Compass documentation](https://github.com/kyma-incubator/compass/blob/master/README.md).

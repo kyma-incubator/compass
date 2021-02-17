@@ -175,7 +175,7 @@ INSERT INTO specifications
             NULL::event_api_spec_format,
             NULL::event_api_spec_type,
             NULL
-     FROM api_definitions);
+     FROM api_definitions WHERE spec_type IS NOT NULL AND spec_format IS NOT NULL);
 
 INSERT INTO specifications
     (SELECT uuid_generate_v4(),
@@ -188,7 +188,7 @@ INSERT INTO specifications
             spec_format,
             spec_type,
             NULL
-     FROM event_api_definitions);
+     FROM event_api_definitions WHERE spec_type IS NOT NULL AND spec_format IS NOT NULL);
 
 ALTER TABLE fetch_requests
     ADD COLUMN spec_id UUID;

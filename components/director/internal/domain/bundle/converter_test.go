@@ -28,8 +28,8 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 		//GIVEN
 		name := "foo"
 		desc := "bar"
+		bndlModel := fixBundleModel(name, desc)
 		testErrMsg := "test-err"
-		bndlModel := fixBundleModel(t, name, desc)
 		bndlModel.Error = &testErrMsg
 		require.NotNil(t, bndlModel)
 		authConv := auth.NewConverter()
@@ -97,7 +97,7 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		bndlModel, err := conv.FromEntity(entity)
 		//THEN
 		require.NoError(t, err)
-		expectedBdnl := fixBundleModel(t, name, desc)
+		expectedBdnl := fixBundleModel(name, desc)
 		expectedBdnl.Error = &testErrMsg
 		assert.Equal(t, expectedBdnl, bndlModel)
 	})
@@ -138,7 +138,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	id := bundleID
 	name := "foo"
 	desc := "bar"
-	modelBundle := fixBundleModel(t, name, desc)
+	modelBundle := fixBundleModel(name, desc)
 	gqlBundle := fixGQLBundle(id, name, desc)
 	emptyModelBundle := &model.Bundle{BaseEntity: &model.BaseEntity{}}
 	emptyGraphQLBundle := &graphql.Bundle{BaseEntity: &graphql.BaseEntity{}}
@@ -210,8 +210,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	name2 := "bar"
 	desc := "1"
 	input := []*model.Bundle{
-		fixBundleModel(t, name1, desc),
-		fixBundleModel(t, name2, desc),
+		fixBundleModel(name1, desc),
+		fixBundleModel(name2, desc),
 		{BaseEntity: &model.BaseEntity{}},
 		nil,
 	}
