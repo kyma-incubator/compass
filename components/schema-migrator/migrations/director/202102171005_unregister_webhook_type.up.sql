@@ -1,0 +1,19 @@
+BEGIN;
+
+ALTER TYPE webhook_type ADD VALUE 'UNREGISTER_APPLICATION';
+
+UPDATE webhooks SET type = 'UNREGISTER_APPLICATION' WHERE type = 'DELETE_APPLICATION';
+
+ALTER TYPE webhook_type RENAME TO webhook_type_old;
+
+CREATE TYPE webhook_type AS ENUM (
+    'CONFIGURATION_CHANGED',
+    'REGISTER_APPLICATION',
+    'UNREGISTER_APPLICATION'
+);
+
+ALTER TABLE webhooks ALTER COLUMN type TYPE webhook_type USING type::text::webhook_type;
+
+DROP TYPE webhook_type_old;
+
+COMMIT;
