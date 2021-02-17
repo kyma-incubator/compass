@@ -73,7 +73,8 @@ func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
 			return err
 		}
 
-		app.Ready = false
+		app.SetReady(false)
+		app.SetError("")
 		if app.GetDeletedAt().IsZero() { // Needed for the tests but might be useful for the production also
 			app.SetDeletedAt(time.Now())
 		}
