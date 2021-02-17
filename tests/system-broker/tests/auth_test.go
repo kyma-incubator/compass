@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -17,10 +18,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testRuntimeName = "test-runtime"
+	testAppName     = "test-application"
+	testBundleName  = "test-bundle"
+	testApiDefName  = "test-api-def"
+)
+
 func TestSystemBrokerAuthentication(t *testing.T) {
-	// setup
 	runtimeInput := &graphql.RuntimeInput{
-		Name: "test-runtime",
+		Name: testRuntimeName,
+	}
+	applicationInput := graphql.ApplicationRegisterInput{
+		Name: testAppName,
+		Bundles: []*graphql.BundleCreateInput{
+			{
+				Name: testBundleName,
+				APIDefinitions: []*graphql.APIDefinitionInput{
+					{
+						Name: testApiDefName,
+						Spec: &graphql.APISpecInput{
+							Type:   graphql.APISpecTypeOpenAPI,
+							Format: graphql.SpecFormatYaml,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
@@ -93,6 +117,22 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "tls: error decrypting message")
 	})
+
+	t.Run("Should successfully call ORD service with certificate secured client", func(t *testing.T) {
+		app, err := director.RegisterApplicationWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, applicationInput)
+		require.NoError(t, err)
+		require.NotNil(t, app.Bundles.Data)
+		require.NotNil(t, app.Bundles.Data[0].APIDefinitions.Data)
+		require.NotNil(t, app.Bundles.Data[0].APIDefinitions.Data[0].Spec)
+		defer director.UnregisterApplication(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, app.ID)
+
+		req := createORDServiceRequest(t, app.Bundles.Data[0].APIDefinitions.Data[0].ID, app.Bundles.Data[0].APIDefinitions.Data[0].Spec.ID, testCtx.Tenant)
+
+		resp, err := securedClient.Do(req)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		require.Equal(t, resp.StatusCode, http.StatusOK)
+	})
 }
 
 func createCatalogRequest(t *testing.T) *http.Request {
@@ -101,6 +141,14 @@ func createCatalogRequest(t *testing.T) *http.Request {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Broker-API-Version", "2.15")
+	return req
+}
+
+func createORDServiceRequest(t *testing.T, apiId, specId, tenantId string) *http.Request {
+	req, err := http.NewRequest(http.MethodGet, testCtx.ORDServiceURL+fmt.Sprintf("/api/%s/spec/%s", apiId, specId), nil)
+	require.NoError(t, err)
+
+	req.Header.Set("Tenant", tenantId)
 	return req
 }
 
