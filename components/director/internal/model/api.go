@@ -105,10 +105,9 @@ func (rd *APIResourceDefinition) Validate() error {
 }
 
 func (a *APIResourceDefinition) ToSpec() *SpecInput {
-	specType := APISpecType(a.Type)
 	return &SpecInput{
-		Format:     SpecFormat(a.MediaType),
-		APIType:    &specType,
+		Format:     a.MediaType,
+		APIType:    &a.Type,
 		CustomType: &a.CustomType,
 		FetchRequest: &FetchRequestInput{ // TODO: Convert AccessStrategies to FetchRequestAuths once ORD defines them
 			URL:  a.URL,

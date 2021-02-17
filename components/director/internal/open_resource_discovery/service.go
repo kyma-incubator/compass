@@ -1,24 +1,12 @@
-package aggregator
+package open_resource_discovery
 
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
-	"strings"
-)
-
-const (
-	packageORDType = "package"
-	bundleORDType  = "consumptionBundle"
-	apiORDType     = "apiResource"
-	eventORDType   = "eventResource"
-	vendorORDType  = "vendor"
-	productORDType = "product"
 )
 
 type Service struct {
@@ -35,10 +23,10 @@ type Service struct {
 	vendorSvc    VendorService
 	tombstoneSvc TombstoneService
 
-	ordClient open_resource_discovery.Client
+	ordClient Client
 }
 
-func NewService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client open_resource_discovery.Client) *Service {
+func NewAggregatorService(transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, client Client) *Service {
 	return &Service{
 		transact:     transact,
 		appSvc:       appSvc,
@@ -57,71 +45,90 @@ func NewService(transact persistence.Transactioner, appSvc ApplicationService, w
 
 // SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
 func (s *Service) SyncORDDocuments(ctx context.Context) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	pageCount := 1
 	pageSize := 200
-	page, err := s.appSvc.ListGlobal(ctx, pageSize, "")
+	page, err := s.listAppPage(ctx, pageSize, "")
 	if err != nil {
 		return errors.Wrapf(err, "error while fetching application page number %d", pageCount)
 	}
-	if err := s.processAppPage(ctx, page.Data); err != nil {
-		return errors.Wrapf(err, "error while processing application page number %d", pageCount)
+	for _, app := range page.Data {
+		if err := s.processApp(ctx, app); err != nil {
+			return errors.Wrapf(err, "error while processing app %q", app.ID)
+		}
 	}
 	pageCount++
 
 	for page.PageInfo.HasNextPage {
-		page, err = s.appSvc.ListGlobal(ctx, pageSize, page.PageInfo.EndCursor)
+		page, err = s.listAppPage(ctx, pageSize, page.PageInfo.EndCursor)
 		if err != nil {
 			return errors.Wrapf(err, "error while fetching page number %d", pageCount)
 		}
-		if err := s.processAppPage(ctx, page.Data); err != nil {
-			return errors.Wrapf(err, "error while processing page number %d", pageCount)
+		for _, app := range page.Data {
+			if err := s.processApp(ctx, app); err != nil {
+				return errors.Wrapf(err, "error while processing app %q", app.ID)
+			}
 		}
 		pageCount++
 	}
-
-	return tx.Commit()
+	return nil
 }
 
-func (s *Service) processAppPage(ctx context.Context, page []*model.Application) error {
-	for _, app := range page {
-		ctx = tenant.SaveToContext(ctx, app.Tenant, "")
-		webhooks, err := s.webhookSvc.List(ctx, app.ID)
-		if err != nil {
-			return errors.Wrapf(err, "error fetching webhooks for app with id %q", app.ID)
-		}
-		var documents open_resource_discovery.Documents
-		var baseURL string
-		for _, wh := range webhooks {
-			if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-				ctx = addFieldToLogger(ctx, "app_id", app.ID)
-				documents, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, *wh.URL)
-				if err != nil {
-					log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q", wh.ID)
-				}
-				baseURL = *wh.URL
-				break
+func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+	page, err := s.appSvc.ListGlobal(ctx, pageSize, cursor)
+	if err != nil {
+		return nil, err
+	}
+	return page, tx.Commit()
+}
+
+func (s *Service) processApp(ctx context.Context, app *model.Application) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	ctx = tenant.SaveToContext(ctx, app.Tenant, "")
+
+	webhooks, err := s.webhookSvc.List(ctx, app.ID)
+	if err != nil {
+		return errors.Wrapf(err, "error fetching webhooks for app with id %q", app.ID)
+	}
+	var documents Documents
+	var baseURL string
+	for _, wh := range webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+			ctx = addFieldToLogger(ctx, "app_id", app.ID)
+			documents, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, *wh.URL)
+			if err != nil {
+				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q", wh.ID)
 			}
+			baseURL = *wh.URL
+			break
 		}
-		if len(documents) > 0 {
-			log.C(ctx).Info("Processing ORD documents")
-			if err := s.processDocuments(ctx, app.ID, baseURL, documents); err != nil {
-				log.C(ctx).WithError(err).Error("error processing ORD documents")
-			} else {
-				log.C(ctx).Info("Successfully processed ORD documents")
-			}
+	}
+	if len(documents) > 0 {
+		log.C(ctx).Info("Processing ORD documents")
+		if err := s.processDocuments(ctx, app.ID, baseURL, documents); err != nil {
+			log.C(ctx).WithError(err).Error("error processing ORD documents")
+		} else {
+			log.C(ctx).Info("Successfully processed ORD documents")
+			return tx.Commit()
 		}
 	}
 	return nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents open_resource_discovery.Documents) error {
+func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents) error {
 	if err := documents.Validate(baseURL); err != nil {
 		return errors.Wrap(err, "invalid documents")
 	}
@@ -147,11 +154,13 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
 	}
 
-	if err := s.processVendors(ctx, appID, vendorsInput); err != nil {
+	vendorsFromDB, err := s.processVendors(ctx, appID, vendorsInput)
+	if err != nil {
 		return err
 	}
 
-	if err := s.processProducts(ctx, appID, productsInput); err != nil {
+	productsFromDB, err := s.processProducts(ctx, appID, productsInput)
+	if err != nil {
 		return err
 	}
 
@@ -181,41 +190,80 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	}
 
 	for _, ts := range tombstonesFromDB {
-		if err := s.deleteResourceForTombstone(ctx, bundlesFromDB, packagesFromDB, apisFromDB, eventsFromDB, *ts); err != nil {
-			return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
+			return packagesFromDB[i].OrdID == ts.OrdID
+		}); found {
+			if err := s.packageSvc.Delete(ctx, packagesFromDB[i].ID); err != nil {
+				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(apisFromDB), func(i int) bool {
+			return equalStrings(apisFromDB[i].OrdID, &ts.OrdID)
+		}); found {
+			if err := s.apiSvc.Delete(ctx, apisFromDB[i].ID); err != nil {
+				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
+			return equalStrings(eventsFromDB[i].OrdID, &ts.OrdID)
+		}); found {
+			if err := s.eventSvc.Delete(ctx, eventsFromDB[i].ID); err != nil {
+				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
+			return equalStrings(bundlesFromDB[i].OrdID, &ts.OrdID)
+		}); found {
+			if err := s.bundleSvc.Delete(ctx, bundlesFromDB[i].ID); err != nil {
+				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
+			return vendorsFromDB[i].OrdID == ts.OrdID
+		}); found {
+			if err := s.vendorSvc.Delete(ctx, vendorsFromDB[i].OrdID); err != nil {
+				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
+			return productsFromDB[i].OrdID == ts.OrdID
+		}); found {
+			if err := s.productSvc.Delete(ctx, productsFromDB[i].OrdID); err != nil {
+				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
 		}
 	}
 
 	return nil
 }
 
-func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) error {
+func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
 	vendorsFromDB, err := s.vendorSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
-		return errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
+		return nil, errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
 	}
 
 	for _, vendor := range vendors {
 		if err := s.resyncVendor(ctx, appID, vendorsFromDB, *vendor); err != nil {
-			return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
+			return nil, errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
 		}
 	}
 
-	return nil
+	return s.vendorSvc.ListByApplicationID(ctx, appID)
 }
 
-func (s *Service) processProducts(ctx context.Context, appID string, products []*model.ProductInput) error {
+func (s *Service) processProducts(ctx context.Context, appID string, products []*model.ProductInput) ([]*model.Product, error) {
 	productsFromDB, err := s.productSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
-		return errors.Wrapf(err, "error while listing products for app with id %q", appID)
+		return nil, errors.Wrapf(err, "error while listing products for app with id %q", appID)
 	}
 
 	for _, product := range products {
 		if err := s.resyncProduct(ctx, appID, productsFromDB, *product); err != nil {
-			return errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
+			return nil, errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
 		}
 	}
-	return nil
+	return s.productSvc.ListByApplicationID(ctx, appID)
 }
 
 func (s *Service) processPackages(ctx context.Context, appID string, packages []*model.PackageInput) ([]*model.Package, error) {
@@ -444,45 +492,6 @@ func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesF
 	}
 	_, err := s.tombstoneSvc.Create(ctx, appID, tombstone)
 	return err
-}
-
-func (s *Service) deleteResourceForTombstone(ctx context.Context, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstone model.Tombstone) error {
-	resourceType := strings.Split(tombstone.OrdID, ":")[1]
-	switch resourceType {
-	case packageORDType:
-		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
-			return packagesFromDB[i].OrdID == tombstone.OrdID
-		}); found {
-			return s.packageSvc.Delete(ctx, packagesFromDB[i].ID)
-		}
-	case apiORDType:
-		if i, found := searchInSlice(len(apisFromDB), func(i int) bool {
-			return equalStrings(apisFromDB[i].OrdID, &tombstone.OrdID)
-		}); found {
-			return s.apiSvc.Delete(ctx, apisFromDB[i].ID)
-		}
-	case eventORDType:
-		if i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
-			return equalStrings(eventsFromDB[i].OrdID, &tombstone.OrdID)
-		}); found {
-			return s.eventSvc.Delete(ctx, eventsFromDB[i].ID)
-		}
-	case vendorORDType:
-		if err := s.vendorSvc.Delete(ctx, tombstone.OrdID); err != nil && !apperrors.IsNotFoundError(err) {
-			return err
-		}
-	case productORDType:
-		if err := s.productSvc.Delete(ctx, tombstone.OrdID); err != nil && !apperrors.IsNotFoundError(err) {
-			return err
-		}
-	case bundleORDType:
-		if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
-			return equalStrings(bundlesFromDB[i].OrdID, &tombstone.OrdID)
-		}); found {
-			return s.bundleSvc.Delete(ctx, bundlesFromDB[i].ID)
-		}
-	}
-	return nil
 }
 
 func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput {

@@ -295,7 +295,7 @@ func (docs Documents) Sanitize(baseURL string) error {
 				return errors.Wrapf(err, "error while merging labels for api with ord id %q", *api.OrdID)
 			}
 		}
-		for _, event := range doc.APIResources {
+		for _, event := range doc.EventResources {
 			referredPkg, ok := packages[*event.OrdPackageID]
 			if !ok {
 				return errors.Errorf("event with ord id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)
@@ -408,11 +408,7 @@ func rewriteRelativeURIsInJson(j json.RawMessage, baseURL, jsonPath string) (jso
 			if err != nil {
 				return nil, err
 			}
-			m := make(map[string]interface{})
-			if err := json.Unmarshal(rewrittenElement, &m); err != nil {
-				return nil, err
-			}
-			items = append(items, m)
+			items = append(items, gjson.ParseBytes(rewrittenElement).Value())
 		}
 		return json.Marshal(items)
 	} else if parsedJson.IsObject() {
