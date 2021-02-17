@@ -15,21 +15,17 @@ limitations under the License.
 package controllers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
-	"net/http"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/types"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,20 +37,10 @@ import (
 
 // OperationReconciler reconciles a Operation object
 type OperationReconciler struct {
-	DirectorURL string
 	client.Client
-	Log    logr.Logger
-	Lister types.ApplicationLister
-	Scheme *runtime.Scheme
-}
-
-// TODO: Remove this struct and resuse the one from Director once the Scheduler logic is merged
-type operationRequest struct {
-	OperationType graphql.OperationType `json:"operation_type,omitempty"`
-	ResourceType  resource.Type         `json:"resource_type"`
-	ResourceID    string                `json:"resource_id"`
-	Ready         bool                  `json:"ready"`
-	Error         string                `json:"error"`
+	Log            logr.Logger
+	DirectorClient director.Client
+	Scheme         *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=operations.compass,resources=operations,verbs=get;list;watch;create;update;patch;delete
@@ -71,7 +57,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	app, err := r.Lister.FetchApplication(ctx, operation.Spec.ResourceID)
+	app, err := r.DirectorClient.FetchApplication(ctx, operation.Spec.ResourceID)
 	if err != nil {
 		logger.Error(err, operationError("Unable to fetch application", operation))
 
@@ -118,7 +104,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks)) {
 		opErr := errors.New("reconciliation timeout reached")
 
-		err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, true, opErr))
+		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, true, opErr))
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -148,7 +134,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, recErr
 			}
 
-			err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, false, err))
+			err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, false, err))
 			if err != nil {
 				return ctrl.Result{Requeue: true}, err
 			}
@@ -166,7 +152,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		case graphql.WebhookModeAsync:
 			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
 		case graphql.WebhookModeSync:
-			err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, true, nil))
+			err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, true, nil))
 			if err != nil {
 				return ctrl.Result{Requeue: true}, err
 			}
@@ -220,7 +206,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		opErr := errors.New("webhook timeout reached")
 
-		err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, false, opErr))
+		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, false, opErr))
 		if err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
@@ -233,7 +219,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		return ctrl.Result{}, opErr
 	case *response.SuccessStatusIdentifier:
-		err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, true, nil))
+		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, true, nil))
 		if err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
@@ -248,7 +234,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	case *response.FailedStatusIdentifier:
 		opErr := errors.New("webhook operation has finished unsuccessfully")
 
-		err := notifyDirector(ctx, r.DirectorURL, prepareDirectorRequest(*operation, true, opErr))
+		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, true, opErr))
 		if err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
@@ -265,37 +251,14 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 }
 
-func prepareDirectorRequest(operation v1alpha1.Operation, ready bool, err error) *operationRequest {
-	return &operationRequest{
+func prepareDirectorRequest(operation v1alpha1.Operation, ready bool, err error) director.Request {
+	return director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceID),
 		ResourceID:    operation.Spec.ResourceID,
 		Ready:         ready,
 		Error:         err.Error(),
 	}
-}
-
-func notifyDirector(ctx context.Context, directorURL string, request *operationRequest) error {
-	body, err := json.Marshal(request)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, directorURL, bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.DefaultClient.Do(req) // TODO: Build custom client, do not rely on default one
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code when notifying director for application state: %d", resp.StatusCode)
-	}
-
-	return nil
 }
 
 func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliationTimeout time.Duration) bool {

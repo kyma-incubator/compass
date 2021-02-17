@@ -15,7 +15,14 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,6 +33,7 @@ import (
 
 	operationsv1alpha1 "github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/config"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -52,6 +60,24 @@ func init() {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
+
+	env, err := env.Default(ctx, config.AddPFlags)
+	fatalOnError(err)
+
+	cfg, err := config.New(env)
+	fatalOnError(err)
+
+	cfg.GraphQLClient.GraphqlEndpoint = cfg.GraphQLClient.GraphqlEndpoint + "?useBundles=true" // TODO: Delete after bundles are adopted
+
+	err = cfg.Validate()
+	fatalOnError(err)
+
 	var metricsAddr string
 	var enableLeaderElection bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -74,10 +100,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	tokenProviderFromHeader, err := oauth.NewTokenProviderFromHeader(cfg.GraphQLClient.GraphqlEndpoint)
+	if err != nil {
+		fatalOnError(err)
+	}
+
+	directorGraphQLClient, err := graphql.PrepareGqlClient(cfg.GraphQLClient, cfg.HttpClient, tokenProviderFromHeader)
+	fatalOnError(err)
+
 	if err = (&controllers.OperationReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Operation"),
-		Scheme: mgr.GetScheme(),
+		Client:         mgr.GetClient(),
+		Log:            ctrl.Log.WithName("controllers").WithName("Operation"),
+		Scheme:         mgr.GetScheme(),
+		DirectorClient: director.NewClient("", directorGraphQLClient), // TODO: Add DirectorURL
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operation")
 		os.Exit(1)
@@ -88,5 +123,11 @@ func main() {
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
+	}
+}
+
+func fatalOnError(err error) {
+	if err != nil {
+		log.D().Fatal(err.Error())
 	}
 }
