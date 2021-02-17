@@ -60,7 +60,7 @@ spec:
             - name: HTTP_CLIENT_FORWARD_HEADERS
               value: "{{ .Values.global.system_broker.tokenProviderFromHeader.forwardHeaders }}"
             - name: ORD_SERVICE_URL
-              value: "https://copmpass-gateway.{{ .Values.global.ingress.domainName }}"
+              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: ORD_STATIC_PATH
               value: "{{ .Values.global.ordService.staticPrefix }}"
           livenessProbe:
