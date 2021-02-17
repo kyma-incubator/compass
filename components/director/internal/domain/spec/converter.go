@@ -66,7 +66,7 @@ func (c *converter) ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec, erro
 	}
 
 	return &graphql.EventSpec{
-
+		ID:           in.ID,
 		Data:         data,
 		Format:       graphql.SpecFormat(in.Format),
 		Type:         graphql.EventSpecType(*in.EventType),

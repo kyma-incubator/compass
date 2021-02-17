@@ -173,6 +173,7 @@ func (fp *GqlFieldsProvider) OmitForApiSpec(omittedProperties []string) string {
 	frOmittedProperties := extractOmitFor(omittedProperties, "fetchRequest")
 
 	return buildProperties(map[string]string{
+		"id":           "id",
 		"data":         "data",
 		"format":       "format",
 		"type":         "type",
@@ -264,6 +265,7 @@ func (fp *GqlFieldsProvider) OmitForEventSpec(omittedProperties []string) string
 	frOmittedProperties := extractOmitFor(omittedProperties, "fetchRequest")
 
 	return buildProperties(map[string]string{
+		"id":           "id",
 		"data":         "data",
 		"type":         "type",
 		"format":       "format",
