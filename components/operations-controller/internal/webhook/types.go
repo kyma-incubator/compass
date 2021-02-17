@@ -27,7 +27,8 @@ const (
 	DefaultTimeoutFactor         = 2
 	DefaultReconciliationTimeout = 12 * time.Hour //TODO: Extract in environment variable
 	DefaultWebhookTimeout        = 2 * time.Hour
-	DefaultRequeueInterval       = 10 * time.Minute
+	DefaultRequeueInterval       = 2 * time.Minute
+	DefaultErrRequeueInterval    = 10 * time.Minute
 	DefaultTimeLayout            = time.RFC3339Nano
 )
 
@@ -49,7 +50,7 @@ func NewRequest(webhook graphql.Webhook, reqData string, correlationID string, o
 
 	retryInterval := DefaultRequeueInterval
 	if webhook.RetryInterval != nil {
-		retryInterval = time.Duration(*webhook.RetryInterval) * time.Minute // TODO: Align measuring units
+		retryInterval = time.Duration(*webhook.RetryInterval) * time.Second
 	}
 
 	return &Request{

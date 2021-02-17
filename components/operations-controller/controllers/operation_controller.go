@@ -21,6 +21,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -100,7 +102,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	webhooks, err := retrieveWebhooks(app.Result.Webhooks, operation.Spec.WebhookIDs)
 	if err != nil {
 		logger.Error(err, operationError("Unable to retrieve webhooks", operation))
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 
 	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks)) {
@@ -108,7 +110,8 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, opErr))
 		if err != nil {
-			return ctrl.Result{}, err
+			logger.Error(err, operationError("Unable to notify Director", operation))
+			return ctrl.Result{RequeueAfter: web_hook.DefaultErrRequeueInterval}, nil
 		}
 
 		operation = setErrorStatus(*operation, opErr.Error())
@@ -127,13 +130,15 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if webhookStatus.WebhookPollURL == "" {
 		request, err := web_hook.NewRequest(webhookEntity, operation.Spec.RequestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time)
 		if err != nil {
-			return ctrl.Result{}, err
+			logger.Error(err, operationError("Unable to prepare Webhook request", operation))
+			return ctrl.Result{}, nil
 		}
 
 		response, err := r.WebhookClient.Do(ctx, request)
 		if err != nil {
+			logger.Error(err, operationError("Unable to execute Webhook request", operation))
 			if recErr, isRecErr := err.(*web_hook.ReconcileError); isRecErr && recErr.Requeue { // the case when webhook timeout is reached
-				return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, recErr
+				return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, nil
 			}
 
 			err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, err))
@@ -148,7 +153,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				return ctrl.Result{Requeue: true}, err
 			}
 
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		}
 
 		switch *webhookEntity.Mode {
@@ -186,16 +191,18 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// Make Poll Request ( poll interval passed <-> operation in progress )
 	request, err := web_hook.NewRequest(webhookEntity, operation.Spec.RequestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time)
 	if err != nil {
-		return ctrl.Result{}, err
+		logger.Error(err, operationError("Unable to prepare Webhook Poll request", operation))
+		return ctrl.Result{}, nil
 	}
 
 	request.PollURL = &webhookStatus.WebhookPollURL
 	response, err := r.WebhookClient.Poll(ctx, request)
 	if err != nil {
+		logger.Error(err, operationError("Unable to execute Webhook Poll request", operation))
 		if recErr, isRecErr := err.(*web_hook.ReconcileError); isRecErr && recErr.Requeue { // the case when webhook timeout is reached
-			return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, recErr
+			return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, nil
 		}
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 
 	switch *response.Status {
@@ -418,6 +425,12 @@ func operationError(msg string, operation *v1alpha1.Operation) string {
 
 func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		WithEventFilter(predicate.Funcs{
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				return false
+			},
+		}).
 		For(&v1alpha1.Operation{}).
 		Complete(r)
 }
