@@ -386,7 +386,7 @@ func TestConverter_Convert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := osb.CatalogConverter{
-				BaseURL: "http://specification.com",
+				ORDServiceURL: "http://specification.com",
 			}
 			service, err := c.Convert(tt.app)
 			if tt.expectedErr != "" {

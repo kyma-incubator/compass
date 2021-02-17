@@ -64,7 +64,7 @@ func main() {
 	directorGraphQLClient, err := prepareGqlClient(cfg)
 	fatalOnError(err)
 
-	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.Server.SelfURL+cfg.Server.RootAPI)
+	systemBroker := osb.NewSystemBroker(directorGraphQLClient, cfg.ORD.ServiceURL+cfg.ORD.StaticPath)
 	osbApi := osb.API(cfg.Server.RootAPI, systemBroker, sblog.NewDefaultLagerAdapter())
 	specsApi := specs.API(cfg.Server.RootAPI, directorGraphQLClient)
 

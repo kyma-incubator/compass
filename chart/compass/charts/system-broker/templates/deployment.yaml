@@ -59,6 +59,10 @@ spec:
               value: "http://{{ .Values.global.gateway.tls.host }}.{{ .Release.Namespace }}.svc.cluster.local:{{.Values.global.gateway.port }}/director/graphql"
             - name: HTTP_CLIENT_FORWARD_HEADERS
               value: "{{ .Values.global.system_broker.tokenProviderFromHeader.forwardHeaders }}"
+            - name: ORD_SERVICE_URL
+              value: "https://copmpass-gateway.{{ .Values.global.ingress.domainName }}"
+            - name: ORD_STATIC_PATH
+              value: "{{ .Values.global.ordService.staticPrefix }}"
           livenessProbe:
             httpGet:
               path: /healthz
