@@ -18,6 +18,7 @@ package config
 
 import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/server"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"reflect"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
@@ -35,6 +36,7 @@ type Config struct {
 	Server        *server.Config  `mapstructure:"server"`
 	HttpClient    *http.Config    `mapstructure:"http_client"`
 	GraphQLClient *graphql.Config `mapstructure:"graphql_client"`
+	Webhook       *webhook.Config `mapstructure:"webhook"`
 }
 
 func AddPFlags(set *pflag.FlagSet) {
@@ -44,8 +46,10 @@ func AddPFlags(set *pflag.FlagSet) {
 
 func DefaultConfig() *Config {
 	return &Config{
+		Server:        server.DefaultConfig(),
 		HttpClient:    http.DefaultConfig(),
 		GraphQLClient: graphql.DefaultConfig(),
+		Webhook:       webhook.DefaultConfig(),
 	}
 }
 

@@ -115,6 +115,7 @@ func main() {
 
 	if err = (&controllers.OperationReconciler{
 		Client:         mgr.GetClient(),
+		Config:         *cfg.Webhook,
 		Log:            ctrl.Log.WithName("controllers").WithName("Operation"),
 		Scheme:         mgr.GetScheme(),
 		DirectorClient: director.NewClient(directorURL, httpClient, directorGraphQLClient),
