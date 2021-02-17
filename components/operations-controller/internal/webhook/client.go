@@ -37,7 +37,9 @@ type Client interface {
 	Poll(ctx context.Context, request *Request) (*web_hook.ResponseStatus, error)
 }
 
-type DefaultClient struct{}
+type DefaultClient struct {
+	HTTPClient http.Client
+}
 
 func (d DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Response, error) {
 	webhook := request.Webhook
@@ -78,7 +80,7 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Resp
 
 	req.Header = headers
 
-	client := http.DefaultClient
+	client := &d.HTTPClient
 	if webhook.Auth != nil {
 		basicCreds, isBasicAuth := webhook.Auth.Credential.(graphql.BasicCredentialData)
 		if isBasicAuth {
@@ -91,7 +93,7 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Resp
 		}
 	}
 
-	resp, err := http.DefaultClient.Do(req) // TODO: Build custom client, do not rely on default one
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +168,7 @@ func (d DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.Re
 		}
 	}
 
-	resp, err := http.DefaultClient.Do(req) // TODO: Build custom client, do not rely on default one
+	resp, err := client.Do(req) // TODO: Build custom client, do not rely on default one
 	if err != nil {
 		return nil, err
 	}

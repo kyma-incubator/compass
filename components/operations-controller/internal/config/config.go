@@ -17,12 +17,12 @@
 package config
 
 import (
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/server"
 	"reflect"
 
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
@@ -32,9 +32,9 @@ type Validatable interface {
 }
 
 type Config struct {
+	Server        *server.Config  `mapstructure:"server"`
 	HttpClient    *http.Config    `mapstructure:"http_client"`
 	GraphQLClient *graphql.Config `mapstructure:"graphql_client"`
-	OAuthProvider *oauth.Config   `mapstructure:"oauth_provider"`
 }
 
 func AddPFlags(set *pflag.FlagSet) {
@@ -46,7 +46,6 @@ func DefaultConfig() *Config {
 	return &Config{
 		HttpClient:    http.DefaultConfig(),
 		GraphQLClient: graphql.DefaultConfig(),
-		OAuthProvider: oauth.DefaultConfig(),
 	}
 }
 

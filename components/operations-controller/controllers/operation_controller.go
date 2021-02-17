@@ -38,8 +38,9 @@ import (
 // OperationReconciler reconciles a Operation object
 type OperationReconciler struct {
 	client.Client
-	Log            logr.Logger
 	DirectorClient director.Client
+	WebhookClient  web_hook.Client
+	Log            logr.Logger
 	Scheme         *runtime.Scheme
 }
 
@@ -121,14 +122,13 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	webhookEntity := webhooks[operation.Spec.WebhookIDs[0]]
 	webhookStatus := operation.Status.Webhooks[0]
 
-	webhookClient := web_hook.DefaultClient{}
 	if webhookStatus.WebhookPollURL == "" {
 		request, err := web_hook.NewRequest(webhookEntity, operation.Spec.RequestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 
-		response, err := webhookClient.Do(ctx, request)
+		response, err := r.WebhookClient.Do(ctx, request)
 		if err != nil {
 			if recErr, isRecErr := err.(*web_hook.ReconcileError); isRecErr && recErr.Requeue { // the case when webhook timeout is reached
 				return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, recErr
@@ -186,7 +186,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	request.PollURL = &webhookStatus.WebhookPollURL
-	response, err := webhookClient.Poll(ctx, request)
+	response, err := r.WebhookClient.Poll(ctx, request)
 	if err != nil {
 		if recErr, isRecErr := err.(*web_hook.ReconcileError); isRecErr && recErr.Requeue { // the case when webhook timeout is reached
 			return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, recErr

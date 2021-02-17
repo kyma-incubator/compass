@@ -37,6 +37,7 @@ type Client interface {
 // defaultClient is the default implementation of the Client interface
 type defaultClient struct {
 	types.ApplicationLister
+	HTTPClient  http.Client
 	DirectorURL string
 }
 
@@ -50,9 +51,10 @@ type Request struct {
 }
 
 // NewClient constructs a default implementation of the Client interface
-func NewClient(directorURL string, appLister types.ApplicationLister) *defaultClient {
+func NewClient(directorURL string, httpClient http.Client, appLister types.ApplicationLister) *defaultClient {
 	return &defaultClient{
 		ApplicationLister: appLister,
+		HTTPClient:        httpClient,
 		DirectorURL:       directorURL,
 	}
 }
@@ -64,12 +66,12 @@ func (dc *defaultClient) Notify(ctx context.Context, request Request) error {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dc.DirectorURL, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dc.DirectorURL+"/operations", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
 
-	resp, err := http.DefaultClient.Do(req) // TODO: Build custom client, do not rely on default one
+	resp, err := dc.HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}

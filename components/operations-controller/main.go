@@ -16,13 +16,16 @@ package main
 
 import (
 	"context"
-	"flag"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
+	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
+	"net/http"
+	"net/url"
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -73,31 +76,33 @@ func main() {
 	cfg, err := config.New(env)
 	fatalOnError(err)
 
+	url, err := url.Parse(cfg.GraphQLClient.GraphqlEndpoint)
+	fatalOnError(err)
+
+	directorURL := url.Host
+
 	cfg.GraphQLClient.GraphqlEndpoint = cfg.GraphQLClient.GraphqlEndpoint + "?useBundles=true" // TODO: Delete after bundles are adopted
 
 	err = cfg.Validate()
 	fatalOnError(err)
 
-	var metricsAddr string
-	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
-	flag.Parse()
-
 	ctrl.SetLogger(zap.New(zap.UseDevMode(devLogging)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
+		MetricsBindAddress: cfg.Server.MetricAddress,
 		Port:               port,
-		LeaderElection:     enableLeaderElection,
+		LeaderElection:     cfg.Server.EnableLeaderElection,
 		LeaderElectionID:   leaderElectionID,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
+	}
+
+	httpClient := http.Client{
+		Transport: httputil.NewHTTPTransport(cfg.HttpClient),
+		Timeout:   cfg.HttpClient.Timeout,
 	}
 
 	tokenProviderFromHeader, err := oauth.NewTokenProviderFromHeader(cfg.GraphQLClient.GraphqlEndpoint)
@@ -112,7 +117,8 @@ func main() {
 		Client:         mgr.GetClient(),
 		Log:            ctrl.Log.WithName("controllers").WithName("Operation"),
 		Scheme:         mgr.GetScheme(),
-		DirectorClient: director.NewClient("", directorGraphQLClient), // TODO: Add DirectorURL
+		DirectorClient: director.NewClient(directorURL, httpClient, directorGraphQLClient),
+		WebhookClient:  webhook.DefaultClient{HTTPClient: httpClient},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operation")
 		os.Exit(1)
