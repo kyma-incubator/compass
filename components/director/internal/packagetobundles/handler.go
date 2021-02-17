@@ -42,7 +42,7 @@ import (
 	"github.com/vektah/gqlparser/gqlerror"
 )
 
-const usesBundlesLabel = "usesBundles"
+const usesBundlesLabel = "useBundles"
 
 //go:generate mockery -name=LabelUpsertService -output=automock -outpkg=automock -case=underscore
 type LabelUpsertService interface {
