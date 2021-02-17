@@ -23,7 +23,6 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/oauth"
 	"net/http"
 	"net/url"
 	"os"
@@ -105,12 +104,12 @@ func main() {
 		Timeout:   cfg.HttpClient.Timeout,
 	}
 
-	tokenProviderFromHeader, err := oauth.NewTokenProviderFromHeader(cfg.GraphQLClient.GraphqlEndpoint)
+	unsignedTokenProvider, err := director.NewUnsignedTokenProvider(cfg.GraphQLClient.GraphqlEndpoint)
 	if err != nil {
 		fatalOnError(err)
 	}
 
-	directorGraphQLClient, err := graphql.PrepareGqlClient(cfg.GraphQLClient, cfg.HttpClient, tokenProviderFromHeader)
+	directorGraphQLClient, err := graphql.PrepareGqlClient(cfg.GraphQLClient, cfg.HttpClient, unsignedTokenProvider)
 	fatalOnError(err)
 
 	if err = (&controllers.OperationReconciler{

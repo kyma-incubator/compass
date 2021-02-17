@@ -17,7 +17,6 @@
 package webhook
 
 import (
-	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"time"
@@ -33,12 +32,7 @@ type Request struct {
 	PollURL               *string
 }
 
-func NewRequest(webhook graphql.Webhook, reqData, correlationID string, opCreationTime time.Time, defaultRequeueInterval time.Duration) (*Request, error) {
-	var data web_hook.RequestData
-	if err := json.Unmarshal([]byte(reqData), &data); err != nil {
-		return nil, err
-	}
-
+func NewRequest(webhook graphql.Webhook, requestData web_hook.RequestData, correlationID string, opCreationTime time.Time, defaultRequeueInterval time.Duration) *Request {
 	retryInterval := defaultRequeueInterval
 	if webhook.RetryInterval != nil {
 		retryInterval = time.Duration(*webhook.RetryInterval) * time.Second
@@ -46,9 +40,9 @@ func NewRequest(webhook graphql.Webhook, reqData, correlationID string, opCreati
 
 	return &Request{
 		Webhook:               webhook,
-		Data:                  data,
+		Data:                  requestData,
 		CorrelationID:         correlationID,
 		RetryInterval:         retryInterval,
 		OperationCreationTime: opCreationTime,
-	}, nil
+	}
 }

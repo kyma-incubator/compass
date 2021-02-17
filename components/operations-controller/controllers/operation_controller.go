@@ -16,10 +16,13 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -61,6 +64,13 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
+	var requestData webhook.RequestData
+	if err := json.Unmarshal([]byte(operation.Spec.RequestData), &requestData); err != nil {
+		logger.Error(err, operationError("Unable to parse request data", operation))
+		return ctrl.Result{}, nil
+	}
+
+	ctx = tenant.SaveToContext(ctx, requestData.TenantID)
 	app, err := r.DirectorClient.FetchApplication(ctx, operation.Spec.ResourceID)
 	if err != nil {
 		logger.Error(err, operationError("Unable to fetch application", operation))
@@ -129,11 +139,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	webhookStatus := operation.Status.Webhooks[0]
 
 	if webhookStatus.WebhookPollURL == "" {
-		request, err := web_hook.NewRequest(webhookEntity, operation.Spec.RequestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time, r.Config.RequeueInterval)
-		if err != nil {
-			logger.Error(err, operationError("Unable to prepare Webhook request", operation))
-			return ctrl.Result{}, nil
-		}
+		request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time, r.Config.RequeueInterval)
 
 		response, err := r.WebhookClient.Do(ctx, request)
 		if err != nil {
@@ -189,11 +195,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	request, err := web_hook.NewRequest(webhookEntity, operation.Spec.RequestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time, r.Config.RequeueInterval)
-	if err != nil {
-		logger.Error(err, operationError("Unable to prepare Webhook Poll request", operation))
-		return ctrl.Result{}, nil
-	}
+	request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time, r.Config.RequeueInterval)
 
 	request.PollURL = &webhookStatus.WebhookPollURL
 	response, err := r.WebhookClient.Poll(ctx, request)
