@@ -23,13 +23,13 @@ global:
       version: "PR-1720"
     director:
       dir:
-      version: "PR-1722"
+      version: "PR-1733"
     gateway:
       dir:
       version: "PR-1720"
     operations_controller:
       dir:
-      version: "PR-1717"
+      version: "PR-1733"
     tenant_fetcher:
       dir:
       version: "PR-1720"
@@ -41,7 +41,7 @@ global:
       version: "PR-1736"
     system_broker:
       dir:
-      version: "PR-1721"
+      version: "PR-1733"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
