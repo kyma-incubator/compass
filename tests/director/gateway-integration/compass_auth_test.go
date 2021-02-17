@@ -67,7 +67,7 @@ func TestCompassAuth(t *testing.T) {
 	assert.Equal(t, intSysOauthCredentialData, credentialDataFromDB)
 
 	t.Log("Remove application to check if the oAuth token is still valid")
-	unregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
+	UnregisterApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appByIntSys.ID)
 
 	t.Log("Remove Integration System")
 	unregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
