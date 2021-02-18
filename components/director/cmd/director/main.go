@@ -276,7 +276,6 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
-	internalRouter := mux.NewRouter()
 	operationUpdaterHandler := operation.NewUpdateOperationHandler(transact, map[resource.Type]operation.ResourceUpdaterFunc{
 		resource.Application: func(ctx context.Context, id string, ready bool, error *string) error {
 			app, err := appRepo.GetGlobalByID(ctx, id)
@@ -292,6 +291,8 @@ func main() {
 			return appRepo.DeleteGlobal(ctx, id)
 		},
 	})
+	internalRouter := mux.NewRouter()
+	internalRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationEndpoint).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
 
