@@ -118,7 +118,7 @@ func main() {
 		Log:            ctrl.Log.WithName("controllers").WithName("Operation"),
 		Scheme:         mgr.GetScheme(),
 		DirectorClient: director.NewClient(directorURL, httpClient, directorGraphQLClient),
-		WebhookClient:  webhook.DefaultClient{HTTPClient: httpClient},
+		WebhookClient:  &webhook.DefaultClient{HTTPClient: httpClient},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operation")
 		os.Exit(1)

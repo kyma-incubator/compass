@@ -144,23 +144,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		response, err := r.WebhookClient.Do(ctx, request)
 		if err != nil {
 			logger.Error(err, operationError("Unable to execute Webhook request", operation))
-			if recErr, isRecErr := err.(*web_hook.ReconcileError); isRecErr && recErr.Requeue { // the case when webhook timeout is reached
-				return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, nil
-			}
-
-			err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, err))
-			if err != nil {
-				return ctrl.Result{Requeue: true}, err
-			}
-
-			operation = setErrorStatus(*operation, err.Error())
-			operation.Status.Phase = v1alpha1.StateFailed
-			if err := r.Update(ctx, operation); err != nil {
-				logger.Error(err, operationError("unable to update operation after failed webhook request", operation))
-				return ctrl.Result{Requeue: true}, err
-			}
-
-			return ctrl.Result{}, nil
+			return r.handleWebhookTimeoutCheckResponse(ctx, operation, webhookEntity, err)
 		}
 
 		switch *webhookEntity.Mode {
@@ -169,7 +153,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		case graphql.WebhookModeSync:
 			err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, nil))
 			if err != nil {
-				return ctrl.Result{Requeue: true}, err
+				return ctrl.Result{}, err
 			}
 			operation = setReadyStatus(*operation)
 			operation.Status.Phase = v1alpha1.StateSuccess
@@ -201,48 +185,23 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	response, err := r.WebhookClient.Poll(ctx, request)
 	if err != nil {
 		logger.Error(err, operationError("Unable to execute Webhook Poll request", operation))
-		if recErr, isRecErr := err.(*web_hook.ReconcileError); isRecErr && recErr.Requeue { // the case when webhook timeout is reached
-			return ctrl.Result{Requeue: recErr.Requeue, RequeueAfter: recErr.RequeueAfter}, nil
-		}
-		return ctrl.Result{}, nil
+		return r.handleWebhookTimeoutCheckResponse(ctx, operation, webhookEntity, err)
 	}
 
 	switch *response.Status {
 	case *response.InProgressStatusIdentifier:
-		if !isWebhookTimeoutReached(operation.CreationTimestamp.Time, time.Duration(*webhookEntity.Timeout)) {
-			requeueAfter := r.Config.RequeueInterval
-			if webhookEntity.RetryInterval != nil {
-				requeueAfter = time.Duration(*webhookEntity.RetryInterval)
-			}
-			return ctrl.Result{Requeue: true, RequeueAfter: requeueAfter}, nil
-		}
-
-		opErr := errors.New("webhook timeout reached")
-
-		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, opErr))
-		if err != nil {
-			return ctrl.Result{Requeue: true}, err
-		}
-
-		operation = setErrorStatus(*operation, opErr.Error())
-		operation.Status.Phase = v1alpha1.StateFailed
-		if err := r.Update(ctx, operation); err != nil {
-			logger.Error(err, operationError("unable to update operation after it has timed out", operation))
-			return ctrl.Result{Requeue: true}, err
-		}
-
-		return ctrl.Result{}, opErr
+		return r.handleWebhookTimeoutCheckResponse(ctx, operation, webhookEntity, errors.New("webhook timeout reached"))
 	case *response.SuccessStatusIdentifier:
 		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, nil))
 		if err != nil {
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 
 		operation = setReadyStatus(*operation)
 		operation.Status.Phase = v1alpha1.StateSuccess
 		if err := r.Update(ctx, operation); err != nil {
 			logger.Error(err, operationError("unable to update operation after it has completed successfully", operation))
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 
 		return ctrl.Result{}, nil
@@ -251,20 +210,43 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, opErr))
 		if err != nil {
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 
 		operation = setErrorStatus(*operation, opErr.Error())
 		operation.Status.Phase = v1alpha1.StateFailed
 		if err := r.Update(ctx, operation); err != nil {
 			logger.Error(err, operationError("unable to update operation after it has finished unsuccessfully", operation))
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 
-		return ctrl.Result{}, opErr
+		return ctrl.Result{}, nil
 	default:
 		return ctrl.Result{}, fmt.Errorf("unexpected poll status response: %s", *response.Status)
 	}
+}
+
+func (r *OperationReconciler) handleWebhookTimeoutCheckResponse(ctx context.Context, operation *v1alpha1.Operation, webhook graphql.Webhook, webhookErr error) (ctrl.Result, error) {
+	if !isWebhookTimeoutReached(operation.CreationTimestamp.Time, time.Duration(*webhook.Timeout)) {
+		requeueAfter := r.Config.RequeueInterval
+		if webhook.RetryInterval != nil {
+			requeueAfter = time.Duration(*webhook.RetryInterval)
+		}
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+
+	err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, webhookErr))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	operation = setErrorStatus(*operation, webhookErr.Error())
+	operation.Status.Phase = v1alpha1.StateFailed
+	if err := r.Update(ctx, operation); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func prepareDirectorRequest(operation v1alpha1.Operation, err error) director.Request {

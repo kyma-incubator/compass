@@ -41,7 +41,7 @@ type DefaultClient struct {
 	HTTPClient http.Client
 }
 
-func (d DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Response, error) {
+func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Response, error) {
 	webhook := request.Webhook
 
 	var method string
@@ -118,25 +118,23 @@ func (d DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Resp
 		return nil, err
 	}
 
-	var recErr *ReconcileError
+	var errMsg string
 	if *response.SuccessStatusCode != resp.StatusCode {
-		recErr = &ReconcileError{Description: fmt.Sprintf("response success status code was not met - expected %q, got %q", *response.SuccessStatusCode, resp.StatusCode)}
+		errMsg += fmt.Sprintf("response success status code was not met - expected %q, got %q; ", *response.SuccessStatusCode, resp.StatusCode)
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		recErr = &ReconcileError{Description: fmt.Sprintf("received error while requesting external system: %s", *response.Error)}
+		errMsg += fmt.Sprintf("received error while requesting external system: %s", *response.Error)
 	}
 
-	if recErr != nil && !isWebhookTimeoutReached(request.OperationCreationTime, time.Duration(*webhook.Timeout)) {
-		recErr.Requeue = true
-		recErr.RequeueAfter = request.RetryInterval
-		return nil, recErr
+	if errMsg != "" {
+		return response, errors.New(errMsg)
 	}
 
-	return response, recErr
+	return response, nil
 }
 
-func (d DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.ResponseStatus, error) {
+func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.ResponseStatus, error) {
 	webhook := request.Webhook
 
 	headers, err := web_hook.ParseHeadersTemplate(webhook.HeaderTemplate, request.Data)
@@ -193,22 +191,20 @@ func (d DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.Re
 		return nil, err
 	}
 
-	var recErr *ReconcileError
+	var errMsg string
 	if *response.SuccessStatusCode != resp.StatusCode {
-		recErr = &ReconcileError{Description: fmt.Sprintf("response success status code was not met - expected %q, got %q", *response.SuccessStatusCode, resp.StatusCode)}
+		errMsg += fmt.Sprintf("response success status code was not met - expected %q, got %q; ", *response.SuccessStatusCode, resp.StatusCode)
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		recErr = &ReconcileError{Description: fmt.Sprintf("received error while polling external system: %s", *response.Error)}
+		errMsg += fmt.Sprintf("received error while polling external system: %s", *response.Error)
 	}
 
-	if recErr != nil && !isWebhookTimeoutReached(request.OperationCreationTime, time.Duration(*webhook.Timeout)) {
-		recErr.Requeue = true
-		recErr.RequeueAfter = request.RetryInterval
-		return nil, recErr
+	if errMsg != "" {
+		return response, errors.New(errMsg)
 	}
 
-	return response, recErr
+	return response, nil
 }
 
 func isWebhookTimeoutReached(creationTime time.Time, webhookTimeout time.Duration) bool {
