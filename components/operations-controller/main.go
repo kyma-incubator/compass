@@ -112,14 +112,11 @@ func main() {
 	directorGraphQLClient, err := graphql.PrepareGqlClient(cfg.GraphQLClient, cfg.HttpClient, unsignedTokenProvider)
 	fatalOnError(err)
 
-	if err = (&controllers.OperationReconciler{
-		Client:         mgr.GetClient(),
-		Config:         *cfg.Webhook,
-		Log:            ctrl.Log.WithName("controllers").WithName("Operation"),
-		Scheme:         mgr.GetScheme(),
-		DirectorClient: director.NewClient(directorURL, httpClient, directorGraphQLClient),
-		WebhookClient:  &webhook.DefaultClient{HTTPClient: httpClient},
-	}).SetupWithManager(mgr); err != nil {
+	controller := controllers.NewOperationReconciler(mgr.GetClient(), *cfg.Webhook,
+		director.NewClient(directorURL, httpClient, directorGraphQLClient), &webhook.DefaultClient{HTTPClient: httpClient},
+		ctrl.Log.WithName("controllers").WithName("Operation"), mgr.GetScheme())
+
+	if err = controller.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operation")
 		os.Exit(1)
 	}

@@ -66,7 +66,7 @@ func (dc *defaultClient) Notify(ctx context.Context, request Request) error {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dc.DirectorURL+"/operations", bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, dc.DirectorURL+"/operations", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}

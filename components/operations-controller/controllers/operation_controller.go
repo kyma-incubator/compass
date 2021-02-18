@@ -42,12 +42,23 @@ import (
 
 // OperationReconciler reconciles a Operation object
 type OperationReconciler struct {
-	client.Client
-	Config         web_hook.Config
-	DirectorClient director.Client
-	WebhookClient  web_hook.Client
-	Log            logr.Logger
-	Scheme         *runtime.Scheme
+	client         client.Client
+	webhookConfig  web_hook.Config
+	directorClient director.Client
+	webhookClient  web_hook.Client
+	log            logr.Logger
+	scheme         *runtime.Scheme
+}
+
+func NewOperationReconciler(controllerClient client.Client, webhookConfig web_hook.Config, directorClient director.Client, webhookClient web_hook.Client, logger logr.Logger, scheme *runtime.Scheme) *OperationReconciler {
+	return &OperationReconciler{
+		client:         controllerClient,
+		webhookConfig:  webhookConfig,
+		log:            logger,
+		scheme:         scheme,
+		directorClient: directorClient,
+		webhookClient:  webhookClient,
+	}
 }
 
 // +kubebuilder:rbac:groups=operations.compass,resources=operations,verbs=get;list;watch;create;update;patch;delete
@@ -55,10 +66,10 @@ type OperationReconciler struct {
 
 func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	logger := r.Log.WithValues("operation", req.NamespacedName)
+	logger := r.log.WithValues("operation", req.NamespacedName)
 
 	var operation = &v1alpha1.Operation{}
-	err := r.Get(ctx, req.NamespacedName, operation)
+	err := r.client.Get(ctx, req.NamespacedName, operation)
 	if err != nil {
 		logger.Error(err, fmt.Sprintf("Unable to retrieve %s from API server", req.NamespacedName))
 		return ctrl.Result{}, nil
@@ -71,31 +82,31 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	ctx = tenant.SaveToContext(ctx, requestData.TenantID)
-	app, err := r.DirectorClient.FetchApplication(ctx, operation.Spec.ResourceID)
+	app, err := r.directorClient.FetchApplication(ctx, operation.Spec.ResourceID)
 	if err != nil {
 		logger.Error(err, operationError("Unable to fetch application", operation))
 
-		if isReconciliationTimeoutReached(operation, time.Duration(r.Config.TimeoutFactor)*r.Config.ReconciliationTimeout) {
-			if err := r.Delete(ctx, operation); err != nil {
-				logger.Error(err, operationError("Unable to delete operation", operation))
-				return ctrl.Result{Requeue: true}, err
+		if isReconciliationTimeoutReached(operation, time.Duration(r.webhookConfig.TimeoutFactor)*r.webhookConfig.ReconciliationTimeout) {
+			if err := r.client.Delete(ctx, operation); err != nil {
+				return ctrl.Result{}, err
 			}
 			return ctrl.Result{}, nil
 		}
 
-		return ctrl.Result{RequeueAfter: r.Config.RequeueInterval}, nil
+		return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
 	}
 
 	operation = setDefaultStatus(*operation)
 
 	if app.Result.Ready {
 		operation = setConditionStatus(*operation, v1alpha1.ConditionTypeReady, corev1.ConditionTrue, "")
+		operation.Status.Phase = v1alpha1.StateSuccess
 		if app.Result.Error != nil {
-			operation = setConditionStatus(*operation, v1alpha1.ConditionTypeError, corev1.ConditionFalse, "")
+			operation = setConditionStatus(*operation, v1alpha1.ConditionTypeError, corev1.ConditionTrue, *app.Result.Error)
+			operation.Status.Phase = v1alpha1.StateFailed
 		}
-		if err := r.Update(ctx, operation); err != nil {
-			logger.Error(err, operationError("Unable to update operation", operation))
-			return ctrl.Result{Requeue: true}, err
+		if err := r.client.Update(ctx, operation); err != nil {
+			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
 	}
@@ -103,9 +114,8 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if app.Result.Error != nil {
 		operation = setErrorStatus(*operation, *app.Result.Error)
 		operation.Status.Phase = v1alpha1.StateFailed
-		if err := r.Update(ctx, operation); err != nil {
-			logger.Error(err, operationError("Unable to update operation", operation))
-			return ctrl.Result{Requeue: true}, err
+		if err := r.client.Update(ctx, operation); err != nil {
+			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
 	}
@@ -116,23 +126,22 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks, r.Config.WebhookTimeout)) {
+	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks, r.webhookConfig.WebhookTimeout)) {
 		opErr := errors.New("reconciliation timeout reached")
 
-		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, opErr))
+		err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, opErr))
 		if err != nil {
 			logger.Error(err, operationError("Unable to notify Director", operation))
-			return ctrl.Result{RequeueAfter: r.Config.RequeueInterval}, nil
+			return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
 		}
 
 		operation = setErrorStatus(*operation, opErr.Error())
 		operation.Status.Phase = v1alpha1.StateFailed
-		if err := r.Update(ctx, operation); err != nil {
-			logger.Error(err, operationError("Unable to update operation", operation))
-			return ctrl.Result{Requeue: true}, err
+		if err := r.client.Update(ctx, operation); err != nil {
+			return ctrl.Result{}, err
 		}
 
-		return ctrl.Result{}, opErr
+		return ctrl.Result{}, nil
 	}
 
 	webhookEntity := webhooks[operation.Spec.WebhookIDs[0]]
@@ -141,7 +150,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if webhookStatus.WebhookPollURL == "" {
 		request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID)
 
-		response, err := r.WebhookClient.Do(ctx, request)
+		response, err := r.webhookClient.Do(ctx, request)
 		if err != nil {
 			logger.Error(err, operationError("Unable to execute Webhook request", operation))
 			return r.handleWebhookTimeoutCheckResponse(ctx, operation, webhookEntity, err)
@@ -151,9 +160,10 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		case graphql.WebhookModeAsync:
 			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
 		case graphql.WebhookModeSync:
-			err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, nil))
+			err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, nil))
 			if err != nil {
-				return ctrl.Result{}, err
+				logger.Error(err, operationError("Unable to notify Director", operation))
+				return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
 			}
 			operation = setReadyStatus(*operation)
 			operation.Status.Phase = v1alpha1.StateSuccess
@@ -161,18 +171,16 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, errors.New("unsupported webhook mode")
 		}
 
-		if err := r.Update(ctx, operation); err != nil {
-			logger.Error(err, operationError("Unable to update poll URL", operation))
-			return ctrl.Result{Requeue: true}, err
+		if err := r.client.Update(ctx, operation); err != nil {
+			return ctrl.Result{}, err
 		}
 
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	requeueAfter, err := getNextPollTime(&webhookEntity, webhookStatus, r.Config.TimeLayout)
+	requeueAfter, err := getNextPollTime(&webhookEntity, webhookStatus, r.webhookConfig.TimeLayout)
 	if err != nil {
-		logger.Error(err, operationError("Unable to calculate next poll time", operation))
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	if requeueAfter > 0 {
@@ -182,7 +190,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID)
 
 	request.PollURL = &webhookStatus.WebhookPollURL
-	response, err := r.WebhookClient.Poll(ctx, request)
+	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		logger.Error(err, operationError("Unable to execute Webhook Poll request", operation))
 		return r.handleWebhookTimeoutCheckResponse(ctx, operation, webhookEntity, err)
@@ -192,15 +200,15 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	case *response.InProgressStatusIdentifier:
 		return r.handleWebhookTimeoutCheckResponse(ctx, operation, webhookEntity, errors.New("webhook timeout reached"))
 	case *response.SuccessStatusIdentifier:
-		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, nil))
+		err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, nil))
 		if err != nil {
-			return ctrl.Result{}, err
+			logger.Error(err, operationError("Unable to notify Director", operation))
+			return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
 		}
 
 		operation = setReadyStatus(*operation)
 		operation.Status.Phase = v1alpha1.StateSuccess
-		if err := r.Update(ctx, operation); err != nil {
-			logger.Error(err, operationError("unable to update operation after it has completed successfully", operation))
+		if err := r.client.Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -208,15 +216,15 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	case *response.FailedStatusIdentifier:
 		opErr := errors.New("webhook operation has finished unsuccessfully")
 
-		err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, opErr))
+		err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, opErr))
 		if err != nil {
-			return ctrl.Result{}, err
+			logger.Error(err, operationError("Unable to notify Director", operation))
+			return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
 		}
 
 		operation = setErrorStatus(*operation, opErr.Error())
 		operation.Status.Phase = v1alpha1.StateFailed
-		if err := r.Update(ctx, operation); err != nil {
-			logger.Error(err, operationError("unable to update operation after it has finished unsuccessfully", operation))
+		if err := r.client.Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -228,21 +236,21 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 func (r *OperationReconciler) handleWebhookTimeoutCheckResponse(ctx context.Context, operation *v1alpha1.Operation, webhook graphql.Webhook, webhookErr error) (ctrl.Result, error) {
 	if !isWebhookTimeoutReached(operation.CreationTimestamp.Time, time.Duration(*webhook.Timeout)) {
-		requeueAfter := r.Config.RequeueInterval
+		requeueAfter := r.webhookConfig.RequeueInterval
 		if webhook.RetryInterval != nil {
 			requeueAfter = time.Duration(*webhook.RetryInterval)
 		}
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	err := r.DirectorClient.Notify(ctx, prepareDirectorRequest(*operation, webhookErr))
+	err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, webhookErr))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	operation = setErrorStatus(*operation, webhookErr.Error())
 	operation.Status.Phase = v1alpha1.StateFailed
-	if err := r.Update(ctx, operation); err != nil {
+	if err := r.client.Update(ctx, operation); err != nil {
 		return ctrl.Result{}, err
 	}
 
