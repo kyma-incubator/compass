@@ -234,6 +234,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 				handler.ServeHTTP(writer, req)
 				require.Equal(t, testCase.UpdateCalled, updateCalled)
 				require.Equal(t, testCase.DeleteCalled, deleteCalled)
+				require.Equal(t, http.StatusOK, writer.Code)
 			})
 		}
 	})

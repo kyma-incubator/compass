@@ -143,6 +143,8 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Unable to finalize database operation"), http.StatusInternalServerError)
 		return
 	}
+
+	writer.WriteHeader(http.StatusOK)
 }
 
 func getError(errorMsg string) *string {
