@@ -13,7 +13,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/klauspost/compress v1.11.7 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210216195113-0f23362ec238
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210218213445-ac00abe99fdf
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.2.3
