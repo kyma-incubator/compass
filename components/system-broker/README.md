@@ -82,7 +82,7 @@ Example catalog containing specifications metadata:
                                 "specification_category": "api_definition",
                                 "specification_format": "application/xml",
                                 "specification_type": "ODATA",
-                                "specification_url": "https://compass-gateway-mtls.kyma.local/open-resource-discovery-static/v0/api/0c17b77e-530b-47d8-a23f-ad462ed4ee0a/spec/b2bb4664-930b-491f-a922-8ac586ec84f9"
+                                "specification_url": "https://compass-gateway-mtls.kyma.local/open-resource-discovery-static/v0/api/0c17b77e-530b-47d8-a23f-ad462ed4ee0a/specification/b2bb4664-930b-491f-a922-8ac586ec84f9"
                             },
                             {
                                 "definition_id": "240031e6-4f15-40f0-b93e-948040020f70",
@@ -90,7 +90,7 @@ Example catalog containing specifications metadata:
                                 "specification_category": "api_definition",
                                 "specification_format": "application/json",
                                 "specification_type": "OPEN_API",
-                                "specification_url": "https://compass-gateway-mtls.kyma.local/open-resource-discovery-static/v0/api/53acc071-42ec-4561-962d-bf3dbc286cb7/spec/240031e6-4f15-40f0-b93e-948040020f70"
+                                "specification_url": "https://compass-gateway-mtls.kyma.local/open-resource-discovery-static/v0/api/53acc071-42ec-4561-962d-bf3dbc286cb7/specification/240031e6-4f15-40f0-b93e-948040020f70"
                             }
                         ]
                     }

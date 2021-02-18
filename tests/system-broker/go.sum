@@ -387,6 +387,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20210122101643-6161
 github.com/kyma-incubator/compass/components/director v0.0.0-20210122101643-6161f35d8d3b/go.mod h1:+hSIRqWC55+nGlpbm9/J6W+SJ4BAAz7j36Ii8NAa4Zo=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210217135916-96c764b34f76 h1:1rWKZk3w7s+qgQED9aoSSmk2C5RyrGCTaeMgkrQl2Mw=
 github.com/kyma-incubator/compass/components/director v0.0.0-20210217135916-96c764b34f76/go.mod h1:OB4+ZBUsOWPL8Y6FXIjyaTHFGUHW1UUFVWwNGz0pLRM=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210218094621-346bfcbcf1f3 h1:MG002DdL/dW/+pCCMgELaYRlxXh8+0PuQj/GNODBTj8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20210218094621-346bfcbcf1f3/go.mod h1:OB4+ZBUsOWPL8Y6FXIjyaTHFGUHW1UUFVWwNGz0pLRM=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20200429083609-7d80a85180c6/go.mod h1:VJR6u6CONemX/0CsndsUPis8cY7jfkMk8TUH27m2jj8=
 github.com/kyma-incubator/compass/tests/connector-tests v0.0.0-20210111103459-2ce2dc25a7de h1:FWHG98/FQq2iyCMi/rX6MmgofAg9MDi+BgXeDIle/es=
 github.com/kyma-incubator/compass/tests/connector-tests v0.0.0-20210111103459-2ce2dc25a7de/go.mod h1:21W727Yew17uyoQ/M2nSddn88mryN45naz8jlmvQSX4=
@@ -394,6 +396,10 @@ github.com/kyma-incubator/compass/tests/director v0.0.0-20210111131231-96d45aba6
 github.com/kyma-incubator/compass/tests/director v0.0.0-20210111131231-96d45aba64e1/go.mod h1:faU1xXM9iepSllb1PwAcFaJhFbkC1coeNfAcAp4vJdQ=
 github.com/kyma-incubator/compass/tests/director v0.0.0-20210217135916-96c764b34f76 h1:Xdeed3ZejpqpbDc0T3TG81KYl5BZWRYjQ6AGf90bs80=
 github.com/kyma-incubator/compass/tests/director v0.0.0-20210217135916-96c764b34f76/go.mod h1:J3/G78xIQJ2lFwYkigCsBP3htgjwJ40iecFvfRsud9A=
+github.com/kyma-incubator/compass/tests/director v0.0.0-20210218061519-312509335379 h1:5npHCmbJADEk9QR3gJC2q9dYxkBI04komPDzmHjri4k=
+github.com/kyma-incubator/compass/tests/director v0.0.0-20210218061519-312509335379/go.mod h1:J3/G78xIQJ2lFwYkigCsBP3htgjwJ40iecFvfRsud9A=
+github.com/kyma-incubator/compass/tests/director v0.0.0-20210218095009-932966ab291b h1:Ioj356vs6NjW58i/aNFg2P9cpQDsbsm5lY1wQs5YD70=
+github.com/kyma-incubator/compass/tests/director v0.0.0-20210218095009-932966ab291b/go.mod h1:+qIx5uJhAE06WJw5nSOFiXSh721GMCLA54Cto4G3384=
 github.com/lestrrat-go/jwx v0.9.0/go.mod h1:iEoxlYfZjvoGpuWwxUz+eR5e6KTJGsaRcy/YNA/UnBk=
 github.com/lestrrat-go/jwx v0.9.2/go.mod h1:iEoxlYfZjvoGpuWwxUz+eR5e6KTJGsaRcy/YNA/UnBk=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
