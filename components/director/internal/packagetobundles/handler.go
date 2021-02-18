@@ -106,17 +106,17 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			body = strings.ReplaceAll(body, "PackageUpdateInput", "BundleUpdateInput")
 
 			// rewrite JSON input
-			reqPackagesJSONPattern := regexp.MustCompile(`(\s*)packages(\s*:\s*\[)`) // matches ` packages:  [`
+			reqPackagesJSONPattern := regexp.MustCompile(`([\s\\n]*)packages([\s\\n]*:[\s\\n]*\[)`) // matches ` packages:  [`
 			body = reqPackagesJSONPattern.ReplaceAllString(body, "${1}bundles${2}")
 
 			// rewrite GQL output
-			reqPackagesGraphQLPattern := regexp.MustCompile(`(\s*)packages(\s*\{)`) // matches ` packages {`
+			reqPackagesGraphQLPattern := regexp.MustCompile(`([\s\\n]*)packages([\s\\n]*\{)`) // matches ` packages {`
 			body = reqPackagesGraphQLPattern.ReplaceAllString(body, "${1}bundles${2}")
 
-			reqPackageGraphQLPattern := regexp.MustCompile(`(\s*)package(\s*\(\s*id\s*:\s*)`) // matches ` package ( id : `
+			reqPackageGraphQLPattern := regexp.MustCompile(`([\s\\n]*)package([\s\\n]*\([\s\\n]*id[\s\\n]*:[\s\\n]*)`) // matches ` package ( id : `
 			body = reqPackageGraphQLPattern.ReplaceAllString(body, "${1}bundle${2}")
 
-			reqPackageModeGraphQLPattern := regexp.MustCompile(`(\s*)mode(\s*):(\s*)PACKAGE(\s*)`) // matches ` mode: PACKAGE `
+			reqPackageModeGraphQLPattern := regexp.MustCompile(`([\s\\n]*)mode([\s\\n]*):([\s\\n]*)PACKAGE([\s\\n]*)`) // matches ` mode: PACKAGE `
 			body = reqPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}BUNDLE${4}")
 
 			r.Body = ioutil.NopCloser(strings.NewReader(body))
@@ -136,7 +136,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 				next.ServeHTTP(w, r)
 
-				if consumerInfo.ConsumerType == consumer.Runtime {
+				if strings.Contains(strings.ToLower(body), "bundle") && consumerInfo.ConsumerType == consumer.Runtime {
 					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
 						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q", usesBundlesLabel)
 					}
@@ -178,13 +178,13 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			body = strings.ReplaceAll(body, "requestBundleInstanceAuthCreation", "requestPackageInstanceAuthCreation")
 			body = strings.ReplaceAll(body, "requestBundleInstanceAuthDeletion", "requestPackageInstanceAuthDeletion")
 
-			respPackagesJSONPattern := regexp.MustCompile(`(\s*\")bundles(\"\s*:\s*\{)`) // matches ` "bundles":  {`
+			respPackagesJSONPattern := regexp.MustCompile(`([\s\\n]*\")bundles(\"[\s\\n]*:[\s\\n]*\{)`) // matches ` "bundles":  {`
 			body = respPackagesJSONPattern.ReplaceAllString(body, "${1}packages${2}")
 
-			respPackageJSONPattern := regexp.MustCompile(`(\s*\")bundle(\"\s*:\s*\{)`) // matches ` "bundle":  {`
+			respPackageJSONPattern := regexp.MustCompile(`([\s\\n]*\")bundle(\"[\s\\n]*:[\s\\n]*\{)`) // matches ` "bundle":  {`
 			body = respPackageJSONPattern.ReplaceAllString(body, "${1}package${2}")
 
-			respPackageModeGraphQLPattern := regexp.MustCompile(`(\s*\")mode(\"\s*):(\s*\")BUNDLE(\"\s*)`) // matches ` "mode": "BUNDLE" `
+			respPackageModeGraphQLPattern := regexp.MustCompile(`([\s\\n]*\")mode(\"[\s\\n]*):([\s\\n]*\")BUNDLE(\"[\s\\n]*)`) // matches ` "mode": "BUNDLE" `
 			body = respPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}PACKAGE${4}")
 
 			w.WriteHeader(recorder.Code)
