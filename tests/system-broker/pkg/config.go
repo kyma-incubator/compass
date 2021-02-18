@@ -12,6 +12,7 @@ type Config struct {
 	SystemBrokerURL string
 	DirectorURL     string
 	ConnectorURL    string
+	ORDServiceURL   string
 }
 
 func ReadConfig() (Config, error) {

@@ -33,11 +33,11 @@ func TestTenantErrors(t *testing.T) {
 		Name:         "app-static-user",
 		ProviderName: ptr.String("compass"),
 	}
-	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
+	_, err = RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
-	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, emptyTenant, appInput)
+	_, err = RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, emptyTenant, appInput)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantRequiredMessage)
 

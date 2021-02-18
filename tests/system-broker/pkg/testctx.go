@@ -18,6 +18,7 @@ type TestContext struct {
 
 	SystemBrokerURL string
 	DirectorURL     string
+	ORDServiceURL   string
 
 	ClientKey *rsa.PrivateKey
 
@@ -40,6 +41,7 @@ func NewTestContext(cfg Config) (*TestContext, error) {
 		Tenant:                      cfg.Tenant,
 		Context:                     context.Background(),
 		SystemBrokerURL:             cfg.SystemBrokerURL,
+		ORDServiceURL:               cfg.ORDServiceURL,
 		DirectorURL:                 cfg.DirectorURL,
 		ClientKey:                   clientKey,
 		ConnectorTokenSecuredClient: connector.NewConnectorClient(cfg.ConnectorURL),

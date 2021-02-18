@@ -10,17 +10,19 @@ import (
 )
 
 var testCtx *pkg.TestContext
+var config pkg.Config
 
 func TestMain(m *testing.M) {
 	logrus.Info("Starting System Broker Tests")
 
-	cfg, err := pkg.ReadConfig()
+	var err error
+	config, err = pkg.ReadConfig()
 	if err != nil {
 		logrus.Errorf("Failed to read config: %s", err.Error())
 		os.Exit(1)
 	}
 
-	testCtx, err = pkg.NewTestContext(cfg)
+	testCtx, err = pkg.NewTestContext(config)
 	if err != nil {
 		logrus.Errorf("Failed to create test context: %s", err.Error())
 		os.Exit(1)
