@@ -51,9 +51,9 @@ func TestCompassAuth(t *testing.T) {
 		Name:      "new-api-name",
 		TargetURL: "https://kyma-project.io",
 	}
-	bndl := createBundle(t, ctx, oauthGraphQLClient, appByIntSys.ID, testConfig.DefaultTenant, "bndl")
-	defer deleteBundle(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, bndl.ID)
-	addAPIToBundleWithInput(t, ctx, oauthGraphQLClient, bndl.ID, testConfig.DefaultTenant, apiInput)
+	bndl := CreateBundle(t, ctx, oauthGraphQLClient, appByIntSys.ID, testConfig.DefaultTenant, "bndl")
+	defer DeleteBundle(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, bndl.ID)
+	AddAPIToBundleWithInput(t, ctx, oauthGraphQLClient, bndl.ID, testConfig.DefaultTenant, apiInput)
 
 	t.Log("Try removing Integration System")
 	unregisterIntegrationSystemWithErr(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)

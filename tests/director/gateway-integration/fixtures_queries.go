@@ -103,7 +103,7 @@ func getRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenan
 	return runtime
 }
 
-func addAPIToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID, tenant string, input graphql.APIDefinitionInput) graphql.APIDefinitionExt {
+func AddAPIToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, bndlID, tenant string, input graphql.APIDefinitionInput) graphql.APIDefinitionExt {
 	inStr, err := tc.Graphqlizer.APIDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
@@ -114,7 +114,7 @@ func addAPIToBundleWithInput(t *testing.T, ctx context.Context, gqlClient *gcli.
 	return actualApi
 }
 
-func createBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appID, tenant, bndlName string) graphql.BundleExt {
+func CreateBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appID, tenant, bndlName string) graphql.BundleExt {
 	in, err := tc.Graphqlizer.BundleCreateInputToGQL(fixBundleCreateInput(bndlName))
 	require.NoError(t, err)
 
@@ -127,7 +127,7 @@ func createBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, app
 	return resp
 }
 
-func deleteBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
+func DeleteBundle(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
 	req := fixDeleteBundleRequest(id)
 
 	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil))
