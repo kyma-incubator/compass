@@ -21,11 +21,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
-const contextKey = "TenantCtxKey"
+const ContextKey = "TenantCtxKey"
 
 // LoadFromContext retrieves the tenantID from the provided context or returns error if missing
 func LoadFromContext(ctx context.Context) (string, error) {
-	tenantID, ok := ctx.Value(contextKey).(string)
+	tenantID, ok := ctx.Value(ContextKey).(string)
 
 	if !ok {
 		return "", apperrors.NewCannotReadTenantError()
@@ -40,5 +40,5 @@ func LoadFromContext(ctx context.Context) (string, error) {
 
 // SaveToContext saves the provided tenantID into the respective context
 func SaveToContext(ctx context.Context, tenantID string) context.Context {
-	return context.WithValue(ctx, contextKey, tenantID)
+	return context.WithValue(ctx, ContextKey, tenantID)
 }
