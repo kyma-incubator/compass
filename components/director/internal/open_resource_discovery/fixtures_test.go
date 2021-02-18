@@ -34,6 +34,7 @@ const (
 	event2ID  = "testEvent2"
 
 	cursor = "cursor"
+	policyLevel = "sap"
 )
 
 var (
@@ -180,7 +181,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 	true := true
 	return &open_resource_discovery.Document{
 		Schema:                "./spec/v1/generated/Document.schema.json",
-		OpenResourceDiscovery: "v1",
+		OpenResourceDiscovery: "1.0-rc.1",
 		Description:           "Test Document",
 		SystemInstanceAware:   true,
 		DescribedSystemInstance: &model.Application{
@@ -202,7 +203,7 @@ func fixORDDocumentWithBaseURL(baseUrl string) *open_resource_discovery.Document
 				Tags:             json.RawMessage(`["testTag"]`),
 				Countries:        json.RawMessage(`["BG","EN"]`),
 				Labels:           json.RawMessage(packageLabels),
-				PolicyLevel:      "sap",
+				PolicyLevel:      policyLevel,
 				PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 				LineOfBusiness:   json.RawMessage(`["lineOfBusiness"]`),
 				Industry:         json.RawMessage(`["automotive","finance"]`),
@@ -495,7 +496,7 @@ func fixPackages() []*model.Package {
 			Tags:             json.RawMessage(`["testTag"]`),
 			Countries:        json.RawMessage(`["BG","EN"]`),
 			Labels:           json.RawMessage(packageLabels),
-			PolicyLevel:      "sap",
+			PolicyLevel:      policyLevel,
 			PartOfProducts:   json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 			LineOfBusiness:   json.RawMessage(`["lineOfBusiness"]`),
 			Industry:         json.RawMessage(`["automotive","finance"]`),

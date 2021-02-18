@@ -30,6 +30,10 @@ var shortDescriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
+func validateDocumentInput (doc *Document) error {
+	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.1")))
+}
+
 func validatePackageInput(pkg *model.PackageInput) error {
 	return validation.ValidateStruct(pkg,
 		validation.Field(&pkg.OrdID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
@@ -309,6 +313,10 @@ func validateJSONArrayOfStrings(arr interface{}, regexPattern *regexp.Regexp) er
 		return errors.New("should be json array")
 	}
 
+	if len(parsedArr.Array()) == 0 {
+		return errors.New("the json array should not be empty")
+	}
+
 	for _, el := range parsedArr.Array() {
 		if el.Type != gjson.String {
 			return errors.New("should be array of strings")
@@ -341,6 +349,10 @@ func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]
 	parsedArr := gjson.ParseBytes(jsonArr)
 	if !parsedArr.IsArray() {
 		return errors.New("should be json array")
+	}
+
+	if len(parsedArr.Array()) == 0 {
+		return errors.New("the json array should not be empty")
 	}
 
 	for _, el := range parsedArr.Array() {

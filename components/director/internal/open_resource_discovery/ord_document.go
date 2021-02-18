@@ -74,6 +74,10 @@ func (docs Documents) Validate(webhookURL string) error {
 	vendorIDs := make(map[string]bool, 0)
 
 	for _, doc := range docs {
+		if err := validateDocumentInput(doc); err != nil {
+			return errors.Wrap(err, "error validating document")
+		}
+
 		for _, pkg := range doc.Packages {
 			if err := validatePackageInput(pkg); err != nil {
 				return errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID)
