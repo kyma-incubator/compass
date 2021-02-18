@@ -106,5 +106,8 @@ func (e *BaseEntity) GetError() *string {
 }
 
 func (e *BaseEntity) SetError(err string) {
+	if err == "" {
+		e.Error = nil
+	}
 	e.Error = &err
 }
