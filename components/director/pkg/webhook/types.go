@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -203,6 +204,11 @@ func ParseHeadersTemplate(tmpl *string, reqData RequestData) (http.Header, error
 	var headers http.Header
 	if err := json.Unmarshal(result.Bytes(), &headers); err != nil {
 		return nil, err
+	}
+
+	for key, value := range headers {
+		headers[key][0] = strings.TrimPrefix(value[0], `[`)
+		headers[key][0] = strings.TrimPrefix(value[0], `]`)
 	}
 
 	return headers, nil
