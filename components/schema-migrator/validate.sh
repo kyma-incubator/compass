@@ -15,7 +15,7 @@ set -e
 IMG_NAME="compass-schema-migrator"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="11"
+POSTGRES_VERSION="9.6"
 
 DB_USER="usr"
 DB_PWD="pwd"
