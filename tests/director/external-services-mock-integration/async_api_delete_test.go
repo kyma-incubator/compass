@@ -96,7 +96,7 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 	checkWebhookOperationState(t, operationFullPath, webhook.OperationResponseStatusINProgress)
 
 	t.Log("Check the deleted application status in director")
-	application := getApplication(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
+	application := getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 	require.False(t, application.Ready, "Application is not in status ready:false")
 
 	t.Log("Unlock application webhook")
@@ -107,8 +107,8 @@ func TestAsyncAPIDeleteApplication(t *testing.T) {
 	time.Sleep(time.Second * 5)
 
 	t.Log("Check in director that the deleted application should not exists")
-	application = getApplication(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
-	require.Nil(t, application, "Application is not deleted")
+	application = getApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+	require.Nil(t, application.BaseEntity, "Application is not deleted")
 }
 
 func webhookModePtr(mode graphql.WebhookMode) *graphql.WebhookMode {
