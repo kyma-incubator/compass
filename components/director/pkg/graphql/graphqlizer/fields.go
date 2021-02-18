@@ -117,11 +117,20 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 
 func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string {
 	return buildProperties(map[string]string{
-		"id":            "id",
-		"applicationID": "applicationID",
-		"type":          "type",
-		"url":           "url",
-		"auth":          fmt.Sprintf("auth {%s}", fp.ForAuth()),
+		"id":               "id",
+		"applicationID":    "applicationID",
+		"type":             "type",
+		"mode":             "mode",
+		"correlationIdKey": "correlationIdKey",
+		"retryInterval":    "retryInterval",
+		"timeout":          "timeout",
+		"url":              "url",
+		"urlTemplate":      "urlTemplate",
+		"inputTemplate":    "inputTemplate",
+		"headerTemplate":   "headerTemplate",
+		"outputTemplate":   "outputTemplate",
+		"statusTemplate":   "statusTemplate",
+		"auth":             fmt.Sprintf("auth {%s}", fp.ForAuth()),
 	}, omittedProperties)
 }
 
@@ -130,7 +139,16 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 		`id
 		applicationID
 		type
+		mode
+		correlationIdKey
+		retryInterval
+		timeout
 		url
+		urlTemplate
+		inputTemplate
+		headerTemplate
+		outputTemplate
+		statusTemplate
 		auth {
 		  %s
 		}`, fp.ForAuth())
