@@ -81,12 +81,12 @@ func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Res
 
 	client := &d.HTTPClient
 	if webhook.Auth != nil {
-		basicCreds, isBasicAuth := webhook.Auth.Credential.(graphql.BasicCredentialData)
+		basicCreds, isBasicAuth := webhook.Auth.Credential.(*graphql.BasicCredentialData)
 		if isBasicAuth {
 			req.SetBasicAuth(basicCreds.Username, basicCreds.Password)
 		}
 
-		oauthCreds, isOAuth := webhook.Auth.Credential.(graphql.OAuthCredentialData)
+		oauthCreds, isOAuth := webhook.Auth.Credential.(*graphql.OAuthCredentialData)
 		if isOAuth {
 			client = oauthClient(ctx, *client, oauthCreds)
 		}
@@ -131,12 +131,12 @@ func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.R
 
 	client := http.DefaultClient
 	if webhook.Auth != nil {
-		basicCreds, isBasicAuth := webhook.Auth.Credential.(graphql.BasicCredentialData)
+		basicCreds, isBasicAuth := webhook.Auth.Credential.(*graphql.BasicCredentialData)
 		if isBasicAuth {
 			req.SetBasicAuth(basicCreds.Username, basicCreds.Password)
 		}
 
-		oauthCreds, isOAuth := webhook.Auth.Credential.(graphql.OAuthCredentialData)
+		oauthCreds, isOAuth := webhook.Auth.Credential.(*graphql.OAuthCredentialData)
 		if isOAuth {
 			client = oauthClient(ctx, *client, oauthCreds)
 		}
@@ -160,11 +160,12 @@ func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.R
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
-func oauthClient(ctx context.Context, client http.Client, oauthCreds graphql.OAuthCredentialData) *http.Client {
+func oauthClient(ctx context.Context, client http.Client, oauthCreds *graphql.OAuthCredentialData) *http.Client {
 	conf := &clientcredentials.Config{
 		ClientID:     oauthCreds.ClientID,
 		ClientSecret: oauthCreds.ClientSecret,
 		TokenURL:     oauthCreds.URL,
+		AuthStyle:    oauth2.AuthStyleInParams,
 	}
 
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
