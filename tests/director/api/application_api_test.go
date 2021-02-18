@@ -172,14 +172,16 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+	url := "http://mywordpress.com/webhooks1"
+
 	in := graphql.ApplicationRegisterInput{
 		Name:         "wordpress",
 		ProviderName: ptr.String("compass"),
 		Webhooks: []*graphql.WebhookInput{
 			{
-				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+				Type: graphql.WebhookTypeConfigurationChanged,
 				Auth: fixBasicAuth(t),
-				URL:  "http://mywordpress.com/webhooks1",
+				URL:  &url,
 			},
 		},
 		Labels: &graphql.Labels{
@@ -473,9 +475,10 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
+		url := "http://new-webhook.url"
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "http://new-webhook.url",
-			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL:  &url,
+			Type: graphql.WebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -486,7 +489,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		err = tc.RunOperation(ctx, addReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.Equal(t, "http://new-webhook.url", actualWebhook.URL)
-		assert.Equal(t, graphql.ApplicationWebhookTypeConfigurationChanged, actualWebhook.Type)
+		assert.Equal(t, graphql.WebhookTypeConfigurationChanged, actualWebhook.Type)
 		id := actualWebhook.ID
 		require.NotNil(t, id)
 
@@ -496,7 +499,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		// update
 		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL: "http://updated-webhook.url", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL: &url, Type: graphql.WebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -1049,12 +1052,13 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 }
 
 func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
+	url := webhookURL
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
 		ProviderName: ptr.String("compass"),
 		Webhooks: []*graphql.WebhookInput{{
-			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-			URL:  webhookURL},
+			Type: graphql.WebhookTypeConfigurationChanged,
+			URL:  &url},
 		},
 	}
 }
