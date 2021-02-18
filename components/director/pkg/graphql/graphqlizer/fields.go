@@ -183,6 +183,7 @@ func (fp *GqlFieldsProvider) OmitForApiSpec(omittedProperties []string) string {
 
 func (fp *GqlFieldsProvider) ForApiSpec() string {
 	return fmt.Sprintf(`
+		id
 		data
 		format
 		type
@@ -275,6 +276,7 @@ func (fp *GqlFieldsProvider) OmitForEventSpec(omittedProperties []string) string
 
 func (fp *GqlFieldsProvider) ForEventSpec() string {
 	return fmt.Sprintf(`
+		id
 		data
 		type
 		format
