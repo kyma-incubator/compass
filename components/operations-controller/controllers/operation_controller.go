@@ -24,6 +24,7 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
@@ -75,8 +76,8 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	var requestData webhook.RequestData
-	if err := json.Unmarshal([]byte(operation.Spec.RequestData), &requestData); err != nil {
+	requestData, err := parseRequestData(operation)
+	if err != nil {
 		logger.Error(err, operationError("Unable to parse request data", operation))
 		return ctrl.Result{}, nil
 	}
@@ -235,7 +236,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *OperationReconciler) handleWebhookTimeoutCheckResponse(ctx context.Context, operation *v1alpha1.Operation, webhook graphql.Webhook, webhookErr error) (ctrl.Result, error) {
-	if !isWebhookTimeoutReached(operation.CreationTimestamp.Time, time.Duration(*webhook.Timeout)) {
+	if !isWebhookTimeoutReached(r.webhookConfig, webhook, operation.CreationTimestamp.Time) {
 		requeueAfter := r.webhookConfig.RequeueInterval
 		if webhook.RetryInterval != nil {
 			requeueAfter = time.Duration(*webhook.RetryInterval)
@@ -257,6 +258,24 @@ func (r *OperationReconciler) handleWebhookTimeoutCheckResponse(ctx context.Cont
 	return ctrl.Result{}, nil
 }
 
+func parseRequestData(operation *v1alpha1.Operation) (webhook.RequestData, error) {
+	str := struct {
+		Application graphql.Application
+		TenantID    string
+		Headers     http.Header
+	}{}
+
+	if err := json.Unmarshal([]byte(operation.Spec.RequestData), &str); err != nil {
+		return webhook.RequestData{}, err
+	}
+
+	return webhook.RequestData{
+		Application: &str.Application,
+		TenantID:    str.TenantID,
+		Headers:     str.Headers,
+	}, nil
+}
+
 func prepareDirectorRequest(operation v1alpha1.Operation, err error) director.Request {
 	return director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
@@ -272,7 +291,12 @@ func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliatio
 	return time.Now().After(operationEndTime)
 }
 
-func isWebhookTimeoutReached(creationTime time.Time, webhookTimeout time.Duration) bool {
+func isWebhookTimeoutReached(cfg web_hook.Config, webhook graphql.Webhook, creationTime time.Time) bool {
+	webhookTimeout := cfg.WebhookTimeout
+	if webhook.Timeout != nil {
+		webhookTimeout = time.Duration(*webhook.Timeout)
+	}
+
 	operationEndTime := creationTime.Add(webhookTimeout)
 	return time.Now().After(operationEndTime)
 }
