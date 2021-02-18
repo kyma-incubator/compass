@@ -440,6 +440,14 @@ func TestDocuments_Validate(t *testing.T) {
 				return []*open_resource_discovery.Document{doc}
 			},
 		}, {
+			Name: "Invalid `tags` field when the JSON array is empty",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Tags = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
 			Name: "Invalid `tags` field when it contains non string value",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
