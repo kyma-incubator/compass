@@ -70,7 +70,7 @@ func NewUpdateOperationHandler(transact persistence.Transactioner, resourceUpdat
 func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	if request.Method != http.MethodPost {
+	if request.Method != http.MethodPut {
 		apperrors.WriteAppError(ctx, writer, apperrors.NewInternalError("Method not allowed"), http.StatusMethodNotAllowed)
 		return
 	}

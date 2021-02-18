@@ -175,7 +175,7 @@ func main() {
 
 	appRepo := applicationRepo()
 
-	scheduler, err := buildScheduler(cfg.OperationsNamespace)
+	scheduler, err := buildScheduler(cfg.OperationsNamespace, cfg.ClientTimeout)
 	exitOnError(err, "Error while creating operations scheduler")
 
 	gqlCfg := graphql.Config{
@@ -504,12 +504,13 @@ func webhookService() webhook.WebhookService {
 	return webhook.NewService(webhookRepo, uidSvc)
 }
 
-func buildScheduler(namespace string) (operation.Scheduler, error) {
+func buildScheduler(namespace string, timeout time.Duration) (operation.Scheduler, error) {
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		log.D().WithError(err).Warn("Could not start K8S Scheduler. Will use the default one")
 		return &operation.DefaultScheduler{}, nil
 	}
+	cfg.Timeout = timeout
 	k8sClient, err := client.NewForConfig(cfg)
 	if err != nil {
 		return nil, err

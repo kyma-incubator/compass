@@ -35,7 +35,7 @@ import (
 
 func TestUpdateOperationHandler(t *testing.T) {
 
-	t.Run("when request method is not POST it should return method not allowed", func(t *testing.T) {
+	t.Run("when request method is not PUT it should return method not allowed", func(t *testing.T) {
 		writer := httptest.NewRecorder()
 		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 		require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 	t.Run("when request body is not valid it should return bad request", func(t *testing.T) {
 		writer := httptest.NewRecorder()
 		reader := bytes.NewReader([]byte(`{"resource_id": 1}`))
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "/", reader)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, "/", reader)
 		require.NoError(t, err)
 
 		handler := operation.NewUpdateOperationHandler(nil, nil, nil)
@@ -242,7 +242,7 @@ func TestUpdateOperationHandler(t *testing.T) {
 
 func fixPostRequestWithBody(t *testing.T, ctx context.Context, body string) *http.Request {
 	reader := bytes.NewReader([]byte(body))
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "/", reader)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, "/", reader)
 	require.NoError(t, err)
 
 	return req
