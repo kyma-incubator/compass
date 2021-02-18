@@ -55,9 +55,6 @@ func (s *Config) Validate() error {
 	if s.RequeueInterval < 0 {
 		return errors.New("validate webhook settings: requeue interval should be >= 0")
 	}
-	if s.TimeoutFactor < 0 {
-		return errors.New("validate webhook settings: dial_timeout should be >= 0")
-	}
 	if s.TimeLayout != time.RFC3339Nano {
 		return fmt.Errorf("validate webhook settings: time layout should be %s", time.RFC3339Nano)
 	}

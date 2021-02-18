@@ -139,7 +139,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	webhookStatus := operation.Status.Webhooks[0]
 
 	if webhookStatus.WebhookPollURL == "" {
-		request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time, r.Config.RequeueInterval)
+		request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID)
 
 		response, err := r.WebhookClient.Do(ctx, request)
 		if err != nil {
@@ -179,7 +179,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID, operation.ObjectMeta.CreationTimestamp.Time, r.Config.RequeueInterval)
+	request := web_hook.NewRequest(webhookEntity, requestData, operation.Spec.CorrelationID)
 
 	request.PollURL = &webhookStatus.WebhookPollURL
 	response, err := r.WebhookClient.Poll(ctx, request)

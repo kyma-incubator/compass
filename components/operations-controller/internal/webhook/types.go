@@ -19,30 +19,20 @@ package webhook
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	"time"
 )
 
 // Request represents a webhook request to be executed
 type Request struct {
-	Webhook               graphql.Webhook
-	Data                  web_hook.RequestData
-	CorrelationID         string
-	RetryInterval         time.Duration
-	OperationCreationTime time.Time
-	PollURL               *string
+	Webhook       graphql.Webhook
+	Data          web_hook.RequestData
+	CorrelationID string
+	PollURL       *string
 }
 
-func NewRequest(webhook graphql.Webhook, requestData web_hook.RequestData, correlationID string, opCreationTime time.Time, defaultRequeueInterval time.Duration) *Request {
-	retryInterval := defaultRequeueInterval
-	if webhook.RetryInterval != nil {
-		retryInterval = time.Duration(*webhook.RetryInterval) * time.Second
-	}
-
+func NewRequest(webhook graphql.Webhook, requestData web_hook.RequestData, correlationID string) *Request {
 	return &Request{
-		Webhook:               webhook,
-		Data:                  requestData,
-		CorrelationID:         correlationID,
-		RetryInterval:         retryInterval,
-		OperationCreationTime: opCreationTime,
+		Webhook:       webhook,
+		Data:          requestData,
+		CorrelationID: correlationID,
 	}
 }
