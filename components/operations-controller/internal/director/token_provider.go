@@ -32,7 +32,8 @@ type UnsignedTokenProvider struct {
 	targetURL *url.URL
 }
 
-type claims struct {
+// Claims defines the custom claims which shall be placed inside tokens sent to Director
+type Claims struct {
 	Scopes string `json:"scopes"`
 	Tenant string `json:"tenant"`
 	jwt.StandardClaims
@@ -72,7 +73,7 @@ func (u UnsignedTokenProvider) GetAuthorizationToken(ctx context.Context) (httpu
 		return httputils.Token{}, err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodNone, claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodNone, Claims{
 		Tenant: tenantID,
 		Scopes: applicationReadScope,
 	})

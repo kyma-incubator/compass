@@ -28,7 +28,6 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 	"io/ioutil"
 	"net/http"
-	"time"
 )
 
 // Client defines a general purpose Webhook executor
@@ -98,40 +97,17 @@ func (d *DefaultClient) Do(ctx context.Context, request *Request) (*web_hook.Res
 		return nil, err
 	}
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	responseData, err := parseResponseData(resp)
 	if err != nil {
 		return nil, err
 	}
 
-	var respBody map[string]interface{}
-	if err := json.Unmarshal(bytes, &respBody); err != nil {
-		return nil, err
-	}
-
-	responseData := web_hook.ResponseData{
-		Body:    respBody,
-		Headers: resp.Header,
-	}
-
-	response, err := web_hook.ParseOutputTemplate(webhook.InputTemplate, webhook.OutputTemplate, web_hook.Mode(*webhook.Mode), responseData)
+	response, err := web_hook.ParseOutputTemplate(webhook.InputTemplate, webhook.OutputTemplate, web_hook.Mode(*webhook.Mode), *responseData)
 	if err != nil {
 		return nil, err
 	}
 
-	var errMsg string
-	if *response.SuccessStatusCode != resp.StatusCode {
-		errMsg += fmt.Sprintf("response success status code was not met - expected %q, got %q; ", *response.SuccessStatusCode, resp.StatusCode)
-	}
-
-	if response.Error != nil && *response.Error != "" {
-		errMsg += fmt.Sprintf("received error while requesting external system: %s", *response.Error)
-	}
-
-	if errMsg != "" {
-		return response, errors.New(errMsg)
-	}
-
-	return response, nil
+	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
 func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.ResponseStatus, error) {
@@ -166,50 +142,22 @@ func (d *DefaultClient) Poll(ctx context.Context, request *Request) (*web_hook.R
 		}
 	}
 
-	resp, err := client.Do(req) // TODO: Build custom client, do not rely on default one
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	responseData, err := parseResponseData(resp)
 	if err != nil {
 		return nil, err
 	}
 
-	var respBody map[string]interface{}
-	if err := json.Unmarshal(bytes, &respBody); err != nil {
-		return nil, err
-	}
-
-	responseData := web_hook.ResponseData{
-		Body:    respBody,
-		Headers: resp.Header,
-	}
-
-	response, err := web_hook.ParseStatusTemplate(webhook.StatusTemplate, responseData)
+	response, err := web_hook.ParseStatusTemplate(webhook.StatusTemplate, *responseData)
 	if err != nil {
 		return nil, err
 	}
 
-	var errMsg string
-	if *response.SuccessStatusCode != resp.StatusCode {
-		errMsg += fmt.Sprintf("response success status code was not met - expected %q, got %q; ", *response.SuccessStatusCode, resp.StatusCode)
-	}
-
-	if response.Error != nil && *response.Error != "" {
-		errMsg += fmt.Sprintf("received error while polling external system: %s", *response.Error)
-	}
-
-	if errMsg != "" {
-		return response, errors.New(errMsg)
-	}
-
-	return response, nil
-}
-
-func isWebhookTimeoutReached(creationTime time.Time, webhookTimeout time.Duration) bool {
-	operationEndTime := creationTime.Add(webhookTimeout)
-	return time.Now().After(operationEndTime)
+	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
 func oauthClient(ctx context.Context, client http.Client, oauthCreds graphql.OAuthCredentialData) *http.Client {
@@ -223,4 +171,38 @@ func oauthClient(ctx context.Context, client http.Client, oauthCreds graphql.OAu
 	securedClient := conf.Client(ctx)
 	securedClient.Timeout = client.Timeout
 	return securedClient
+}
+
+func parseResponseData(resp *http.Response) (*web_hook.ResponseData, error) {
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var respBody map[string]interface{}
+	if err := json.Unmarshal(bytes, &respBody); err != nil {
+		return nil, err
+	}
+
+	return &web_hook.ResponseData{
+		Body:    respBody,
+		Headers: resp.Header,
+	}, nil
+}
+
+func checkForErr(resp *http.Response, successStatusCode *int, error *string) error {
+	var errMsg string
+	if *successStatusCode != resp.StatusCode {
+		errMsg += fmt.Sprintf("response success status code was not met - expected %q, got %q; ", *successStatusCode, resp.StatusCode)
+	}
+
+	if error != nil && *error != "" {
+		errMsg += fmt.Sprintf("received error while polling external system: %s", *error)
+	}
+
+	if errMsg != "" {
+		return errors.New(errMsg)
+	}
+
+	return nil
 }

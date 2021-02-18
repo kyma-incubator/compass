@@ -29,6 +29,7 @@ type Request struct {
 	PollURL       *string
 }
 
+// NewRequest constructs a webhook Request
 func NewRequest(webhook graphql.Webhook, requestData web_hook.RequestData, correlationID string) *Request {
 	return &Request{
 		Webhook:       webhook,
