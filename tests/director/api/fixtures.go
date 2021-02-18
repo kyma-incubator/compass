@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 func fixBasicAuth(t *testing.T) *graphql.AuthInput {
@@ -100,8 +101,8 @@ func fixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 				"d": []string{"e", "f"},
 			},
 			Webhooks: []*graphql.WebhookInput{{
-				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-				URL:  "http://url.com",
+				Type: graphql.WebhookTypeConfigurationChanged,
+				URL:  str.Ptr("http://url.com"),
 			}},
 			HealthCheckURL: ptr.String("http://url.valid"),
 		},

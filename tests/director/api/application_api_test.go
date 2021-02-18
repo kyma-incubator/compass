@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -177,9 +178,9 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 		ProviderName: ptr.String("compass"),
 		Webhooks: []*graphql.WebhookInput{
 			{
-				Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+				Type: graphql.WebhookTypeConfigurationChanged,
 				Auth: fixBasicAuth(t),
-				URL:  "http://mywordpress.com/webhooks1",
+				URL:  str.Ptr("http://mywordpress.com/webhooks1"),
 			},
 		},
 		Labels: &graphql.Labels{
@@ -474,8 +475,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL:  "http://new-webhook.url",
-			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL:  str.Ptr("http://new-webhook.url"),
+			Type: graphql.WebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -486,7 +487,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		err = tc.RunOperation(ctx, addReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.Equal(t, "http://new-webhook.url", actualWebhook.URL)
-		assert.Equal(t, graphql.ApplicationWebhookTypeConfigurationChanged, actualWebhook.Type)
+		assert.Equal(t, graphql.WebhookTypeConfigurationChanged, actualWebhook.Type)
 		id := actualWebhook.ID
 		require.NotNil(t, id)
 
@@ -496,7 +497,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		// update
 		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL: "http://updated-webhook.url", Type: graphql.ApplicationWebhookTypeConfigurationChanged,
+			URL: str.Ptr("http://updated-webhook.url"), Type: graphql.WebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -1053,8 +1054,8 @@ func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRe
 		Name:         placeholder,
 		ProviderName: ptr.String("compass"),
 		Webhooks: []*graphql.WebhookInput{{
-			Type: graphql.ApplicationWebhookTypeConfigurationChanged,
-			URL:  webhookURL},
+			Type: graphql.WebhookTypeConfigurationChanged,
+			URL:  str.Ptr(webhookURL)},
 		},
 	}
 }
