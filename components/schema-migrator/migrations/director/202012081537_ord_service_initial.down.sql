@@ -25,7 +25,7 @@ ALTER TABLE packages
 
 DROP TRIGGER set_release_status_api_def ON api_definitions;
 DROP TRIGGER set_release_status_event_def ON event_api_definitions;
-DROP FUNCTION set_release_status;
+DROP FUNCTION set_release_status();
 
 ALTER TABLE api_definitions
     DROP COLUMN ord_id,
