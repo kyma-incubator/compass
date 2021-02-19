@@ -106,7 +106,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			operation = setConditionStatus(*operation, v1alpha1.ConditionTypeError, corev1.ConditionTrue, *app.Result.Error)
 			operation.Status.Phase = v1alpha1.StateFailed
 		}
-		if err := r.client.Update(ctx, operation); err != nil {
+		if err := r.client.Status().Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
@@ -115,7 +115,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if app.Result.Error != nil {
 		operation = setErrorStatus(*operation, *app.Result.Error)
 		operation.Status.Phase = v1alpha1.StateFailed
-		if err := r.client.Update(ctx, operation); err != nil {
+		if err := r.client.Status().Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
@@ -138,7 +138,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		operation = setErrorStatus(*operation, opErr.Error())
 		operation.Status.Phase = v1alpha1.StateFailed
-		if err := r.client.Update(ctx, operation); err != nil {
+		if err := r.client.Status().Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -172,7 +172,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, errors.New("unsupported webhook mode")
 		}
 
-		if err := r.client.Update(ctx, operation); err != nil {
+		if err := r.client.Status().Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -209,7 +209,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		operation = setReadyStatus(*operation)
 		operation.Status.Phase = v1alpha1.StateSuccess
-		if err := r.client.Update(ctx, operation); err != nil {
+		if err := r.client.Status().Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -225,7 +225,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		operation = setErrorStatus(*operation, opErr.Error())
 		operation.Status.Phase = v1alpha1.StateFailed
-		if err := r.client.Update(ctx, operation); err != nil {
+		if err := r.client.Status().Update(ctx, operation); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -251,7 +251,7 @@ func (r *OperationReconciler) handleWebhookTimeoutCheckResponse(ctx context.Cont
 
 	operation = setErrorStatus(*operation, webhookErr.Error())
 	operation.Status.Phase = v1alpha1.StateFailed
-	if err := r.client.Update(ctx, operation); err != nil {
+	if err := r.client.Status().Update(ctx, operation); err != nil {
 		return ctrl.Result{}, err
 	}
 
