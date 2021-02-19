@@ -10,14 +10,14 @@ import (
 )
 
 const (
-	invalidOpenResourceDiscovery  = "invalidOpenResourceDiscovery"
-	invalidUrl                    = "invalidUrl"
-	invalidOrdID                  = "invalidOrdId"
-	invalidShortDescriptionLength = 256
-	invalidVersion                = "invalidVersion"
-	invalidPolicyLevel            = "invalidPolicyLevel"
-	customPolicyLevel             = "custom"
-	invalidVendor                 = "wrongVendor!"
+	invalidOpenResourceDiscovery = "invalidOpenResourceDiscovery"
+	invalidUrl                   = "invalidUrl"
+	invalidOrdID                 = "invalidOrdId"
+	invalidDescriptionLength     = 256
+	invalidVersion               = "invalidVersion"
+	invalidPolicyLevel           = "invalidPolicyLevel"
+	customPolicyLevel            = "custom"
+	invalidVendor                = "wrongVendor!"
 )
 
 var (
@@ -138,9 +138,61 @@ var (
 
 	invalidIndustryElement          = `["banking", "wrongIndustry!@#"]`
 	invalidIndustryNonStringElement = `["banking", 992]`
+
+	invalidBundleLinksDueToMissingTitle = `[
+        {
+		  "description": "foo bar",
+          "url": "https://example.com/2018/04/11/testing/"
+        }
+      ]`
+
+	invalidBundleLinksDueToMissingURL = `[
+        {
+		  "description": "foo bar",
+		  "title": "myTitle"
+        }
+      ]`
+	invalidBundleLinksDueToWrongURL = `[
+        {
+		  "description": "foo bar",
+		  "title": "myTitle",
+          "url": "wrongURL"
+        }
+      ]`
+
+	invalidCredentialsExchangeStrategyDueToMissingType = `[
+        {
+		  "callbackUrl": "http://localhost:8080/credentials/relative"
+        }
+      ]`
+	invalidCredentialsExchangeStrategyDueToWrongType = `[
+        {
+          "type": "wrongType",
+		  "callbackUrl": "http://localhost:8080/credentials/relative"
+        }
+      ]`
+	invalidCredentialsExchangeStrategyDueToMissingCustomType = `[
+        {
+          "type": "wrongType",
+		  "customType": "ns:credential-exchange:v1",
+		  "customDescription": "foo bar"
+        }
+      ]`
+	invalidCredentialsExchangeStrategyDueToWrongCustomType = `[
+        {
+          "type": "custom",
+		  "customType": "wrongCustomType"
+        }
+      ]`
+	invalidCredentialsExchangeStrategyDueToWrongCallbackURL = `[
+        {
+          "type": "custom",
+		  "callbackUrl": "wrongURL"		  
+        }
+      ]`
 )
 
-func TestDocuments_Validate(t *testing.T) {
+func TestDocuments_ValidatePackage(t *testing.T) {
 	var tests = []struct {
 		Name              string
 		DocumentProvider  func() []*open_resource_discovery.Document
@@ -212,7 +264,15 @@ func TestDocuments_Validate(t *testing.T) {
 			Name: "Exceeded length of `shortDescription` field for Package",
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].ShortDescription = strings.Repeat("a", invalidShortDescriptionLength)
+				doc.Packages[0].ShortDescription = strings.Repeat("a", invalidDescriptionLength)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `shortDescription` field for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].ShortDescription = ""
 
 				return []*open_resource_discovery.Document{doc}
 			},
@@ -641,6 +701,281 @@ func TestDocuments_Validate(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			docs := open_resource_discovery.Documents{test.DocumentProvider()[0]}
+			err := docs.Validate(baseURL)
+			if test.ExpectedToBeValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestDocuments_ValidateBundle(t *testing.T) {
+	var tests = []struct {
+		Name              string
+		DocumentProvider  func() []*open_resource_discovery.Document
+		ExpectedToBeValid bool
+	}{
+		{
+			Name: "Missing `ordID` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].OrdID = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `ordID` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].OrdID = str.Ptr(invalidOrdID)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Name = ""
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `shortDescription` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].ShortDescription = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `shortDescription` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidDescriptionLength))
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `shortDescription` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].ShortDescription = str.Ptr("")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "New lines in `shortDescription` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].ShortDescription = str.Ptr(`newLine\n`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Missing `description` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Description = nil
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `description` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Description = str.Ptr(strings.Repeat("a", invalidDescriptionLength))
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `description` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Description = str.Ptr("")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "New lines in `description` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Description = str.Ptr(`newLine\n`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `title` field in `Links` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Links = json.RawMessage(invalidBundleLinksDueToMissingTitle)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `url` field in `Links` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Links = json.RawMessage(invalidBundleLinksDueToMissingURL)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `url` field in `Links` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Links = json.RawMessage(invalidBundleLinksDueToWrongURL)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `Links` field when it is invalid JSON for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Links = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `Links` field when it isn't a JSON array for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Links = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `Links` field when it is an empty JSON array for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Links = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid JSON `Labels` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Labels = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `Labels` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Labels = json.RawMessage(`[]`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Labels` values are not array for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Labels` values are not array of strings for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid key for JSON `Labels` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Missing `type` field of `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidCredentialsExchangeStrategyDueToMissingType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `type` field of `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidCredentialsExchangeStrategyDueToWrongType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`type` field is not with value `custom` when `customType` field is provided for `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidCredentialsExchangeStrategyDueToWrongCustomType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `customType` field when `type` field is set to `custom` for `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidCredentialsExchangeStrategyDueToWrongCustomType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`type` field is not with value `custom` when `customDescription` field is provided for `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidCredentialsExchangeStrategyDueToMissingCustomType)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `callbackURL` field of `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidCredentialsExchangeStrategyDueToWrongCallbackURL)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `CredentialExchangeStrategies` field when it is invalid JSON for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `CredentialExchangeStrategies` field when it isn't a JSON array for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `CredentialExchangeStrategies` field when it is an empty JSON array for Bundle",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage("[]")
 
 				return []*open_resource_discovery.Document{doc}
 			},

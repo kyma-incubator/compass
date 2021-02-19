@@ -31,6 +31,10 @@ var shortDescriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
+var descriptionRules = []validation.Rule{
+	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "description should not contain line breaks"),
+}
+
 func validateDocumentInput(doc *Document) error {
 	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.1")))
 }
@@ -71,7 +75,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
 		validation.Field(&bndl.Name, validation.Required),
 		validation.Field(&bndl.ShortDescription, shortDescriptionRules...),
-		validation.Field(&bndl.Description, validation.Required),
+		validation.Field(&bndl.Description, descriptionRules...),
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
 		validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
@@ -79,6 +83,9 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 				"type": {
 					validation.Required,
 					validation.In("custom"),
+				},
+				"callbackUrl": {
+					is.RequestURI,
 				},
 			}, validateCustomType, validateCustomDescription)
 		})),

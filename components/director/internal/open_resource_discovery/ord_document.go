@@ -89,7 +89,7 @@ func (docs Documents) Validate(webhookURL string) error {
 		}
 		for _, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInput(bndl); err != nil {
-				return errors.Wrapf(err, "error validating bundle with ord id %q", *bndl.OrdID)
+				return errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID))
 			}
 			if _, ok := bundleIDs[*bndl.OrdID]; ok {
 				return errors.Errorf("found duplicate bundle with ord id %q", *bndl.OrdID)
@@ -107,7 +107,7 @@ func (docs Documents) Validate(webhookURL string) error {
 		}
 		for _, api := range doc.APIResources {
 			if err := validateAPIInput(api); err != nil {
-				return errors.Wrapf(err, "error validating api with ord id %q", *api.OrdID)
+				return errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID))
 			}
 			if doc.SystemInstanceAware && (api.SystemInstanceAware == nil || !(*api.SystemInstanceAware)) {
 				return errors.Errorf("found system unaware api %q in system aware document", *api.OrdID)
@@ -122,7 +122,7 @@ func (docs Documents) Validate(webhookURL string) error {
 		}
 		for _, event := range doc.EventResources {
 			if err := validateEventInput(event); err != nil {
-				return errors.Wrapf(err, "error validating event with ord id %q", *event.OrdID)
+				return errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID))
 			}
 			if doc.SystemInstanceAware && (event.SystemInstanceAware == nil || !(*event.SystemInstanceAware)) {
 				return errors.Errorf("found system unaware event %q in system aware document", *event.OrdID)
@@ -427,4 +427,11 @@ func rewriteRelativeURIsInJson(j json.RawMessage, baseURL, jsonPath string) (jso
 func isAbsoluteURL(str string) bool {
 	u, err := url.Parse(str)
 	return err == nil && u.Scheme != "" && u.Host != ""
+}
+
+func stringPtrToString(p *string) string {
+	if p != nil {
+		return *p
+	}
+	return ""
 }
