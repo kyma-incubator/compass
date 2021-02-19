@@ -181,8 +181,10 @@ func parseResponseData(resp *http.Response) (*web_hook.ResponseData, error) {
 	}
 
 	var respBody map[string]interface{}
-	if err := json.Unmarshal(bytes, &respBody); err != nil {
-		return nil, err
+	if len(bytes) > 0 {
+		if err := json.Unmarshal(bytes, &respBody); err != nil {
+			return nil, err
+		}
 	}
 
 	return &web_hook.ResponseData{
