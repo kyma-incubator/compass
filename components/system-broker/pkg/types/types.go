@@ -22,32 +22,32 @@ import (
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . applicationsLister
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . ApplicationLister
 type ApplicationLister interface {
 	FetchApplication(ctx context.Context, id string) (*director.ApplicationOutput, error)
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . applicationsLister
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . ApplicationsLister
 type ApplicationsLister interface {
 	FetchApplications(ctx context.Context) (*director.ApplicationsOutput, error)
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsFetcher
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . BundleCredentialsFetcher
 type BundleCredentialsFetcher interface {
 	FetchBundleInstanceAuth(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceAuthOutput, error)
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsFetcherForInstance
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . BundleCredentialsFetcherForInstance
 type BundleCredentialsFetcherForInstance interface {
 	FetchBundleInstanceCredentials(ctx context.Context, in *director.BundleInstanceInput) (*director.BundleInstanceCredentialsOutput, error)
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsCreateRequester
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . BundleCredentialsCreateRequester
 type BundleCredentialsCreateRequester interface {
 	RequestBundleInstanceCredentialsCreation(ctx context.Context, in *director.BundleInstanceCredentialsInput) (*director.BundleInstanceAuthOutput, error)
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . bundleCredentialsDeleteRequester
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . BundleCredentialsDeleteRequester
 type BundleCredentialsDeleteRequester interface {
 	RequestBundleInstanceCredentialsDeletion(ctx context.Context, in *director.BundleInstanceAuthDeletionInput) (*director.BundleInstanceAuthDeletionOutput, error)
 }

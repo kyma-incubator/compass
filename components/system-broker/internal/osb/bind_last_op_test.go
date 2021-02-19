@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/types/typesfakes"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/director"
 	"github.com/kyma-incubator/compass/components/system-broker/internal/osb"
-	"github.com/kyma-incubator/compass/components/system-broker/internal/osb/osbfakes"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -18,14 +19,14 @@ func TestBindLastOp(t *testing.T) {
 	bindingID := "bindingID"
 
 	var (
-		fakeCredentialsGetter *osbfakes.FakeBundleCredentialsFetcher
+		fakeCredentialsGetter *typesfakes.FakeBundleCredentialsFetcher
 		be                    *osb.BindLastOperationEndpoint
 		bundleInstanceAuth    *director.BundleInstanceAuthOutput
 		details               domain.PollDetails
 	)
 
 	setup := func() {
-		fakeCredentialsGetter = &osbfakes.FakeBundleCredentialsFetcher{}
+		fakeCredentialsGetter = &typesfakes.FakeBundleCredentialsFetcher{}
 
 		be = osb.NewBindLastOperationEndpoint(fakeCredentialsGetter)
 
