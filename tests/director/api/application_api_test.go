@@ -238,10 +238,10 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		EventingConfiguration graphql.ApplicationEventingConfiguration `json:"eventingConfiguration"`
 	}
 
-	t.Run("Register Application with Packages when useBundles=false", func(t *testing.T) {
+	t.Run("Register Application with Packages should succeed", func(t *testing.T) {
 		var actualApp ApplicationWithPackagesExt
 		request := fixRegisterApplicationWithPackagesRequest(expectedAppName)
-		err := tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, &actualApp)
+		err := tc.NewOperation(ctx).Run(request, &actualApp)
 
 		appID := actualApp.ID
 		packageID := actualApp.Packages.Data[0].ID
@@ -254,25 +254,14 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		require.NotEmpty(t, packageID)
 		require.Equal(t, expectedAppName, actualApp.Name)
 
-		t.Run("Get Application with Package when useBundles=false should succeed", func(t *testing.T) {
+		t.Run("Get Application with Package should succeed", func(t *testing.T) {
 			var actualAppWithPackage ApplicationWithPackagesExt
 			request := fixGetApplicationWithPackageRequest(appID, packageID)
-			err := tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, &actualAppWithPackage)
+			err := tc.NewOperation(ctx).Run(request, &actualAppWithPackage)
 
 			require.NoError(t, err)
 			require.NotEmpty(t, actualAppWithPackage.ID)
 			require.NotEmpty(t, actualAppWithPackage.Package.ID)
-		})
-
-		t.Run("Get Application with Package when useBundles=true should fail", func(t *testing.T) {
-			var actualAppWithPackage ApplicationWithPackagesExt
-			request := fixGetApplicationWithPackageRequest(appID, packageID)
-			err := tc.NewOperation(ctx).
-				WithQueryParam("useBundles", "true").
-				Run(request, &actualAppWithPackage)
-
-			require.Error(t, err)
-			require.Empty(t, actualAppWithPackage.ID)
 		})
 
 		runtimeInput := fixRuntimeInput("test-runtime")
@@ -288,7 +277,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 		defer unregisterRuntime(t, runtime.ID)
 
-		t.Run("Get ApplicationForRuntime with Package when useBundles=false should succeed", func(t *testing.T) {
+		t.Run("Get ApplicationForRuntime with Package should succeed", func(t *testing.T) {
 			applicationPage := struct {
 				Data []*ApplicationWithPackagesExt `json:"data"`
 			}{}
@@ -296,7 +285,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 			err := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
 				ID:   runtime.ID,
 				Type: jwtbuilder.RuntimeConsumer,
-			}).WithQueryParam("useBundles", "false").Run(request, &applicationPage)
+			}).Run(request, &applicationPage)
 
 			require.NoError(t, err)
 			require.Len(t, applicationPage.Data, 1)
@@ -311,29 +300,6 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 			require.Equal(t, len(actualAppWithPackage.Webhooks), len(actualApp.Webhooks))
 			require.Equal(t, len(actualAppWithPackage.Packages.Data), len(actualApp.Packages.Data))
 		})
-
-		t.Run("Get ApplicationForRuntime with Package when useBundles=true should fail", func(t *testing.T) {
-			var actualAppWithPackage ApplicationWithPackagesExt
-			request := fixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
-			err := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
-				ID:   runtime.ID,
-				Type: jwtbuilder.RuntimeConsumer,
-			}).WithQueryParam("useBundles", "true").Run(request, &actualAppWithPackage)
-
-			require.Error(t, err)
-			require.Empty(t, actualAppWithPackage.ID)
-		})
-	})
-
-	t.Run("Register Application with Packages when useBundles=true should fail", func(t *testing.T) {
-		var actualApp ApplicationWithPackagesExt
-		request := fixRegisterApplicationWithPackagesRequest("failed-app-with-packages")
-		op := tc.NewOperation(ctx).WithQueryParam("useBundles", "true")
-		err := op.Run(request, &actualApp)
-
-		require.Error(t, err)
-		require.Empty(t, actualApp.ID)
-		require.Empty(t, actualApp.Name)
 	})
 }
 
