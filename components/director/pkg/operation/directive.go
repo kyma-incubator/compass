@@ -170,7 +170,7 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 		return "", errors.New("failed to retrieve request headers")
 	}
 
-	var headers webhook.Header
+	headers := make(map[string]string, 0)
 	for key, value := range reqHeaders {
 		headers[key] = value[0]
 	}

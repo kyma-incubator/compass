@@ -38,21 +38,17 @@ type Resource interface {
 	Sentinel()
 }
 
-// A Header represents the key-value pairs in an HTTP header.
-// It's the equivalent of the standard http.Header type but with only a single value for every key
-type Header map[string]string
-
 // RequestData struct contains parts of request that might be needed for later processing of a Webhook request
 type RequestData struct {
 	Application Resource
 	TenantID    string
-	Headers     Header
+	Headers     map[string]string
 }
 
 // ResponseData struct contains parts of response that might be needed for later processing of Webhook response
 type ResponseData struct {
-	Body    map[string]interface{}
-	Headers Header
+	Body    map[string]string
+	Headers map[string]string
 }
 
 type URL struct {

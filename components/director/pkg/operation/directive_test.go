@@ -46,7 +46,7 @@ const (
 )
 
 func TestHandleOperation(t *testing.T) {
-	var mockedHeaders = webhook.Header{
+	var mockedHeaders = map[string]string{
 		"key": "value",
 	}
 
