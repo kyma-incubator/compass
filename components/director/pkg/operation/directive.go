@@ -165,9 +165,14 @@ func (d *directive) prepareRequestData(ctx context.Context, err error, res inter
 		return "", errors.New("entity is not a webhook provider")
 	}
 
-	headers, ok := ctx.Value(header.ContextKey).(http.Header)
+	reqHeaders, ok := ctx.Value(header.ContextKey).(http.Header)
 	if !ok {
 		return "", errors.New("failed to retrieve request headers")
+	}
+
+	var headers webhook.Header
+	for key, value := range reqHeaders {
+		headers[key] = value[0]
 	}
 
 	requestData := &webhook.RequestData{

@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -47,8 +46,8 @@ const (
 )
 
 func TestHandleOperation(t *testing.T) {
-	var mockedHeaders = http.Header{
-		"key": []string{"value"},
+	var mockedHeaders = webhook.Header{
+		"key": "value",
 	}
 
 	t.Run("missing operation mode param causes internal server error", func(t *testing.T) {

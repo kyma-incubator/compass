@@ -419,7 +419,7 @@ func TestWebhookInput_Validate_HeaderTemplate(t *testing.T) {
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         stringPtr(`{"Content-Type":["application/json"],"client_user":["{{.Headers.user_id}}"]}`),
+			Value:         stringPtr(`{"Content-Type":["application/json"],"client_user":["{{.Headers.User_id}}"]}`),
 			ExpectedValid: true,
 		},
 		{

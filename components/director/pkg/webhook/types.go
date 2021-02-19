@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -39,17 +38,21 @@ type Resource interface {
 	Sentinel()
 }
 
+// A Header represents the key-value pairs in an HTTP header.
+// It's the equivalent of the standard http.Header type but with only a single value for every key
+type Header map[string]string
+
 // RequestData struct contains parts of request that might be needed for later processing of a Webhook request
 type RequestData struct {
 	Application Resource
 	TenantID    string
-	Headers     http.Header
+	Headers     Header
 }
 
 // ResponseData struct contains parts of response that might be needed for later processing of Webhook response
 type ResponseData struct {
 	Body    map[string]interface{}
-	Headers http.Header
+	Headers Header
 }
 
 type URL struct {
@@ -140,7 +143,7 @@ func ParseURLTemplate(tmpl *string, reqData RequestData) (*URL, error) {
 		return nil, nil
 	}
 
-	urlTemplate, err := template.New("url").Parse(*tmpl)
+	urlTemplate, err := template.New("url").Option("missingkey=zero").Parse(*tmpl)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +167,7 @@ func ParseInputTemplate(tmpl *string, reqData RequestData) ([]byte, error) {
 		return nil, nil
 	}
 
-	inputTemplate, err := template.New("input").Parse(*tmpl)
+	inputTemplate, err := template.New("input").Option("missingkey=zero").Parse(*tmpl)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +190,7 @@ func ParseHeadersTemplate(tmpl *string, reqData RequestData) (http.Header, error
 		return nil, nil
 	}
 
-	headerTemplate, err := template.New("header").Parse(*tmpl)
+	headerTemplate, err := template.New("header").Option("missingkey=zero").Parse(*tmpl)
 	if err != nil {
 		return nil, err
 	}
@@ -198,17 +201,12 @@ func ParseHeadersTemplate(tmpl *string, reqData RequestData) (http.Header, error
 	}
 
 	if result.Len() == 0 {
-		return nil, nil
+		return http.Header{}, nil
 	}
 
 	var headers http.Header
 	if err := json.Unmarshal(result.Bytes(), &headers); err != nil {
 		return nil, err
-	}
-
-	for key, value := range headers {
-		headers[key][0] = strings.TrimPrefix(value[0], `[`)
-		headers[key][0] = strings.TrimSuffix(value[0], `]`)
 	}
 
 	return headers, nil
@@ -223,7 +221,7 @@ func ParseOutputTemplate(inputTmpl, outputTmpl *string, webhookMode Mode, respDa
 		return nil, nil
 	}
 
-	outputTemplate, err := template.New("output").Parse(*outputTmpl)
+	outputTemplate, err := template.New("output").Option("missingkey=zero").Parse(*outputTmpl)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +244,7 @@ func ParseStatusTemplate(tmpl *string, respData ResponseData) (*ResponseStatus, 
 		return nil, nil
 	}
 
-	statusTemplate, err := template.New("status").Parse(*tmpl)
+	statusTemplate, err := template.New("status").Option("missingkey=zero").Parse(*tmpl)
 	if err != nil {
 		return nil, err
 	}
