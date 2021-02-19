@@ -2,6 +2,9 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -14,20 +17,28 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 	ctx := context.Background()
 	name := "int-system"
 
-	intSysInput := graphql.IntegrationSystemInput{Name: name}
-	intSys, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
-	registerIntegrationSystemRequest := fixRegisterIntegrationSystemRequest(intSys)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	intSysInput := graphql.IntegrationSystemInput{Name: name}
+	intSys, err := pkg.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSysInput)
+	require.NoError(t, err)
+
+	registerIntegrationSystemRequest := pkg.FixRegisterIntegrationSystemRequest(intSys)
 	output := graphql.IntegrationSystemExt{}
 
 	// WHEN
 	t.Log("Register integration system")
 
-	err = tc.RunOperationWithoutTenant(ctx, registerIntegrationSystemRequest, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, registerIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	defer unregisterIntegrationSystem(t, ctx, output.ID)
+	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, output.ID)
 
 	//THEN
 	require.NotEmpty(t, output.Name)
@@ -35,10 +46,10 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 
 	t.Log("Check if Integration System was registered")
 
-	getIntegrationSystemRequest := fixIntegrationSystemRequest(output.ID)
+	getIntegrationSystemRequest := pkg.FixGetIntegrationSystemRequest(output.ID)
 	intSysOutput := graphql.IntegrationSystemExt{}
 
-	err = tc.RunOperationWithoutTenant(ctx, getIntegrationSystemRequest, &intSysOutput)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemRequest, &intSysOutput)
 
 	require.NotEmpty(t, intSysOutput)
 	assertIntegrationSystem(t, intSysInput, intSysOutput)
@@ -48,23 +59,32 @@ func TestRegisterIntegrationSystem(t *testing.T) {
 func TestUpdateIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	name := "int-system"
 	newName := "new-int-system"
 	newDescription := "new description"
 	t.Log("Register integration system")
-	intSys := registerIntegrationSystem(t, ctx, name)
+	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, name)
 
 	intSysInput := graphql.IntegrationSystemInput{Name: newName, Description: &newDescription}
-	intSysGQL, err := tc.graphqlizer.IntegrationSystemInputToGQL(intSysInput)
-	updateIntegrationSystemRequest := fixUpdateIntegrationSystemRequest(intSys.ID, intSysGQL)
+	intSysGQL, err := pkg.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSysInput)
+	updateIntegrationSystemRequest := pkg.FixUpdateIntegrationSystemRequest(intSys.ID, intSysGQL)
 	updateOutput := graphql.IntegrationSystemExt{}
 
 	// WHEN
 	t.Log("Update integration system")
-	err = tc.RunOperationWithoutTenant(ctx, updateIntegrationSystemRequest, &updateOutput)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateIntegrationSystemRequest, &updateOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
-	defer unregisterIntegrationSystem(t, ctx, updateOutput.ID)
+	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, updateOutput.ID)
 
 	//THEN
 	t.Log("Check if Integration System was updated")
@@ -75,23 +95,32 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 func TestUnregisterIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	name := "int-system"
 
 	t.Log("Register integration system")
-	intSys := registerIntegrationSystem(t, ctx, name)
+	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, name)
 
-	unregisterIntegrationSystemRequest := fixunregisterIntegrationSystem(intSys.ID)
+	unregisterIntegrationSystemRequest := pkg.FixUnregisterIntegrationSystem(intSys.ID)
 	deleteOutput := graphql.IntegrationSystemExt{}
 
 	// WHEN
 	t.Log("Unregister integration system")
-	err := tc.RunOperationWithoutTenant(ctx, unregisterIntegrationSystemRequest, &deleteOutput)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, unregisterIntegrationSystemRequest, &deleteOutput)
 	require.NoError(t, err)
 
 	//THEN
 	t.Log("Check if Integration System was deleted")
 
-	out := getIntegrationSystem(t, ctx, intSys.ID)
+	out := pkg.GetIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
 
 	require.Empty(t, out)
 	saveExample(t, unregisterIntegrationSystemRequest.Query(), "unregister integration system")
@@ -100,19 +129,28 @@ func TestUnregisterIntegrationSystem(t *testing.T) {
 func TestQueryIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	name := "int-system"
 
 	t.Log("Register integration system")
-	intSys := registerIntegrationSystem(t, ctx, name)
-	getIntegrationSystemRequest := fixIntegrationSystemRequest(intSys.ID)
+	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, name)
+	getIntegrationSystemRequest := pkg.FixGetIntegrationSystemRequest(intSys.ID)
 	output := graphql.IntegrationSystemExt{}
 
 	// WHEN
 	t.Log("Get integration system")
-	err := tc.RunOperationWithoutTenant(ctx, getIntegrationSystemRequest, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
-	defer unregisterIntegrationSystem(t, ctx, output.ID)
+	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, output.ID)
 
 	//THEN
 	t.Log("Check if Integration System was received")
@@ -122,25 +160,34 @@ func TestQueryIntegrationSystem(t *testing.T) {
 func TestQueryIntegrationSystems(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	name1 := "int-system-1"
 	name2 := "int-system-2"
 
 	t.Log("Register integration systems")
-	intSys1 := registerIntegrationSystem(t, ctx, name1)
-	defer unregisterIntegrationSystem(t, ctx, intSys1.ID)
+	intSys1 := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, name1)
+	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys1.ID)
 
-	intSys2 := registerIntegrationSystem(t, ctx, name2)
-	defer unregisterIntegrationSystem(t, ctx, intSys2.ID)
+	intSys2 := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, name2)
+	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, tenant, intSys2.ID)
 
 	first := 100
 	after := ""
 
-	getIntegrationSystemsRequest := fixIntegrationSystemsRequest(first, after)
+	getIntegrationSystemsRequest := pkg.FixGetIntegrationSystemsRequestWithPagination(first, after)
 	output := graphql.IntegrationSystemPageExt{}
 
 	// WHEN
 	t.Log("List integration systems")
-	err := tc.RunOperationWithoutTenant(ctx, getIntegrationSystemsRequest, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, getIntegrationSystemsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN

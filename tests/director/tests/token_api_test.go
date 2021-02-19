@@ -4,6 +4,10 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,39 +19,58 @@ import (
 func TestTokenGeneration(t *testing.T) {
 	t.Run("Generate one time token for Runtime", func(t *testing.T) {
 		//GIVEN
-		ctx := context.TODO()
-		runtime := registerRuntime(t, ctx, "test")
-		defer unregisterRuntime(t, runtime.ID)
+		ctx := context.Background()
+
+		t.Log("Get Dex id_token")
+		dexToken, err := idtokenprovider.GetDexToken()
+		require.NoError(t, err)
+
+		dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+		tenant := pkg.TestTenants.GetDefaultTenantID()
+
+		input := pkg.FixRuntimeInput("test")
+		runtime := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
+		defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
 		tokenRequestNumber := 3
 
 		//WHEN
 		for i := 0; i < tokenRequestNumber; i++ {
-			token := requestOneTimeTokenForRuntime(t, ctx, runtime.ID)
+			token := pkg.RequestOneTimeTokenForRuntime(t, ctx, dexGraphQLClient, runtime.ID)
 			assert.NotEmpty(t, token.Token)
 			assert.NotEmpty(t, token.ConnectorURL)
 		}
 		//THEN
-		runtimeExt := getRuntime(t, ctx, runtime.ID)
+		runtimeExt := pkg.GetRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
 		assert.Len(t, runtimeExt.Auths, tokenRequestNumber)
 	})
 
 	t.Run("Generate one time token for Application", func(t *testing.T) {
 		//GIVEN
 		ctx := context.TODO()
-		app := registerApplication(t, ctx, "test")
-		defer unregisterApplication(t, app.ID)
+
+		t.Log("Get Dex id_token")
+		dexToken, err := idtokenprovider.GetDexToken()
+		require.NoError(t, err)
+
+		dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+		tenant := pkg.TestTenants.GetDefaultTenantID()
+
+		app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "test", tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 		tokenRequestNumber := 3
 
 		//WHEN
 		for i := 0; i < tokenRequestNumber; i++ {
-			token := requestOneTimeTokenForApplication(t, ctx, app.ID)
+			token := pkg.RequestOneTimeTokenForApplication(t, ctx, dexGraphQLClient, app.ID)
 			assert.NotEmpty(t, token.Token)
 			assert.NotEmpty(t, token.ConnectorURL)
 			assert.NotEmpty(t, token.LegacyConnectorURL)
 		}
 
 		//THEN
-		appExt := getApplication(t, ctx, app.ID)
+		appExt := pkg.GetApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 		assert.Len(t, appExt.Auths, tokenRequestNumber)
 	})
 }

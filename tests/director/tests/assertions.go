@@ -2,6 +2,7 @@ package tests
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"strconv"
 	"strings"
 	"testing"
@@ -274,7 +275,7 @@ func assertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 	assert.Equal(t, in.Name, actualApplicationTemplate.Name)
 	assert.Equal(t, in.Description, actualApplicationTemplate.Description)
 
-	gqlAppInput, err := tc.graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
+	gqlAppInput, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(*in.ApplicationInput)
 	require.NoError(t, err)
 
 	gqlAppInput = strings.Replace(gqlAppInput, "\t", "", -1)
@@ -317,7 +318,7 @@ func assertBundleInstanceAuth(t *testing.T, expectedAuth graphql.BundleInstanceA
 }
 
 func assertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql.JSON) {
-	inExpectedStr, ok := unmarshalJSON(t, inExpected).(string)
+	inExpectedStr, ok := pkg.UnmarshalJSON(t, inExpected).(string)
 	assert.True(t, ok)
 
 	var expected map[string]interface{}
@@ -332,7 +333,7 @@ func assertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql
 }
 
 func assertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inActual *graphql.JSONSchema) {
-	inExpectedStr, ok := unmarshalJSONSchema(t, inExpected).(string)
+	inExpectedStr, ok := pkg.UnmarshalJSONSchema(t, inExpected).(string)
 	assert.True(t, ok)
 
 	var expected map[string]interface{}
@@ -344,40 +345,6 @@ func assertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inAct
 	require.NoError(t, err)
 
 	assert.Equal(t, expected, actual)
-}
-
-func marshalJSON(t *testing.T, data interface{}) *graphql.JSON {
-	out, err := json.Marshal(data)
-	require.NoError(t, err)
-	output := strconv.Quote(string(out))
-	j := graphql.JSON(output)
-	return &j
-}
-
-func unmarshalJSON(t *testing.T, j *graphql.JSON) interface{} {
-	require.NotNil(t, j)
-	var output interface{}
-	err := json.Unmarshal([]byte(*j), &output)
-	require.NoError(t, err)
-
-	return output
-}
-
-func marshalJSONSchema(t *testing.T, schema interface{}) *graphql.JSONSchema {
-	out, err := json.Marshal(schema)
-	require.NoError(t, err)
-	output := strconv.Quote(string(out))
-	jsonSchema := graphql.JSONSchema(output)
-	return &jsonSchema
-}
-
-func unmarshalJSONSchema(t *testing.T, schema *graphql.JSONSchema) interface{} {
-	require.NotNil(t, schema)
-	var output interface{}
-	err := json.Unmarshal([]byte(*schema), &output)
-	require.NoError(t, err)
-
-	return output
 }
 
 func assertAutomaticScenarioAssignment(t *testing.T, expected graphql.AutomaticScenarioAssignmentSetInput, actual graphql.AutomaticScenarioAssignment) {
@@ -472,4 +439,20 @@ func assertQueryParams(t *testing.T, in *graphql.QueryParamsSerialized, actual *
 	require.NoError(t, err)
 
 	require.Equal(t, &queryParamsIn, actual)
+}
+
+func assertRuntimeScenarios(t *testing.T, runtimes graphql.RuntimePageExt, expectedScenarios map[string][]interface{}) {
+	for _, rtm := range runtimes.Data {
+		expectedScenarios, found := expectedScenarios[rtm.ID]
+		require.True(t, found)
+		assertScenarios(t, rtm.Labels, expectedScenarios)
+	}
+}
+
+func assertScenarios(t *testing.T, actual graphql.Labels, expected []interface{}) {
+	val, ok := actual["scenarios"]
+	require.True(t, ok)
+	scenarios, ok := val.([]interface{})
+	require.True(t, ok)
+	assert.ElementsMatch(t, scenarios, expected)
 }

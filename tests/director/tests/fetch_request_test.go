@@ -2,6 +2,9 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,6 +18,14 @@ const OpenAPISpec = "https://raw.githubusercontent.com/kyma-incubator/github-sla
 
 func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: "test",
@@ -34,8 +45,8 @@ func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 		}},
 	}
 
-	app := registerApplicationFromInput(t, ctx, appInput)
-	defer unregisterApplication(t, app.ID)
+	app := pkg.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, appInput)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 	api := app.Bundles.Data[0].APIDefinitions.Data[0]
 
@@ -46,13 +57,21 @@ func Test_FetchRequestAddApplicationWithAPI(t *testing.T) {
 func Test_FetchRequestAddAPIToBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
 	apiInput := graphql.APIDefinitionInput{
 		Name:      "test",
@@ -65,7 +84,7 @@ func Test_FetchRequestAddAPIToBundle(t *testing.T) {
 			},
 		},
 	}
-	api := addAPIToBundleWithInput(t, ctx, bndl.ID, apiInput)
+	api := pkg.AddAPIToBundleWithInput(t, ctx, dexGraphQLClient, tenant, bndl.ID, apiInput)
 	assert.NotNil(t, api.Spec.Data)
 	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, api.Spec.FetchRequest.Status.Condition)
 }
@@ -73,9 +92,17 @@ func Test_FetchRequestAddAPIToBundle(t *testing.T) {
 func TestFetchRequestAddBundleWithAPI(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
 	bndlInput := graphql.BundleCreateInput{
@@ -94,8 +121,8 @@ func TestFetchRequestAddBundleWithAPI(t *testing.T) {
 		},
 	}
 
-	bndl := createBundleWithInput(t, ctx, application.ID, bndlInput)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
 	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec.Data)
 	assert.Equal(t, graphql.FetchRequestStatusConditionSucceeded, bndl.APIDefinitions.Data[0].Spec.FetchRequest.Status.Condition)
@@ -104,9 +131,17 @@ func TestFetchRequestAddBundleWithAPI(t *testing.T) {
 func TestRefetchAPISpec(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
 	bndlInput := graphql.BundleCreateInput{
@@ -125,15 +160,15 @@ func TestRefetchAPISpec(t *testing.T) {
 		},
 	}
 
-	bndl := createBundleWithInput(t, ctx, application.ID, bndlInput)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
 	spec := bndl.APIDefinitions.Data[0].Spec.Data
 
 	var refetchedSpec graphql.APISpecExt
-	req := fixRefetchAPISpecRequest(bndl.APIDefinitions.Data[0].ID)
+	req := pkg.FixRefetchAPISpecRequest(bndl.APIDefinitions.Data[0].ID)
 
-	err := tc.RunOperation(ctx, req, &refetchedSpec)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, req, &refetchedSpec)
 	require.NoError(t, err)
 	assert.Equal(t, spec, refetchedSpec.Data)
 

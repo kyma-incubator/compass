@@ -3,6 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -14,7 +17,13 @@ import (
 func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	tenantID := testTenants.GetIDByName(t, "ASA1")
+	tenantID := pkg.TestTenants.GetIDByName(t, "ASA1")
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	testScenarioA := "ASA1"
 	testScenarioB := "ASA2"
@@ -27,11 +36,11 @@ func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 		Key:   "keyB",
 		Value: "valueB",
 	}
-	testSelectorAGQL, err := tc.graphqlizer.LabelSelectorInputToGQL(testSelectorA)
+	testSelectorAGQL, err := pkg.Tc.Graphqlizer.LabelSelectorInputToGQL(testSelectorA)
 	require.NoError(t, err)
 
 	// setup available scenarios
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{"DEFAULT", testScenarioA, testScenarioB, testScenarioC})
+	pkg.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{"DEFAULT", testScenarioA, testScenarioB, testScenarioC})
 
 	// create automatic scenario assignments
 	inputAssignment1 := graphql.AutomaticScenarioAssignmentSetInput{
@@ -46,28 +55,28 @@ func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 		ScenarioName: testScenarioC,
 		Selector:     &testSelectorB,
 	}
-	createAutomaticScenarioAssignmentInTenant(t, ctx, inputAssignment1, tenantID)
-	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioA)
-	createAutomaticScenarioAssignmentInTenant(t, ctx, inputAssignment2, tenantID)
-	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioB)
-	createAutomaticScenarioAssignmentInTenant(t, ctx, inputAssignment3, tenantID)
-	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, testScenarioC)
+	pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, inputAssignment1, tenantID)
+	defer pkg.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantID, testScenarioA)
+	pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, inputAssignment2, tenantID)
+	defer pkg.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantID, testScenarioB)
+	pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, inputAssignment3, tenantID)
+	defer pkg.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantID, testScenarioC)
 
 	// prepare queries
-	getAssignmentForScenarioRequest := fixAutomaticScenarioAssignmentForScenarioRequest(testScenarioA)
-	listAssignmentsRequest := fixAutomaticScenarioAssignmentsRequest()
-	listAssignmentsForSelectorRequest := fixAutomaticScenarioAssignmentsForSelectorRequest(testSelectorAGQL)
+	getAssignmentForScenarioRequest := pkg.FixAutomaticScenarioAssignmentForScenarioRequest(testScenarioA)
+	listAssignmentsRequest := pkg.FixAutomaticScenarioAssignmentsRequest()
+	listAssignmentsForSelectorRequest := pkg.FixAutomaticScenarioAssignmentsForSelectorRequest(testSelectorAGQL)
 
 	actualAssignmentsPage := graphql.AutomaticScenarioAssignmentPage{}
 	actualAssignmentForScenario := graphql.AutomaticScenarioAssignment{}
 	actualAssignmentsForSelector := []*graphql.AutomaticScenarioAssignment{}
 
 	// WHEN
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, listAssignmentsRequest, &actualAssignmentsPage)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, listAssignmentsRequest, &actualAssignmentsPage)
 	require.NoError(t, err)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, getAssignmentForScenarioRequest, &actualAssignmentForScenario)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, getAssignmentForScenarioRequest, &actualAssignmentForScenario)
 	require.NoError(t, err)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, listAssignmentsForSelectorRequest, &actualAssignmentsForSelector)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, listAssignmentsForSelectorRequest, &actualAssignmentsForSelector)
 	require.NoError(t, err)
 
 	// THEN
@@ -87,27 +96,35 @@ func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	tenantID := testTenants.GetIDByName(t, "TestCreateAutomaticScenarioAssignment")
+
+	tenantID := pkg.TestTenants.GetIDByName(t, "TestCreateAutomaticScenarioAssignment")
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
 	prodScenario := "PRODUCTION"
 	devScenario := "DEVELOPMENT"
 	manualScenario := "MANUAL"
 	defaultScenario := "DEFAULT"
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{prodScenario, manualScenario, devScenario, defaultScenario})
+	pkg.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{prodScenario, manualScenario, devScenario, defaultScenario})
 
 	rtms := make([]*graphql.RuntimeExt, 3)
 	for i := 0; i < 3; i++ {
-		rmtInput := fixRuntimeInput(fmt.Sprintf("runtime%d", i))
+		rmtInput := pkg.FixRuntimeInput(fmt.Sprintf("runtime%d", i))
 
-		rtm := registerRuntimeFromInputWithinTenant(t, ctx, &rmtInput, tenantID)
-		rtms[i] = rtm
-		defer unregisterRuntimeWithinTenant(t, rtm.ID, tenantID)
+		rtm := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rmtInput)
+		rtms[i] = &rtm
+		defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantID, rtm.ID)
 	}
 
 	selectorKey := "KEY"
 	selectorValue := "VALUE"
 
-	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[0].ID, selectorKey, selectorValue)
-	setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[1].ID, selectorKey, selectorValue)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantID, rtms[0].ID, selectorKey, selectorValue)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantID, rtms[1].ID, selectorKey, selectorValue)
 
 	t.Run("Check automatic scenario assigment", func(t *testing.T) {
 		//GIVEN
@@ -118,12 +135,12 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 
 		//WHEN
-		asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
-		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
-		defer deleteAutomaticScenarioAssigmentForSelector(t, ctx, tenantID, *asaInput.Selector)
+		asaInput := pkg.FixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
+		pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, tenantID)
+		defer pkg.DeleteAutomaticScenarioAssigmentForSelector(t, ctx, dexGraphQLClient, tenantID, *asaInput.Selector)
 
 		//THEN
-		runtimes := listRuntimes(t, ctx, tenantID)
+		runtimes := pkg.ListRuntimes(t, ctx, dexGraphQLClient, tenantID)
 		require.Len(t, runtimes.Data, 3)
 		assertRuntimeScenarios(t, runtimes, expectedScenarios)
 	})
@@ -137,9 +154,9 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 
 		//WHEN
-		asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
-		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
-		runtimes := listRuntimes(t, ctx, tenantID)
+		asaInput := pkg.FixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
+		pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, tenantID)
+		runtimes := pkg.ListRuntimes(t, ctx, dexGraphQLClient, tenantID)
 		assertRuntimeScenarios(t, runtimes, scenarios)
 
 		expectedScenarios := map[string][]interface{}{
@@ -149,10 +166,10 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 
 		//WHEN
-		deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, prodScenario)
+		pkg.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantID, prodScenario)
 
 		//THEN
-		runtimes = listRuntimes(t, ctx, tenantID)
+		runtimes = pkg.ListRuntimes(t, ctx, dexGraphQLClient, tenantID)
 		require.Len(t, runtimes.Data, 3)
 		assertRuntimeScenarios(t, runtimes, expectedScenarios)
 	})
@@ -166,11 +183,11 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 
 		//WHEN
-		asaInput := fixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
-		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
+		asaInput := pkg.FixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
+		pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, tenantID)
 		asaInput.ScenarioName = devScenario
-		createAutomaticScenarioAssignmentInTenant(t, ctx, asaInput, tenantID)
-		runtimes := listRuntimes(t, ctx, tenantID)
+		pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, tenantID)
+		runtimes := pkg.ListRuntimes(t, ctx, dexGraphQLClient, tenantID)
 		assertRuntimeScenarios(t, runtimes, scenarios)
 
 		expectedScenarios := map[string][]interface{}{
@@ -180,37 +197,27 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 
 		//WHEN
-		setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[0].ID, "scenarios", []interface{}{prodScenario, devScenario, manualScenario})
-		setRuntimeLabelWithinTenant(t, ctx, tenantID, rtms[1].ID, "scenarios", []interface{}{prodScenario, devScenario, manualScenario})
-		deleteAutomaticScenarioAssigmentForSelector(t, ctx, tenantID, graphql.LabelSelectorInput{Key: selectorKey, Value: selectorValue})
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantID, rtms[0].ID, "scenarios", []interface{}{prodScenario, devScenario, manualScenario})
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantID, rtms[1].ID, "scenarios", []interface{}{prodScenario, devScenario, manualScenario})
+		pkg.DeleteAutomaticScenarioAssigmentForSelector(t, ctx, dexGraphQLClient, tenantID, graphql.LabelSelectorInput{Key: selectorKey, Value: selectorValue})
 
 		//THEN
-		runtimes = listRuntimes(t, ctx, tenantID)
+		runtimes = pkg.ListRuntimes(t, ctx, dexGraphQLClient, tenantID)
 		require.Len(t, runtimes.Data, 3)
 		assertRuntimeScenarios(t, runtimes, expectedScenarios)
 	})
 
 }
 
-func assertRuntimeScenarios(t *testing.T, runtimes graphql.RuntimePageExt, expectedScenarios map[string][]interface{}) {
-	for _, rtm := range runtimes.Data {
-		expectedScenarios, found := expectedScenarios[rtm.ID]
-		require.True(t, found)
-		assertScenarios(t, rtm.Labels, expectedScenarios)
-	}
-}
-
-func assertScenarios(t *testing.T, actual graphql.Labels, expected []interface{}) {
-	val, ok := actual["scenarios"]
-	require.True(t, ok)
-	scenarios, ok := val.([]interface{})
-	require.True(t, ok)
-	assert.ElementsMatch(t, scenarios, expected)
-}
-
 func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	defaultValue := "DEFAULT"
 	scenario1 := "test-scenario"
@@ -221,8 +228,8 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	}
 
 	scenarios := []string{defaultValue, scenario1, scenario2}
-	tenantID := testTenants.GetIDByName(t, "TestDeleteAssignmentsForScenario")
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
+	tenantID := pkg.TestTenants.GetIDByName(t, "TestDeleteAssignmentsForScenario")
+	pkg.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenarios)
 
 	assignment1 := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: scenario1,
@@ -235,26 +242,26 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 	var output graphql.AutomaticScenarioAssignment
 
-	assignment1Gql, err := tc.graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(assignment1)
+	assignment1Gql, err := pkg.Tc.Graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(assignment1)
 	require.NoError(t, err)
 
-	req := fixCreateAutomaticScenarioAssignmentRequest(assignment1Gql)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, nil)
+	req := pkg.FixCreateAutomaticScenarioAssignmentRequest(assignment1Gql)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, nil)
 	require.NoError(t, err)
 	saveExample(t, req.Query(), "create automatic scenario assignment")
 
-	createAutomaticScenarioAssignmentInTenant(t, ctx, assignment2, tenantID)
-	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, scenario2)
+	pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, assignment2, tenantID)
+	defer pkg.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenario2)
 
 	//WHEN
-	req = fixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenario1)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &output)
+	req = pkg.FixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenario1)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, &output)
 	require.NoError(t, err)
 
 	//THEN
 	assertAutomaticScenarioAssignment(t, assignment1, output)
 
-	allAssignments := listAutomaticScenarioAssignmentsWithinTenant(t, ctx, tenantID)
+	allAssignments := pkg.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, dexGraphQLClient, tenantID)
 	require.Len(t, allAssignments.Data, 1)
 	require.Equal(t, 1, allAssignments.TotalCount)
 	assertAutomaticScenarioAssignment(t, assignment2, *allAssignments.Data[0])
@@ -265,6 +272,13 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
 	defaultValue := "DEFAULT"
 	scenario1 := "test-scenario"
 	scenario2 := "test-scenario-2"
@@ -272,8 +286,8 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	scenarios := []string{defaultValue, scenario1, scenario2, scenario3}
 
-	tenantID := testTenants.GetIDByName(t, "TestDeleteAssignmentsForSelector")
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, scenarios)
+	tenantID := pkg.TestTenants.GetIDByName(t, "TestDeleteAssignmentsForSelector")
+	pkg.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenarios)
 
 	selector := graphql.LabelSelectorInput{Key: "test-key", Value: "test-value"}
 	selector2 := graphql.LabelSelectorInput{
@@ -289,23 +303,23 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 
 	var output []*graphql.AutomaticScenarioAssignment
 
-	createAutomaticScenarioAssignmentInTenant(t, ctx, assignments[0], tenantID)
-	createAutomaticScenarioAssignmentInTenant(t, ctx, assignments[1], tenantID)
-	createAutomaticScenarioAssignmentInTenant(t, ctx, anotherAssignment, tenantID)
-	defer deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, scenario3)
+	pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, assignments[0], tenantID)
+	pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, assignments[1], tenantID)
+	pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, anotherAssignment, tenantID)
+	defer pkg.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenario3)
 
-	selectorGql, err := tc.graphqlizer.LabelSelectorInputToGQL(selector)
+	selectorGql, err := pkg.Tc.Graphqlizer.LabelSelectorInputToGQL(selector)
 	require.NoError(t, err)
 
 	//WHEN
-	req := fixDeleteAutomaticScenarioAssignmentsForSelectorRequest(selectorGql)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &output)
+	req := pkg.FixDeleteAutomaticScenarioAssignmentsForSelectorRequest(selectorGql)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, req, &output)
 	require.NoError(t, err)
 
 	//THEN
 	assertAutomaticScenarioAssignments(t, assignments, output)
 
-	actualAssignments := listAutomaticScenarioAssignmentsWithinTenant(t, ctx, tenantID)
+	actualAssignments := pkg.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, dexGraphQLClient, tenantID)
 	assert.Len(t, actualAssignments.Data, 1)
 	require.Equal(t, 1, actualAssignments.TotalCount)
 	assertAutomaticScenarioAssignment(t, anotherAssignment, *actualAssignments.Data[0])
@@ -317,61 +331,57 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
 	defaultValue := "DEFAULT"
 	scenario := "test"
 
 	scenariosOnlyDefault := []interface{}{defaultValue}
 	scenarios := []interface{}{scenario, defaultValue}
-	tenantID := testTenants.GetIDByName(t, "TestWholeScenario")
-	createScenariosLabelDefinitionWithinTenant(t, ctx, tenantID, []string{scenarios[0].(string), scenarios[1].(string)})
+	tenantID := pkg.TestTenants.GetIDByName(t, "TestWholeScenario")
+	pkg.CreateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantID, []string{scenarios[0].(string), scenarios[1].(string)})
 
 	selector := graphql.LabelSelectorInput{Key: "testkey", Value: "testvalue"}
 	assignment := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: scenario, Selector: &selector}
 
-	createAutomaticScenarioAssignmentInTenant(t, ctx, assignment, tenantID)
+	pkg.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, assignment, tenantID)
 
 	rtmInput := graphql.RuntimeInput{
 		Name:   "test-name",
 		Labels: &graphql.Labels{selector.Key: selector.Value, "scenarios": []string{defaultValue}},
 	}
 
-	rtm := registerRuntimeFromInputWithinTenant(t, ctx, &rtmInput, tenantID)
-	defer unregisterRuntimeWithinTenant(t, rtm.ID, tenantID)
+	rtm := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, &rtmInput)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
 
 	t.Run("Scenario is set when label matches selector", func(t *testing.T) {
-		rtmWithScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
+		rtmWithScenarios := pkg.GetRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
 		assertScenarios(t, rtmWithScenarios.Labels, scenarios)
 	})
 
 	selector2 := graphql.LabelSelectorInput{Key: "newtestkey", Value: "newtestvalue"}
 
 	t.Run("Scenario is unset when label on runtime changes", func(t *testing.T) {
-		setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm.ID, selector.Key, selector2.Value)
-		rtmWithScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantID, rtm.ID, selector.Key, selector2.Value)
+		rtmWithScenarios := pkg.GetRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
 		assertScenarios(t, rtmWithScenarios.Labels, scenariosOnlyDefault)
 	})
 
 	t.Run("Scenario is set back when label on runtime matches selector", func(t *testing.T) {
-		setRuntimeLabelWithinTenant(t, ctx, tenantID, rtm.ID, selector.Key, selector.Value)
-		rtmWithScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantID, rtm.ID, selector.Key, selector.Value)
+		rtmWithScenarios := pkg.GetRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
 		assertScenarios(t, rtmWithScenarios.Labels, scenarios)
 	})
 
 	t.Run("Scenario is unset when automatic scenario assignment is deleted", func(t *testing.T) {
-		deleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, tenantID, scenario)
-		rtmWithoutScenarios := getRuntimeWithinTenant(t, ctx, rtm.ID, tenantID)
+		pkg.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantID, scenario)
+		rtmWithoutScenarios := pkg.GetRuntime(t, ctx, dexGraphQLClient, rtm.ID, tenantID)
 		assertScenarios(t, rtmWithoutScenarios.Labels, scenariosOnlyDefault)
 	})
-
-}
-
-func fixAutomaticScenarioAssigmentInput(automaticScenario, selecterKey, selectorValue string) graphql.AutomaticScenarioAssignmentSetInput {
-	return graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: automaticScenario,
-		Selector: &graphql.LabelSelectorInput{
-			Key:   selecterKey,
-			Value: selectorValue,
-		},
-	}
 
 }

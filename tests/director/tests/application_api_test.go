@@ -3,6 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/jwtbuilder"
@@ -10,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,6 +35,7 @@ var integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
 func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
 	in := graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
 		ProviderName:   ptr.String("provider name"),
@@ -44,20 +47,25 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		},
 	}
 
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
-	actualApp := graphql.ApplicationExt{}
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	// WHEN
-	request := fixRegisterApplicationRequest(appInputGQL)
-	err = tc.RunOperation(ctx, request, &actualApp)
+	request := pkg.FixRegisterApplicationRequest(appInputGQL)
+	actualApp := graphql.ApplicationExt{}
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 
 	//THEN
 	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer unregisterApplication(t, actualApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 	assertApplication(t, in, actualApp)
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
 }
@@ -66,11 +74,21 @@ func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	firstAppName := "app@wordpress"
-	actualApp := registerApplication(t, ctx, firstAppName)
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	actualApp := pkg.RegisterApplication(t, ctx, dexGraphQLClient, firstAppName, tenant)
+
 	//THEN
 	require.NotEmpty(t, actualApp.ID)
 	require.Equal(t, actualApp.Name, firstAppName)
-	defer unregisterApplication(t, actualApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, actualApp.ID)
 
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
 
@@ -85,21 +103,25 @@ func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}
-	appSecondInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(inSecond)
+	appSecondInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inSecond)
 	require.NoError(t, err)
 	actualSecondApp := graphql.ApplicationExt{}
+
 	// WHEN
-	request := fixRegisterApplicationRequest(appSecondInputGQL)
-	err = tc.RunOperation(ctx, request, &actualSecondApp)
+
+	request := pkg.FixRegisterApplicationRequest(appSecondInputGQL)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualSecondApp)
+
 	//THEN
 	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
 	require.Empty(t, actualSecondApp.ID)
 
 	// THIRD APP WITH DIFFERENT APP NAME WHEN NORMALIZED
-	actualThirdApp := registerApplication(t, ctx, "appwordpress")
+	actualThirdApp := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "appwordpress", tenant)
+
 	//THEN
 	require.NotEmpty(t, actualThirdApp.ID)
-	defer unregisterApplication(t, actualThirdApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, actualThirdApp.ID)
 
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualThirdApp.Status.Condition)
 
@@ -114,23 +136,23 @@ func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}
-	appFourthInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(inFourth)
+	appFourthInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inFourth)
 	require.NoError(t, err)
 	actualFourthApp := graphql.ApplicationExt{}
 	// WHEN
-	request = fixRegisterApplicationRequest(appFourthInputGQL)
-	err = tc.RunOperation(ctx, request, &actualFourthApp)
+	request = pkg.FixRegisterApplicationRequest(appFourthInputGQL)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualFourthApp)
 	//THEN
 	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
 	require.Empty(t, actualFourthApp.ID)
 
 	// FIFTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH DOES NOT MATCH ANY EXISTING APP WHEN NORMALIZED
 	fifthAppName := "mp-application"
-	actualFifthApp := registerApplication(t, ctx, fifthAppName)
+	actualFifthApp := pkg.RegisterApplication(t, ctx, dexGraphQLClient, fifthAppName, tenant)
 	//THEN
 	require.NotEmpty(t, actualFifthApp.ID)
 	require.Equal(t, actualFifthApp.Name, fifthAppName)
-	defer unregisterApplication(t, actualFifthApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, actualFifthApp.ID)
 
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualFifthApp.Status.Condition)
 }
@@ -151,20 +173,26 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 		StatusCondition: &statusCond,
 	}
 
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
-	request := fixRegisterApplicationRequest(appInputGQL)
+	request := pkg.FixRegisterApplicationRequest(appInputGQL)
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	// WHEN
 	actualApp := graphql.ApplicationExt{}
-	err = tc.RunOperation(ctx, request, &actualApp)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 
 	//THEN
 	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with status")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer unregisterApplication(t, actualApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 	assertApplication(t, in, actualApp)
 	assert.Equal(t, statusCond, actualApp.Status.Condition)
 }
@@ -178,7 +206,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 		Webhooks: []*graphql.WebhookInput{
 			{
 				Type: graphql.WebhookTypeConfigurationChanged,
-				Auth: fixBasicAuth(t),
+				Auth: pkg.FixBasicAuth(t),
 				URL:  ptr.String("http://mywordpress.com/webhooks1"),
 			},
 		},
@@ -187,46 +215,65 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 		},
 	}
 
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
 	// WHEN
-	request := fixRegisterApplicationRequest(appInputGQL)
+	request := pkg.FixRegisterApplicationRequest(appInputGQL)
 	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with webhooks")
-	err = tc.RunOperation(ctx, request, &actualApp)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer unregisterApplication(t, actualApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 	assertApplication(t, in, actualApp)
 }
 
 func TestRegisterApplicationWithBundles(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := fixApplicationRegisterInputWithBundles(t)
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	in := pkg.FixApplicationRegisterInputWithBundles(t)
+	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
 	// WHEN
-	request := fixRegisterApplicationRequest(appInputGQL)
-	err = tc.RunOperation(ctx, request, &actualApp)
+	request := pkg.FixRegisterApplicationRequest(appInputGQL)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 
 	//THEN
 	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with bundles")
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer unregisterApplication(t, actualApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 	assertApplication(t, in, actualApp)
 }
 
 // TODO: Delete after bundles are adopted
+
 func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 	ctx := context.Background()
 	expectedAppName := "create-app-with-packages"
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	type ApplicationWithPackagesExt struct {
 		graphql.Application
@@ -240,8 +287,8 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 	t.Run("Register Application with Packages when useBundles=false", func(t *testing.T) {
 		var actualApp ApplicationWithPackagesExt
-		request := fixRegisterApplicationWithPackagesRequest(expectedAppName)
-		err := tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, &actualApp)
+		request := pkg.FixRegisterApplicationWithPackagesRequest(expectedAppName)
+		err := pkg.Tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, dexGraphQLClient, &actualApp)
 
 		appID := actualApp.ID
 		packageID := actualApp.Packages.Data[0].ID
@@ -249,15 +296,15 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, appID)
 
-		defer unregisterApplication(t, appID)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), appID)
 
 		require.NotEmpty(t, packageID)
 		require.Equal(t, expectedAppName, actualApp.Name)
 
 		t.Run("Get Application with Package when useBundles=false should succeed", func(t *testing.T) {
 			var actualAppWithPackage ApplicationWithPackagesExt
-			request := fixGetApplicationWithPackageRequest(appID, packageID)
-			err := tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, &actualAppWithPackage)
+			request := pkg.FixGetApplicationWithPackageRequest(appID, packageID)
+			err := pkg.Tc.NewOperation(ctx).WithQueryParam("useBundles", "false").Run(request, dexGraphQLClient, &actualAppWithPackage)
 
 			require.NoError(t, err)
 			require.NotEmpty(t, actualAppWithPackage.ID)
@@ -266,37 +313,37 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 		t.Run("Get Application with Package when useBundles=true should fail", func(t *testing.T) {
 			var actualAppWithPackage ApplicationWithPackagesExt
-			request := fixGetApplicationWithPackageRequest(appID, packageID)
-			err := tc.NewOperation(ctx).
+			request := pkg.FixGetApplicationWithPackageRequest(appID, packageID)
+			err := pkg.Tc.NewOperation(ctx).
 				WithQueryParam("useBundles", "true").
-				Run(request, &actualAppWithPackage)
+				Run(request, dexGraphQLClient, &actualAppWithPackage)
 
 			require.Error(t, err)
 			require.Empty(t, actualAppWithPackage.ID)
 		})
 
-		runtimeInput := fixRuntimeInput("test-runtime")
-		(*runtimeInput.Labels)[scenariosLabel] = []string{"DEFAULT"}
-		runtimeInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInput)
+		runtimeInput := pkg.FixRuntimeInput("test-runtime")
+		(*runtimeInput.Labels)[ScenariosLabel] = []string{"DEFAULT"}
+		runtimeInputGQL, err := pkg.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
 		require.NoError(t, err)
-		registerRuntimeRequest := fixRegisterRuntimeRequest(runtimeInputGQL)
+		registerRuntimeRequest := pkg.FixRegisterRuntimeRequest(runtimeInputGQL)
 
 		runtime := graphql.Runtime{}
-		err = tc.RunOperation(ctx, registerRuntimeRequest, &runtime)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, registerRuntimeRequest, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 
-		defer unregisterRuntime(t, runtime.ID)
+		defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), runtime.ID)
 
 		t.Run("Get ApplicationForRuntime with Package when useBundles=false should succeed", func(t *testing.T) {
 			applicationPage := struct {
 				Data []*ApplicationWithPackagesExt `json:"data"`
 			}{}
-			request := fixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
-			err := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
+			request := pkg.FixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
+			err := pkg.Tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
 				ID:   runtime.ID,
 				Type: jwtbuilder.RuntimeConsumer,
-			}).WithQueryParam("useBundles", "false").Run(request, &applicationPage)
+			}).WithQueryParam("useBundles", "false").Run(request, dexGraphQLClient, &applicationPage)
 
 			require.NoError(t, err)
 			require.Len(t, applicationPage.Data, 1)
@@ -314,11 +361,11 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 		t.Run("Get ApplicationForRuntime with Package when useBundles=true should fail", func(t *testing.T) {
 			var actualAppWithPackage ApplicationWithPackagesExt
-			request := fixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
-			err := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
+			request := pkg.FixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
+			err := pkg.Tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
 				ID:   runtime.ID,
 				Type: jwtbuilder.RuntimeConsumer,
-			}).WithQueryParam("useBundles", "true").Run(request, &actualAppWithPackage)
+			}).WithQueryParam("useBundles", "true").Run(request, dexGraphQLClient, &actualAppWithPackage)
 
 			require.Error(t, err)
 			require.Empty(t, actualAppWithPackage.ID)
@@ -327,9 +374,9 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 	t.Run("Register Application with Packages when useBundles=true should fail", func(t *testing.T) {
 		var actualApp ApplicationWithPackagesExt
-		request := fixRegisterApplicationWithPackagesRequest("failed-app-with-packages")
-		op := tc.NewOperation(ctx).WithQueryParam("useBundles", "true")
-		err := op.Run(request, &actualApp)
+		request := pkg.FixRegisterApplicationWithPackagesRequest("failed-app-with-packages")
+		op := pkg.Tc.NewOperation(ctx).WithQueryParam("useBundles", "true")
+		err := op.Run(request, dexGraphQLClient, &actualApp)
 
 		require.Error(t, err)
 		require.Empty(t, actualApp.ID)
@@ -341,14 +388,21 @@ func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	in := fixSampleApplicationCreateInputWithIntegrationSystem("placeholder")
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	in := pkg.FixSampleApplicationCreateInputWithIntegrationSystem("placeholder")
+	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
 
-	request := fixRegisterApplicationRequest(appInputGQL)
+	request := pkg.FixRegisterApplicationRequest(appInputGQL)
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
 	// WHEN
-	err = tc.RunOperation(ctx, request, &actualApp)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 
 	//THEN
 	require.Error(t, err)
@@ -360,8 +414,14 @@ func TestUpdateApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	actualApp := registerApplication(t, ctx, "before")
-	defer unregisterApplication(t, actualApp.ID)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	actualApp := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "before", pkg.TestTenants.GetDefaultTenantID())
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 
 	updateStatusCond := graphql.ApplicationStatusConditionConnected
 
@@ -373,15 +433,15 @@ func TestUpdateApplication(t *testing.T) {
 	expectedApp.Status.Condition = updateStatusCond
 	expectedApp.Labels["name"] = "before"
 
-	updateInput := fixSampleApplicationUpdateInput("after")
+	updateInput := pkg.FixSampleApplicationUpdateInput("after")
 	updateInput.StatusCondition = &updateStatusCond
-	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	updateInputGQL, err := pkg.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
 	require.NoError(t, err)
-	request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+	request := pkg.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
 	updatedApp := graphql.ApplicationExt{}
 
 	//WHEN
-	err = tc.RunOperation(ctx, request, &updatedApp)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &updatedApp)
 
 	//THEN
 	require.NoError(t, err)
@@ -399,17 +459,23 @@ func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	actualApp := registerApplication(t, ctx, "before")
-	defer unregisterApplication(t, actualApp.ID)
-
-	updateInput := fixSampleApplicationUpdateInputWithIntegrationSystem("after")
-	updateInputGQL, err := tc.graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
-	request := fixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	actualApp := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "before", pkg.TestTenants.GetDefaultTenantID())
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
+
+	updateInput := pkg.FixSampleApplicationUpdateInputWithIntegrationSystem("after")
+	updateInputGQL, err := pkg.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+	request := pkg.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
 	updatedApp := graphql.ApplicationExt{}
 
 	//WHEN
-	err = tc.RunOperation(ctx, request, &updatedApp)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &updatedApp)
 
 	//THEN
 	require.Error(t, err)
@@ -423,17 +489,23 @@ func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 
 	appName := "samename"
 
-	actualApp := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, actualApp.ID)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	actualApp := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, pkg.TestTenants.GetDefaultTenantID())
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 
 	t.Run("Error when creating second Application with same name", func(t *testing.T) {
-		in := fixSampleApplicationRegisterInputWithName("first", appName)
-		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+		in := pkg.FixSampleApplicationRegisterInputWithNameAndWebhooks("first", appName)
+		appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 		require.NoError(t, err)
-		request := fixRegisterApplicationRequest(appInputGQL)
+		request := pkg.FixRegisterApplicationRequest(appInputGQL)
 
 		// WHEN
-		err = tc.RunOperation(ctx, request, nil)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, nil)
 
 		// THEN
 		require.Error(t, err)
@@ -444,21 +516,29 @@ func TestCreateApplicationWithDuplicatedNamesWithinTenant(t *testing.T) {
 func TestDeleteApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	in := fixSampleApplicationRegisterInput("app")
+	in := pkg.FixSampleApplicationRegisterInputWithWebhooks("app")
 
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
-	createReq := fixRegisterApplicationRequest(appInputGQL)
+
+	createReq := pkg.FixRegisterApplicationRequest(appInputGQL)
 	actualApp := graphql.ApplicationExt{}
-	err = tc.RunOperation(ctx, createReq, &actualApp)
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, actualApp.ID)
 
 	// WHEN
-	delReq := fixUnregisterApplicationRequest(actualApp.ID)
+	delReq := pkg.FixUnregisterApplicationRequest(actualApp.ID)
 	saveExample(t, delReq.Query(), "unregister application")
-	err = tc.RunOperation(ctx, delReq, &actualApp)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, delReq, &actualApp)
 
 	//THEN
 	require.NoError(t, err)
@@ -467,16 +547,26 @@ func TestDeleteApplication(t *testing.T) {
 func TestUpdateApplicationParts(t *testing.T) {
 	ctx := context.Background()
 	placeholder := "app"
-	in := fixSampleApplicationRegisterInput(placeholder)
+	in := pkg.FixSampleApplicationRegisterInputWithWebhooks(placeholder)
 
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
-	createReq := fixRegisterApplicationRequest(appInputGQL)
+
+	createReq := pkg.FixRegisterApplicationRequest(appInputGQL)
 	actualApp := graphql.ApplicationExt{}
-	err = tc.RunOperation(ctx, createReq, &actualApp)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer unregisterApplication(t, actualApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 
 	t.Run("labels manipulation", func(t *testing.T) {
 		expectedLabel := graphql.Label{Key: "brand_new_label", Value: []interface{}{"aaa", "bbb"}}
@@ -484,40 +574,42 @@ func TestUpdateApplicationParts(t *testing.T) {
 		// add label
 		createdLabel := &graphql.Label{}
 
-		addReq := fixSetApplicationLabelRequest(actualApp.ID, expectedLabel.Key, []string{"aaa", "bbb"})
+		addReq := pkg.FixSetApplicationLabelRequest(actualApp.ID, expectedLabel.Key, []string{"aaa", "bbb"})
 		saveExample(t, addReq.Query(), "set application label")
-		err := tc.RunOperation(ctx, addReq, &createdLabel)
+
+		err := pkg.Tc.RunOperation(ctx, dexGraphQLClient, addReq, &createdLabel)
 		require.NoError(t, err)
 		assert.Equal(t, &expectedLabel, createdLabel)
-		actualApp := getApplication(t, ctx, actualApp.ID)
+
+		actualApp := pkg.GetApplication(t, ctx, dexGraphQLClient, actualApp.ID, tenant)
 		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "aaa")
 		assert.Contains(t, actualApp.Labels[expectedLabel.Key], "bbb")
 
 		// delete label value
 		deletedLabel := graphql.Label{}
-		delReq := fixDeleteApplicationLabelRequest(actualApp.ID, expectedLabel.Key)
+		delReq := pkg.FixDeleteApplicationLabelRequest(actualApp.ID, expectedLabel.Key)
 		saveExample(t, delReq.Query(), "delete application label")
-		err = tc.RunOperation(ctx, delReq, &deletedLabel)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, delReq, &deletedLabel)
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabel, deletedLabel)
-		actualApp = getApplication(t, ctx, actualApp.ID)
+		actualApp = pkg.GetApplication(t, ctx, dexGraphQLClient, actualApp.ID, pkg.TestTenants.GetDefaultTenantID())
 		assert.Nil(t, actualApp.Labels[expectedLabel.Key])
 
 	})
 
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
-		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		webhookInStr, err := pkg.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL:  ptr.String("http://new-webhook.url"),
 			Type: graphql.WebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
-		addReq := fixAddWebhookRequest(actualApp.ID, webhookInStr)
+		addReq := pkg.FixAddWebhookRequest(actualApp.ID, webhookInStr)
 		saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add application webhook")
 
 		actualWebhook := graphql.Webhook{}
-		err = tc.RunOperation(ctx, addReq, &actualWebhook)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, addReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.Equal(t, "http://new-webhook.url", actualWebhook.URL)
 		assert.Equal(t, graphql.WebhookTypeConfigurationChanged, actualWebhook.Type)
@@ -525,29 +617,29 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NotNil(t, id)
 
 		// get all webhooks
-		updatedApp := getApplication(t, ctx, actualApp.ID)
+		updatedApp := pkg.GetApplication(t, ctx, dexGraphQLClient, actualApp.ID, tenant)
 		assert.Len(t, updatedApp.Webhooks, 2)
 
 		// update
-		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		webhookInStr, err = pkg.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL: ptr.String("http://updated-webhook.url"), Type: graphql.WebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
-		updateReq := fixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
+		updateReq := pkg.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
 		saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
-		err = tc.RunOperation(ctx, updateReq, &actualWebhook)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
 
 		// delete
 
 		//GIVEN
-		deleteReq := fixDeleteWebhookRequest(actualWebhook.ID)
+		deleteReq := pkg.FixDeleteWebhookRequest(actualWebhook.ID)
 		saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete application webhook")
 
 		//WHEN
-		err = tc.RunOperation(ctx, deleteReq, &actualWebhook)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, deleteReq, &actualWebhook)
 
 		//THEN
 		require.NoError(t, err)
@@ -567,24 +659,33 @@ func TestUpdateApplicationParts(t *testing.T) {
 func TestQueryApplications(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
 	for i := 0; i < 3; i++ {
 		in := graphql.ApplicationRegisterInput{
 			Name: fmt.Sprintf("app-%d", i),
 		}
 
-		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+		appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 		require.NoError(t, err)
+
 		actualApp := graphql.Application{}
-		request := fixRegisterApplicationRequest(appInputGQL)
-		err = tc.RunOperation(ctx, request, &actualApp)
+		request := pkg.FixRegisterApplicationRequest(appInputGQL)
+
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualApp)
 		require.NoError(t, err)
-		defer unregisterApplication(t, actualApp.ID)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 	}
 	actualAppPage := graphql.ApplicationPage{}
 
 	// WHEN
-	queryReq := fixApplicationsRequest()
-	err := tc.RunOperation(ctx, queryReq, &actualAppPage)
+	queryReq := pkg.FixGetApplicationsRequestWithPagination()
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, queryReq, &actualAppPage)
 	saveExampleInCustomDir(t, queryReq.Query(), queryApplicationsCategory, "query applications")
 
 	//THEN
@@ -600,10 +701,18 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	cursor := ""
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	apps := make(map[string]*graphql.ApplicationExt)
 	for i := 0; i < appAmount; i++ {
-		app := registerApplication(t, ctx, fmt.Sprintf("app-%d", i))
-		defer unregisterApplication(t, app.ID)
+		app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, fmt.Sprintf("app-%d", i), tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), app.ID)
 		apps[app.ID] = &app
 	}
 	appsPage := graphql.ApplicationPageExt{}
@@ -611,8 +720,8 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	// WHEN
 	queriesForFullPage := appAmount / after
 	for i := 0; i < queriesForFullPage; i++ {
-		appReq := fixApplicationsPageableRequest(after, cursor)
-		err := tc.RunOperation(ctx, appReq, &appsPage)
+		appReq := pkg.FixApplicationsPageableRequest(after, cursor)
+		err := pkg.Tc.RunOperation(ctx, dexGraphQLClient, appReq, &appsPage)
 		require.NoError(t, err)
 
 		//THEN
@@ -627,8 +736,8 @@ func TestQueryApplicationsPageable(t *testing.T) {
 		cursor = string(appsPage.PageInfo.EndCursor)
 	}
 
-	appReq := fixApplicationsPageableRequest(after, cursor)
-	err := tc.RunOperation(ctx, appReq, &appsPage)
+	appReq := pkg.FixApplicationsPageableRequest(after, cursor)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, appReq, &appsPage)
 	require.NoError(t, err)
 
 	assert.False(t, appsPage.PageInfo.HasNextPage)
@@ -646,23 +755,31 @@ func TestQuerySpecificApplication(t *testing.T) {
 		ProviderName: ptr.String("compass"),
 	}
 
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
+	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
 	actualApp := graphql.Application{}
-	request := fixRegisterApplicationRequest(appInputGQL)
-	err = tc.RunOperation(context.Background(), request, &actualApp)
+	request := pkg.FixRegisterApplicationRequest(appInputGQL)
+	err = pkg.Tc.RunOperation(context.Background(), dexGraphQLClient, request, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
 	appID := actualApp.ID
-	defer unregisterApplication(t, appID)
+	defer pkg.UnregisterApplication(t, context.Background(), dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), appID)
 
 	t.Run("Query Application With Consumer User", func(t *testing.T) {
 		actualApp := graphql.Application{}
 
 		// WHEN
-		queryAppReq := fixApplicationRequest(appID)
-		err = tc.RunOperation(context.Background(), queryAppReq, &actualApp)
+		queryAppReq := pkg.FixGetApplicationRequest(appID)
+		err = pkg.Tc.RunOperation(context.Background(), dexGraphQLClient, queryAppReq, &actualApp)
 		saveExampleInCustomDir(t, queryAppReq.Query(), queryApplicationCategory, "query application")
 
 		//THE
@@ -672,34 +789,36 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 	ctx := context.Background()
 
-	runtime := registerRuntime(t, ctx, "runtime-test")
-	defer unregisterRuntime(t, runtime.ID)
+	input := pkg.FixRuntimeInput("runtime-test")
+
+	runtime := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
 
 	scenarios := []string{defaultScenario, "test-scenario"}
 
 	// update label definitions
-	updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios)
-	defer updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios[:1])
+	pkg.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), scenarios)
+	defer pkg.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), scenarios[:1])
 
-	runtimeConsumer := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
+	runtimeConsumer := pkg.Tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
 		ID:   runtime.ID,
 		Type: jwtbuilder.RuntimeConsumer,
 	})
 
 	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
 		// set application scenarios label
-		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[1:])
-		defer setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1])
+		pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, appID, ScenariosLabel, scenarios[1:])
+		defer pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, appID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
-		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		actualApp := graphql.Application{}
 
 		// WHEN
-		queryAppReq := fixApplicationRequest(appID)
-		err = runtimeConsumer.Run(queryAppReq, &actualApp)
+		queryAppReq := pkg.FixGetApplicationRequest(appID)
+		err = runtimeConsumer.Run(queryAppReq, dexGraphQLClient, &actualApp)
 
 		//THEN
 		require.NoError(t, err)
@@ -708,17 +827,17 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 	t.Run("Query Application With Consumer Runtime not in same scenario", func(t *testing.T) {
 		// set application scenarios label
-		setApplicationLabel(t, ctx, appID, scenariosLabel, scenarios[:1])
+		pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, appID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
-		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		actualApp := graphql.Application{}
 
 		// WHEN
-		queryAppReq := fixApplicationRequest(appID)
-		err = runtimeConsumer.Run(queryAppReq, &actualApp)
+		queryAppReq := pkg.FixGetApplicationRequest(appID)
+		err = runtimeConsumer.Run(queryAppReq, dexGraphQLClient, &actualApp)
 
 		//THEN
 		require.Error(t, err)
@@ -728,23 +847,31 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 func TestTenantSeparation(t *testing.T) {
 	// GIVEN
-	appIn := fixSampleApplicationRegisterInput("tenantseparation")
-	inStr, err := tc.graphqlizer.ApplicationRegisterInputToGQL(appIn)
+	appIn := pkg.FixSampleApplicationRegisterInputWithWebhooks("tenantseparation")
+	inStr, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appIn)
 	require.NoError(t, err)
-	createReq := fixRegisterApplicationRequest(inStr)
+
+	createReq := pkg.FixRegisterApplicationRequest(inStr)
 	actualApp := graphql.ApplicationExt{}
 	ctx := context.Background()
-	err = tc.RunOperation(ctx, createReq, &actualApp)
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)
-	defer unregisterApplication(t, actualApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, pkg.TestTenants.GetDefaultTenantID(), actualApp.ID)
 
 	// WHEN
-	getAppReq := fixApplicationsRequest()
-	customTenant := testTenants.GetIDByName(t, "Test1")
+	getAppReq := pkg.FixGetApplicationsRequestWithPagination()
+	customTenant := pkg.TestTenants.GetIDByName(t, "Test1")
 	anotherTenantsApps := graphql.ApplicationPage{}
 	// THEN
-	err = tc.RunOperationWithCustomTenant(ctx, customTenant, getAppReq, &anotherTenantsApps)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, customTenant, getAppReq, &anotherTenantsApps)
 	require.NoError(t, err)
 	assert.Empty(t, anotherTenantsApps.Data)
 }
@@ -752,8 +879,8 @@ func TestTenantSeparation(t *testing.T) {
 func TestApplicationsForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-	tenantID := testTenants.GetIDByName(t, "Test1")
-	otherTenant := testTenants.GetIDByName(t, "Test2")
+	tenantID := pkg.TestTenants.GetIDByName(t, "Test1")
+	otherTenant := pkg.TestTenants.GetIDByName(t, "Test2")
 	tenantUnnormalizedApplications := []*graphql.Application{}
 	tenantNormalizedApplications := []*graphql.Application{}
 	defaultValue := "DEFAULT"
@@ -770,8 +897,14 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}
 	var schema interface{} = jsonSchema
 
-	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
-	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, otherTenant)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	pkg.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
+	pkg.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, otherTenant)
 
 	applications := []struct {
 		ApplicationName string
@@ -812,20 +945,20 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}
 
 	for _, testApp := range applications {
-		applicationInput := fixSampleApplicationRegisterInput(testApp.ApplicationName)
-		applicationInput.Labels = &graphql.Labels{scenariosLabel: testApp.Scenarios}
-		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
+		applicationInput := pkg.FixSampleApplicationRegisterInputWithWebhooks(testApp.ApplicationName)
+		applicationInput.Labels = &graphql.Labels{ScenariosLabel: testApp.Scenarios}
+		appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
-		createApplicationReq := fixRegisterApplicationRequest(appInputGQL)
+		createApplicationReq := pkg.FixRegisterApplicationRequest(appInputGQL)
 		application := graphql.Application{}
 
-		err = tc.RunOperationWithCustomTenant(ctx, testApp.Tenant, createApplicationReq, &application)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testApp.Tenant, createApplicationReq, &application)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 
-		defer unregisterApplicationInTenant(t, application.ID, testApp.Tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testApp.Tenant, application.ID)
 		if testApp.WithinTenant {
 			tenantUnnormalizedApplications = append(tenantUnnormalizedApplications, &application)
 
@@ -836,24 +969,24 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}
 
 	//create runtime without normalization
-	runtimeInputWithoutNormalization := fixRuntimeInput("unnormalized-runtime")
-	(*runtimeInputWithoutNormalization.Labels)[scenariosLabel] = scenarios
-	(*runtimeInputWithoutNormalization.Labels)[isNormalizedLabel] = "false"
-	runtimeInputWithoutNormalizationGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInputWithoutNormalization)
+	runtimeInputWithoutNormalization := pkg.FixRuntimeInput("unnormalized-runtime")
+	(*runtimeInputWithoutNormalization.Labels)[ScenariosLabel] = scenarios
+	(*runtimeInputWithoutNormalization.Labels)[IsNormalizedLabel] = "false"
+	runtimeInputWithoutNormalizationGQL, err := pkg.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInputWithoutNormalization)
 	require.NoError(t, err)
-	registerRuntimeWithNormalizationRequest := fixRegisterRuntimeRequest(runtimeInputWithoutNormalizationGQL)
+	registerRuntimeWithNormalizationRequest := pkg.FixRegisterRuntimeRequest(runtimeInputWithoutNormalizationGQL)
 
 	runtimeWithoutNormalization := graphql.Runtime{}
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeWithNormalizationRequest, &runtimeWithoutNormalization)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerRuntimeWithNormalizationRequest, &runtimeWithoutNormalization)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtimeWithoutNormalization.ID)
-	defer unregisterRuntimeWithinTenant(t, runtimeWithoutNormalization.ID, tenantID)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, runtimeWithoutNormalization.ID, tenantID)
 
 	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
-		request := fixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
+		request := pkg.FixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
 		applicationPage := graphql.ApplicationPage{}
 
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, request, &applicationPage)
 		saveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
@@ -865,28 +998,28 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	t.Run("Applications For Runtime Query without normalization due to missing label", func(t *testing.T) {
 		//create runtime without normalization
-		unlabeledRuntimeInput := fixRuntimeInput("unlabeled-runtime")
-		(*unlabeledRuntimeInput.Labels)[scenariosLabel] = scenarios
-		(*unlabeledRuntimeInput.Labels)[isNormalizedLabel] = "false"
-		unlabeledRuntimeGQL, err := tc.graphqlizer.RuntimeInputToGQL(unlabeledRuntimeInput)
+		unlabeledRuntimeInput := pkg.FixRuntimeInput("unlabeled-runtime")
+		(*unlabeledRuntimeInput.Labels)[ScenariosLabel] = scenarios
+		(*unlabeledRuntimeInput.Labels)[IsNormalizedLabel] = "false"
+		unlabeledRuntimeGQL, err := pkg.Tc.Graphqlizer.RuntimeInputToGQL(unlabeledRuntimeInput)
 		require.NoError(t, err)
-		registerUnlabeledRuntimeRequest := fixRegisterRuntimeRequest(unlabeledRuntimeGQL)
+		registerUnlabeledRuntimeRequest := pkg.FixRegisterRuntimeRequest(unlabeledRuntimeGQL)
 
 		unlabledRuntime := graphql.Runtime{}
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerUnlabeledRuntimeRequest, &unlabledRuntime)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerUnlabeledRuntimeRequest, &unlabledRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, unlabledRuntime.ID)
-		defer unregisterRuntimeWithinTenant(t, unlabledRuntime.ID, tenantID)
+		defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, unlabledRuntime.ID, tenantID)
 
 		deleteLabelRuntimeResp := graphql.Runtime{}
-		deleteLabelRequest := fixDeleteRuntimeLabelRequest(unlabledRuntime.ID, isNormalizedLabel)
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, deleteLabelRequest, &deleteLabelRuntimeResp)
+		deleteLabelRequest := pkg.FixDeleteRuntimeLabelRequest(unlabledRuntime.ID, IsNormalizedLabel)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, deleteLabelRequest, &deleteLabelRuntimeResp)
 		require.NoError(t, err)
 
-		request := fixApplicationForRuntimeRequest(unlabledRuntime.ID)
+		request := pkg.FixApplicationForRuntimeRequest(unlabledRuntime.ID)
 		applicationPage := graphql.ApplicationPage{}
 
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, request, &applicationPage)
 		saveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
@@ -897,23 +1030,23 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime without normalization
-		runtimeInputWithNormalization := fixRuntimeInput("normalized-runtime")
-		(*runtimeInputWithNormalization.Labels)[scenariosLabel] = scenarios
-		(*runtimeInputWithNormalization.Labels)[isNormalizedLabel] = "true"
-		runtimeInputWithNormalizationGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeInputWithNormalization)
+		runtimeInputWithNormalization := pkg.FixRuntimeInput("normalized-runtime")
+		(*runtimeInputWithNormalization.Labels)[ScenariosLabel] = scenarios
+		(*runtimeInputWithNormalization.Labels)[IsNormalizedLabel] = "true"
+		runtimeInputWithNormalizationGQL, err := pkg.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInputWithNormalization)
 		require.NoError(t, err)
-		registerRuntimeWithNormalizationRequest := fixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
+		registerRuntimeWithNormalizationRequest := pkg.FixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
 
 		runtimeWithNormalization := graphql.Runtime{}
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerRuntimeWithNormalizationRequest, &runtimeWithNormalization)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerRuntimeWithNormalizationRequest, &runtimeWithNormalization)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtimeWithNormalization.ID)
-		defer unregisterRuntimeWithinTenant(t, runtimeWithNormalization.ID, tenantID)
+		defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, runtimeWithNormalization.ID, tenantID)
 
-		request := fixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
+		request := pkg.FixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
 		applicationPage := graphql.ApplicationPage{}
 
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, request, &applicationPage)
 		saveExample(t, request.Query(), "query applications for runtime")
 
 		//THEN
@@ -923,13 +1056,13 @@ func TestApplicationsForRuntime(t *testing.T) {
 	})
 
 	t.Run("Applications Query With Consumer Runtime", func(t *testing.T) {
-		request := fixApplicationsRequest()
+		request := pkg.FixGetApplicationsRequestWithPagination()
 		applicationPage := graphql.ApplicationPage{}
 
-		err = tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
+		err = pkg.Tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
 			ID:   runtimeWithoutNormalization.ID,
 			Type: jwtbuilder.RuntimeConsumer,
-		}).Run(request, &applicationPage)
+		}).Run(request, dexGraphQLClient, &applicationPage)
 
 		//THEN
 		require.NoError(t, err)
@@ -941,7 +1074,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-	tenantID := testTenants.GetIDByName(t, "TestApplicationsForRuntimeWithHiddenApps")
+	tenantID := pkg.TestTenants.GetIDByName(t, "TestApplicationsForRuntimeWithHiddenApps")
 	expectedApplications := []*graphql.Application{}
 	expectedNormalizedApplications := []*graphql.Application{}
 
@@ -959,7 +1092,13 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	}
 	var schema interface{} = jsonSchema
 
-	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	pkg.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
 
 	applications := []struct {
 		ApplicationName string
@@ -987,23 +1126,23 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	applicationHideSelectorValue := "applicationHideSelectorValue"
 
 	for _, testApp := range applications {
-		applicationInput := fixSampleApplicationRegisterInput(testApp.ApplicationName)
-		applicationInput.Labels = &graphql.Labels{scenariosLabel: testApp.Scenarios}
+		applicationInput := pkg.FixSampleApplicationRegisterInputWithWebhooks(testApp.ApplicationName)
+		applicationInput.Labels = &graphql.Labels{ScenariosLabel: testApp.Scenarios}
 		if testApp.Hidden {
 			(*applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue
 		}
-		appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
+		appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
-		createApplicationReq := fixRegisterApplicationRequest(appInputGQL)
+		createApplicationReq := pkg.FixRegisterApplicationRequest(appInputGQL)
 		application := graphql.Application{}
 
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, createApplicationReq, &application)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createApplicationReq, &application)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 
-		defer unregisterApplicationInTenant(t, application.ID, tenantID)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
 		if !testApp.Hidden {
 			expectedApplications = append(expectedApplications, &application)
 
@@ -1014,24 +1153,24 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	}
 
 	//create runtime without normalization
-	runtimeWithoutNormalizationInput := fixRuntimeInput("unnormalized-runtime")
-	(*runtimeWithoutNormalizationInput.Labels)[scenariosLabel] = scenarios
-	(*runtimeWithoutNormalizationInput.Labels)[isNormalizedLabel] = "false"
-	runtimeWithoutNormalizationInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeWithoutNormalizationInput)
+	runtimeWithoutNormalizationInput := pkg.FixRuntimeInput("unnormalized-runtime")
+	(*runtimeWithoutNormalizationInput.Labels)[ScenariosLabel] = scenarios
+	(*runtimeWithoutNormalizationInput.Labels)[IsNormalizedLabel] = "false"
+	runtimeWithoutNormalizationInputGQL, err := pkg.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithoutNormalizationInput)
 	require.NoError(t, err)
-	registerWithoutNormalizationRuntimeRequest := fixRegisterRuntimeRequest(runtimeWithoutNormalizationInputGQL)
+	registerWithoutNormalizationRuntimeRequest := pkg.FixRegisterRuntimeRequest(runtimeWithoutNormalizationInputGQL)
 	runtimeWithoutNormalization := graphql.Runtime{}
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerWithoutNormalizationRuntimeRequest, &runtimeWithoutNormalization)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerWithoutNormalizationRuntimeRequest, &runtimeWithoutNormalization)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtimeWithoutNormalization.ID)
-	defer unregisterRuntimeWithinTenant(t, runtimeWithoutNormalization.ID, tenantID)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, runtimeWithoutNormalization.ID, tenantID)
 
 	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
 		//WHEN
-		request := fixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
+		request := pkg.FixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
 		applicationPage := graphql.ApplicationPage{}
 
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, request, &applicationPage)
 
 		//THEN
 		require.NoError(t, err)
@@ -1041,23 +1180,23 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime with normalization
-		runtimeWithNormalizationInput := fixRuntimeInput("normalized-runtime")
-		(*runtimeWithNormalizationInput.Labels)[scenariosLabel] = scenarios
-		(*runtimeWithNormalizationInput.Labels)[isNormalizedLabel] = "true"
-		runtimeWithNormalizationInputGQL, err := tc.graphqlizer.RuntimeInputToGQL(runtimeWithNormalizationInput)
+		runtimeWithNormalizationInput := pkg.FixRuntimeInput("normalized-runtime")
+		(*runtimeWithNormalizationInput.Labels)[ScenariosLabel] = scenarios
+		(*runtimeWithNormalizationInput.Labels)[IsNormalizedLabel] = "true"
+		runtimeWithNormalizationInputGQL, err := pkg.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithNormalizationInput)
 		require.NoError(t, err)
-		registerWithNormalizationRuntimeRequest := fixRegisterRuntimeRequest(runtimeWithNormalizationInputGQL)
+		registerWithNormalizationRuntimeRequest := pkg.FixRegisterRuntimeRequest(runtimeWithNormalizationInputGQL)
 		runtimeWithNormalization := graphql.Runtime{}
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, registerWithNormalizationRuntimeRequest, &runtimeWithNormalization)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, registerWithNormalizationRuntimeRequest, &runtimeWithNormalization)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtimeWithNormalization.ID)
-		defer unregisterRuntimeWithinTenant(t, runtimeWithNormalization.ID, tenantID)
+		defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, runtimeWithNormalization.ID, tenantID)
 
 		//WHEN
-		request := fixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
+		request := pkg.FixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
 		applicationPage := graphql.ApplicationPage{}
 
-		err = tc.RunOperationWithCustomTenant(ctx, tenantID, request, &applicationPage)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, request, &applicationPage)
 
 		//THEN
 		require.NoError(t, err)
@@ -1067,98 +1206,17 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	t.Run("Applications Query With Consumer Runtime", func(t *testing.T) {
 		//WHEN
-		request := fixApplicationsRequest()
+		request := pkg.FixGetApplicationsRequestWithPagination()
 		applicationPage := graphql.ApplicationPage{}
 
-		err = tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
+		err = pkg.Tc.NewOperation(ctx).WithTenant(tenantID).WithConsumer(&jwtbuilder.Consumer{
 			ID:   runtimeWithoutNormalization.ID,
 			Type: jwtbuilder.RuntimeConsumer,
-		}).Run(request, &applicationPage)
+		}).Run(request, dexGraphQLClient, &applicationPage)
 
 		//THEN
 		require.NoError(t, err)
 		require.Len(t, applicationPage.Data, len(expectedApplications))
 		assert.ElementsMatch(t, expectedApplications, applicationPage.Data)
 	})
-}
-
-func fixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
-	return graphql.ApplicationRegisterInput{
-		Name:         placeholder,
-		ProviderName: ptr.String("compass"),
-		Webhooks: []*graphql.WebhookInput{{
-			Type: graphql.WebhookTypeConfigurationChanged,
-			URL:  ptr.String(webhookURL),
-		},
-		},
-	}
-}
-
-func fixSampleApplicationRegisterInputWithName(placeholder, name string) graphql.ApplicationRegisterInput {
-	sampleInput := fixSampleApplicationRegisterInput(placeholder)
-	sampleInput.Name = name
-	return sampleInput
-}
-
-func fixSampleApplicationCreateInputWithIntegrationSystem(placeholder string) graphql.ApplicationRegisterInput {
-	sampleInput := fixSampleApplicationRegisterInput(placeholder)
-	sampleInput.IntegrationSystemID = &integrationSystemID
-	return sampleInput
-}
-
-func fixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpdateInput {
-	return graphql.ApplicationUpdateInput{
-		Description:    &placeholder,
-		HealthCheckURL: ptr.String(webhookURL),
-		ProviderName:   &placeholder,
-	}
-}
-
-func fixSampleApplicationUpdateInputWithIntegrationSystem(placeholder string) graphql.ApplicationUpdateInput {
-	return graphql.ApplicationUpdateInput{
-		Description:         &placeholder,
-		HealthCheckURL:      ptr.String(webhookURL),
-		IntegrationSystemID: &integrationSystemID,
-		ProviderName:        ptr.String(placeholder),
-	}
-}
-
-func unregisterApplicationInTenant(t *testing.T, id string, tenant string) {
-	req := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-		unregisterApplication(id: "%s") {
-			id
-		}	
-	}`, id))
-	require.NoError(t, tc.RunOperationWithCustomTenant(context.Background(), tenant, req, nil))
-}
-
-func unregisterApplication(t *testing.T, id string) {
-	req := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-		unregisterApplication(id: "%s") {
-			id
-		}	
-	}`, id))
-	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
-}
-
-func deleteAPI(t *testing.T, id string) {
-	req := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-		deleteAPIDefinition(id: "%s") {
-			id
-		}	
-	}`, id))
-	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
-}
-
-func deleteEventAPI(t *testing.T, id string) {
-	req := gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-		deleteEventDefinition(id: "%s") {
-			id
-		}	
-	}`, id))
-	require.NoError(t, tc.RunOperation(context.Background(), req, nil))
 }

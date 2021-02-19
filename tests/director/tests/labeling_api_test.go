@@ -3,6 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,21 +18,30 @@ import (
 func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	name := "label-without-label-def"
-	application := registerApplication(t, ctx, name)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, name, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	t.Log("Set label on application")
 	labelKey := "test"
 	labelValue := "val"
 
-	setLabelRequest := fixSetApplicationLabelRequest(application.ID, labelKey, labelValue)
+	setLabelRequest := pkg.FixSetApplicationLabelRequest(application.ID, labelKey, labelValue)
 	label := graphql.Label{}
-	defer deleteLabelDefinition(t, ctx, labelKey, false)
-	defer deleteApplicationLabel(t, ctx, application.ID, labelKey)
+	defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+	defer pkg.DeleteApplicationLabel(t, ctx, dexGraphQLClient, application.ID, labelKey)
 
 	// WHEN
-	err := tc.RunOperation(ctx, setLabelRequest, &label)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
 
 	//THEN
 	require.NoError(t, err)
@@ -39,10 +51,10 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 
 	t.Log("Check if LabelDefinition was created internally")
 
-	getLabelDefinitionRequest := fixLabelDefinitionRequest(labelKey)
+	getLabelDefinitionRequest := pkg.FixLabelDefinitionRequest(labelKey)
 	labelDefinition := graphql.LabelDefinition{}
 
-	err = tc.RunOperation(ctx, getLabelDefinitionRequest, &labelDefinition)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, getLabelDefinitionRequest, &labelDefinition)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, labelDefinition)
@@ -53,6 +65,14 @@ func TestCreateLabelWithoutLabelDefinition(t *testing.T) {
 func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
 
 	applicationName := "label-with-existing-label-def"
 
@@ -74,33 +94,33 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshalJSONSchema(t, schema),
+		Schema: pkg.MarshalJSONSchema(t, schema),
 	}
 
-	labelDefinitionInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
+	labelDefinitionInputGQL, err := pkg.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
 	require.NoError(t, err)
 
 	t.Run("should fail - label value doesn't match json schema provided in label definition", func(t *testing.T) {
-		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(labelDefinitionInputGQL)
+		createLabelDefinitionRequest := pkg.FixCreateLabelDefinitionRequest(labelDefinitionInputGQL)
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		application := registerApplication(t, ctx, applicationName)
-		defer unregisterApplication(t, application.ID)
+		application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, applicationName, tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 		t.Log("Create label definition")
-		err = tc.RunOperation(ctx, createLabelDefinitionRequest, &labelDefinition)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, &labelDefinition)
 
 		require.NoError(t, err)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
+		defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
 		assert.Equal(t, labelKey, labelDefinition.Key)
 
 		invalidLabelValue := 123
-		setLabelRequest := fixSetApplicationLabelRequest(application.ID, labelKey, invalidLabelValue)
+		setLabelRequest := pkg.FixSetApplicationLabelRequest(application.ID, labelKey, invalidLabelValue)
 
 		// WHEN
 		t.Log("Try to set label on application with invalid value against given json schema")
-		err = tc.RunOperation(ctx, setLabelRequest, nil)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, nil)
 
 		//THEN
 		require.Error(t, err)
@@ -111,15 +131,15 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 	})
 
 	t.Run("should succeed - label value matches json schema in label definition", func(t *testing.T) {
-		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(labelDefinitionInputGQL)
+		createLabelDefinitionRequest := pkg.FixCreateLabelDefinitionRequest(labelDefinitionInputGQL)
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		application := registerApplication(t, ctx, applicationName)
-		defer unregisterApplication(t, application.ID)
+		application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, applicationName, tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 		t.Log("Create label definition")
-		err = tc.RunOperation(ctx, createLabelDefinitionRequest, &labelDefinition)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, &labelDefinition)
 
 		t.Log("Set label on application with valid value")
 		validLabelValue := map[string]interface{}{
@@ -128,22 +148,22 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 
 		var appLabel interface{} = validLabelValue
 
-		setLabelRequest := fixSetApplicationLabelRequest(application.ID, labelKey, appLabel)
+		setLabelRequest := pkg.FixSetApplicationLabelRequest(application.ID, labelKey, appLabel)
 		label := graphql.Label{}
 
-		err = tc.RunOperation(ctx, setLabelRequest, &label)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
-		defer deleteApplicationLabel(t, ctx, application.ID, labelKey)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
+		defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+		defer pkg.DeleteApplicationLabel(t, ctx, dexGraphQLClient, application.ID, labelKey)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, label.Key)
 		require.NotEmpty(t, label.Value)
 
 		t.Log("Check if Label was set on application")
-		queryAppReq := fixApplicationRequest(application.ID)
+		queryAppReq := pkg.FixGetApplicationRequest(application.ID)
 
 		// WHEN
-		err = tc.RunOperation(context.Background(), queryAppReq, &application)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, queryAppReq, &application)
 
 		//THEN
 		require.NoError(t, err)
@@ -155,6 +175,14 @@ func TestCreateLabelWithExistingLabelDefinition(t *testing.T) {
 func TestEditLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
 
 	labelKey := "foo"
 	labelKeyBar := "bar"
@@ -202,10 +230,10 @@ func TestEditLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshalJSONSchema(t, schema),
+		Schema: pkg.MarshalJSONSchema(t, schema),
 	}
 
-	labelDefinitionInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
+	labelDefinitionInputGQL, err := pkg.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
 	require.NoError(t, err)
 
 	validLabelValue := map[string]interface{}{
@@ -214,39 +242,39 @@ func TestEditLabelDefinition(t *testing.T) {
 	var appLabel interface{} = validLabelValue
 
 	t.Run("Try to edit LabelDefinition with incompatible data", func(t *testing.T) {
-		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(labelDefinitionInputGQL)
+		createLabelDefinitionRequest := pkg.FixCreateLabelDefinitionRequest(labelDefinitionInputGQL)
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		app := registerApplication(t, ctx, "app")
-		defer unregisterApplication(t, app.ID)
+		app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 		t.Log("Create label definition")
-		err = tc.RunOperation(ctx, createLabelDefinitionRequest, &labelDefinition)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, &labelDefinition)
 		require.NoError(t, err)
 
 		t.Log("Set label on application")
-		setLabelRequest := fixSetApplicationLabelRequest(app.ID, labelKey, appLabel)
+		setLabelRequest := pkg.FixSetApplicationLabelRequest(app.ID, labelKey, appLabel)
 		label := graphql.Label{}
 
-		err = tc.RunOperation(ctx, setLabelRequest, &label)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
-		defer deleteApplicationLabel(t, ctx, app.ID, labelKey)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
+		defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+		defer pkg.DeleteApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey)
 
 		var invalidSchema interface{} = invalidJsonSchema
 		labelDefinitionInput = graphql.LabelDefinitionInput{
 			Key:    labelKey,
-			Schema: marshalJSONSchema(t, invalidSchema),
+			Schema: pkg.MarshalJSONSchema(t, invalidSchema),
 		}
 
-		ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
+		ldInputGql, err := pkg.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
 		require.NoError(t, err)
 
-		updateLabelDefinitionReq := fixUpdateLabelDefinitionRequest(ldInputGql)
+		updateLabelDefinitionReq := pkg.FixUpdateLabelDefinitionRequest(ldInputGql)
 
 		// WHEN
 		t.Log("Try to edit LabelDefinition with incompatible data")
-		err = tc.RunOperation(context.Background(), updateLabelDefinitionReq, nil)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateLabelDefinitionReq, nil)
 
 		//THEN
 		require.Error(t, err)
@@ -255,44 +283,44 @@ func TestEditLabelDefinition(t *testing.T) {
 	})
 
 	t.Run("Edit LabelDefinition with compatible data", func(t *testing.T) {
-		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(labelDefinitionInputGQL)
+		createLabelDefinitionRequest := pkg.FixCreateLabelDefinitionRequest(labelDefinitionInputGQL)
 		labelDefinition := graphql.LabelDefinition{}
 
 		t.Log("Create application")
-		app := registerApplication(t, ctx, "app")
-		defer unregisterApplication(t, app.ID)
+		app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 		t.Log("Create label definition")
-		err = tc.RunOperation(ctx, createLabelDefinitionRequest, &labelDefinition)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, &labelDefinition)
 		require.NoError(t, err)
 
 		t.Log("Set label on application")
-		setLabelRequest := fixSetApplicationLabelRequest(app.ID, labelKey, appLabel)
+		setLabelRequest := pkg.FixSetApplicationLabelRequest(app.ID, labelKey, appLabel)
 		label := graphql.Label{}
 
-		err = tc.RunOperation(ctx, setLabelRequest, &label)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
-		defer deleteApplicationLabel(t, ctx, app.ID, labelKey)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
+		defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+		defer pkg.DeleteApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey)
 
 		var newSchema interface{} = newValidJsonSchema
 		labelDefinitionInput = graphql.LabelDefinitionInput{
 			Key:    labelKey,
-			Schema: marshalJSONSchema(t, newSchema),
+			Schema: pkg.MarshalJSONSchema(t, newSchema),
 		}
 
-		ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
+		ldInputGql, err := pkg.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
 		require.NoError(t, err)
 
-		updateLabelDefinitionReq := fixUpdateLabelDefinitionRequest(ldInputGql)
+		updateLabelDefinitionReq := pkg.FixUpdateLabelDefinitionRequest(ldInputGql)
 
 		// WHEN
 		t.Log("Edit LabelDefinition with compatible data")
-		err = tc.RunOperation(context.Background(), updateLabelDefinitionReq, &labelDefinition)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateLabelDefinitionReq, &labelDefinition)
 
 		//THEN
 		require.NoError(t, err)
 
-		schemaVal, ok := (unmarshalJSONSchema(t, labelDefinition.Schema)).(map[string]interface{})
+		schemaVal, ok := (pkg.UnmarshalJSONSchema(t, labelDefinition.Schema)).(map[string]interface{})
 		require.True(t, ok)
 		actualProperties, ok := schemaVal["properties"].(map[string]interface{})
 		require.True(t, ok)
@@ -309,24 +337,33 @@ func TestCreateScenariosLabel(t *testing.T) {
 	// GIVEN
 	t.Log("Create application")
 	ctx := context.Background()
-	app := registerApplication(t, ctx, "app")
-	defer unregisterApplication(t, app.ID)
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 	t.Log("Check if scenarios LabelDefinition exists")
 	labelKey := "scenarios"
 
-	getLabelDefinition := fixLabelDefinitionRequest(labelKey)
+	getLabelDefinition := pkg.FixLabelDefinitionRequest(labelKey)
 	ld := graphql.LabelDefinition{}
 
-	err := tc.RunOperation(ctx, getLabelDefinition, &ld)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, getLabelDefinition, &ld)
 	require.NoError(t, err)
 
 	t.Log("Check if app was labeled with scenarios=default")
 
-	getApp := fixApplicationRequest(app.ID)
+	getApp := pkg.FixGetApplicationRequest(app.ID)
 	actualApp := graphql.Application{}
 	// WHEN
-	err = tc.RunOperation(ctx, getApp, &actualApp)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, getApp, &actualApp)
 
 	//THEN
 	require.NoError(t, err)
@@ -347,9 +384,18 @@ func TestCreateScenariosLabel(t *testing.T) {
 func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	t.Log("Create application")
-	app := registerApplication(t, ctx, "app")
-	defer unregisterApplication(t, app.ID)
+	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
 	additionalValue := "ADDITIONAL"
@@ -369,16 +415,16 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	var schema interface{} = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshalJSONSchema(t, schema),
+		Schema: pkg.MarshalJSONSchema(t, schema),
 	}
 
-	ldInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(ldInput)
+	ldInputGQL, err := pkg.Tc.Graphqlizer.LabelDefinitionInputToGQL(ldInput)
 	require.NoError(t, err)
 
-	updateLabelDefinitionRequest := fixUpdateLabelDefinitionRequest(ldInputGQL)
+	updateLabelDefinitionRequest := pkg.FixUpdateLabelDefinitionRequest(ldInputGQL)
 	labelDefinition := graphql.LabelDefinition{}
 
-	err = tc.RunOperation(ctx, updateLabelDefinitionRequest, &labelDefinition)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
 
 	require.NoError(t, err)
 
@@ -386,13 +432,13 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	var labelValue interface{} = scenarios
 
 	t.Logf("Set scenario label value %s on application", additionalValue)
-	setApplicationLabel(t, ctx, app.ID, labelKey, labelValue)
+	pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey, labelValue)
 
 	t.Log("Check if new scenario label value was set correctly")
-	appRequest := fixApplicationRequest(app.ID)
+	appRequest := pkg.FixGetApplicationRequest(app.ID)
 	app = graphql.ApplicationExt{}
 
-	err = tc.RunOperation(ctx, appRequest, &app)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, appRequest, &app)
 	require.NoError(t, err)
 
 	scenariosLabel, ok := app.Labels[labelKey].([]interface{})
@@ -408,6 +454,14 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 func TestDeleteLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
 
 	labelKey := "foo"
 
@@ -426,40 +480,40 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	labelDefinitionInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshalJSONSchema(t, schema),
+		Schema: pkg.MarshalJSONSchema(t, schema),
 	}
 
-	ldInputGql, err := tc.graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
+	ldInputGql, err := pkg.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
 	require.NoError(t, err)
 
 	t.Run("Try to delete Label Definition while it's being used by some labels with deleteRelatedLabels parameter set to false - should fail", func(t *testing.T) {
 
 		t.Log("Create application")
-		app := registerApplication(t, ctx, "app")
-		defer unregisterApplication(t, app.ID)
+		app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 		t.Log("Create LabelDefinition")
-		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(ldInputGql)
+		createLabelDefinitionRequest := pkg.FixCreateLabelDefinitionRequest(ldInputGql)
 		ld := graphql.LabelDefinition{}
 
-		err = tc.RunOperation(ctx, createLabelDefinitionRequest, ld)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, ld)
 		require.NoError(t, err)
 
 		t.Log("Set label on application")
 		validLabelValue := map[string]interface{}{"foo": "test"}
 
-		setLabelRequest := fixSetApplicationLabelRequest(app.ID, labelKey, validLabelValue)
+		setLabelRequest := pkg.FixSetApplicationLabelRequest(app.ID, labelKey, validLabelValue)
 		label := graphql.Label{}
 
-		err = tc.RunOperation(ctx, setLabelRequest, &label)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
 		require.NoError(t, err)
-		defer deleteLabelDefinition(t, ctx, labelKey, false)
-		defer deleteApplicationLabel(t, ctx, app.ID, labelKey)
+		defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKey, false, tenant)
+		defer pkg.DeleteApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey)
 
 		t.Log("Try to delete Label Definition while it's being used by some labels")
 
-		deleteLabelDefinitionRequest := fixDeleteLabelDefinitionRequest(labelKey, false)
-		err = tc.RunOperation(context.Background(), deleteLabelDefinitionRequest, nil)
+		deleteLabelDefinitionRequest := pkg.FixDeleteLabelDefinitionRequest(labelKey, false)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, deleteLabelDefinitionRequest, nil)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "reason=could not delete label definition, it is already used by at least one label")
 		saveExample(t, deleteLabelDefinitionRequest.Query(), "delete label definition")
@@ -468,75 +522,76 @@ func TestDeleteLabelDefinition(t *testing.T) {
 	t.Run("Delete Label Definition while it's being used by some labels with deleteRelatedLabels parameter set to true - should succeed", func(t *testing.T) {
 
 		t.Log("Create LabelDefinition")
-		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(ldInputGql)
+		createLabelDefinitionRequest := pkg.FixCreateLabelDefinitionRequest(ldInputGql)
 		ld := graphql.LabelDefinition{}
 
-		err = tc.RunOperation(ctx, createLabelDefinitionRequest, ld)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, ld)
 		require.NoError(t, err)
 
 		t.Log("Create application")
-		app := registerApplication(t, ctx, "app")
-		defer unregisterApplication(t, app.ID)
+		app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 		t.Log("Create runtime")
-		rtm := registerRuntime(t, ctx, "rtm")
-		defer unregisterRuntimeWithinTenant(t, rtm.ID, testTenants.GetDefaultTenantID())
+		input := pkg.FixRuntimeInput("rtm")
+		rtm := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
+		defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, rtm.ID)
 
 		t.Log("Set labels on application and runtime")
-		setApplicationLabel(t, ctx, app.ID, labelKey, map[string]interface{}{labelKey: "app"})
-		setRuntimeLabel(t, ctx, rtm.ID, labelKey, map[string]interface{}{labelKey: "rtm"})
+		pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey, map[string]interface{}{labelKey: "app"})
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, rtm.ID, labelKey, map[string]interface{}{labelKey: "rtm"})
 
 		t.Log("Delete Label Definition while it's being used by some labels")
-		deleteLabelDefinitionRequest := fixDeleteLabelDefinitionRequest(labelKey, true)
-		err = tc.RunOperation(context.Background(), deleteLabelDefinitionRequest, nil)
+		deleteLabelDefinitionRequest := pkg.FixDeleteLabelDefinitionRequest(labelKey, true)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, deleteLabelDefinitionRequest, nil)
 		require.NoError(t, err)
 
 		t.Log("Assert labels were deleted from Application and Runtime")
-		app = getApplication(t, ctx, app.ID)
-		runtime := getRuntime(t, ctx, rtm.ID)
+		app = pkg.GetApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
+		runtime := pkg.GetRuntime(t, ctx, dexGraphQLClient, tenant, rtm.ID)
 
 		assert.Empty(t, app.Labels[labelKey])
 		assert.Empty(t, runtime.Labels[labelKey])
 
 		t.Log("Assert Label definition was deleted")
-		ldRequest := fixLabelDefinitionRequest(labelKey)
+		ldRequest := pkg.FixLabelDefinitionRequest(labelKey)
 		errMsg := fmt.Sprintf("graphql: label definition with key '%s' does not exist", labelKey)
-		require.Nil(t, tc.RunOperation(ctx, ldRequest, nil), errMsg)
+		require.Nil(t, pkg.Tc.RunOperation(ctx, dexGraphQLClient, ldRequest, nil), errMsg)
 	})
 
 	t.Run("Delete Label from application, then delete the Label Definition - should succeed", func(t *testing.T) {
 
 		t.Log("Create application")
-		app := registerApplication(t, ctx, "app")
-		defer unregisterApplication(t, app.ID)
+		app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 
 		t.Log("Create LabelDefinition")
-		createLabelDefinitionRequest := fixCreateLabelDefinitionRequest(ldInputGql)
+		createLabelDefinitionRequest := pkg.FixCreateLabelDefinitionRequest(ldInputGql)
 		ld := graphql.LabelDefinition{}
 
-		err = tc.RunOperation(ctx, createLabelDefinitionRequest, ld)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, createLabelDefinitionRequest, ld)
 		require.NoError(t, err)
 
 		t.Log("Set label on application")
 		validLabelValue := map[string]interface{}{labelKey: "test"}
 
-		setLabelRequest := fixSetApplicationLabelRequest(app.ID, labelKey, validLabelValue)
+		setLabelRequest := pkg.FixSetApplicationLabelRequest(app.ID, labelKey, validLabelValue)
 		label := graphql.Label{}
 
-		err = tc.RunOperation(ctx, setLabelRequest, &label)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
 		require.NoError(t, err)
 
-		deleteApplicationLabelRequest := fixDeleteApplicationLabelRequest(app.ID, labelKey)
+		deleteApplicationLabelRequest := pkg.FixDeleteApplicationLabelRequest(app.ID, labelKey)
 		label = graphql.Label{}
 
-		err := tc.RunOperation(ctx, deleteApplicationLabelRequest, &label)
+		err := pkg.Tc.RunOperation(ctx, dexGraphQLClient, deleteApplicationLabelRequest, &label)
 		require.NoError(t, err)
 		assert.Equal(t, labelKey, label.Key)
 
-		deleteLabelDefinitionRequest := fixDeleteLabelDefinitionRequest(labelKey, false)
+		deleteLabelDefinitionRequest := pkg.FixDeleteLabelDefinitionRequest(labelKey, false)
 		labelDefinition := graphql.LabelDefinition{}
 
-		err = tc.RunOperation(context.Background(), deleteLabelDefinitionRequest, &labelDefinition)
+		err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, deleteLabelDefinitionRequest, &labelDefinition)
 		require.NoError(t, err)
 		assertGraphQLJSONSchema(t, labelDefinitionInput.Schema, labelDefinition.Schema)
 	})
@@ -545,9 +600,18 @@ func TestDeleteLabelDefinition(t *testing.T) {
 func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	t.Log("Create application")
-	app := registerApplication(t, ctx, "app")
-	defer unregisterApplication(t, app.ID)
+	app := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, app.ID)
 	labelKey := "scenarios"
 	defaultValue := "DEFAULT"
 
@@ -566,17 +630,17 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	var schema interface{} = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: marshalJSONSchema(t, schema),
+		Schema: pkg.MarshalJSONSchema(t, schema),
 	}
 
-	ldInputGQL, err := tc.graphqlizer.LabelDefinitionInputToGQL(ldInput)
+	ldInputGQL, err := pkg.Tc.Graphqlizer.LabelDefinitionInputToGQL(ldInput)
 	require.NoError(t, err)
 
-	updateLabelDefinitionRequest := fixUpdateLabelDefinitionRequest(ldInputGQL)
+	updateLabelDefinitionRequest := pkg.FixUpdateLabelDefinitionRequest(ldInputGQL)
 	labelDefinition := graphql.LabelDefinition{}
 
 	// WHEN
-	err = tc.RunOperation(ctx, updateLabelDefinitionRequest, &labelDefinition)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
 	errMsg := fmt.Sprintf(`rule.validSchema=while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s"`, labelKey, defaultValue)
 
 	// THEN
@@ -588,35 +652,44 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	// GIVEN
 	//Create first application
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	labelKeyFoo := "foo"
 	labelKeyBar := "bar"
-	defer deleteLabelDefinition(t, ctx, labelKeyFoo, false)
-	defer deleteLabelDefinition(t, ctx, labelKeyBar, false)
+	defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyFoo, false, tenant)
+	defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyBar, false, tenant)
 
-	firstApp := registerApplication(t, ctx, "first")
+	firstApp := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "first", tenant)
 	require.NotEmpty(t, firstApp.ID)
-	defer unregisterApplication(t, firstApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, firstApp.ID)
 
 	//Create second application
-	secondApp := registerApplication(t, ctx, "second")
+	secondApp := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "second", tenant)
 	require.NotEmpty(t, secondApp.ID)
-	defer unregisterApplication(t, secondApp.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, secondApp.ID)
 
 	//Set label "foo" on both applications
 	labelValueFoo := "val"
 
-	firstAppLabel := setApplicationLabel(t, ctx, firstApp.ID, labelKeyFoo, labelValueFoo)
+	firstAppLabel := pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, firstApp.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, firstAppLabel.Key)
 	require.NotEmpty(t, firstAppLabel.Value)
 
-	secondAppLabel := setApplicationLabel(t, ctx, secondApp.ID, labelKeyFoo, labelValueFoo)
+	secondAppLabel := pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, secondApp.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, secondAppLabel.Key)
 	require.NotEmpty(t, secondAppLabel.Value)
 
 	//Set label "bar" on first application
 	labelValueBar := "barval"
 
-	firstAppBarLabel := setApplicationLabel(t, ctx, firstApp.ID, labelKeyBar, labelValueBar)
+	firstAppBarLabel := pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, firstApp.ID, labelKeyBar, labelValueBar)
 	require.NotEmpty(t, firstAppBarLabel.Key)
 	require.NotEmpty(t, firstAppBarLabel.Value)
 
@@ -626,12 +699,12 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	}
 
 	//WHEN
-	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
+	labelFilterGQL, err := pkg.Tc.Graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest := fixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
+	applicationRequest := pkg.FixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
 	applicationPage := graphql.ApplicationPageExt{}
-	err = tc.RunOperation(ctx, applicationRequest, &applicationPage)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, applicationRequest, &applicationPage)
 	require.NoError(t, err)
 
 	//THEN
@@ -648,12 +721,12 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	}
 
 	// WHEN
-	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
+	labelFilterGQL, err = pkg.Tc.Graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	applicationRequest = fixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
+	applicationRequest = pkg.FixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
 	applicationPage = graphql.ApplicationPageExt{}
-	err = tc.RunOperation(ctx, applicationRequest, &applicationPage)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, applicationRequest, &applicationPage)
 	require.NoError(t, err)
 
 	//THEN
@@ -669,33 +742,44 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	// GIVEN
 	//Create first runtime
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	labelKeyFoo := "foo"
 	labelKeyBar := "bar"
-	defer deleteLabelDefinition(t, ctx, labelKeyFoo, false)
-	defer deleteLabelDefinition(t, ctx, labelKeyBar, false)
+	defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyFoo, false, tenant)
+	defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, labelKeyBar, false, tenant)
 
-	firstRuntime := registerRuntime(t, ctx, "first")
-	defer unregisterRuntime(t, firstRuntime.ID)
+	inputFirst := pkg.FixRuntimeInput("first")
+	firstRuntime := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &inputFirst)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, firstRuntime.ID)
 
 	//Create second runtime
-	secondRuntime := registerRuntime(t, ctx, "second")
-	defer unregisterRuntime(t, secondRuntime.ID)
+	inputSecond := pkg.FixRuntimeInput("second")
+	secondRuntime := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &inputSecond)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, secondRuntime.ID)
 
 	//Set label "foo" on both runtimes
 	labelValueFoo := "val"
 
-	firstRuntimeLabel := setRuntimeLabel(t, ctx, firstRuntime.ID, labelKeyFoo, labelValueFoo)
+	firstRuntimeLabel := pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, firstRuntime.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, firstRuntimeLabel.Key)
 	require.NotEmpty(t, firstRuntimeLabel.Value)
 
-	secondRuntimeLabel := setRuntimeLabel(t, ctx, secondRuntime.ID, labelKeyFoo, labelValueFoo)
+	secondRuntimeLabel := pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, secondRuntime.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, secondRuntimeLabel.Key)
 	require.NotEmpty(t, secondRuntimeLabel.Value)
 
 	//Set label "bar" on first runtime
 	labelValueBar := "barval"
 
-	firstRuntimeBarLabel := setRuntimeLabel(t, ctx, firstRuntime.ID, labelKeyBar, labelValueBar)
+	firstRuntimeBarLabel := pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, firstRuntime.ID, labelKeyBar, labelValueBar)
 	require.NotEmpty(t, firstRuntimeBarLabel.Key)
 	require.NotEmpty(t, firstRuntimeBarLabel.Value)
 
@@ -705,12 +789,12 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	}
 
 	//WHEN
-	labelFilterGQL, err := tc.graphqlizer.LabelFilterToGQL(labelFilter)
+	labelFilterGQL, err := pkg.Tc.Graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	runtimesRequest := fixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
+	runtimesRequest := pkg.FixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
 	runtimePage := graphql.RuntimePageExt{}
-	err = tc.RunOperation(ctx, runtimesRequest, &runtimePage)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
 
 	//THEN
@@ -727,12 +811,12 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	}
 
 	// WHEN
-	labelFilterGQL, err = tc.graphqlizer.LabelFilterToGQL(labelFilter)
+	labelFilterGQL, err = pkg.Tc.Graphqlizer.LabelFilterToGQL(labelFilter)
 	require.NoError(t, err)
 
-	runtimesRequest = fixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
+	runtimesRequest = pkg.FixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
 	runtimePage = graphql.RuntimePageExt{}
-	err = tc.RunOperation(ctx, runtimesRequest, &runtimePage)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
 
 	//THEN
@@ -741,27 +825,34 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	assert.Equal(t, runtimePage.TotalCount, 1)
 	assert.Contains(t, runtimePage.Data[0].Labels, labelKeyBar)
 	assert.Equal(t, runtimePage.Data[0].Labels[labelKeyBar], labelValueBar)
-	saveExampleInCustomDir(t, runtimesRequest.Query(), queryRuntimesCategory, "query runtimes with label filter")
+	saveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with label filter")
 }
 
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
-	tenantID := testTenants.GetIDByName(t, "Test3")
+	tenantID := pkg.TestTenants.GetIDByName(t, "Test3")
 	ctx := context.TODO()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
 	firstSchema := map[string]interface{}{
 		"test": "test",
 	}
-	firstLabelDefinition := createLabelDefinitionWithinTenant(t, ctx, "first", firstSchema, tenantID)
-	defer deleteLabelDefinitionWithinTenant(t, ctx, firstLabelDefinition.Key, false, tenantID)
+	firstLabelDefinition := pkg.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, "first", firstSchema, tenantID)
+	defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, firstLabelDefinition.Key, false, tenantID)
 
 	secondSchema := map[string]interface{}{
 		"test": "test",
 	}
-	secondLabelDefinition := createLabelDefinitionWithinTenant(t, ctx, "second", secondSchema, tenantID)
-	defer deleteLabelDefinitionWithinTenant(t, ctx, secondLabelDefinition.Key, false, tenantID)
+	secondLabelDefinition := pkg.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, "second", secondSchema, tenantID)
+	defer pkg.DeleteLabelDefinition(t, ctx, dexGraphQLClient, secondLabelDefinition.Key, false, tenantID)
 
 	//WHEN
-	labelDefinitions, err := listLabelDefinitionsWithinTenant(t, ctx, tenantID)
+	labelDefinitions, err := pkg.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, tenantID)
 
 	//THEN
 	require.NoError(t, err)
@@ -773,7 +864,14 @@ func TestListLabelDefinitions(t *testing.T) {
 func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	tenantID := testTenants.GetIDByName(t, "Test4")
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenantID := pkg.TestTenants.GetIDByName(t, "Test4")
 	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"DEFAULT", "Christmas", "New Year"}
 
@@ -788,26 +886,26 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	}
 	var schema interface{} = scenarioSchema
 
-	createLabelDefinitionWithinTenant(t, ctx, scenariosLabel, schema, tenantID)
+	pkg.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: name,
 		Labels: &graphql.Labels{
-			scenariosLabel: []string{"Christmas", "New Year"},
+			ScenariosLabel: []string{"Christmas", "New Year"},
 		},
 	}
 
-	application := registerApplicationFromInputWithinTenant(t, ctx, appInput, tenantID)
+	application := pkg.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantID, appInput)
 	require.NotEmpty(t, application.ID)
-	defer unregisterApplicationInTenant(t, application.ID, tenantID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenantID, application.ID)
 
 	//WHEN
-	appLabelRequest := fixSetApplicationLabelRequest(application.ID, scenariosLabel, []string{"Christmas"})
-	require.NoError(t, tc.RunOperationWithCustomTenant(ctx, tenantID, appLabelRequest, nil))
+	appLabelRequest := pkg.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{"Christmas"})
+	require.NoError(t, pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, appLabelRequest, nil))
 
 	//remove last label
-	appLabelRequest = fixSetApplicationLabelRequest(application.ID, scenariosLabel, []string{""})
-	err := tc.RunOperationWithCustomTenant(ctx, tenantID, appLabelRequest, nil)
+	appLabelRequest = pkg.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{""})
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, appLabelRequest, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -817,16 +915,23 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
-	tenantID := testTenants.GetIDByName(t, "TestGetScenariosLabelDefinitionCreatesOneIfNotExists")
-	getLabelDefinitionRequest := fixLabelDefinitionRequest(scenariosLabel)
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenantID := pkg.TestTenants.GetIDByName(t, "TestGetScenariosLabelDefinitionCreatesOneIfNotExists")
+	getLabelDefinitionRequest := pkg.FixLabelDefinitionRequest(ScenariosLabel)
 	labelDefinition := graphql.LabelDefinition{}
 
 	// WHEN
-	err := tc.RunOperationWithCustomTenant(ctx, tenantID, getLabelDefinitionRequest, &labelDefinition)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, getLabelDefinitionRequest, &labelDefinition)
 
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, labelDefinition)
-	assert.Equal(t, scenariosLabel, labelDefinition.Key)
+	assert.Equal(t, ScenariosLabel, labelDefinition.Key)
 	assert.NotEmpty(t, labelDefinition.Schema)
 }

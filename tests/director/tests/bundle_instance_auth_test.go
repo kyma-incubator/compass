@@ -2,6 +2,9 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/jwtbuilder"
@@ -13,23 +16,31 @@ import (
 func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
-
-	bndl := createBundle(t, ctx, application.ID, "bndl-app-1")
-	defer deleteBundle(t, ctx, bndl.ID)
-
-	authCtx, inputParams := fixBundleInstanceAuthContextAndInputParams(t)
-	bndlInstanceAuthRequestInput := fixBundleInstanceAuthRequestInput(authCtx, inputParams)
-	bndlInstanceAuthRequestInputStr, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(bndlInstanceAuthRequestInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
-	bndlInstanceAuthCreationRequestReq := fixRequestBundleInstanceAuthCreationRequest(bndl.ID, bndlInstanceAuthRequestInputStr)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+
+	authCtx, inputParams := pkg.FixBundleInstanceAuthContextAndInputParams(t)
+	bndlInstanceAuthRequestInput := pkg.FixBundleInstanceAuthRequestInput(authCtx, inputParams)
+	bndlInstanceAuthRequestInputStr, err := pkg.Tc.Graphqlizer.BundleInstanceAuthRequestInputToGQL(bndlInstanceAuthRequestInput)
+	require.NoError(t, err)
+
+	bndlInstanceAuthCreationRequestReq := pkg.FixRequestBundleInstanceAuthCreationRequest(bndl.ID, bndlInstanceAuthRequestInputStr)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Request bundle instance auth creation")
-	err = tc.RunOperation(ctx, bndlInstanceAuthCreationRequestReq, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, bndlInstanceAuthCreationRequestReq, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -38,10 +49,10 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	saveExample(t, bndlInstanceAuthCreationRequestReq.Query(), "request bundle instance auth creation")
 
 	// Fetch Application with bundles
-	bundlesForApplicationReq := fixBundlesRequest(application.ID)
+	bundlesForApplicationReq := pkg.FixGetBundlesRequest(application.ID)
 	bndlFromAPI := graphql.ApplicationExt{}
 
-	err = tc.RunOperation(ctx, bundlesForApplicationReq, &bndlFromAPI)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationReq, &bndlFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auths exists
@@ -50,9 +61,9 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 
 	// Fetch Application with bundle
 	instanceAuthID := bndlFromAPI.Bundles.Data[0].InstanceAuths[0].ID
-	bundlesForApplicationWithInstanceAuthReq := fixBundleWithInstanceAuthRequest(application.ID, bndl.ID, instanceAuthID)
+	bundlesForApplicationWithInstanceAuthReq := pkg.FixGetBundleWithInstanceAuthRequest(application.ID, bndl.ID, instanceAuthID)
 
-	err = tc.RunOperation(ctx, bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auth exist
@@ -63,53 +74,63 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 	ctx := context.Background()
 
-	runtime := registerRuntime(t, ctx, "runtime-test")
-	defer unregisterRuntime(t, runtime.ID)
-
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
-
-	bndl := createBundle(t, ctx, application.ID, "bndl-app-1")
-	defer deleteBundle(t, ctx, bndl.ID)
-
-	authCtx, inputParams := fixBundleInstanceAuthContextAndInputParams(t)
-	bndlInstanceAuthRequestInput := fixBundleInstanceAuthRequestInput(authCtx, inputParams)
-	bndlInstanceAuthRequestInputStr, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(bndlInstanceAuthRequestInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
-	bndlInstanceAuthCreationRequestReq := fixRequestBundleInstanceAuthCreationRequest(bndl.ID, bndlInstanceAuthRequestInputStr)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	input := pkg.FixRuntimeInput("runtime-test")
+
+	runtime := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+
+	authCtx, inputParams := pkg.FixBundleInstanceAuthContextAndInputParams(t)
+	bndlInstanceAuthRequestInput := pkg.FixBundleInstanceAuthRequestInput(authCtx, inputParams)
+	bndlInstanceAuthRequestInputStr, err := pkg.Tc.Graphqlizer.BundleInstanceAuthRequestInputToGQL(bndlInstanceAuthRequestInput)
+	require.NoError(t, err)
+
+	bndlInstanceAuthCreationRequestReq := pkg.FixRequestBundleInstanceAuthCreationRequest(bndl.ID, bndlInstanceAuthRequestInputStr)
 	output := graphql.BundleInstanceAuth{}
 
 	scenarios := []string{defaultScenario, "test-scenario"}
-	updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios)
-	defer updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios[:1])
+	pkg.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios)
+	defer pkg.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios[:1])
 
-	runtimeConsumer := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
+	runtimeConsumer := pkg.Tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
 		ID:   runtime.ID,
 		Type: jwtbuilder.RuntimeConsumer,
 	})
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		setApplicationLabel(t, ctx, application.ID, scenariosLabel, scenarios[1:])
-		defer setApplicationLabel(t, ctx, application.ID, scenariosLabel, scenarios[:1])
+		pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[1:])
+		defer pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
-		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		t.Log("Request bundle instance auth creation")
-		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, &output)
+		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, dexGraphQLClient, &output)
 
 		// THEN
 		require.NoError(t, err)
 		assertBundleInstanceAuthInput(t, bndlInstanceAuthRequestInput, output)
 
 		// Fetch Application with bundles
-		bundlesForApplicationReq := fixBundlesRequest(application.ID)
+		bundlesForApplicationReq := pkg.FixGetBundlesRequest(application.ID)
 		bndlFromAPI := graphql.ApplicationExt{}
 
-		err = runtimeConsumer.Run(bundlesForApplicationReq, &bndlFromAPI)
+		err = runtimeConsumer.Run(bundlesForApplicationReq, dexGraphQLClient, &bndlFromAPI)
 		require.NoError(t, err)
 
 		// Assert the bundle instance auths exists
@@ -118,9 +139,9 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 		// Fetch Application with bundle instance auth
 		instanceAuthID := bndlFromAPI.Bundles.Data[0].InstanceAuths[0].ID
-		bundlesForApplicationWithInstanceAuthReq := fixBundleWithInstanceAuthRequest(application.ID, bndl.ID, instanceAuthID)
+		bundlesForApplicationWithInstanceAuthReq := pkg.FixGetBundleWithInstanceAuthRequest(application.ID, bndl.ID, instanceAuthID)
 
-		err = runtimeConsumer.Run(bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
+		err = runtimeConsumer.Run(bundlesForApplicationWithInstanceAuthReq, dexGraphQLClient, &bndlFromAPI)
 		require.NoError(t, err)
 
 		// Assert the bundle instance auth exist
@@ -130,14 +151,14 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is NOT in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		setApplicationLabel(t, ctx, application.ID, scenariosLabel, scenarios[:1])
+		pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
-		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		t.Log("Request bundle instance auth creation")
-		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, &output)
+		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, dexGraphQLClient, &output)
 
 		// THEN
 		require.Error(t, err)
@@ -148,41 +169,49 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
-
-	authInput := fixBasicAuth(t)
-
-	bndlInput := fixBundleCreateInputWithDefaultAuth("bndl-app-1", authInput)
-	bndl, err := tc.graphqlizer.BundleCreateInputToGQL(bndlInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
-	addBndlRequest := fixAddBundleRequest(application.ID, bndl)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	authInput := pkg.FixBasicAuth(t)
+
+	bndlInput := pkg.FixBundleCreateInputWithDefaultAuth("bndl-app-1", authInput)
+	bndl, err := pkg.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
+	require.NoError(t, err)
+
+	addBndlRequest := pkg.FixAddBundleRequest(application.ID, bndl)
 	bndlAddOutput := graphql.Bundle{}
 
-	err = tc.RunOperation(ctx, addBndlRequest, &bndlAddOutput)
-	defer deleteBundle(t, ctx, bndlAddOutput.ID)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, addBndlRequest, &bndlAddOutput)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndlAddOutput.ID)
 	require.NoError(t, err)
 
-	bndlInstanceAuthRequestInput := fixBundleInstanceAuthRequestInput(nil, nil)
-	bndlInstanceAuthRequestInputStr, err := tc.graphqlizer.BundleInstanceAuthRequestInputToGQL(bndlInstanceAuthRequestInput)
+	bndlInstanceAuthRequestInput := pkg.FixBundleInstanceAuthRequestInput(nil, nil)
+	bndlInstanceAuthRequestInputStr, err := pkg.Tc.Graphqlizer.BundleInstanceAuthRequestInputToGQL(bndlInstanceAuthRequestInput)
 	require.NoError(t, err)
 
-	bndlInstanceAuthCreationRequestReq := fixRequestBundleInstanceAuthCreationRequest(bndlAddOutput.ID, bndlInstanceAuthRequestInputStr)
+	bndlInstanceAuthCreationRequestReq := pkg.FixRequestBundleInstanceAuthCreationRequest(bndlAddOutput.ID, bndlInstanceAuthRequestInputStr)
 	authOutput := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Request bundle instance auth creation")
-	err = tc.RunOperation(ctx, bndlInstanceAuthCreationRequestReq, &authOutput)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, bndlInstanceAuthCreationRequestReq, &authOutput)
 
 	// THEN
 	require.NoError(t, err)
 
 	// Fetch Application with bundles
-	bundlesForApplicationReq := fixBundlesRequest(application.ID)
+	bundlesForApplicationReq := pkg.FixGetBundlesRequest(application.ID)
 	bndlFromAPI := graphql.ApplicationExt{}
 
-	err = tc.RunOperation(ctx, bundlesForApplicationReq, &bndlFromAPI)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationReq, &bndlFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auths exists
@@ -191,9 +220,9 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 
 	// Fetch Application with bundle
 	instanceAuthID := bndlFromAPI.Bundles.Data[0].InstanceAuths[0].ID
-	bundlesForApplicationWithInstanceAuthReq := fixBundleWithInstanceAuthRequest(application.ID, bndlAddOutput.ID, instanceAuthID)
+	bundlesForApplicationWithInstanceAuthReq := pkg.FixGetBundleWithInstanceAuthRequest(application.ID, bndlAddOutput.ID, instanceAuthID)
 
-	err = tc.RunOperation(ctx, bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auth exist
@@ -206,20 +235,28 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
 
-	bndl := createBundle(t, ctx, application.ID, "bndl-app-1")
-	defer deleteBundle(t, ctx, bndl.ID)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	bndlInstanceAuth := createBundleInstanceAuth(t, ctx, bndl.ID)
+	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	bndlInstanceAuthDeletionRequestReq := fixRequestBundleInstanceAuthDeletionRequest(bndlInstanceAuth.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+
+	bndlInstanceAuth := pkg.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
+
+	bndlInstanceAuthDeletionRequestReq := pkg.FixRequestBundleInstanceAuthDeletionRequest(bndlInstanceAuth.ID)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Request bundle instance auth deletion")
-	err := tc.RunOperation(ctx, bndlInstanceAuthDeletionRequestReq, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, bndlInstanceAuthDeletionRequestReq, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -230,41 +267,51 @@ func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 	ctx := context.Background()
 
-	runtime := registerRuntime(t, ctx, "runtime-test")
-	defer unregisterRuntime(t, runtime.ID)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	bndl := createBundle(t, ctx, application.ID, "bndl-app-1")
-	defer deleteBundle(t, ctx, bndl.ID)
+	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	bndlInstanceAuth := createBundleInstanceAuth(t, ctx, bndl.ID)
+	input := pkg.FixRuntimeInput("runtime-test")
 
-	bndlInstanceAuthDeletionRequestReq := fixRequestBundleInstanceAuthDeletionRequest(bndlInstanceAuth.ID)
+	runtime := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+
+	bndlInstanceAuth := pkg.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
+
+	bndlInstanceAuthDeletionRequestReq := pkg.FixRequestBundleInstanceAuthDeletionRequest(bndlInstanceAuth.ID)
 
 	scenarios := []string{defaultScenario, "test-scenario"}
-	updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios)
-	defer updateScenariosLabelDefinitionWithinTenant(t, ctx, testTenants.GetDefaultTenantID(), scenarios[:1])
+	pkg.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios)
+	defer pkg.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant, scenarios[:1])
 
-	runtimeConsumer := tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
+	runtimeConsumer := pkg.Tc.NewOperation(ctx).WithConsumer(&jwtbuilder.Consumer{
 		ID:   runtime.ID,
 		Type: jwtbuilder.RuntimeConsumer,
 	})
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		setApplicationLabel(t, ctx, application.ID, scenariosLabel, scenarios[1:])
-		defer setApplicationLabel(t, ctx, application.ID, scenariosLabel, scenarios[:1])
+		pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[1:])
+		defer pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
-		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
 		output := graphql.BundleInstanceAuth{}
-		err := runtimeConsumer.Run(bndlInstanceAuthDeletionRequestReq, &output)
+		err := runtimeConsumer.Run(bndlInstanceAuthDeletionRequestReq, dexGraphQLClient, &output)
 
 		// THEN
 		require.NoError(t, err)
@@ -272,16 +319,16 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is NOT in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		setApplicationLabel(t, ctx, application.ID, scenariosLabel, scenarios[:1])
+		pkg.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[1:])
-		defer setRuntimeLabel(t, ctx, runtime.ID, scenariosLabel, scenarios[:1])
+		pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
 		output := graphql.BundleInstanceAuth{}
-		err := runtimeConsumer.Run(bndlInstanceAuthDeletionRequestReq, &output)
+		err := runtimeConsumer.Run(bndlInstanceAuthDeletionRequestReq, dexGraphQLClient, &output)
 
 		// THEN
 		require.Error(t, err)
@@ -292,25 +339,33 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 func TestSetBundleInstanceAuth(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
-
-	bndl := createBundle(t, ctx, application.ID, "bndl-app-1")
-	defer deleteBundle(t, ctx, bndl.ID)
-
-	bndlInstanceAuth := createBundleInstanceAuth(t, ctx, bndl.ID)
-
-	authInput := fixBasicAuth(t)
-	bndlInstanceAuthSetInput := fixBundleInstanceAuthSetInputSucceeded(authInput)
-	bndlInstanceAuthSetInputStr, err := tc.graphqlizer.BundleInstanceAuthSetInputToGQL(bndlInstanceAuthSetInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
-	setBundleInstanceAuthReq := fixSetBundleInstanceAuthRequest(bndlInstanceAuth.ID, bndlInstanceAuthSetInputStr)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+
+	bndlInstanceAuth := pkg.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
+
+	authInput := pkg.FixBasicAuth(t)
+	bndlInstanceAuthSetInput := pkg.FixBundleInstanceAuthSetInputSucceeded(authInput)
+	bndlInstanceAuthSetInputStr, err := pkg.Tc.Graphqlizer.BundleInstanceAuthSetInputToGQL(bndlInstanceAuthSetInput)
+	require.NoError(t, err)
+
+	setBundleInstanceAuthReq := pkg.FixSetBundleInstanceAuthRequest(bndlInstanceAuth.ID, bndlInstanceAuthSetInputStr)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Set bundle instance auth")
-	err = tc.RunOperation(ctx, setBundleInstanceAuthReq, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, setBundleInstanceAuthReq, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -323,20 +378,28 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 func TestDeleteBundleInstanceAuth(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
 
-	bndl := createBundle(t, ctx, application.ID, "bndl-app-1")
-	defer deleteBundle(t, ctx, bndl.ID)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	bndlInstanceAuth := createBundleInstanceAuth(t, ctx, bndl.ID)
+	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	deleteBundleInstanceAuthReq := fixDeleteBundleInstanceAuthRequest(bndlInstanceAuth.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+
+	bndlInstanceAuth := pkg.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
+
+	deleteBundleInstanceAuthReq := pkg.FixDeleteBundleInstanceAuthRequest(bndlInstanceAuth.ID)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Delete bundle instance auth")
-	err := tc.RunOperation(ctx, deleteBundleInstanceAuthReq, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, deleteBundleInstanceAuthReq, &output)
 
 	// THEN
 	require.NoError(t, err)

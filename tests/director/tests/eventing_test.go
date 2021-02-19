@@ -3,6 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
@@ -20,6 +23,15 @@ const appEventURLFormat = "https://%s/%s/v1/events"
 func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventingAssigned(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
 	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
@@ -27,24 +39,28 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	defaultScenarios := []string{"DEFAULT"}
 
 	appName := "app-test-eventing"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
-	runtime1 := registerRuntime(t, ctx, "runtime-1-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime1.ID, testTenants.GetDefaultTenantID())
+	input1 := pkg.FixRuntimeInput("runtime-1-eventing")
 
-	setRuntimeLabel(t, ctx, runtime1.ID, scenariosLabel, defaultScenarios)
-	setRuntimeLabel(t, ctx, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
-	setRuntimeLabel(t, ctx, runtime1.ID, isNormalizedLabel, "false")
+	runtime1 := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input1)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime1.ID)
 
-	runtime2 := registerRuntime(t, ctx, "runtime-2-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime2.ID, testTenants.GetDefaultTenantID())
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, ScenariosLabel, defaultScenarios)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, IsNormalizedLabel, "false")
 
-	setRuntimeLabel(t, ctx, runtime2.ID, scenariosLabel, defaultScenarios)
-	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
+	input2 := pkg.FixRuntimeInput("runtime-2-eventing")
+
+	runtime2 := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input2)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime2.ID)
+
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, ScenariosLabel, defaultScenarios)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
 
 	// WHEN
-	testApp := getApplication(t, ctx, application.ID)
+	testApp := pkg.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	// THEN
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
@@ -53,16 +69,27 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 func TestGetEventingConfigurationForRuntime(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtimeEventingURL := "http://eventing.runtime.local"
 
-	runtime := registerRuntime(t, ctx, "runtime-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime.ID, testTenants.GetDefaultTenantID())
+	input := pkg.FixRuntimeInput("runtime-eventing")
 
-	setRuntimeLabel(t, ctx, runtime.ID, runtimeEventingURLLabelKey, runtimeEventingURL)
+	runtime := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime.ID, runtimeEventingURLLabelKey, runtimeEventingURL)
 
 	// WHEN
-	testRuntime := getRuntime(t, ctx, runtime.ID)
+	testRuntime := pkg.GetRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
 
 	// THEN
 	require.Equal(t, runtimeEventingURL, testRuntime.EventingConfiguration.DefaultURL)
@@ -71,6 +98,15 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 func TestSetDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
 	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
@@ -79,30 +115,34 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	defaultScenarios := []string{"DEFAULT"}
 
 	appName := "app-test-eventing"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
-	runtime1 := registerRuntime(t, ctx, "runtime-1-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime1.ID, testTenants.GetDefaultTenantID())
+	input1 := pkg.FixRuntimeInput("runtime-1-eventing")
 
-	setRuntimeLabel(t, ctx, runtime1.ID, scenariosLabel, defaultScenarios)
-	setRuntimeLabel(t, ctx, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
-	setRuntimeLabel(t, ctx, runtime1.ID, isNormalizedLabel, "false")
+	runtime1 := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input1)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime1.ID)
 
-	runtime2 := registerRuntime(t, ctx, "runtime-2-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime2.ID, testTenants.GetDefaultTenantID())
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, ScenariosLabel, defaultScenarios)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, IsNormalizedLabel, "false")
 
-	setRuntimeLabel(t, ctx, runtime2.ID, scenariosLabel, defaultScenarios)
-	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
-	setRuntimeLabel(t, ctx, runtime2.ID, isNormalizedLabel, "true")
+	input2 := pkg.FixRuntimeInput("runtime-2-eventing")
+
+	runtime2 := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input2)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime2.ID)
+
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, ScenariosLabel, defaultScenarios)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, IsNormalizedLabel, "true")
 
 	// WHEN
-	testApp := getApplication(t, ctx, application.ID)
+	testApp := pkg.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
-	request := fixSetDefaultEventingForApplication(application.ID, runtime2.ID)
-	err := tc.RunOperation(ctx, request, &actualEventingCfg)
+	request := pkg.FixSetDefaultEventingForApplication(application.ID, runtime2.ID)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualEventingCfg)
 
 	// THEN
 	defaultAppNameNormalizer := &normalizer.DefaultNormalizator{}
@@ -111,21 +151,32 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, normalizedAppName), actualEventingCfg.DefaultURL)
 
-	testApp = getApplication(t, ctx, application.ID)
+	testApp = pkg.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, normalizedAppName), testApp.EventingConfiguration.DefaultURL)
 }
 
 func TestEmptyEventConfigurationForApp(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
-	application := registerApplication(t, ctx, "app-test-eventing")
-	defer unregisterApplication(t, application.ID)
 
-	runtime1 := registerRuntime(t, ctx, "runtime-1-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime1.ID, testTenants.GetDefaultTenantID())
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-eventing", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	input1 := pkg.FixRuntimeInput("runtime-1-eventing")
+
+	runtime1 := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input1)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime1.ID)
 
 	//WHEN
-	app := getApplication(t, ctx, application.ID)
+	app := pkg.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	//THEN
 	assert.Equal(t, "", app.EventingConfiguration.DefaultURL)
@@ -134,6 +185,15 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtime1Eventing := "eventing.runtime1.local"
 	runtime1EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime1Eventing)
@@ -142,41 +202,45 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	defaultScenarios := []string{"DEFAULT"}
 
 	appName := "app-test-eventing"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
-	runtime1 := registerRuntime(t, ctx, "runtime-1-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime1.ID, testTenants.GetDefaultTenantID())
+	input1 := pkg.FixRuntimeInput("runtime-1-eventing")
 
-	setRuntimeLabel(t, ctx, runtime1.ID, scenariosLabel, defaultScenarios)
-	setRuntimeLabel(t, ctx, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
-	setRuntimeLabel(t, ctx, runtime1.ID, isNormalizedLabel, "false")
+	runtime1 := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input1)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime1.ID)
 
-	runtime2 := registerRuntime(t, ctx, "runtime-2-eventing")
-	defer unregisterRuntimeWithinTenant(t, runtime2.ID, testTenants.GetDefaultTenantID())
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, ScenariosLabel, defaultScenarios)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime1.ID, IsNormalizedLabel, "false")
 
-	setRuntimeLabel(t, ctx, runtime2.ID, scenariosLabel, defaultScenarios)
-	setRuntimeLabel(t, ctx, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
-	setRuntimeLabel(t, ctx, runtime2.ID, isNormalizedLabel, "false")
+	input2 := pkg.FixRuntimeInput("runtime-2-eventing")
 
-	testApp := getApplication(t, ctx, application.ID)
+	runtime2 := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, &input2)
+	defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, tenant, runtime2.ID)
+
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, ScenariosLabel, defaultScenarios)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
+	pkg.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenant, runtime2.ID, IsNormalizedLabel, "false")
+
+	testApp := pkg.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
-	setDefaultEventingForApplication(t, ctx, application.ID, runtime2.ID)
+	pkg.SetDefaultEventingForApplication(t, ctx, dexGraphQLClient, application.ID, runtime2.ID)
 
-	testApp = getApplication(t, ctx, application.ID)
+	testApp = pkg.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 
 	// WHEN
 	actualEventingCfg := graphql.ApplicationEventingConfiguration{}
-	request := fixDeleteDefaultEventingForApplication(application.ID)
-	err := tc.RunOperation(ctx, request, &actualEventingCfg)
+	request := pkg.FixDeleteDefaultEventingForApplication(application.ID)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, request, &actualEventingCfg)
 
 	// THEN
 	saveExampleInCustomDir(t, request.Query(), eventingCategory, "delete default eventing for application")
 	require.NoError(t, err)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime2Eventing, appName), actualEventingCfg.DefaultURL)
 
-	testApp = getApplication(t, ctx, application.ID)
+	testApp = pkg.GetApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 	require.Equal(t, fmt.Sprintf(appEventURLFormat, runtime1Eventing, appName), testApp.EventingConfiguration.DefaultURL)
 }

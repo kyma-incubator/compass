@@ -2,6 +2,9 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,24 +16,32 @@ import (
 func TestAddAPIToBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	input := fixAPIDefinitionInput()
-	inStr, err := tc.graphqlizer.APIDefinitionInputToGQL(input)
+	input := pkg.FixAPIDefinitionInput()
+	inStr, err := pkg.Tc.Graphqlizer.APIDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
 	actualApi := graphql.APIDefinitionExt{}
-	req := fixAddAPIToBundleRequest(bndl.ID, inStr)
-	err = tc.RunOperation(ctx, req, &actualApi)
+	req := pkg.FixAddAPIToBundleRequest(bndl.ID, inStr)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, req, &actualApi)
 	require.NoError(t, err)
 
-	pack := getBundle(t, ctx, application.ID, bndl.ID)
+	pack := pkg.GetBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndl.ID)
 	require.Equal(t, bndl.ID, pack.ID)
 
 	assertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
@@ -40,24 +51,32 @@ func TestAddAPIToBundle(t *testing.T) {
 func TestManageAPIInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
-
-	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
-
-	api := addAPIToBundle(t, ctx, bndl.ID)
-
-	apiUpdateInput := fixAPIDefinitionInputWithName("new-name")
-	apiUpdateGQL, err := tc.graphqlizer.APIDefinitionInputToGQL(apiUpdateInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
-	req := fixUpdateAPIRequest(api.ID, apiUpdateGQL)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	appName := "app-test-bundle"
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndlName := "test-bundle"
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+
+	api := pkg.AddAPIToBundle(t, ctx, dexGraphQLClient, bndl.ID)
+
+	apiUpdateInput := pkg.FixAPIDefinitionInputWithName("new-name")
+	apiUpdateGQL, err := pkg.Tc.Graphqlizer.APIDefinitionInputToGQL(apiUpdateInput)
+	require.NoError(t, err)
+
+	req := pkg.FixUpdateAPIRequest(api.ID, apiUpdateGQL)
 
 	var updatedAPI graphql.APIDefinitionExt
-	err = tc.RunOperation(ctx, req, &updatedAPI)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, req, &updatedAPI)
 	require.NoError(t, err)
 
 	assert.Equal(t, updatedAPI.ID, api.ID)
@@ -65,8 +84,8 @@ func TestManageAPIInBundle(t *testing.T) {
 	saveExample(t, req.Query(), "update api definition")
 
 	var deletedAPI graphql.APIDefinitionExt
-	req = fixDeleteAPIRequest(api.ID)
-	err = tc.RunOperation(ctx, req, &deletedAPI)
+	req = pkg.FixDeleteAPIRequest(api.ID)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, req, &deletedAPI)
 	require.NoError(t, err)
 
 	assert.Equal(t, api.ID, deletedAPI.ID)
@@ -76,21 +95,29 @@ func TestManageAPIInBundle(t *testing.T) {
 func TestAddEventDefinitionToBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	input := fixEventAPIDefinitionInput()
-	inStr, err := tc.graphqlizer.EventDefinitionInputToGQL(input)
+	input := pkg.FixEventAPIDefinitionInput()
+	inStr, err := pkg.Tc.Graphqlizer.EventDefinitionInputToGQL(input)
 	require.NoError(t, err)
 
 	actualEvent := graphql.EventAPIDefinitionExt{}
-	req := fixAddEventAPIToBundleRequest(bndl.ID, inStr)
-	err = tc.RunOperation(ctx, req, &actualEvent)
+	req := pkg.FixAddEventAPIToBundleRequest(bndl.ID, inStr)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, req, &actualEvent)
 	require.NoError(t, err)
 
 	assertEventsAPI(t, []*graphql.EventDefinitionInput{&input}, []*graphql.EventAPIDefinitionExt{&actualEvent})
@@ -100,24 +127,32 @@ func TestAddEventDefinitionToBundle(t *testing.T) {
 func TestManageEventDefinitionInBundle(t *testing.T) {
 	ctx := context.Background()
 
-	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
-
-	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
-
-	event := addEventToBundle(t, ctx, bndl.ID)
-
-	eventUpdateInput := fixEventAPIDefinitionInputWithName("new-name")
-	eventUpdateGQL, err := tc.graphqlizer.EventDefinitionInputToGQL(eventUpdateInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
-	req := fixUpdateEventAPIRequest(event.ID, eventUpdateGQL)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	appName := "app-test-bundle"
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndlName := "test-bundle"
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+
+	event := pkg.AddEventToBundle(t, ctx, dexGraphQLClient, bndl.ID)
+
+	eventUpdateInput := pkg.FixEventAPIDefinitionInputWithName("new-name")
+	eventUpdateGQL, err := pkg.Tc.Graphqlizer.EventDefinitionInputToGQL(eventUpdateInput)
+	require.NoError(t, err)
+
+	req := pkg.FixUpdateEventAPIRequest(event.ID, eventUpdateGQL)
 
 	var updatedEvent graphql.EventAPIDefinitionExt
-	err = tc.RunOperation(ctx, req, &updatedEvent)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, req, &updatedEvent)
 	require.NoError(t, err)
 
 	assert.Equal(t, updatedEvent.ID, event.ID)
@@ -125,8 +160,8 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 	saveExample(t, req.Query(), "update event definition")
 
 	var deletedEvent graphql.EventAPIDefinitionExt
-	req = fixDeleteEventAPIRequest(event.ID)
-	err = tc.RunOperation(ctx, req, &deletedEvent)
+	req = pkg.FixDeleteEventAPIRequest(event.ID)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, req, &deletedEvent)
 	require.NoError(t, err)
 
 	assert.Equal(t, event.ID, deletedEvent.ID)
@@ -136,21 +171,29 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 func TestAddDocumentToBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	input := fixDocumentInput(t)
-	inStr, err := tc.graphqlizer.DocumentInputToGQL(&input)
+	input := pkg.FixDocumentInput(t)
+	inStr, err := pkg.Tc.Graphqlizer.DocumentInputToGQL(&input)
 	require.NoError(t, err)
 
 	actualDocument := graphql.DocumentExt{}
-	req := fixAddDocumentToBundleRequest(bndl.ID, inStr)
-	err = tc.RunOperation(ctx, req, &actualDocument)
+	req := pkg.FixAddDocumentToBundleRequest(bndl.ID, inStr)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, req, &actualDocument)
 	require.NoError(t, err)
 
 	assertDocuments(t, []*graphql.DocumentInput{&input}, []*graphql.DocumentExt{&actualDocument})
@@ -160,19 +203,27 @@ func TestAddDocumentToBundle(t *testing.T) {
 func TestManageDocumentInBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	document := addDocumentToBundle(t, ctx, bndl.ID)
+	document := pkg.AddDocumentToBundle(t, ctx, dexGraphQLClient, bndl.ID)
 
 	var deletedDocument graphql.DocumentExt
-	req := fixDeleteDocumentRequest(document.ID)
-	err := tc.RunOperation(ctx, req, &deletedDocument)
+	req := pkg.FixDeleteDocumentRequest(document.ID)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, req, &deletedDocument)
 	require.NoError(t, err)
 
 	assert.Equal(t, document.ID, deletedDocument.ID)
@@ -182,19 +233,27 @@ func TestManageDocumentInBundle(t *testing.T) {
 func TestAPIDefinitionInBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	api := addAPIToBundle(t, ctx, bndl.ID)
+	api := pkg.AddAPIToBundle(t, ctx, dexGraphQLClient, bndl.ID)
 
-	queryApiForBndl := fixAPIDefinitionInBundleRequest(application.ID, bndl.ID, api.ID)
+	queryApiForBndl := pkg.FixAPIDefinitionInBundleRequest(application.ID, bndl.ID, api.ID)
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryApiForBndl, &app)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, queryApiForBndl, &app)
 	require.NoError(t, err)
 
 	actualApi := app.Bundle.APIDefinition
@@ -206,19 +265,27 @@ func TestAPIDefinitionInBundle(t *testing.T) {
 func TestEventDefinitionInBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	event := addEventToBundle(t, ctx, bndl.ID)
+	event := pkg.AddEventToBundle(t, ctx, dexGraphQLClient, bndl.ID)
 
-	queryEventForBndl := fixEventDefinitionInBundleRequest(application.ID, bndl.ID, event.ID)
+	queryEventForBndl := pkg.FixEventDefinitionInBundleRequest(application.ID, bndl.ID, event.ID)
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryEventForBndl, &app)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, queryEventForBndl, &app)
 	require.NoError(t, err)
 
 	actualEvent := app.Bundle.EventDefinition
@@ -230,19 +297,27 @@ func TestEventDefinitionInBundle(t *testing.T) {
 func TestDocumentInBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	doc := addDocumentToBundle(t, ctx, bndl.ID)
+	doc := pkg.AddDocumentToBundle(t, ctx, dexGraphQLClient, bndl.ID)
 
-	queryDocForBndl := fixDocumentInBundleRequest(application.ID, bndl.ID, doc.ID)
+	queryDocForBndl := pkg.FixDocumentInBundleRequest(application.ID, bndl.ID, doc.ID)
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryDocForBndl, &app)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, queryDocForBndl, &app)
 	require.NoError(t, err)
 
 	actualDoc := app.Bundle.Document
@@ -253,23 +328,31 @@ func TestDocumentInBundle(t *testing.T) {
 func TestAPIDefinitionsInBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	inputA := fixAPIDefinitionInputWithName("foo")
-	addAPIToBundleWithInput(t, ctx, bndl.ID, inputA)
+	inputA := pkg.FixAPIDefinitionInputWithName("foo")
+	pkg.AddAPIToBundleWithInput(t, ctx, dexGraphQLClient, tenant, bndl.ID, inputA)
 
-	inputB := fixAPIDefinitionInputWithName("bar")
-	addAPIToBundleWithInput(t, ctx, bndl.ID, inputB)
+	inputB := pkg.FixAPIDefinitionInputWithName("bar")
+	pkg.AddAPIToBundleWithInput(t, ctx, dexGraphQLClient, tenant, bndl.ID, inputB)
 
-	queryApisForBndl := fixAPIDefinitionsInBundleRequest(application.ID, bndl.ID)
+	queryApisForBndl := pkg.FixAPIDefinitionsInBundleRequest(application.ID, bndl.ID)
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryApisForBndl, &app)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, queryApisForBndl, &app)
 	require.NoError(t, err)
 
 	apis := app.Bundle.APIDefinitions
@@ -281,24 +364,32 @@ func TestAPIDefinitionsInBundle(t *testing.T) {
 func TestEventDefinitionsInBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	inputA := fixEventAPIDefinitionInputWithName("foo")
-	addEventToBundleWithInput(t, ctx, bndl.ID, inputA)
+	inputA := pkg.FixEventAPIDefinitionInputWithName("foo")
+	pkg.AddEventToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, inputA)
 
-	inputB := fixEventAPIDefinitionInputWithName("bar")
-	addEventToBundleWithInput(t, ctx, bndl.ID, inputB)
+	inputB := pkg.FixEventAPIDefinitionInputWithName("bar")
+	pkg.AddEventToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, inputB)
 
-	queryEventsForBndl := fixEventDefinitionsInBundleRequest(application.ID, bndl.ID)
+	queryEventsForBndl := pkg.FixEventDefinitionsInBundleRequest(application.ID, bndl.ID)
 
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryEventsForBndl, &app)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, queryEventsForBndl, &app)
 	require.NoError(t, err)
 
 	events := app.Bundle.EventDefinitions
@@ -310,24 +401,32 @@ func TestEventDefinitionsInBundle(t *testing.T) {
 func TestDocumentsInBundle(t *testing.T) {
 	ctx := context.Background()
 
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	appName := "app-test-bundle"
-	application := registerApplication(t, ctx, appName)
-	defer unregisterApplication(t, application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := createBundle(t, ctx, application.ID, bndlName)
-	defer deleteBundle(t, ctx, bndl.ID)
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlName)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
-	inputA := fixDocumentInputWithName(t, "foo")
-	addDocumentToBundleWithInput(t, ctx, bndl.ID, inputA)
+	inputA := pkg.FixDocumentInputWithName(t, "foo")
+	pkg.AddDocumentToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, inputA)
 
-	inputB := fixDocumentInputWithName(t, "bar")
-	addDocumentToBundleWithInput(t, ctx, bndl.ID, inputB)
+	inputB := pkg.FixDocumentInputWithName(t, "bar")
+	pkg.AddDocumentToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, inputB)
 
-	queryDocsForBndl := fixDocumentsInBundleRequest(application.ID, bndl.ID)
+	queryDocsForBndl := pkg.FixDocumentsInBundleRequest(application.ID, bndl.ID)
 
 	app := graphql.ApplicationExt{}
-	err := tc.RunOperation(ctx, queryDocsForBndl, &app)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, queryDocsForBndl, &app)
 	require.NoError(t, err)
 
 	docs := app.Bundle.Documents
@@ -339,32 +438,40 @@ func TestDocumentsInBundle(t *testing.T) {
 func TestAddBundle(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
-
-	bndlInput := fixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
-	bndl, err := tc.graphqlizer.BundleCreateInputToGQL(bndlInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
-	addBndlRequest := fixAddBundleRequest(application.ID, bndl)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndlInput := pkg.FixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
+	bndl, err := pkg.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
+	require.NoError(t, err)
+
+	addBndlRequest := pkg.FixAddBundleRequest(application.ID, bndl)
 	output := graphql.BundleExt{}
 
 	// WHEN
 	t.Log("Create bundle")
-	err = tc.RunOperation(ctx, addBndlRequest, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, addBndlRequest, &output)
 
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 	assertBundle(t, &bndlInput, &output)
-	defer deleteBundle(t, ctx, output.ID)
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, output.ID)
 
 	saveExample(t, addBndlRequest.Query(), "add bundle")
 
-	bundleRequest := fixBundleRequest(application.ID, output.ID)
+	bundleRequest := pkg.FixBundleRequest(application.ID, output.ID)
 	bndlFromAPI := graphql.ApplicationExt{}
 
-	err = tc.RunOperation(ctx, bundleRequest, &bndlFromAPI)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, bundleRequest, &bndlFromAPI)
 	require.NoError(t, err)
 
 	assertBundle(t, &bndlInput, &output)
@@ -374,19 +481,27 @@ func TestAddBundle(t *testing.T) {
 func TestQueryBundles(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
 
-	bndl1 := createBundle(t, ctx, application.ID, "bndl-app-1")
-	defer deleteBundle(t, ctx, bndl1.ID)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	bndl2 := createBundle(t, ctx, application.ID, "bndl-app-2")
-	defer deleteBundle(t, ctx, bndl2.ID)
+	tenant := pkg.TestTenants.GetDefaultTenantID()
 
-	bundlesRequest := fixBundlesRequest(application.ID)
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndl1 := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl1.ID)
+
+	bndl2 := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-2")
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl2.ID)
+
+	bundlesRequest := pkg.FixGetBundlesRequest(application.ID)
 	bndlsFromAPI := graphql.ApplicationExt{}
 
-	err := tc.RunOperation(ctx, bundlesRequest, &bndlsFromAPI)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, bundlesRequest, &bndlsFromAPI)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(bndlsFromAPI.Bundles.Data))
 
@@ -396,22 +511,30 @@ func TestQueryBundles(t *testing.T) {
 func TestUpdateBundle(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
-
-	bndl := createBundle(t, ctx, application.ID, "bndl-app-1")
-	defer deleteBundle(t, ctx, bndl.ID)
-
-	bndlUpdateInput := fixBundleUpdateInput("bndl-app-1-up")
-	bndlUpdate, err := tc.graphqlizer.BundleUpdateInputToGQL(bndlUpdateInput)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
 	require.NoError(t, err)
 
-	updateBndlReq := fixUpdateBundleRequest(bndl.ID, bndlUpdate)
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
+	defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+
+	bndlUpdateInput := pkg.FixBundleUpdateInput("bndl-app-1-up")
+	bndlUpdate, err := pkg.Tc.Graphqlizer.BundleUpdateInputToGQL(bndlUpdateInput)
+	require.NoError(t, err)
+
+	updateBndlReq := pkg.FixUpdateBundleRequest(bndl.ID, bndlUpdate)
 	output := graphql.Bundle{}
 
 	// WHEN
 	t.Log("Update bundle")
-	err = tc.RunOperation(ctx, updateBndlReq, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, updateBndlReq, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -424,17 +547,25 @@ func TestUpdateBundle(t *testing.T) {
 func TestDeleteBundle(t *testing.T) {
 	ctx := context.Background()
 
-	application := registerApplication(t, ctx, "app-test-bundle")
-	defer unregisterApplication(t, application.ID)
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
 
-	bndl := createBundle(t, ctx, application.ID, "bndl-app-1")
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	pkdDeleteReq := fixDeleteBundleRequest(bndl.ID)
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
+	application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
+
+	bndl := pkg.CreateBundle(t, ctx, dexGraphQLClient, tenant, application.ID, "bndl-app-1")
+
+	pkdDeleteReq := pkg.FixDeleteBundleRequest(bndl.ID)
 	output := graphql.Bundle{}
 
 	// WHEN
 	t.Log("Delete bundle")
-	err := tc.RunOperation(ctx, pkdDeleteReq, &output)
+	err = pkg.Tc.RunOperation(ctx, dexGraphQLClient, pkdDeleteReq, &output)
 
 	// THEN
 	require.NoError(t, err)

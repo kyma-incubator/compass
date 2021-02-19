@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"os"
 	"testing"
 
@@ -27,16 +28,16 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	testTenants.InitializeDB(transact)
+	pkg.TestTenants.InitializeDB(transact)
 
-	tc, err = newTestContext()
+	pkg.Tc, err = pkg.NewTestContext()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	exitVal := m.Run()
 
-	testTenants.CleanupDB(transact)
+	pkg.TestTenants.CleanupDB(transact)
 
 	os.Exit(exitVal)
 }

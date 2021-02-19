@@ -2,6 +2,9 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -18,18 +21,24 @@ func TestQueryTenants(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	getTenantsRequest := fixTenantsRequest()
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	getTenantsRequest := pkg.FixTenantsRequest()
 	var output []*graphql.Tenant
 	expectedTenants := expectedTenants()
 
 	t.Log("Initializing one of the tenants")
-	initializedTenantID := testTenants.GetIDByName(t, tenantsQueryInitializedTenantName)
-	unregisterApp := registerSimpleApp(t, initializedTenantID)
+	initializedTenantID := pkg.TestTenants.GetIDByName(t, pkg.TenantsQueryInitializedTenantName)
+	unregisterApp := pkg.RegisterSimpleApp(t,ctx,dexGraphQLClient, initializedTenantID)
 	defer unregisterApp()
 
 	// WHEN
 	t.Log("List tenant")
-	err := tc.RunOperationWithoutTenant(ctx, getTenantsRequest, &output)
+	err = pkg.Tc.RunOperation(ctx,dexGraphQLClient, getTenantsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN
@@ -39,26 +48,10 @@ func TestQueryTenants(t *testing.T) {
 	saveExample(t, getTenantsRequest.Query(), "query tenants")
 }
 
-func registerSimpleApp(t *testing.T, tenantID string) func() {
-	ctx := context.Background()
 
-	placeholder := "foo"
-	in := fixSampleApplicationRegisterInput(placeholder)
-	appInputGQL, err := tc.graphqlizer.ApplicationRegisterInputToGQL(in)
-	require.NoError(t, err)
-
-	var res graphql.Application
-	req := fixRegisterApplicationRequest(appInputGQL)
-	err = tc.RunOperationWithCustomTenant(ctx, tenantID, req, &res)
-	require.NoError(t, err)
-
-	return func() {
-		unregisterApplicationInTenant(t, res.ID, tenantID)
-	}
-}
 
 func expectedTenants() []*graphql.Tenant {
-	testTnts := testTenants.List()
+	testTnts := pkg.TestTenants.List()
 	var expectedTenants []*graphql.Tenant
 
 	for _, tnt := range testTnts {
@@ -75,9 +68,9 @@ func expectedTenants() []*graphql.Tenant {
 
 func expectedInitializedFieldForTenant(name string) *bool {
 	switch name {
-	case tenantsQueryInitializedTenantName:
+	case pkg.TenantsQueryInitializedTenantName:
 		return &trueVal
-	case tenantsQueryNotInitializedTenantName:
+	case pkg.TenantsQueryNotInitializedTenantName:
 		return &falseVal
 	}
 

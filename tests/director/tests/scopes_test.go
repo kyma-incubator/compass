@@ -2,6 +2,9 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,6 +16,15 @@ import (
 func TestScopesAuthorization(t *testing.T) {
 	// given
 	ctx := context.Background()
+
+	t.Log("Get Dex id_token")
+	dexToken, err := idtokenprovider.GetDexToken()
+	require.NoError(t, err)
+
+	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
+
+	tenant := pkg.TestTenants.GetDefaultTenantID()
+
 	id := uuid.New().String()
 
 	testCases := []struct {
@@ -27,11 +39,11 @@ func TestScopesAuthorization(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			request := fixApplicationForRuntimeRequest(id)
+			request := pkg.FixApplicationForRuntimeRequest(id)
 			response := graphql.ApplicationPage{}
 
 			// when
-			err := tc.RunOperationWithCustomScopes(ctx, testCase.Scopes, request, &response)
+			err := pkg.Tc.RunOperationWithCustomScopes(ctx, dexGraphQLClient, tenant, testCase.Scopes, request, &response)
 
 			// then
 			require.Error(t, err)
