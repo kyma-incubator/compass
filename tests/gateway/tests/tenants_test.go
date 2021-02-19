@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -33,25 +34,23 @@ func TestTenantErrors(t *testing.T) {
 		Name:         "app-static-user",
 		ProviderName: ptr.String("compass"),
 	}
-	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
-	require.Error(t, err)
+	_ = pkg.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, notExistingTenant, appInput)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
-	_, err = registerApplicationWithinTenant(t, ctx, dexGraphQLClient, emptyTenant, appInput)
-	require.Error(t, err)
+	_ = pkg.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, emptyTenant, appInput)
 	require.Contains(t, err.Error(), tenantRequiredMessage)
 
-	is := registerIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "test")
-	defer unregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, is.ID)
+	is := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "test")
+	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, is.ID)
 
-	req := fixGenerateClientCredentialsForIntegrationSystem(is.ID)
+	req := pkg.FixRequestClientCredentialsForIntegrationSystem(is.ID)
 
 	var credentials graphql.SystemAuth
-	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, notExistingTenant, req, &credentials)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, notExistingTenant, req, &credentials)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
-	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, emptyTenant, req, &credentials)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, emptyTenant, req, &credentials)
 	require.NoError(t, err)
 	require.NotNil(t, credentials)
 }

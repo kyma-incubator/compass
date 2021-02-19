@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"net/http"
 	"testing"
 	"time"
@@ -49,9 +50,9 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 
 		ctx := context.Background()
 		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGQLClient)
-		defer unregisterApplication(t, ctx, dexGQLClient, tenant, appID)
+		defer pkg.UnregisterApplication(t, ctx, dexGQLClient, appID, tenant)
 
-		oneTimeToken := generateOneTimeTokenForApplication(t, ctx, dexGQLClient, tenant, appID)
+		oneTimeToken := pkg.GenerateOneTimeTokenForApplication(t, ctx, dexGQLClient, tenant, appID)
 		certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
 		client := getClientWithCert(certChain, clientKey)
 
@@ -92,7 +93,7 @@ func createApplicationForCertPlaygroundTest(t *testing.T, ctx context.Context, t
 	appInput := graphql.ApplicationRegisterInput{
 		Name: "cert-playground-test",
 	}
-	app := registerApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
+	app := pkg.RegisterApplicationFromInputWithinTenant(t, ctx, cli, tenant, appInput)
 	require.NotEmpty(t, app.ID)
 
 	return app.ID

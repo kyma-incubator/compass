@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -48,7 +49,7 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 						Oauth: &graphql.OAuthCredentialDataInput{
 							ClientID:     testConfig.AppClientID,
 							ClientSecret: testConfig.AppClientSecret,
-							URL:          testConfig.ExternalServicesMockBaseURL + "oauth/token",
+							URL:          testConfig.ExternalServicesMockBaseURL + "oauth/Token",
 						},
 					},
 				},
@@ -67,8 +68,8 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 			dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 			appName := "app-test-bundle"
-			application := registerApplication(t, ctx, dexGraphQLClient, appName, tenant)
-			defer unregisterApplication(t, dexGraphQLClient, application.ID, tenant)
+			application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+			defer pkg.UnregisterApplication(t, ctx,dexGraphQLClient, tenant, application.ID)
 
 			bndlName := "test-bundle"
 			bndlInput := graphql.BundleCreateInput{
@@ -85,23 +86,23 @@ func TestRefetchAPISpecDifferentSpec(t *testing.T) {
 				},
 			}
 
-			bndl := createBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
-			defer deleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+			bndl := pkg.CreateBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
+			defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 			bndlID := bndl.ID
 			assertSpecInBundleNotNil(t, bndl)
 			spec := *bndl.APIDefinitions.Data[0].Spec.APISpec.Data
 
 			var refetchedSpec graphql.APISpecExt
 			apiID := bndl.APIDefinitions.Data[0].ID
-			req := fixRefetchAPISpecRequest(apiID)
+			req := pkg.FixRefetchAPISpecRequest(apiID)
 
-			err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &refetchedSpec)
+			err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &refetchedSpec)
 			require.NoError(t, err)
 
 			require.NotNil(t, refetchedSpec.APISpec.Data)
 			assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
 
-			bndl = getBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlID)
+			bndl = pkg.GetBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlID)
 
 			assertSpecInBundleNotNil(t, bndl)
 			assert.Equal(t, *refetchedSpec.APISpec.Data, *bndl.APIDefinitions.Data[0].Spec.Data)
@@ -140,7 +141,7 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 						Oauth: &graphql.OAuthCredentialDataInput{
 							ClientID:     "wrong_" + testConfig.AppClientID,
 							ClientSecret: "wrong_" + testConfig.AppClientSecret,
-							URL:          testConfig.ExternalServicesMockBaseURL + "oauth/token",
+							URL:          testConfig.ExternalServicesMockBaseURL + "oauth/Token",
 						},
 					},
 				},
@@ -160,8 +161,8 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 			dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 			appName := "app-test-bundle"
-			application := registerApplication(t, ctx, dexGraphQLClient, appName, tenant)
-			defer unregisterApplication(t, dexGraphQLClient, application.ID, tenant)
+			application := pkg.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
+			defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, application.ID)
 
 			bndlName := "test-bundle"
 			bndlInput := graphql.BundleCreateInput{
@@ -178,8 +179,8 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(t *testing.T) {
 				},
 			}
 
-			bndl := createBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
-			defer deleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+			bndl := pkg.CreateBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
+			defer pkg.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
 
 			assert.True(t, len(bndl.APIDefinitions.Data) > 0)
 			assert.NotNil(t, bndl.APIDefinitions.Data[0])

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"net/http"
 	"testing"
 
@@ -37,26 +38,26 @@ func TestAuditlogIntegration(t *testing.T) {
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
 	t.Log("Create request for registering application")
-	appInputGQL, err := tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
+	appInputGQL, err := pkg.Tc.Graphqlizer.ApplicationRegisterInputToGQL(appInput)
 	require.NoError(t, err)
 
-	registerRequest := fixRegisterApplicationRequest(appInputGQL)
+	registerRequest := pkg.FixRegisterApplicationRequest(appInputGQL)
 
-	t.Log("Register Application through Gateway with Dex id token")
+	t.Log("Register Application through Gateway with Dex id Token")
 	app := graphql.ApplicationExt{}
-	err = tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerRequest, &app)
+	err = pkg.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTenant, registerRequest, &app)
 	require.NoError(t, err)
 
-	defer unregisterApplicationInTenant(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 
-	t.Log("Get auditlog service token")
-	auditlogToken := getAuditlogMockToken(t, &httpClient, testConfig.ExternalServicesMockBaseURL)
+	t.Log("Get auditlog service Token")
+	auditlogToken := pkg.GetAuditlogMockToken(t, &httpClient, testConfig.ExternalServicesMockBaseURL)
 
 	t.Log("Get auditlog from external services mock")
-	auditlogs := searchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
+	auditlogs := pkg.SearchForAuditlogByString(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, appName)
 
 	for _, auditlog := range auditlogs {
-		defer deleteAuditlogByID(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, auditlog.UUID)
+		defer pkg.DeleteAuditlogByID(t, &httpClient, testConfig.ExternalServicesMockBaseURL, auditlogToken, auditlog.UUID)
 	}
 
 	t.Log("Compare request to director with auditlog")

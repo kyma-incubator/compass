@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
@@ -24,23 +25,26 @@ func TestViewerQuery(t *testing.T) {
 
 	t.Run("Test viewer as Integration System", func(t *testing.T) {
 		t.Log("Register Integration System with Dex id token")
-		intSys := registerIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
+		intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, "integration-system")
 
 		t.Logf("Registered Integration System with [id=%s]", intSys.ID)
-		defer unregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+		defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
 
 		t.Log("Request Client Credentials for Integration System")
-		intSysOauthCredentialData := requestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+		intSystemAuth := pkg.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, intSys.ID)
+
+		intSysOauthCredentialData, ok:= intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := getAccessToken(t, intSysOauthCredentialData, "")
+		accessToken := pkg.GetAccessToken(t, intSysOauthCredentialData, "")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
 
 		t.Log("Requesting Viewer as Integration System")
 		viewer := graphql.Viewer{}
-		req := fixGetViewerRequest()
+		req := pkg.FixGetViewerRequest()
 
-		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, intSys.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeIntegrationSystem, viewer.Type)
@@ -55,27 +59,27 @@ func TestViewerQuery(t *testing.T) {
 		}
 
 		t.Log("Register Application with Dex id token")
-		app := registerApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
+		app := pkg.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 
 		t.Logf("Registered Application with [id=%s]", app.ID)
-		defer unregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+		defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
 
 		t.Log("Request Client Credentials for Application")
-		appAuth := requestClientCredentialsForApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+		appAuth := pkg.RequestClientCredentialsForApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
 		appOauthCredentialData, ok := appAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)
 		require.NotEmpty(t, appOauthCredentialData.ClientSecret)
 		require.NotEmpty(t, appOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := getAccessToken(t, appOauthCredentialData, "")
+		accessToken := pkg.GetAccessToken(t, appOauthCredentialData, "")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
 
 		t.Log("Requesting Viewer as Application")
 		viewer := graphql.Viewer{}
-		req := fixGetViewerRequest()
+		req := pkg.FixGetViewerRequest()
 
-		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, app.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeApplication, viewer.Type)
@@ -90,27 +94,27 @@ func TestViewerQuery(t *testing.T) {
 		}
 
 		t.Log("Register Runtime with Dex id token")
-		runtime := RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
+		runtime := pkg.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, &runtimeInput)
 
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
-		defer UnregisterRuntimeWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		defer pkg.UnregisterRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 
 		t.Log("Request Client Credentials for Runtime")
-		rtmAuth := requestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
+		rtmAuth := pkg.RequestClientCredentialsForRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, runtime.ID)
 		rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)
 		require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
 		require.NotEmpty(t, rtmOauthCredentialData.ClientID)
 
 		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := getAccessToken(t, rtmOauthCredentialData, "")
+		accessToken := pkg.GetAccessToken(t, rtmOauthCredentialData, "")
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain))
 
 		t.Log("Requesting Viewer as Runtime")
 		viewer := graphql.Viewer{}
-		req := fixGetViewerRequest()
+		req := pkg.FixGetViewerRequest()
 
-		err = tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
+		err = pkg.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, runtime.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeRuntime, viewer.Type)

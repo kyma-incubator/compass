@@ -76,22 +76,20 @@ func TestORDService(t *testing.T) {
 
 	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 
-	app, err := pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
-	require.NoError(t, err)
+	app := pkg.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, appInput)
 
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTenant, app.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, app.ID, testConfig.DefaultTenant)
 
-	app2, err := pkg.RegisterApplicationWithinTenant(t, ctx, dexGraphQLClient, testConfig.Tenant, appInput2)
-	require.NoError(t, err)
+	app2 := pkg.RegisterApplicationFromInputWithinTenant(t, ctx, dexGraphQLClient, testConfig.Tenant, appInput2)
 
-	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, testConfig.Tenant, app2.ID)
+	defer pkg.UnregisterApplication(t, ctx, dexGraphQLClient, app2.ID, testConfig.Tenant)
 
 	t.Log("Create integration system")
-	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "test-int-system")
+	intSys := pkg.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "","test-int-system")
 	require.NotEmpty(t, intSys)
-	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
+	defer pkg.UnregisterIntegrationSystem(t, ctx, dexGraphQLClient,"", intSys.ID)
 
-	intSystemCredentials := pkg.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, intSys.ID)
+	intSystemCredentials := pkg.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient,"", intSys.ID)
 	defer pkg.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
 
 	unsecuredHttpClient := http.DefaultClient
@@ -615,7 +613,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 						Description: ptr.String("api for adding comments"),
 						TargetURL:   "http://mywordpress.com/comments",
 						Group:       ptr.String("comments"),
-						Version:     pkg.FixDepracatedVersion(),
+						Version:     pkg.FixDeprecatedVersion(),
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOpenAPI,
 							Format: directorSchema.SpecFormatYaml,
@@ -636,7 +634,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 					{
 						Name:        "xml",
 						Description: ptr.String("xml api"),
-						Version:     pkg.FixDecomissionedVersion(),
+						Version:     pkg.FixDecommissionedVersion(),
 						TargetURL:   "http://mywordpress.com/xml",
 						Spec: &directorSchema.APISpecInput{
 							Type:   directorSchema.APISpecTypeOdata,
@@ -649,7 +647,7 @@ func createApp(suffix string) directorSchema.ApplicationRegisterInput {
 					{
 						Name:        "comments-v1",
 						Description: ptr.String("comments events"),
-						Version:     pkg.FixDepracatedVersion(),
+						Version:     pkg.FixDeprecatedVersion(),
 						Group:       ptr.String("comments"),
 						Spec: &directorSchema.EventSpecInput{
 							Type:   directorSchema.EventSpecTypeAsyncAPI,

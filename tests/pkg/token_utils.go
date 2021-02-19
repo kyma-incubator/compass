@@ -1,4 +1,4 @@
-package tests
+package pkg
 
 import (
 	"crypto/tls"
@@ -16,17 +16,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type hydraToken struct {
+type HydraToken struct {
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int    `json:"expires_in"`
 	Scope       string `json:"scope"`
 	TokenType   string `json:"token_type"`
 }
 
-const applicationScopes = "application:read application:write"
-const integrationSystemScopes = "application:read application:write application_template:read application_template:write runtime:read runtime:write"
+const ApplicationScopes = "application:read application:write"
+const IntegrationSystemScopes = "application:read application:write application_template:read application_template:write runtime:read runtime:write"
 
-func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, scopes string) (*hydraToken, error) {
+func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, scopes string) (*HydraToken, error) {
 	form := url.Values{}
 	form.Set("grant_type", "client_credentials")
 	form.Set("scope", scopes)
@@ -46,12 +46,12 @@ func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 	}
 	resp, err := client.Do(req)
 	require.NoError(t, err)
-	defer httpRequestBodyCloser(t, resp)
+	defer HttpRequestBodyCloser(t, resp)
 
 	token, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	hydraToken := hydraToken{}
+	hydraToken := HydraToken{}
 	err = json.Unmarshal(token, &hydraToken)
 	require.NoError(t, err)
 
@@ -61,15 +61,15 @@ func fetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 	return &hydraToken, nil
 }
 
-func getAccessToken(t *testing.T, oauthCredentialData *graphql.OAuthCredentialData, scopes string) string {
+func GetAccessToken(t *testing.T, oauthCredentialData *graphql.OAuthCredentialData, scopes string) string {
 	oauthCredentials := fmt.Sprintf("%s:%s", oauthCredentialData.ClientID, oauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
-	hydraToken, err := fetchHydraAccessToken(t, encodedCredentials, oauthCredentialData.URL, scopes)
+	hydraToken, err := FetchHydraAccessToken(t, encodedCredentials, oauthCredentialData.URL, scopes)
 	require.NoError(t, err)
 	return hydraToken.AccessToken
 }
 
-func httpRequestBodyCloser(t *testing.T, resp *http.Response) {
+func HttpRequestBodyCloser(t *testing.T, resp *http.Response) {
 	err := resp.Body.Close()
 	require.NoError(t, err)
 }

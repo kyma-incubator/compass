@@ -1,4 +1,4 @@
-package tests
+package pkg
 
 import (
 	"log"
@@ -30,11 +30,11 @@ const (
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
 
-	tenantsQueryNotInitializedTenantName = "TestTenantsQueryTenantNotInitialized"
-	tenantsQueryInitializedTenantName    = "TestTenantsQueryTenantInitialized"
+	TenantsQueryNotInitializedTenantName = "TestTenantsQueryTenantNotInitialized"
+	TenantsQueryInitializedTenantName    = "TestTenantsQueryTenantInitialized"
 )
 
-var testTenants TestTenantsManager
+var TestTenants TestTenantsManager
 
 type TestTenantsManager struct {
 	tenantsByName map[string]Tenant
@@ -126,16 +126,16 @@ func (mgr *TestTenantsManager) InitializeDB(transact persistence.Transactioner) 
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
-		tenantsQueryNotInitializedTenantName: {
+		TenantsQueryNotInitializedTenantName: {
 			ID:             "72329135-27fd-4284-9bcb-37ea8d6307d0",
-			Name:           tenantsQueryNotInitializedTenantName,
+			Name:           TenantsQueryNotInitializedTenantName,
 			ExternalTenant: "72329135-27fd-4284-9bcb-37ea8d6307d0",
 			ProviderName:   testProvider,
 			Status:         Active,
 		},
-		tenantsQueryInitializedTenantName: {
+		TenantsQueryInitializedTenantName: {
 			ID:             "8cf0c909-f816-4fe3-a507-a7917ccd8380",
-			Name:           tenantsQueryInitializedTenantName,
+			Name:           TenantsQueryInitializedTenantName,
 			ExternalTenant: "8cf0c909-f816-4fe3-a507-a7917ccd8380",
 			ProviderName:   testProvider,
 			Status:         Active,
@@ -189,7 +189,7 @@ func (mgr TestTenantsManager) GetDefaultTenantID() string {
 	return mgr.tenantsByName[testDefaultTenant].ID
 }
 
-func (mgr TestTenantsManager) emptyTenant() string {
+func (mgr TestTenantsManager) EmptyTenant() string {
 	return ""
 }
 
