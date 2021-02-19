@@ -187,9 +187,14 @@ func parseResponseData(resp *http.Response) (*web_hook.ResponseData, error) {
 		}
 	}
 
+	var headers web_hook.Header
+	for key, value := range resp.Header {
+		headers[key] = value[0]
+	}
+
 	return &web_hook.ResponseData{
 		Body:    respBody,
-		Headers: resp.Header,
+		Headers: headers,
 	}, nil
 }
 

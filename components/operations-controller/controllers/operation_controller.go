@@ -24,7 +24,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/tenant"
 	web_hook "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
@@ -262,7 +261,7 @@ func parseRequestData(operation *v1alpha1.Operation) (webhook.RequestData, error
 	str := struct {
 		Application graphql.Application
 		TenantID    string
-		Headers     http.Header
+		Headers     webhook.Header
 	}{}
 
 	if err := json.Unmarshal([]byte(operation.Spec.RequestData), &str); err != nil {

@@ -5,8 +5,8 @@ go 1.15
 require (
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/go-logr/logr v0.1.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210219000551-ac447a84759e
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210219000750-a0c030134e3b
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210219205106-815ebd841c55
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210219205217-5cf20dfb6722
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.4
 	github.com/pkg/errors v0.9.1
