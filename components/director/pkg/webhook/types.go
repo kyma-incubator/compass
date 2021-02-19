@@ -208,7 +208,7 @@ func ParseHeadersTemplate(tmpl *string, reqData RequestData) (http.Header, error
 
 	for key, value := range headers {
 		headers[key][0] = strings.TrimPrefix(value[0], `[`)
-		headers[key][0] = strings.TrimPrefix(value[0], `]`)
+		headers[key][0] = strings.TrimSuffix(value[0], `]`)
 	}
 
 	return headers, nil
