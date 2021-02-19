@@ -46,7 +46,6 @@ type Request struct {
 	OperationType graphql.OperationType `json:"operation_type,omitempty"`
 	ResourceType  resource.Type         `json:"resource_type"`
 	ResourceID    string                `json:"resource_id"`
-	Ready         bool                  `json:"ready"`
 	Error         string                `json:"error"`
 }
 

@@ -282,7 +282,7 @@ func prepareDirectorRequest(operation v1alpha1.Operation) director.Request {
 func prepareDirectorRequestWithError(operation v1alpha1.Operation, err error) director.Request {
 	request := director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
-		ResourceType:  resource.Type(operation.Spec.ResourceID),
+		ResourceType:  resource.Type(operation.Spec.ResourceType),
 		ResourceID:    operation.Spec.ResourceID,
 	}
 
