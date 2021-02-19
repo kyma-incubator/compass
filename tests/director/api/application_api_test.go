@@ -93,7 +93,7 @@ func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 	err = tc.RunOperation(ctx, request, &actualSecondApp)
 	//THEN
 	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
-	require.Empty(t, actualSecondApp.ID)
+	require.Empty(t, actualSecondApp.BaseEntity)
 
 	// THIRD APP WITH DIFFERENT APP NAME WHEN NORMALIZED
 	actualThirdApp := registerApplication(t, ctx, "appwordpress")
@@ -122,7 +122,7 @@ func TestRegisterApplicationNormalizarionValidation(t *testing.T) {
 	err = tc.RunOperation(ctx, request, &actualFourthApp)
 	//THEN
 	require.EqualError(t, err, "graphql: Object name is not unique [object=application]")
-	require.Empty(t, actualFourthApp.ID)
+	require.Empty(t, actualFourthApp.BaseEntity)
 
 	// FIFTH APP WITH DIFFERENT ALREADY NORMALIZED NAME WHICH DOES NOT MATCH ANY EXISTING APP WHEN NORMALIZED
 	fifthAppName := "mp-application"
@@ -476,6 +476,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 	t.Run("manage webhooks", func(t *testing.T) {
 		// add
 		url := "http://new-webhook.url"
+		urlUpdated := "http://updated-webhook.url"
 		webhookInStr, err := tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL:  &url,
 			Type: graphql.WebhookTypeConfigurationChanged,
@@ -488,7 +489,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 		actualWebhook := graphql.Webhook{}
 		err = tc.RunOperation(ctx, addReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "http://new-webhook.url", actualWebhook.URL)
+		assert.NotNil(t, actualWebhook.URL)
+		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
 		assert.Equal(t, graphql.WebhookTypeConfigurationChanged, actualWebhook.Type)
 		id := actualWebhook.ID
 		require.NotNil(t, id)
@@ -499,7 +501,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		// update
 		webhookInStr, err = tc.graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
-			URL: &url, Type: graphql.WebhookTypeConfigurationChanged,
+			URL: &urlUpdated, Type: graphql.WebhookTypeConfigurationChanged,
 		})
 
 		require.NoError(t, err)
@@ -507,7 +509,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 		saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
 		err = tc.RunOperation(ctx, updateReq, &actualWebhook)
 		require.NoError(t, err)
-		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
+		assert.NotNil(t, actualWebhook.URL)
+		assert.Equal(t, urlUpdated, *actualWebhook.URL)
 
 		// delete
 
@@ -520,7 +523,8 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		assert.Equal(t, "http://updated-webhook.url", actualWebhook.URL)
+		assert.NotNil(t, actualWebhook.URL)
+		assert.Equal(t, urlUpdated, *actualWebhook.URL)
 
 	})
 
