@@ -24,13 +24,14 @@ const (
 	ApiOrdIDRegex           = "^([a-zA-Z0-9._\\-]+):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	EventOrdIDRegex         = "^([a-zA-Z0-9._\\-]+):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
 	PPMSObjectIDRegex       = "^([0-9]+)$"
+	LabelsKeyRegex          = "^[a-zA-Z0-9-_.]*$"
 )
 
 var shortDescriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
-func validateDocumentInput (doc *Document) error {
+func validateDocumentInput(doc *Document) error {
 	return validation.ValidateStruct(doc, validation.Field(&doc.OpenResourceDiscovery, validation.Required, validation.In("1.0-rc.1")))
 }
 
@@ -203,7 +204,7 @@ func validateORDLabels(val interface{}) error {
 
 	var err error
 	parsedLabels.ForEach(func(key, value gjson.Result) bool {
-		if err = validation.Validate(key.String(), validation.Match(regexp.MustCompile("^[a-zA-Z0-9-_.]*$"))); err != nil {
+		if err = validation.Validate(key.String(), validation.Match(regexp.MustCompile(LabelsKeyRegex))); err != nil {
 			return false
 		}
 		if !value.IsArray() {

@@ -111,6 +111,33 @@ var (
 	invalidTagsValue = `["invalid!@#"]`
 
 	invalidTagsValueIntegerElement = `["storage", 992]`
+
+	invalidLabelsWhenValueIsNotArray = `{
+  		"label-key-1": "label-value-1"
+		}`
+
+	invalidLabelsWhenValuesAreNotArrayOfStrings = `{
+  		"label-key-1": [
+    	  "label-value-1",
+    	  992
+  		]
+	}`
+
+	invalidLabelsWhenKeyIsWrong = `{
+  		"invalidKey!@#": [
+    	  "label-value-1",
+    	  "label-value-2"
+  		]
+	}`
+
+	invalidCountriesElement          = `["DE", "wrongCountry"]`
+	invalidCountriesNonStringElement = `["DE", 992]`
+
+	invalidLineOfBusinessElement          = `["sales", "wrongLineOfBusiness!@#"]`
+	invalidLineOfBusinessNonStringElement = `["sales", 992]`
+
+	invalidIndustryElement          = `["banking", "wrongIndustry!@#"]`
+	invalidIndustryNonStringElement = `["banking", 992]`
 )
 
 func TestDocuments_Validate(t *testing.T) {
@@ -452,6 +479,168 @@ func TestDocuments_Validate(t *testing.T) {
 			DocumentProvider: func() []*open_resource_discovery.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON `Labels` field for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Labels = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid JSON object `Labels` field for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Labels = json.RawMessage(`[]`)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Labels` values are not array for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "`Labels` values are not array of strings for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid key for JSON `Labels` field for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `countries` field element for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Countries = json.RawMessage(invalidCountriesElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `countries` field when JSON array contains non string element for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Countries = json.RawMessage(invalidCountriesNonStringElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `countries` field when it is invalid JSON for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Countries = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `countries` field when it isn't a JSON array for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Countries = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `countries` field when the JSON array is empty",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Countries = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `lineOfBusiness` field element for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(invalidLineOfBusinessElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when JSON array contains non string element for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(invalidLineOfBusinessNonStringElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when it is invalid JSON for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when it isn't a JSON array for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `lineOfBusiness` field when the JSON array is empty",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage("[]")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `industry` field element for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(invalidIndustryElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when JSON array contains non string element for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(invalidIndustryNonStringElement)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when it is invalid JSON for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(invalidJson)
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when it isn't a JSON array for Package",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage("{}")
+
+				return []*open_resource_discovery.Document{doc}
+			},
+		}, {
+			Name: "Invalid `industry` field when the JSON array is empty",
+			DocumentProvider: func() []*open_resource_discovery.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage("[]")
 
 				return []*open_resource_discovery.Document{doc}
 			},
