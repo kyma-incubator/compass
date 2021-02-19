@@ -7,80 +7,66 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/header"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/operation"
-
-	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
-
+	"github.com/99designs/gqlgen/handler"
+	"github.com/dlmiddlecote/sqlstats"
+	"github.com/gorilla/mux"
+	graphqlAPI "github.com/kyma-incubator/compass/components/director/internal/api"
+	mp_authenticator "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-	"github.com/vrischmann/envconfig"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	mp_bundle "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
-
-	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
-
-	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
-
-	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
-
-	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/kyma-incubator/compass/components/director/internal/metrics"
-
-	"github.com/dlmiddlecote/sqlstats"
-
-	mp_authenticator "github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/director/internal/domain"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/error_presenter"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
+	"github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/internalschema"
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+	"github.com/kyma-incubator/compass/components/director/pkg/header"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/99designs/gqlgen/handler"
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/vrischmann/envconfig"
 )
 
 const envPrefix = "APP"
@@ -122,6 +108,14 @@ type config struct {
 	Features features.Config
 
 	ProtectedLabelPattern string `envconfig:"default=.*_defaultEventing"`
+
+	// todo move this
+	Token struct {
+		Length                int           `envconfig:"default=64"`
+		RuntimeExpiration     time.Duration `envconfig:"default=60m"`
+		ApplicationExpiration time.Duration `envconfig:"default=5m"`
+		CSRExpiration         time.Duration `envconfig:"default=5m"`
+	}
 }
 
 func main() {
@@ -265,6 +259,9 @@ func main() {
 
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
+
+	internalGQLHandler, err := PrepareInternalGraphQLServer(cfg, graphqlAPI.NewTokenResolver(transact, tokenService(cfg, httpClient)), correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	exitOnError(err, "Failed configuring internal graphQL handler")
 
 	go func() {
 		<-ctx.Done()
@@ -467,4 +464,72 @@ func webhookService() webhook.WebhookService {
 	webhookRepo := webhook.NewRepository(webhookConverter)
 
 	return webhook.NewService(webhookRepo, uidSvc)
+}
+
+func PrepareInternalGraphQLServer(cfg config, tokenResolver graphqlAPI.TokenResolver, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
+	gqlInternalCfg := internalschema.Config{
+		Resolvers: &graphqlAPI.InternalResolver{
+			TokenResolver: tokenResolver,
+		},
+	}
+
+	internalExecutableSchema := internalschema.NewExecutableSchema(gqlInternalCfg)
+
+	internalRouter := mux.NewRouter()
+	internalRouter.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
+	internalRouter.HandleFunc(cfg.APIEndpoint, handler.GraphQL(internalExecutableSchema))
+
+	internalRouter.Use(middlewares...)
+
+	handlerWithTimeout, err := timeouthandler.WithTimeout(internalRouter, cfg.ServerTimeout)
+	if err != nil {
+		return nil, err
+	}
+	return handlerWithTimeout, nil
+}
+
+func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient *http.Client, pairingAdapters map[string]string) graphqlAPI.TokenService {
+	uidSvc := uid.NewService()
+	authConverter := auth.NewConverter()
+	systemAuthConverter := systemauth.NewConverter(authConverter)
+	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
+	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
+	labelConverter := label.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	specConverter := spec.NewConverter(frConverter)
+
+	intSysConverter := integrationsystem.NewConverter()
+	intSysRepo := integrationsystem.NewRepository(intSysConverter)
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	webhookConverter := webhook.NewConverter(authConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	docConverter := document.NewConverter(frConverter)
+	packageConverter := mp_bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, packageConverter)
+	applicationRepo := application.NewRepository(appConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	runtimeRepo := runtime.NewRepository()
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
+	labelUpsertSvc := label.NewLabelUpsertService(labelRepo, labelDefRepo, uidSvc)
+	scenariosSvc := labeldef.NewScenariosService(labelDefRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	bundleRepo := mp_bundle.NewRepository(packageConverter)
+	apiRepo := api.NewRepository(apiConverter)
+	docRepo := document.NewRepository(docConverter)
+	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient)
+	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
+	specRepo := spec.NewRepository(specConverter)
+	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
+	apiSvc := api.NewService(apiRepo, uidSvc, specSvc)
+	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc)
+	documenSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
+	bundleSvc := mp_bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documenSvc, uidSvc)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
+	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, onetimetoken.NewTokenGenerator(cfg.Token.Length), cfg.OneTimeToken.ConnectorURL, pairingAdapters)
 }
