@@ -180,21 +180,21 @@ func parseResponseData(resp *http.Response) (*web_hook.ResponseData, error) {
 		return nil, err
 	}
 
-	var respBody map[string]interface{}
+	body := make(map[string]string, 0)
 	if len(bytes) > 0 {
-		if err := json.Unmarshal(bytes, &respBody); err != nil {
+		if err := json.Unmarshal(bytes, &body); err != nil {
 			return nil, err
 		}
 	}
 
-	var headers web_hook.Header
+	headers := make(map[string]string, 0)
 	for key, value := range resp.Header {
 		headers[key] = value[0]
 	}
 
 	return &web_hook.ResponseData{
-		Body:    respBody,
 		Headers: headers,
+		Body:    body,
 	}, nil
 }
 

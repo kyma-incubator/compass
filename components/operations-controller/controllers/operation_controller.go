@@ -129,7 +129,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if isReconciliationTimeoutReached(operation, calculateReconciliationTimeout(webhooks, r.webhookConfig.WebhookTimeout)) {
 		opErr := errors.New("reconciliation timeout reached")
 
-		err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, opErr))
+		err := r.directorClient.Notify(ctx, prepareDirectorRequestWithError(*operation, opErr))
 		if err != nil {
 			logger.Error(err, operationError("Unable to notify Director", operation))
 			return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
@@ -160,7 +160,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		case graphql.WebhookModeAsync:
 			operation.Status.Webhooks[0].WebhookPollURL = *response.Location
 		case graphql.WebhookModeSync:
-			err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, nil))
+			err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation))
 			if err != nil {
 				logger.Error(err, operationError("Unable to notify Director", operation))
 				return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
@@ -200,7 +200,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	case *response.InProgressStatusIdentifier:
 		return r.handleWebhookTimeoutCheckResponse(ctx, operation, webhookEntity, errors.New("webhook timeout reached"))
 	case *response.SuccessStatusIdentifier:
-		err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, nil))
+		err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation))
 		if err != nil {
 			logger.Error(err, operationError("Unable to notify Director", operation))
 			return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
@@ -216,7 +216,7 @@ func (r *OperationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	case *response.FailedStatusIdentifier:
 		opErr := errors.New("webhook operation has finished unsuccessfully")
 
-		err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, opErr))
+		err := r.directorClient.Notify(ctx, prepareDirectorRequestWithError(*operation, opErr))
 		if err != nil {
 			logger.Error(err, operationError("Unable to notify Director", operation))
 			return ctrl.Result{RequeueAfter: r.webhookConfig.RequeueInterval}, nil
@@ -243,7 +243,7 @@ func (r *OperationReconciler) handleWebhookTimeoutCheckResponse(ctx context.Cont
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	err := r.directorClient.Notify(ctx, prepareDirectorRequest(*operation, webhookErr))
+	err := r.directorClient.Notify(ctx, prepareDirectorRequestWithError(*operation, webhookErr))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -261,7 +261,7 @@ func parseRequestData(operation *v1alpha1.Operation) (webhook.RequestData, error
 	str := struct {
 		Application graphql.Application
 		TenantID    string
-		Headers     webhook.Header
+		Headers     map[string]string
 	}{}
 
 	if err := json.Unmarshal([]byte(operation.Spec.RequestData), &str); err != nil {
@@ -275,13 +275,22 @@ func parseRequestData(operation *v1alpha1.Operation) (webhook.RequestData, error
 	}, nil
 }
 
-func prepareDirectorRequest(operation v1alpha1.Operation, err error) director.Request {
-	return director.Request{
+func prepareDirectorRequest(operation v1alpha1.Operation) director.Request {
+	return prepareDirectorRequestWithError(operation, nil)
+}
+
+func prepareDirectorRequestWithError(operation v1alpha1.Operation, err error) director.Request {
+	request := director.Request{
 		OperationType: graphql.OperationType(operation.Spec.OperationType),
 		ResourceType:  resource.Type(operation.Spec.ResourceID),
 		ResourceID:    operation.Spec.ResourceID,
-		Error:         err.Error(),
 	}
+
+	if err != nil {
+		request.Error = err.Error()
+	}
+
+	return request
 }
 
 func isReconciliationTimeoutReached(operation *v1alpha1.Operation, reconciliationTimeout time.Duration) bool {
@@ -301,6 +310,10 @@ func isWebhookTimeoutReached(cfg web_hook.Config, webhook graphql.Webhook, creat
 }
 
 func getNextPollTime(webhook *graphql.Webhook, webhookStatus v1alpha1.Webhook, timeLayout string) (time.Duration, error) {
+	if webhookStatus.LastPollTimestamp == "" {
+		return 0, nil
+	}
+
 	lastPollTimestamp, err := time.Parse(timeLayout, webhookStatus.LastPollTimestamp)
 	if err != nil {
 		return 0, err

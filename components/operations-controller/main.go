@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
@@ -78,7 +79,7 @@ func main() {
 	url, err := url.Parse(cfg.GraphQLClient.GraphqlEndpoint)
 	fatalOnError(err)
 
-	directorURL := url.Host
+	directorURL := fmt.Sprintf("%s://%s", url.Scheme, url.Host)
 
 	cfg.GraphQLClient.GraphqlEndpoint = cfg.GraphQLClient.GraphqlEndpoint + "?useBundles=true" // TODO: Delete after bundles are adopted
 
