@@ -74,7 +74,8 @@ func TestCompassAuth(t *testing.T) {
 
 	t.Log("Check if token granted for Integration System is invalid")
 	appByIntSys = registerApplicationFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTenant, appInput)
-	require.Empty(t, appByIntSys.ID)
+
+	require.Empty(t, appByIntSys.BaseEntity)
 
 	t.Log("Check if token can not be fetched with old client credentials")
 	oauthCredentials := fmt.Sprintf("%s:%s", intSysOauthCredentialData.ClientID, intSysOauthCredentialData.ClientSecret)
