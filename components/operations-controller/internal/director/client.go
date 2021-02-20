@@ -31,7 +31,7 @@ import (
 // and notifying Director for state changes of said application
 type Client interface {
 	types.ApplicationLister
-	Notify(ctx context.Context, request Request) error
+	UpdateStatus(ctx context.Context, request Request) error
 }
 
 // defaultClient is the default implementation of the Client interface
