@@ -17,6 +17,7 @@
 package config
 
 import (
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/server"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"reflect"
@@ -33,10 +34,11 @@ type Validatable interface {
 }
 
 type Config struct {
-	Server        *server.Config  `mapstructure:"server"`
-	HttpClient    *http.Config    `mapstructure:"http_client"`
-	GraphQLClient *graphql.Config `mapstructure:"graphql_client"`
-	Webhook       *webhook.Config `mapstructure:"webhook"`
+	Server        *server.Config   `mapstructure:"server"`
+	HttpClient    *http.Config     `mapstructure:"http_client"`
+	GraphQLClient *graphql.Config  `mapstructure:"graphql_client"`
+	Director      *director.Config `mapstructure:"director"`
+	Webhook       *webhook.Config  `mapstructure:"webhook"`
 }
 
 func AddPFlags(set *pflag.FlagSet) {
